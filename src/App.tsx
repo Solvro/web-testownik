@@ -7,6 +7,7 @@ import {Theme} from "./Theme.tsx";
 import LoginPrompt from "./components/LoginPrompt.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import Error404Page from "./pages/errors/Error404Page.tsx";
+import GradesPage from "./pages/GradesPage.tsx";
 import QuizPage from "./pages/QuizPage.tsx";
 import ImportQuizPage from "./pages/ImportQuizPage.tsx";
 import ImportQuizLegacyPage from "./pages/ImportQuizLegacyPage.tsx";
@@ -46,6 +47,7 @@ const App: React.FC = () => {
                         <>
                             <Route path="/" element={<DashboardPage/>}/>
                             <Route path="/profile" element={<ProfilePage/>}/>
+                            <Route path="/grades" element={<GradesPage/>}/>
                             <Route path="/create-quiz" element={<CreateQuizPage/>}/>
                             <Route path="/edit-quiz/:quizId" element={<EditQuizPage/>}/>
                             <Route path="/import-quiz" element={<ImportQuizPage/>}/>
