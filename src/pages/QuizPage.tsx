@@ -24,6 +24,8 @@ import {getDeviceFriendlyName, getDeviceType} from "../components/quiz/helpers/d
 import {Icon} from "@iconify/react";
 
 import "../styles/quiz.css";
+import PropagateLoader from "react-spinners/PropagateLoader";
+import LoginPrompt from "../components/LoginPrompt.tsx";
 
 interface UserSettings {
     sync_progress: boolean;
@@ -107,11 +109,13 @@ const QuizPage: React.FC = () => {
         (async () => {
             const quizData = await fetchQuiz();
             if (!quizData) {
-                console.error("Nie udało się załadować quizu.");
+                console.error("Quiz not found or error fetching.");
                 setLoading(false);
                 return;
             }
             setQuiz(quizData);
+
+            document.title = `${quizData.title} - Testownik`;
 
             // Handle version update logic
             handleVersionUpdate(quizData.version);
@@ -912,7 +916,38 @@ const QuizPage: React.FC = () => {
 
     // ========== Render ==========
     if (loading) {
-        return <div className="text-center mt-5">Ładowanie...</div>;
+        return (
+            <Card className="border-0 shadow">
+                <Card.Body>
+                    <div className="text-center mb-5">
+                        <p>Ładowanie bazy...</p>
+                        <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
+                    </div>
+                </Card.Body>
+            </Card>
+        );
+    }
+
+    if (!quiz) {
+        if (!appContext.isAuthenticated) {
+            return <LoginPrompt/>;
+        }
+        return (
+            <Card className="border-0 shadow">
+                <Card.Body>
+                    <div className="text-center">
+                        <p>Nie udało się załadować bazy, upewnij się że jest ona dla Ciebie dostępna lub spróbuj ponownie później.</p>
+                        <Button
+                            variant={appContext.theme.getTheme()}
+                            onClick={() => window.location.reload()}
+                            className="d-inline-flex align-items-center gap-1"
+                        >
+                            <Icon icon="mdi:cloud-refresh-variant"/> Spróbuj ponownie
+                        </Button>
+                    </div>
+                </Card.Body>
+            </Card>
+        );
     }
 
     return (

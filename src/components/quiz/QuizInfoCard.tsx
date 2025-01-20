@@ -36,6 +36,7 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
         <Card className="border-0 shadow">
             <Card.Body>
                 <Card.Title>{quiz.title}</Card.Title>
+                {quiz.maintainer && <Card.Subtitle className="mb-2 text-muted">by {quiz.maintainer.full_name}</Card.Subtitle>}
                 <div>
                     <div className="d-flex justify-content-between">
                         <span>Udzielone odpowiedzi</span>
