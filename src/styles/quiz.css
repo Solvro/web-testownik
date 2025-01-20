@@ -23,10 +23,10 @@
     justify-content: center;
 }
 
-.answer.btn-dark:hover {
+.answer.btn-dark:not(.active):hover {
     background-color: #212529;
 }
 
-.answer.btn-light:hover {
+.answer.btn-light:not(.active):hover {
     background-color: #f8f9fa;
 }
