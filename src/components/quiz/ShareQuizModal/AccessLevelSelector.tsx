@@ -16,7 +16,7 @@ const levels = [
 
 const AccessLevelSelector: React.FC<AccessLevelSelectorProps> = ({value, onChange}) => {
     return (
-        <div className="access-level-selector d-flex justify-content-between align-items-center">
+        <div className="access-level-selector d-flex justify-content-between align-items-center overflow-x-auto">
             {levels.map((level) => {
                 const isSelected = value === level.value;
                 const isHighlighted = value >= level.value;

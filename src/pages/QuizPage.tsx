@@ -171,7 +171,7 @@ const QuizPage: React.FC = () => {
             gracefullyClosePeerConnection();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [appContext.isAuthenticated]);
 
     // Whenever currentQuestion changes, we attempt to save progress
     useEffect(() => {
@@ -936,7 +936,8 @@ const QuizPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center">
-                        <p>Nie udało się załadować bazy, upewnij się że jest ona dla Ciebie dostępna lub spróbuj ponownie później.</p>
+                        <p>Nie udało się załadować bazy, upewnij się że jest ona dla Ciebie dostępna lub spróbuj
+                            ponownie później.</p>
                         <Button
                             variant={appContext.theme.getTheme()}
                             onClick={() => window.location.reload()}

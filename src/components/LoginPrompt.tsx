@@ -1,6 +1,6 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {Card, Button, Modal} from 'react-bootstrap';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
 import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
 import AppContext from "../AppContext.tsx";
@@ -74,6 +74,10 @@ const LoginPrompt: React.FC = () => {
                         </Card.Text>
                         <Card.Text>
                             Obecnie dostęp do Testownika mają tylko studenci Politechniki Wrocławskiej.
+                        </Card.Text>
+                        <Card.Text>
+                            <b>Klikając przycisk poniżej, potwierdzasz, że zapoznałeś się z naszym <Link
+                                to={"/terms"}>regulaminem</Link> oraz że go akceptujesz.</b>
                         </Card.Text>
                         <Button href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
                                 variant="primary" className="w-100">Zaloguj się</Button>

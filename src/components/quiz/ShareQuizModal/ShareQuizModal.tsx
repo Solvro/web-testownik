@@ -59,6 +59,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
     useEffect(() => {
         setAccessLevel(quiz.visibility);
         setIsMaintainerAnonymous(quiz.is_anonymous);
+        setAllowAnonymous(quiz.allow_anonymous);
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

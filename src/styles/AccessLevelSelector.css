@@ -114,3 +114,29 @@
         color: #58a6ff; /* Bright blue for highlighted labels */
     }
 }
+
+@media (max-width: 576px) {
+    .access-level-label {
+        font-size: 0.8rem; /* Smaller label size */
+        white-space: nowrap; /* Prevent the text from wrapping */
+        overflow: hidden; /* Hide the overflowed text */
+        text-overflow: ellipsis; /* Add the ellipsis (…) for truncated text */
+        max-width: 4rem; /* Limit the maximum width of the label */
+    }
+
+    .access-level-selector {
+        gap: 0.5rem; /* Reduce gap between items */
+    }
+
+    .access-level-item {
+        padding: 0.3rem; /* Smaller padding for items */
+    }
+
+    .access-level-icon {
+        font-size: 1.5rem; /* Reduce icon size */
+    }
+
+    .access-level-label {
+        font-size: 0.8rem; /* Smaller label size */
+    }
+}

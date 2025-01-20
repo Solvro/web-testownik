@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React, {useContext, useEffect, useState} from 'react';
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage.tsx';
 import Navbar from "./components/Navbar.tsx";
 import AppContext from "./AppContext.tsx";
-import { Theme } from "./Theme.tsx";
+import {Theme} from "./Theme.tsx";
 import LoginPrompt from "./components/LoginPrompt.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import Error404Page from "./pages/errors/Error404Page.tsx";
@@ -14,6 +14,8 @@ import CreateQuizPage from "./pages/CreateQuizPage.tsx";
 import EditQuizPage from "./pages/EditQuizPage.tsx";
 import QuizzesPage from "./pages/QuizzesPage.tsx";
 import SearchInQuizPage from "./pages/SearchInQuizPage.tsx";
+import TermsPage from "./pages/TermsPage.tsx";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.tsx";
 
 const useThemeDetector = () => {
     const getCurrentTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -38,26 +40,29 @@ const App: React.FC = () => {
     return (
         <div className="container d-flex flex-column" id="container">
             <Router>
-                <Navbar />
-                {context.isAuthenticated && (
-                    <Routes>
-                        <Route path="/" element={<DashboardPage/>}/>
-                        <Route path="/quiz/:quizId" element={<QuizPage />} />
-                        <Route path="/profile" element={<ProfilePage/>}/>
-                        <Route path="/create-quiz" element={<CreateQuizPage/>}/>
-                        <Route path="/edit-quiz/:quizId" element={<EditQuizPage/>}/>
-                        <Route path="/import-quiz" element={<ImportQuizPage/>}/>
-                        <Route path="/import-quiz-legacy" element={<ImportQuizLegacyPage/>}/>
-                        <Route path="/quizzes" element={<QuizzesPage/>}/>
-                        <Route path="/search-in-quiz/:quizId" element={<SearchInQuizPage/>}/>
-                        <Route path="*" element={<Error404Page/>}/>
-                    </Routes>
-                ) || (
-                    <Routes>
-                        <Route path="/quiz/:quizId" element={<QuizPage />} />
-                        <Route path="*" element={<LoginPrompt />} />
-                    </Routes>
-                )}
+                <Navbar/>
+                <Routes>
+                    {context.isAuthenticated && (
+                        <>
+                            <Route path="/" element={<DashboardPage/>}/>
+                            <Route path="/profile" element={<ProfilePage/>}/>
+                            <Route path="/create-quiz" element={<CreateQuizPage/>}/>
+                            <Route path="/edit-quiz/:quizId" element={<EditQuizPage/>}/>
+                            <Route path="/import-quiz" element={<ImportQuizPage/>}/>
+                            <Route path="/import-quiz-legacy" element={<ImportQuizLegacyPage/>}/>
+                            <Route path="/quizzes" element={<QuizzesPage/>}/>
+                            <Route path="/search-in-quiz/:quizId" element={<SearchInQuizPage/>}/>
+                            <Route path="*" element={<Error404Page/>}/>
+                        </>
+                    ) || (
+                        <>
+                            <Route path="*" element={<LoginPrompt/>}/>
+                        </>
+                    )}
+                    <Route path="/quiz/:quizId" element={<QuizPage/>}/>
+                    <Route path="/terms" element={<TermsPage/>}/>
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
+                </Routes>
             </Router>
         </div>
     );
