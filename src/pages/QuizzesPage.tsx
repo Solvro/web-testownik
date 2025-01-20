@@ -2,7 +2,7 @@ import React, {useEffect, useState, useContext} from 'react';
 import {Button, Card, Alert, Row, Col, ButtonGroup} from 'react-bootstrap';
 import {useNavigate} from 'react-router-dom';
 import AppContext from '../AppContext.tsx';
-import {Quiz} from '../components/quiz/types.ts';
+import {QuizMetadata} from '../components/quiz/types.ts';
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {SharedQuiz} from "../components/quiz/ShareQuizModal/types.ts";
 import {Icon} from "@iconify/react";
@@ -12,11 +12,11 @@ const QuizzesPage: React.FC = () => {
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
 
-    const [userQuizzes, setUserQuizzes] = useState<Quiz[]>([]);
+    const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
     const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedQuizToShare, setSelectedQuizToShare] = useState<Quiz | null>(null);
+    const [selectedQuizToShare, setSelectedQuizToShare] = useState<QuizMetadata | null>(null);
 
     useEffect(() => {
         const fetchQuizzes = async () => {
@@ -46,11 +46,11 @@ const QuizzesPage: React.FC = () => {
         fetchQuizzes();
     }, [appContext.axiosInstance]);
 
-    const handleShareQuiz = (quiz: Quiz) => {
+    const handleShareQuiz = (quiz: QuizMetadata) => {
         setSelectedQuizToShare(quiz);
     }
 
-    const handleDeleteQuiz = (quiz: Quiz) => {
+    const handleDeleteQuiz = (quiz: QuizMetadata) => {
         // Ask for confirmation  and then delete the quiz
         if (window.confirm('Czy na pewno chcesz usunąć tę bazę?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tej bazy.')) {
             appContext.axiosInstance.delete(`/quizzes/${quiz.id}/`)
@@ -64,7 +64,7 @@ const QuizzesPage: React.FC = () => {
         }
     }
 
-    const handleDownloadQuiz = (quiz: Quiz) => {
+    const handleDownloadQuiz = (quiz: QuizMetadata) => {
         appContext.axiosInstance.get(`/quizzes/${quiz.id}/`)
             .then((response) => {
                 const quiz = response.data;
@@ -85,8 +85,12 @@ const QuizzesPage: React.FC = () => {
             });
     }
 
-    const handleSearchInQuiz = (quiz: Quiz) => {
+    const handleSearchInQuiz = (quiz: QuizMetadata) => {
         navigate(`/search-in-quiz/${quiz.id}`);
+    }
+
+    const updateQuiz = (quiz: QuizMetadata) => {
+        setUserQuizzes((prev) => prev.map((q) => q.id === quiz.id ? quiz : q));
     }
 
     if (loading) {
@@ -203,7 +207,9 @@ const QuizzesPage: React.FC = () => {
             )}
             <div className="p-5"/>
             {selectedQuizToShare &&
-                <ShareQuizModal show={true} onHide={() => setSelectedQuizToShare(null)} quiz={selectedQuizToShare}/>}
+                <ShareQuizModal show={true} onHide={() => setSelectedQuizToShare(null)} quiz={selectedQuizToShare}
+                                setQuiz={updateQuiz}/>
+            }
         </div>
     );
 };

@@ -20,12 +20,14 @@ interface ShareQuizModalProps {
     show: boolean;
     onHide: () => void;
     quiz: QuizMetadata;
+    setQuiz?: (quiz: QuizMetadata) => void;
 }
 
 const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                                                            show,
                                                            onHide,
                                                            quiz,
+                                                           setQuiz,
                                                        }) => {
     const appContext = useContext(AppContext);
 
@@ -237,7 +239,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
 
         try {
             // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-            await appContext.axiosInstance.patch(`/quizzes/${quiz.id}/`, {
+            const quizResponse = await appContext.axiosInstance.patch(`/quizzes/${quiz.id}/`, {
                 visibility: accessLevel,
                 allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
                 is_anonymous: isMaintainerAnonymous,
@@ -287,6 +289,10 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
             // 8) Re-fetch everything or just update local “initial” states to reflect new changes
             setInitialUsersWithAccess(usersWithAccess);
             setInitialGroupsWithAccess(groupsWithAccess);
+
+            if (setQuiz) {
+                setQuiz(quizResponse.data);
+            }
 
             onHide();
         } catch (error) {
