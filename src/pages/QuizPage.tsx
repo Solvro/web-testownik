@@ -148,10 +148,6 @@ const QuizPage: React.FC = () => {
 
 
         // Key press handler
-        const keyDownHandler = (event: globalThis.KeyboardEvent) => {
-            handleKeyPress(event);
-        };
-        window.addEventListener("keydown", keyDownHandler);
 
         // Ping interval
         const pingIntervalId = setInterval(() => {
@@ -167,7 +163,6 @@ const QuizPage: React.FC = () => {
         return () => {
             clearInterval(pingIntervalId);
             if (timerRef.current) clearInterval(timerRef.current);
-            window.removeEventListener("keydown", keyDownHandler);
             gracefullyClosePeerConnection();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -459,7 +454,7 @@ const QuizPage: React.FC = () => {
     }, []);
 
     // ========== KeyPress Handling ==========
-    const handleKeyPress = (event: globalThis.KeyboardEvent): void => {
+    const handleKeyPress = useCallback((event: globalThis.KeyboardEvent): void => {
         // Don’t override user typing in text input (except checkboxes).
         const target = event.target as HTMLElement;
         if (
@@ -472,7 +467,6 @@ const QuizPage: React.FC = () => {
 
         switch (key) {
             case "enter":
-                // On Enter, trigger nextAction unless we’re focusing a button
                 if (target.tagName.toLowerCase() !== "button") {
                     nextAction();
                 }
@@ -481,7 +475,6 @@ const QuizPage: React.FC = () => {
                 nextQuestion();
                 break;
             case "c":
-                // old logic: show continuity button if user pressed 'c' w/o ctrl
                 if (!event.ctrlKey) {
                     // no direct DOM manipulation; if you want to show the button forcibly,
                     // you can either unify it with state or let the user open the modal.
@@ -494,7 +487,17 @@ const QuizPage: React.FC = () => {
             default:
                 break;
         }
-    };
+    }, [nextAction, nextQuestion]);
+
+    useEffect(() => {
+        const keyDownHandler = (event: globalThis.KeyboardEvent) => {
+            handleKeyPress(event);
+        };
+        window.addEventListener("keydown", keyDownHandler);
+        return () => {
+            window.removeEventListener("keydown", keyDownHandler);
+        };
+    }, [handleKeyPress]);
 
     // ========== Utility Actions (copy, chatgpt, report) ==========
     const copyToClipboard = (): void => {
