@@ -2,6 +2,8 @@ import React, {useContext, useEffect} from 'react';
 import {Card, Button} from 'react-bootstrap';
 import {Answer, Question} from "./types.ts";
 import AppContext from "../../AppContext.tsx";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import {a11yDark} from "react-syntax-highlighter/dist/cjs/styles/hljs";
 
 interface QuestionCardProps {
     question: Question | null;
@@ -112,7 +114,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         <Card className="border-0 shadow">
             <Card.Body>
                 <p style={{whiteSpace: 'pre-line'}}>
-                    {question.id}. {question.question}
+                    <SyntaxHighlighter lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}
+                                       wrapLines={true}
+                                       language="java"
+                                       style={a11yDark}>
+
+                        {question.question}
+                    </SyntaxHighlighter>
                 </p>
                 <div className="mt-3 d-flex flex-column gap-2">
                     {question.answers.map((answer: Answer, idx: number) => (
