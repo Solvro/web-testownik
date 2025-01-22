@@ -48,6 +48,7 @@ const QuestionForm: React.FC<Props> = ({question, onUpdate, onRemove, advancedMo
                 <Form.Label>Pytanie {question.id}</Form.Label>
                 <Form.Control
                     type="text"
+                    as="textarea"
                     placeholder="Podaj treść pytania"
                     value={question.question}
                     onChange={(e) => handleTextChange(e.target.value)}
