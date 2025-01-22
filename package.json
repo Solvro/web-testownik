@@ -11,15 +11,14 @@
   },
   "dependencies": {
     "@iconify/react": "^5.2.0",
-    "@types/react-syntax-highlighter": "^15.5.13",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "fastest-levenshtein": "^1.0.16",
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "katex": "^0.16.20",
+    "marked-react": "^3.0.0",
     "peerjs": "^1.5.4",
-    "prettier": "^3.4.2",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.7",
     "react-dom": "^18.3.1",
@@ -27,7 +26,6 @@
     "react-router-bootstrap": "^0.26.3",
     "react-router-dom": "^7.1.1",
     "react-spinners": "^0.15.0",
-    "react-syntax-highlighter": "^15.6.1",
     "ua-parser-js": "^2.0.0"
   },
   "devDependencies": {
