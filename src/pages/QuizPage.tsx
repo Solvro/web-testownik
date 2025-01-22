@@ -26,6 +26,7 @@ import {Icon} from "@iconify/react";
 import "../styles/quiz.css";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import LoginPrompt from "../components/LoginPrompt.tsx";
+import {AxiosError} from "axios";
 
 interface UserSettings {
     sync_progress: boolean;
@@ -545,28 +546,44 @@ const QuizPage: React.FC = () => {
         }
     };
 
-    const reportIncorrectQuestion = () => {
-        alert("Funkcja zgłaszania błędów jest obecnie niedostępna. \nPrzepraszamy za utrudnienia.");
+    const reportIncorrectQuestion = async () => {
         if (!currentQuestion || !quiz) {
             alert("Brak pytania do zgłoszenia!");
             return;
         }
         if (!quiz) {
-            alert("Brak adresu e-mail do zgłaszania błędów.");
+            alert("Baza pytań nie została załadowana, spróbuj ponownie później");
             return;
         }
 
-        const subject = encodeURIComponent(`Testownik - zgłoszenie błędu`);
-        const body = encodeURIComponent(
-            `Pytanie nr ${currentQuestion.id}:\n${currentQuestion.question}\n\nOdpowiedzi:\n` +
-            currentQuestion.answers
-                .map(
-                    (ans) => `${ans.answer} (Poprawna: ${ans.correct ? "Tak" : "Nie"})`
-                )
-                .join("\n") +
-            `\n\nUwagi:\n`
-        );
-        window.open(`mailto:${quiz}?subject=${subject}&body=${body}`);
+        const issue = prompt("Podaj krótki opis błędu w pytaniu:");
+
+        if (!issue) {
+            alert("Nie podano opisu błędu, zgłoszenie nie zostało wysłane.");
+            return;
+        }
+
+        try {
+            const response = await appContext.axiosInstance.post("/report-quiz-error/", {
+                quiz_id: quiz.id,
+                question_id: currentQuestion.id,
+                issue: issue,
+            });
+
+            if (response.status === 201) {
+                alert("Zgłoszenie zostało wysłane do właściciela bazy pytań. Dziękujemy!");
+            } else {
+                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n" + response.data);
+            }
+        } catch (e) {
+            console.error("Error reporting incorrect question:", e);
+            if (e instanceof AxiosError) {
+                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n" + e.response?.data.error);
+            } else {
+                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później.");
+            }
+        }
+
     };
 
 
@@ -1011,9 +1028,11 @@ const QuizPage: React.FC = () => {
                                 <Button variant={appContext.theme.getTheme()} onClick={openInChatGPT}>
                                     <Icon icon="simple-icons:openai"/>
                                 </Button>
-                                <Button variant={appContext.theme.getTheme()} onClick={reportIncorrectQuestion}>
-                                    <Icon icon="tabler:message-report-filled"/>
-                                </Button>
+                                {quiz.maintainer?.id !== parseInt(localStorage.getItem("user_id") || "") && (
+                                    <Button variant={appContext.theme.getTheme()} onClick={reportIncorrectQuestion}>
+                                        <Icon icon="tabler:message-report-filled"/>
+                                    </Button>
+                                )}
                                 <Button variant={appContext.theme.getTheme()}
                                         onClick={() => setShowBrainrot(!showBrainrot)}>
                                     <Icon icon="healthicons:skull-24px"/>
