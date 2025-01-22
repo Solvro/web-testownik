@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import {useParams} from "react-router-dom";
 import {
-    Container,
     Row,
     Col, Card, Button,
 } from "react-bootstrap";
@@ -27,6 +26,7 @@ import "../styles/quiz.css";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import LoginPrompt from "../components/LoginPrompt.tsx";
 import {AxiosError} from "axios";
+import QuizActionButtons from "../components/quiz/QuizActionButtons.tsx";
 
 interface UserSettings {
     sync_progress: boolean;
@@ -972,9 +972,9 @@ const QuizPage: React.FC = () => {
     }
 
     return (
-        <Container style={{marginTop: 20}}>
-            <Row>
-                <Col md={8} className="mb-3">
+        <>
+            <Row className="mt-4">
+                <Col className="mb-3" md={showBrainrot ? 6 : 8}>
                     <QuestionCard
                         question={currentQuestion}
                         selectedAnswers={selectedAnswers}
@@ -1010,7 +1010,7 @@ const QuizPage: React.FC = () => {
                         isQuizFinished={isQuizFinished}
                     />
                 </Col>
-                <Col md={4}>
+                <Col md={showBrainrot ? 3 : 4}>
                     <QuizInfoCard
                         quiz={quiz}
                         correctAnswersCount={correctAnswersCount}
@@ -1019,29 +1019,18 @@ const QuizPage: React.FC = () => {
                         studyTime={studyTime}
                         resetProgress={resetProgress}
                     />
-                    <Card className="border-0 shadow mt-3">
-                        <Card.Body>
-                            <div className="d-flex justify-content-around">
-                                <Button variant={appContext.theme.getTheme()} onClick={copyToClipboard}>
-                                    <Icon icon="solar:clipboard-bold"/>
-                                </Button>
-                                <Button variant={appContext.theme.getTheme()} onClick={openInChatGPT}>
-                                    <Icon icon="simple-icons:openai"/>
-                                </Button>
-                                {quiz.maintainer?.id !== parseInt(localStorage.getItem("user_id") || "") && (
-                                    <Button variant={appContext.theme.getTheme()} onClick={reportIncorrectQuestion}>
-                                        <Icon icon="tabler:message-report-filled"/>
-                                    </Button>
-                                )}
-                                <Button variant={appContext.theme.getTheme()}
-                                        onClick={() => setShowBrainrot(!showBrainrot)}>
-                                    <Icon icon="healthicons:skull-24px"/>
-                                </Button>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                    {showBrainrot && (
-                        <Card className="border-0 shadow mt-3">
+                    <QuizActionButtons
+                        onCopy={copyToClipboard}
+                        onOpenChatGPT={openInChatGPT}
+                        onReportIssue={reportIncorrectQuestion}
+                        toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
+                        isMaintainer={quiz.maintainer?.id === parseInt(localStorage.getItem("user_id") || "")}
+                        theme={appContext.theme.getTheme()}
+                    />
+                </Col>
+                {showBrainrot && (
+                    <Col md={3}>
+                        <Card className="border-0 shadow">
                             <Card.Body>
                                 <div className='player-wrapper'>
                                     <ReactPlayer
@@ -1056,8 +1045,8 @@ const QuizPage: React.FC = () => {
                                 </div>
                             </Card.Body>
                         </Card>
-                    )}
-                </Col>
+                    </Col>
+                )}
             </Row>
 
             {/* Continuity */}
@@ -1074,7 +1063,7 @@ const QuizPage: React.FC = () => {
                 showContinuityDisconnectedToast={showContinuityDisconnectedToast}
                 onClose={handleToastClose}
             />
-        </Container>
+        </>
     );
 };
 
