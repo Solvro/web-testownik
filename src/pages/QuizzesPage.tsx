@@ -98,7 +98,7 @@ const QuizzesPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center mb-5">
-                        <p>Ładowanie bazy...</p>
+                        <p>Ładowanie baz...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
                     </div>
                 </Card.Body>
