@@ -69,11 +69,10 @@ const LoginPrompt: React.FC = () => {
                     <Card.Body>
                         <Card.Title>Witaj w Testowniku!</Card.Title>
                         <Card.Text>
-                            Testownik to narzędzie do tworzenia i rozwiązywania testów. Możesz korzystać z niego,
-                            logując się za pomocą swojego konta USOS.
+                            Testownik stworzony by <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>  wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
                         </Card.Text>
                         <Card.Text>
-                            Obecnie dostęp do Testownika mają tylko studenci Politechniki Wrocławskiej.
+                            Powered by <a href="https://solvro.pwr.edu.pl/">Solvro</a>
                         </Card.Text>
                         <Card.Text>
                             <b>Klikając przycisk poniżej, potwierdzasz, że zapoznałeś się z naszym <Link

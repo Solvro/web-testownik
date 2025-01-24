@@ -34,8 +34,8 @@ const AboutCard: React.FC = () => {
 
     const fetchContributors = async () => {
         try {
-            const coreResponse = await fetch("https://api.github.com/repos/testownik-pwr/testownik_core/contributors?anon=1");
-            const frontendResponse = await fetch("https://api.github.com/repos/testownik-pwr/testownik_frontend/contributors?anon=1");
+            const coreResponse = await fetch("https://api.github.com/repos/Solvro/backend-testownik/contributors?anon=1");
+            const frontendResponse = await fetch("https://api.github.com/repos/Solvro/web-testownik/contributors?anon=1");
 
             const coreData = await coreResponse.json();
             const frontendData = await frontendResponse.json();

@@ -39,34 +39,41 @@ const App: React.FC = () => {
     context.theme.setTheme(useThemeDetector());
 
     return (
-        <div className="container d-flex flex-column" id="container">
-            <Router>
-                <Navbar/>
-                <Routes>
-                    {context.isAuthenticated && (
-                        <>
-                            <Route path="/" element={<DashboardPage/>}/>
-                            <Route path="/profile" element={<ProfilePage/>}/>
-                            <Route path="/grades" element={<GradesPage/>}/>
-                            <Route path="/create-quiz" element={<CreateQuizPage/>}/>
-                            <Route path="/edit-quiz/:quizId" element={<EditQuizPage/>}/>
-                            <Route path="/import-quiz" element={<ImportQuizPage/>}/>
-                            <Route path="/import-quiz-legacy" element={<ImportQuizLegacyPage/>}/>
-                            <Route path="/quizzes" element={<QuizzesPage/>}/>
-                            <Route path="/search-in-quiz/:quizId" element={<SearchInQuizPage/>}/>
-                            <Route path="*" element={<Error404Page/>}/>
-                        </>
-                    ) || (
-                        <>
-                            <Route path="*" element={<LoginPrompt/>}/>
-                        </>
-                    )}
-                    <Route path="/quiz/:quizId" element={<QuizPage/>}/>
-                    <Route path="/terms" element={<TermsPage/>}/>
-                    <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
-                </Routes>
-            </Router>
-        </div>
+        <>
+            <div className="container d-flex flex-column" id="container">
+                <Router>
+                    <Navbar/>
+                    <Routes>
+                        {context.isAuthenticated && (
+                            <>
+                                <Route path="/" element={<DashboardPage/>}/>
+                                <Route path="/profile" element={<ProfilePage/>}/>
+                                <Route path="/grades" element={<GradesPage/>}/>
+                                <Route path="/create-quiz" element={<CreateQuizPage/>}/>
+                                <Route path="/edit-quiz/:quizId" element={<EditQuizPage/>}/>
+                                <Route path="/import-quiz" element={<ImportQuizPage/>}/>
+                                <Route path="/import-quiz-legacy" element={<ImportQuizLegacyPage/>}/>
+                                <Route path="/quizzes" element={<QuizzesPage/>}/>
+                                <Route path="/search-in-quiz/:quizId" element={<SearchInQuizPage/>}/>
+                                <Route path="*" element={<Error404Page/>}/>
+                            </>
+                        ) || (
+                            <>
+                                <Route path="*" element={<LoginPrompt/>}/>
+                            </>
+                        )}
+                        <Route path="/quiz/:quizId" element={<QuizPage/>}/>
+                        <Route path="/terms" element={<TermsPage/>}/>
+                        <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
+                    </Routes>
+                </Router>
+            </div>
+            <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
+                    style={{position: "fixed", bottom: 0, width: "100%"}}>
+                <span>© {new Date().getFullYear()} <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, powered by <a
+                    href="https://solvro.pwr.edu.pl/">Solvro</a></span>
+            </footer>
+        </>
     );
 };
 
