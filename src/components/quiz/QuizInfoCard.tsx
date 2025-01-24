@@ -2,7 +2,7 @@ import {Quiz, Reoccurrence} from "./types.ts";
 import React, {useContext} from "react";
 import {Button, ButtonGroup, Card} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 import {Icon} from "@iconify/react";
 
 interface QuizInfoCardProps {

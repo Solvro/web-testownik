@@ -5,7 +5,7 @@ import React, {
     useRef,
     useContext,
 } from "react";
-import {useParams} from "react-router-dom";
+import {useParams} from "react-router";
 import {
     Row,
     Col, Card, Button,
@@ -82,7 +82,6 @@ const QuizPage: React.FC = () => {
     const startTimeRef = useRef<number>(Date.now());
 
     // Continuity
-    const [peer, setPeer] = useState<Peer | null>(null);
     const [peerConnections, setPeerConnections] = useState<DataConnection[]>([]);
     const [isContinuityHost, setIsContinuityHost] = useState(false);
     const hasInitializedContinuity = useRef(false);
@@ -92,6 +91,7 @@ const QuizPage: React.FC = () => {
     const reoccurrencesRef = useRef<Reoccurrence[]>([]);
     const wrongAnswersCountRef = useRef<number>(0);
     const correctAnswersCountRef = useRef<number>(0);
+    const peerRef = useRef<Peer | null>(null);
 
     // Toast states
     const [showCopiedToast, setShowCopiedToast] = useState(false);
@@ -190,7 +190,6 @@ const QuizPage: React.FC = () => {
     useEffect(() => {
         correctAnswersCountRef.current = correctAnswersCount;
     }, [correctAnswersCount]);
-
 
     // ========== API & Local Storage Helpers ==========
     const fetchQuiz = async (): Promise<Quiz | null> => {
@@ -622,7 +621,7 @@ const QuizPage: React.FC = () => {
 
     const initiateContinuity = () => {
 
-        if (peer) {
+        if (peerRef.current) {
             console.warn("Continuity already initialized");
             return;
         }
@@ -651,7 +650,7 @@ const QuizPage: React.FC = () => {
 
             hostPeer.on("open", (id) => {
                 console.log("Peer opened with ID:", id);
-                setPeer(hostPeer);
+                peerRef.current = hostPeer;
                 setIsContinuityHost(true);
             });
 
@@ -675,7 +674,7 @@ const QuizPage: React.FC = () => {
                     });
 
                     clientPeer.on("open", () => {
-                        setPeer(clientPeer);
+                        peerRef.current = clientPeer;
                         connectToPeer(clientPeer, baseId)
                             .then((conn) => {
                                 setShowContinuityConnectedToast(true);
@@ -791,8 +790,8 @@ const QuizPage: React.FC = () => {
         setShowContinuityDisconnectedToast(true);
 
         // If we are not the host, try to reconnect or if the host is no longer available then we can attempt to become the host
-        if (!isContinuityHost && peer && !peer.destroyed) {
-            connectToPeer(peer, conn.peer)
+        if (!isContinuityHost && peerRef.current && !peerRef.current.destroyed) {
+            connectToPeer(peerRef.current, conn.peer)
                 .then((newConn) => {
                     handlePeerConnectionAsClient(newConn);
                 })
@@ -866,8 +865,8 @@ const QuizPage: React.FC = () => {
     };
 
     const gracefullyClosePeerConnection = () => {
-        if (peer && !peer.destroyed) {
-            peer.destroy();
+        if (peerRef.current && !peerRef.current.destroyed) {
+            peerRef.current.destroy();
         }
     };
 

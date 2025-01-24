@@ -2,7 +2,7 @@ import React, {useContext, useRef, useState} from 'react';
 import {Alert, Button, Card, Col, Form, Row, Spinner} from 'react-bootstrap';
 import JSZip from 'jszip';
 import AppContext from '../AppContext';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router';
 import QuizPreviewModal from '../components/quiz/QuizPreviewModal';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import {Icon} from "@iconify/react";

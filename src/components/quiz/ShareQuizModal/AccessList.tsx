@@ -35,7 +35,7 @@ const AccessList: React.FC<AccessListProps> = ({
                 >
                     <div className="d-flex align-items-center gap-2">
                         <img
-                            src={quizMetadata.maintainer.photo_url}
+                            src={quizMetadata.maintainer.photo}
                             alt="avatar"
                             className="rounded-circle object-fit-cover"
                             width="32"
@@ -75,7 +75,7 @@ const AccessList: React.FC<AccessListProps> = ({
                 >
                     <div className="d-flex align-items-center gap-2">
                         <img
-                            src={user.photo_url}
+                            src={user.photo}
                             alt="avatar"
                             className="rounded-circle object-fit-cover"
                             width="32"
@@ -101,7 +101,7 @@ const AccessList: React.FC<AccessListProps> = ({
                 >
                     <div className="d-flex align-items-center gap-2">
                         <img
-                            src={group.photo_url}
+                            src={group.photo}
                             alt="avatar"
                             className="rounded-circle"
                             width="32"

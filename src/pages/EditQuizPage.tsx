@@ -3,7 +3,7 @@ import {Button, Card, Form, Alert, ButtonGroup} from 'react-bootstrap';
 import QuestionForm from '../components/quiz/QuestionForm';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
-import {useNavigate, useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router";
 import PropagateLoader from "react-spinners/PropagateLoader";
 
 const EditQuizPage: React.FC = () => {

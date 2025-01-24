@@ -4,7 +4,7 @@ import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
 import {Quiz} from "../components/quiz/types.ts";
 import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 
 type UploadType = 'file' | 'link' | 'json';
 

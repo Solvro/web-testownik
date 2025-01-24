@@ -89,7 +89,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
             }] : []);
             const foundGroups = sharedData.flatMap((sq: SharedQuiz) => sq.group ? [{
                 ...sq.group,
-                photo_url: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
+                photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
             }] : []);
 
@@ -110,7 +110,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
             const response = await appContext.axiosInstance.get("/study-groups/");
             const data = response.data.map((group: Group) => ({
                 ...group,
-                photo_url: `https://ui-avatars.com/api/?background=random&name=${
+                photo: `https://ui-avatars.com/api/?background=random&name=${
                     group.name.split(" ")[0]
                 }+${group.name.split(" ")[1] || ""}&size=128`,
             }));

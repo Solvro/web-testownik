@@ -2,7 +2,7 @@ import React, {useContext} from 'react';
 import {Modal, Button, ListGroup, Alert, ButtonGroup, Card} from 'react-bootstrap';
 import {Quiz} from './types';
 import AppContext from "../../AppContext.tsx";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 import ShareQuizModal from "./ShareQuizModal/ShareQuizModal.tsx";
 
 interface QuizPreviewModalProps {

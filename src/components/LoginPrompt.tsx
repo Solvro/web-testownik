@@ -1,6 +1,6 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {Card, Button, Modal} from 'react-bootstrap';
-import {Link, useLocation, useNavigate} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from 'react-router';
 import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
 import AppContext from "../AppContext.tsx";
@@ -22,7 +22,7 @@ const LoginPrompt: React.FC = () => {
                 throw new Error("No user data available");
             }
             const userData = response.data;
-            localStorage.setItem("profile_picture", userData.photo_url);
+            localStorage.setItem("profile_picture", userData.photo);
             localStorage.setItem("is_staff", userData.is_staff);
             localStorage.setItem("user_id", userData.id);
             appContext.setAuthenticated(true);

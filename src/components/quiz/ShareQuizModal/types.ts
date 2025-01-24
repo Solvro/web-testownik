@@ -11,7 +11,7 @@ export enum AccessLevel {
 export interface User {
     id: number;
     full_name: string;
-    photo_url: string;
+    photo: string;
     student_number: string;
     shared_quiz_id?: string; // Optional, for deleting shared quizzes
 }
@@ -28,7 +28,7 @@ export interface Group {
     id: string;
     name: string;
     term: Term;
-    photo_url: string;
+    photo: string;
     shared_quiz_id?: string; // Optional, for deleting shared quizzes
 }
 

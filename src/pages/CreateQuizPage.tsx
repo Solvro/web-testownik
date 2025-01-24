@@ -4,7 +4,7 @@ import QuestionForm from '../components/quiz/QuestionForm';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
 import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 
 
 const CreateQuizPage: React.FC = () => {

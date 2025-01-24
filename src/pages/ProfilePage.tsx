@@ -11,6 +11,8 @@ interface UserData {
     student_number: string;
     email: string;
     photo_url: string;
+    overriden_photo_url: string;
+    photo: string;
     is_superuser: boolean;
     is_staff: boolean;
 }
@@ -69,7 +71,8 @@ const ProfilePage: React.FC = () => {
                 </Col>
                 <Col md={8}>
                     <Tab.Content>
-                        {activeTab === "account" && <ProfileDetails userData={userData} loading={!userData}/>}
+                        {activeTab === "account" &&
+                            <ProfileDetails userData={userData} loading={!userData} setUserData={setUserData}/>}
                         {activeTab === "settings" && (
                             <SettingsForm
                                 settings={settings}

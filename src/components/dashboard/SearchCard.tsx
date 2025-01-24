@@ -31,7 +31,9 @@ const SearchCard: React.FC = () => {
             const response = await appContext.axiosInstance.get(`/search-quizzes/?query=${encodeURIComponent(searchQuery)}`);
 
             const data = Object.values(response.data).flat() as SearchResult[];
-            setSearchResults(data);
+            const uniqueData = Array.from(new Set(data.map(item => item.id)))
+                .map(id => data.find(item => item.id === id)) as SearchResult[];
+            setSearchResults(uniqueData);
         } catch {
             setSearchResults([]);
         }

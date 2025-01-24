@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useContext} from 'react';
 import {Button, Card, Alert, Row, Col, ButtonGroup} from 'react-bootstrap';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router';
 import AppContext from '../AppContext.tsx';
 import {QuizMetadata} from '../components/quiz/types.ts';
 import PropagateLoader from "react-spinners/PropagateLoader";

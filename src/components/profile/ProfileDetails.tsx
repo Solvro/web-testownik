@@ -1,33 +1,77 @@
-import React from "react";
-import {Badge, Card, Placeholder} from "react-bootstrap";
+import React, {useContext, useEffect, useState} from "react";
+import {Badge, Card, Placeholder, Modal, Button} from "react-bootstrap";
 import {PuffLoader} from "react-spinners";
 import "../../styles/ProfileDetails.css";
+import AppContext from "../../AppContext.tsx";
+import {Icon} from "@iconify/react";
 
-interface ProfileDetailsProps {
-    userData?: {
-        id: number;
-        full_name: string;
-        student_number: string;
-        email: string;
-        photo_url: string;
-        is_superuser: boolean;
-        is_staff: boolean;
-    } | null;
-    loading?: boolean;
+interface UserData {
+    id: number;
+    full_name: string;
+    student_number: string;
+    email: string;
+    photo_url: string;
+    overriden_photo_url: string;
+    photo: string;
+    is_superuser: boolean;
+    is_staff: boolean;
 }
 
-const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading}) => {
+interface ProfileDetailsProps {
+    userData: UserData | null;
+    loading: boolean;
+    setUserData: (data: UserData) => void;
+}
+
+const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUserData}) => {
+    const appContext = useContext(AppContext);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo || "");
+
+    const handleOpenModal = () => setShowModal(true);
+    const handleCloseModal = () => setShowModal(false);
+
+    const handleSavePhoto = () => {
+        handleCloseModal();
+        appContext.axiosInstance.patch("/user/", {overriden_photo_url: selectedPhoto !== userData?.photo_url ? selectedPhoto : null})
+            .then(() => {
+                localStorage.setItem("profile_picture", selectedPhoto);
+                document.getElementById("profile-pic")?.setAttribute("src", selectedPhoto);
+                if (userData) setUserData({...userData, photo: selectedPhoto});
+            })
+            .catch((err) => console.error("Error saving photo:", err));
+
+
+    };
+
+    useEffect(() => {
+        setSelectedPhoto(userData?.photo || "");
+    }, [userData?.photo]);
+
+    const avatarOptions = [
+        userData?.photo_url,
+        encodeURI(`https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name}`),
+        encodeURI(`https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name} 2`),
+        encodeURI(`https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name} 3`),
+        encodeURI(`https://api.dicebear.com/9.x/dylan/svg?seed=${userData?.full_name}`),
+        encodeURI(`https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name}`),
+        encodeURI(`https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name} 2`),
+        encodeURI(`https://api.dicebear.com/9.x/shapes/svg?seed=${userData?.full_name}`),
+        encodeURI(`https://api.dicebear.com/9.x/initials/svg?seed=${userData?.full_name}`),
+    ];
 
     return (
         <Card className="border-0 shadow">
             {loading && (
-                <Placeholder className="d-flex flex-column align-items-center text-nowrap" as={Card.Body}
-                             animation="wave">
+                <Placeholder
+                    className="d-flex flex-column align-items-center text-nowrap"
+                    as={Card.Body}
+                    animation="wave"
+                >
                     <div className="d-flex justify-content-center m-3">
                         <PuffLoader color="#4c6ef5" size="6em"/>
                     </div>
                     <Placeholder as="h1" xs={6} className="rounded-3"/>
-
                     <Placeholder as="h2" xs={4} className="rounded-3"/>
                     <Placeholder as="span" xs={2} className="rounded-3"/>
                     <hr className="w-100"/>
@@ -37,16 +81,35 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading}) => {
                 </Placeholder>
             ) || (
                 <Card.Body className="d-flex flex-column align-items-center text-nowrap">
-                    <img
-                        src={userData?.photo_url}
-                        alt="Profilowe"
-                        style={{
-                            borderRadius: "50%",
-                            width: "6em",
-                            height: "6em",
-                            objectFit: "cover",
-                        }}
-                    />
+                    <div style={{position: "relative"}}>
+                        <img
+                            src={userData?.photo}
+                            alt="Profilowe"
+                            style={{
+                                borderRadius: "50%",
+                                width: "6em",
+                                height: "6em",
+                                objectFit: "cover",
+                            }}
+                        />
+                        <Badge
+                            pill
+                            bg={appContext.theme.getTheme()}
+                            className="d-flex justify-content-center align-items-center p-0 shadow"
+                            style={{
+                                position: "absolute",
+                                top: "0",
+                                right: "-0.5em",
+                                cursor: "pointer",
+                                width: "2em",
+                                height: "2em",
+                                color: appContext.theme.getOppositeThemeColor(),
+                            }}
+                            onClick={handleOpenModal}
+                        >
+                            <Icon icon="akar-icons:pencil"/>
+                        </Badge>
+                    </div>
                     <h1 className="mt-3">{userData?.full_name}</h1>
                     <h2 className="text-muted">{userData?.student_number}</h2>
                     {(userData?.is_superuser || userData?.is_staff) && (
@@ -70,6 +133,40 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading}) => {
                     </ul>
                 </Card.Body>
             )}
+            <Modal show={showModal} onHide={handleCloseModal} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Wybierz zdjęcie profilowe</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="d-flex flex-wrap gap-3 justify-content-center">
+                        {avatarOptions.map((url, index) => (
+                            <img
+                                key={index}
+                                src={url}
+                                alt={`Avatar ${index}`}
+                                style={{
+                                    borderRadius: "50%",
+                                    width: "5em",
+                                    height: "5em",
+                                    objectFit: "cover",
+                                    cursor: "pointer",
+                                    border: selectedPhoto === url ? "3px solid #4c6ef5" : "3px solid transparent",
+                                    boxShadow: selectedPhoto === url ? "0 0 10px rgba(76, 110, 245, 0.5)" : "none",
+                                }}
+                                onClick={() => setSelectedPhoto(url || "")}
+                            />
+                        ))}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCloseModal}>
+                        Anuluj
+                    </Button>
+                    <Button variant="primary" onClick={handleSavePhoto}>
+                        Zapisz
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Card>
     );
 };

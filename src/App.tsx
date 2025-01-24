@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+import {BrowserRouter as Router, Route, Routes} from 'react-router';
 import DashboardPage from './pages/DashboardPage.tsx';
 import Navbar from "./components/Navbar.tsx";
 import AppContext from "./AppContext.tsx";

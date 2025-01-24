@@ -67,7 +67,7 @@ const SearchResultsPopover = React.forwardRef<HTMLDivElement, SearchResultsPopov
                                 onClick={() => handleAddEntity(result)}
                             >
                                 <img
-                                    src={result.photo_url}
+                                    src={result.photo}
                                     alt="avatar"
                                     className="rounded-circle"
                                     width="32"

@@ -4,7 +4,7 @@ import {Navbar as BSNavbar, Nav, Container, Button} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
 import {SERVER_URL} from "../config.ts";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 
 const Navbar: React.FC = () => {
     const appContext = useContext(AppContext);
