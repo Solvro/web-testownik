@@ -1,1 +1,1 @@
-export const SERVER_URL = "https://testownik.solvro.pl/api";
+export const SERVER_URL = "https://api.testownik.solvro.pl";
