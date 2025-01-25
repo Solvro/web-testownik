@@ -12,7 +12,7 @@ const Error404Page: React.FC = () => {
                 <h2>Strona nie znaleziona</h2>
 
                 <p className="text-muted">Jeśli uważasz, że to błąd, możesz utworzyć zgłoszenie na <a
-                    href="https://github.com/testownik-pwr/testownik_frontend/issues" target="_blank"
+                    href="https://github.com/solvro/web-testownik/issues" target="_blank"
                     rel="noreferrer">GitHubie</a>.</p>
             </Card.Body>
 

@@ -120,7 +120,7 @@ const LoginPrompt: React.FC = () => {
                             Ciebie.
                         </li>
                     </ul>
-                    <p>Kod źródłowy Testownika jest dostępny na <a href="https://github.com/testownik-pwr">GitHubie</a>,
+                    <p>Kod źródłowy Testownika jest dostępny na <a href="https://github.com/solvro/web-testownik">GitHubie</a>,
                         gdzie sam możesz zweryfikować, jakie dane są przetwarzane oraz jak są one wykorzystywane.</p>
                 </Modal.Body>
                 <Modal.Footer>

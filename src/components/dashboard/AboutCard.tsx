@@ -68,7 +68,7 @@ const AboutCard: React.FC = () => {
                     <span>Twórcy</span>
                     <div>
                         <Icon icon="mdi:github" width="24" height="24" cursor="pointer"
-                              onClick={() => window.open("https://github.com/testownik-pwr/")}/>
+                              onClick={() => window.open("https://github.com/solvro/web-testownik")}/>
                     </div>
                 </h5>
                 <Table>
