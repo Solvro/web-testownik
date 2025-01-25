@@ -26,15 +26,7 @@ const Navbar: React.FC = () => {
             <Container fluid>
                 <Nav.Link href="/">
                     <BSNavbar.Brand>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                             className="feather feather-home">
-                            <path d="M3 18v-6a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v6"></path>
-                            <path d="M13 13v5a2 2 0 0 0 2 2h3"></path>
-                            <path d="M18 13v-6a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v6"></path>
-                            <line x1="13" y1="6" x2="13" y2="11"></line>
-                            <line x1="18" y1="6" x2="18" y2="11"></line>
-                        </svg>
+                      <img src="/solvro_mono.svg" alt="logo solvro" width={32}/>
                     </BSNavbar.Brand>
                 </Nav.Link>
                 <BSNavbar.Toggle aria-controls="navbarNav"/>
