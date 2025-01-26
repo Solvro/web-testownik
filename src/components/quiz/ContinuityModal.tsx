@@ -24,7 +24,7 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({peerConnections, isCon
         <>
             <Button
                 className={`shadow-lg bg-body-tertiary ${peerConnections.length === 0 ? "d-none" : ""}`}
-                style={{position: "fixed", bottom: "1rem", right: "1rem"}}
+                style={{position: "fixed", bottom: "1rem", right: "1rem", zIndex: 1000}}
                 onClick={() => setShowModal(true)}
             >
                 <Icon icon={iconName}/>

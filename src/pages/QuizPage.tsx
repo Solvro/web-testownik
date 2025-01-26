@@ -18,7 +18,6 @@ import QuestionCard from "../components/quiz/QuestionCard.tsx";
 import QuizInfoCard from "../components/quiz/QuizInfoCard.tsx";
 import {Question, Quiz, Reoccurrence} from "../components/quiz/types.ts";
 import ContinuityModal from "../components/quiz/ContinuityModal.tsx";
-import ToastNotifications from "../components/quiz/ToastNotifications.tsx";
 import {getDeviceFriendlyName, getDeviceType} from "../components/quiz/helpers/deviceUtils.ts";
 import {Icon} from "@iconify/react";
 
@@ -27,6 +26,7 @@ import PropagateLoader from "react-spinners/PropagateLoader";
 import LoginPrompt from "../components/LoginPrompt.tsx";
 import {AxiosError} from "axios";
 import QuizActionButtons from "../components/quiz/QuizActionButtons.tsx";
+import {toast} from "react-toastify";
 
 interface UserSettings {
     sync_progress: boolean;
@@ -92,14 +92,6 @@ const QuizPage: React.FC = () => {
     const wrongAnswersCountRef = useRef<number>(0);
     const correctAnswersCountRef = useRef<number>(0);
     const peerRef = useRef<Peer | null>(null);
-
-    // Toast states
-    const [showCopiedToast, setShowCopiedToast] = useState(false);
-    const [showErrorToast, setShowErrorToast] = useState(false);
-    const [showContinuityConnectedToast, setShowContinuityConnectedToast] =
-        useState(false);
-    const [showContinuityDisconnectedToast, setShowContinuityDisconnectedToast] =
-        useState(false);
 
     // Memes
     const [showBrainrot, setShowBrainrot] = useState(false);
@@ -515,11 +507,11 @@ const QuizPage: React.FC = () => {
                 .join("\n");
             const fullText = `${question}\n\n${answersText}`;
             navigator.clipboard.writeText(fullText).then(() => {
-                setShowCopiedToast(true);
+                toast.info("Pytanie skopiowane do schowka!")
             });
         } catch (error) {
             console.error("Błąd podczas kopiowania do schowka:", error);
-            setShowErrorToast(true);
+            toast.error("Błąd podczas kopiowania do schowka!");
         }
     };
 
@@ -542,7 +534,7 @@ const QuizPage: React.FC = () => {
             window.open(chatGPTUrl, "_blank");
         } catch (error) {
             console.error("Error opening in ChatGPT:", error);
-            setShowErrorToast(true);
+            toast.error("Błąd podczas otwierania w ChatGPT!");
         }
     };
 
@@ -678,7 +670,7 @@ const QuizPage: React.FC = () => {
                         peerRef.current = clientPeer;
                         connectToPeer(clientPeer, baseId)
                             .then((conn) => {
-                                setShowContinuityConnectedToast(true);
+                                toast.info("🖥️ Połączono z hostem!");
                                 handlePeerConnectionAsClient(conn);
                             })
                             .catch((error) => {
@@ -788,7 +780,7 @@ const QuizPage: React.FC = () => {
     const handlePeerClose = (conn: DataConnection) => {
         console.log("Peer disconnected:", conn.peer);
         setPeerConnections((prev) => prev.filter((c) => c.open && c.peer !== conn.peer));
-        setShowContinuityDisconnectedToast(true);
+        toast.info("🖥️ Klient rozłączony.");
 
         // If we are not the host, try to reconnect or if the host is no longer available then we can attempt to become the host
         if (!isContinuityHost && peerRef.current && !peerRef.current.destroyed) {
@@ -914,25 +906,6 @@ const QuizPage: React.FC = () => {
         });
     };
 
-    // ========== Toast handler ==========
-    const handleToastClose = (toastName: string) => {
-        switch (toastName) {
-            case "copied":
-                setShowCopiedToast(false);
-                break;
-            case "error":
-                setShowErrorToast(false);
-                break;
-            case "continuityConnected":
-                setShowContinuityConnectedToast(false);
-                break;
-            case "continuityDisconnected":
-                setShowContinuityDisconnectedToast(false);
-                break;
-            default:
-                break;
-        }
-    };
 
     // ========== Render ==========
     if (loading) {
@@ -1053,15 +1026,6 @@ const QuizPage: React.FC = () => {
             <ContinuityModal
                 peerConnections={peerConnections}
                 isContinuityHost={isContinuityHost}
-            />
-
-            {/* Toasts */}
-            <ToastNotifications
-                showCopiedToast={showCopiedToast}
-                showErrorToast={showErrorToast}
-                showContinuityConnectedToast={showContinuityConnectedToast}
-                showContinuityDisconnectedToast={showContinuityDisconnectedToast}
-                onClose={handleToastClose}
             />
         </>
     );

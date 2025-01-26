@@ -17,6 +17,7 @@ import QuizzesPage from "./pages/QuizzesPage.tsx";
 import SearchInQuizPage from "./pages/SearchInQuizPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.tsx";
+import {ToastContainer} from "react-toastify";
 
 const useThemeDetector = () => {
     const getCurrentTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -68,6 +69,8 @@ const App: React.FC = () => {
                     </Routes>
                 </Router>
             </div>
+            <ToastContainer theme={context.theme.getTheme()} newestOnTop={false} pauseOnFocusLoss
+                            position="bottom-right"/>
             <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
                     style={{position: "fixed", bottom: 0, width: "100%"}}>
                 <span>© {new Date().getFullYear()} <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, powered by <a

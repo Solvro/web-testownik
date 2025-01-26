@@ -5,6 +5,7 @@ import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
 import {useNavigate, useParams} from "react-router";
 import PropagateLoader from "react-spinners/PropagateLoader";
+import {toast} from "react-toastify";
 
 const EditQuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
@@ -72,27 +73,27 @@ const EditQuizPage: React.FC = () => {
     const handleSubmit = async () => {
         if (!title.trim()) {
             setError('Podaj tytuł bazy.');
-            return;
+            return false;
         }
 
         if (questions.length === 0) {
             setError('Dodaj przynajmniej jedno pytanie.');
-            return;
+            return false;
         }
 
         if (questions.some((q) => !q.question.trim())) {
             setError('Wszystkie pytania muszą mieć treść.');
-            return;
+            return false;
         }
 
         if (questions.some((q) => q.answers.length < 1)) {
             setError('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
-            return;
+            return false;
         }
 
         if (questions.some((q) => q.answers.filter((a) => a.correct).length === 0)) {
             setError('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
-            return;
+            return false;
         }
 
         setError(null);
@@ -115,15 +116,19 @@ const EditQuizPage: React.FC = () => {
             if (response.status !== 200) {
                 const errorData = await response.data;
                 setError(errorData.error || 'Wystąpił błąd podczas aktualizacji quizu.');
+                return false;
             }
         } catch {
             setError('Wystąpił błąd podczas aktualizacji quizu.');
+            return false;
         }
+        toast.success('Baza została zaktualizowana.');
+        return true;
     };
 
     const handleSubmitAndClose = async () => {
-        await handleSubmit();
-        navigate("/");
+        if (await handleSubmit())
+            navigate("/");
     };
 
     const scrollToBottom = () => {
@@ -214,7 +219,7 @@ const EditQuizPage: React.FC = () => {
                 variant={`outline-${appContext.theme.getOppositeTheme()}`}
                 style={{
                     position: 'fixed',
-                    bottom: '20px',
+                    bottom: '45px',
                     right: '20px',
                     borderRadius: '50%',
                     width: '50px',
