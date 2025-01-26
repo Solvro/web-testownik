@@ -198,6 +198,22 @@ const QuizzesPage: React.FC = () => {
                                         >
                                             Otwórz
                                         </Button>
+                                        <ButtonGroup className="opacity-75">
+                                            <Button
+                                                variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                                                onClick={() => handleDownloadQuiz(sq.quiz)}
+                                                size="sm"
+                                            >
+                                                <Icon icon={"mdi:download"}/>
+                                            </Button>
+                                            <Button
+                                                variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                                                onClick={() => handleSearchInQuiz(sq.quiz)}
+                                                size="sm"
+                                            >
+                                                <Icon icon={"mdi:magnify"}/>
+                                            </Button>
+                                        </ButtonGroup>
                                     </Card.Footer>
                                 </Card>
                             </Col>
