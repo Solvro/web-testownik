@@ -9,7 +9,7 @@ const TermsPage = () => {
 
                 <h2>1. Postanowienia ogólne</h2>
                 <p>1. Niniejszy regulamin określa zasady korzystania z serwisu Testownik (dalej „Serwis”),
-                    dostępnego pod adresem <a href="http://testownik.live">testownik.live</a>.</p>
+                    dostępnego pod adresem <a href="https://testownik.solvro.pl">testownik.solvro.pl</a>.</p>
                 <p>2. Korzystanie z Serwisu oznacza akceptację wszystkich postanowień niniejszego regulaminu.</p>
                 <p>3. Serwis przeznaczony jest wyłącznie dla studentów Politechniki Wrocławskiej, którzy logują się
                     za pomocą konta USOS.</p>
@@ -33,7 +33,7 @@ const TermsPage = () => {
                 <p>1. W przypadku zauważenia treści, które mogą naruszać prawo, prawa autorskie, dobra osobiste lub
                     inne regulacje, użytkownicy mają możliwość zgłoszenia naruszenia.</p>
                 <p>2. Zgłoszenia naruszeń można przesyłać na adres e-mail: <a
-                    href="mailto:takedown@testownik.live">takedown@testownik.live</a>.</p>
+                    href="mailto:testownik@solvro.pl">testownik@solvro.pl</a>.</p>
                 <p>3. Każde zgłoszenie powinno zawierać szczegółowy opis naruszenia oraz link do materiału, którego
                     dotyczy zgłoszenie.</p>
                 <p>4. Zgłoszenia będą rozpatrywane w ciągu 14 dni roboczych, a w przypadku zasadności zgłoszenia
@@ -59,7 +59,7 @@ const TermsPage = () => {
                 <p>1. Administrator Serwisu zastrzega sobie prawo do zmiany regulaminu. Wszelkie zmiany wchodzą w
                     życie z dniem ich opublikowania w Serwisie.</p>
                 <p>2. Wszelkie pytania, uwagi lub problemy dotyczące korzystania z Serwisu można zgłaszać na adres
-                    e-mail: <a href="mailto:kontakt@testownik.live">kontakt@testownik.live</a>.</p>
+                    e-mail: <a href="mailto:testownik@solvro.pl">testownik@solvro.pl</a>.</p>
                 <p>3. Korzystanie z Serwisu po wprowadzeniu zmian w regulaminie jest równoznaczne z akceptacją nowej
                     treści regulaminu.</p>
 
