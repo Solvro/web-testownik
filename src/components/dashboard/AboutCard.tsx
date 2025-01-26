@@ -54,7 +54,8 @@ const AboutCard: React.FC = () => {
                 }
                 return acc;
             }, []);
-            setContributors(data);
+
+            setContributors(data.sort((a: Contributor, b: Contributor) => b.contributions - a.contributions));
         } catch (e) {
             console.error(e);
             setContributors([]);
