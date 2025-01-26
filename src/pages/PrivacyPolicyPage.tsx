@@ -8,7 +8,7 @@ const PrivacyPolicyPage = () => {
 
                 <h2>1. Postanowienia ogólne</h2>
                 <p>1. Niniejsza Polityka Prywatności określa zasady przetwarzania danych osobowych przez serwis
-                    Testownik (dalej "Serwis"), dostępny pod adresem <a href="http://testownik.live">testownik.live</a>.
+                    Testownik (dalej "Serwis"), dostępny pod adresem <a href="https://testownik.solvro.pl">testownik.solvro.pl</a>.
                 </p>
                 <p>2. Administratorem danych osobowych jest właściciel Serwisu (dalej "Administrator").</p>
                 <p>3. Serwis przetwarza dane osobowe zgodnie z obowiązującymi przepisami prawa, w szczególności z
@@ -80,7 +80,7 @@ const PrivacyPolicyPage = () => {
 
                 <h2>9. Kontakt</h2>
                 <p>Wszelkie pytania, uwagi lub żądania dotyczące przetwarzania danych osobowych można kierować na adres
-                    e-mail: <a href="mailto:kontakt@testownik.live">kontakt@testownik.live</a>.</p>
+                    e-mail: <a href="mailto:testownik@solvro.pl">testownik@solvro.pl</a>.</p>
 
                 <h2>10. Zmiany w Polityce Prywatności</h2>
                 <p>1. Administrator zastrzega sobie prawo do zmiany Polityki Prywatności. Wszelkie zmiany będą
