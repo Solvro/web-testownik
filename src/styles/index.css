@@ -1,17 +1,30 @@
 [data-bs-theme=dark] {
-    --bs-body-bg: #06090f !important;
+    --bs-body-bg: #0b111c !important;
 }
 
 @media (prefers-color-scheme: dark) {
     .card {
-        background-color: #0d1117 !important;
+        background-color: #0f1626 !important;
     }
 
     .modal-content {
-        background-color: #0d1117 !important;
+        background-color: #0f1626 !important;
     }
 
     .table > :not(caption) > * > * {
         background-color: transparent !important;
+    }
+
+    .btn-dark {
+        background-color: #1A2856 !important;
+        border-color: #192a4c !important;
+    }
+
+    .btn-dark.active, .btn-dark:active {
+        background-color: #2B54AC !important;
+    }
+
+    footer.bg-dark {
+        background-color: #0f1626 !important;
     }
 }
