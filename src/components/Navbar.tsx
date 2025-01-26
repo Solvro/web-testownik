@@ -1,14 +1,56 @@
 // Navbar.tsx
-import React, {useContext} from 'react';
+import React, {useCallback, useContext, useEffect} from 'react';
 import {Navbar as BSNavbar, Nav, Container, Button} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
 import {SERVER_URL} from "../config.ts";
-import {useNavigate} from "react-router";
+import {useLocation, useNavigate} from "react-router";
 
 const Navbar: React.FC = () => {
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
+
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const accessToken = queryParams.get('access_token');
+    const refreshToken = queryParams.get('refresh_token');
+
+    const fetchUserData = useCallback(async () => {
+        try {
+            const response = await appContext.axiosInstance.get("/user/");
+            if (!response.data) {
+                throw new Error("No user data available");
+            }
+            const userData = response.data;
+            localStorage.setItem("profile_picture", userData.photo);
+            localStorage.setItem("is_staff", userData.is_staff);
+            localStorage.setItem("user_id", userData.id);
+            appContext.setAuthenticated(true);
+        } catch {
+            console.error("Failed to fetch user data");
+        }
+    }, [appContext]);
+
+    const handleLogin = useCallback(async () => {
+        if (accessToken && refreshToken) {
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("refresh_token", refreshToken);
+
+            queryParams.delete('access_token');
+            queryParams.delete('refresh_token');
+
+            navigate({
+                search: queryParams.toString(),
+            });
+
+            await fetchUserData();
+        }
+    }, [accessToken, refreshToken, fetchUserData]);
+
+
+    useEffect(() => {
+        handleLogin();
+    }, [handleLogin]);
 
     const handleLogout = () => {
         localStorage.removeItem("access_token");
@@ -26,7 +68,7 @@ const Navbar: React.FC = () => {
             <Container fluid>
                 <Nav.Link href="/">
                     <BSNavbar.Brand>
-                      <img src="/solvro_mono.svg" alt="logo solvro" width={32}/>
+                        <img src="/solvro_mono.svg" alt="logo solvro" width={32}/>
                     </BSNavbar.Brand>
                 </Nav.Link>
                 <BSNavbar.Toggle aria-controls="navbarNav"/>

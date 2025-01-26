@@ -1,6 +1,6 @@
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {Card, Button, Modal} from 'react-bootstrap';
-import {Link, useLocation, useNavigate} from 'react-router';
+import {Link, useLocation} from 'react-router';
 import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
 import AppContext from "../AppContext.tsx";
@@ -10,47 +10,9 @@ const LoginPrompt: React.FC = () => {
     const appContext = useContext(AppContext);
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const location = useLocation();
-    const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
     const accessToken = queryParams.get('access_token');
     const refreshToken = queryParams.get('refresh_token');
-
-    const fetchUserData = useCallback(async () => {
-        try {
-            const response = await appContext.axiosInstance.get("/user/");
-            if (!response.data) {
-                throw new Error("No user data available");
-            }
-            const userData = response.data;
-            localStorage.setItem("profile_picture", userData.photo);
-            localStorage.setItem("is_staff", userData.is_staff);
-            localStorage.setItem("user_id", userData.id);
-            appContext.setAuthenticated(true);
-        } catch {
-            console.error("Failed to fetch user data");
-        }
-    }, [appContext]);
-
-    const handleLogin = useCallback(async () => {
-        if (accessToken && refreshToken) {
-            localStorage.setItem("access_token", accessToken);
-            localStorage.setItem("refresh_token", refreshToken);
-
-            queryParams.delete('access_token');
-            queryParams.delete('refresh_token');
-
-            navigate({
-                search: queryParams.toString(),
-            });
-
-            await fetchUserData();
-        }
-    }, [accessToken, refreshToken, fetchUserData]);
-
-
-    useEffect(() => {
-        handleLogin();
-    }, [handleLogin]);
 
     return (
         <div className="d-flex justify-content-center">
@@ -69,7 +31,8 @@ const LoginPrompt: React.FC = () => {
                     <Card.Body>
                         <Card.Title>Witaj w Testowniku!</Card.Title>
                         <Card.Text>
-                            Testownik stworzony by <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>  wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
+                            Testownik stworzony by <a href="https://github.com/Antoni-Czaplicki">Antoni
+                            Czaplicki</a> wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
                         </Card.Text>
                         <Card.Text>
                             Powered by <a href="https://solvro.pwr.edu.pl/">Solvro</a>
@@ -120,7 +83,8 @@ const LoginPrompt: React.FC = () => {
                             Ciebie.
                         </li>
                     </ul>
-                    <p>Kod źródłowy Testownika jest dostępny na <a href="https://github.com/solvro/web-testownik">GitHubie</a>,
+                    <p>Kod źródłowy Testownika jest dostępny na <a
+                        href="https://github.com/solvro/web-testownik">GitHubie</a>,
                         gdzie sam możesz zweryfikować, jakie dane są przetwarzane oraz jak są one wykorzystywane.</p>
                 </Modal.Body>
                 <Modal.Footer>
