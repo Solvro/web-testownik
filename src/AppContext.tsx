@@ -13,7 +13,7 @@ export interface AppContextType {
 }
 
 const axiosInstance = axios.create({
-    baseURL: SERVER_URL + "/api",
+    baseURL: SERVER_URL,
     headers: {
         'Content-Type': 'application/json',
     },
