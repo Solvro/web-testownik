@@ -40,20 +40,24 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         };
     }, [question, selectedAnswers]);
 
-    if (!question) {
-        return null;
-    }
 
     if (isQuizFinished) {
         return (
             <Card className="border-0 shadow">
                 <Card.Body>
-                    Quiz finished
+                    <Card.Title>Baza została ukończona</Card.Title>
+                    <Card.Text>
+                        Gratulacje! Ukończyłeś bazę pytań. Aby kontynuować naukę, zresetuj swoje postępy korzystając z
+                        przycisku po prawej stronie.
+                    </Card.Text>
                 </Card.Body>
             </Card>
         );
     }
 
+    if (!question) {
+        return null;
+    }
     const getAnswerVariant = (answer: Answer, answerId: number) => {
         if (questionChecked) {
             if (answer.correct) {

@@ -362,6 +362,7 @@ const QuizPage: React.FC = () => {
         const available = recurrencesData.filter((r) => r.reoccurrences > 0);
         if (available.length === 0) {
             setIsQuizFinished(true);
+            saveProgress();
             setCurrentQuestion(null);
             return;
         }
