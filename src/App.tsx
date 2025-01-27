@@ -41,7 +41,7 @@ const App: React.FC = () => {
 
     return (
         <>
-            <div className="container d-flex flex-column" id="container">
+            <div className="container d-flex flex-column mb-5" id="container">
                 <Router>
                     <Navbar/>
                     <Routes>
@@ -74,7 +74,8 @@ const App: React.FC = () => {
             <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
                     style={{position: "fixed", bottom: 0, width: "100%"}}>
                 <span>© {new Date().getFullYear()} <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, powered by <a
-                    href="https://solvro.pwr.edu.pl/"><img src="/solvro_mono.svg" alt="solvro logo" width={24}/> KN Solvro</a> </span>
+                    href="https://solvro.pwr.edu.pl/"><img src="/solvro_mono.svg" alt="solvro logo" width={24}
+                                                           className="solvro-logo"/> KN Solvro</a> </span>
             </footer>
         </>
     );

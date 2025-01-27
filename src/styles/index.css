@@ -28,3 +28,9 @@
         background-color: #0f1626 !important;
     }
 }
+
+@media (prefers-color-scheme: light) {
+    .solvro-logo {
+        filter: invert(1);
+    }
+}

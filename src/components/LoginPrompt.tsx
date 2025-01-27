@@ -31,11 +31,13 @@ const LoginPrompt: React.FC = () => {
                     <Card.Body>
                         <Card.Title>Witaj w Testowniku!</Card.Title>
                         <Card.Text>
-                            Testownik stworzony by <a href="https://github.com/Antoni-Czaplicki">Antoni
-                            Czaplicki</a> wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
+                            Testownik by <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, stworzony
+                            wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
                         </Card.Text>
                         <Card.Text>
-                            Powered by <a href="https://solvro.pwr.edu.pl/">Solvro</a>
+                            Powered by <a href="https://solvro.pwr.edu.pl/"><img src="/solvro_mono.svg"
+                                                                                 alt="solvro logo" width={24}
+                                                                                 className="solvro-logo"/> KN Solvro</a>
                         </Card.Text>
                         <Card.Text>
                             <b>Klikając przycisk poniżej, potwierdzasz, że zapoznałeś się z naszym <Link
