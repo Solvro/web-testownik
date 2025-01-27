@@ -170,6 +170,35 @@ const QuizzesPage: React.FC = () => {
                             </Card>
                         </Col>
                     ))}
+                    <Col key="create-quiz">
+                        <Card className="h-100">
+                            <Card.Body>
+                                <Card.Title className="text-secondary">Dodaj nową bazę</Card.Title>
+                            </Card.Body>
+                            <Card.Footer className="d-flex justify-content-between">
+                                <Button
+                                    variant={appContext.theme.getOppositeTheme()}
+                                    onClick={() => navigate(`/create-quiz`)}
+                                >
+                                    <Icon icon="mdi:plus"/> Utwórz
+                                </Button>
+                                <ButtonGroup>
+                                    <Button
+                                        variant={appContext.theme.getOppositeTheme()}
+                                        onClick={() => navigate(`/import-quiz`)}
+                                    >
+                                        Importuj <Icon icon="mdi:upload"/>
+                                    </Button>
+                                    <Button
+                                        variant={appContext.theme.getOppositeTheme()}
+                                        onClick={() => navigate(`/import-quiz-legacy`)}
+                                    >
+                                        <Icon icon="material-symbols:folder-zip"/>
+                                    </Button>
+                                </ButtonGroup>
+                            </Card.Footer>
+                        </Card>
+                    </Col>
                 </Row>
             ) : (
                 <div className="text-center">
