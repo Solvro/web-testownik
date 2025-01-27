@@ -1,5 +1,5 @@
 import React, {useState, useRef, useContext} from 'react';
-import {Button, Card, Alert, Form, ButtonGroup, Spinner} from 'react-bootstrap';
+import {Button, Card, Alert, Form, ButtonGroup, Spinner, Modal} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
 import {Quiz} from "../components/quiz/types.ts";
@@ -19,6 +19,8 @@ const ImportQuizPage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [quiz, setQuiz] = useState<Quiz | null>(null);
+
+    const [showJsonFormatModal, setShowJsonFormatModal] = useState(false);
 
     document.title = "Importuj bazę - Testownik Solvro";
 
@@ -221,6 +223,95 @@ const ImportQuizPage: React.FC = () => {
                 </Card.Body>
             </Card>
             <QuizPreviewModal show={quiz !== null} onHide={() => navigate("/")} quiz={quiz} type="imported"/>
+            <p className="text-center mt-3">
+                <a href="#" className="fs-6 link-secondary" onClick={() => setShowJsonFormatModal(true)}>
+                    Jak powinna wyglądać baza w formacie JSON?
+                </a>
+            </p>
+            <Modal
+                show={showJsonFormatModal}
+                onHide={() => setShowJsonFormatModal(false)}
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Format JSON bazy</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>
+                        Baza w formacie JSON powinna składać się z dwóch głównych
+                        kluczy: <code>title</code> i <code>questions</code>.
+                    </p>
+                    <p>
+                        Klucz <code>title</code> powinien zawierać tytuł bazy w formie tekstu.
+                    </p>
+                    <p>
+                        Klucz <code>questions</code> powinien zawierać tablicę obiektów reprezentujących pytania.
+                        Każde pytanie powinno zawierać
+                        klucze <code>question</code> i <code>answers</code> oraz opcjonalnie <code>multiple</code>.
+                    </p>
+                    <p>
+                        Przykładowa baza w formacie JSON:
+                    </p>
+                    <pre className="overflow-auto" style={{maxHeight: "50vh"}}>
+                        {`{
+    "title": "Przykładowa baza",
+    "description": "Opis bazy", // Opcjonalny
+    "questions": [
+        {
+            "question": "Jaki jest sens sesji?",
+            "answers": [
+                {
+                    "answer": "Nie ma sensu",
+                    "correct": false
+                },
+                {
+                    "answer": "Żeby zjeść obiad",
+                    "correct": true
+                },
+                {
+                    "answer": "Żeby się wykończyć",
+                    "correct": false
+                }
+            ],
+            "multiple": false, // Opcjonalny, domyślnie false
+            "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny, domyślnie null
+        },
+        {
+            "question": "Kto jest najlepszy?",
+            "answers": [
+                {
+                    "answer": "Ja",
+                    "correct": true
+                },
+                {
+                    "answer": "Ty",
+                    "correct": false
+                }
+            ],
+            "multiple": false
+        },
+        {
+            "question": "Pytanie ze zdjęciem",
+            "image": "https://example.com/image.jpg", // Opcjonalny
+            "answers": [
+                {
+                    "answer": "Odpowiedź 1",
+                    "image": "https://example.com/image2.jpg", // Opcjonalny
+                    "correct": true
+                },
+                {
+                    "answer": "Odpowiedź 2",
+                    "image": "https://example.com/image3.jpg", // Opcjonalny
+                    "correct": false
+                }
+            ],
+            "multiple": true
+        }
+    ]
+}`}
+                    </pre>
+                </Modal.Body>
+            </Modal>
         </>
     );
 };
