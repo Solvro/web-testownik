@@ -5,6 +5,7 @@ import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
 import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
 import {useNavigate} from "react-router";
+import {toast} from "react-toastify";
 
 
 const CreateQuizPage: React.FC = () => {
@@ -46,29 +47,34 @@ const CreateQuizPage: React.FC = () => {
         setQuestions((prev) => prev.filter((q) => q.id !== id));
     };
 
+    const setErrorAndNotify = (message: string) => {
+        setError(message);
+        toast.error(message);
+    }
+
     const handleSubmit = async () => {
         if (!title.trim()) {
-            setError('Podaj tytuł bazy.');
+            setErrorAndNotify('Podaj tytuł bazy.');
             return;
         }
 
         if (questions.length === 0) {
-            setError('Dodaj przynajmniej jedno pytanie.');
+            setErrorAndNotify('Dodaj przynajmniej jedno pytanie.');
             return;
         }
 
         if (questions.some((q) => !q.question.trim())) {
-            setError('Wszystkie pytania muszą mieć treść.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć treść.');
             return;
         }
 
         if (questions.some((q) => q.answers.length < 1)) {
-            setError('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
             return;
         }
 
         if (questions.some((q) => q.answers.filter((a) => a.correct).length === 0)) {
-            setError('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
             return;
         }
 
@@ -86,10 +92,10 @@ const CreateQuizPage: React.FC = () => {
                 setQuiz(result);
             } else {
                 const errorData = await response.data;
-                setError(errorData.error || 'Wystąpił błąd podczas importowania quizu.');
+                setErrorAndNotify(errorData.error || 'Wystąpił błąd podczas importowania quizu.');
             }
         } catch {
-            setError('Wystąpił błąd podczas importowania quizu.');
+            setErrorAndNotify('Wystąpił błąd podczas importowania quizu.');
         }
     };
 

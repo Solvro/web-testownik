@@ -70,29 +70,34 @@ const EditQuizPage: React.FC = () => {
         setQuestions((prev) => prev.filter((q) => q.id !== id));
     };
 
+    const setErrorAndNotify = (message: string) => {
+        setError(message);
+        toast.error(message);
+    }
+
     const handleSubmit = async () => {
         if (!title.trim()) {
-            setError('Podaj tytuł bazy.');
+            setErrorAndNotify('Podaj tytuł bazy.');
             return false;
         }
 
         if (questions.length === 0) {
-            setError('Dodaj przynajmniej jedno pytanie.');
+            setErrorAndNotify('Dodaj przynajmniej jedno pytanie.');
             return false;
         }
 
         if (questions.some((q) => !q.question.trim())) {
-            setError('Wszystkie pytania muszą mieć treść.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć treść.');
             return false;
         }
 
         if (questions.some((q) => q.answers.length < 1)) {
-            setError('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
             return false;
         }
 
         if (questions.some((q) => q.answers.filter((a) => a.correct).length === 0)) {
-            setError('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
+            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
             return false;
         }
 
@@ -115,11 +120,11 @@ const EditQuizPage: React.FC = () => {
 
             if (response.status !== 200) {
                 const errorData = await response.data;
-                setError(errorData.error || 'Wystąpił błąd podczas aktualizacji quizu.');
+                setErrorAndNotify(errorData.error || 'Wystąpił błąd podczas aktualizacji quizu.');
                 return false;
             }
         } catch {
-            setError('Wystąpił błąd podczas aktualizacji quizu.');
+            setErrorAndNotify('Wystąpił błąd podczas aktualizacji quizu.');
             return false;
         }
         toast.success('Baza została zaktualizowana.');
