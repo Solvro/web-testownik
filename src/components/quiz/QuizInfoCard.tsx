@@ -1,6 +1,6 @@
 import {Quiz, Reoccurrence} from "./types.ts";
 import React, {useContext} from "react";
-import {Button, ButtonGroup, Card} from "react-bootstrap";
+import {Button, ButtonGroup, Card, OverlayTrigger, Tooltip} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
 import {useNavigate} from "react-router";
 import {Icon} from "@iconify/react";
@@ -36,7 +36,8 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
         <Card className="border-0 shadow">
             <Card.Body>
                 <Card.Title>{quiz.title}</Card.Title>
-                {quiz.maintainer && <Card.Subtitle className="mb-2 text-muted">by {quiz.maintainer.full_name}</Card.Subtitle>}
+                {quiz.maintainer &&
+                    <Card.Subtitle className="mb-2 text-muted">by {quiz.maintainer.full_name}</Card.Subtitle>}
                 <div>
                     <div className="d-flex justify-content-between">
                         <span>Udzielone odpowiedzi</span>
@@ -58,9 +59,27 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                 </div>
                 <div className="d-flex justify-content-between mt-3">
                     <ButtonGroup>
-                        <Button variant={appContext.theme.getTheme()} size="sm" onClick={openSearchInQuiz}>
-                            <Icon icon="mdi:magnify"/>
-                        </Button>
+                        {appContext.isAuthenticated ? (
+                            <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Wyszukaj w bazie</Tooltip>}
+                            >
+                                <Button variant={appContext.theme.getTheme()} size="sm" onClick={openSearchInQuiz}>
+                                    <Icon icon="mdi:magnify"/>
+                                </Button>
+                            </OverlayTrigger>
+                        ) : (
+                            <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Zaloguj się, aby użyć tej funkcji</Tooltip>}
+                            >
+                                <span className="d-inline-block" style={{cursor: "not-allowed"}}>
+                                    <Button variant={appContext.theme.getTheme()} size="sm" disabled>
+                                        <Icon icon="mdi:magnify"/>
+                                    </Button>
+                                </span>
+                            </OverlayTrigger>
+                        )}
                     </ButtonGroup>
                     <Button className="text-danger bg-danger bg-opacity-25 border-0" size="sm" onClick={resetProgress}>
                         Reset

@@ -5,7 +5,7 @@ import React, {
     useRef,
     useContext,
 } from "react";
-import {useParams} from "react-router";
+import {useLocation, useParams} from "react-router";
 import {
     Row,
     Col, Card, Button,
@@ -54,6 +54,8 @@ const PING_TIMEOUT = 15000; // 15s
 const QuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
     const appContext = useContext(AppContext);
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
 
     // ========== States ==========
     // Basic
@@ -99,6 +101,11 @@ const QuizPage: React.FC = () => {
 
     // ========== Lifecycle ==========
     useEffect(() => {
+        if (queryParams.get("error") === "not_student") {
+            toast.error("Nie udało się nam potwierdzić, że jesteś studentem. Spróbuj ponownie.");
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         (async () => {
             const quizData = await fetchQuiz();
             if (!quizData) {

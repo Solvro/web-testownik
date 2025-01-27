@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import {Card, Button, Modal} from 'react-bootstrap';
+import {Card, Button, Modal, Alert} from 'react-bootstrap';
 import {Link, useLocation} from 'react-router';
 import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
@@ -13,6 +13,7 @@ const LoginPrompt: React.FC = () => {
     const queryParams = new URLSearchParams(location.search);
     const accessToken = queryParams.get('access_token');
     const refreshToken = queryParams.get('refresh_token');
+    const error = queryParams.get('error');
 
     return (
         <div className="d-flex justify-content-center">
@@ -30,6 +31,19 @@ const LoginPrompt: React.FC = () => {
                 ) : (
                     <Card.Body>
                         <Card.Title>Witaj w Testowniku!</Card.Title>
+                        {error && (
+                            <Alert variant="danger">
+                                <p>Wystąpił błąd podczas logowania.</p>
+                                {error === "not_student" ? (
+                                    <span>Niestety, nie udało nam się zidentyfikować Cię jako studenta PWr. Upewnij
+                                        się, że logujesz się na swoje konto studenta. Jeśli problem będzie się
+                                        powtarzał, <a
+                                            href="mailto:testownik@solvro.pl">skontaktuj się z nami</a>.</span>
+                                ) : (
+                                    <span>{error}</span>
+                                )}
+                            </Alert>
+                        )}
                         <Card.Text>
                             Testownik by <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, stworzony
                             wraz ze wsparciem <a href="https://www.facebook.com/KNKredek/">KN Kredek</a>.
