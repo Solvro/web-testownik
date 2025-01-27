@@ -3,6 +3,7 @@ import {Card, InputGroup, FormControl, Button, Table} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {Icon} from "@iconify/react";
+import {Link} from "react-router";
 
 interface SearchResult {
     id: string;
@@ -70,12 +71,12 @@ const SearchCard: React.FC = () => {
                                 searchResults.map((result) => (
                                     <tr key={result.id}>
                                         <td>
-                                            <a href={`/quiz/${result.id}`}
-                                               className={"text-decoration-none text-" + appContext.theme.getOppositeTheme()}>
+                                            <Link to={`/quiz/${result.id}`}
+                                                  className={"text-decoration-none text-" + appContext.theme.getOppositeTheme()}>
                                                 {result.title}
                                                 <span
                                                     className="link-secondary"> by {result.is_anonymous ? "anonim" : result.maintainer}</span>
-                                            </a>
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))

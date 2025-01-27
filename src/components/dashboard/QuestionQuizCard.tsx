@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useContext} from "react";
 import {Card, Button} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
+import {Link} from "react-router";
 
 interface Answer {
     answer: string;
@@ -75,10 +76,10 @@ const QuestionQuizCard: React.FC = () => {
                     <div>
                         <small className="text-muted">Powtórz to jeszcze raz:</small>
                         <h5 className="card-title mb-0">{questionData.question}</h5>
-                        <a href={`/quiz/${questionData.quiz_id}`}
-                           className="small text-decoration-none text-secondary">
+                        <Link to={`/quiz/${questionData.quiz_id}`}
+                              className="small text-decoration-none text-secondary">
                             {questionData.quiz_title}
-                        </a>
+                        </Link>
                         <div className="d-grid gap-2 mt-3 overflow-y-auto" style={{maxHeight: "30rem"}}>
                             {questionData.answers.map((answer, idx) => (
                                 <Button

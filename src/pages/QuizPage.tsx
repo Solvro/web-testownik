@@ -108,7 +108,7 @@ const QuizPage: React.FC = () => {
             }
             setQuiz(quizData);
 
-            document.title = `${quizData.title} - Testownik`;
+            document.title = `${quizData.title} - Testownik Solvro`;
 
             // Handle version update logic
             handleVersionUpdate(quizData.version);

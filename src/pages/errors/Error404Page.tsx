@@ -3,7 +3,7 @@ import {Card} from "react-bootstrap";
 
 const Error404Page: React.FC = () => {
 
-    document.title = "404 - Testownik";
+    document.title = "404 - Testownik Solvro";
 
     return (
         <Card className="border-0 shadow">

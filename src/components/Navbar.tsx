@@ -1,5 +1,4 @@
-// Navbar.tsx
-import React, {useCallback, useContext, useEffect} from 'react';
+import React, {useCallback, useContext, useEffect, useMemo} from 'react';
 import {Navbar as BSNavbar, Nav, Container, Button} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
@@ -9,9 +8,9 @@ import {useLocation, useNavigate} from "react-router";
 const Navbar: React.FC = () => {
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
-
     const location = useLocation();
-    const queryParams = new URLSearchParams(location.search);
+
+    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const accessToken = queryParams.get('access_token');
     const refreshToken = queryParams.get('refresh_token');
 
@@ -45,8 +44,7 @@ const Navbar: React.FC = () => {
 
             await fetchUserData();
         }
-    }, [accessToken, refreshToken, fetchUserData]);
-
+    }, [accessToken, refreshToken, queryParams, navigate, fetchUserData]);
 
     useEffect(() => {
         handleLogin();
@@ -60,40 +58,84 @@ const Navbar: React.FC = () => {
         localStorage.removeItem("user_id");
         appContext.setAuthenticated(false);
         navigate("/");
-    }
+    };
 
+    const handleNavigation = (path: string, event: React.MouseEvent<HTMLElement>) => {
+        if (event.metaKey || event.ctrlKey) {
+            // Open in a new tab
+            window.open(path, "_blank");
+        } else {
+            // Navigate normally
+            navigate(path);
+        }
+    };
+
+    const isActive = (path: string) => location.pathname === path;
 
     return (
         <BSNavbar expand="lg" className="mb-3">
             <Container fluid>
-                <Nav.Link href="/">
+                <Nav.Link
+                    onClick={(event) => {
+                        handleNavigation("/", event);
+                    }}
+                >
                     <BSNavbar.Brand>
-                        <img src="/solvro_mono.svg" alt="logo solvro" width={32} className="solvro-logo"/>
+                        <img
+                            src="/solvro_mono.svg"
+                            alt="logo solvro"
+                            width={32}
+                            className="solvro-logo"
+                        />
                     </BSNavbar.Brand>
                 </Nav.Link>
                 <BSNavbar.Toggle aria-controls="navbarNav"/>
                 <BSNavbar.Collapse id="navbarNav">
                     <Nav className="me-auto mb-2 mb-lg-0">
-                        <Nav.Link href="/quizzes">Twoje bazy</Nav.Link>
-                        <Nav.Link href="/grades">Oceny</Nav.Link>
+                        <Nav.Link
+                            onClick={(event) => handleNavigation("/quizzes", event)}
+                            active={isActive("/quizzes")}
+                        >
+                            Twoje bazy
+                        </Nav.Link>
+                        <Nav.Link
+                            onClick={(event) => handleNavigation("/grades", event)}
+                            active={isActive("/grades")}
+                        >
+                            Oceny
+                        </Nav.Link>
                         {localStorage.getItem("is_staff") === "true" && (
-                            <Nav.Link href={SERVER_URL + "/admin/"} target={"_blank"}>Panel administratora</Nav.Link>
+                            <Nav.Link
+                                href={`${SERVER_URL}/admin/`}
+                                target="_blank"
+                                active={false}
+                            >
+                                Panel administratora
+                            </Nav.Link>
                         )}
                     </Nav>
                     <Nav>
                         {appContext.isAuthenticated ? (
                             <>
-                                <Nav.Link href="/profile">
-                                    <Button variant={appContext.theme.getOppositeTheme()}
-                                            className="d-inline-flex gap-1 align-items-center">
+                                <Nav.Link
+                                    onClick={(event) => handleNavigation("/profile", event)}
+                                >
+                                    <Button
+                                        variant={appContext.theme.getOppositeTheme()}
+                                        className="d-inline-flex gap-1 align-items-center"
+                                    >
                                         {localStorage.getItem("profile_picture") ? (
-                                            <img src={localStorage.getItem("profile_picture")!} alt="Profilowe"
-                                                 id="profile-pic" style={{
-                                                borderRadius: '50%',
-                                                width: '1.5em',
-                                                height: '1.5em',
-                                                objectFit: 'cover'
-                                            }}/>
+                                            <img
+                                                src={localStorage.getItem("profile_picture")!}
+                                                alt="Profilowe"
+                                                id="profile-pic"
+                                                style={{
+                                                    borderRadius: "50%",
+                                                    width: "1.5em",
+                                                    height: "1.5em",
+                                                    objectFit: "cover",
+                                                }}
+                                            />
                                         ) : (
                                             <Icon icon="bi:person-circle"></Icon>
                                         )}
@@ -101,16 +143,22 @@ const Navbar: React.FC = () => {
                                     </Button>
                                 </Nav.Link>
                                 <Nav.Link className="ps-0" onClick={handleLogout}>
-                                    <Button variant="danger"
-                                            className="d-flex align-items-center justify-content-center p-2 fs-5">
+                                    <Button
+                                        variant="danger"
+                                        className="d-flex align-items-center justify-content-center p-2 fs-5"
+                                    >
                                         <Icon icon="bi:box-arrow-right"></Icon>
                                     </Button>
                                 </Nav.Link>
                             </>
                         ) : (
-                            <Nav.Link href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}>
-                                <Button variant={appContext.theme.getOppositeTheme()}
-                                        className="d-inline-flex gap-1 align-items-center">
+                            <Nav.Link
+                                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                            >
+                                <Button
+                                    variant={appContext.theme.getOppositeTheme()}
+                                    className="d-inline-flex gap-1 align-items-center"
+                                >
                                     <Icon icon="bi:box-arrow-in-right"></Icon>
                                     Zaloguj się
                                 </Button>

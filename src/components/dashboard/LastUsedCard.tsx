@@ -1,6 +1,7 @@
 import React, {useContext, useEffect, useState} from "react";
 import {Card, Table} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
+import {Link} from "react-router";
 
 interface Quiz {
     id: number;
@@ -36,10 +37,10 @@ const LastUsedCard: React.FC = () => {
                             lastUsedQuizzes.map((quiz) => (
                                 <tr key={quiz.id}>
                                     <td>
-                                        <a href={`/quiz/${quiz.id}`}
-                                           className={"text-decoration-none text-" + appContext.theme.getOppositeTheme()}>
+                                        <Link to={`/quiz/${quiz.id}`}
+                                              className={"text-decoration-none text-" + appContext.theme.getOppositeTheme()}>
                                             {quiz.title}
-                                        </a>
+                                        </Link>
                                     </td>
                                 </tr>
                             ))

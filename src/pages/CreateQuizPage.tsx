@@ -6,6 +6,7 @@ import AppContext from "../AppContext.tsx";
 import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
 import {useNavigate} from "react-router";
 import {toast} from "react-toastify";
+import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
 
 
 const CreateQuizPage: React.FC = () => {
@@ -23,7 +24,7 @@ const CreateQuizPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [quiz, setQuiz] = useState<Quiz | null>(null); // Result of the quiz creation
 
-    document.title = "Stwórz bazę - Testownik";
+    document.title = "Stwórz bazę - Testownik Solvro";
 
     const addQuestion = () => {
         setQuestions((prev) => [
@@ -53,30 +54,12 @@ const CreateQuizPage: React.FC = () => {
     }
 
     const handleSubmit = async () => {
-        if (!title.trim()) {
-            setErrorAndNotify('Podaj tytuł bazy.');
-            return;
+        const validationError = validateQuiz(title, questions); // Validate the quiz
+        if (validationError) {
+            setErrorAndNotify(validationError);
+            return false;
         }
 
-        if (questions.length === 0) {
-            setErrorAndNotify('Dodaj przynajmniej jedno pytanie.');
-            return;
-        }
-
-        if (questions.some((q) => !q.question.trim())) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć treść.');
-            return;
-        }
-
-        if (questions.some((q) => q.answers.length < 1)) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
-            return;
-        }
-
-        if (questions.some((q) => q.answers.filter((a) => a.correct).length === 0)) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
-            return;
-        }
 
         setError(null);
 

@@ -2,6 +2,9 @@ import {Card} from 'react-bootstrap';
 import {Link} from "react-router";
 
 const TermsPage = () => {
+
+    document.title = "Regulamin - Testownik Solvro";
+
     return (
         <Card className="border-0 shadow">
             <Card.Body>

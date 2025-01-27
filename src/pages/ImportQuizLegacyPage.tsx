@@ -31,7 +31,7 @@ const ImportQuizLegacyPage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const directoryInputRef = useRef<HTMLInputElement>(null);
 
-    document.title = "Importuj bazę (stara wersja) - Testownik";
+    document.title = "Importuj bazę (stara wersja) - Testownik Solvro";
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];

@@ -9,6 +9,8 @@ import '../styles/dashboard.css';
 
 const DashboardPage: React.FC = () => {
 
+    document.title = "Testownik Solvro";
+
     return (
         <Row className="mh-1 row-gap-3">
             {/* Dev */}

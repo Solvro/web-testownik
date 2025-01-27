@@ -43,6 +43,8 @@ const GradesPage: React.FC = () => {
     const [editing, setEditing] = useState(false);
     const [editedGrades, setEditedGrades] = useState<Record<string, number | string>>({});
 
+    document.title = "Oceny - Testownik Solvro";
+
     useEffect(() => {
         const fetchData = async () => {
             try {

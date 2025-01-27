@@ -5,6 +5,8 @@ import AppContext from "../AppContext.tsx";
 import {Quiz} from "../components/quiz/types.ts";
 import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
 import {useNavigate} from "react-router";
+import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
+import {toast} from "react-toastify";
 
 type UploadType = 'file' | 'link' | 'json';
 
@@ -18,7 +20,7 @@ const ImportQuizPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [quiz, setQuiz] = useState<Quiz | null>(null);
 
-    document.title = "Importuj bazę - Testownik";
+    document.title = "Importuj bazę - Testownik Solvro";
 
     const handleUploadTypeChange = (type: UploadType) => {
         setUploadType(type);
@@ -35,6 +37,11 @@ const ImportQuizPage: React.FC = () => {
         }
     };
 
+    const setErrorAndNotify = (message: string) => {
+        setError(message);
+        toast.error(message);
+    }
+
     const handleImport = async () => {
         setError(null);
         setLoading(true);
@@ -49,6 +56,11 @@ const ImportQuizPage: React.FC = () => {
             reader.onload = async () => {
                 try {
                     const data = JSON.parse(reader.result as string);
+                    const validationError = validateQuiz(data.title, data.questions);
+                    if (validationError) {
+                        setErrorAndNotify(validationError);
+                        return false;
+                    }
                     await submitImport('json', data);
                 } catch {
                     setError('Wystąpił błąd podczas wczytywania pliku.');
@@ -58,7 +70,7 @@ const ImportQuizPage: React.FC = () => {
         } else if (uploadType === 'link') {
             const linkInput = (document.getElementById('link-input') as HTMLInputElement)?.value;
             if (!linkInput) {
-                setError('Wklej link do quizu.');
+                setErrorAndNotify('Wklej link do quizu.');
                 setLoading(false);
                 return;
             }
@@ -77,6 +89,11 @@ const ImportQuizPage: React.FC = () => {
             }
             try {
                 const data = JSON.parse(textInput);
+                const validationError = validateQuiz(data.title, data.questions);
+                if (validationError) {
+                    setError(validationError);
+                    return false;
+                }
                 await submitImport('json', data);
             } catch {
                 setError('Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.');

@@ -6,6 +6,7 @@ import AppContext from "../AppContext.tsx";
 import {useNavigate, useParams} from "react-router";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {toast} from "react-toastify";
+import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
 
 const EditQuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
@@ -19,7 +20,7 @@ const EditQuizPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [advancedMode, setAdvancedMode] = useState(false);
 
-    document.title = "Edytuj bazę - Testownik";
+    document.title = "Edytuj bazę - Testownik Solvro";
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -76,28 +77,9 @@ const EditQuizPage: React.FC = () => {
     }
 
     const handleSubmit = async () => {
-        if (!title.trim()) {
-            setErrorAndNotify('Podaj tytuł bazy.');
-            return false;
-        }
-
-        if (questions.length === 0) {
-            setErrorAndNotify('Dodaj przynajmniej jedno pytanie.');
-            return false;
-        }
-
-        if (questions.some((q) => !q.question.trim())) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć treść.');
-            return false;
-        }
-
-        if (questions.some((q) => q.answers.length < 1)) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.');
-            return false;
-        }
-
-        if (questions.some((q) => q.answers.filter((a) => a.correct).length === 0)) {
-            setErrorAndNotify('Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.');
+        const validationError = validateQuiz(title, questions); // Validate the quiz
+        if (validationError) {
+            setErrorAndNotify(validationError);
             return false;
         }
 

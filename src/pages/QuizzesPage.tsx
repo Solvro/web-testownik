@@ -18,6 +18,8 @@ const QuizzesPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedQuizToShare, setSelectedQuizToShare] = useState<QuizMetadata | null>(null);
 
+    document.title = "Twoje bazy - Testownik Solvro";
+
     useEffect(() => {
         const fetchQuizzes = async () => {
             try {

@@ -35,7 +35,7 @@ const ProfilePage: React.FC = () => {
 
     useEffect(() => {
         // Set page title
-        document.title = "Profil - Testownik";
+        document.title = "Profil - Testownik Solvro";
 
         // Fetch user data
         appContext.axiosInstance.get("/user/")
@@ -52,7 +52,7 @@ const ProfilePage: React.FC = () => {
 
     const handleTabSelect = (tabKey: string | null) => {
         if (tabKey) setActiveTab(tabKey);
-        document.title = `${tabKey === "account" ? "Profil" : "Ustawienia"} - Testownik`;
+        document.title = `${tabKey === "account" ? "Profil" : "Ustawienia"} - Testownik Solvro`;
     };
 
     const handleSettingChange = (name: keyof SettingsData, value: boolean | number) => {
