@@ -295,6 +295,7 @@ const QuizPage: React.FC = () => {
             setWrongAnswersCount(0);
             setIsQuizFinished(false);
             setStudyTime(0);
+            startTimeRef.current = Date.now();
             pickRandomQuestion(quiz, newReoccurrences);
         }
     };
