@@ -30,7 +30,7 @@ const LoginPrompt: React.FC = () => {
                     </Card.Body>
                 ) : (
                     <Card.Body>
-                        <Card.Title>Witaj w Testowniku!</Card.Title>
+                        <Card.Title>Witaj w Testowniku Solvro!</Card.Title>
                         {error && (
                             <Alert variant="danger">
                                 <p>Wystąpił błąd podczas logowania.</p>
