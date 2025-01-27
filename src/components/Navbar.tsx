@@ -68,7 +68,7 @@ const Navbar: React.FC = () => {
             <Container fluid>
                 <Nav.Link href="/">
                     <BSNavbar.Brand>
-                        <img src="/solvro_mono.svg" alt="logo solvro" width={32}/>
+                        <img src="/solvro_mono.svg" alt="logo solvro" width={32} className="solvro-logo"/>
                     </BSNavbar.Brand>
                 </Nav.Link>
                 <BSNavbar.Toggle aria-controls="navbarNav"/>
