@@ -74,13 +74,11 @@ const PrivacyPolicyPage = () => {
                 <p>2. Dostęp do danych osobowych mają wyłącznie upoważnione osoby, które zobowiązane są do zachowania
                     poufności.</p>
 
-                <h2>8. Wykorzystywanie Google Analytics</h2>
-                <p>1. Serwis korzysta z Google Analytics w celu analizy ruchu na stronie oraz poprawy jakości
+                <h2>8. Wykorzystywanie Analytics</h2>
+                <p>1. Serwis korzysta z Umami Analytics w celu analizy ruchu na stronie oraz poprawy jakości
                     świadczonych usług.</p>
-                <p>2. Google Analytics może zbierać informacje, takie jak adres IP użytkownika, rodzaj przeglądarki,
+                <p>2. Analytics może zbierać informacje, takie jak adres IP użytkownika, rodzaj przeglądarki,
                     system operacyjny i inne dane dotyczące interakcji z Serwisem.</p>
-                <p>3. Więcej informacji na temat przetwarzania danych przez Google można znaleźć na stronie <a
-                    href="https://policies.google.com/privacy">polityki prywatności Google</a>.</p>
 
                 <h2>9. Kontakt</h2>
                 <p>Wszelkie pytania, uwagi lub żądania dotyczące przetwarzania danych osobowych można kierować na adres
