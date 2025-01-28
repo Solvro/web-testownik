@@ -269,6 +269,8 @@ const ImportQuizLegacyPage: React.FC = () => {
         if (!template) {
             console.error(`Error in file ${filename}. Template not found. Skipping.`);
             return null;
+        } else if (template.startsWith("QQ")) {
+            return parseQTemplate(lines, filename, index);
         } else if (!["x", "y"].includes(template[0]?.toLowerCase())) {
             console.error(`Error in file ${filename}. Template not recognized. Skipping.`);
             return null;
@@ -318,6 +320,63 @@ const ImportQuizLegacyPage: React.FC = () => {
             answers,
             multiple: !isTrueFalse,
             id: index++
+        };
+    };
+
+    const parseQTemplate = async (lines: string[], filename: string, index: number): Promise<Question | null> => {
+        // Validate template format
+        const templateLine = lines[0]?.trim();
+        if (!templateLine.startsWith("QQ")) {
+            console.error(`Error in file ${filename}. Template does not start with QQ. Skipping.`);
+            return null;
+        }
+
+        // Extract correctness indicators (1/0) from the template
+        const templateParts = templateLine.split(';')[0]; // Ignore parts after semicolon
+        const correctness = templateParts.slice(2).split(''); // Remove "QQ" and split into individual characters
+
+        // Validate correctness indicators
+        if (!correctness.every(c => c === '1' || c === '0')) {
+            console.error(`Error in file ${filename}. Invalid correctness indicators. Skipping.`);
+            return null;
+        }
+
+        // Extract question text from the second line
+        const questionLine = lines[1]?.trim();
+        const questionMatch = questionLine.match(/^(\d+)\.\t(.*)/); // Match number, period, tab, and question text
+        if (!questionMatch) {
+            console.error(`Error in file ${filename}. Invalid question format. Skipping.`);
+            return null;
+        }
+        const questionText = questionMatch[2];
+
+        // Extract answers from subsequent lines
+        const answers: Array<{ answer: string; correct: boolean }> = [];
+        for (let i = 2; i < lines.length; i++) {
+            const answerLine = lines[i]?.trim();
+            const answerMatch = answerLine.match(/^\t?\(([a-z])\)\s+(.*)/); // Match optional tab, "(letter)", and answer text
+            if (answerMatch) {
+                const answerIndex = answers.length; // Determine the index of the answer based on its position
+                answers.push({
+                    answer: answerMatch[2], // The answer text
+                    correct: correctness[answerIndex] === '1', // Check if it's correct
+                });
+            } else if (answerLine) {
+                console.error(`Error in file ${filename} at line ${i + 1}. Invalid answer format. Skipping.`);
+            }
+        }
+
+        // Ensure that the number of answers matches the correctness indicators
+        if (answers.length !== correctness.length) {
+            console.error(`Error in file ${filename}. Mismatch between answers and correctness indicators. Skipping.`);
+            return null;
+        }
+
+        return {
+            question: questionText,
+            answers,
+            multiple: correctness.filter(c => c === '1').length > 1, // True if multiple answers are correct
+            id: index,
         };
     };
 
