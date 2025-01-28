@@ -30,7 +30,9 @@ const PrivacyPolicyPage = () => {
                         operacyjny)
                     </li>
                 </ul>
-                <p>2. Dane przetwarzane są wyłącznie w zakresie niezbędnym do świadczenia usług Serwisu.</p>
+                <p>2. Dane przetwarzane są dla potrzeb korzystania z Serwisu, w tym do logowania, tworzenia quizów,
+                    przeglądania wyników oraz kontaktowania się z Administratorem. Twoje dane mogą być również
+                    wyświetlane innym użytkownikom Serwisu w zależności od ustawień prywatności.</p>
 
                 <h2>3. Cel przetwarzania danych</h2>
                 <p>Dane osobowe przetwarzane są w celu:</p>
@@ -40,6 +42,9 @@ const PrivacyPolicyPage = () => {
                     <li>Utrzymania bezpieczeństwa Serwisu i zapobiegania nadużyciom;</li>
                     <li>Kontaktowania się z użytkownikami w sprawach związanych z funkcjonowaniem Serwisu;</li>
                     <li>Spełnienia obowiązków prawnych Administratora.</li>
+                    <li>Umożliwienia kontaktu z użytkownikami w celu przeprowadzenia badań i analizy jakości
+                        świadczonych usług.
+                    </li>
                 </ul>
 
                 <h2>4. Udostępnianie danych</h2>
