@@ -3,6 +3,7 @@ import {Card, Button} from 'react-bootstrap';
 import {Answer, Question} from "./types.ts";
 import AppContext from "../../AppContext.tsx";
 import Markdown from 'marked-react';
+import {DotLottieReact} from "@lottiefiles/dotlottie-react";
 
 interface QuestionCardProps {
     question: Question | null;
@@ -49,6 +50,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                     <Card.Text>
                         Gratulacje! Ukończyłeś cały quiz. Aby kontynuować naukę, zresetuj swoje postępy korzystając z
                         przycisku po prawej stronie.
+                    </Card.Text>
+                    <DotLottieReact
+                        src="https://lottie.host/dfccc02f-66a0-41dc-894c-c5f376a1f8dd/nMskjwo4wX.lottie"
+                        loop
+                        autoplay
+                    />
+                    <Card.Text className="mt-3 text-center text-muted">
+                        Idż się napić piwa, albo lepiej - wódki
                     </Card.Text>
                 </Card.Body>
             </Card>

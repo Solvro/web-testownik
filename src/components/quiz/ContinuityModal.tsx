@@ -2,6 +2,7 @@ import React, {useState} from "react";
 import {Modal, Button, Badge} from "react-bootstrap";
 import {Icon} from "@iconify/react";
 import {PeerConnectOption} from "peerjs";
+import {DotLottieReact} from "@lottiefiles/dotlottie-react";
 
 interface ContinuityModalProps {
     peerConnections: PeerConnectOption[];
@@ -48,6 +49,11 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({peerConnections, isCon
                             <p>Synchronizujesz swój postęp na żywo.</p>
                         </>
                     )}
+                    <DotLottieReact
+                        src="https://lottie.host/25909953-1714-4638-921c-a7b94593bae2/k3okRjUxg9.json"
+                        loop
+                        autoplay
+                    />
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowModal(false)}>Zamknij</Button>
