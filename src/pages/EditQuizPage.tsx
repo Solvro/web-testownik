@@ -20,7 +20,7 @@ const EditQuizPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [advancedMode, setAdvancedMode] = useState(false);
 
-    document.title = "Edytuj bazę - Testownik Solvro";
+    document.title = "Edytuj quiz - Testownik Solvro";
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -35,10 +35,10 @@ const EditQuizPage: React.FC = () => {
                         setAdvancedMode(true);
                     }
                 } else {
-                    setError('Nie udało się załadować bazy.');
+                    setError('Nie udało się załadować quizu.');
                 }
             } catch {
-                setError('Wystąpił błąd podczas ładowania bazy.');
+                setError('Wystąpił błąd podczas ładowania quizu.');
             } finally {
                 setLoading(false);
             }
@@ -109,7 +109,7 @@ const EditQuizPage: React.FC = () => {
             setErrorAndNotify('Wystąpił błąd podczas aktualizacji quizu.');
             return false;
         }
-        toast.success('Baza została zaktualizowana.');
+        toast.success('Quiz został zaktualizowany.');
         return true;
     };
 
@@ -127,7 +127,7 @@ const EditQuizPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center mb-5">
-                        <p>Ładowanie bazy...</p>
+                        <p>Ładowanie quizu...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
                     </div>
                 </Card.Body>
@@ -140,7 +140,7 @@ const EditQuizPage: React.FC = () => {
             <Card className="border-0 shadow mb-5">
                 <Card.Body>
                     <div className="d-flex justify-content-between align-items-center">
-                        <h1 className="h5">Edytuj bazę</h1>
+                        <h1 className="h5">Edytuj quiz</h1>
                         <Form.Check
                             type="switch"
                             id="advanced-mode-switch"
@@ -155,7 +155,7 @@ const EditQuizPage: React.FC = () => {
                             <Form.Label>Tytuł</Form.Label>
                             <Form.Control
                                 type="text"
-                                placeholder="Podaj tytuł bazy"
+                                placeholder="Podaj tytuł quizu"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
@@ -165,7 +165,7 @@ const EditQuizPage: React.FC = () => {
                             <Form.Control
                                 as="textarea"
                                 rows={3}
-                                placeholder="Podaj opis bazy"
+                                placeholder="Podaj opis quizu"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                             />

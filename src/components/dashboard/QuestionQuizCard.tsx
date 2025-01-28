@@ -127,7 +127,7 @@ const QuestionQuizCard: React.FC = () => {
                 ) : (
                     <div>
                         <h5 className="card-title">Nie ma żadnych pytań do powtórzenia.</h5>
-                        <p className="small text-muted">Po użyciu twojej pierwszej bazy pojawią się tutaj pytania.</p>
+                        <p className="small text-muted">Po użyciu twojego pierwszego quizu pojawią się tutaj pytania.</p>
                     </div>
                 )}
             </Card.Body>

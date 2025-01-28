@@ -15,7 +15,7 @@ const SearchInQuizPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    document.title = `Wyszukaj w bazie - ${quiz?.title || "Ładowanie..."} - Testownik Solvro`;
+    document.title = `Wyszukaj w quizach - ${quiz?.title || "Ładowanie..."} - Testownik Solvro`;
 
     useEffect(() => {
         const fetchQuiz = async () => {

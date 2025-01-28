@@ -11,16 +11,16 @@ const ImportButtonsCard: React.FC = () => {
             <Card.Body className="d-flex align-items-center">
                 <div className="row gap-3 p-2 justify-content-center">
                     <Link to="/create-quiz" className="w-auto">
-                        <Button className="w-auto" variant={`outline-${appContext.theme.getOppositeTheme()}`}>Dodaj nową
-                            bazę</Button>
+                        <Button className="w-auto" variant={`outline-${appContext.theme.getOppositeTheme()}`}>Dodaj nowy
+                            quiz</Button>
                     </Link>
                     <Link to="/import-quiz" className="w-auto">
                         <Button variant={`outline-${appContext.theme.getOppositeTheme()}`}>Importuj
-                            bazę</Button>
+                            quiz</Button>
                     </Link>
                     <Link to="/import-quiz-legacy" className="w-auto">
                         <Button className="w-auto" variant={`outline-${appContext.theme.getOppositeTheme()}`}>Importuj
-                            bazę (stara wersja)</Button>
+                            quiz (stara wersja)</Button>
                     </Link>
                 </div>
             </Card.Body>

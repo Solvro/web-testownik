@@ -318,7 +318,7 @@ const QuizPage: React.FC = () => {
             localStorage.setItem(localVersionKey, fetchedVersion.toString());
         } else if (fetchedVersion !== storedVersion) {
             // Show a quick alert or set a special toast that DB updated
-            console.log("Baza pytań została zaktualizowana!");
+            console.log("Quiz został zaktualizowany!");
             localStorage.setItem(localVersionKey, fetchedVersion.toString());
         }
     };
@@ -552,7 +552,7 @@ const QuizPage: React.FC = () => {
             return;
         }
         if (!quiz) {
-            alert("Baza pytań nie została załadowana, spróbuj ponownie później");
+            alert("Quiz nie został załadowany, spróbuj ponownie później");
             return;
         }
 
@@ -571,7 +571,7 @@ const QuizPage: React.FC = () => {
             });
 
             if (response.status === 201) {
-                alert("Zgłoszenie zostało wysłane do właściciela bazy pytań. Dziękujemy!");
+                alert("Zgłoszenie zostało wysłane do właściciela quizu. Dziękujemy!");
             } else {
                 alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n" + response.data);
             }
@@ -921,7 +921,7 @@ const QuizPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center mb-5">
-                        <p>Ładowanie bazy...</p>
+                        <p>Ładowanie quizu...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
                     </div>
                 </Card.Body>
@@ -937,7 +937,7 @@ const QuizPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center">
-                        <p>Nie udało się załadować bazy, upewnij się że jest ona dla Ciebie dostępna lub spróbuj
+                        <p>Nie udało się załadować quizu, upewnij się że jest on dla Ciebie dostępny lub spróbuj
                             ponownie później.</p>
                         <Button
                             variant={appContext.theme.getTheme()}

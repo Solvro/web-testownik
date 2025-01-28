@@ -45,9 +45,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         return (
             <Card className="border-0 shadow">
                 <Card.Body>
-                    <Card.Title>Baza została ukończona</Card.Title>
+                    <Card.Title>Quiz został ukończony</Card.Title>
                     <Card.Text>
-                        Gratulacje! Ukończyłeś bazę pytań. Aby kontynuować naukę, zresetuj swoje postępy korzystając z
+                        Gratulacje! Ukończyłeś cały quiz. Aby kontynuować naukę, zresetuj swoje postępy korzystając z
                         przycisku po prawej stronie.
                     </Card.Text>
                 </Card.Body>

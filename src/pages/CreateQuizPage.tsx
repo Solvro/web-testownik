@@ -24,7 +24,7 @@ const CreateQuizPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [quiz, setQuiz] = useState<Quiz | null>(null); // Result of the quiz creation
 
-    document.title = "Stwórz bazę - Testownik Solvro";
+    document.title = "Stwórz quiz - Testownik Solvro";
 
     const addQuestion = () => {
         setQuestions((prev) => [
@@ -90,14 +90,14 @@ const CreateQuizPage: React.FC = () => {
     return (
         <>
             <Card className="border-0 shadow p-4">
-                <h1 className="h5">Stwórz nową bazę</h1>
+                <h1 className="h5">Stwórz nowy quiz</h1>
                 {error && <Alert variant="danger">{error}</Alert>}
                 <Form>
                     <Form.Group className="mb-3">
                         <Form.Label>Tytuł</Form.Label>
                         <Form.Control
                             type="text"
-                            placeholder="Podaj tytuł bazy"
+                            placeholder="Podaj tytuł quizu"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
@@ -107,7 +107,7 @@ const CreateQuizPage: React.FC = () => {
                         <Form.Control
                             as="textarea"
                             rows={3}
-                            placeholder="Podaj opis bazy"
+                            placeholder="Podaj opis quizu"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
@@ -128,7 +128,7 @@ const CreateQuizPage: React.FC = () => {
                     </Button>
                     <div className="text-center mt-4">
                         <Button onClick={handleSubmit} variant={appContext.theme.getOppositeTheme()}>
-                            Stwórz bazę
+                            Stwórz quiz
                         </Button>
                     </div>
                 </Form>

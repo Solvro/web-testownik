@@ -31,7 +31,7 @@ const ImportQuizLegacyPage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const directoryInputRef = useRef<HTMLInputElement>(null);
 
-    document.title = "Importuj bazę (stara wersja) - Testownik Solvro";
+    document.title = "Importuj quiz (stara wersja) - Testownik Solvro";
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -142,7 +142,7 @@ const ImportQuizLegacyPage: React.FC = () => {
         }
 
         if (!quizTitle.trim()) {
-            setError('Nie podano nazwy bazy.');
+            setError('Nie podano nazwy quiz.');
             return;
         }
 
@@ -462,7 +462,7 @@ const ImportQuizLegacyPage: React.FC = () => {
                     <Form.Label>Nazwa</Form.Label>
                     <Form.Control
                         type="text"
-                        placeholder="Nazwa bazy"
+                        placeholder="Nazwa quizu"
                         value={quizTitle}
                         onChange={(e) => setQuizTitle(e.target.value)}
                     />

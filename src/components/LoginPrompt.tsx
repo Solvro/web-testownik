@@ -84,11 +84,11 @@ const LoginPrompt: React.FC = () => {
                             konieczności logowania się do USOS za każdym razem.
                         </li>
                         <li><code>studies</code> - Informacje o Twoich studiach, takie jak numer indeksu, kierunek
-                            studiów oraz twoje grupy zajęciowe. Użyjemy to żeby ułatwić ci udostępnianie baz dla
+                            studiów oraz twoje grupy zajęciowe. Użyjemy to żeby ułatwić ci udostępnianie quizów dla
                             twoich grup.
                         </li>
                         <li><code>email</code> - Twój adres email (najczęściej [nr_indeksu]@student.pwr.edu.pl),
-                            który jest używany do kontaktu przy zgłaszaniu błędów w bazach danych.
+                            który jest używany do kontaktu przy zgłaszaniu błędów w quizach.
                         </li>
                         <li><code>photo</code> - Twoje zdjęcie profilowe, które jest wyświetlane w górnym prawym
                             rogu strony oraz przy wyszukiwaniu osób.

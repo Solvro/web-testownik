@@ -19,7 +19,7 @@ export const validateQuiz = (quiz: Quiz): string | null => {
     }
 
     if (!quiz.title.trim()) {
-        return "Podaj tytuł bazy.";
+        return "Podaj tytuł quizu.";
     }
 
     if (quiz.questions.length === 0) {

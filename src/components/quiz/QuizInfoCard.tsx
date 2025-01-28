@@ -62,7 +62,7 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                         {appContext.isAuthenticated ? (
                             <OverlayTrigger
                                 placement="top"
-                                overlay={<Tooltip>Wyszukaj w bazie</Tooltip>}
+                                overlay={<Tooltip>Wyszukaj w quizie</Tooltip>}
                             >
                                 <Button variant={appContext.theme.getTheme()} size="sm" onClick={openSearchInQuiz}>
                                     <Icon icon="mdi:magnify"/>

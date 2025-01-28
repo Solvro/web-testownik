@@ -99,7 +99,7 @@ const Navbar: React.FC = () => {
                             onClick={(event) => handleNavigation("/quizzes", event)}
                             active={isActive("/quizzes")}
                         >
-                            Twoje bazy
+                            Twoje quizy
                         </Nav.Link>
                         <Nav.Link
                             onClick={(event) => handleNavigation("/grades", event)}

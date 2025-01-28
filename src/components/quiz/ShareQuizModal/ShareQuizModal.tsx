@@ -378,7 +378,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                 {accessLevel == AccessLevel.PRIVATE && (usersWithAccess.length > 0 || groupsWithAccess.length > 0) && (
                     <div className="mt-3">
                         <Alert variant="warning" className="mb-0">
-                            Ustawiono dostęp prywatny, ale dodano użytkowników/grupy. Baza nie będzie dla nich dostępna.
+                            Ustawiono dostęp prywatny, ale dodano użytkowników/grupy. Quiz nie będzie dla nich dostępny.
                         </Alert>
                     </div>
                 )}

@@ -46,7 +46,7 @@ const SearchCard: React.FC = () => {
             <Card.Body>
                 <InputGroup>
                     <FormControl
-                        placeholder="Wyszukaj bazę"
+                        placeholder="Wyszukaj quiz"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => {

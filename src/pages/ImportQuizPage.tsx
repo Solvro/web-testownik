@@ -22,7 +22,7 @@ const ImportQuizPage: React.FC = () => {
 
     const [showJsonFormatModal, setShowJsonFormatModal] = useState(false);
 
-    document.title = "Importuj bazę - Testownik Solvro";
+    document.title = "Importuj quiz - Testownik Solvro";
 
     const handleUploadTypeChange = (type: UploadType) => {
         setUploadType(type);
@@ -225,7 +225,7 @@ const ImportQuizPage: React.FC = () => {
             <QuizPreviewModal show={quiz !== null} onHide={() => navigate("/")} quiz={quiz} type="imported"/>
             <p className="text-center mt-3">
                 <a href="#" className="fs-6 link-secondary" onClick={() => setShowJsonFormatModal(true)}>
-                    Jak powinna wyglądać baza w formacie JSON?
+                    Jak powinien wyglądać quiz w formacie JSON?
                 </a>
             </p>
             <Modal
@@ -234,15 +234,15 @@ const ImportQuizPage: React.FC = () => {
                 centered
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>Format JSON bazy</Modal.Title>
+                    <Modal.Title>Format JSON quizu</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <p>
-                        Baza w formacie JSON powinna składać się z dwóch głównych
+                        Quiz w formacie JSON powinien składać się z dwóch głównych
                         kluczy: <code>title</code> i <code>questions</code>.
                     </p>
                     <p>
-                        Klucz <code>title</code> powinien zawierać tytuł bazy w formie tekstu.
+                        Klucz <code>title</code> powinien zawierać tytuł quizu w formie tekstu.
                     </p>
                     <p>
                         Klucz <code>questions</code> powinien zawierać tablicę obiektów reprezentujących pytania.
@@ -250,12 +250,12 @@ const ImportQuizPage: React.FC = () => {
                         klucze <code>question</code> i <code>answers</code> oraz opcjonalnie <code>multiple</code>.
                     </p>
                     <p>
-                        Przykładowa baza w formacie JSON:
+                        Przykładowy quiz w formacie JSON:
                     </p>
                     <pre className="overflow-auto" style={{maxHeight: "50vh"}}>
                         {`{
-    "title": "Przykładowa baza",
-    "description": "Opis bazy", // Opcjonalny
+    "title": "Przykładowy quiz",
+    "description": "Opis quizu", // Opcjonalny
     "questions": [
         {
             "question": "Jaki jest sens sesji?",

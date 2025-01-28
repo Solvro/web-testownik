@@ -46,7 +46,7 @@ const LastUsedCard: React.FC = () => {
                             ))
                         ) : (
                             <tr>
-                                <td className="text-muted">Brak ostatnio używanych baz.</td>
+                                <td className="text-muted">Brak ostatnio używanych quizów.</td>
                             </tr>
                         )}
                         </tbody>

@@ -18,7 +18,7 @@ const QuizzesPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedQuizToShare, setSelectedQuizToShare] = useState<QuizMetadata | null>(null);
 
-    document.title = "Twoje bazy - Testownik Solvro";
+    document.title = "Twoje quizy - Testownik Solvro";
 
     useEffect(() => {
         const fetchQuizzes = async () => {
@@ -54,13 +54,13 @@ const QuizzesPage: React.FC = () => {
 
     const handleDeleteQuiz = (quiz: QuizMetadata) => {
         // Ask for confirmation  and then delete the quiz
-        if (window.confirm('Czy na pewno chcesz usunąć tę bazę?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tej bazy.')) {
+        if (window.confirm('Czy na pewno chcesz usunąć ten quiz?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tego quizu.')) {
             appContext.axiosInstance.delete(`/quizzes/${quiz.id}/`)
                 .then(() => {
                     setUserQuizzes((prev) => prev.filter((q) => q.id !== quiz.id));
                 })
                 .catch(() => {
-                        setError('Nie udało się usunąć bazy.');
+                        setError('Nie udało się usunąć quizu.');
                     }
                 );
         }
@@ -83,7 +83,7 @@ const QuizzesPage: React.FC = () => {
                 link.remove();
             })
             .catch(() => {
-                setError('Nie udało się pobrać bazy.');
+                setError('Nie udało się pobrać quizu.');
             });
     }
 
@@ -100,7 +100,7 @@ const QuizzesPage: React.FC = () => {
             <Card className="border-0 shadow">
                 <Card.Body>
                     <div className="text-center mb-5">
-                        <p>Ładowanie baz...</p>
+                        <p>Ładowanie quizu...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
                     </div>
                 </Card.Body>
@@ -114,7 +114,7 @@ const QuizzesPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="h4 mb-4">Twoje bazy</h1>
+            <h1 className="h4 mb-4">Twoje quizy</h1>
 
             {userQuizzes.length > 0 ? (
                 <Row xs={1} md={2} lg={3} className="g-4">
@@ -175,7 +175,7 @@ const QuizzesPage: React.FC = () => {
                     <Col key="create-quiz">
                         <Card className="h-100">
                             <Card.Body>
-                                <Card.Title className="text-secondary">Dodaj nową bazę</Card.Title>
+                                <Card.Title className="text-secondary">Dodaj nowy quiz</Card.Title>
                             </Card.Body>
                             <Card.Footer className="d-flex justify-content-between">
                                 <Button
@@ -204,16 +204,16 @@ const QuizzesPage: React.FC = () => {
                 </Row>
             ) : (
                 <div className="text-center">
-                    <p>Nie masz jeszcze żadnych baz.</p>
+                    <p>Nie masz jeszcze żadnych quizów.</p>
                     <Button onClick={() => navigate('/create-quiz')} variant={appContext.theme.getOppositeTheme()}>
-                        Stwórz bazę
+                        Stwórz quiz
                     </Button>
                 </div>
             )}
 
             {sharedQuizzes.length > 0 && (
                 <>
-                    <h2 className="h5 mt-5 mb-4">Udostępnione bazy</h2>
+                    <h2 className="h5 mt-5 mb-4">Udostępnione quizy</h2>
                     <Row xs={1} md={2} lg={3} className="g-4">
                         {sharedQuizzes.map((sq) => (
                             <Col key={sq.id}>

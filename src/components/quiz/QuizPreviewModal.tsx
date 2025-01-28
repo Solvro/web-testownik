@@ -38,7 +38,7 @@ const QuizPreviewModal: React.FC<QuizPreviewModalProps> = ({show, onHide, quiz, 
         <>
             <Modal show={show} onHide={onHide} size="lg" centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>{type === 'created' ? 'Baza została utworzona' : 'Baza została zaimportowana'}</Modal.Title>
+                    <Modal.Title>{type === 'created' ? 'Quiz został utworzony' : 'Quiz został zaimportowany'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {quiz ? (
@@ -66,7 +66,7 @@ const QuizPreviewModal: React.FC<QuizPreviewModalProps> = ({show, onHide, quiz, 
                             </div>
                         </>
                     ) : (
-                        <Alert variant="danger">Brak danych do wyświetlenia bazy.</Alert>
+                        <Alert variant="danger">Brak danych do wyświetlenia quizu.</Alert>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
