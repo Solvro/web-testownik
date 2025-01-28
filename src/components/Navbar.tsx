@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {Navbar as BSNavbar, Nav, Container, Button} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
@@ -9,6 +9,8 @@ const Navbar: React.FC = () => {
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
     const location = useLocation();
+
+    const [expanded, setExpanded] = useState(false);
 
     const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const accessToken = queryParams.get('access_token');
@@ -67,13 +69,14 @@ const Navbar: React.FC = () => {
         } else {
             // Navigate normally
             navigate(path);
+            setExpanded(false);
         }
     };
 
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <BSNavbar expand="lg" className="mb-3">
+        <BSNavbar expand="lg" className="mb-3" expanded={expanded}>
             <Container fluid>
                 <Nav.Link
                     onClick={(event) => {
@@ -89,7 +92,7 @@ const Navbar: React.FC = () => {
                         />
                     </BSNavbar.Brand>
                 </Nav.Link>
-                <BSNavbar.Toggle aria-controls="navbarNav"/>
+                <BSNavbar.Toggle aria-controls="navbarNav" onClick={() => setExpanded(!expanded)}/>
                 <BSNavbar.Collapse id="navbarNav">
                     <Nav className="me-auto mb-2 mb-lg-0">
                         <Nav.Link
