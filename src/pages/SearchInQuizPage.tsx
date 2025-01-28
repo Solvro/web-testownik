@@ -49,19 +49,54 @@ const SearchInQuizPage: React.FC = () => {
         const typoToleranceThreshold = 3; // Maximum distance for fuzzy matching
 
         const filtered = quiz.questions
-            .map((question) => ({
-                ...question,
-                relevance: question.question.toLowerCase().includes(lowerCaseQuery) ? distance(question.question.toLowerCase(), lowerCaseQuery) - 100 : distance(question.question.toLowerCase(), lowerCaseQuery),
-            }))
+            .map((question) => {
+                const answerMatches = question.answers.some((answer) =>
+                    answer.answer.toLowerCase().includes(lowerCaseQuery)
+                );
+
+                const questionRelevance = question.question
+                    .toLowerCase()
+                    .includes(lowerCaseQuery)
+                    ? distance(question.question.toLowerCase(), lowerCaseQuery) - 100
+                    : distance(question.question.toLowerCase(), lowerCaseQuery);
+
+                return {
+                    ...question,
+                    relevance: answerMatches
+                        ? -50 // Prioritize matches in answers
+                        : questionRelevance,
+                    matchesAnswer: answerMatches,
+                };
+            })
             .filter(
                 (question) =>
                     question.relevance <= typoToleranceThreshold || // Allow fuzzy matches
-                    question.question.toLowerCase().includes(lowerCaseQuery) // Exact or substring match
+                    question.question.toLowerCase().includes(lowerCaseQuery) || // Exact or substring match in question
+                    question.matchesAnswer // Match in answers
             )
             .sort((a, b) => a.relevance - b.relevance);
 
         setFilteredQuestions(filtered);
     }, [query, quiz]);
+
+    // Function to highlight the matched text
+    const highlightMatch = (text: string, query: string): React.ReactNode => {
+        if (!query) return text;
+
+        const regex = new RegExp(`(${query})`, "gi");
+        const parts = text.split(regex);
+
+        return parts.map((part, index) =>
+            regex.test(part) ? (
+                <span key={index}
+                      style={{backgroundColor: appContext.theme.getTheme() === "dark" ? "rgba(159,159,159,0.32)" : "#ff0"}}>
+                    {part}
+                </span>
+            ) : (
+                part
+            )
+        );
+    };
 
     if (loading) {
         return <div className="text-center">Ładowanie...</div>;
@@ -79,7 +114,7 @@ const SearchInQuizPage: React.FC = () => {
             <Form.Group className="mb-4">
                 <Form.Control
                     type="text"
-                    placeholder="Wyszukaj w pytaniach..."
+                    placeholder="Wyszukaj w pytaniach lub odpowiedziach..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                 />
@@ -89,14 +124,16 @@ const SearchInQuizPage: React.FC = () => {
                 filteredQuestions.map((question) => (
                     <Card key={question.id} className="mb-3">
                         <Card.Body>
-                            <Card.Title>{question.question}</Card.Title>
+                            <Card.Title>
+                                {highlightMatch(question.question, query)}
+                            </Card.Title>
                             <ul className="list-unstyled">
                                 {question.answers.map((answer, index) => (
                                     <li
                                         key={index}
                                         className={answer.correct ? "text-success" : "text-muted"}
                                     >
-                                        {answer.answer}
+                                        {highlightMatch(answer.answer, query)}
                                     </li>
                                 ))}
                             </ul>
