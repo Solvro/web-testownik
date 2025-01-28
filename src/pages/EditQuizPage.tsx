@@ -54,8 +54,8 @@ const EditQuizPage: React.FC = () => {
                 id: prev.length + 1,
                 question: '',
                 multiple: true,
-                answers: [{answer: '', correct: false, imageUrl: ''}, {answer: '', correct: false, imageUrl: ''}],
-                imageUrl: '',
+                answers: [{answer: '', correct: false, image: ''}, {answer: '', correct: false, image: ''}],
+                image: '',
                 explanation: ''
             },
         ]);
@@ -77,7 +77,19 @@ const EditQuizPage: React.FC = () => {
     }
 
     const handleSubmit = async () => {
-        const validationError = validateQuiz(title, questions); // Validate the quiz
+        const quiz = {
+            title, description,
+            questions: questions.map((q) => ({
+                ...q,
+                image: advancedMode ? q.image : undefined,
+                explanation: advancedMode ? q.explanation : undefined,
+                answers: q.answers.map((a) => ({
+                    ...a,
+                    image: advancedMode ? a.image : undefined,
+                })),
+            })),
+        };
+        const validationError = validateQuiz(quiz as Quiz);
         if (validationError) {
             setErrorAndNotify(validationError);
             return false;
@@ -86,19 +98,7 @@ const EditQuizPage: React.FC = () => {
         setError(null);
 
         try {
-            const response = await appContext.axiosInstance.put(`/quizzes/${quizId}/`, {
-                title,
-                description,
-                questions: questions.map((q) => ({
-                    ...q,
-                    image: advancedMode ? q.image : undefined,
-                    explanation: advancedMode ? q.explanation : undefined,
-                    answers: q.answers.map((a) => ({
-                        ...a,
-                        image: advancedMode ? a.image : undefined,
-                    })),
-                })),
-            });
+            const response = await appContext.axiosInstance.put(`/quizzes/${quizId}/`, quiz);
 
             if (response.status !== 200) {
                 const errorData = await response.data;

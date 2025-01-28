@@ -1,37 +1,66 @@
-import {Question} from "../types.ts";
+import {Quiz} from "../types.ts";
 
-/**
- * Validates the quiz data before submission.
- * @param title The title of the quiz.
- * @param questions The list of quiz questions.
- * @returns An error message if validation fails, otherwise null.
- */
-export const validateQuiz = (title: string, questions: Question[]): string | null => {
-    if (!title.trim()) {
-        return 'Podaj tytuł bazy.';
+
+// Allowed keys for each object type
+const ALLOWED_QUIZ_KEYS = [
+    "title", "description", "visibility", "allow_anonymous",
+    "is_anonymous", "version", "questions"
+];
+const ALLOWED_QUESTION_KEYS = [
+    "id", "question", "explanation", "multiple", "image", "answers"
+];
+const ALLOWED_ANSWER_KEYS = ["answer", "correct", "image"];
+
+export const validateQuiz = (quiz: Quiz): string | null => {
+    // Check if quiz contains only allowed properties
+    if (!containsOnlyAllowedKeys(quiz, ALLOWED_QUIZ_KEYS)) {
+        return "Quiz zawiera nieprawidłowe właściwości.";
     }
 
-    if (questions.length === 0) {
-        return 'Dodaj przynajmniej jedno pytanie.';
+    if (!quiz.title.trim()) {
+        return "Podaj tytuł bazy.";
     }
 
-    for (const question of questions) {
+    if (quiz.questions.length === 0) {
+        return "Dodaj przynajmniej jedno pytanie.";
+    }
+
+    for (const [questionIndex, question] of quiz.questions.entries()) {
+        // Check if question contains only allowed properties
+        if (!containsOnlyAllowedKeys(question, ALLOWED_QUESTION_KEYS)) {
+            return `Pytanie nr ${questionIndex + 1} zawiera nieprawidłowe właściwości: ${Object.keys(question).join(", ")}.`;
+        }
+
         if (!question.question.trim()) {
-            return 'Wszystkie pytania muszą mieć treść.';
+            return `Pytanie nr ${questionIndex + 1} musi mieć treść.`;
         }
 
         if (question.answers.length < 1) {
-            return 'Wszystkie pytania muszą mieć przynajmniej jedną odpowiedź.';
+            return `Pytanie nr ${questionIndex + 1} musi mieć przynajmniej jedną odpowiedź.`;
+        }
+
+        for (const [answerIndex, answer] of question.answers.entries()) {
+            // Check if answer contains only allowed properties
+            if (!containsOnlyAllowedKeys(answer, ALLOWED_ANSWER_KEYS)) {
+                return `Odpowiedź nr ${answerIndex + 1} w pytaniu nr ${questionIndex + 1} zawiera nieprawidłowe właściwości.`;
+            }
+
+            if (!answer.answer.trim()) {
+                return `Odpowiedź nr ${answerIndex + 1} w pytaniu nr ${questionIndex + 1} musi mieć treść.`;
+            }
         }
 
         if (question.answers.filter((a) => a.correct).length === 0) {
-            return 'Wszystkie pytania muszą mieć przynajmniej jedną prawidłową odpowiedź.';
-        }
-
-        if (question.answers.some((a) => !a.answer.trim())) {
-            return 'Wszystkie odpowiedzi muszą mieć treść.';
+            return `Pytanie nr ${questionIndex + 1} musi mieć przynajmniej jedną prawidłową odpowiedź.`;
         }
     }
 
     return null; // No validation errors
+};
+
+// Utility function to check if an object contains only allowed keys
+const containsOnlyAllowedKeys = <T extends object>(obj: T, allowedKeys: string[]): boolean => {
+    return Object.keys(obj as object).every((key) =>
+        allowedKeys.includes(key)
+    );
 };

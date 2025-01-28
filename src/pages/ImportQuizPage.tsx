@@ -42,6 +42,7 @@ const ImportQuizPage: React.FC = () => {
     const setErrorAndNotify = (message: string) => {
         setError(message);
         toast.error(message);
+        setLoading(false);
     }
 
     const handleImport = async () => {
@@ -50,15 +51,14 @@ const ImportQuizPage: React.FC = () => {
         if (uploadType === 'file') {
             const file = fileInputRef.current?.files?.[0];
             if (!file) {
-                setError('Wybierz plik z quizem.');
-                setLoading(false);
+                setErrorAndNotify('Wybierz plik z quizem.');
                 return;
             }
             const reader = new FileReader();
             reader.onload = async () => {
                 try {
                     const data = JSON.parse(reader.result as string);
-                    const validationError = validateQuiz(data.title, data.questions);
+                    const validationError = validateQuiz(data);
                     if (validationError) {
                         setErrorAndNotify(validationError);
                         return false;
@@ -91,9 +91,9 @@ const ImportQuizPage: React.FC = () => {
             }
             try {
                 const data = JSON.parse(textInput);
-                const validationError = validateQuiz(data.title, data.questions);
+                const validationError = validateQuiz(data);
                 if (validationError) {
-                    setError(validationError);
+                    setErrorAndNotify(validationError);
                     return false;
                 }
                 await submitImport('json', data);

@@ -54,7 +54,12 @@ const CreateQuizPage: React.FC = () => {
     }
 
     const handleSubmit = async () => {
-        const validationError = validateQuiz(title, questions); // Validate the quiz
+        const quiz = {
+            title,
+            description,
+            questions,
+        }
+        const validationError = validateQuiz(quiz as Quiz);
         if (validationError) {
             setErrorAndNotify(validationError);
             return false;

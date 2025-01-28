@@ -66,13 +66,13 @@ const QuizPreviewModal: React.FC<QuizPreviewModalProps> = ({show, onHide, quiz, 
                             </div>
                         </>
                     ) : (
-                        <Alert variant="danger">Brak danych do wyświetlenia quizu.</Alert>
+                        <Alert variant="danger">Brak danych do wyświetlenia bazy.</Alert>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
                     <ButtonGroup>
                         <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={handleOpen}>
-                            Otwórz quiz
+                            Otwórz
                         </Button>
                         <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={handleShare}>
                             Udostępnij
