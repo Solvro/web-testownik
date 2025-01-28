@@ -4,6 +4,7 @@ import {PuffLoader} from "react-spinners";
 import "../../styles/ProfileDetails.css";
 import AppContext from "../../AppContext.tsx";
 import {Icon} from "@iconify/react";
+import {toast} from "react-toastify";
 
 interface UserData {
     id: number;
@@ -29,7 +30,10 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
     const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo || "");
 
     const handleOpenModal = () => setShowModal(true);
-    const handleCloseModal = () => setShowModal(false);
+    const handleCloseModal = () => {
+        setSelectedPhoto(userData?.photo || "");
+        setShowModal(false);
+    }
 
     const handleSavePhoto = () => {
         handleCloseModal();
@@ -156,6 +160,22 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                                 onClick={() => setSelectedPhoto(url || "")}
                             />
                         ))}
+                        {!avatarOptions.includes(selectedPhoto) && (
+                            <img
+                                src={selectedPhoto}
+                                alt="Avatar"
+                                style={{
+                                    borderRadius: "50%",
+                                    width: "5em",
+                                    height: "5em",
+                                    objectFit: "cover",
+                                    cursor: "pointer",
+                                    border: "3px solid #4c6ef5",
+                                    boxShadow: "0 0 10px rgba(76, 110, 245, 0.5)",
+                                }}
+                                onClick={() => toast("To zdjęcie nie jest już dostępne. Po zmianie na inne nie będzie możliwości powrotu.")}
+                            />
+                        )}
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
