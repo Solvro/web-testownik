@@ -3,7 +3,7 @@ import {Button, Card, Form, Alert, ButtonGroup} from 'react-bootstrap';
 import QuestionForm from '../components/quiz/QuestionForm';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
-import {useNavigate, useParams} from "react-router";
+import {useLocation, useNavigate, useParams} from "react-router";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {toast} from "react-toastify";
 import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
@@ -12,6 +12,8 @@ const EditQuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -34,6 +36,22 @@ const EditQuizPage: React.FC = () => {
                     if (data.questions.some((q) => q.image || q.explanation || q.answers.some((a) => a.image))) {
                         setAdvancedMode(true);
                     }
+                    setTimeout(() => {
+                        if (location.hash || queryParams.has('scroll_to')) {
+                            const element = document.getElementById(window.location.hash.substring(1) || queryParams.get('scroll_to') || '');
+                            if (element) {
+                                element.scrollIntoView({behavior: "smooth"});
+                                if (window.location.hash) {
+                                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                                } else {
+                                    queryParams.delete('scroll_to');
+                                    navigate({
+                                        search: queryParams.toString(),
+                                    });
+                                }
+                            }
+                        }
+                    }, 100);
                 } else {
                     setError('Nie udało się załadować quizu.');
                 }
