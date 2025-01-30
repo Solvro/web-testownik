@@ -59,13 +59,13 @@ const SearchCard: React.FC = () => {
                         <Icon icon="ic:baseline-search" width="24" height="24"/>
                     </Button>
                 </InputGroup>
-                <div id="search-results" className="mt-3">
+                <div id="search-results" className="mt-3 overflow-y-auto" style={{maxHeight: "20rem"}}>
                     {loading ? (
                         <div className="d-flex justify-content-center pt-3">
                             <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={10}/>
                         </div>
                     ) : (
-                        <Table className="mb-0 overflow-y-auto" style={{maxHeight: "20rem"}}>
+                        <Table className="mb-0">
                             <tbody>
                             {searchResults.length > 0 ? (
                                 searchResults.map((result) => (
