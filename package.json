@@ -14,6 +14,7 @@
     "@lottiefiles/dotlottie-react": "^0.12.3",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
+    "dompurify": "^3.2.4",
     "fastest-levenshtein": "^1.0.16",
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",

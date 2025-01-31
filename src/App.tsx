@@ -18,6 +18,7 @@ import SearchInQuizPage from "./pages/SearchInQuizPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.tsx";
 import {ToastContainer} from "react-toastify";
+import Alerts from "./components/Alerts.tsx";
 
 const useThemeDetector = () => {
     const getCurrentTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -44,6 +45,7 @@ const App: React.FC = () => {
             <div className="container d-flex flex-column mb-5" id="container">
                 <Router>
                     <Navbar/>
+                    <Alerts/>
                     <Routes>
                         {context.isAuthenticated && (
                             <>
