@@ -26,6 +26,8 @@ export const validateQuiz = (quiz: Quiz): string | null => {
         return "Dodaj przynajmniej jedno pytanie.";
     }
 
+    const questionIds = new Set<number>();
+
     for (const [questionIndex, question] of quiz.questions.entries()) {
         // Check if question contains only allowed properties
         if (!containsOnlyAllowedKeys(question, ALLOWED_QUESTION_KEYS)) {
@@ -40,6 +42,11 @@ export const validateQuiz = (quiz: Quiz): string | null => {
         if (question.answers.length < 1) {
             return `Pytanie nr ${questionIndex + 1} musi mieć przynajmniej jedną odpowiedź.`;
         }
+
+        if (questionIds.has(question.id)) {
+            return `Pytanie nr ${questionIndex + 1} ma zduplikowane ID: ${question.id}.`;
+        }
+        questionIds.add(question.id);
 
         for (const [answerIndex, answer] of question.answers.entries()) {
             // Check if answer contains only allowed properties
