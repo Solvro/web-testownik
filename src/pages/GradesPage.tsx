@@ -3,6 +3,7 @@ import AppContext from "../AppContext.tsx";
 import {Alert, Button, Card, Form, Navbar, Table} from "react-bootstrap";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {Icon} from "@iconify/react";
+import {useNavigate} from "react-router";
 
 interface Grade {
     value: number;
@@ -33,6 +34,7 @@ interface GradesData {
 
 const GradesPage: React.FC = () => {
     const appContext = useContext(AppContext);
+    const navigate = useNavigate();
 
 
     const [loading, setLoading] = useState(true);
@@ -69,9 +71,10 @@ const GradesPage: React.FC = () => {
                 setError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania ocen.");
             }
         };
-
-        fetchData();
-    }, [appContext.axiosInstance]);
+        if (!appContext.isGuest) {
+            fetchData();
+        }
+    }, [appContext.axiosInstance, appContext.isGuest]);
 
     useEffect(() => {
         if (!editing) {
@@ -114,6 +117,23 @@ const GradesPage: React.FC = () => {
         ? courses.filter((course) => course.term_id === selectedTerm)
         : courses;
 
+
+    if (appContext.isGuest) {
+        return (
+            <Card className="shadow border-0">
+                <Card.Title className="text-center mt-4">Oceny</Card.Title>
+                <Card.Body className="text-center">
+                    <p>Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna w trybie gościa.</p>
+                    <Button
+                        variant={appContext.theme.getTheme()}
+                        onClick={() => navigate("/connect-account")}
+                    >
+                        Połącz konto
+                    </Button>
+                </Card.Body>
+            </Card>
+        );
+    }
 
     if (loading) {
         return (

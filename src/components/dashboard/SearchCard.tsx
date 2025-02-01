@@ -29,6 +29,14 @@ const SearchCard: React.FC = () => {
 
         try {
             setLoading(true);
+            if (appContext.isGuest) {
+                const guestQuizzes = localStorage.getItem("guest_quizzes");
+                const data = guestQuizzes ? JSON.parse(guestQuizzes) : [];
+                const filteredData = data.filter((quiz: any) => quiz.title.toLowerCase().includes(searchQuery.toLowerCase()));
+                setSearchResults(filteredData);
+                setLoading(false);
+                return;
+            }
             const response = await appContext.axiosInstance.get(`/search-quizzes/?query=${encodeURIComponent(searchQuery)}`);
 
             const data = Object.values(response.data).flat() as SearchResult[];

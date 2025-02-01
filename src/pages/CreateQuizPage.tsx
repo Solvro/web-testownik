@@ -7,6 +7,7 @@ import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
 import {useNavigate} from "react-router";
 import {toast} from "react-toastify";
 import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
+import {uuidv4} from "../components/quiz/helpers/uuid.ts";
 
 
 const CreateQuizPage: React.FC = () => {
@@ -69,11 +70,22 @@ const CreateQuizPage: React.FC = () => {
         setError(null);
 
         try {
-            const response = await appContext.axiosInstance.post('/quizzes/', {
-                title,
-                description,
-                questions,
-            });
+            if (appContext.isGuest) {
+                const userQuizzes = localStorage.getItem('guest_quizzes') ? JSON.parse(localStorage.getItem('guest_quizzes')!) : []
+                const tempQuiz = {
+                    ...quiz,
+                    id: uuidv4(),
+                    visibility: 0,
+                    version: 1,
+                    allow_anonymous: false,
+                    is_anonymous: true
+                }
+                userQuizzes.push(tempQuiz)
+                localStorage.setItem('guest_quizzes', JSON.stringify(userQuizzes))
+                setQuiz(tempQuiz);
+                return;
+            }
+            const response = await appContext.axiosInstance.post('/quizzes/', quiz);
 
             if (response.status === 201) {
                 const result = await response.data;

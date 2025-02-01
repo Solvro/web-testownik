@@ -8,6 +8,8 @@ import responseInterceptor, {RefreshTokenExpiredError} from "./interceptors/resp
 export interface AppContextType {
     isAuthenticated: boolean;
     setAuthenticated: (isAuthenticated: boolean) => void;
+    isGuest: boolean;
+    setGuest: (isGuest: boolean) => void;
     theme: AppTheme;
     axiosInstance: AxiosInstance
 }
@@ -27,15 +29,26 @@ const AppContext = createContext<AppContextType>({
     isAuthenticated: false,
     setAuthenticated: () => {
     },
+    isGuest: false,
+    setGuest: () => {
+    },
     theme: new AppTheme(),
     axiosInstance: axiosInstance,
 });
 
 const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem("access_token"));
+    const [isGuest, setIsGuest] = useState<boolean>(localStorage.getItem("is_guest") === "true");
+
+    const setGuest = (isGuest: boolean) => {
+        localStorage.setItem("is_guest", isGuest.toString());
+        setIsGuest(isGuest);
+    }
     const context: AppContextType = {
         isAuthenticated: isAuthenticated,
         setAuthenticated: setIsAuthenticated,
+        isGuest: isGuest,
+        setGuest: setGuest,
         theme: new AppTheme(),
         axiosInstance: axiosInstance,
     }

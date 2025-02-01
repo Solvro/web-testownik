@@ -193,6 +193,14 @@ const QuizPage: React.FC = () => {
     // ========== API & Local Storage Helpers ==========
     const fetchQuiz = async (): Promise<Quiz | null> => {
         try {
+            if (appContext.isGuest) {
+                const userQuizzes = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
+                const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
+                if (quiz) {
+                    return quiz;
+                }
+                return null;
+            }
             const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
             if (response.status === 200) {
                 return response.data;
@@ -205,18 +213,26 @@ const QuizPage: React.FC = () => {
 
     const fetchUserSettings = async (): Promise<UserSettings> => {
         try {
+            if (appContext.isGuest) {
+                return localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : {
+                    sync_progress: false,
+                    initial_reoccurrences: 1,
+                    wrong_answer_reoccurrences: 1,
+                }
+            }
             const response = await appContext.axiosInstance.get("/settings/");
             if (response.status === 200) {
+                localStorage.setItem("settings", JSON.stringify(response.data));
                 return response.data;
             }
         } catch (e) {
             console.error("Error fetching user settings:", e);
         }
-        return {
+        return localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : {
             sync_progress: false,
             initial_reoccurrences: 1,
             wrong_answer_reoccurrences: 1,
-        };
+        }
     };
 
     const loadProgress = async (sync: boolean): Promise<Progress | null> => {
@@ -293,6 +309,8 @@ const QuizPage: React.FC = () => {
         }
         // Now re-initialize states
         if (quiz) {
+            setQuestionChecked(false);
+            setSelectedAnswers([]);
             const newReoccurrences = quiz.questions.map((q) => ({
                 id: q.id,
                 reoccurrences: userSettings.initial_reoccurrences,

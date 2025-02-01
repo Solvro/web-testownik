@@ -27,6 +27,23 @@ const EditQuizPage: React.FC = () => {
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
+                if (appContext.isGuest) {
+                    const userQuizzes = localStorage.getItem("guest_quizzes") ? JSON.parse(localStorage.getItem("guest_quizzes")!) : [];
+                    const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
+                    if (!quiz) {
+                        setError('Nie znaleziono quizu.');
+                        setLoading(false);
+                        return;
+                    }
+                    setTitle(quiz.title);
+                    setDescription(quiz.description || '');
+                    setQuestions(quiz.questions || []);
+                    if (quiz.questions.some((q: Question) => q.image || q.explanation || q.answers.some((a) => a.image))) {
+                        setAdvancedMode(true);
+                    }
+                    setLoading(false);
+                    return;
+                }
                 const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
                 if (response.status === 200) {
                     const data: Quiz = response.data;
@@ -116,6 +133,18 @@ const EditQuizPage: React.FC = () => {
         setError(null);
 
         try {
+            if (appContext.isGuest) {
+                const userQuizzes = localStorage.getItem("guest_quizzes") ? JSON.parse(localStorage.getItem("guest_quizzes")!) : [];
+                const quizIndex = userQuizzes.findIndex((q: Quiz) => q.id === quizId);
+                if (quizIndex === -1) {
+                    setErrorAndNotify('Nie znaleziono quizu.');
+                    return false;
+                }
+                userQuizzes[quizIndex] = {...userQuizzes[quizIndex], ...quiz};
+                localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
+                toast.success('Quiz został zaktualizowany.');
+                return true;
+            }
             const response = await appContext.axiosInstance.put(`/quizzes/${quizId}/`, quiz);
 
             if (response.status !== 200) {

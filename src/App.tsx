@@ -19,6 +19,7 @@ import TermsPage from "./pages/TermsPage.tsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.tsx";
 import {ToastContainer} from "react-toastify";
 import Alerts from "./components/Alerts.tsx";
+import ConnectGuestAccount from "./components/ConnectGuestAccount.tsx";
 
 const useThemeDetector = () => {
     const getCurrentTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -47,7 +48,7 @@ const App: React.FC = () => {
                     <Navbar/>
                     <Alerts/>
                     <Routes>
-                        {context.isAuthenticated && (
+                        {(context.isAuthenticated || context.isGuest) && (
                             <>
                                 <Route path="/" element={<DashboardPage/>}/>
                                 <Route path="/profile" element={<ProfilePage/>}/>
@@ -64,6 +65,9 @@ const App: React.FC = () => {
                             <>
                                 <Route path="*" element={<LoginPrompt/>}/>
                             </>
+                        )}
+                        {context.isGuest && (
+                            <Route path="/connect-account" element={<ConnectGuestAccount/>}/>
                         )}
                         <Route path="/quiz/:quizId" element={<QuizPage/>}/>
                         <Route path="/terms" element={<TermsPage/>}/>

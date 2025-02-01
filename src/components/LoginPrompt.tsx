@@ -5,15 +5,22 @@ import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
 import AppContext from "../AppContext.tsx";
 import {SERVER_URL} from "../config.ts";
+import PrivacyModal from "./PrivacyModal.tsx";
 
 const LoginPrompt: React.FC = () => {
     const appContext = useContext(AppContext);
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+    const [showGuestModal, setShowGuestModal] = useState(false);
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const accessToken = queryParams.get('access_token');
     const refreshToken = queryParams.get('refresh_token');
     const error = queryParams.get('error');
+
+    const signInAsGuest = () => {
+        appContext.setGuest(true);
+        setShowGuestModal(false);
+    }
 
     return (
         <div className="d-flex justify-content-center">
@@ -54,11 +61,15 @@ const LoginPrompt: React.FC = () => {
                                                                                  className="solvro-logo"/> KN Solvro</a>
                         </Card.Text>
                         <Card.Text>
-                            <b>Klikając przycisk poniżej, potwierdzasz, że zapoznałeś się z naszym <Link
+                            <b>Klikając przyciski poniżej, potwierdzasz, że zapoznałeś się z naszym <Link
                                 to={"/terms"}>regulaminem</Link> oraz że go akceptujesz.</b>
                         </Card.Text>
-                        <Button href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
-                                variant="primary" className="w-100">Zaloguj się</Button>
+                        <div className="d-grid gap-2">
+                            <Button href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                                    variant="primary" className="w-100">Zaloguj się</Button>
+                            <Button onClick={() => setShowGuestModal(true)}
+                                    variant="outline-primary" className="w-100">Kontynuuj jako gość</Button>
+                        </div>
                         <div className="text-center mt-2">
                             <a href="#" className="fs-6 link-secondary" onClick={() => setShowPrivacyModal(true)}>
                                 Jak wykorzystujemy Twoje dane?
@@ -67,44 +78,24 @@ const LoginPrompt: React.FC = () => {
                     </Card.Body>
                 )}
             </Card>
-            <Modal id="privacyModal" tabIndex={-1} aria-labelledby="privacyModalLabel" aria-hidden="true"
-                   show={showPrivacyModal} onHide={() => setShowPrivacyModal(false)}>
+            <PrivacyModal show={showPrivacyModal} onHide={() => setShowPrivacyModal(false)}/>
+            <Modal id="guestModal" tabIndex={-1} aria-labelledby="guestModalLabel" aria-hidden="true"
+                   show={showGuestModal} onHide={() => setShowGuestModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title id="privacyModalLabel">Jak wykorzystujemy Twoje dane</Modal.Title>
+                    <Modal.Title id="guestModalLabel">Kontynuuj jako gość</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <p>Testownik korzysta z Twoich danych z USOS, aby móc zidentyfikować Cię jako studenta PWr i
-                        zapewnić Ci dostęp do odpowiednich funkcji.</p>
-                    <p>Lista danych, które otrzymujemy od USOS oraz w jaki sposób je przetwarzamy:</p>
-                    <ul>
-                        <li><code>default</code> - Twoje podstawowe dane, takie jak imię, nazwisko oraz status
-                            studenta.
-                        </li>
-                        <li><code>offline_access</code> - Uprawnienie pozwalające na odświeżanie Twoich danych bez
-                            konieczności logowania się do USOS za każdym razem.
-                        </li>
-                        <li><code>studies</code> - Informacje o Twoich studiach, takie jak numer indeksu, kierunek
-                            studiów oraz twoje grupy zajęciowe. Użyjemy to żeby ułatwić ci udostępnianie quizów dla
-                            twoich grup.
-                        </li>
-                        <li><code>email</code> - Twój adres email (najczęściej [nr_indeksu]@student.pwr.edu.pl),
-                            który jest używany do kontaktu przy zgłaszaniu błędów w quizach.
-                        </li>
-                        <li><code>photo</code> - Twoje zdjęcie profilowe, które jest wyświetlane w górnym prawym
-                            rogu strony oraz przy wyszukiwaniu osób.
-                        </li>
-                        <li><code>grades</code> - Twoje oceny końcowe z USOS, które są wyświetlane w zakładce
-                            "Oceny" wraz z wyliczoną średnią. Nie są one zapisywane w bazie danych Testownika, a
-                            jedynie pobierane z USOS w momencie wyświetlania strony. Są one dostępne tylko dla
-                            Ciebie.
-                        </li>
-                    </ul>
-                    <p>Kod źródłowy Testownika jest dostępny na <a
-                        href="https://github.com/solvro/web-testownik">GitHubie</a>,
-                        gdzie sam możesz zweryfikować, jakie dane są przetwarzane oraz jak są one wykorzystywane.</p>
+                    <p>Jeśli nie chcesz logować się za pomocą USOS, możesz kontynuować jako gość. W takim przypadku
+                        będziesz mógł korzystać z podstawowych funkcji Testownika. Wszystkie quizy oraz wyniki będą
+                        zapisywane lokalnie na Twoim urządzeniu (w <code>localStorage</code>).</p>
+                    <p>Jeśli zdecydujesz się na zalogowanie za pomocą USOS w przyszłości, będziesz mógł przenieść
+                        swoje quizy oraz wyniki do swojego konta i w pełni korzystać z funkcji Testownika - m.in.
+                        synchronizacji, udostępniania quizów oraz przeglądania swoich ocen.</p>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowPrivacyModal(false)}>Zamknij</Button>
+                    <Button variant="secondary" onClick={() => setShowGuestModal(false)}>Anuluj</Button>
+                    <Button onClick={signInAsGuest}
+                            variant="primary">Kontynuuj jako gość</Button>
                 </Modal.Footer>
             </Modal>
         </div>

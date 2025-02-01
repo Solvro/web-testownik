@@ -1,6 +1,7 @@
-import React from "react";
+import React, {useContext} from "react";
 import {Button, Card, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {Icon} from "@iconify/react";
+import AppContext from "../../AppContext.tsx";
 
 interface QuizActionButtonsProps {
     onCopy: () => void;
@@ -19,6 +20,8 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                                                                  isMaintainer,
                                                                  theme,
                                                              }) => {
+    const appContext = useContext(AppContext);
+
     return (
         <Card className="border-0 shadow mt-3">
             <Card.Body>
@@ -41,7 +44,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                         </Button>
                     </OverlayTrigger>
 
-                    {!isMaintainer && (
+                    {(!isMaintainer && appContext.isAuthenticated && !appContext.isGuest) && (
                         <OverlayTrigger
                             placement="top"
                             overlay={<Tooltip>Zgłoś problem z pytaniem</Tooltip>}
