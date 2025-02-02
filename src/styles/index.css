@@ -34,3 +34,18 @@
         filter: invert(1);
     }
 }
+
+
+@media (prefers-color-scheme: light) {
+    .btn-primary {
+        --bs-btn-bg: #2B54AC !important;
+        --bs-btn-border-color: #2B54AC !important;
+        --bs-btn-hover-bg: #284fa3 !important;
+    }
+
+    .btn-outline-primary {
+        --bs-btn-color: #2B54AC !important;
+        --bs-btn-border-color: #2B54AC !important;
+        --bs-btn-hover-bg: #2B54AC !important;
+    }
+}

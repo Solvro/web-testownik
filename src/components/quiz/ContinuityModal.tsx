@@ -1,8 +1,9 @@
-import React, {useState} from "react";
+import React, {useContext, useState} from "react";
 import {Modal, Button, Badge} from "react-bootstrap";
 import {Icon} from "@iconify/react";
 import {PeerConnectOption} from "peerjs";
 import {DotLottieReact} from "@lottiefiles/dotlottie-react";
+import AppContext from "../../AppContext.tsx";
 
 interface ContinuityModalProps {
     peerConnections: PeerConnectOption[];
@@ -10,6 +11,7 @@ interface ContinuityModalProps {
 }
 
 const ContinuityModal: React.FC<ContinuityModalProps> = ({peerConnections, isContinuityHost}) => {
+    const appContext = useContext(AppContext);
     const [showModal, setShowModal] = useState(false);
 
     const connectedDevices = peerConnections
@@ -56,7 +58,8 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({peerConnections, isCon
                     />
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowModal(false)}>Zamknij</Button>
+                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                            onClick={() => setShowModal(false)}>Zamknij</Button>
                 </Modal.Footer>
             </Modal>
         </>

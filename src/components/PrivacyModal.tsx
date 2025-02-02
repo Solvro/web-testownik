@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {Modal, Button} from 'react-bootstrap';
+import AppContext from "../AppContext.tsx";
 
 interface PrivacyModalProps {
     show: boolean;
@@ -7,6 +8,7 @@ interface PrivacyModalProps {
 }
 
 const PrivacyModal: React.FC<PrivacyModalProps> = ({show, onHide}) => {
+    const appContext = useContext(AppContext);
     return (
         <Modal id="privacyModal" tabIndex={-1} aria-labelledby="privacyModalLabel" aria-hidden="true" show={show}
                onHide={onHide}>
@@ -42,7 +44,7 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({show, onHide}) => {
                     dane są przetwarzane oraz jak są one wykorzystywane.</p>
             </Modal.Body>
             <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>Zamknij</Button>
+                <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={onHide}>Zamknij</Button>
             </Modal.Footer>
         </Modal>
     );

@@ -93,7 +93,7 @@ const LoginPrompt: React.FC = () => {
                         synchronizacji, udostępniania quizów oraz przeglądania swoich ocen.</p>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowGuestModal(false)}>Anuluj</Button>
+                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={() => setShowGuestModal(false)}>Anuluj</Button>
                     <Button onClick={signInAsGuest}
                             variant="primary">Kontynuuj jako gość</Button>
                 </Modal.Footer>

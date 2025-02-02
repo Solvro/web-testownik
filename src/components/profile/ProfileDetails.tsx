@@ -200,7 +200,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseModal}>
+                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={handleCloseModal}>
                         Anuluj
                     </Button>
                     <Button variant="primary" onClick={handleSavePhoto}>
