@@ -25,15 +25,19 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
 
         axios
             .post(`${SERVER_URL}/feedback/send`, { name, email, content })
-            .then((response) => console.log(response.data))
-            .catch((error) => console.error('Failed to fetch alerts:', error))
-            .finally(() => {
-                setIsSending(false);
+            .then(() => {
                 setName('');
                 setEmail('');
                 setContent('');
                 onHide();
                 alert('Dziękujemy za zgłoszenie błędu!');
+            })
+            .catch((error) => {
+                alert('Wystąpił błąd podczas wysyłania zgłoszenia!');
+                console.error(error);
+            })
+            .finally(() => {
+                setIsSending(false);
             });
     };
 
