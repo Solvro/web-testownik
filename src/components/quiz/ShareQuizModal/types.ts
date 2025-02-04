@@ -21,6 +21,7 @@ export interface Term {
     name: string;
     start_date: string;
     end_date: string;
+    finish_date: string;
     is_current: boolean;
 }
 
