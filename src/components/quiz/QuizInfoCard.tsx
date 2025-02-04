@@ -4,6 +4,7 @@ import {Button, ButtonGroup, Card, OverlayTrigger, ProgressBar, Tooltip} from "r
 import AppContext from "../../AppContext.tsx";
 import {useNavigate} from "react-router";
 import {Icon} from "@iconify/react";
+import {toast} from "react-toastify";
 
 interface QuizInfoCardProps {
     quiz: Quiz | null;
@@ -95,6 +96,21 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                                 </span>
                             </OverlayTrigger>
                         )}
+                        <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Kopiuj link do quizu</Tooltip>}
+                        >
+                            <Button variant={appContext.theme.getTheme()} size="sm" onClick={() => {
+                                navigator.clipboard.writeText(window.location.href).then(() => {
+                                    toast.success("Skopiowano link do quizu", {
+                                        autoClose: 2000,
+                                        hideProgressBar: true,
+                                    });
+                                });
+                            }}>
+                                <Icon icon="mdi:link"/>
+                            </Button>
+                        </OverlayTrigger>
                     </ButtonGroup>
                     <Button className="text-danger bg-danger bg-opacity-25 border-0" size="sm" onClick={resetProgress}>
                         Reset

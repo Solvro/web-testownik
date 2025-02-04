@@ -76,7 +76,7 @@ const App: React.FC = () => {
                 </Router>
             </div>
             <ToastContainer theme={context.theme.getTheme()} newestOnTop={false} pauseOnFocusLoss
-                            position="bottom-right"/>
+                            position="bottom-right" draggable={true}/>
             <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
                     style={{position: "fixed", bottom: 0, width: "100%"}}>
                 <span>© {new Date().getFullYear()} <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, powered by <a
