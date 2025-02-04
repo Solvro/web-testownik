@@ -7,6 +7,7 @@ import QuizPreviewModal from "../components/quiz/QuizPreviewModal.tsx";
 import {useNavigate} from "react-router";
 import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
 import {toast} from "react-toastify";
+import {uuidv4} from "../components/quiz/helpers/uuid.ts";
 
 type UploadType = 'file' | 'link' | 'json';
 
@@ -45,6 +46,18 @@ const ImportQuizPage: React.FC = () => {
         setLoading(false);
     }
 
+    const addQuestionIdsIfMissing = (quiz: Quiz): Quiz => {
+        let id = 1;
+        for (const question of quiz.questions) {
+            if (!question.id) {
+                question.id = id++;
+            } else {
+                id = Math.max(id, question.id + 1);
+            }
+        }
+        return quiz;
+    }
+
     const handleImport = async () => {
         setError(null);
         setLoading(true);
@@ -58,7 +71,7 @@ const ImportQuizPage: React.FC = () => {
             reader.onload = async () => {
                 try {
                     const data = JSON.parse(reader.result as string);
-                    const validationError = validateQuiz(data);
+                    const validationError = validateQuiz(addQuestionIdsIfMissing(data));
                     if (validationError) {
                         setErrorAndNotify(validationError);
                         return false;
@@ -91,7 +104,7 @@ const ImportQuizPage: React.FC = () => {
             }
             try {
                 const data = JSON.parse(textInput);
-                const validationError = validateQuiz(data);
+                const validationError = validateQuiz(addQuestionIdsIfMissing(data));
                 if (validationError) {
                     setErrorAndNotify(validationError);
                     return false;
@@ -106,6 +119,30 @@ const ImportQuizPage: React.FC = () => {
 
     const submitImport = async (type: 'json' | 'link', data: string | Quiz) => {
         try {
+            if (appContext.isGuest) {
+                if (type === 'link' || typeof data === 'string') {
+                    try {
+                        const response = await fetch(data as string);
+                        data = await response.json() as Quiz;
+                    } catch {
+                        setError('Wystąpił błąd podczas importowania quizu, będąc gościem możesz tylko importować quizy z domeny testownik.solvro.pl, które są dostępne publicznie. Ciągle możesz skorzystać z opcji importu z pliku lub wprowadzić quiz ręcznie.');
+                        return;
+                    }
+                }
+                const tempQuiz = {
+                    ...data,
+                    id: uuidv4(),
+                    visibility: 0,
+                    version: 1,
+                    allow_anonymous: false,
+                    is_anonymous: true
+                }
+                const userQuizzes = localStorage.getItem('guest_quizzes') ? JSON.parse(localStorage.getItem('guest_quizzes')!) : []
+                userQuizzes.push(tempQuiz)
+                localStorage.setItem('guest_quizzes', JSON.stringify(userQuizzes))
+                setQuiz(tempQuiz);
+                return;
+            }
             let response;
             if (type === 'json') {
                 response = await appContext.axiosInstance.post('/quizzes/', data);
@@ -247,7 +284,9 @@ const ImportQuizPage: React.FC = () => {
                     <p>
                         Klucz <code>questions</code> powinien zawierać tablicę obiektów reprezentujących pytania.
                         Każde pytanie powinno zawierać
-                        klucze <code>question</code> i <code>answers</code> oraz opcjonalnie <code>multiple</code>.
+                        klucze <code>id</code>, <code>question</code> i <code>answers</code> oraz
+                        opcjonalnie <code>multiple</code> (domyślnie <code>false</code>) i <code>explanation</code>.
+                        Jeśli nie podano <code>id</code>, zostanie on nadany automatycznie od 1.
                     </p>
                     <p>
                         Przykładowy quiz w formacie JSON:
@@ -258,6 +297,7 @@ const ImportQuizPage: React.FC = () => {
     "description": "Opis quizu", // Opcjonalny
     "questions": [
         {
+            "id": 1,
             "question": "Jaki jest sens sesji?",
             "answers": [
                 {
@@ -277,6 +317,7 @@ const ImportQuizPage: React.FC = () => {
             "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny, domyślnie null
         },
         {
+            "id": 2,
             "question": "Kto jest najlepszy?",
             "answers": [
                 {
@@ -291,6 +332,7 @@ const ImportQuizPage: React.FC = () => {
             "multiple": false
         },
         {
+            "id": 3,
             "question": "Pytanie ze zdjęciem",
             "image": "https://example.com/image.jpg", // Opcjonalny
             "answers": [

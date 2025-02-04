@@ -29,6 +29,20 @@ const QuestionQuizCard: React.FC = () => {
 
     const fetchQuestion = async () => {
         try {
+            if (appContext.isGuest) {
+                const guestQuizzes = localStorage.getItem("guest_quizzes") ? JSON.parse(localStorage.getItem("guest_quizzes")!) : [];
+                if (!guestQuizzes.length) {
+                    setQuestionData(null);
+                    throw new Error("No questions available");
+                }
+                const randomQuiz = guestQuizzes[Math.floor(Math.random() * guestQuizzes.length)];
+                const randomQuestion = randomQuiz.questions[Math.floor(Math.random() * randomQuiz.questions.length)];
+                setQuestionData(randomQuestion);
+                setSelectedAnswers([]);
+                setEnableEdit(true);
+                setResult(null);
+                return;
+            }
             const response = await appContext.axiosInstance.get("/random-question/");
             if (!response.data) {
                 setQuestionData(null);
@@ -127,7 +141,8 @@ const QuestionQuizCard: React.FC = () => {
                 ) : (
                     <div>
                         <h5 className="card-title">Nie ma żadnych pytań do powtórzenia.</h5>
-                        <p className="small text-muted">Po użyciu twojego pierwszego quizu pojawią się tutaj pytania.</p>
+                        <p className="small text-muted">Po użyciu twojego pierwszego quizu pojawią się tutaj
+                            pytania.</p>
                     </div>
                 )}
             </Card.Body>

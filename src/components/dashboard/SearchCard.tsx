@@ -29,6 +29,14 @@ const SearchCard: React.FC = () => {
 
         try {
             setLoading(true);
+            if (appContext.isGuest) {
+                const guestQuizzes = localStorage.getItem("guest_quizzes");
+                const data = guestQuizzes ? JSON.parse(guestQuizzes) : [];
+                const filteredData = data.filter((quiz: any) => quiz.title.toLowerCase().includes(searchQuery.toLowerCase()));
+                setSearchResults(filteredData);
+                setLoading(false);
+                return;
+            }
             const response = await appContext.axiosInstance.get(`/search-quizzes/?query=${encodeURIComponent(searchQuery)}`);
 
             const data = Object.values(response.data).flat() as SearchResult[];
@@ -59,13 +67,13 @@ const SearchCard: React.FC = () => {
                         <Icon icon="ic:baseline-search" width="24" height="24"/>
                     </Button>
                 </InputGroup>
-                <div id="search-results" className="mt-3">
+                <div id="search-results" className="mt-3 overflow-y-auto" style={{maxHeight: "20rem"}}>
                     {loading ? (
                         <div className="d-flex justify-content-center pt-3">
                             <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={10}/>
                         </div>
                     ) : (
-                        <Table className="mb-0 overflow-y-auto" style={{maxHeight: "20rem"}}>
+                        <Table className="mb-0">
                             <tbody>
                             {searchResults.length > 0 ? (
                                 searchResults.map((result) => (

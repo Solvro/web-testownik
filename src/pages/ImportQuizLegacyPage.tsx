@@ -6,6 +6,7 @@ import {useNavigate} from 'react-router';
 import QuizPreviewModal from '../components/quiz/QuizPreviewModal';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import {Icon} from "@iconify/react";
+import {uuidv4} from "../components/quiz/helpers/uuid.ts";
 
 const trueFalseStrings = {
     "prawda": true,
@@ -162,6 +163,23 @@ const ImportQuizLegacyPage: React.FC = () => {
                 title: quizTitle,
                 description: quizDescription,
                 questions,
+            }
+
+            if (appContext.isGuest) {
+                const userQuizzes = localStorage.getItem('guest_quizzes') ? JSON.parse(localStorage.getItem('guest_quizzes')!) : []
+                const tempQuiz = {
+                    ...quizData,
+                    id: uuidv4(),
+                    visibility: 0,
+                    version: 1,
+                    allow_anonymous: false,
+                    is_anonymous: true
+                }
+                userQuizzes.push(tempQuiz)
+                localStorage.setItem('guest_quizzes', JSON.stringify(userQuizzes))
+                setQuiz(tempQuiz);
+                setLoading(false);
+                return;
             }
 
             const response = await appContext.axiosInstance.post('/quizzes/', quizData);

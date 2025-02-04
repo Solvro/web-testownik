@@ -22,6 +22,12 @@ const QuizzesPage: React.FC = () => {
 
     useEffect(() => {
         const fetchQuizzes = async () => {
+            if (appContext.isGuest) {
+                setUserQuizzes(localStorage.getItem('guest_quizzes') ? JSON.parse(localStorage.getItem('guest_quizzes')!) : []);
+
+                setLoading(false);
+                return;
+            }
             try {
                 const [userResponse, sharedResponse] = await Promise.all([
                     appContext.axiosInstance.get('/quizzes/'),
@@ -55,6 +61,11 @@ const QuizzesPage: React.FC = () => {
     const handleDeleteQuiz = (quiz: QuizMetadata) => {
         // Ask for confirmation  and then delete the quiz
         if (window.confirm('Czy na pewno chcesz usunąć ten quiz?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tego quizu.')) {
+            if (appContext.isGuest) {
+                localStorage.setItem('guest_quizzes', JSON.stringify(userQuizzes.filter((q) => q.id !== quiz.id)));
+                setUserQuizzes((prev) => prev.filter((q) => q.id !== quiz.id));
+                return;
+            }
             appContext.axiosInstance.delete(`/quizzes/${quiz.id}/`)
                 .then(() => {
                     setUserQuizzes((prev) => prev.filter((q) => q.id !== quiz.id));
@@ -67,6 +78,18 @@ const QuizzesPage: React.FC = () => {
     }
 
     const handleDownloadQuiz = (quiz: QuizMetadata) => {
+        if (appContext.isGuest) {
+            // @ts-expect-error - we don't need the id in the downloaded quiz
+            delete quiz.id;
+            const url = window.URL.createObjectURL(new Blob([JSON.stringify(quiz, null, 2)], {type: 'application/json'}));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${quiz.title}.json`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            return;
+        }
         appContext.axiosInstance.get(`/quizzes/${quiz.id}/`)
             .then((response) => {
                 const quiz = response.data;
@@ -154,13 +177,15 @@ const QuizzesPage: React.FC = () => {
                                         >
                                             <Icon icon={"mdi:download"}/>
                                         </Button>
-                                        <Button
-                                            variant={`outline-${appContext.theme.getOppositeTheme()}`}
-                                            onClick={() => handleSearchInQuiz(quiz)}
-                                            size="sm"
-                                        >
-                                            <Icon icon={"mdi:magnify"}/>
-                                        </Button>
+                                        {!appContext.isGuest && (
+                                            <Button
+                                                variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                                                onClick={() => handleSearchInQuiz(quiz)}
+                                                size="sm"
+                                            >
+                                                <Icon icon={"mdi:magnify"}/>
+                                            </Button>
+                                        )}
                                         <Button
                                             variant={`outline-${appContext.theme.getOppositeTheme()}`}
                                             onClick={() => handleDeleteQuiz(quiz)}

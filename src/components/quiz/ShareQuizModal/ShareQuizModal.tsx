@@ -15,6 +15,7 @@ import SearchResultsPopover from "./SearchResultsPopover.tsx";
 import AccessList from "./AccessList.tsx";
 import {distance} from "fastest-levenshtein";
 import {QuizMetadata} from "../types.ts";
+import {useNavigate} from "react-router";
 
 interface ShareQuizModalProps {
     show: boolean;
@@ -30,6 +31,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                                                            setQuiz,
                                                        }) => {
     const appContext = useContext(AppContext);
+    const navigate = useNavigate();
 
     const [accessLevel, setAccessLevel] = useState<AccessLevel>(AccessLevel.PRIVATE);
     const [loading, setLoading] = useState(false);
@@ -65,6 +67,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
     }, []);
 
     const fetchData = async () => {
+        if (appContext.isGuest) return;
         setLoading(true);
         try {
             await Promise.all([
@@ -80,6 +83,13 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
 
 
     const fetchAccess = async () => {
+        if (appContext.isGuest) {
+            setUsersWithAccess([]);
+            setInitialUsersWithAccess([]);
+            setGroupsWithAccess([]);
+            setInitialGroupsWithAccess([]);
+            return;
+        }
         try {
             const response = await appContext.axiosInstance.get(`/shared-quizzes/?quiz=${quiz.id}`);
             const sharedData = response.data;
@@ -300,6 +310,34 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
             console.error("Failed to save quiz settings:", error);
         }
     };
+
+    if (appContext.isGuest) {
+        return (
+            <Modal show={show} onHide={onHide} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Udostępnij "{quiz.title}"</Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body>
+                    <Alert variant="warning" className="text-center">
+                        <p>Musisz być zalogowany, aby móc udostępniać quizy.</p>
+                        <Button
+                            variant="warning"
+                            onClick={() => navigate("/connect-account")}
+                        >
+                            Połącz konto
+                        </Button>
+                    </Alert>
+                </Modal.Body>
+
+                <Modal.Footer>
+                    <Button variant="primary" onClick={onHide}>
+                        Zamknij
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        )
+    }
 
     return (
         <Modal show={show} onHide={onHide} centered>

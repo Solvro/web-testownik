@@ -37,6 +37,11 @@ const ProfilePage: React.FC = () => {
         // Set page title
         document.title = "Profil - Testownik Solvro";
 
+        if (appContext.isGuest) {
+            setSettings(localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : settings);
+            return;
+        }
+
         // Fetch user data
         appContext.axiosInstance.get("/user/")
             .then((res) => res.data)
@@ -57,6 +62,8 @@ const ProfilePage: React.FC = () => {
 
     const handleSettingChange = (name: keyof SettingsData, value: boolean | number) => {
         setSettings({...settings, [name]: value});
+        localStorage.setItem("settings", JSON.stringify({...settings, [name]: value}));
+        if (appContext.isGuest) return;
         appContext.axiosInstance.put("/settings/", {[name]: value})
             .then((res) => console.log("Settings updated:", res.data))
             .catch((err) => console.error("Error updating settings:", err));

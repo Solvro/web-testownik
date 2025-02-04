@@ -5,6 +5,7 @@ import "../../styles/ProfileDetails.css";
 import AppContext from "../../AppContext.tsx";
 import {Icon} from "@iconify/react";
 import {toast} from "react-toastify";
+import {useNavigate} from "react-router";
 
 interface UserData {
     id: number;
@@ -26,6 +27,7 @@ interface ProfileDetailsProps {
 
 const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUserData}) => {
     const appContext = useContext(AppContext);
+    const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo || "");
 
@@ -63,6 +65,25 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
         encodeURI(`https://api.dicebear.com/9.x/shapes/svg?seed=${userData?.full_name}`),
         encodeURI(`https://api.dicebear.com/9.x/initials/svg?seed=${userData?.full_name}`),
     ];
+
+    if (appContext.isGuest) {
+        return (
+            <Card className="border-0 shadow">
+                <Card.Body className="d-flex flex-column align-items-center text-nowrap">
+                    <Icon icon="fluent:guest-32-filled" style={{fontSize: "6em"}}/>
+                    <h1 className="mt-3">Gość</h1>
+                    <Badge bg="info" className="bg-opacity-25 text-info">Guest</Badge>
+                    <Button
+                        className="mt-3"
+                        variant="success"
+                        onClick={() => navigate("/connect-account")}
+                    >
+                        Połącz konto
+                    </Button>
+                </Card.Body>
+            </Card>
+        );
+    }
 
     return (
         <Card className="border-0 shadow">
@@ -179,7 +200,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseModal}>
+                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={handleCloseModal}>
                         Anuluj
                     </Button>
                     <Button variant="primary" onClick={handleSavePhoto}>

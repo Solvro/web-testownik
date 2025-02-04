@@ -1,5 +1,6 @@
-import React from "react";
-import {Card, Table, Form} from "react-bootstrap";
+import React, {useContext} from "react";
+import {Card, Table, Form, Alert} from "react-bootstrap";
+import AppContext from "../../AppContext.tsx";
 
 interface SettingsData {
     sync_progress: boolean;
@@ -13,14 +14,23 @@ interface SettingsFormProps {
 }
 
 const SettingsForm: React.FC<SettingsFormProps> = ({settings, onSettingChange}) => {
+    const appContext = useContext(AppContext);
+
     return (
         <Card className="border-0 shadow">
             <Card.Body>
+                {appContext.isGuest && (
+                    <Alert variant="warning">
+                        Część ustawień jest niedostępna dla gości.
+                    </Alert>
+                )}
                 <Table>
                     <tbody>
                     <tr>
                         <td>
-                            <Form.Label>Synchronizuj postępy</Form.Label>
+                            <Form.Label className={appContext.isGuest ? "text-muted" : ""}>
+                                Synchronizuj postępy
+                            </Form.Label>
                         </td>
                         <td>
                             <Form.Check
@@ -29,6 +39,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({settings, onSettingChange}) 
                                 onChange={(e) =>
                                     onSettingChange("sync_progress", e.target.checked)
                                 }
+                                disabled={appContext.isGuest}
                             />
                         </td>
                     </tr>

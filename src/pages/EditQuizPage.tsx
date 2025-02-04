@@ -3,7 +3,7 @@ import {Button, Card, Form, Alert, ButtonGroup} from 'react-bootstrap';
 import QuestionForm from '../components/quiz/QuestionForm';
 import {Question, Quiz} from "../components/quiz/types.ts";
 import AppContext from "../AppContext.tsx";
-import {useNavigate, useParams} from "react-router";
+import {useLocation, useNavigate, useParams} from "react-router";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {toast} from "react-toastify";
 import {validateQuiz} from "../components/quiz/helpers/quizValidation.ts";
@@ -12,6 +12,8 @@ const EditQuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
     const appContext = useContext(AppContext);
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -25,6 +27,23 @@ const EditQuizPage: React.FC = () => {
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
+                if (appContext.isGuest) {
+                    const userQuizzes = localStorage.getItem("guest_quizzes") ? JSON.parse(localStorage.getItem("guest_quizzes")!) : [];
+                    const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
+                    if (!quiz) {
+                        setError('Nie znaleziono quizu.');
+                        setLoading(false);
+                        return;
+                    }
+                    setTitle(quiz.title);
+                    setDescription(quiz.description || '');
+                    setQuestions(quiz.questions || []);
+                    if (quiz.questions.some((q: Question) => q.image || q.explanation || q.answers.some((a) => a.image))) {
+                        setAdvancedMode(true);
+                    }
+                    setLoading(false);
+                    return;
+                }
                 const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
                 if (response.status === 200) {
                     const data: Quiz = response.data;
@@ -34,6 +53,22 @@ const EditQuizPage: React.FC = () => {
                     if (data.questions.some((q) => q.image || q.explanation || q.answers.some((a) => a.image))) {
                         setAdvancedMode(true);
                     }
+                    setTimeout(() => {
+                        if (location.hash || queryParams.has('scroll_to')) {
+                            const element = document.getElementById(window.location.hash.substring(1) || queryParams.get('scroll_to') || '');
+                            if (element) {
+                                element.scrollIntoView({behavior: "smooth"});
+                                if (window.location.hash) {
+                                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                                } else {
+                                    queryParams.delete('scroll_to');
+                                    navigate({
+                                        search: queryParams.toString(),
+                                    });
+                                }
+                            }
+                        }
+                    }, 100);
                 } else {
                     setError('Nie udało się załadować quizu.');
                 }
@@ -98,6 +133,18 @@ const EditQuizPage: React.FC = () => {
         setError(null);
 
         try {
+            if (appContext.isGuest) {
+                const userQuizzes = localStorage.getItem("guest_quizzes") ? JSON.parse(localStorage.getItem("guest_quizzes")!) : [];
+                const quizIndex = userQuizzes.findIndex((q: Quiz) => q.id === quizId);
+                if (quizIndex === -1) {
+                    setErrorAndNotify('Nie znaleziono quizu.');
+                    return false;
+                }
+                userQuizzes[quizIndex] = {...userQuizzes[quizIndex], ...quiz};
+                localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
+                toast.success('Quiz został zaktualizowany.');
+                return true;
+            }
             const response = await appContext.axiosInstance.put(`/quizzes/${quizId}/`, quiz);
 
             if (response.status !== 200) {

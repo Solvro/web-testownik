@@ -18,6 +18,11 @@ const LastUsedCard: React.FC = () => {
 
     const fetchLastUsedQuizzes = async () => {
         try {
+            if (appContext.isGuest) {
+                const guestQuizzes = localStorage.getItem("guest_quizzes");
+                setLastUsedQuizzes(guestQuizzes ? JSON.parse(guestQuizzes) : []);
+                return;
+            }
             const response = await appContext.axiosInstance.get("/last-used-quizzes/");
             const data: Quiz[] = response.data;
             setLastUsedQuizzes(data);

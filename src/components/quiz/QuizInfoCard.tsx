@@ -1,6 +1,6 @@
 import {Quiz, Reoccurrence} from "./types.ts";
 import React, {useContext} from "react";
-import {Button, ButtonGroup, Card, OverlayTrigger, Tooltip} from "react-bootstrap";
+import {Button, ButtonGroup, Card, OverlayTrigger, ProgressBar, Tooltip} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
 import {useNavigate} from "react-router";
 import {Icon} from "@iconify/react";
@@ -12,6 +12,18 @@ interface QuizInfoCardProps {
     reoccurrences: Reoccurrence[];
     studyTime: number; // in seconds
     resetProgress: () => void;
+}
+
+const percentageToColor = (percentage: number) => {
+    if (percentage < 25) {
+        return "danger";
+    } else if (percentage < 50) {
+        return "warning";
+    } else if (percentage < 75) {
+        return "info";
+    } else {
+        return "success";
+    }
 }
 
 const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
@@ -31,6 +43,8 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
     const openSearchInQuiz = () => {
         navigate(`/search-in-quiz/${quiz.id}`);
     }
+
+    const progressPercentage = (reoccurrences.filter(q => q.reoccurrences === 0).length / quiz.questions.length) * 100;
 
     return (
         <Card className="border-0 shadow">
@@ -57,6 +71,7 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                         <span className="text-success">{new Date(studyTime * 1000).toISOString().slice(11, 19)}</span>
                     </div>
                 </div>
+                <ProgressBar className="mt-3" now={progressPercentage} variant={percentageToColor(progressPercentage)}/>
                 <div className="d-flex justify-content-between mt-3">
                     <ButtonGroup>
                         {appContext.isAuthenticated ? (

@@ -57,7 +57,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                         autoplay
                     />
                     <Card.Text className="mt-3 text-center text-muted">
-                        Idż się napić piwa, albo lepiej - wódki
+                        Idź się napić piwka, no i odpocznij - zasłużyłeś!
                     </Card.Text>
                 </Card.Body>
             </Card>
