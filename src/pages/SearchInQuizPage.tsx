@@ -126,6 +126,10 @@ const SearchInQuizPage: React.FC = () => {
                         <Card.Body>
                             <Card.Title>
                                 {highlightMatch(question.question, query)}
+                                {question.image && (
+                                    <img src={question.image} alt={question.question}
+                                         className="d-block mx-auto rounded mw-100"/>
+                                )}
                             </Card.Title>
                             <ul className="list-unstyled">
                                 {question.answers.map((answer, index) => (
@@ -134,6 +138,11 @@ const SearchInQuizPage: React.FC = () => {
                                         className={answer.correct ? "text-success" : "text-muted"}
                                     >
                                         {highlightMatch(answer.answer, query)}
+                                        {answer.image && (
+                                            <img src={answer.image} alt={answer.answer}
+                                                 style={{borderStyle: answer.correct ? "solid" : "none"}}
+                                                 className={"d-block mx-auto rounded mw-100" + (answer.correct ? " border-success border-3" : "")}/>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

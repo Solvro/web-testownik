@@ -128,7 +128,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div>
                     <Markdown>{question.id + ". " + question.question}</Markdown>
                     {question.image && (
-                        <img src={question.image} alt={question.question} className="d-block mx-auto rounded"/>
+                        <img src={question.image} alt={question.question} className="d-block mx-auto rounded mw-100"/>
                     )}
                 </div>
                 <div className="mt-3 d-flex flex-column gap-2">
@@ -145,7 +145,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                                 {answer.answer}
                                 {answer.image && (
                                     <img src={answer.image} alt={answer.answer}
-                                         className="d-block mx-auto rounded mb-2"/>
+                                         className="d-block mx-auto rounded mb-2 mw-100"/>
                                 )}
                             </div>
                         </Button>
