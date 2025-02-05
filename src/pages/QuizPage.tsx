@@ -5,7 +5,7 @@ import React, {
     useRef,
     useContext,
 } from "react";
-import {Link, useLocation, useParams} from "react-router";
+import {Link, useLocation, useNavigate, useParams} from "react-router";
 import {
     Row,
     Col, Card, Button,
@@ -54,6 +54,7 @@ const PING_TIMEOUT = 15000; // 15s
 const QuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
     const appContext = useContext(AppContext);
+    const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
 
@@ -585,6 +586,11 @@ const QuizPage: React.FC = () => {
         setShowReportModal(true);
     };
 
+    const editQuestion = () => {
+        if (!currentQuestion) return;
+        navigate(`/edit-quiz/${quizId}#question-${currentQuestion.id}`);
+    }
+
 
     interface InitialSyncMessage {
         type: "initial_sync";
@@ -1003,6 +1009,7 @@ const QuizPage: React.FC = () => {
                         onCopy={copyToClipboard}
                         onOpenChatGPT={openInChatGPT}
                         onReportIssue={reportIncorrectQuestion}
+                        onEditQuestion={editQuestion}
                         toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
                         isMaintainer={quiz.maintainer?.id === parseInt(localStorage.getItem("user_id") || "")}
                         theme={appContext.theme.getTheme()}
