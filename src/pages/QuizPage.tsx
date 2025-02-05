@@ -5,7 +5,7 @@ import React, {
     useRef,
     useContext,
 } from "react";
-import {useLocation, useParams} from "react-router";
+import {Link, useLocation, useParams} from "react-router";
 import {
     Row,
     Col, Card, Button,
@@ -145,6 +145,22 @@ const QuizPage: React.FC = () => {
             }
 
             setLoading(false);
+            if (!localStorage.getItem("shown_reoccurrences_info")) {
+                toast.info(
+                    <div>
+                        <p>
+                            Domyślnie pytania mają 1 powtórzenie i dodatkowe powtórzenia po błędnej odpowiedzi.
+                        </p>
+                        <p>
+                            Możesz zmienić to w <Link to="/profile#settings">ustawieniach</Link>.
+                        </p>
+                    </div>,
+                    {
+                        icon: () => <Icon icon="mdi:settings"/>,
+                        autoClose: 10000,
+                    });
+                localStorage.setItem("shown_reoccurrences_info", "true");
+            }
         })();
 
 
