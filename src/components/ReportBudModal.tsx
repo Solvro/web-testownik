@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useState } from 'react';
-import { Modal, Button, InputGroup, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
 import AppContext from '../AppContext.tsx';
 import axios from 'axios';
 import { SERVER_URL } from '../config.ts';
@@ -9,28 +10,68 @@ interface ReportBugModalProps {
     onHide: () => void;
 }
 
+const DEFAULT_FORM_STATE = {
+    name: '',
+    email: '',
+    title: '',
+    content: '',
+    sendDiagnostics: false,
+    diagnostic: '',
+    reportType: 'bug',
+};
+
 const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [content, setContent] = useState('');
+    const [form, setForm] = useState(DEFAULT_FORM_STATE);
     const [isSending, setIsSending] = useState(false);
+
+    const handleChange = (
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
+    ) => {
+        const { id, value, type, checked } = e.target as HTMLInputElement;
+        setForm((prev) => ({
+            ...prev,
+            [id]: type === 'checkbox' ? checked : value,
+        }));
+    };
 
     const handleSend = () => {
         setIsSending(true);
 
-        if (!name || !email || !content) {
+        if (!form.name || !form.content || !form.title) {
             alert('Wypełnij wszystkie pola!');
+            setIsSending(false);
             return;
         }
 
+        if (form.sendDiagnostics) {
+            const diagnostics = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                vendor: navigator.vendor,
+
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                outerWidth: window.outerWidth,
+                outerHeight: window.outerHeight,
+
+                location: window.location.href,
+                localStorage: JSON.stringify(localStorage),
+                sessionStorage: JSON.stringify(sessionStorage),
+            };
+            form.diagnostic = JSON.stringify(diagnostics, null, 2);
+        }
+
         axios
-            .post(`${SERVER_URL}/feedback/send`, { name, email, content })
+            .post(`${SERVER_URL}/feedback/send`, {
+                ...form,
+                sendDiagnostics: form.sendDiagnostics ? 'true' : 'false',
+            })
             .then(() => {
-                setName('');
-                setEmail('');
-                setContent('');
+                setForm(DEFAULT_FORM_STATE);
                 onHide();
-                alert('Dziękujemy za zgłoszenie błędu!');
+                alert('Dziękujemy za zgłoszenie!');
             })
             .catch((error) => {
                 alert('Wystąpił błąd podczas wysyłania zgłoszenia!');
@@ -43,92 +84,83 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
 
     const appContext = useContext(AppContext);
     return (
-        <Modal
-            id="reportBugModal"
-            tabIndex={-1}
-            aria-labelledby="reportBugModalLabel"
-            aria-hidden="true"
-            show={show}
-            onHide={onHide}>
+        <Modal show={show} onHide={onHide}>
             <Modal.Header closeButton>
-                <Modal.Title id="reportBugModalLabel">
-                    Zgłoś błąd w Testowniku
-                </Modal.Title>
+                <Modal.Title>Zgłoszenie błędu lub sugestia</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <div>
-                    <Form.Label htmlFor="name" className="access-level-label">
-                        Twoja nazwa
-                    </Form.Label>
-                    <InputGroup>
+                <Row className="mb-3">
+                    <Form.Group as={Col} controlId="name">
+                        <Form.Label>Twoja nazwa</Form.Label>
                         <Form.Control
                             disabled={isSending}
                             placeholder="Jan Kowalski"
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    handleSend();
-                                }
-                            }}
+                            value={form.name}
+                            onChange={handleChange}
                         />
-                    </InputGroup>
-                    <Form.Label htmlFor="email" className="access-level-label">
-                        Adres e-mail
-                    </Form.Label>
-                    <InputGroup>
+                    </Form.Group>
+                    <Form.Group as={Col} controlId="email">
+                        <Form.Label>Adres e-mail (opcjonalnie)</Form.Label>
                         <Form.Control
                             disabled={isSending}
-                            id="email"
-                            aria-describedby="email"
                             placeholder="jan.kowalski@solvro.pl"
-                            value={email}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    handleSend();
-                                }
-                            }}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={form.email}
+                            onChange={handleChange}
                         />
-                    </InputGroup>
-                    <Form.Label
-                        htmlFor="content"
-                        className="access-level-label">
-                        Treść
-                    </Form.Label>
-                    <InputGroup>
-                        <Form.Control
-                            disabled={isSending}
-                            id="content"
-                            placeholder="Treść zgłoszenia"
-                            as="textarea"
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    handleSend();
-                                }
-                            }}
+                    </Form.Group>
+                </Row>
+                <Form.Group className="mb-3" controlId="title">
+                    <Form.Label>Tytuł</Form.Label>
+                    <Form.Control
+                        disabled={isSending}
+                        placeholder="Tytuł zgłoszenia"
+                        value={form.title}
+                        onChange={handleChange}
+                    />
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="content">
+                    <Form.Label>Treść</Form.Label>
+                    <Form.Control
+                        disabled={isSending}
+                        placeholder="Treść zgłoszenia"
+                        as="textarea"
+                        value={form.content}
+                        onChange={handleChange}
+                    />
+                </Form.Group>
+                <Row className="mb-3">
+                    <Form.Group as={Col} controlId="sendDiagnostics">
+                        <Form.Check
+                            type="checkbox"
+                            label="Wyślij dane diagnostyczne"
+                            checked={form.sendDiagnostics}
+                            onChange={handleChange}
                         />
-                    </InputGroup>
-                </div>
+                    </Form.Group>
+                    <Form.Group as={Col} controlId="reportType">
+                        <Form.Label>Typ zgłoszenia</Form.Label>
+                        <Form.Select
+                            value={form.reportType}
+                            onChange={handleChange}>
+                            <option value="bug">Błąd</option>
+                            <option value="enhancement">Propozycja</option>
+                            <option value="question">Pytanie</option>
+                        </Form.Select>
+                    </Form.Group>
+                </Row>
             </Modal.Body>
             <Modal.Footer>
-                <div className="d-inline-flex gap-1 align-items-center">
-                    <Button
-                        variant={`outline-${appContext.theme.getOppositeTheme()}`}
-                        onClick={onHide}>
-                        Anuluj
-                    </Button>
-                    <Button
-                        disabled={isSending}
-                        variant="primary"
-                        onClick={handleSend}
-                        className="w-100">
-                        Wyślij formularz
-                    </Button>
-                </div>
+                <Button
+                    variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                    onClick={onHide}>
+                    Anuluj
+                </Button>
+                <Button
+                    disabled={isSending}
+                    variant="primary"
+                    onClick={handleSend}>
+                    Wyślij formularz
+                </Button>
             </Modal.Footer>
         </Modal>
     );
