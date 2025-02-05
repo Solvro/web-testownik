@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useContext, useState } from 'react';
-import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
+import React, {useContext, useState} from 'react';
+import {Modal, Button, Form, Row, Col} from 'react-bootstrap';
 import AppContext from '../AppContext.tsx';
 import axios from 'axios';
-import { SERVER_URL } from '../config.ts';
+import {SERVER_URL} from '../config.ts';
+import {toast} from "react-toastify";
 
 interface ReportBugModalProps {
     show: boolean;
@@ -20,32 +20,50 @@ const DEFAULT_FORM_STATE = {
     reportType: 'bug',
 };
 
-const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
+const ReportBugModal: React.FC<ReportBugModalProps> = ({show, onHide}) => {
     const [form, setForm] = useState(DEFAULT_FORM_STATE);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSending, setIsSending] = useState(false);
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+
+        if (!form.name.trim()) errors.name = 'Podaj swoje imię.';
+        if (!form.title.trim()) errors.title = 'Podaj tytuł zgłoszenia.';
+        if (!form.content.trim()) errors.content = 'Podaj treść zgłoszenia.';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const handleChange = (
         e: React.ChangeEvent<
             HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
         >
     ) => {
-        const { id, value, type, checked } = e.target as HTMLInputElement;
+        const {id, value, type, checked} = e.target as HTMLInputElement;
         setForm((prev) => ({
             ...prev,
             [id]: type === 'checkbox' ? checked : value,
+        }));
+
+        // Clear the error message for this field when user types
+        setFormErrors((prev) => ({
+            ...prev,
+            [id]: '',
         }));
     };
 
     const handleSend = () => {
         setIsSending(true);
 
-        if (!form.name || !form.content || !form.title) {
-            alert('Wypełnij wszystkie pola!');
+        if (!validateForm()) {
             setIsSending(false);
             return;
         }
 
         if (form.sendDiagnostics) {
+            const quizId = location.pathname.includes('quiz') ? location.pathname.split('/').pop() : null;
             const diagnostics = {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
@@ -56,8 +74,15 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
                 outerWidth: window.outerWidth,
                 outerHeight: window.outerHeight,
 
+                quiz_id: quizId,
+
                 location: window.location.href,
-                localStorage: JSON.stringify(localStorage),
+                localStorage: {
+                    user_id: localStorage.getItem('user_id'),
+                    is_guest: localStorage.getItem('is_guest'),
+                    is_authenticated: localStorage.getItem('access_token') ? 'true' : 'false',
+                    quiz_progress: quizId ? localStorage.getItem(`${quizId}_progress`) : null,
+                },
                 sessionStorage: JSON.stringify(sessionStorage),
             };
             form.diagnostic = JSON.stringify(diagnostics, null, 2);
@@ -71,10 +96,12 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
             .then(() => {
                 setForm(DEFAULT_FORM_STATE);
                 onHide();
-                alert('Dziękujemy za zgłoszenie!');
+                toast.success('Dziękujemy za zgłoszenie!');
             })
             .catch((error) => {
-                alert('Wystąpił błąd podczas wysyłania zgłoszenia!');
+                toast.error('Wystąpił błąd podczas wysyłania zgłoszenia!', {
+                    position: 'top-center',
+                });
                 console.error(error);
             })
             .finally(() => {
@@ -83,6 +110,7 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
     };
 
     const appContext = useContext(AppContext);
+
     return (
         <Modal show={show} onHide={onHide}>
             <Modal.Header closeButton>
@@ -97,7 +125,11 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
                             placeholder="Jan Kowalski"
                             value={form.name}
                             onChange={handleChange}
+                            isInvalid={!!formErrors.name}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            {formErrors.name}
+                        </Form.Control.Feedback>
                     </Form.Group>
                     <Form.Group as={Col} controlId="email">
                         <Form.Label>Adres e-mail (opcjonalnie)</Form.Label>
@@ -116,7 +148,11 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
                         placeholder="Tytuł zgłoszenia"
                         value={form.title}
                         onChange={handleChange}
+                        isInvalid={!!formErrors.title}
                     />
+                    <Form.Control.Feedback type="invalid">
+                        {formErrors.title}
+                    </Form.Control.Feedback>
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="content">
                     <Form.Label>Treść</Form.Label>
@@ -126,7 +162,11 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
                         as="textarea"
                         value={form.content}
                         onChange={handleChange}
+                        isInvalid={!!formErrors.content}
                     />
+                    <Form.Control.Feedback type="invalid">
+                        {formErrors.content}
+                    </Form.Control.Feedback>
                 </Form.Group>
                 <Row className="mb-3">
                     <Form.Group as={Col} controlId="sendDiagnostics">
@@ -141,7 +181,8 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
                         <Form.Label>Typ zgłoszenia</Form.Label>
                         <Form.Select
                             value={form.reportType}
-                            onChange={handleChange}>
+                            onChange={handleChange}
+                        >
                             <option value="bug">Błąd</option>
                             <option value="enhancement">Propozycja</option>
                             <option value="question">Pytanie</option>
@@ -152,13 +193,15 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
             <Modal.Footer>
                 <Button
                     variant={`outline-${appContext.theme.getOppositeTheme()}`}
-                    onClick={onHide}>
+                    onClick={onHide}
+                >
                     Anuluj
                 </Button>
                 <Button
                     disabled={isSending}
                     variant="primary"
-                    onClick={handleSend}>
+                    onClick={handleSend}
+                >
                     Wyślij formularz
                 </Button>
             </Modal.Footer>

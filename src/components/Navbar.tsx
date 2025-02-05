@@ -16,7 +16,7 @@ import { Icon } from '@iconify/react';
 import AppContext from '../AppContext.tsx';
 import { SERVER_URL } from '../config.ts';
 import { useLocation, useNavigate } from 'react-router';
-import ReportBugModal from './ReportBudModal.tsx';
+import ReportBugModal from './ReportBugModal.tsx';
 
 const Navbar: React.FC = () => {
     const appContext = useContext(AppContext);
