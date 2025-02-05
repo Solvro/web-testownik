@@ -7,6 +7,7 @@ interface QuizActionButtonsProps {
     onCopy: () => void;
     onOpenChatGPT: () => void;
     onReportIssue: () => void;
+    onEditQuestion: () => void;
     toggleBrainrot: () => void;
     isMaintainer: boolean;
     theme: string;
@@ -16,6 +17,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                                                                  onCopy,
                                                                  onOpenChatGPT,
                                                                  onReportIssue,
+                                                                 onEditQuestion,
                                                                  toggleBrainrot,
                                                                  isMaintainer,
                                                                  theme,
@@ -51,6 +53,17 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                         >
                             <Button variant={theme} onClick={onReportIssue}>
                                 <Icon icon="tabler:message-report-filled"/>
+                            </Button>
+                        </OverlayTrigger>
+                    )}
+
+                    {(isMaintainer) && (
+                        <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Edytuj pytanie</Tooltip>}
+                        >
+                            <Button variant={theme} onClick={onEditQuestion}>
+                                <Icon icon="mdi:edit"/>
                             </Button>
                         </OverlayTrigger>
                     )}
