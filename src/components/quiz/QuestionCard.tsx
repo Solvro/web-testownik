@@ -171,7 +171,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                         </Button>
                     )}
                 </div>
-                <div id="explanation" className="mt-3"></div>
+                {question.explanation && questionChecked && (
+                    <div id="explanation" className="mt-3">
+                        <Markdown>{question.explanation}</Markdown>
+                    </div>
+                )}
             </Card.Body>
         </Card>
     );
