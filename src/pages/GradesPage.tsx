@@ -25,6 +25,7 @@ interface Term {
     name: string;
     start_date: string;
     end_date: string;
+    finish_date: string;
 }
 
 interface GradesData {
@@ -61,8 +62,8 @@ const GradesPage: React.FC = () => {
                     data.terms.find(
                         (term) =>
                             new Date() >= new Date(term.start_date) &&
-                            new Date() <= new Date(term.end_date)
-                    )?.id || ""
+                            new Date() <= new Date(term.finish_date)
+                    )?.id || data.terms.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())[0].id
                 );
                 setError(null);
                 setLoading(false);

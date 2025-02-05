@@ -43,8 +43,8 @@ const App: React.FC = () => {
 
     return (
         <>
-            <div className="container d-flex flex-column mb-5" id="container">
-                <Router>
+            <Router>
+                <div className="container d-flex flex-column mb-5" id="container">
                     <Navbar/>
                     <Alerts/>
                     <Routes>
@@ -73,16 +73,16 @@ const App: React.FC = () => {
                         <Route path="/terms" element={<TermsPage/>}/>
                         <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
                     </Routes>
-                </Router>
-            </div>
-            <ToastContainer theme={context.theme.getTheme()} newestOnTop={false} pauseOnFocusLoss
-                            position="bottom-right"/>
-            <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
-                    style={{position: "fixed", bottom: 0, width: "100%"}}>
+                </div>
+                <ToastContainer theme={context.theme.getTheme()} newestOnTop={false} pauseOnFocusLoss
+                                position="bottom-right" draggable={true}/>
+                <footer className={`footer text-center py-1 d-none d-sm-block bg-${context.theme.getTheme()}`}
+                        style={{position: "fixed", bottom: 0, width: "100%"}}>
                 <span>© {new Date().getFullYear()} <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>, powered by <a
                     href="https://solvro.pwr.edu.pl/"><img src="/solvro_mono.svg" alt="solvro logo" width={24}
                                                            className="solvro-logo"/> KN Solvro</a> </span>
-            </footer>
+                </footer>
+            </Router>
         </>
     );
 };

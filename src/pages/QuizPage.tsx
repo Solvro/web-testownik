@@ -5,7 +5,7 @@ import React, {
     useRef,
     useContext,
 } from "react";
-import {useLocation, useParams} from "react-router";
+import {Link, useLocation, useNavigate, useParams} from "react-router";
 import {
     Row,
     Col, Card, Button,
@@ -24,9 +24,9 @@ import {Icon} from "@iconify/react";
 import "../styles/quiz.css";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import LoginPrompt from "../components/LoginPrompt.tsx";
-import {AxiosError} from "axios";
 import QuizActionButtons from "../components/quiz/QuizActionButtons.tsx";
 import {toast} from "react-toastify";
+import ReportQuestionIssueModal from "../components/quiz/ReportQuestionIssueModal.tsx";
 
 interface UserSettings {
     sync_progress: boolean;
@@ -54,6 +54,7 @@ const PING_TIMEOUT = 15000; // 15s
 const QuizPage: React.FC = () => {
     const {quizId} = useParams<{ quizId: string }>();
     const appContext = useContext(AppContext);
+    const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
 
@@ -97,6 +98,7 @@ const QuizPage: React.FC = () => {
 
     // Memes
     const [showBrainrot, setShowBrainrot] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
 
     // ========== Lifecycle ==========
@@ -144,6 +146,22 @@ const QuizPage: React.FC = () => {
             }
 
             setLoading(false);
+            if (!localStorage.getItem("shown_reoccurrences_info")) {
+                toast.info(
+                    <div>
+                        <p>
+                            Domyślnie pytania mają 1 powtórzenie i dodatkowe powtórzenia po błędnej odpowiedzi.
+                        </p>
+                        <p>
+                            Możesz zmienić to w <Link to="/profile#settings">ustawieniach</Link>.
+                        </p>
+                    </div>,
+                    {
+                        icon: () => <Icon icon="mdi:settings"/>,
+                        autoClose: 10000,
+                    });
+                localStorage.setItem("shown_reoccurrences_info", "true");
+            }
         })();
 
 
@@ -565,44 +583,13 @@ const QuizPage: React.FC = () => {
     };
 
     const reportIncorrectQuestion = async () => {
-        if (!currentQuestion || !quiz) {
-            alert("Brak pytania do zgłoszenia!");
-            return;
-        }
-        if (!quiz) {
-            alert("Quiz nie został załadowany, spróbuj ponownie później");
-            return;
-        }
-
-        const issue = prompt("Podaj krótki opis błędu w pytaniu:");
-
-        if (!issue) {
-            alert("Nie podano opisu błędu, zgłoszenie nie zostało wysłane.");
-            return;
-        }
-
-        try {
-            const response = await appContext.axiosInstance.post("/report-quiz-error/", {
-                quiz_id: quiz.id,
-                question_id: currentQuestion.id,
-                issue: issue,
-            });
-
-            if (response.status === 201) {
-                alert("Zgłoszenie zostało wysłane do właściciela quizu. Dziękujemy!");
-            } else {
-                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n" + response.data);
-            }
-        } catch (e) {
-            console.error("Error reporting incorrect question:", e);
-            if (e instanceof AxiosError) {
-                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n" + e.response?.data.error);
-            } else {
-                alert("Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później.");
-            }
-        }
-
+        setShowReportModal(true);
     };
+
+    const editQuestion = () => {
+        if (!currentQuestion) return;
+        navigate(`/edit-quiz/${quizId}#question-${currentQuestion.id}`);
+    }
 
 
     interface InitialSyncMessage {
@@ -701,7 +688,7 @@ const QuizPage: React.FC = () => {
                             })
                             .catch((error) => {
                                 console.error("Error connecting to host:", error);
-                                alert("Failed to connect to the host. Please try again.");
+                                toast.error("Failed to connect to the host. Please try again.");
                             });
                     });
 
@@ -1022,6 +1009,7 @@ const QuizPage: React.FC = () => {
                         onCopy={copyToClipboard}
                         onOpenChatGPT={openInChatGPT}
                         onReportIssue={reportIncorrectQuestion}
+                        onEditQuestion={editQuestion}
                         toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
                         isMaintainer={quiz.maintainer?.id === parseInt(localStorage.getItem("user_id") || "")}
                         theme={appContext.theme.getTheme()}
@@ -1052,6 +1040,12 @@ const QuizPage: React.FC = () => {
             <ContinuityModal
                 peerConnections={peerConnections}
                 isContinuityHost={isContinuityHost}
+            />
+            <ReportQuestionIssueModal
+                show={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                quizId={quiz.id}
+                questionId={currentQuestion?.id}
             />
         </>
     );

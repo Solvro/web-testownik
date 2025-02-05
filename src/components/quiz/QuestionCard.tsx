@@ -127,6 +127,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             <Card.Body>
                 <div>
                     <Markdown>{question.id + ". " + question.question}</Markdown>
+                    {question.image && (
+                        <img src={question.image} alt={question.question} className="d-block mx-auto rounded mw-100"/>
+                    )}
                 </div>
                 <div className="mt-3 d-flex flex-column gap-2">
                     {question.answers.map((answer: Answer, idx: number) => (
@@ -138,7 +141,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                             className={`answer ${selectedAnswers.includes(idx) ? 'active' : ''} ${getAnswerAdditionalClasses(answer, idx)}`}
                             disabled={questionChecked}
                         >
-                            {answer.answer}
+                            <div className="d-flex justify-content-between align-items-center flex-column">
+                                {answer.answer}
+                                {answer.image && (
+                                    <img src={answer.image} alt={answer.answer}
+                                         className="d-block mx-auto rounded mb-2 mw-100"/>
+                                )}
+                            </div>
                         </Button>
                     ))}
                 </div>
@@ -162,7 +171,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                         </Button>
                     )}
                 </div>
-                <div id="explanation" className="mt-3"></div>
+                {question.explanation && questionChecked && (
+                    <div id="explanation" className="mt-3">
+                        <Markdown>{question.explanation}</Markdown>
+                    </div>
+                )}
             </Card.Body>
         </Card>
     );

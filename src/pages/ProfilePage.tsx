@@ -4,6 +4,7 @@ import MenuSidebar from "../components/profile/MenuSidebar.tsx";
 import ProfileDetails from "../components/profile/ProfileDetails.tsx";
 import SettingsForm from "../components/profile/SettingsForm.tsx";
 import AppContext from "../AppContext.tsx";
+import {useLocation} from "react-router";
 
 interface UserData {
     id: number;
@@ -25,6 +26,7 @@ interface SettingsData {
 
 const ProfilePage: React.FC = () => {
     const appContext = useContext(AppContext);
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState<string>("account");
     const [userData, setUserData] = useState<UserData | null>(null);
     const [settings, setSettings] = useState<SettingsData>({
@@ -36,6 +38,11 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         // Set page title
         document.title = "Profil - Testownik Solvro";
+
+        if (location.hash) {
+            handleTabSelect(location.hash.slice(1));
+            window.history.replaceState(null, "", location.pathname);
+        }
 
         if (appContext.isGuest) {
             setSettings(localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : settings);
