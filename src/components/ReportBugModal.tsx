@@ -26,7 +26,7 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({show, onHide}) => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSending, setIsSending] = useState(false);
 
-    const quizId = location.pathname.includes('quiz') ? location.pathname.split('/').pop() : null;
+    const quizId = location.pathname.includes('quiz/') ? location.pathname.split('/').pop() : null;
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
