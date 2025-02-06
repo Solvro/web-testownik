@@ -1,9 +1,10 @@
 import React, {useContext, useState} from 'react';
-import {Modal, Button, Form, Row, Col} from 'react-bootstrap';
+import {Modal, Button, Form, Row, Col, Alert} from 'react-bootstrap';
 import AppContext from '../AppContext.tsx';
 import axios from 'axios';
 import {SERVER_URL} from '../config.ts';
 import {toast} from "react-toastify";
+import {Icon} from "@iconify/react";
 
 interface ReportBugModalProps {
     show: boolean;
@@ -24,6 +25,8 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({show, onHide}) => {
     const [form, setForm] = useState(DEFAULT_FORM_STATE);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSending, setIsSending] = useState(false);
+
+    const quizId = location.pathname.includes('quiz') ? location.pathname.split('/').pop() : null;
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
@@ -63,7 +66,6 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({show, onHide}) => {
         }
 
         if (form.sendDiagnostics) {
-            const quizId = location.pathname.includes('quiz') ? location.pathname.split('/').pop() : null;
             const diagnostics = {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
@@ -117,6 +119,13 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({show, onHide}) => {
                 <Modal.Title>Zgłoszenie błędu lub sugestia</Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                {quizId && (
+                    <Alert variant="info">
+                        Ten formularz służy do zgłaszania błędów w aplikacji. Jeśli chcesz zgłosić błąd w quizie, to
+                        zrób to bezpośrednio z poziomu quizu, używając przycisku <Icon
+                        icon="tabler:message-report-filled"/>
+                    </Alert>
+                )}
                 <Row className="mb-3">
                     <Form.Group as={Col} controlId="name">
                         <Form.Label>Twoja nazwa</Form.Label>
