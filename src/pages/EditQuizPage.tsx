@@ -22,6 +22,8 @@ const EditQuizPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [advancedMode, setAdvancedMode] = useState(false);
 
+    const [prevQuestionId, setPrevQuestionId] = useState<number>(0);
+
     document.title = "Edytuj quiz - Testownik Solvro";
 
     useEffect(() => {
@@ -42,6 +44,7 @@ const EditQuizPage: React.FC = () => {
                         setAdvancedMode(true);
                     }
                     setLoading(false);
+                    setPrevQuestionId(quiz.questions.reduce((prev: Question, current: Question) => (prev.id > current.id) ? prev : current).id);
                     return;
                 }
                 const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
@@ -53,6 +56,7 @@ const EditQuizPage: React.FC = () => {
                     if (data.questions.some((q) => q.image || q.explanation || q.answers.some((a) => a.image))) {
                         setAdvancedMode(true);
                     }
+                    setPrevQuestionId(data.questions.reduce((prev: Question, current: Question) => (prev.id > current.id) ? prev : current).id);
                     setTimeout(() => {
                         if (location.hash || queryParams.has('scroll_to')) {
                             const element = document.getElementById(window.location.hash.substring(1) || queryParams.get('scroll_to') || '');
@@ -86,7 +90,7 @@ const EditQuizPage: React.FC = () => {
         setQuestions((prev) => [
             ...prev,
             {
-                id: prev.length + 1,
+                id: prevQuestionId + 1,
                 question: '',
                 multiple: true,
                 answers: [{answer: '', correct: false, image: ''}, {answer: '', correct: false, image: ''}],
@@ -94,6 +98,7 @@ const EditQuizPage: React.FC = () => {
                 explanation: ''
             },
         ]);
+        setPrevQuestionId(prevQuestionId + 1);
     };
 
     const updateQuestion = (updatedQuestion: Question) => {
