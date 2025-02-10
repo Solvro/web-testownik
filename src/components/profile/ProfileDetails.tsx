@@ -157,7 +157,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                         <li>Email: {userData?.email}</li>
                     </ul>
                     <hr className="w-100"/>
-                    <p className="text-muted text-center">
+                    <p className="text-muted text-center text-wrap">
                         Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami pod
                         adresem: <a href="mailto:kn.solvro@pwr.edu.pl">kn.solvro@pwr.edu.pl</a>
                     </p>
