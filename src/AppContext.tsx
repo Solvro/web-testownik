@@ -1,4 +1,4 @@
-import React, {createContext, useState} from 'react';
+import React, {createContext, useCallback, useState} from 'react';
 import {AppTheme} from "./Theme.tsx";
 import axios, {AxiosInstance} from "axios";
 import {SERVER_URL} from './config';
@@ -11,7 +11,8 @@ export interface AppContextType {
     isGuest: boolean;
     setGuest: (isGuest: boolean) => void;
     theme: AppTheme;
-    axiosInstance: AxiosInstance
+    axiosInstance: AxiosInstance,
+    fetchUserData: () => Promise<void>;
 }
 
 const axiosInstance = axios.create({
@@ -34,6 +35,7 @@ const AppContext = createContext<AppContextType>({
     },
     theme: new AppTheme(),
     axiosInstance: axiosInstance,
+    fetchUserData: () => Promise.resolve(),
 });
 
 const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
@@ -44,6 +46,23 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({children})
         localStorage.setItem("is_guest", isGuest.toString());
         setIsGuest(isGuest);
     }
+
+    const fetchUserData = useCallback(async () => {
+        try {
+            const response = await axiosInstance.get('/user/');
+            if (!response.data) {
+                throw new Error('No user data available');
+            }
+            const userData = response.data;
+            localStorage.setItem('profile_picture', userData.photo);
+            localStorage.setItem('is_staff', userData.is_staff);
+            localStorage.setItem('user_id', userData.id);
+            setIsAuthenticated(true);
+        } catch {
+            console.error('Failed to fetch user data');
+        }
+    }, []);
+
     const context: AppContextType = {
         isAuthenticated: isAuthenticated,
         setAuthenticated: setIsAuthenticated,
@@ -51,6 +70,7 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({children})
         setGuest: setGuest,
         theme: new AppTheme(),
         axiosInstance: axiosInstance,
+        fetchUserData: fetchUserData,
     }
 
     axiosInstance.interceptors.response.use((response) => response, (error) => {

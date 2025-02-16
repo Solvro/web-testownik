@@ -20,6 +20,9 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.tsx";
 import {ToastContainer} from "react-toastify";
 import Alerts from "./components/Alerts.tsx";
 import ConnectGuestAccount from "./components/ConnectGuestAccount.tsx";
+import LoginLinkPage from "./pages/LoginLinkPage.tsx";
+import OTPLoginPage from "./pages/OTPLoginPage.tsx";
+import './styles/App.css';
 
 const useThemeDetector = () => {
     const getCurrentTheme = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -63,6 +66,8 @@ const App: React.FC = () => {
                             </>
                         ) || (
                             <>
+                                <Route path="/login-otp" element={<OTPLoginPage/>}/>
+                                <Route path="/login-link/:token" element={<LoginLinkPage/>}/>
                                 <Route path="*" element={<LoginPrompt/>}/>
                             </>
                         )}

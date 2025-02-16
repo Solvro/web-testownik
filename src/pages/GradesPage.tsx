@@ -66,10 +66,11 @@ const GradesPage: React.FC = () => {
                     )?.id || data.terms.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())[0].id
                 );
                 setError(null);
-                setLoading(false);
             } catch (error) {
                 console.error("Error fetching grades:", error);
                 setError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania ocen.");
+            } finally {
+                setLoading(false);
             }
         };
         if (!appContext.isGuest) {
@@ -136,6 +137,26 @@ const GradesPage: React.FC = () => {
         );
     }
 
+    if (error) {
+        return (
+            <Card className="shadow border-0">
+                <Card.Body>
+                    <Alert variant="danger">
+                        <p>Wystąpił błąd podczas pobierania ocen.</p>
+                        <p>{error}</p>
+                        <Button
+                            variant="link"
+                            className="alert-link p-0"
+                            onClick={() => window.location.reload()}
+                        >
+                            Spróbuj ponownie
+                        </Button>
+                    </Alert>
+                </Card.Body>
+            </Card>
+        );
+    }
+
     if (loading) {
         return (
             <Card className="shadow border-0">
@@ -144,19 +165,6 @@ const GradesPage: React.FC = () => {
                         <p>Ładowanie ocen...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
                     </div>
-                    {error && (
-                        <Alert variant="danger">
-                            <p>Wystąpił błąd podczas pobierania ocen.</p>
-                            <p>{error}</p>
-                            <Button
-                                variant="link"
-                                className="alert-link p-0"
-                                onClick={() => window.location.reload()}
-                            >
-                                Spróbuj ponownie
-                            </Button>
-                        </Alert>
-                    )}
                 </Card.Body>
             </Card>
         );
