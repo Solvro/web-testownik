@@ -370,7 +370,11 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                         value={searchQuery}
                         onChange={handleSearchInput}
                         onKeyUp={() => {
-                            if (searchQuery.length >= 3) handleSearch(searchQuery);
+                            if (searchQuery.length >= 3) {
+                                handleSearch(searchQuery);
+                            } else {
+                                setSearchResults([]);
+                            }
                         }}
                     />
                 </OverlayTrigger>

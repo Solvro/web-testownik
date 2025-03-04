@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from "react";
-import {Badge, Card, Placeholder, Modal, Button} from "react-bootstrap";
+import {Badge, Card, Placeholder, Modal, Button, Form, Stack} from "react-bootstrap";
 import {PuffLoader} from "react-spinners";
 import "../../styles/ProfileDetails.css";
 import AppContext from "../../AppContext.tsx";
@@ -17,6 +17,7 @@ interface UserData {
     photo: string;
     is_superuser: boolean;
     is_staff: boolean;
+    hide_profile: boolean;
 }
 
 interface ProfileDetailsProps {
@@ -45,10 +46,24 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                 document.getElementById("profile-pic")?.setAttribute("src", selectedPhoto);
                 if (userData) setUserData({...userData, photo: selectedPhoto});
             })
-            .catch((err) => console.error("Error saving photo:", err));
+            .catch((err) => {
+                console.error("Error saving photo:", err);
+                toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
+            });
 
 
     };
+
+    const handleHideProfile = (hide: boolean) => {
+        appContext.axiosInstance.patch("/user/", {hide_profile: hide})
+            .then(() => {
+                if (userData) setUserData({...userData, hide_profile: hide});
+            })
+            .catch((err) => {
+                console.error("Error saving photo:", err);
+                toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
+            });
+    }
 
     useEffect(() => {
         setSelectedPhoto(userData?.photo || "");
@@ -156,6 +171,22 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                         <li>Id: {userData?.id}</li>
                         <li>Email: {userData?.email}</li>
                     </ul>
+                    <hr className="w-100"/>
+                    <Stack direction="horizontal" gap={3}>
+                        <Form.Label className={appContext.isGuest ? "text-muted text-wrap" : "text-wrap"}>
+                            <span>Ukryj profil</span>
+                            <br/>
+                            <span className="text-muted" style={{fontSize: "0.75rem"}}>Nie będzie cię można znaleźć w wyszukiwarce po imieniu i nazwisku,
+                                nie będziesz wyświetlany w rankingach.</span>
+                        </Form.Label>
+                        <Form.Check
+                            type="switch"
+                            className="ms-auto"
+                            checked={userData?.hide_profile}
+                            onChange={(e) => handleHideProfile(e.target.checked)}
+                            disabled={appContext.isGuest}
+                        />
+                    </Stack>
                     <hr className="w-100"/>
                     <p className="text-muted text-center text-wrap">
                         Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami pod

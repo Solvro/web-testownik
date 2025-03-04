@@ -16,6 +16,7 @@ interface UserData {
     photo: string;
     is_superuser: boolean;
     is_staff: boolean;
+    hide_profile: boolean;
 }
 
 interface SettingsData {
@@ -63,8 +64,15 @@ const ProfilePage: React.FC = () => {
     }, []);
 
     const handleTabSelect = (tabKey: string | null) => {
-        if (tabKey) setActiveTab(tabKey);
-        document.title = `${tabKey === "account" ? "Profil" : "Ustawienia"} - Testownik Solvro`;
+        if (!tabKey) return;
+
+        setActiveTab(tabKey);
+
+        const titles: Record<string, string> = {
+            account: "Profil",
+            settings: "Ustawienia",
+        };
+        document.title = `${titles[tabKey] || "Profil"} - Testownik Solvro`;
     };
 
     const handleSettingChange = (name: keyof SettingsData, value: boolean | number) => {

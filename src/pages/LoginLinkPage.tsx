@@ -54,10 +54,10 @@ const LoginLinkPage = () => {
                         </Button>
                     </Alert>
                 ) : (
-                    <Alert variant="info">
+                    <div className="text-center mb-5">
                         <p>Trwa logowanie...</p>
                         <PropagateLoader color={appContext.theme.getOppositeThemeColor()} loading={true} size={15}/>
-                    </Alert>
+                    </div>
                 )}
             </Card.Body>
         </Card>
