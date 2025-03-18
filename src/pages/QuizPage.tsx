@@ -211,18 +211,20 @@ const QuizPage: React.FC = () => {
     // ========== API & Local Storage Helpers ==========
     const fetchQuiz = async (): Promise<Quiz | null> => {
         try {
-            if (appContext.isGuest) {
-                const userQuizzes = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
-                const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
-                if (quiz) {
-                    return quiz;
+            try {
+                const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
+                if (response.status === 200) {
+                    return response.data;
                 }
-                return null;
+            } catch (e) {
+                console.info("Error fetching quiz from server, falling back to local storage:", e);
             }
-            const response = await appContext.axiosInstance.get(`/quizzes/${quizId}/`);
-            if (response.status === 200) {
-                return response.data;
+            const userQuizzes = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
+            const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
+            if (quiz) {
+                return quiz;
             }
+            return null;
         } catch (e) {
             console.error("Error fetching quiz:", e);
         }
@@ -231,7 +233,7 @@ const QuizPage: React.FC = () => {
 
     const fetchUserSettings = async (): Promise<UserSettings> => {
         try {
-            if (appContext.isGuest) {
+            if (appContext.isGuest || !appContext.isAuthenticated) {
                 return localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : {
                     sync_progress: false,
                     initial_reoccurrences: 1,
@@ -255,7 +257,7 @@ const QuizPage: React.FC = () => {
 
     const loadProgress = async (sync: boolean): Promise<Progress | null> => {
         // Try server if sync is enabled
-        if (sync) {
+        if (sync && appContext.isAuthenticated) {
             try {
                 const response = await appContext.axiosInstance.get(
                     `/quiz-progress/${quizId}/`
@@ -294,6 +296,7 @@ const QuizPage: React.FC = () => {
         // if sync and either we are host or not connected at all
         if (
             userSettings.sync_progress &&
+            appContext.isAuthenticated &&
             (isContinuityHost || peerConnections.length === 0)
         ) {
             try {
