@@ -8,7 +8,7 @@ import {toast} from "react-toastify";
 import {useNavigate} from "react-router";
 
 interface UserData {
-    id: number;
+    id: string;
     full_name: string;
     student_number: string;
     email: string;

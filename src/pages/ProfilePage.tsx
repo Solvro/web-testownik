@@ -1,5 +1,5 @@
-import React, {useState, useEffect, useContext} from "react";
-import {Container, Row, Col, Tab} from "react-bootstrap";
+import React, {useContext, useEffect, useState} from "react";
+import {Col, Container, Row, Tab} from "react-bootstrap";
 import MenuSidebar from "../components/profile/MenuSidebar.tsx";
 import ProfileDetails from "../components/profile/ProfileDetails.tsx";
 import SettingsForm from "../components/profile/SettingsForm.tsx";
@@ -7,7 +7,7 @@ import AppContext from "../AppContext.tsx";
 import {useLocation} from "react-router";
 
 interface UserData {
-    id: number;
+    id: string;
     full_name: string;
     student_number: string;
     email: string;

@@ -9,7 +9,7 @@ export enum AccessLevel {
 }
 
 export interface User {
-    id: number;
+    id: string;
     full_name: string;
     photo: string;
     student_number: string;
