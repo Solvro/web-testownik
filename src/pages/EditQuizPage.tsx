@@ -24,6 +24,29 @@ const EditQuizPage: React.FC = () => {
 
     const [prevQuestionId, setPrevQuestionId] = useState<number>(0);
 
+    // State for controlling multiple choice for all questions
+    const [allQuestionsMultiple, setAllQuestionsMultiple] = useState<boolean | null>(null);
+
+    // Function to determine the state of all questions multiple property
+    const getAllQuestionsMultipleState = (): boolean | null => {
+        if (questions.length === 0) return null;
+        const allTrue = questions.every(q => q.multiple);
+        const allFalse = questions.every(q => !q.multiple);
+        if (allTrue) return true;
+        if (allFalse) return false;
+        return null; // mixed state
+    };
+
+    // Update allQuestionsMultiple state when questions change
+    useEffect(() => {
+        setAllQuestionsMultiple(getAllQuestionsMultipleState());
+    }, [questions]);
+
+    // Function to set multiple property for all questions
+    const handleSetAllQuestionsMultiple = (multiple: boolean) => {
+        setQuestions(prev => prev.map(q => ({...q, multiple})));
+    };
+
     document.title = "Edytuj quiz - Testownik Solvro";
 
     useEffect(() => {
@@ -191,7 +214,7 @@ const EditQuizPage: React.FC = () => {
         <>
             <Card className="border-0 shadow mb-5">
                 <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap">
                         <h1 className="h5">Edytuj quiz</h1>
                         <Form.Check
                             type="switch"
@@ -222,6 +245,21 @@ const EditQuizPage: React.FC = () => {
                                 onChange={(e) => setDescription(e.target.value)}
                             />
                         </Form.Group>
+
+                        {advancedMode && (
+                            <Form.Check
+                                type="checkbox"
+                                id="all-questions-multiple-switch"
+                                label="Wielokrotny wybór (dla wszystkich pytań)"
+                                checked={allQuestionsMultiple === true}
+                                ref={(el: HTMLInputElement | null) => {
+                                    if (el) {
+                                        el.indeterminate = allQuestionsMultiple === null;
+                                    }
+                                }}
+                                onChange={(e) => handleSetAllQuestionsMultiple(e.target.checked)}
+                            />
+                        )}
 
                         <h2 className="h6 mt-4">Pytania</h2>
                         {questions.map((question) => (

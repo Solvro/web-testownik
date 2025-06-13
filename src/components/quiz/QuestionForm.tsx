@@ -25,16 +25,42 @@ const QuestionForm: React.FC<Props> = ({question, onUpdate, onRemove, advancedMo
         onUpdate({...question, image});
     };
 
+    const handleMultipleChange = (multiple: boolean) => {
+        // If switching from multiple choice to single choice and there are multiple correct answers,
+        // keep only the first correct answer
+        if (!multiple && question.multiple && question.answers.filter(a => a.correct).length > 1) {
+            const firstCorrectIndex = question.answers.findIndex(a => a.correct);
+            const updatedAnswers = question.answers.map((a, i) => ({
+                ...a,
+                correct: i === firstCorrectIndex ? true : false
+            }));
+            onUpdate({...question, multiple, answers: updatedAnswers});
+        } else {
+            onUpdate({...question, multiple});
+        }
+    };
+
     const addAnswer = () => {
         const newAnswer = {answer: '', correct: false, image: ''};
         onUpdate({...question, answers: [...question.answers, newAnswer]});
     };
 
     const updateAnswer = (index: number, updatedAnswer: Answer) => {
-        const updatedAnswers = question.answers.map((a, i) =>
-            i === index ? updatedAnswer : a
-        );
-        onUpdate({...question, answers: updatedAnswers});
+        // If this is a single-choice question and we're marking an answer as correct,
+        // unmark all other answers as correct
+        if (!question.multiple && updatedAnswer.correct) {
+            const updatedAnswers = question.answers.map((a, i) => ({
+                ...a,
+                correct: i === index ? true : false
+            }));
+            updatedAnswers[index] = updatedAnswer;
+            onUpdate({...question, answers: updatedAnswers});
+        } else {
+            const updatedAnswers = question.answers.map((a, i) =>
+                i === index ? updatedAnswer : a
+            );
+            onUpdate({...question, answers: updatedAnswers});
+        }
     };
 
     const removeAnswer = (index: number) => {
@@ -76,10 +102,21 @@ const QuestionForm: React.FC<Props> = ({question, onUpdate, onRemove, advancedMo
                             onChange={(e) => handleExplanationChange(e.target.value)}
                         />
                     </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Check
+                            type="checkbox"
+                            id={`multiple-choice-${question.id}`}
+                            label="Wielokrotny wybór (można zaznaczyć więcej niż jedną odpowiedź)"
+                            checked={question.multiple}
+                            onChange={(e) => handleMultipleChange(e.target.checked)}
+                        />
+                    </Form.Group>
                 </>
             )}
 
-            <h6>Odpowiedzi</h6>
+            <h6>Odpowiedzi {!question.multiple &&
+                <small className="text-muted">(pojedynczy wybór)</small>}{question.multiple &&
+                <small className="text-muted">(wielokrotny wybór)</small>}</h6>
             {question.answers.map((answer, index) => (
                 <Row key={index} className="align-items-center mb-2">
                     <Col>
@@ -112,7 +149,8 @@ const QuestionForm: React.FC<Props> = ({question, onUpdate, onRemove, advancedMo
                     )}
                     <Col xs="auto">
                         <Form.Check
-                            type="checkbox"
+                            type={question.multiple ? "checkbox" : "radio"}
+                            name={question.multiple ? undefined : `question-${question.id}-answers`}
                             checked={answer.correct}
                             onChange={(e) =>
                                 updateAnswer(index, {

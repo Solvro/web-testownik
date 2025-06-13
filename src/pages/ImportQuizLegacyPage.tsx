@@ -300,11 +300,11 @@ const ImportQuizLegacyPage: React.FC = () => {
         let question = lines.slice(1, questionLinesCount + 1).join('\n');
 
         // Extract number from filename
-        const filenameNumberMatch = filename.match(/^0*(\\d+)/);
+        const filenameNumberMatch = filename.match(/^0*(\d+)/);
         if (filenameNumberMatch) {
             const filenameNumber = filenameNumberMatch[1];
             // Remove the number from the beginning of the question if it matches the filename number
-            const questionNumberMatch = question.match(/^0*(\\d+)\\.\\s*(0*\\d+\\.\\s*)?(.*)/);
+            const questionNumberMatch = question.match(/^0*(\d+)\.\s*(0*\d+\.\s*)?(.*)/);
             if (questionNumberMatch && questionNumberMatch[1] === filenameNumber) {
                 question = questionNumberMatch[3];
             }

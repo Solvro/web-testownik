@@ -493,6 +493,21 @@ const QuizPage: React.FC = () => {
         setStudyTime(diff);
     }, []);
 
+
+    // Stop timer when quiz is finished
+    useEffect(() => {
+        if (isQuizFinished && timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        } else if (!isQuizFinished && !timerRef.current) {
+            // Restart timer if quiz is resumed (e.g., after continuity reset)
+            timerRef.current = window.setInterval(() => {
+                updateStudyTime();
+            }, 1000);
+        }
+    }, [isQuizFinished]);
+
+
     // ========== KeyPress Handling ==========
     const handleKeyPress = useCallback((event: globalThis.KeyboardEvent): void => {
         // Don’t override user typing in text input (except checkboxes).

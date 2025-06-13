@@ -77,8 +77,13 @@ const ImportQuizPage: React.FC = () => {
                         return false;
                     }
                     await submitImport('json', data);
-                } catch {
-                    setError('Wystąpił błąd podczas wczytywania pliku.');
+                } catch (error) {
+                    if (error instanceof Error) {
+                        setError(`Wystąpił błąd podczas wczytywania pliku: ${error.message}`);
+                    } else {
+                        setError('Wystąpił błąd podczas wczytywania pliku.');
+                    }
+                    console.error('Błąd podczas wczytywania pliku:', error);
                 }
             };
             reader.readAsText(file);
@@ -110,8 +115,13 @@ const ImportQuizPage: React.FC = () => {
                     return false;
                 }
                 await submitImport('json', data);
-            } catch {
-                setError('Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.');
+            } catch (error) {
+                if (error instanceof Error) {
+                    setError(`Wystąpił błąd podczas parsowania JSON: ${error.message}`);
+                } else {
+                    setError('Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.');
+                }
+                console.error('Błąd podczas parsowania JSON:', error);
             }
         }
         setLoading(false);
