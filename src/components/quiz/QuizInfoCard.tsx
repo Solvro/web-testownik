@@ -1,10 +1,11 @@
 import {Quiz, Reoccurrence} from "./types.ts";
-import React, {useContext} from "react";
+import {useContext} from "react";
 import {Button, ButtonGroup, Card, OverlayTrigger, ProgressBar, Tooltip} from "react-bootstrap";
 import AppContext from "../../AppContext.tsx";
 import {useNavigate} from "react-router";
 import {Icon} from "@iconify/react";
 import {toast} from "react-toastify";
+import "../../styles/quiz.css";
 
 interface QuizInfoCardProps {
     quiz: Quiz | null;
@@ -15,17 +16,34 @@ interface QuizInfoCardProps {
     resetProgress: () => void;
 }
 
-const percentageToColor = (percentage: number) => {
-    if (percentage < 25) {
-        return "danger";
-    } else if (percentage < 50) {
-        return "warning";
-    } else if (percentage < 75) {
-        return "info";
-    } else {
-        return "success";
+const getProgressColor = (percentage: number): string => {
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+
+    // Color stops: [percentage, [r, g, b]]
+    const colorStops: [number, [number, number, number]][] = [
+        [0, [220, 53, 69]],    // Red
+        [25, [255, 193, 7]],   // Yellow
+        [50, [23, 162, 184]],  // Cyan
+        [75, [13, 110, 253]],  // Blue
+        [100, [25, 135, 84]]   // Green
+    ];
+
+    // Find the two colors to interpolate between
+    for (let i = 0; i < colorStops.length - 1; i++) {
+        const [startPercent, startColor] = colorStops[i];
+        const [endPercent, endColor] = colorStops[i + 1];
+
+        if (clampedPercentage >= startPercent && clampedPercentage <= endPercent) {
+            const ratio = (clampedPercentage - startPercent) / (endPercent - startPercent);
+            const r = Math.round(startColor[0] + (endColor[0] - startColor[0]) * ratio);
+            const g = Math.round(startColor[1] + (endColor[1] - startColor[1]) * ratio);
+            const b = Math.round(startColor[2] + (endColor[2] - startColor[2]) * ratio);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
     }
-}
+
+    return 'rgb(25, 135, 84)'; // Default to green
+};
 
 const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                                                        quiz,
@@ -72,7 +90,13 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                         <span className="text-success">{new Date(studyTime * 1000).toISOString().slice(11, 19)}</span>
                     </div>
                 </div>
-                <ProgressBar className="mt-3" now={progressPercentage} variant={percentageToColor(progressPercentage)}/>
+                <ProgressBar
+                    className="mt-3 custom-progress-bar"
+                    now={progressPercentage}
+                    style={{
+                        '--progress-color': getProgressColor(progressPercentage)
+                    } as React.CSSProperties}
+                />
                 <div className="d-flex justify-content-between mt-3">
                     <ButtonGroup>
                         {appContext.isAuthenticated ? (
