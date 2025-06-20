@@ -944,8 +944,38 @@ const QuizPage: React.FC = () => {
     }
 
     if (!quiz) {
-        if (!appContext.isAuthenticated) {
+        if (!appContext.isAuthenticated && !appContext.isGuest) {
             return <LoginPrompt/>;
+        }
+        if (appContext.isGuest) {
+            return (
+                <Card className="border-0 shadow">
+                    <Card.Body>
+                        <div className="text-center">
+                            <p>Quiz nie został znaleziony lub nie jest dostępny dla gości.</p>
+                            <p>Możesz spróbować się zalogować, aby uzyskać dostęp do tego quizu, lub
+                                skontaktować się z jego twórcą aby ustawić dostępność.</p>
+                            <div className="d-flex justify-content-center gap-2">
+                                <Button
+                                    variant={appContext.theme.getTheme()}
+                                    onClick={() => window.location.reload()}
+                                    className="d-inline-flex align-items-center gap-1"
+                                >
+                                    <Icon icon="mdi:cloud-refresh-variant"/> Spróbuj ponownie
+                                </Button>
+                                <Link to="/connect-account">
+                                    <Button
+                                        variant="primary"
+                                        className="d-inline-flex align-items-center gap-1"
+                                    >
+                                        <Icon icon="mdi:login"/> Zaloguj się
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </Card.Body>
+                </Card>
+            );
         }
         return (
             <Card className="border-0 shadow">

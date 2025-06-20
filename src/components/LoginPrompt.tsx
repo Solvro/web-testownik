@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import {Card, Button, Modal, Alert} from 'react-bootstrap';
+import {Alert, Button, Card, Modal} from 'react-bootstrap';
 import {Link, useLocation} from 'react-router';
 import GridLoader from "react-spinners/GridLoader";
 import '../styles/LoginPrompt.css';
@@ -20,6 +20,10 @@ const LoginPrompt: React.FC = () => {
     const signInAsGuest = () => {
         appContext.setGuest(true);
         setShowGuestModal(false);
+        localStorage.setItem("settings", JSON.stringify({
+            ...localStorage.getItem("settings") ? JSON.parse(localStorage.getItem("settings")!) : {},
+            sync_progress: false
+        }));
     }
 
     return (
@@ -93,7 +97,8 @@ const LoginPrompt: React.FC = () => {
                         synchronizacji, udostępniania quizów oraz przeglądania swoich ocen.</p>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`} onClick={() => setShowGuestModal(false)}>Anuluj</Button>
+                    <Button variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                            onClick={() => setShowGuestModal(false)}>Anuluj</Button>
                     <Button onClick={signInAsGuest}
                             variant="primary">Kontynuuj jako gość</Button>
                 </Modal.Footer>

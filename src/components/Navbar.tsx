@@ -1,17 +1,5 @@
-import React, {
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
-import {
-    Navbar as BSNavbar,
-    Nav,
-    Container,
-    Button,
-    Badge,
-} from 'react-bootstrap';
+import React, {useCallback, useContext, useEffect, useMemo, useState,} from 'react';
+import {Button, Container, Nav, Navbar as BSNavbar,} from 'react-bootstrap';
 import {Icon} from '@iconify/react';
 import AppContext from '../AppContext.tsx';
 import {SERVER_URL} from '../config.ts';
@@ -139,13 +127,6 @@ const Navbar: React.FC = () => {
                                         className="d-inline-flex gap-1 align-items-center">
                                         <Icon icon="fluent:guest-24-filled"></Icon>
                                         <span>Gość</span>
-                                        <Badge
-                                            bg={appContext.theme.getTheme()}
-                                            style={{
-                                                color: appContext.theme.getOppositeThemeColor(),
-                                            }}>
-                                            <b>BETA</b>
-                                        </Badge>
                                     </Button>
                                 </Nav.Link>
                                 <Nav.Link

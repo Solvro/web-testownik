@@ -1,15 +1,10 @@
-import React, {
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
-import {Modal, Button, Form, OverlayTrigger, Tooltip, Alert} from "react-bootstrap";
+import React, {useCallback, useContext, useEffect, useState,} from "react";
+import {Alert, Button, Form, Modal, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {Icon} from "@iconify/react";
 import PropagateLoader from "react-spinners/PropagateLoader";
 
 import AppContext from "../../../AppContext.tsx";
-import {AccessLevel, User, Group, SharedQuiz} from "./types";
+import {AccessLevel, Group, SharedQuiz, User} from "./types";
 import AccessLevelSelector from "./AccessLevelSelector.tsx";
 import SearchResultsPopover from "./SearchResultsPopover.tsx";
 import AccessList from "./AccessList.tsx";
@@ -408,7 +403,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                         <Form.Check
                             type="switch"
                             id="anonymous-switch"
-                            label="Pozwól na dostęp dla niezalogowanych"
+                            label="Pozwól na dostęp dla niezalogowanych/gości"
                             checked={allowAnonymous}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 handleToggleAllowAnonymous(e.target.checked)

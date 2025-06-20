@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from "react";
-import {Badge, Card, Placeholder, Modal, Button, Form, Stack} from "react-bootstrap";
+import {Badge, Button, Card, Form, Modal, Placeholder, Stack} from "react-bootstrap";
 import {PuffLoader} from "react-spinners";
 import "../../styles/ProfileDetails.css";
 import AppContext from "../../AppContext.tsx";
@@ -87,7 +87,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({userData, loading, setUs
                 <Card.Body className="d-flex flex-column align-items-center text-nowrap">
                     <Icon icon="fluent:guest-32-filled" style={{fontSize: "6em"}}/>
                     <h1 className="mt-3">Gość</h1>
-                    <Badge bg="info" className="bg-opacity-25 text-info">Guest</Badge>
+                    <Badge bg="info" className="bg-opacity-25 text-info">Konto lokalne</Badge>
                     <Button
                         className="mt-3"
                         variant="success"
