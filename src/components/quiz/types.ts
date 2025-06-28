@@ -9,7 +9,7 @@ export interface QuizMetadata {
     allow_anonymous: boolean;
     is_anonymous: boolean;
     version: number;
-    can_edit: boolean;
+    can_edit?: boolean;
 }
 
 export interface Answer {

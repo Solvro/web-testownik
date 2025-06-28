@@ -1,5 +1,5 @@
-import React, {useState, useRef, useContext} from 'react';
-import {Button, Card, Alert, Form, ButtonGroup, Spinner, Modal} from 'react-bootstrap';
+import React, {useContext, useRef, useState} from 'react';
+import {Alert, Button, ButtonGroup, Card, Form, Modal, Spinner} from 'react-bootstrap';
 import {Icon} from "@iconify/react";
 import AppContext from "../AppContext.tsx";
 import {Quiz} from "../components/quiz/types.ts";
@@ -145,7 +145,8 @@ const ImportQuizPage: React.FC = () => {
                     visibility: 0,
                     version: 1,
                     allow_anonymous: false,
-                    is_anonymous: true
+                    is_anonymous: true,
+                    can_edit: true,
                 }
                 const userQuizzes = localStorage.getItem('guest_quizzes') ? JSON.parse(localStorage.getItem('guest_quizzes')!) : []
                 userQuizzes.push(tempQuiz)

@@ -1050,7 +1050,7 @@ const QuizPage: React.FC = () => {
                         onReportIssue={reportIncorrectQuestion}
                         onEditQuestion={editQuestion}
                         toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
-                        isMaintainer={quiz.can_edit}
+                        isMaintainer={quiz.can_edit || quiz.maintainer?.id === localStorage.getItem("user_id")}
                         theme={appContext.theme.getTheme()}
                     />
                 </Col>

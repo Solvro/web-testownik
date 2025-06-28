@@ -173,7 +173,8 @@ const ImportQuizLegacyPage: React.FC = () => {
                     visibility: 0,
                     version: 1,
                     allow_anonymous: false,
-                    is_anonymous: true
+                    is_anonymous: true,
+                    can_edit: true,
                 }
                 userQuizzes.push(tempQuiz)
                 localStorage.setItem('guest_quizzes', JSON.stringify(userQuizzes))
