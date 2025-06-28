@@ -1,5 +1,5 @@
-import React, {useEffect, useState, useContext} from 'react';
-import {Button, Card, Alert, Row, Col, ButtonGroup} from 'react-bootstrap';
+import React, {useContext, useEffect, useState} from 'react';
+import {Alert, Button, ButtonGroup, Card, Col, Row} from 'react-bootstrap';
 import {useNavigate} from 'react-router';
 import AppContext from '../AppContext.tsx';
 import {QuizMetadata} from '../components/quiz/types.ts';
@@ -243,6 +243,10 @@ const QuizzesPage: React.FC = () => {
                         {sharedQuizzes.map((sq) => (
                             <Col key={sq.id}>
                                 <Card className="h-100">
+                                    {sq.quiz.can_edit && (
+                                        <Icon icon={"mdi:pencil"}
+                                              className="position-absolute top-0 end-0 m-2 text-secondary"/>
+                                    )}
                                     <Card.Body>
                                         <Card.Title>{sq.quiz.title}</Card.Title>
                                         <Card.Text>{sq.quiz.description}</Card.Text>
@@ -255,6 +259,15 @@ const QuizzesPage: React.FC = () => {
                                             Otwórz
                                         </Button>
                                         <ButtonGroup className="opacity-75">
+                                            {sq.quiz.can_edit && (
+                                                <Button
+                                                    variant={`outline-${appContext.theme.getOppositeTheme()}`}
+                                                    onClick={() => navigate(`/edit-quiz/${sq.quiz.id}`)}
+                                                    size="sm"
+                                                >
+                                                    <Icon icon={"mdi:edit"}/>
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant={`outline-${appContext.theme.getOppositeTheme()}`}
                                                 onClick={() => handleDownloadQuiz(sq.quiz)}

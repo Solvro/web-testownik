@@ -31,10 +31,10 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
     const [accessLevel, setAccessLevel] = useState<AccessLevel>(AccessLevel.PRIVATE);
     const [loading, setLoading] = useState(false);
 
-    const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<User[]>([]);
-    const [initialGroupsWithAccess, setInitialGroupsWithAccess] = useState<Group[]>([]);
-    const [usersWithAccess, setUsersWithAccess] = useState<User[]>([]);
-    const [groupsWithAccess, setGroupsWithAccess] = useState<Group[]>([]);
+    const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<(User & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
+    const [initialGroupsWithAccess, setInitialGroupsWithAccess] = useState<(Group & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
+    const [usersWithAccess, setUsersWithAccess] = useState<(User & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
+    const [groupsWithAccess, setGroupsWithAccess] = useState<(Group & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
     const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(false);
     const [allowAnonymous, setAllowAnonymous] = useState(false);
 
@@ -91,11 +91,13 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
             const foundUsers = sharedData.flatMap((sq: SharedQuiz) => sq.user ? [{
                 ...sq.user,
                 shared_quiz_id: sq.id,
+                allow_edit: sq.allow_edit,
             }] : []);
             const foundGroups = sharedData.flatMap((sq: SharedQuiz) => sq.group ? [{
                 ...sq.group,
                 photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
+                allow_edit: sq.allow_edit,
             }] : []);
 
             setUsersWithAccess(foundUsers);
@@ -212,12 +214,12 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
         if ("full_name" in entity) {
             // Prevent duplicates
             if (!usersWithAccess.find((u) => u.id === entity.id) && entity.id !== quiz.maintainer?.id) {
-                setUsersWithAccess((prev) => [...prev, entity]);
+                setUsersWithAccess((prev) => [...prev, {...entity, allow_edit: false}]);
             }
         } else {
             // It's a group
             if (!groupsWithAccess.find((g) => g.id === entity.id)) {
-                setGroupsWithAccess((prev) => [...prev, entity]);
+                setGroupsWithAccess((prev) => [...prev, {...entity, allow_edit: false}]);
             }
         }
         setSearchQuery("");
@@ -238,6 +240,22 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
 
     const handleToggleAllowAnonymous = (checked: boolean) => {
         setAllowAnonymous(checked);
+    };
+
+    const handleToggleUserEdit = (user: User & { shared_quiz_id?: string; allow_edit: boolean }) => {
+        setUsersWithAccess((prev) => 
+            prev.map((u) => 
+                u.id === user.id ? { ...u, allow_edit: !u.allow_edit } : u
+            )
+        );
+    };
+
+    const handleToggleGroupEdit = (group: Group & { shared_quiz_id?: string; allow_edit: boolean }) => {
+        setGroupsWithAccess((prev) => 
+            prev.map((g) => 
+                g.id === group.id ? { ...g, allow_edit: !g.allow_edit } : g
+            )
+        );
     };
 
     // -------------- Save Handler -------------- //
@@ -265,6 +283,20 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                 (g) => !initialGroupsWithAccess.some((g2) => g2.id === g.id)
             );
 
+            // Find existing users/groups with changed allow_edit status
+            const changedUsers = usersWithAccess.filter(
+                (u) => {
+                    const initial = initialUsersWithAccess.find((u2) => u2.id === u.id);
+                    return initial && initial.allow_edit !== u.allow_edit;
+                }
+            );
+            const changedGroups = groupsWithAccess.filter(
+                (g) => {
+                    const initial = initialGroupsWithAccess.find((g2) => g2.id === g.id);
+                    return initial && initial.allow_edit !== g.allow_edit;
+                }
+            );
+
 
             for (const rUser of removedUsers) {
                 await appContext.axiosInstance.delete(
@@ -282,6 +314,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                 await appContext.axiosInstance.post(`/shared-quizzes/`, {
                     quiz_id: quiz.id,
                     user_id: aUser.id,
+                    allow_edit: aUser.allow_edit || false,
                 });
             }
 
@@ -289,6 +322,20 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                 await appContext.axiosInstance.post(`/shared-quizzes/`, {
                     quiz_id: quiz.id,
                     study_group_id: aGroup.id,
+                    allow_edit: aGroup.allow_edit || false,
+                });
+            }
+
+            // Update existing users/groups with changed allow_edit status
+            for (const cUser of changedUsers) {
+                await appContext.axiosInstance.patch(`/shared-quizzes/${cUser.shared_quiz_id}/`, {
+                    allow_edit: cUser.allow_edit,
+                });
+            }
+
+            for (const cGroup of changedGroups) {
+                await appContext.axiosInstance.patch(`/shared-quizzes/${cGroup.shared_quiz_id}/`, {
+                    allow_edit: cGroup.allow_edit,
                 });
             }
 
@@ -392,6 +439,8 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
                         handleRemoveUserAccess={handleRemoveUserAccess}
                         handleRemoveGroupAccess={handleRemoveGroupAccess}
                         handleToggleMaintainerAnonymous={handleToggleMaintainerAnonymous}
+                        handleToggleUserEdit={handleToggleUserEdit}
+                        handleToggleGroupEdit={handleToggleGroupEdit}
                     />
                 )}
 

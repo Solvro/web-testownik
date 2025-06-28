@@ -7,13 +7,15 @@ import {QuizMetadata} from "../types.ts";
 
 interface AccessListProps {
     quizMetadata: QuizMetadata | null;
-    usersWithAccess: User[];
-    groupsWithAccess: Group[];
+    usersWithAccess: (User & { shared_quiz_id?: string; allow_edit: boolean })[];
+    groupsWithAccess: (Group & { shared_quiz_id?: string; allow_edit: boolean })[];
     isMaintainerAnonymous: boolean;
     theme: AppTheme;
     handleRemoveUserAccess: (user: User) => void;
     handleRemoveGroupAccess: (group: Group) => void;
     handleToggleMaintainerAnonymous: () => void;
+    handleToggleUserEdit: (user: User & { shared_quiz_id?: string; allow_edit: boolean }) => void;
+    handleToggleGroupEdit: (group: Group & { shared_quiz_id?: string; allow_edit: boolean }) => void;
 }
 
 const AccessList: React.FC<AccessListProps> = ({
@@ -25,6 +27,8 @@ const AccessList: React.FC<AccessListProps> = ({
                                                    handleRemoveUserAccess,
                                                    handleRemoveGroupAccess,
                                                    handleToggleMaintainerAnonymous,
+                                                   handleToggleUserEdit,
+                                                   handleToggleGroupEdit,
                                                }) => {
     return (
         <div className="d-flex flex-wrap gap-2" style={{ maxHeight: "16rem", overflowY: "auto" }}>
@@ -83,6 +87,27 @@ const AccessList: React.FC<AccessListProps> = ({
                         />
                         <p className="m-0">{user.full_name}</p>
                     </div>
+                    <div className="d-flex align-items-center gap-2">
+                    <div
+                        onClick={() => handleToggleUserEdit(user)}
+                        style={{ cursor: "pointer", userSelect: "none" }}
+                    >
+                        { user.allow_edit ? (
+                            <Icon
+                                icon="mdi:pencil"
+                                className="text-success bg-success bg-opacity-25 rounded-circle p-1"
+                                width="32"
+                                height="32"
+                            />
+                        ) : (
+                            <Icon
+                                icon="mdi:eye"
+                                className="text-secondary bg-secondary bg-opacity-25 rounded-circle p-1"
+                                width="32"
+                                height="32"
+                            />
+                        )}
+                    </div>
                     <Button
                         size="sm"
                         className="text-danger bg-danger bg-opacity-25 border-0"
@@ -90,6 +115,7 @@ const AccessList: React.FC<AccessListProps> = ({
                     >
                         Usuń
                     </Button>
+                    </div>
                 </div>
             ))}
 
@@ -109,13 +135,35 @@ const AccessList: React.FC<AccessListProps> = ({
                         />
                         <p className="m-0">{group.name}</p>
                     </div>
-                    <Button
-                        size="sm"
-                        className="text-danger bg-danger bg-opacity-25 border-0"
-                        onClick={() => handleRemoveGroupAccess(group)}
-                    >
-                        Usuń
-                    </Button>
+                    <div className="d-flex align-items-center gap-2">
+                        <div
+                            onClick={() => handleToggleGroupEdit(group)}
+                            style={{ cursor: "pointer", userSelect: "none" }}
+                        >
+                            { group.allow_edit ? (
+                                <Icon
+                                    icon="mdi:pencil"
+                                    className="text-success bg-success bg-opacity-25 rounded-circle p-1"
+                                    width="32"
+                                    height="32"
+                                />
+                            ) : (
+                                <Icon
+                                    icon="mdi:eye"
+                                    className="text-secondary bg-secondary bg-opacity-25 rounded-circle p-1"
+                                    width="32"
+                                    height="32"
+                                />
+                            )}
+                        </div>
+                        <Button
+                            size="sm"
+                            className="text-danger bg-danger bg-opacity-25 border-0"
+                            onClick={() => handleRemoveGroupAccess(group)}
+                        >
+                            Usuń
+                        </Button>
+                    </div>
                 </div>
             ))}
         </div>

@@ -1,10 +1,5 @@
-import React, {useContext, useState, useEffect} from 'react';
-import {
-    Card,
-    Button,
-    Alert,
-    Form
-} from 'react-bootstrap';
+import React, {useContext, useEffect, useState} from 'react';
+import {Alert, Button, Card, Form} from 'react-bootstrap';
 import {Link, useLocation, useNavigate} from 'react-router';
 import AppContext from "../AppContext.tsx";
 import {SERVER_URL} from "../config.ts";
@@ -75,7 +70,7 @@ const ConnectGuestAccount: React.FC = () => {
                         const progress = JSON.parse(localStorage.getItem(`${quiz.id}_progress`) || "{}");
                         if (progress) {
                             setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
-                            await appContext.axiosInstance.post(`/quiz-progress/${newQuizId}/`, progress);
+                            await appContext.axiosInstance.post(`/quiz/${newQuizId}/progress/`, progress);
                         }
                     }
                     // Replace the quiz ID in the local storage with the new ID

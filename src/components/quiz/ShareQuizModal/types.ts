@@ -39,4 +39,5 @@ export interface SharedQuiz {
     access_level: AccessLevel;
     user: User | null;
     group: Group | null;
+    allow_edit: boolean;
 }

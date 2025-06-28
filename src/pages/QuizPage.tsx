@@ -251,7 +251,7 @@ const QuizPage: React.FC = () => {
         if (sync && appContext.isAuthenticated) {
             try {
                 const response = await appContext.axiosInstance.get(
-                    `/quiz-progress/${quizId}/`
+                    `/quiz/${quizId}/progress/`
                 );
                 if (response.status === 200) {
                     startTimeRef.current = Date.now() - response.data.study_time * 1000;
@@ -291,7 +291,7 @@ const QuizPage: React.FC = () => {
             (isContinuityHost || peerConnections.length === 0)
         ) {
             try {
-                await appContext.axiosInstance.post(`/quiz-progress/${quizId}/`, progress);
+                await appContext.axiosInstance.post(`/quiz/${quizId}/progress/`, progress);
             } catch (e) {
                 console.error("Error saving progress to server:", e);
             }
@@ -314,7 +314,7 @@ const QuizPage: React.FC = () => {
         localStorage.removeItem(`${quizId}_progress`);
         if (userSettings.sync_progress) {
             try {
-                await appContext.axiosInstance.delete(`/quiz-progress/${quizId}/`);
+                await appContext.axiosInstance.delete(`/quiz/${quizId}/progress/`);
             } catch (e) {
                 console.error("Error resetting progress on server:", e);
             }
@@ -1050,7 +1050,7 @@ const QuizPage: React.FC = () => {
                         onReportIssue={reportIncorrectQuestion}
                         onEditQuestion={editQuestion}
                         toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
-                        isMaintainer={quiz.maintainer?.id === localStorage.getItem("user_id")}
+                        isMaintainer={quiz.can_edit}
                         theme={appContext.theme.getTheme()}
                     />
                 </Col>
