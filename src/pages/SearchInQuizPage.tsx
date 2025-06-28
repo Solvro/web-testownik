@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useParams} from "react-router";
-import {Card, Form, Alert} from "react-bootstrap";
+import {Alert, Card, Form} from "react-bootstrap";
 import {distance} from "fastest-levenshtein";
 import AppContext from "../AppContext.tsx";
 import {Question, Quiz} from "../components/quiz/types.ts";
@@ -46,33 +46,86 @@ const SearchInQuizPage: React.FC = () => {
         }
 
         const lowerCaseQuery = query.toLowerCase().trim();
-        const typoToleranceThreshold = 3; // Maximum distance for fuzzy matching
+        const queryWords = lowerCaseQuery.split(/\s+/).filter(word => word.length > 1);
+        const typoToleranceThreshold = 3;
 
         const filtered = quiz.questions
             .map((question) => {
+                const questionLower = question.question.toLowerCase();
+                const questionWords = questionLower.split(/\s+/).filter(word => word.length > 0);
+                const questionWordCount = questionWords.length;
+
+                // Check for exact matches first
+                const exactMatch = questionLower.includes(lowerCaseQuery);
+
+                // Check for word-level matches
+                let wordMatches = 0;
+                let bestWordDistance = Infinity;
+
+                if (queryWords.length > 0) {
+                    // Count how many query words appear in the question
+                    queryWords.forEach(qWord => {
+                        if (questionWords.some(word => word.includes(qWord))) {
+                            wordMatches++;
+                        }
+
+                        // Find closest word match for typo tolerance
+                        questionWords.forEach(word => {
+                            const wordDistance = distance(word, qWord);
+                            bestWordDistance = Math.min(bestWordDistance, wordDistance);
+                        });
+                    });
+                }
+
+                // Check answers for matches
                 const answerMatches = question.answers.some((answer) =>
                     answer.answer.toLowerCase().includes(lowerCaseQuery)
                 );
 
-                const questionRelevance = question.question
-                    .toLowerCase()
-                    .includes(lowerCaseQuery)
-                    ? distance(question.question.toLowerCase(), lowerCaseQuery) - 100
-                    : distance(question.question.toLowerCase(), lowerCaseQuery);
+                // Number of answer matches
+                const answerMatchCount = question.answers.filter(
+                    answer => answer.answer.toLowerCase().includes(lowerCaseQuery)
+                ).length;
 
+                // Calculate relevance score - lower is better
+                let relevance = exactMatch ? -200 : 0;
+
+                // Boost for word matches
+                relevance -= wordMatches * 50;
+
+                // Only use typo tolerance if we have some word matches or exact matches
+                if (!exactMatch && wordMatches === 0) {
+                    relevance = 1000; // High relevance (bad) for no matches
+                } else if (!exactMatch && bestWordDistance !== Infinity) {
+                    relevance += bestWordDistance;
+                }
+
+                // Boost for answer matches
+                relevance -= answerMatchCount * 30;
+
+                // Calculate match density (ratio of matches to question length)
+                const matchDensity = questionWordCount > 0 ? wordMatches / questionWordCount : 0;
+
+                console.log(`Question: ${question.question}, Relevance: ${relevance}, Word Matches: ${wordMatches}, Exact Match: ${exactMatch}, Match Density: ${matchDensity}`);
                 return {
                     ...question,
-                    relevance: answerMatches
-                        ? -50 // Prioritize matches in answers
-                        : questionRelevance,
+                    relevance,
                     matchesAnswer: answerMatches,
+                    hasExactMatch: exactMatch,
+                    wordMatchCount: wordMatches,
+                    questionWordCount,
+                    matchDensity
                 };
             })
             .filter(
                 (question) =>
-                    question.relevance <= typoToleranceThreshold || // Allow fuzzy matches
-                    question.question.toLowerCase().includes(lowerCaseQuery) || // Exact or substring match in question
-                    question.matchesAnswer // Match in answers
+                    question.hasExactMatch || // Always include exact matches
+                    question.matchesAnswer || // Always include answer matches
+                    (question.wordMatchCount > 0 && ( // Only include if we have actual word matches
+                        question.relevance <= typoToleranceThreshold || // Good typo tolerance
+                        question.matchDensity >= 0.30 || // At least 15% of words match
+                        question.wordMatchCount >= 3    // Or at least 2 words match
+                    ))
             )
             .sort((a, b) => a.relevance - b.relevance);
 
