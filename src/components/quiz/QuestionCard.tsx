@@ -151,10 +151,10 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                     ))}
                 </div>
                 <div className="mt-3">
-                    {questionChecked && !selectedAnswers.length ? (
-                        <p className="text-danger">Nie wybrano odpowiedzi</p>
-                    ) : questionChecked && isQuestionAnsweredCorrectly() ? (
+                    {questionChecked && isQuestionAnsweredCorrectly() ? (
                         <p className="text-success">Poprawna odpowiedź!</p>
+                    ) : questionChecked && !selectedAnswers.length ? (
+                        <p className="text-danger">Nie wybrano odpowiedzi</p>
                     ) : questionChecked && (
                         <p className="text-danger">Niepoprawna odpowiedź.</p>
                     )}
