@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useRef, useState} from "react";
-import {Modal, Button, Form} from "react-bootstrap";
+import {Button, Form, Modal} from "react-bootstrap";
 import {toast} from "react-toastify";
 import {AxiosError} from "axios";
 import AppContext from "../../AppContext.tsx";
@@ -23,10 +23,13 @@ const ReportQuestionIssueModal: React.FC<ReportQuestionIssueModalProps> = ({show
         if (!quizId) {
             console.error("Quiz ID is not set in ReportQuestionIssueModal");
             onClose();
+            return;
         }
         if (!questionId) {
             console.error("Question ID is not set in ReportQuestionIssueModal");
+            toast.error("Nie można zgłosić problemu - brak aktywnego pytania. Spróbuj odświeżyć stronę.");
             onClose();
+            return;
         }
         if (issueRef.current && !isFocused) {
             issueRef.current.focus();

@@ -136,6 +136,19 @@ const QuizPage: React.FC = () => {
                 pickRandomQuestion(quizData, newReoccurrences);
             }
 
+            // Clean up any orphaned reoccurrences that might exist in state
+            // This handles edge cases where questions were deleted after state was set
+            setReoccurrences(prevReoccurrences => {
+                const validQuestionIds = new Set(quizData.questions.map(q => q.id));
+                const cleanedReoccurrences = prevReoccurrences.filter(r => validQuestionIds.has(r.id));
+                // If we filtered out some reoccurrences, log it for debugging
+                if (cleanedReoccurrences.length !== prevReoccurrences.length) {
+                    console.log('Cleaned up orphaned reoccurrences:',
+                        prevReoccurrences.length - cleanedReoccurrences.length, 'removed');
+                }
+                return cleanedReoccurrences;
+            });
+
             setLoading(false);
             if (!localStorage.getItem("shown_reoccurrences_info")) {
                 toast.info(
@@ -361,7 +374,24 @@ const QuizPage: React.FC = () => {
         // Reconstruct
         setCorrectAnswersCount(savedProgress.correct_answers_count);
         setWrongAnswersCount(savedProgress.wrong_answers_count);
-        setReoccurrences(savedProgress.reoccurrences);
+
+        // Filter out reoccurrences for questions that no longer exist in the quiz
+        const validQuestionIds = new Set(quizData.questions.map(q => q.id));
+        const filteredReoccurrences = savedProgress.reoccurrences.filter(
+            r => validQuestionIds.has(r.id)
+        );
+
+        // If we lost some questions, recreate reoccurrences for any new questions that were added
+        const existingIds = new Set(filteredReoccurrences.map(r => r.id));
+        const newQuestionReoccurrences = quizData.questions
+            .filter(q => !existingIds.has(q.id))
+            .map(q => ({
+                id: q.id,
+                reoccurrences: userSettings.initial_reoccurrences,
+            }));
+
+        const finalReoccurrences = [...filteredReoccurrences, ...newQuestionReoccurrences];
+        setReoccurrences(finalReoccurrences);
         setStudyTime(savedProgress.study_time);
 
         // If everything is mastered, or no question set, pick random
@@ -369,14 +399,15 @@ const QuizPage: React.FC = () => {
             (q) => q.id === savedProgress.current_question
         );
         if (!questionFromProgress) {
-            pickRandomQuestion(quizData, savedProgress.reoccurrences);
+            // The saved current question no longer exists, pick a new random one
+            pickRandomQuestion(quizData, finalReoccurrences);
         } else {
             const sortedAnswers = [...questionFromProgress.answers].sort(
                 () => Math.random() - 0.5
             );
             setCurrentQuestion({...questionFromProgress, answers: sortedAnswers});
             // Check if everything is done
-            const anyWithReoccurrences = savedProgress.reoccurrences.some(
+            const anyWithReoccurrences = finalReoccurrences.some(
                 (r) => r.reoccurrences > 0
             );
             if (!anyWithReoccurrences) {
@@ -389,19 +420,48 @@ const QuizPage: React.FC = () => {
         quizData: Quiz,
         recurrencesData: Reoccurrence[]
     ) => {
-        const available = recurrencesData.filter((r) => r.reoccurrences > 0);
-        if (available.length === 0) {
+        // Filter reoccurrences to only include questions that actually exist in the quiz
+        const validQuestionIds = new Set(quizData.questions.map(q => q.id));
+        const validReoccurrences = recurrencesData.filter(
+            r => validQuestionIds.has(r.id) && r.reoccurrences > 0
+        );
+
+        if (validReoccurrences.length === 0) {
             setIsQuizFinished(true);
             saveProgress();
             setCurrentQuestion(null);
-            return;
+            return null;
         }
-        const randId = available[Math.floor(Math.random() * available.length)].id;
+
+        // Pick a random question from valid ones
+        const randId = validReoccurrences[Math.floor(Math.random() * validReoccurrences.length)].id;
         const questionObj = quizData.questions.find((q) => q.id === randId);
+
+        // This should not happen now that we filtered, but let's be extra safe
         if (!questionObj) {
-            setCurrentQuestion(null);
-            return;
+            console.error("Question not found even after filtering - this should not happen", {
+                randId,
+                validReoccurrences
+            });
+            // Try to find any available question as fallback
+            const anyAvailableQuestion = quizData.questions.find(q => {
+                const reoccurrence = recurrencesData.find(r => r.id === q.id);
+                return reoccurrence && reoccurrence.reoccurrences > 0;
+            });
+            if (anyAvailableQuestion) {
+                const sortedAnswers = [...anyAvailableQuestion.answers].sort(
+                    () => Math.random() - 0.5
+                );
+                setCurrentQuestion({...anyAvailableQuestion, answers: sortedAnswers});
+                setIsQuizFinished(false);
+                return {...anyAvailableQuestion, answers: sortedAnswers};
+            } else {
+                setCurrentQuestion(null);
+                setIsQuizFinished(true);
+                return null;
+            }
         }
+
         const sortedAnswers = [...questionObj.answers].sort(
             () => Math.random() - 0.5
         );
@@ -592,6 +652,10 @@ const QuizPage: React.FC = () => {
     };
 
     const reportIncorrectQuestion = async () => {
+        if (!currentQuestion) {
+            toast.error("Nie można zgłosić problemu - brak aktywnego pytania. Spróbuj odświeżyć stronę.");
+            return;
+        }
         setShowReportModal(true);
     };
 
