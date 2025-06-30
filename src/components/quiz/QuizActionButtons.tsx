@@ -11,6 +11,7 @@ interface QuizActionButtonsProps {
     toggleBrainrot: () => void;
     isMaintainer: boolean;
     theme: string;
+    disabled?: boolean;
 }
 
 const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
@@ -21,6 +22,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                                                                  toggleBrainrot,
                                                                  isMaintainer,
                                                                  theme,
+                                                                 disabled = false,
                                                              }) => {
     const appContext = useContext(AppContext);
 
@@ -32,7 +34,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                         placement="top"
                         overlay={<Tooltip>Kopiuj pytanie i odpowiedzi do schowka</Tooltip>}
                     >
-                        <Button variant={theme} onClick={onCopy}>
+                        <Button variant={theme} onClick={onCopy} disabled={disabled}>
                             <Icon icon="solar:clipboard-bold"/>
                         </Button>
                     </OverlayTrigger>
@@ -41,7 +43,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                         placement="top"
                         overlay={<Tooltip>Otwórz pytanie w ChatGPT</Tooltip>}
                     >
-                        <Button variant={theme} onClick={onOpenChatGPT}>
+                        <Button variant={theme} onClick={onOpenChatGPT} disabled={disabled}>
                             <Icon icon="simple-icons:openai"/>
                         </Button>
                     </OverlayTrigger>
@@ -51,7 +53,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                             placement="top"
                             overlay={<Tooltip>Zgłoś problem z pytaniem</Tooltip>}
                         >
-                            <Button variant={theme} onClick={onReportIssue}>
+                            <Button variant={theme} onClick={onReportIssue} disabled={disabled}>
                                 <Icon icon="tabler:message-report-filled"/>
                             </Button>
                         </OverlayTrigger>
@@ -62,7 +64,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
                             placement="top"
                             overlay={<Tooltip>Edytuj pytanie</Tooltip>}
                         >
-                            <Button variant={theme} onClick={onEditQuestion}>
+                            <Button variant={theme} onClick={onEditQuestion} disabled={disabled}>
                                 <Icon icon="mdi:edit"/>
                             </Button>
                         </OverlayTrigger>

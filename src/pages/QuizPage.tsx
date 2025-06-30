@@ -1116,6 +1116,7 @@ const QuizPage: React.FC = () => {
                         toggleBrainrot={() => setShowBrainrot(!showBrainrot)}
                         isMaintainer={quiz.can_edit || quiz.maintainer?.id === localStorage.getItem("user_id")}
                         theme={appContext.theme.getTheme()}
+                        disabled={isQuizFinished || !currentQuestion}
                     />
                 </Col>
                 {showBrainrot && (
@@ -1144,12 +1145,14 @@ const QuizPage: React.FC = () => {
                 peerConnections={peerConnections}
                 isContinuityHost={isContinuityHost}
             />
-            <ReportQuestionIssueModal
-                show={showReportModal}
-                onClose={() => setShowReportModal(false)}
-                quizId={quiz.id}
-                questionId={currentQuestion?.id}
-            />
+            {currentQuestion && (
+                <ReportQuestionIssueModal
+                    show={showReportModal}
+                    onClose={() => setShowReportModal(false)}
+                    quizId={quiz.id}
+                    questionId={currentQuestion?.id}
+                />
+            )}
         </>
     );
 };
