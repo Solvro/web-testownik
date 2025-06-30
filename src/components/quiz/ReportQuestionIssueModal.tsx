@@ -27,7 +27,6 @@ const ReportQuestionIssueModal: React.FC<ReportQuestionIssueModalProps> = ({show
         }
         if (!questionId) {
             console.error("Question ID is not set in ReportQuestionIssueModal");
-            toast.error("Nie można zgłosić problemu - brak aktywnego pytania. Spróbuj odświeżyć stronę.");
             onClose();
             return;
         }
