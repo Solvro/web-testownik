@@ -14,8 +14,6 @@ const setup = () => {
   const user = userEvent.setup();
 
   const fillFields = async () => {
-    const user = userEvent.setup();
-
     await user.type(screen.getByPlaceholderText(/tytuł/i), "test quiz");
     await user.type(screen.getByPlaceholderText(/opis/i), "test description");
     await user.type(screen.getByPlaceholderText(/pytania/i), "test question");
