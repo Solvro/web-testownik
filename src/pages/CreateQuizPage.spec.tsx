@@ -1,6 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { toast } from "react-toastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Quiz } from "../components/quiz/types";
+import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/Providers";
 import CreateQuizPage from "./CreateQuizPage";
 
@@ -24,7 +28,19 @@ const setup = () => {
     await user.click(checkboxes[0]);
   };
 
-  return { user, fillFields };
+  const submit = async () => {
+    await user.click(screen.getByText(/stwórz quiz/i));
+  };
+
+  const addQuestion = async () => {
+    await user.click(screen.getByText(/dodaj pytanie/i));
+  };
+
+  const removeQuestion = async () => {
+    await user.click(screen.getAllByText(/usuń pytanie/i)[0]);
+  };
+
+  return { user, fillFields, submit, addQuestion, removeQuestion };
 };
 
 describe("CreateQuizPage", () => {
@@ -34,7 +50,7 @@ describe("CreateQuizPage", () => {
   });
 
   it("should store quiz in local storage for guest users", async () => {
-    const { user, fillFields } = setup();
+    const { fillFields, submit } = setup();
     render(
       <Providers guest>
         <CreateQuizPage />
@@ -42,17 +58,15 @@ describe("CreateQuizPage", () => {
     );
 
     await fillFields();
-    await user.click(screen.getByText(/stwórz quiz/i));
+    await submit();
 
-    await waitFor(() => {
-      const stored = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
-      expect(stored).toHaveLength(1);
-      expect(stored[0].title).toBe("test quiz");
-    });
+    const stored = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
+    expect(stored).toHaveLength(1);
+    expect(stored[0].title).toBe("test quiz");
   });
 
   it("should try to post quiz if user is authenticated", async () => {
-    const { user, fillFields } = setup();
+    const { fillFields, submit } = setup();
 
     render(
       <Providers>
@@ -61,10 +75,133 @@ describe("CreateQuizPage", () => {
     );
 
     await fillFields();
-    await user.click(screen.getByText(/stwórz quiz/i));
+    await submit();
 
-    await waitFor(() => {
-      expect(screen.getByText(/test quiz/i)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/test quiz/i)).toBeInTheDocument();
+  });
+
+  it("should show error if request fails", async () => {
+    const { fillFields, submit } = setup();
+    server.use(
+      http.post("/quizzes/", async () => {
+        return HttpResponse.error();
+      })
+    );
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+
+    await fillFields();
+    await submit();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
+  });
+
+  it("should show validation error if title is empty", async () => {
+    const { submit } = setup();
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+
+    await submit();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(screen.getByText(/podaj tytuł/i)).toBeInTheDocument();
+  });
+
+  it("should show validation error if qustion field is empty", async () => {
+    const { user, submit } = setup();
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+    await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
+    await submit();
+
+    expect(toast.error).toBeCalled();
+    expect(screen.getByText(/pytanie.*treść/i));
+  });
+
+  it("should show validation error if one of the answer fields is empty", async () => {
+    const { user, submit } = setup();
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+
+    await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
+    await user.type(
+      screen.getByPlaceholderText(/treść pytania/i),
+      "test question"
+    );
+    await submit();
+
+    expect(toast.error).toBeCalled();
+    expect(
+      screen.getByText(/odpowiedź.*w pytaniu.*treść/i)
+    ).toBeInTheDocument();
+  });
+
+  it("should be possible to add question", async () => {
+    const { addQuestion, user, submit, fillFields } = setup();
+    let apiRequest: Quiz | null = null;
+
+    server.use(
+      http.post("*/quizzes", async ({ request }) => {
+        apiRequest = (await request.json()) as Quiz;
+        console.log("I was called");
+        return HttpResponse.json({ ...apiRequest, id: "123" }, { status: 201 });
+      })
+    );
+
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+
+    await fillFields();
+    await addQuestion();
+    await user.type(
+      screen.getAllByPlaceholderText(/treść pytania/i)[1],
+      "test question 2"
+    );
+    await user.type(
+      screen.getAllByPlaceholderText(/treść odpowiedzi/i)[2],
+      "test answer 3"
+    );
+    await user.type(
+      screen.getAllByPlaceholderText(/treść odpowiedzi/i)[3],
+      "test answer 4"
+    );
+    await submit();
+
+    expect(screen.getByText(/pytanie 2/i)).toBeInTheDocument();
+
+    expect(apiRequest!.questions).toHaveLength(2);
+    expect(apiRequest!.questions[0].question).toMatch(/test question/i);
+    expect(apiRequest!.questions[1].question).toMatch(/test question/i);
+  });
+
+  it("should be possible to remove question", async () => {
+    const { removeQuestion, addQuestion } = setup();
+    render(
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
+    );
+    await addQuestion();
+    expect(screen.getAllByText(/pytanie \d/i)).toHaveLength(2);
+
+    await removeQuestion();
+
+    expect(screen.getAllByText(/pytanie \d/i)).toHaveLength(1);
   });
 });
