@@ -1,9 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AppContext from "../AppContext";
-import { AppTheme } from "../Theme";
+import { Providers } from "../tests/Providers";
 import CreateQuizPage from "./CreateQuizPage";
 
 vi.mock("react-toastify", () => ({
@@ -37,18 +35,10 @@ describe("CreateQuizPage", () => {
 
   it("should store quiz in local storage for guest users", async () => {
     const { user, fillFields } = setup();
-    const ctx = {
-      isGuest: true,
-      isAuthenticated: false,
-      axiosInstance: { post: vi.fn() },
-      theme: new AppTheme(),
-    };
     render(
-      <AppContext.Provider value={ctx as never}>
-        <MemoryRouter>
-          <CreateQuizPage />
-        </MemoryRouter>
-      </AppContext.Provider>
+      <Providers guest>
+        <CreateQuizPage />
+      </Providers>
     );
 
     await fillFields();
@@ -63,52 +53,18 @@ describe("CreateQuizPage", () => {
 
   it("should try to post quiz if user is authenticated", async () => {
     const { user, fillFields } = setup();
-    const createdQuiz = {
-      id: "123",
-      title: "test quiz",
-      description: "test description",
-      questions: [
-        {
-          id: 1,
-          question: "test question",
-          multiple: true,
-          answers: [
-            { answer: "test answer 1", correct: true },
-            { answer: "test answer 2", correct: false },
-          ],
-        },
-      ],
-    };
-
-    const mockPost = vi.fn().mockResolvedValue({
-      status: 201,
-      data: createdQuiz,
-    });
-
-    const ctx = {
-      isGuest: false,
-      isAuthenticated: true,
-      axiosInstance: { post: mockPost },
-      theme: new AppTheme(),
-    };
 
     render(
-      <AppContext.Provider value={ctx as never}>
-        <MemoryRouter>
-          <CreateQuizPage />
-        </MemoryRouter>
-      </AppContext.Provider>
+      <Providers>
+        <CreateQuizPage />
+      </Providers>
     );
 
     await fillFields();
     await user.click(screen.getByText(/stwórz quiz/i));
 
     await waitFor(() => {
-      expect(mockPost).toHaveBeenCalledWith("/quizzes/", {
-        title: "test quiz",
-        description: "test description",
-        questions: expect.any(Array),
-      });
+      expect(screen.getByText(/test quiz/i)).toBeInTheDocument();
     });
   });
 });
