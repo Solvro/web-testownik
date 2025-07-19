@@ -29,15 +29,17 @@ const setup = () => {
   };
 
   const submit = async () => {
-    await user.click(screen.getByText(/stwórz quiz/i));
+    await user.click(screen.getByRole("button", { name: /stwórz quiz/i }));
   };
 
   const addQuestion = async () => {
-    await user.click(screen.getByText(/dodaj pytanie/i));
+    await user.click(screen.getByRole("button", { name: /dodaj pytanie/i }));
   };
 
   const removeQuestion = async () => {
-    await user.click(screen.getAllByText(/usuń pytanie/i)[0]);
+    await user.click(
+      screen.getAllByRole("button", { name: /usuń pytanie/i })[0]
+    );
   };
 
   return { user, fillFields, submit, addQuestion, removeQuestion };
@@ -156,7 +158,6 @@ describe("CreateQuizPage", () => {
     server.use(
       http.post("*/quizzes", async ({ request }) => {
         apiRequest = (await request.json()) as Quiz;
-        console.log("I was called");
         return HttpResponse.json({ ...apiRequest, id: "123" }, { status: 201 });
       })
     );
