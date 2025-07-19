@@ -45,6 +45,7 @@ describe("GradesPage", () => {
       </Providers>
     );
 
+    expect(screen.getByText(/ładowanie/i)).toBeInTheDocument();
     await waitForElementToBeRemoved(() => screen.queryByText(/ładowanie/i));
   });
 
@@ -63,7 +64,7 @@ describe("GradesPage", () => {
       ).toBeInTheDocument();
 
       expect(screen.getByText(mockCourses[0].course_name)).toBeInTheDocument();
-      expect(screen.getByText(mockCourses[0].course_name)).toBeInTheDocument();
+      expect(screen.getByText(mockCourses[1].course_name)).toBeInTheDocument();
       expect(
         screen.getByRole("option", { name: mockTerms[0].name })
       ).toBeInTheDocument();
