@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { Quiz } from "../../components/quiz/types";
 import { mockTerms, mockCourses } from "./GradesMock";
+import { mockQuiz } from "./QuizMock";
 
 export const handlers = [
   http.post("/quizzes/", async ({ request }) => {
@@ -24,5 +25,8 @@ export const handlers = [
   }),
   http.get("/grades/", () =>
     HttpResponse.json({ terms: mockTerms, courses: mockCourses })
+  ),
+  http.post("/import-quiz-from-link/", async () =>
+    HttpResponse.json(mockQuiz, { status: 201 })
   ),
 ];
