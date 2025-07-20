@@ -48,7 +48,6 @@ const setup = (guest = false) => {
     ) as HTMLInputElement;
     const file = new File([content], name, { type: "application/json" });
     await user.upload(fileInput, file);
-    console.log(file);
     return file;
   };
 
