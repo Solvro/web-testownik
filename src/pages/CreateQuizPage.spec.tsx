@@ -12,8 +12,14 @@ vi.mock("react-toastify", () => ({
   toast: { error: vi.fn(), info: vi.fn() },
 }));
 
-const setup = () => {
+const setup = (guest = false) => {
   const user = userEvent.setup();
+
+  render(
+    <Providers guest={guest}>
+      <CreateQuizPage />
+    </Providers>
+  );
 
   const fillFields = async () => {
     await user.type(screen.getByPlaceholderText(/tytuł/i), "test quiz");
@@ -52,12 +58,7 @@ describe("CreateQuizPage", () => {
   });
 
   it("should store quiz in local storage for guest users", async () => {
-    const { fillFields, submit } = setup();
-    render(
-      <Providers guest>
-        <CreateQuizPage />
-      </Providers>
-    );
+    const { fillFields, submit } = setup(true);
 
     await fillFields();
     await submit();
@@ -69,12 +70,6 @@ describe("CreateQuizPage", () => {
 
   it("should try to post quiz if user is authenticated", async () => {
     const { fillFields, submit } = setup();
-
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
 
     await fillFields();
     await submit();
@@ -89,11 +84,6 @@ describe("CreateQuizPage", () => {
         return HttpResponse.error();
       })
     );
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
 
     await fillFields();
     await submit();
@@ -104,11 +94,6 @@ describe("CreateQuizPage", () => {
 
   it("should show validation error if title is empty", async () => {
     const { submit } = setup();
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
 
     await submit();
 
@@ -118,11 +103,6 @@ describe("CreateQuizPage", () => {
 
   it("should show validation error if qustion field is empty", async () => {
     const { user, submit } = setup();
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
     await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
     await submit();
 
@@ -132,11 +112,6 @@ describe("CreateQuizPage", () => {
 
   it("should show validation error if one of the answer fields is empty", async () => {
     const { user, submit } = setup();
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
 
     await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
     await user.type(
@@ -160,12 +135,6 @@ describe("CreateQuizPage", () => {
         apiRequest = (await request.json()) as Quiz;
         return HttpResponse.json({ ...apiRequest, id: "123" }, { status: 201 });
       })
-    );
-
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
     );
 
     await fillFields();
@@ -193,11 +162,6 @@ describe("CreateQuizPage", () => {
 
   it("should be possible to remove question", async () => {
     const { removeQuestion, addQuestion } = setup();
-    render(
-      <Providers>
-        <CreateQuizPage />
-      </Providers>
-    );
     await addQuestion();
     expect(screen.getAllByText(/pytanie \d/i)).toHaveLength(2);
 

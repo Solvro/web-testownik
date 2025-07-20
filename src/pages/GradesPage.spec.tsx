@@ -12,19 +12,21 @@ import { Providers } from "../tests/Providers";
 import GradesPage from "./GradesPage";
 import userEvent from "@testing-library/user-event";
 
-const setup = () => {
+const setup = (guest = false) => {
   const user = userEvent.setup();
+
+  render(
+    <Providers guest={guest}>
+      <GradesPage />
+    </Providers>
+  );
 
   return { user };
 };
 
 describe("GradesPage", () => {
   it("should show have restricted gui for guest users", async () => {
-    render(
-      <Providers guest>
-        <GradesPage />
-      </Providers>
-    );
+    setup(true);
 
     expect(screen.getByText(/oceny/i)).toBeInTheDocument();
     expect(
@@ -45,12 +47,7 @@ describe("GradesPage", () => {
           )
       )
     );
-
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     expect(screen.getByText(/ładowanie/i)).toBeInTheDocument();
     await waitForElementToBeRemoved(() => screen.queryByText(/ładowanie/i));
@@ -58,12 +55,7 @@ describe("GradesPage", () => {
 
   it("should display fetched terms and courses", async () => {
     vi.setSystemTime(new Date("2024-10-15T12:00:00Z"));
-
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(
@@ -83,11 +75,7 @@ describe("GradesPage", () => {
 
   it("should show error if api request fails", async () => {
     server.use(http.get("/grades/", () => HttpResponse.error()));
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
@@ -103,11 +91,7 @@ describe("GradesPage", () => {
         })
       )
     );
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(screen.getByText("Matematyka")).toBeInTheDocument();
@@ -126,11 +110,7 @@ describe("GradesPage", () => {
         })
       )
     );
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     // Right now component shows an error, would be better to handle this as an edge case
     await waitFor(() => {
@@ -148,11 +128,7 @@ describe("GradesPage", () => {
         })
       )
     );
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(screen.getByText(emptyCourse.course_name)).toBeInTheDocument();
@@ -170,17 +146,13 @@ describe("GradesPage", () => {
         })
       )
     );
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(screen.getByText(emptyCourse.course_name)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button"));
+    await user.click(screen.getAllByRole("button")[1]);
     const gradeInput = screen.getByRole("spinbutton");
     await user.type(gradeInput, "4.0");
     expect(gradeInput).toHaveValue(4.0);
@@ -194,11 +166,7 @@ describe("GradesPage", () => {
         })
       )
     );
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    setup();
 
     await waitFor(() => {
       expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
@@ -206,8 +174,6 @@ describe("GradesPage", () => {
   });
 
   it("should update courses when switching terms", async () => {
-    const { user } = setup();
-
     server.use(
       http.get("/grades/", () =>
         HttpResponse.json({
@@ -216,19 +182,14 @@ describe("GradesPage", () => {
         })
       )
     );
-
-    render(
-      <Providers>
-        <GradesPage />
-      </Providers>
-    );
+    const { user } = setup();
 
     await waitFor(() => {
       expect(screen.getByText(mockCourses[0].course_name)).toBeInTheDocument();
     });
 
     const termSelect = screen.getByRole("combobox");
-    await user.selectOptions(termSelect, mockTerms[1].name)
+    await user.selectOptions(termSelect, mockTerms[1].name);
 
     await waitFor(() => {
       expect(screen.getByText(mockCourses[2].course_name)).toBeInTheDocument();
