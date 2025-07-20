@@ -152,6 +152,7 @@ describe("GradesPage", () => {
       expect(screen.getByText(emptyCourse.course_name)).toBeInTheDocument();
     });
 
+    // we have two identical buttons in the dom, so there is no other way to tell them apart
     await user.click(screen.getAllByRole("button")[1]);
     const gradeInput = screen.getByRole("spinbutton");
     await user.type(gradeInput, "4.0");
