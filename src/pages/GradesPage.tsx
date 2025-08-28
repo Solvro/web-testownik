@@ -1,9 +1,10 @@
-import React, {useState, useEffect, useContext, useCallback} from "react";
+import React, {useCallback, useContext, useEffect, useState} from "react";
 import AppContext from "../AppContext.tsx";
 import {Alert, Button, Card, Form, Navbar, Table} from "react-bootstrap";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import {Icon} from "@iconify/react";
 import {useNavigate} from "react-router";
+import {AxiosError} from "axios";
 
 interface Grade {
     value: number;
@@ -68,7 +69,11 @@ const GradesPage: React.FC = () => {
                 setError(null);
             } catch (error) {
                 console.error("Error fetching grades:", error);
-                setError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania ocen.");
+                if (error instanceof AxiosError && error.response) {
+                    setError(error.response.data.detail || "Wystąpił błąd podczas pobierania ocen.");
+                } else {
+                    setError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania ocen.");
+                }
             } finally {
                 setLoading(false);
             }

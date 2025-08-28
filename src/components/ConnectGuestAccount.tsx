@@ -323,7 +323,14 @@ const ConnectGuestAccount: React.FC = () => {
                                 variant="primary"
                                 className="w-100"
                             >
-                                Zaloguj się
+                                Zaloguj się z USOS
+                            </Button>
+                            <Button
+                                href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
+                                variant="primary"
+                                className="w-100"
+                            >
+                                Zaloguj się z Solvro Auth
                             </Button>
                             <Button onClick={handleLogout} variant="outline-primary" className="w-100">
                                 Kontynuuj jako gość
