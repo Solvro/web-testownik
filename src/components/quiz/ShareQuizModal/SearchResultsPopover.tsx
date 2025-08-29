@@ -1,90 +1,77 @@
-import React, {useEffect} from "react";
-import {Popover} from "react-bootstrap";
-import PropagateLoader from "react-spinners/PropagateLoader";
-import {User, Group} from "./types";
-import {AppContextType} from "../../../AppContext.tsx";
-import {PopperRef} from "react-bootstrap/types";
+import React from "react";
+import { Group, User } from "./types";
+import { cn } from "@/lib/utils";
+import Loader from "@/components/loader.tsx";
+import { PopoverContent } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SearchResultsPopoverProps {
-    searchResults: (User | Group)[];
-    searchResultsLoading: boolean;
-    appContext: AppContextType;
-    handleAddEntity: (entity: User | Group) => void;
-    inputWidth: number;
-    searchQuery: string;
-    // They are here to automatically update the Popover position
-    accessLevel?: number;
-    usersWithAccess?: User[];
-    groupsWithAccess?: Group[];
-    // Additional props for positioning
-    style?: React.CSSProperties;
-    popper?: PopperRef;
+  searchResults: (User | Group)[];
+  searchResultsLoading: boolean;
+  handleAddEntity: (entity: User | Group) => void;
+  searchQuery: string;
+  className?: string;
 }
 
-const SearchResultsPopover = React.forwardRef<HTMLDivElement, SearchResultsPopoverProps>(
-    (
-        {
-            searchResults,
-            searchResultsLoading,
-            appContext,
-            handleAddEntity,
-            inputWidth,
-            searchQuery,
-            accessLevel,
-            usersWithAccess,
-            groupsWithAccess,
-            style,
-            popper,
-            ...rest
-        },
-        ref
-    ) => {
-        useEffect(() => {
-            popper?.scheduleUpdate?.();
-        }, [accessLevel, usersWithAccess, groupsWithAccess, popper]);
-
-        return (
-            <Popover
-                ref={ref}
-                id="search-results-popover"
-                style={{ maxWidth: "100%", width: inputWidth, ...style }}
-                {...rest}
-            >
-                <Popover.Body className="d-flex flex-column gap-2 overflow-auto" style={{ maxHeight: "20rem" }}>
-                    {searchResultsLoading ? (
-                        <div className="d-flex justify-content-center mt-1 mb-3">
-                            <PropagateLoader
-                                color={appContext.theme.getOppositeThemeColor()}
-                                size={10}
-                            />
-                        </div>
-                    ) : searchResults.length > 0 ? (
-                        searchResults.map((result) => (
-                            <div
-                                key={result.id}
-                                className="d-flex align-items-center gap-2"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleAddEntity(result)}
-                            >
-                                <img
-                                    src={result.photo}
-                                    alt="avatar"
-                                    className="rounded-circle"
-                                    width="32"
-                                    height="32"
-                                />
-                                {"full_name" in result ? result.full_name : result.name}
-                            </div>
-                        ))
-                    ) : searchQuery.length >= 3 ? (
-                        <span className="text-center">Brak wyników</span>
-                    ) : (
-                        <span className="text-center">Wpisz co najmniej 3 znaki</span>
-                    )}
-                </Popover.Body>
-            </Popover>
-        );
-    }
+const SearchResultsPopover = React.forwardRef<
+  HTMLDivElement,
+  SearchResultsPopoverProps
+>(
+  (
+    {
+      searchResults,
+      searchResultsLoading,
+      handleAddEntity,
+      searchQuery,
+      className,
+    },
+    ref,
+  ) => {
+    return (
+      <PopoverContent
+        ref={ref}
+        align="start"
+        side="bottom"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
+      >
+        <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
+          <div className="flex flex-col gap-2 text-sm">
+            {searchResultsLoading ? (
+              <div className="flex justify-center pt-4 pb-8">
+                <Loader size={8} />
+              </div>
+            ) : searchResults.length > 0 ? (
+              searchResults.map((result) => (
+                <button
+                  key={result.id}
+                  type="button"
+                  className="hover:bg-muted focus:bg-muted flex items-center gap-2 rounded-md px-2 py-1.5 text-left focus:outline-none"
+                  onClick={() => handleAddEntity(result)}
+                >
+                  <img
+                    src={result.photo}
+                    alt="avatar"
+                    className="size-8 rounded-full"
+                  />
+                  {"full_name" in result ? result.full_name : result.name}
+                </button>
+              ))
+            ) : searchQuery.length >= 3 ? (
+              <span className="text-muted-foreground py-2 text-center">
+                Brak wyników
+              </span>
+            ) : (
+              <span className="text-muted-foreground py-2 text-center">
+                Wpisz co najmniej 3 znaki
+              </span>
+            )}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    );
+  },
 );
 
 export default SearchResultsPopover;

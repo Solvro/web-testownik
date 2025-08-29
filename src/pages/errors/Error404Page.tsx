@@ -1,23 +1,34 @@
 import React from "react";
-import {Card} from "react-bootstrap";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Error404Page: React.FC = () => {
+  document.title = "404 - Testownik Solvro";
 
-    document.title = "404 - Testownik Solvro";
+  return (
+    <div className="flex justify-center">
+      <Card>
+        <CardContent className="space-y-2 text-center">
+          <h1 className="text-5xl font-bold">404</h1>
+          <h2 className="text-2xl font-semibold">
+            Strona nie została znaleziona
+          </h2>
 
-    return (
-        <Card className="border-0 shadow">
-            <Card.Body className="text-center">
-                <h1>404</h1>
-                <h2>Strona nie znaleziona</h2>
-
-                <p className="text-muted">Jeśli uważasz, że to błąd, możesz utworzyć zgłoszenie na <a
-                    href="https://github.com/solvro/web-testownik/issues" target="_blank"
-                    rel="noreferrer">GitHubie</a>.</p>
-            </Card.Body>
-
-        </Card>
-    );
+          <p className="text-muted-foreground">
+            Jeśli uważasz, że to błąd, możesz utworzyć zgłoszenie na{" "}
+            <a
+              href="https://github.com/solvro/web-testownik/issues"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              GitHubie
+            </a>
+            .
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default Error404Page;

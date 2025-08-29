@@ -1,507 +1,541 @@
-import React, {useCallback, useContext, useEffect, useState,} from "react";
-import {Alert, Button, Form, Modal, OverlayTrigger, Tooltip} from "react-bootstrap";
-import {Icon} from "@iconify/react";
-import PropagateLoader from "react-spinners/PropagateLoader";
-
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import AppContext from "../../../AppContext.tsx";
-import {AccessLevel, Group, SharedQuiz, User} from "./types";
+import { AccessLevel, Group, SharedQuiz, User } from "./types";
 import AccessLevelSelector from "./AccessLevelSelector.tsx";
 import SearchResultsPopover from "./SearchResultsPopover.tsx";
 import AccessList from "./AccessList.tsx";
-import {distance} from "fastest-levenshtein";
-import {QuizMetadata} from "../types.ts";
-import {useNavigate} from "react-router";
+import { distance } from "fastest-levenshtein";
+import { QuizMetadata } from "../types.ts";
+import { useNavigate } from "react-router";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import Loader from "@/components/loader.tsx";
+import { Link2Icon } from "lucide-react";
+import { Label } from "@/components/ui/label.tsx";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { toast } from "react-toastify";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 
 interface ShareQuizModalProps {
-    show: boolean;
-    onHide: () => void;
-    quiz: QuizMetadata;
-    setQuiz?: (quiz: QuizMetadata) => void;
+  show: boolean;
+  onHide: () => void;
+  quiz: QuizMetadata;
+  setQuiz?: (quiz: QuizMetadata) => void;
 }
 
 const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
-                                                           show,
-                                                           onHide,
-                                                           quiz,
-                                                           setQuiz,
-                                                       }) => {
-    const appContext = useContext(AppContext);
-    const navigate = useNavigate();
+  show,
+  onHide,
+  quiz,
+  setQuiz,
+}) => {
+  const appContext = useContext(AppContext);
+  const navigate = useNavigate();
 
-    const [accessLevel, setAccessLevel] = useState<AccessLevel>(AccessLevel.PRIVATE);
-    const [loading, setLoading] = useState(false);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>(
+    AccessLevel.PRIVATE,
+  );
+  const [loading, setLoading] = useState(false);
 
-    const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<(User & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
-    const [initialGroupsWithAccess, setInitialGroupsWithAccess] = useState<(Group & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
-    const [usersWithAccess, setUsersWithAccess] = useState<(User & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
-    const [groupsWithAccess, setGroupsWithAccess] = useState<(Group & { shared_quiz_id?: string; allow_edit: boolean })[]>([]);
-    const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(false);
-    const [allowAnonymous, setAllowAnonymous] = useState(false);
+  const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<
+    (User & { shared_quiz_id?: string; allow_edit: boolean })[]
+  >([]);
+  const [initialGroupsWithAccess, setInitialGroupsWithAccess] = useState<
+    (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
+  >([]);
+  const [usersWithAccess, setUsersWithAccess] = useState<
+    (User & { shared_quiz_id?: string; allow_edit: boolean })[]
+  >([]);
+  const [groupsWithAccess, setGroupsWithAccess] = useState<
+    (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
+  >([]);
+  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(false);
+  const [allowAnonymous, setAllowAnonymous] = useState(false);
 
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
-    const [searchResultsLoading, setSearchResultsLoading] = useState(false);
-    const [userGroups, setUserGroups] = useState<Group[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
+  const [searchResultsLoading, setSearchResultsLoading] = useState(false);
+  const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-    const inputRef = useCallback((node: HTMLInputElement | null) => {
-        if (node !== null) {
-            setInputWidth(node.clientWidth);
-            node.addEventListener("click", () => {
-                setInputWidth(node.clientWidth);
-            });
-        }
-    }, []);
-    const [inputWidth, setInputWidth] = useState(0);
+  useEffect(() => {
+    setAccessLevel(quiz.visibility);
+    setIsMaintainerAnonymous(quiz.is_anonymous);
+    setAllowAnonymous(quiz.allow_anonymous);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    useEffect(() => {
-        setAccessLevel(quiz.visibility);
-        setIsMaintainerAnonymous(quiz.is_anonymous);
-        setAllowAnonymous(quiz.allow_anonymous);
-        fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+  const fetchData = async () => {
+    if (appContext.isGuest) return;
+    setLoading(true);
+    try {
+      await Promise.all([fetchUserGroups(), fetchAccess()]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchData = async () => {
-        if (appContext.isGuest) return;
-        setLoading(true);
-        try {
-            await Promise.all([
-                fetchUserGroups(),
-                fetchAccess(),
-            ]);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const fetchAccess = async () => {
-        if (appContext.isGuest) {
-            setUsersWithAccess([]);
-            setInitialUsersWithAccess([]);
-            setGroupsWithAccess([]);
-            setInitialGroupsWithAccess([]);
-            return;
-        }
-        try {
-            const response = await appContext.axiosInstance.get(`/shared-quizzes/?quiz=${quiz.id}`);
-            const sharedData = response.data;
-            const foundUsers = sharedData.flatMap((sq: SharedQuiz) => sq.user ? [{
+  const fetchAccess = async () => {
+    if (appContext.isGuest) {
+      setUsersWithAccess([]);
+      setInitialUsersWithAccess([]);
+      setGroupsWithAccess([]);
+      setInitialGroupsWithAccess([]);
+      return;
+    }
+    try {
+      const response = await appContext.axiosInstance.get(
+        `/shared-quizzes/?quiz=${quiz.id}`,
+      );
+      const sharedData = response.data;
+      const foundUsers = sharedData.flatMap((sq: SharedQuiz) =>
+        sq.user
+          ? [
+              {
                 ...sq.user,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
-            }] : []);
-            const foundGroups = sharedData.flatMap((sq: SharedQuiz) => sq.group ? [{
+              },
+            ]
+          : [],
+      );
+      const foundGroups = sharedData.flatMap((sq: SharedQuiz) =>
+        sq.group
+          ? [
+              {
                 ...sq.group,
                 photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
-            }] : []);
+              },
+            ]
+          : [],
+      );
 
-            setUsersWithAccess(foundUsers);
-            setInitialUsersWithAccess(foundUsers);
-            setGroupsWithAccess(foundGroups);
-            setInitialGroupsWithAccess(foundGroups);
-        } catch {
-            setUsersWithAccess([]);
-            setInitialUsersWithAccess([]);
-            setGroupsWithAccess([]);
-            setInitialGroupsWithAccess([]);
-        }
-    };
-
-    const fetchUserGroups = async () => {
-        try {
-            const response = await appContext.axiosInstance.get("/study-groups/");
-            const data = response.data.map((group: Group) => ({
-                ...group,
-                photo: `https://ui-avatars.com/api/?background=random&name=${
-                    group.name.split(" ")[0]
-                }+${group.name.split(" ")[1] || ""}&size=128`,
-            }));
-            setUserGroups(data);
-        } catch {
-            setUserGroups([]);
-        }
-    };
-
-    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-    };
-
-    const handleSearch = useCallback(
-        async (query: string) => {
-            setSearchResultsLoading(true);
-            try {
-                // Fetch users
-                const usersResponse = await appContext.axiosInstance.get<User[]>(
-                    `/users/?search=${encodeURIComponent(query)}`
-                );
-                let data: (User | Group)[] = [...usersResponse.data];
-
-                // Filter groups by the query
-                const matchedGroups = userGroups.filter((g) =>
-                    g.name.toLowerCase().includes(query.toLowerCase())
-                );
-                data = [...data, ...matchedGroups];
-
-                // If query is exactly 6 digits, prioritize matching student_number
-                let userByIndex: User | undefined;
-                if (query.length === 6 && !isNaN(parseInt(query))) {
-                    userByIndex = data.find(
-                        (obj) => "student_number" in obj && obj.student_number === query
-                    ) as User;
-                    if (userByIndex) {
-                        data = data.filter((item) => item !== userByIndex);
-                    }
-                }
-
-                // Sort results by "distance" to the query
-                data.sort((a, b) => {
-                    const aIsGroup = "name" in a;
-                    const bIsGroup = "name" in b;
-
-                    if (aIsGroup && bIsGroup) {
-                        // Both groups
-                        const aGroup = a as Group;
-                        const bGroup = b as Group;
-                        if (aGroup.term.is_current && !bGroup.term.is_current) {
-                            return -1;
-                        }
-                        if (!aGroup.term.is_current && bGroup.term.is_current) {
-                            return 1;
-                        }
-                        return distance(aGroup.name, query) - distance(bGroup.name, query);
-                    } else if (aIsGroup) {
-                        // a is Group, b is User
-                        return (
-                            distance((a as Group).name, query) -
-                            distance((b as User).full_name, query)
-                        );
-                    } else if (bIsGroup) {
-                        // a is User, b is Group
-                        return (
-                            distance((a as User).full_name, query) -
-                            distance((b as Group).name, query)
-                        );
-                    } else {
-                        // both users
-                        return (
-                            distance((a as User).full_name, query) -
-                            distance((b as User).full_name, query)
-                        );
-                    }
-                });
-
-                if (userByIndex) {
-                    data.unshift(userByIndex);
-                }
-
-                setSearchResults(data);
-            } catch {
-                setSearchResults([]);
-            } finally {
-                setSearchResultsLoading(false);
-            }
-        },
-        [userGroups, appContext.axiosInstance]
-    );
-
-    const handleAddEntity = (entity: User | Group) => {
-        // If it's a user
-        if ("full_name" in entity) {
-            // Prevent duplicates
-            if (!usersWithAccess.find((u) => u.id === entity.id) && entity.id !== quiz.maintainer?.id) {
-                setUsersWithAccess((prev) => [...prev, {...entity, allow_edit: false}]);
-            }
-        } else {
-            // It's a group
-            if (!groupsWithAccess.find((g) => g.id === entity.id)) {
-                setGroupsWithAccess((prev) => [...prev, {...entity, allow_edit: false}]);
-            }
-        }
-        setSearchQuery("");
-        setSearchResults([]);
-    };
-
-    const handleRemoveUserAccess = (user: User) => {
-        setUsersWithAccess((prev) => prev.filter((u) => u.id !== user.id));
-    };
-
-    const handleRemoveGroupAccess = (group: Group) => {
-        setGroupsWithAccess((prev) => prev.filter((g) => g.id !== group.id));
-    };
-
-    const handleToggleMaintainerAnonymous = () => {
-        setIsMaintainerAnonymous((prev) => !prev);
-    };
-
-    const handleToggleAllowAnonymous = (checked: boolean) => {
-        setAllowAnonymous(checked);
-    };
-
-    const handleToggleUserEdit = (user: User & { shared_quiz_id?: string; allow_edit: boolean }) => {
-        setUsersWithAccess((prev) => 
-            prev.map((u) => 
-                u.id === user.id ? { ...u, allow_edit: !u.allow_edit } : u
-            )
-        );
-    };
-
-    const handleToggleGroupEdit = (group: Group & { shared_quiz_id?: string; allow_edit: boolean }) => {
-        setGroupsWithAccess((prev) => 
-            prev.map((g) => 
-                g.id === group.id ? { ...g, allow_edit: !g.allow_edit } : g
-            )
-        );
-    };
-
-    // -------------- Save Handler -------------- //
-    const handleSave = async () => {
-
-        try {
-            // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-            const quizResponse = await appContext.axiosInstance.patch(`/quizzes/${quiz.id}/`, {
-                visibility: accessLevel,
-                allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
-                is_anonymous: isMaintainerAnonymous,
-            });
-
-            const removedUsers = initialUsersWithAccess.filter(
-                (u) => !usersWithAccess.some((u2) => u2.id === u.id)
-            );
-            const addedUsers = usersWithAccess.filter(
-                (u) => !initialUsersWithAccess.some((u2) => u2.id === u.id)
-            );
-
-            const removedGroups = initialGroupsWithAccess.filter(
-                (g) => !groupsWithAccess.some((g2) => g2.id === g.id)
-            );
-            const addedGroups = groupsWithAccess.filter(
-                (g) => !initialGroupsWithAccess.some((g2) => g2.id === g.id)
-            );
-
-            // Find existing users/groups with changed allow_edit status
-            const changedUsers = usersWithAccess.filter(
-                (u) => {
-                    const initial = initialUsersWithAccess.find((u2) => u2.id === u.id);
-                    return initial && initial.allow_edit !== u.allow_edit;
-                }
-            );
-            const changedGroups = groupsWithAccess.filter(
-                (g) => {
-                    const initial = initialGroupsWithAccess.find((g2) => g2.id === g.id);
-                    return initial && initial.allow_edit !== g.allow_edit;
-                }
-            );
-
-
-            for (const rUser of removedUsers) {
-                await appContext.axiosInstance.delete(
-                    `/shared-quizzes/${rUser.shared_quiz_id}/`
-                );
-            }
-
-            for (const rGroup of removedGroups) {
-                await appContext.axiosInstance.delete(
-                    `/shared-quizzes/${rGroup.shared_quiz_id}/`
-                );
-            }
-
-            for (const aUser of addedUsers) {
-                await appContext.axiosInstance.post(`/shared-quizzes/`, {
-                    quiz_id: quiz.id,
-                    user_id: aUser.id,
-                    allow_edit: aUser.allow_edit || false,
-                });
-            }
-
-            for (const aGroup of addedGroups) {
-                await appContext.axiosInstance.post(`/shared-quizzes/`, {
-                    quiz_id: quiz.id,
-                    study_group_id: aGroup.id,
-                    allow_edit: aGroup.allow_edit || false,
-                });
-            }
-
-            // Update existing users/groups with changed allow_edit status
-            for (const cUser of changedUsers) {
-                await appContext.axiosInstance.patch(`/shared-quizzes/${cUser.shared_quiz_id}/`, {
-                    allow_edit: cUser.allow_edit,
-                });
-            }
-
-            for (const cGroup of changedGroups) {
-                await appContext.axiosInstance.patch(`/shared-quizzes/${cGroup.shared_quiz_id}/`, {
-                    allow_edit: cGroup.allow_edit,
-                });
-            }
-
-            // 8) Re-fetch everything or just update local “initial” states to reflect new changes
-            setInitialUsersWithAccess(usersWithAccess);
-            setInitialGroupsWithAccess(groupsWithAccess);
-
-            if (setQuiz) {
-                setQuiz(quizResponse.data);
-            }
-
-            onHide();
-        } catch (error) {
-            console.error("Failed to save quiz settings:", error);
-        }
-    };
-
-    if (appContext.isGuest) {
-        return (
-            <Modal show={show} onHide={onHide} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Udostępnij "{quiz.title}"</Modal.Title>
-                </Modal.Header>
-
-                <Modal.Body>
-                    <Alert variant="warning" className="text-center">
-                        <p>Musisz być zalogowany, aby móc udostępniać quizy.</p>
-                        <Button
-                            variant="warning"
-                            onClick={() => navigate("/connect-account")}
-                        >
-                            Połącz konto
-                        </Button>
-                    </Alert>
-                </Modal.Body>
-
-                <Modal.Footer>
-                    <Button variant="primary" onClick={onHide}>
-                        Zamknij
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-        )
+      setUsersWithAccess(foundUsers);
+      setInitialUsersWithAccess(foundUsers);
+      setGroupsWithAccess(foundGroups);
+      setInitialGroupsWithAccess(foundGroups);
+    } catch {
+      setUsersWithAccess([]);
+      setInitialUsersWithAccess([]);
+      setGroupsWithAccess([]);
+      setInitialGroupsWithAccess([]);
     }
+  };
 
-    return (
-        <Modal show={show} onHide={onHide} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Udostępnij "{quiz.title}"</Modal.Title>
-            </Modal.Header>
+  const fetchUserGroups = async () => {
+    try {
+      const response = await appContext.axiosInstance.get("/study-groups/");
+      const data = response.data.map((group: Group) => ({
+        ...group,
+        photo: `https://ui-avatars.com/api/?background=random&name=${
+          group.name.split(" ")[0]
+        }+${group.name.split(" ")[1] || ""}&size=128`,
+      }));
+      setUserGroups(data);
+    } catch {
+      setUserGroups([]);
+    }
+  };
 
-            <Modal.Body>
-                <OverlayTrigger
-                    overlay={
-                        <SearchResultsPopover
-                            searchResults={searchResults}
-                            searchResultsLoading={searchResultsLoading}
-                            appContext={appContext}
-                            handleAddEntity={handleAddEntity}
-                            inputWidth={inputWidth}
-                            searchQuery={searchQuery}
-                            accessLevel={accessLevel}
-                            usersWithAccess={usersWithAccess}
-                            groupsWithAccess={groupsWithAccess}
-                        />
-                    }
-                    placement="bottom"
-                    show={searchQuery.length > 0 && show}
-                >
-                    <Form.Control
-                        placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
-                        className="mb-2"
-                        ref={inputRef}
-                        value={searchQuery}
-                        onChange={handleSearchInput}
-                        onKeyUp={() => {
-                            if (searchQuery.length >= 3) {
-                                handleSearch(searchQuery);
-                            } else {
-                                setSearchResults([]);
-                            }
-                        }}
-                    />
-                </OverlayTrigger>
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
-                <h6>Dostęp mają:</h6>
-                {loading ? (
-                    <div className="d-flex justify-content-center w-100 mt-1 mb-3">
-                        <PropagateLoader
-                            color={appContext.theme.getOppositeThemeColor()}
-                            size={10}
-                        />
-                    </div>
-                ) : (
-                    <AccessList
-                        quizMetadata={quiz}
-                        usersWithAccess={usersWithAccess}
-                        groupsWithAccess={groupsWithAccess}
-                        isMaintainerAnonymous={isMaintainerAnonymous}
-                        theme={appContext.theme}
-                        handleRemoveUserAccess={handleRemoveUserAccess}
-                        handleRemoveGroupAccess={handleRemoveGroupAccess}
-                        handleToggleMaintainerAnonymous={handleToggleMaintainerAnonymous}
-                        handleToggleUserEdit={handleToggleUserEdit}
-                        handleToggleGroupEdit={handleToggleGroupEdit}
-                    />
-                )}
+  const handleSearch = useCallback(
+    async (query: string) => {
+      setSearchResultsLoading(true);
+      try {
+        // Fetch users
+        const usersResponse = await appContext.axiosInstance.get<User[]>(
+          `/users/?search=${encodeURIComponent(query)}`,
+        );
+        let data: (User | Group)[] = [...usersResponse.data];
 
-                <h6 className="mt-3">Poziom dostępu:</h6>
-                <AccessLevelSelector value={accessLevel} onChange={setAccessLevel}/>
+        // Filter groups by the query
+        const matchedGroups = userGroups.filter((g) =>
+          g.name.toLowerCase().includes(query.toLowerCase()),
+        );
+        data = [...data, ...matchedGroups];
 
-                {accessLevel >= AccessLevel.UNLISTED && (
-                    <div className="mt-2">
-                        <Form.Check
-                            type="switch"
-                            id="anonymous-switch"
-                            label="Pozwól na dostęp dla niezalogowanych/gości"
-                            checked={allowAnonymous}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleToggleAllowAnonymous(e.target.checked)
-                            }
-                        />
-                    </div>
-                )}
+        // If query is exactly 6 digits, prioritize matching student_number
+        let userByIndex: User | undefined;
+        if (query.length === 6 && !isNaN(parseInt(query))) {
+          userByIndex = data.find(
+            (obj) => "student_number" in obj && obj.student_number === query,
+          ) as User;
+          if (userByIndex) {
+            data = data.filter((item) => item !== userByIndex);
+          }
+        }
 
-                {accessLevel == AccessLevel.PRIVATE && (usersWithAccess.length > 0 || groupsWithAccess.length > 0) && (
-                    <div className="mt-3">
-                        <Alert variant="warning" className="mb-0">
-                            Ustawiono dostęp prywatny, ale dodano użytkowników/grupy. Quiz nie będzie dla nich dostępny.
-                        </Alert>
-                    </div>
-                )}
-            </Modal.Body>
+        // Sort results by "distance" to the query
+        data.sort((a, b) => {
+          const aIsGroup = "name" in a;
+          const bIsGroup = "name" in b;
 
-            <Modal.Footer>
-                <div className="d-flex justify-content-between w-100">
-                    <OverlayTrigger
-                        overlay={
-                            <Tooltip id="copy-link-tooltip">
-                                Link do quizu został skopiowany do schowka
-                            </Tooltip>
-                        }
-                        placement="bottom"
-                        trigger="click"
-                        rootClose
-                    >
-                        <Button
-                            variant={`outline-${appContext.theme.getOppositeTheme()}`}
-                            onClick={() => {
-                                navigator.clipboard.writeText(
-                                    `${window.location.origin}/quiz/${quiz.id}`
-                                );
-                            }}
-                            className="d-inline-flex align-items-center"
-                        >
-                            <Icon icon={"mdi:link-variant"} className="me-1"/>
-                            Kopiuj link
-                        </Button>
-                    </OverlayTrigger>
-                    <Button variant="primary" onClick={handleSave}>
-                        Zapisz
-                    </Button>
-                </div>
-            </Modal.Footer>
-        </Modal>
+          if (aIsGroup && bIsGroup) {
+            // Both groups
+            const aGroup = a as Group;
+            const bGroup = b as Group;
+            if (aGroup.term.is_current && !bGroup.term.is_current) {
+              return -1;
+            }
+            if (!aGroup.term.is_current && bGroup.term.is_current) {
+              return 1;
+            }
+            return distance(aGroup.name, query) - distance(bGroup.name, query);
+          } else if (aIsGroup) {
+            // a is Group, b is User
+            return (
+              distance((a as Group).name, query) -
+              distance((b as User).full_name, query)
+            );
+          } else if (bIsGroup) {
+            // a is User, b is Group
+            return (
+              distance((a as User).full_name, query) -
+              distance((b as Group).name, query)
+            );
+          } else {
+            // both users
+            return (
+              distance((a as User).full_name, query) -
+              distance((b as User).full_name, query)
+            );
+          }
+        });
+
+        if (userByIndex) {
+          data.unshift(userByIndex);
+        }
+
+        setSearchResults(data);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchResultsLoading(false);
+      }
+    },
+    [userGroups, appContext.axiosInstance],
+  );
+
+  const handleAddEntity = (entity: User | Group) => {
+    // If it's a user
+    if ("full_name" in entity) {
+      // Prevent duplicates
+      if (
+        !usersWithAccess.find((u) => u.id === entity.id) &&
+        entity.id !== quiz.maintainer?.id
+      ) {
+        setUsersWithAccess((prev) => [
+          ...prev,
+          { ...entity, allow_edit: false },
+        ]);
+      }
+    } else {
+      // It's a group
+      if (!groupsWithAccess.find((g) => g.id === entity.id)) {
+        setGroupsWithAccess((prev) => [
+          ...prev,
+          { ...entity, allow_edit: false },
+        ]);
+      }
+    }
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  const handleRemoveUserAccess = (user: User) => {
+    setUsersWithAccess((prev) => prev.filter((u) => u.id !== user.id));
+  };
+
+  const handleRemoveGroupAccess = (group: Group) => {
+    setGroupsWithAccess((prev) => prev.filter((g) => g.id !== group.id));
+  };
+
+  const handleToggleUserEdit = (
+    user: User & { shared_quiz_id?: string; allow_edit: boolean },
+  ) => {
+    setUsersWithAccess((prev) =>
+      prev.map((u) =>
+        u.id === user.id ? { ...u, allow_edit: !u.allow_edit } : u,
+      ),
     );
+  };
+
+  const handleToggleGroupEdit = (
+    group: Group & { shared_quiz_id?: string; allow_edit: boolean },
+  ) => {
+    setGroupsWithAccess((prev) =>
+      prev.map((g) =>
+        g.id === group.id ? { ...g, allow_edit: !g.allow_edit } : g,
+      ),
+    );
+  };
+
+  // -------------- Save Handler -------------- //
+  const handleSave = async () => {
+    try {
+      // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
+      const quizResponse = await appContext.axiosInstance.patch(
+        `/quizzes/${quiz.id}/`,
+        {
+          visibility: accessLevel,
+          allow_anonymous:
+            allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
+          is_anonymous: isMaintainerAnonymous,
+        },
+      );
+
+      const removedUsers = initialUsersWithAccess.filter(
+        (u) => !usersWithAccess.some((u2) => u2.id === u.id),
+      );
+      const addedUsers = usersWithAccess.filter(
+        (u) => !initialUsersWithAccess.some((u2) => u2.id === u.id),
+      );
+
+      const removedGroups = initialGroupsWithAccess.filter(
+        (g) => !groupsWithAccess.some((g2) => g2.id === g.id),
+      );
+      const addedGroups = groupsWithAccess.filter(
+        (g) => !initialGroupsWithAccess.some((g2) => g2.id === g.id),
+      );
+
+      // Find existing users/groups with changed allow_edit status
+      const changedUsers = usersWithAccess.filter((u) => {
+        const initial = initialUsersWithAccess.find((u2) => u2.id === u.id);
+        return initial && initial.allow_edit !== u.allow_edit;
+      });
+      const changedGroups = groupsWithAccess.filter((g) => {
+        const initial = initialGroupsWithAccess.find((g2) => g2.id === g.id);
+        return initial && initial.allow_edit !== g.allow_edit;
+      });
+
+      for (const rUser of removedUsers) {
+        await appContext.axiosInstance.delete(
+          `/shared-quizzes/${rUser.shared_quiz_id}/`,
+        );
+      }
+
+      for (const rGroup of removedGroups) {
+        await appContext.axiosInstance.delete(
+          `/shared-quizzes/${rGroup.shared_quiz_id}/`,
+        );
+      }
+
+      for (const aUser of addedUsers) {
+        await appContext.axiosInstance.post(`/shared-quizzes/`, {
+          quiz_id: quiz.id,
+          user_id: aUser.id,
+          allow_edit: aUser.allow_edit || false,
+        });
+      }
+
+      for (const aGroup of addedGroups) {
+        await appContext.axiosInstance.post(`/shared-quizzes/`, {
+          quiz_id: quiz.id,
+          study_group_id: aGroup.id,
+          allow_edit: aGroup.allow_edit || false,
+        });
+      }
+
+      // Update existing users/groups with changed allow_edit status
+      for (const cUser of changedUsers) {
+        await appContext.axiosInstance.patch(
+          `/shared-quizzes/${cUser.shared_quiz_id}/`,
+          {
+            allow_edit: cUser.allow_edit,
+          },
+        );
+      }
+
+      for (const cGroup of changedGroups) {
+        await appContext.axiosInstance.patch(
+          `/shared-quizzes/${cGroup.shared_quiz_id}/`,
+          {
+            allow_edit: cGroup.allow_edit,
+          },
+        );
+      }
+
+      // 8) Re-fetch everything or just update local “initial” states to reflect new changes
+      setInitialUsersWithAccess(usersWithAccess);
+      setInitialGroupsWithAccess(groupsWithAccess);
+
+      if (setQuiz) {
+        setQuiz(quizResponse.data);
+      }
+
+      onHide();
+    } catch (error) {
+      console.error("Failed to save quiz settings:", error);
+    }
+  };
+
+  return (
+    <Dialog
+      open={show}
+      onOpenChange={(open) => {
+        if (!open) onHide();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Udostępnij "{quiz.title}"</DialogTitle>
+        </DialogHeader>
+        {appContext.isGuest ? (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-4 text-center text-sm">
+            <p className="mb-2 font-medium">
+              Musisz być zalogowany, aby móc udostępniać quizy.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/connect-account")}
+            >
+              Połącz konto
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Popover open={show && searchQuery.length > 0} modal={true}>
+              <PopoverTrigger asChild>
+                <div className="relative w-full">
+                  <Input
+                    placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
+                    value={searchQuery}
+                    onChange={handleSearchInput}
+                    onKeyUp={() => {
+                      if (searchQuery.length >= 3) {
+                        handleSearch(searchQuery);
+                      } else {
+                        setSearchResults([]);
+                      }
+                    }}
+                  />
+                </div>
+              </PopoverTrigger>
+              {searchQuery.length > 0 && (
+                <SearchResultsPopover
+                  searchResults={searchResults}
+                  searchResultsLoading={searchResultsLoading}
+                  handleAddEntity={handleAddEntity}
+                  searchQuery={searchQuery}
+                />
+              )}
+            </Popover>
+            <div className="space-y-2">
+              <h6 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+                Dostęp mają:
+              </h6>
+              {loading ? (
+                <div className="flex w-full justify-center py-4">
+                  <Loader size={10} />
+                </div>
+              ) : (
+                <AccessList
+                  quizMetadata={quiz}
+                  usersWithAccess={usersWithAccess}
+                  groupsWithAccess={groupsWithAccess}
+                  isMaintainerAnonymous={isMaintainerAnonymous}
+                  setIsMaintainerAnonymous={setIsMaintainerAnonymous}
+                  handleRemoveUserAccess={handleRemoveUserAccess}
+                  handleRemoveGroupAccess={handleRemoveGroupAccess}
+                  handleToggleUserEdit={handleToggleUserEdit}
+                  handleToggleGroupEdit={handleToggleGroupEdit}
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <h6 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+                Poziom dostępu:
+              </h6>
+              <AccessLevelSelector
+                value={accessLevel}
+                onChange={setAccessLevel}
+              />
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="allow-anonymous"
+                  checked={
+                    allowAnonymous && accessLevel >= AccessLevel.UNLISTED
+                  }
+                  onCheckedChange={(checked) => setAllowAnonymous(!!checked)}
+                  disabled={accessLevel < AccessLevel.UNLISTED}
+                />
+                <Label htmlFor="allow-anonymous">
+                  Pozwól na dostęp dla niezalogowanych/gości
+                </Label>
+              </div>
+            </div>
+            {accessLevel == AccessLevel.PRIVATE &&
+              (usersWithAccess.length > 0 || groupsWithAccess.length > 0) && (
+                <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs text-yellow-700 dark:text-yellow-400">
+                  Ustawiono dostęp prywatny, ale dodano użytkowników/grupy. Quiz
+                  nie będzie dla nich dostępny.
+                </div>
+              )}
+          </div>
+        )}
+        <DialogFooter
+          className={cn(
+            "sm:flex-row sm:justify-between",
+            appContext.isGuest && "hidden",
+          )}
+        >
+          <Button
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `${window.location.origin}/quiz/${quiz.id}`,
+              );
+              toast.success("Skopiowano link do quizu");
+            }}
+            className="hidden sm:inline-flex"
+          >
+            <Link2Icon className="size-4" />
+            Kopiuj link
+          </Button>
+          <div className="flex flex-wrap-reverse gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Anuluj
+              </Button>
+            </DialogClose>
+            <Button className="w-full sm:w-auto" onClick={handleSave}>
+              Zapisz
+            </Button>
+          </div>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `${window.location.origin}/quiz/${quiz.id}`,
+              );
+              toast.success("Skopiowano link do quizu");
+            }}
+            className="sm:hidden"
+          >
+            <Link2Icon className="size-4" />
+            Kopiuj link
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 export default ShareQuizModal;

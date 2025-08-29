@@ -25,7 +25,7 @@ export const validateQuiz = (quiz: Quiz): string | null => {
   // Check if quiz contains only allowed properties
   if (!containsOnlyAllowedKeys(quiz, ALLOWED_QUIZ_KEYS)) {
     const invalidKeys = Object.keys(quiz).filter(
-      (key) => !ALLOWED_QUIZ_KEYS.includes(key)
+      (key) => !ALLOWED_QUIZ_KEYS.includes(key),
     );
     return "Quiz zawiera nieprawidłowe właściwości: " + invalidKeys.join(", ");
   }
@@ -44,7 +44,7 @@ export const validateQuiz = (quiz: Quiz): string | null => {
     // Check if question contains only allowed properties
     if (!containsOnlyAllowedKeys(question, ALLOWED_QUESTION_KEYS)) {
       const invalidKeys = Object.keys(question).filter(
-        (key) => !ALLOWED_QUESTION_KEYS.includes(key)
+        (key) => !ALLOWED_QUESTION_KEYS.includes(key),
       );
       return `Pytanie nr ${
         questionIndex + 1
@@ -72,7 +72,7 @@ export const validateQuiz = (quiz: Quiz): string | null => {
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(answer, ALLOWED_ANSWER_KEYS)) {
         const invalidKeys = Object.keys(answer).filter(
-          (key) => !ALLOWED_ANSWER_KEYS.includes(key)
+          (key) => !ALLOWED_ANSWER_KEYS.includes(key),
         );
         return `Odpowiedź nr ${answerIndex + 1} w pytaniu nr ${
           questionIndex + 1
@@ -93,7 +93,7 @@ export const validateQuiz = (quiz: Quiz): string | null => {
 // Utility function to check if an object contains only allowed keys
 const containsOnlyAllowedKeys = <T extends object>(
   obj: T,
-  allowedKeys: string[]
+  allowedKeys: string[],
 ): boolean => {
   return Object.keys(obj as object).every((key) => allowedKeys.includes(key));
 };
