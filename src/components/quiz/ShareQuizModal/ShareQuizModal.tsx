@@ -437,9 +437,9 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
               )}
             </Popover>
             <div className="space-y-2">
-              <h6 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+              <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
                 Dostęp mają:
-              </h6>
+              </h5>
               {loading ? (
                 <div className="flex w-full justify-center py-4">
                   <Loader size={10} />
@@ -459,9 +459,9 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
               )}
             </div>
             <div className="space-y-2">
-              <h6 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+              <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
                 Poziom dostępu:
-              </h6>
+              </h5>
               <AccessLevelSelector
                 value={accessLevel}
                 onChange={setAccessLevel}

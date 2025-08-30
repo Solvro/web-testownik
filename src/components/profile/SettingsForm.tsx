@@ -34,7 +34,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
       )}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Ustawienia</CardTitle>
+          <CardTitle>Ustawienia</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">

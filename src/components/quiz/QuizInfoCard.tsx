@@ -4,7 +4,13 @@ import AppContext from "../../AppContext.tsx";
 import { useNavigate } from "react-router";
 import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress.tsx";
 import {
@@ -73,11 +79,9 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{quiz.title}</CardTitle>
+        <CardTitle>{quiz.title}</CardTitle>
         {quiz.maintainer && (
-          <p className="text-muted-foreground text-xs">
-            by {quiz.maintainer.full_name}
-          </p>
+          <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
         )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
@@ -144,10 +148,7 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                     navigator.clipboard
                       .writeText(window.location.href)
                       .then(() => {
-                        toast.success("Skopiowano link do quizu", {
-                          autoClose: 2000,
-                          hideProgressBar: true,
-                        });
+                        toast.success("Skopiowano link do quizu");
                       });
                   }}
                 >

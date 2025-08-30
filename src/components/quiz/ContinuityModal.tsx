@@ -43,7 +43,7 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({
             <span className="relative inline-flex h-full w-full items-center justify-center">
               <Icon icon={iconName} className="text-xl" />
               {isContinuityHost && (
-                <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-white shadow">
+                <span className="absolute -top-1 -right-1 inline-flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-white shadow">
                   <CrownIcon className="size-3" />
                 </span>
               )}

@@ -104,9 +104,7 @@ const OTPLoginPage = () => {
       <div className="flex justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-lg">
-              Kod jednorazowy został wysłany
-            </CardTitle>
+            <CardTitle>Kod jednorazowy został wysłany</CardTitle>
             <CardDescription>
               Sprawdź swoją skrzynkę i wprowadź kod poniżej
             </CardDescription>
@@ -177,9 +175,7 @@ const OTPLoginPage = () => {
     <div className="flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-lg">
-            Zaloguj się za pomocą adresu e-mail
-          </CardTitle>
+          <CardTitle>Zaloguj się za pomocą adresu e-mail</CardTitle>
           <CardDescription>
             Na Twój adres e-mail zostanie wysłany kod jednorazowy.
           </CardDescription>

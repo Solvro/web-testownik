@@ -156,7 +156,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
             />
             <button
               onClick={handleOpenModal}
-              className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex h-8 w-8 items-center justify-center rounded-full border shadow transition"
+              className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
             >
               <PencilIcon className="size-4" />
             </button>

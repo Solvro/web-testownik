@@ -141,7 +141,7 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
         if (!open) onHide();
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
           <DialogDescription>
@@ -150,8 +150,11 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
         </DialogHeader>
         <div className="space-y-6">
           {quizId && (
-            <Alert variant="default">
-              <AlertDescription className="space-y-1 text-sm">
+            <Alert
+              variant="default"
+              className="border-fuchsia-500 bg-fuchsia-50 dark:bg-fuchsia-900/20"
+            >
+              <AlertDescription>
                 <span>
                   Ten formularz służy do zgłaszania błędów w aplikacji. Jeśli
                   chcesz zgłosić błąd w quizie, użyj przycisku
