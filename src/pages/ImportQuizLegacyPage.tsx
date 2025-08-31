@@ -9,7 +9,7 @@ import {
   FolderArchiveIcon,
   FolderIcon,
   FolderOpenIcon,
-  Loader2Icon,
+  LoaderCircleIcon,
 } from "lucide-react";
 import JSZip from "jszip";
 import AppContext from "../AppContext";
@@ -577,7 +577,7 @@ const ImportQuizLegacyPage: React.FC = () => {
             <Button onClick={handleImport} disabled={loading}>
               {loading ? (
                 <>
-                  <Loader2Icon className="animate-spin" /> Import...
+                  <LoaderCircleIcon className="animate-spin" /> Import...
                 </>
               ) : (
                 "Importuj"

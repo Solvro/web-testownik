@@ -86,7 +86,7 @@ const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
         <ScrollArea className="min-h-0 flex-1">
           {loading ? (
             <div className="flex justify-center pt-3">
-              <Loader color={"currentColor"} size={10} />
+              <Loader size={10} />
             </div>
           ) : (
             <Table>

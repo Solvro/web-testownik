@@ -6,6 +6,7 @@ import AppContext from "../../AppContext.tsx";
 import { Link } from "react-router";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils.ts";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 interface Quiz {
   id: number;
@@ -19,12 +20,14 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
   const appContext = useContext(AppContext);
   const [lastUsedQuizzes, setLastUsedQuizzes] = useState<Quiz[]>([]);
   const [fetchedAll, setFetchedAll] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchLastUsedQuizzes(10);
   }, []);
 
   const fetchLastUsedQuizzes = async (limit: number) => {
+    setLoading(true);
     try {
       if (appContext.isGuest) {
         const guestQuizzes = localStorage.getItem("guest_quizzes");
@@ -35,6 +38,7 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
           setFetchedAll(true);
         }
         setLastUsedQuizzes(selectedQuizzes);
+        setLoading(false);
         return;
       }
       const response = await appContext.axiosInstance.get(
@@ -50,6 +54,8 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
       setLastUsedQuizzes(data);
     } catch {
       setLastUsedQuizzes([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,6 +99,19 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
                       </TableRow>
                     )}
                 </>
+              ) : loading ? (
+                [...Array(10)].map((_, i) => {
+                  const widths = ["w-1/3", "w-3/4", "w-2/3"];
+                  const randomWidth =
+                    widths[Math.floor(Math.random() * widths.length)];
+                  return (
+                    <TableRow key={i} className="hover:bg-transparent">
+                      <TableCell>
+                        <Skeleton className={cn("h-5", randomWidth)} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell className="text-muted-foreground text-xs">

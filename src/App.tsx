@@ -79,7 +79,7 @@ const App: React.FC = () => {
             </Routes>
           </div>
           <ToastContainer />
-          <footer className="bg-background/80 supports-[backdrop-filter]:bg-background/60 text-muted-foreground fixed bottom-0 left-0 hidden w-full border-t py-1 text-sm backdrop-blur sm:block">
+          <footer className="bg-background/60 text-muted-foreground fixed bottom-0 left-0 hidden w-full border-t py-1 text-sm backdrop-blur sm:block">
             <div className="flex items-center justify-center gap-1">
               <span>
                 © {new Date().getFullYear()}{" "}

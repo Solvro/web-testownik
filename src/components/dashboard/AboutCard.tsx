@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils.ts";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 interface Contributor {
   login: string;
@@ -33,12 +34,14 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
   ...props
 }) => {
   const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchContributors();
   }, []);
 
   const fetchContributors = async () => {
+    setLoading(true);
     try {
       const coreResponse = await fetch(
         "https://api.github.com/repos/Solvro/backend-testownik/contributors?anon=1",
@@ -78,6 +81,8 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
     } catch (e) {
       console.error(e);
       setContributors([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,7 +105,21 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
         <ScrollArea className="min-h-0 flex-1">
           <Table>
             <TableBody>
-              {contributors.length > 0 ? (
+              {loading ? (
+                [...Array(10)].map((_, i) => (
+                  <TableRow key={i} className="hover:bg-transparent">
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="size-6 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Skeleton className="h-3 w-16" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : contributors.length > 0 ? (
                 contributors.map((contributor) => (
                   <TableRow
                     key={contributor.id}
