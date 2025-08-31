@@ -193,9 +193,11 @@ const ImportQuizLegacyPage: React.FC = () => {
       };
 
       if (appContext.isGuest) {
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes: Quiz[] =
+          guestQuizzesString !== null
+            ? (JSON.parse(guestQuizzesString) as Quiz[])
+            : [];
         const temporaryQuiz = {
           ...quizData,
           id: uuidv4(),
@@ -212,7 +214,7 @@ const ImportQuizLegacyPage: React.FC = () => {
         return;
       }
 
-      const response = await appContext.axiosInstance.post(
+      const response = await appContext.axiosInstance.post<Quiz>(
         "/quizzes/",
         quizData,
       );
@@ -221,9 +223,9 @@ const ImportQuizLegacyPage: React.FC = () => {
         const quiz = response.data;
         setQuiz(quiz);
       } else {
-        const errorData = await response.data;
+        const errorData = response.data as { error?: string };
         setError(
-          errorData.error || "Wystąpił błąd podczas importowania quizu.",
+          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
         );
       }
     } catch (error_) {
@@ -253,13 +255,11 @@ const ImportQuizLegacyPage: React.FC = () => {
         }
         try {
           const decoder = new TextDecoder("utf-8", { fatal: true });
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         } catch {
           const decoder = new TextDecoder("windows-1250");
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         }
       });
@@ -538,9 +538,7 @@ const ImportQuizLegacyPage: React.FC = () => {
                 <input
                   type="file"
                   ref={directoryInputRef}
-                  /* @ts-expect-error: directory selection */
-                  directory=""
-                  webkitdirectory=""
+                  {...({ webkitdirectory: "" } as { webkitdirectory: string })}
                   onChange={handleDirectorySelect}
                   className="hidden"
                 />

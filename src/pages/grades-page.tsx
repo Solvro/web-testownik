@@ -87,11 +87,12 @@ const GradesPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await appContext.axiosInstance.get("/grades/");
+        const response =
+          await appContext.axiosInstance.get<GradesData>("/grades/");
         if (response.status !== 200) {
           throw new Error("Invalid response status");
         }
-        const data: GradesData = response.data;
+        const data = response.data;
         setTerms(data.terms);
         setCourses(data.courses);
         setSelectedTerm(
@@ -110,9 +111,9 @@ const GradesPage: React.FC = () => {
       } catch (error) {
         console.error("Error fetching grades:", error);
         if (error instanceof AxiosError && error.response) {
+          const errorData = error.response.data as { detail?: string };
           setError(
-            error.response.data.detail ||
-              "Wystąpił błąd podczas pobierania ocen.",
+            errorData.detail ?? "Wystąpił błąd podczas pobierania ocen.",
           );
         } else {
           setError(
@@ -126,7 +127,7 @@ const GradesPage: React.FC = () => {
       }
     };
     if (!appContext.isGuest) {
-      fetchData();
+      void fetchData();
     }
   }, [appContext.axiosInstance, appContext.isGuest]);
 

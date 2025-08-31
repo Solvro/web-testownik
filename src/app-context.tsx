@@ -8,6 +8,12 @@ import responseInterceptor, {
   RefreshTokenExpiredError,
 } from "./interceptors/response-interceptor.ts";
 
+interface UserData {
+  photo: string;
+  is_staff: string;
+  id: string;
+}
+
 export interface AppContextType {
   isAuthenticated: boolean;
   setAuthenticated: (isAuthenticated: boolean) => void;
@@ -24,7 +30,7 @@ const axiosInstance = axios.create({
   },
 });
 
-axiosInstance.interceptors.request.use(requestInterceptor, async (error) => {
+axiosInstance.interceptors.request.use(requestInterceptor, (error) => {
   throw error;
 });
 axiosInstance.interceptors.response.use(
@@ -51,18 +57,18 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.getItem("is_guest") === "true",
   );
 
-  const setGuest = (isGuest: boolean) => {
-    localStorage.setItem("is_guest", isGuest.toString());
-    setIsGuest(isGuest);
+  const setGuest = (isGuestParameter: boolean) => {
+    localStorage.setItem("is_guest", isGuestParameter.toString());
+    setIsGuest(isGuestParameter);
   };
 
   const fetchUserData = useCallback(async () => {
     try {
-      const response = await axiosInstance.get("/user/");
-      if (!response.data) {
-        throw new Error("No user data available");
-      }
+      const response = await axiosInstance.get<UserData>("/user/");
       const userData = response.data;
+      if (!userData.id || !userData.photo || !userData.is_staff) {
+        throw new Error("Incomplete user data received");
+      }
       localStorage.setItem("profile_picture", userData.photo);
       localStorage.setItem("is_staff", userData.is_staff);
       localStorage.setItem("user_id", userData.id);
@@ -83,7 +89,7 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   axiosInstance.interceptors.response.use(
     (response) => response,
-    async (error) => {
+    (error) => {
       if (error instanceof RefreshTokenExpiredError) {
         localStorage.removeItem("profile_picture");
         localStorage.removeItem("is_staff");

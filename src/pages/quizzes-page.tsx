@@ -44,9 +44,10 @@ const QuizzesPage: React.FC = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       if (appContext.isGuest) {
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
         setUserQuizzes(
-          localStorage.getItem("guest_quizzes")
-            ? JSON.parse(localStorage.getItem("guest_quizzes")!)
+          guestQuizzesString !== null
+            ? (JSON.parse(guestQuizzesString) as QuizMetadata[])
             : [],
         );
 
@@ -55,8 +56,8 @@ const QuizzesPage: React.FC = () => {
       }
       try {
         const [userResponse, sharedResponse] = await Promise.all([
-          appContext.axiosInstance.get("/quizzes/"),
-          appContext.axiosInstance.get("/shared-quizzes/"),
+          appContext.axiosInstance.get<QuizMetadata[]>("/quizzes/"),
+          appContext.axiosInstance.get<SharedQuiz[]>("/shared-quizzes/"),
         ]);
 
         if (userResponse.status === 200) {
@@ -78,8 +79,8 @@ const QuizzesPage: React.FC = () => {
       }
     };
 
-    fetchQuizzes();
-  }, [appContext.axiosInstance]);
+    void fetchQuizzes();
+  }, [appContext.axiosInstance, appContext.isGuest]);
 
   const handleShareQuiz = (quiz: QuizMetadata) => {
     setSelectedQuizToShare(quiz);
@@ -115,10 +116,12 @@ const QuizzesPage: React.FC = () => {
 
   const handleDownloadQuiz = (quiz: QuizMetadata) => {
     if (appContext.isGuest) {
-      // @ts-expect-error - we don't need the id in the downloaded quiz
-      delete quiz.id;
+      // Create a copy without the id for download
+      const { id, ...quizToDownload } = quiz;
       const url = window.URL.createObjectURL(
-        new Blob([JSON.stringify(quiz, null, 2)], { type: "application/json" }),
+        new Blob([JSON.stringify(quizToDownload, null, 2)], {
+          type: "application/json",
+        }),
       );
       const link = document.createElement("a");
       link.href = url;
@@ -128,22 +131,27 @@ const QuizzesPage: React.FC = () => {
       link.remove();
       return;
     }
-    appContext.axiosInstance
-      .get(`/quizzes/${quiz.id}/`)
+    void appContext.axiosInstance
+      .get<Quiz>(`/quizzes/${quiz.id}/`)
       .then((response) => {
-        const quiz = response.data;
-        delete quiz.id;
-        quiz.maintainer = quiz.maintainer?.full_name || null;
-        delete quiz.visibility;
-        delete quiz.allow_anonymous;
+        const fullQuiz = response.data;
+        // Create a downloadable version
+        const downloadableQuiz = {
+          title: fullQuiz.title,
+          description: fullQuiz.description,
+          maintainer: fullQuiz.maintainer?.full_name || null,
+          version: fullQuiz.version,
+          questions: fullQuiz.questions,
+          is_anonymous: fullQuiz.is_anonymous,
+        };
         const url = window.URL.createObjectURL(
-          new Blob([JSON.stringify(quiz, null, 2)], {
+          new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
             type: "application/json",
           }),
         );
         const link = document.createElement("a");
         link.href = url;
-        link.setAttribute("download", `${quiz.title}.json`);
+        link.setAttribute("download", `${fullQuiz.title}.json`);
         document.body.append(link);
         link.click();
         link.remove();

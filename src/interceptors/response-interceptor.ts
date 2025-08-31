@@ -7,6 +7,11 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+interface TokenRefreshResponse {
+  access: string;
+  refresh: string;
+}
+
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
@@ -63,9 +68,12 @@ const responseInterceptor = async (error: AxiosError) => {
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       try {
-        const response = await axios.post(`${SERVER_URL}/token/refresh/`, {
-          refresh: refreshToken,
-        });
+        const response = await axios.post<TokenRefreshResponse>(
+          `${SERVER_URL}/token/refresh/`,
+          {
+            refresh: refreshToken,
+          },
+        );
         const newToken = response.data.access;
         const newRefreshToken = response.data.refresh;
         localStorage.setItem("access_token", newToken);

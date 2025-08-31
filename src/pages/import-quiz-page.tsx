@@ -25,7 +25,7 @@ import AppContext from "../app-context.tsx";
 import { validateQuiz } from "../components/quiz/helpers/quiz-validation.ts";
 import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
 import QuizPreviewModal from "../components/quiz/quiz-preview-modal.tsx";
-import type { Quiz } from "../components/quiz/types.ts";
+import type { Quiz, QuizMetadata } from "../components/quiz/types.ts";
 
 function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -95,7 +95,7 @@ const ImportQuizPage: React.FC = () => {
         const reader = new FileReader();
         reader.addEventListener("load", async () => {
           try {
-            const data = JSON.parse(reader.result as string);
+            const data = JSON.parse(reader.result as string) as Quiz;
             const validationError = validateQuiz(addQuestionIdsIfMissing(data));
             if (validationError) {
               setErrorAndNotify(validationError);
@@ -118,8 +118,9 @@ const ImportQuizPage: React.FC = () => {
         break;
       }
       case "link": {
-        const linkInput = document.querySelector("#link-input")?.value;
-        if (!linkInput) {
+        const linkInput =
+          document.querySelector<HTMLInputElement>("#link-input")?.value;
+        if (!linkInput || linkInput.trim() === "") {
           setErrorAndNotify("Wklej link do quizu.");
           setLoading(false);
           return;
@@ -134,14 +135,15 @@ const ImportQuizPage: React.FC = () => {
         break;
       }
       case "json": {
-        const textInput = document.querySelector("#text-input")?.value;
-        if (!textInput) {
+        const textInput =
+          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
+        if (!textInput || textInput.trim() === "") {
           setError("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
         try {
-          const data = JSON.parse(textInput);
+          const data = JSON.parse(textInput) as Quiz;
           const validationError = validateQuiz(addQuestionIdsIfMissing(data));
           if (validationError) {
             setErrorAndNotify(validationError);
@@ -189,9 +191,11 @@ const ImportQuizPage: React.FC = () => {
           is_anonymous: true,
           can_edit: true,
         };
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const userQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes =
+          userQuizzesString !== null
+            ? (JSON.parse(userQuizzesString) as QuizMetadata[])
+            : [];
         userQuizzes.push(temporaryQuiz);
         localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
         setQuiz(temporaryQuiz);
@@ -199,9 +203,9 @@ const ImportQuizPage: React.FC = () => {
       }
       let response;
       if (type === "json") {
-        response = await appContext.axiosInstance.post("/quizzes/", data);
+        response = await appContext.axiosInstance.post<Quiz>("/quizzes/", data);
       } else if (type === "link") {
-        response = await appContext.axiosInstance.post(
+        response = await appContext.axiosInstance.post<Quiz>(
           "/import-quiz-from-link/",
           { link: data },
         );
@@ -210,12 +214,12 @@ const ImportQuizPage: React.FC = () => {
       }
 
       if (response.status === 201) {
-        const result = await response.data;
+        const result = response.data;
         setQuiz(result);
       } else {
-        const errorData = await response.data;
+        const errorData = response.data as { error?: string };
         setError(
-          errorData.error || "Wystąpił błąd podczas importowania quizu.",
+          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
         );
       }
     } catch {

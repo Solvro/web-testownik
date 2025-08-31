@@ -78,9 +78,10 @@ const ReportQuestionIssueModal: React.FC<ReportQuestionIssueModalProps> = ({
     } catch (error) {
       console.error("Error reporting incorrect question:", error);
       if (error instanceof AxiosError) {
+        const errorData = error.response?.data as { error?: string };
         toast.error(
           `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${
-            error.response?.data.error
+            errorData?.error ?? ""
           }`,
         );
       } else {

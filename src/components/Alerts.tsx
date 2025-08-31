@@ -21,11 +21,10 @@ interface AlertData {
 
 const Alerts: React.FC = () => {
   const [alerts, setAlerts] = React.useState<AlertData[]>([]);
-  const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(
-    localStorage.getItem("dismissedAlerts")
-      ? JSON.parse(localStorage.getItem("dismissedAlerts")!)
-      : [],
-  );
+  const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
+    const stored = localStorage.getItem("dismissedAlerts");
+    return stored !== null ? (JSON.parse(stored) as string[]) : [];
+  });
 
   const dismissAlert = (alertId: string) => {
     setDismissedAlerts([...dismissedAlerts, alertId]);
@@ -37,11 +36,11 @@ const Alerts: React.FC = () => {
 
   React.useEffect(() => {
     axios
-      .get(`${SERVER_URL}/alerts/`)
+      .get<AlertData[]>(`${SERVER_URL}/alerts/`)
       .then((response) => {
         setAlerts(response.data);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to fetch alerts:", error);
       });
   }, []);

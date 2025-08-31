@@ -21,6 +21,14 @@ const ALLOWED_QUESTION_KEYS = [
 ];
 const ALLOWED_ANSWER_KEYS = ["answer", "correct", "image"];
 
+// Utility function to check if an object contains only allowed keys
+const containsOnlyAllowedKeys = (
+  object: object,
+  allowedKeys: string[],
+): boolean => {
+  return Object.keys(object).every((key) => allowedKeys.includes(key));
+};
+
 export const validateQuiz = (quiz: Quiz): string | null => {
   // Check if quiz contains only allowed properties
   if (!containsOnlyAllowedKeys(quiz, ALLOWED_QUIZ_KEYS)) {
@@ -46,25 +54,25 @@ export const validateQuiz = (quiz: Quiz): string | null => {
       const invalidKeys = Object.keys(question).filter(
         (key) => !ALLOWED_QUESTION_KEYS.includes(key),
       );
-      return `Pytanie nr ${
-        questionIndex + 1
-      } zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
+      return `Pytanie nr ${String(
+        questionIndex + 1,
+      )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
     }
 
     if (!question.question.trim()) {
-      return `Pytanie nr ${questionIndex + 1} musi mieć treść.`;
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
     }
 
     if (question.answers.length === 0) {
-      return `Pytanie nr ${
-        questionIndex + 1
-      } musi mieć przynajmniej jedną odpowiedź.`;
+      return `Pytanie nr ${String(
+        questionIndex + 1,
+      )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
     if (questionIds.has(question.id)) {
-      return `Pytanie nr ${questionIndex + 1} ma zduplikowane ID: ${
-        question.id
-      }.`;
+      return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${String(
+        question.id,
+      )}.`;
     }
     questionIds.add(question.id);
 
@@ -74,28 +82,18 @@ export const validateQuiz = (quiz: Quiz): string | null => {
         const invalidKeys = Object.keys(answer).filter(
           (key) => !ALLOWED_ANSWER_KEYS.includes(key),
         );
-        return `Odpowiedź nr ${answerIndex + 1} w pytaniu nr ${
-          questionIndex + 1
-        } zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
       }
 
       if (!answer.answer.trim()) {
-        return `Odpowiedź nr ${answerIndex + 1} w pytaniu nr ${
-          questionIndex + 1
-        } musi mieć treść.`;
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} musi mieć treść.`;
       }
     }
   }
 
   return null; // No validation errors
-};
-
-// Utility function to check if an object contains only allowed keys
-const containsOnlyAllowedKeys = <T extends object>(
-  object: T,
-  allowedKeys: string[],
-): boolean => {
-  return Object.keys(object as object).every((key) =>
-    allowedKeys.includes(key),
-  );
 };
