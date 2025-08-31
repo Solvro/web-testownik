@@ -37,7 +37,7 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
 
 type UploadType = "file" | "link" | "json";
 
-const ImportQuizPage: React.FC = () => {
+function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [uploadType, setUploadType] = useState<UploadType>("link");
@@ -56,7 +56,7 @@ const ImportQuizPage: React.FC = () => {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file !== undefined) {
       setFileName(file.name);
       setError(null);
     } else {
@@ -70,16 +70,16 @@ const ImportQuizPage: React.FC = () => {
     setLoading(false);
   };
 
-  const addQuestionIdsIfMissing = (quiz: Quiz): Quiz => {
+  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
     let id = 1;
-    for (const question of quiz.questions) {
+    for (const question of quizData.questions) {
       if (question.id) {
         id = Math.max(id, question.id + 1);
       } else {
         question.id = id++;
       }
     }
-    return quiz;
+    return quizData;
   };
 
   const handleImport = async () => {
@@ -88,7 +88,7 @@ const ImportQuizPage: React.FC = () => {
     switch (uploadType) {
       case "file": {
         const file = fileInputRef.current?.files?.[0];
-        if (!file) {
+        if (file === undefined) {
           setErrorAndNotify("Wybierz plik z quizem.");
           return;
         }
@@ -97,20 +97,20 @@ const ImportQuizPage: React.FC = () => {
           try {
             const data = JSON.parse(reader.result as string) as Quiz;
             const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-            if (validationError) {
+            if (validationError !== null) {
               setErrorAndNotify(validationError);
               return false;
             }
             await submitImport("json", data);
-          } catch (error) {
-            if (error instanceof Error) {
+          } catch (fileError) {
+            if (fileError instanceof Error) {
               setError(
-                `Wystąpił błąd podczas wczytywania pliku: ${error.message}`,
+                `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
               );
             } else {
               setError("Wystąpił błąd podczas wczytywania pliku.");
             }
-            console.error("Błąd podczas wczytywania pliku:", error);
+            console.error("Błąd podczas wczytywania pliku:", fileError);
           }
         });
         reader.readAsText(file);
@@ -435,6 +435,6 @@ const ImportQuizPage: React.FC = () => {
       </Dialog>
     </>
   );
-};
+}
 
 export default ImportQuizPage;

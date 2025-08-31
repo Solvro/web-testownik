@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import AppContext from "../app-context.tsx";
 import type { Quiz } from "../components/quiz/types.ts";
 
-const EditQuizPage: React.FC = () => {
+function EditQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ const EditQuizPage: React.FC = () => {
           return;
         }
         const response = await appContext.axiosInstance.get(
-          `/quizzes/${quizId}/`,
+          `/quizzes/${String(quizId)}/`,
         );
         if (response.status === 200) {
           const data: Quiz = response.data;
@@ -106,7 +106,7 @@ const EditQuizPage: React.FC = () => {
         return true;
       }
       const response = await appContext.axiosInstance.put(
-        `/quizzes/${quizId}/`,
+        `/quizzes/${String(quizId)}/`,
         payload,
       );
       if (response.status !== 200) {
@@ -162,6 +162,6 @@ const EditQuizPage: React.FC = () => {
       />
     </>
   );
-};
+}
 
 export default EditQuizPage;

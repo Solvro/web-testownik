@@ -19,7 +19,7 @@ interface AlertData {
   updated_at: string;
 }
 
-const Alerts: React.FC = () => {
+function Alerts(): React.JSX.Element {
   const [alerts, setAlerts] = React.useState<AlertData[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
     const stored = localStorage.getItem("dismissedAlerts");
@@ -46,11 +46,10 @@ const Alerts: React.FC = () => {
   }, []);
 
   if (
-    alerts.length === 0 ||
-    !alerts.some(
+    alerts.every(
       (alert) =>
-        (!dismissedAlerts.includes(alert.id) && alert.active) ||
-        !alert.dismissible,
+        (dismissedAlerts.includes(alert.id) || !alert.active) &&
+        alert.dismissible,
     )
   ) {
     return null;
@@ -98,6 +97,6 @@ const Alerts: React.FC = () => {
       )}
     </div>
   );
-};
+}
 
 export default Alerts;

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import AppContext from "../app-context.tsx";
 import type { Question, Quiz } from "../components/quiz/types.ts";
 
-const SearchInQuizPage: React.FC = () => {
+function SearchInQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = React.useContext(AppContext);
 
@@ -20,14 +20,14 @@ const SearchInQuizPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  document.title = `Wyszukaj w quizach - ${quiz?.title || "Ładowanie..."} - Testownik Solvro`;
+  document.title = `Wyszukaj w quizach - ${quiz?.title ?? "Ładowanie..."} - Testownik Solvro`;
 
   useEffect(() => {
     const fetchQuiz = async () => {
       setLoading(true);
       try {
         const response = await appContext.axiosInstance.get(
-          `/quizzes/${quizId}/`,
+          `/quizzes/${String(quizId)}/`,
         );
         if (response.status === 200) {
           const data: Quiz = response.data;
@@ -43,7 +43,7 @@ const SearchInQuizPage: React.FC = () => {
       }
     };
 
-    fetchQuiz();
+    void fetchQuiz();
   }, [quizId, appContext.axiosInstance]);
 
   useEffect(() => {
@@ -253,6 +253,6 @@ const SearchInQuizPage: React.FC = () => {
       )}
     </div>
   );
-};
+}
 
 export default SearchInQuizPage;

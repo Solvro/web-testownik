@@ -18,7 +18,7 @@ import AppContext from "../app-context.tsx";
 import { SERVER_URL } from "../config.ts";
 import PrivacyModal from "./privacy-modal.tsx";
 
-const LoginPrompt: React.FC = () => {
+function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
@@ -121,14 +121,14 @@ const LoginPrompt: React.FC = () => {
               <div className="mb-0 grid gap-2">
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
                   >
                     Zaloguj się z USOS
                   </a>
                 </Button>
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
+                    href={`${SERVER_URL}/login?jwt=true&redirect=${String(document.location)}`}
                   >
                     Zaloguj się z Solvro Auth
                   </a>
@@ -206,6 +206,6 @@ const LoginPrompt: React.FC = () => {
       </Dialog>
     </div>
   );
-};
+}
 
 export default LoginPrompt;

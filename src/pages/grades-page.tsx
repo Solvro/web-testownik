@@ -69,7 +69,7 @@ interface GradesData {
   terms: Term[];
 }
 
-const GradesPage: React.FC = () => {
+function GradesPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
@@ -375,6 +375,6 @@ const GradesPage: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default GradesPage;

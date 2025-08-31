@@ -26,7 +26,7 @@ import QuizzesPage from "./pages/quizzes-page.tsx";
 import SearchInQuizPage from "./pages/search-in-quiz-page.tsx";
 import TermsPage from "./pages/terms-page.tsx";
 
-const App: React.FC = () => {
+function App(): React.JSX.Element {
   const context = useContext(AppContext);
 
   return (
@@ -101,6 +101,6 @@ const App: React.FC = () => {
       </ThemeProvider>
     </Router>
   );
-};
+}
 
 export default App;

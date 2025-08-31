@@ -10,7 +10,7 @@ import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
 import QuizPreviewModal from "../components/quiz/quiz-preview-modal.tsx";
 import type { Quiz } from "../components/quiz/types.ts";
 
-const CreateQuizPage: React.FC = () => {
+function CreateQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -21,9 +21,11 @@ const CreateQuizPage: React.FC = () => {
   const handleSave = async (data: QuizEditorResult) => {
     try {
       if (appContext.isGuest) {
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const guestQuizzesData = localStorage.getItem("guest_quizzes");
+        const userQuizzes: Quiz[] =
+          guestQuizzesData !== null
+            ? (JSON.parse(guestQuizzesData) as Quiz[])
+            : [];
         const temporaryQuiz = {
           ...data,
           questions: data.questions,
@@ -73,6 +75,6 @@ const CreateQuizPage: React.FC = () => {
       />
     </>
   );
-};
+}
 
 export default CreateQuizPage;

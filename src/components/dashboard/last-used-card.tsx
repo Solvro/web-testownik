@@ -15,17 +15,17 @@ interface Quiz {
   title: string;
 }
 
-const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
+function LastUsedCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [lastUsedQuizzes, setLastUsedQuizzes] = useState<Quiz[]>([]);
   const [fetchedAll, setFetchedAll] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchLastUsedQuizzes(10);
+    void fetchLastUsedQuizzes(10);
   }, []);
 
   const fetchLastUsedQuizzes = async (limit: number) => {
@@ -74,7 +74,7 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
                     <TableRow key={quiz.id} className="hover:bg-transparent">
                       <TableCell>
                         <Link
-                          to={`/quiz/${quiz.id}`}
+                          to={`/quiz/${String(quiz.id)}`}
                           className="text-sm font-medium hover:underline"
                         >
                           <div className="elipsis w-full truncate">
@@ -127,6 +127,6 @@ const LastUsedCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
+}
 
 export default LastUsedCard;

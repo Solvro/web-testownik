@@ -47,9 +47,11 @@ const AppContext = createContext<AppContextType>({
   fetchUserData: async () => {},
 });
 
-const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
+function AppContextProvider({
   children,
-}) => {
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     Boolean(localStorage.getItem("access_token")),
   );
@@ -101,7 +103,7 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
-};
+}
 
 export { AppContextProvider };
 

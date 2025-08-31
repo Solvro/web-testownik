@@ -30,15 +30,15 @@ interface Contributor {
   contributions: number;
 }
 
-const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
+function AboutCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchContributors();
+    void fetchContributors();
   }, []);
 
   const fetchContributors = async () => {
@@ -161,6 +161,6 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
+}
 
 export default AboutCard;

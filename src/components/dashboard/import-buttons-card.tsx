@@ -4,9 +4,9 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-const ImportButtonsCard: React.FC<React.ComponentProps<typeof Card>> = ({
+function ImportButtonsCard({
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   return (
     <Card {...props}>
       <CardContent className="flex h-full flex-wrap content-center justify-center gap-3">
@@ -22,6 +22,6 @@ const ImportButtonsCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
+}
 
-export default ImportButtonsCard;
+export { ImportButtonsCard as default };

@@ -26,7 +26,7 @@ interface SettingsData {
   wrong_answer_reoccurrences: number;
 }
 
-const ProfilePage: React.FC = () => {
+function ProfilePage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>("account");
@@ -47,9 +47,10 @@ const ProfilePage: React.FC = () => {
     }
 
     if (appContext.isGuest) {
+      const savedSettings = localStorage.getItem("settings");
       setSettings(
-        localStorage.getItem("settings")
-          ? JSON.parse(localStorage.getItem("settings")!)
+        savedSettings !== null
+          ? (JSON.parse(savedSettings) as SettingsData)
           : settings,
       );
       return;
@@ -142,6 +143,6 @@ const ProfilePage: React.FC = () => {
       </Tabs>
     </div>
   );
-};
+}
 
 export default ProfilePage;

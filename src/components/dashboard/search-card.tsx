@@ -19,10 +19,10 @@ interface SearchResult {
   is_anonymous: boolean;
 }
 
-const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
+function SearchCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -71,12 +71,12 @@ const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
           <Input
             placeholder="Wyszukaj quiz"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch();
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void handleSearch();
               }
             }}
           />
@@ -139,6 +139,6 @@ const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
+}
 
 export default SearchCard;
