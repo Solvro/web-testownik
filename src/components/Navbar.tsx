@@ -1,23 +1,3 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Button } from "@/components/ui/button";
-import AppContext from "../AppContext.tsx";
-import { SERVER_URL } from "../config.ts";
-import { Link, useLocation, useNavigate } from "react-router";
-import ReportBugModal from "./ReportBugModal.tsx";
-import { ModeToggle } from "@/components/mode-toggle.tsx";
-import AppLogo from "@/components/app-logo.tsx";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
 import {
   CircleUserRoundIcon,
   CloudUploadIcon,
@@ -27,6 +7,28 @@ import {
   MenuIcon,
   XIcon,
 } from "lucide-react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router";
+
+import AppLogo from "@/components/app-logo.tsx";
+import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { Button } from "@/components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@/components/ui/navigation-menu";
+
+import AppContext from "../app-context.tsx";
+import { SERVER_URL } from "../config.ts";
+import ReportBugModal from "./report-bug-modal.tsx";
 
 const Navbar: React.FC = () => {
   const appContext = useContext(AppContext);
@@ -36,28 +38,28 @@ const Navbar: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  const queryParams = useMemo(
+  const queryParameters = useMemo(
     () => new URLSearchParams(location.search),
     [location.search],
   );
-  const accessToken = queryParams.get("access_token");
-  const refreshToken = queryParams.get("refresh_token");
+  const accessToken = queryParameters.get("access_token");
+  const refreshToken = queryParameters.get("refresh_token");
 
   const handleLogin = useCallback(async () => {
     if (accessToken && refreshToken) {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
 
-      queryParams.delete("access_token");
-      queryParams.delete("refresh_token");
+      queryParameters.delete("access_token");
+      queryParameters.delete("refresh_token");
 
       navigate({
-        search: queryParams.toString(),
+        search: queryParameters.toString(),
       });
 
       await appContext.fetchUserData();
     }
-  }, [accessToken, refreshToken, queryParams, navigate]);
+  }, [accessToken, refreshToken, queryParameters, navigate]);
 
   useEffect(() => {
     handleLogin();
@@ -96,7 +98,9 @@ const Navbar: React.FC = () => {
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink
-                  onClick={() => setShowReportModal(true)}
+                  onClick={() => {
+                    setShowReportModal(true);
+                  }}
                   asChild
                 >
                   <Link to="#">Zgłoś błąd</Link>
@@ -176,7 +180,9 @@ const Navbar: React.FC = () => {
           variant="ghost"
           size="icon"
           className="sm:hidden"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => {
+            setExpanded(!expanded);
+          }}
         >
           {expanded ? (
             <XIcon className="size-6" />
@@ -185,7 +191,7 @@ const Navbar: React.FC = () => {
           )}
         </Button>
       </div>
-      {expanded && (
+      {expanded ? (
         <div className="flex flex-col gap-4 border-t pt-2 sm:hidden">
           <Link
             to="/quizzes"
@@ -209,7 +215,9 @@ const Navbar: React.FC = () => {
           </Link>
           <Link
             to="#"
-            onClick={() => setShowReportModal(true)}
+            onClick={() => {
+              setShowReportModal(true);
+            }}
             className="text-muted-foreground hover:text-foreground text-left transition-colors"
           >
             Zgłoś błąd
@@ -219,6 +227,7 @@ const Navbar: React.FC = () => {
               href={`${SERVER_URL}/admin/`}
               target="_blank"
               className="text-muted-foreground hover:text-foreground transition-colors"
+              rel="noreferrer"
             >
               Panel administratora
             </a>
@@ -275,10 +284,12 @@ const Navbar: React.FC = () => {
             )}
           </div>
         </div>
-      )}
+      ) : null}
       <ReportBugModal
         show={showReportModal}
-        onHide={() => setShowReportModal(false)}
+        onHide={() => {
+          setShowReportModal(false);
+        }}
       />
     </nav>
   );

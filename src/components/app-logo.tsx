@@ -1,10 +1,11 @@
 import React from "react";
+
 import { cn } from "@/lib/utils.ts";
 
-const AppLogo = ({
+function AppLogo({
   className,
   ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) => {
+}: React.ImgHTMLAttributes<HTMLImageElement>) {
   return (
     <img
       src="/solvro_mono.svg"
@@ -14,6 +15,6 @@ const AppLogo = ({
       {...props}
     />
   );
-};
+}
 
 export default AppLogo;

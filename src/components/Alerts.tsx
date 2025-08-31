@@ -1,10 +1,12 @@
-import React from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import axios from "axios";
-import { SERVER_URL } from "../config.ts";
 import DOMPurify from "dompurify";
 import { XIcon } from "lucide-react";
+import React from "react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button.tsx";
+
+import { SERVER_URL } from "../config.ts";
 
 interface AlertData {
   id: string;
@@ -36,12 +38,16 @@ const Alerts: React.FC = () => {
   React.useEffect(() => {
     axios
       .get(`${SERVER_URL}/alerts/`)
-      .then((response) => setAlerts(response.data))
-      .catch((error) => console.error("Failed to fetch alerts:", error));
+      .then((response) => {
+        setAlerts(response.data);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch alerts:", error);
+      });
   }, []);
 
   if (
-    !alerts.length ||
+    alerts.length === 0 ||
     !alerts.some(
       (alert) =>
         (!dismissedAlerts.includes(alert.id) && alert.active) ||
@@ -66,18 +72,20 @@ const Alerts: React.FC = () => {
               }
               className="relative pr-10"
             >
-              {alert.dismissible && (
+              {alert.dismissible ? (
                 <Button
                   variant="ghost"
                   size="icon"
                   aria-label="Zamknij"
-                  onClick={() => dismissAlert(alert.id)}
+                  onClick={() => {
+                    dismissAlert(alert.id);
+                  }}
                   className="text-muted-foreground hover:text-foreground absolute top-0 right-0 m-1 transition-colors"
                 >
                   <XIcon className="size-4" />
                 </Button>
-              )}
-              {alert.title && <AlertTitle>{alert.title}</AlertTitle>}
+              ) : null}
+              {alert.title ? <AlertTitle>{alert.title}</AlertTitle> : null}
               <AlertDescription>
                 <div
                   dangerouslySetInnerHTML={{

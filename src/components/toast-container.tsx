@@ -1,5 +1,6 @@
-import { ToastContainer as ReactToastContainer } from "react-toastify";
 import React from "react";
+import { ToastContainer as ReactToastContainer } from "react-toastify";
+
 import { useTheme } from "@/components/theme-provider.tsx";
 
 const ToastContainer: React.FC = () => {
