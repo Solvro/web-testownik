@@ -10,11 +10,15 @@ import {
 import { Button } from "@/components/ui/button";
 import AppContext from "../../AppContext.tsx";
 import { Link } from "react-router";
-import Markdown from "marked-react";
+import Markdown from "react-markdown";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { cn } from "@/lib/utils.ts";
 import { LoaderCircleIcon } from "lucide-react";
+import { computeAnswerVariant } from "@/components/quiz/helpers/questionCard.ts";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 interface Answer {
   answer: string;
@@ -108,26 +112,6 @@ const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
     setEnableEdit(false);
   };
 
-  const computeAnswerVariant = (
-    isSelected: boolean,
-    isResult: boolean,
-    isCorrect: boolean,
-  ) => {
-    if (isResult) {
-      if (isCorrect && isSelected)
-        return "border-green-500 bg-green-500/15 text-green-600 dark:text-green-400"; // Correct & chosen
-      if (isCorrect && !isSelected)
-        return "border-yellow-500 bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"; // Missed correct answer
-      if (!isCorrect && isSelected)
-        return "border-red-500 bg-red-500/15 text-red-600 dark:text-red-400"; // Chosen but incorrect
-      return "opacity-50"; // Not selected & incorrect (distractor)
-    }
-    // Idle (selecting answers) phase
-    return isSelected
-      ? "bg-primary/10 border-primary"
-      : "hover:bg-accent border-border";
-  };
-
   if (!questionData) {
     if (loading) {
       return (
@@ -191,7 +175,12 @@ const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
             </small>
             <ScrollArea className="w-full min-w-0">
               <CardTitle className="mb-1">
-                <Markdown>{questionData.question}</Markdown>
+                <Markdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {questionData.question}
+                </Markdown>
               </CardTitle>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>

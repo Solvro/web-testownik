@@ -1169,6 +1169,7 @@ const QuizPage: React.FC = () => {
             questionChecked={questionChecked}
             nextAction={nextAction}
             isQuizFinished={isQuizFinished}
+            restartQuiz={resetProgress}
           />
         </div>
         <div
@@ -1212,6 +1213,7 @@ const QuizPage: React.FC = () => {
                     playing
                     playsInline
                     loop
+                    muted
                     width="100%"
                     height="100%"
                   />
