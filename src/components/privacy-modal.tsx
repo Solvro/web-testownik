@@ -76,10 +76,10 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ show, onHide }) => {
           </li>
           <li>
             <TypographyInlineCode>grades</TypographyInlineCode> - Twoje oceny
-            końcowe z USOS, które są wyświetlane w zakładce "Oceny" wraz z
-            wyliczoną średnią. Nie są one zapisywane w bazie danych Testownika,
-            a jedynie pobierane z USOS w momencie wyświetlania strony. Są one
-            dostępne tylko dla Ciebie.
+            końcowe z USOS, które są wyświetlane w zakładce &ldquo;Oceny&rdquo;
+            wraz z wyliczoną średnią. Nie są one zapisywane w bazie danych
+            Testownika, a jedynie pobierane z USOS w momencie wyświetlania
+            strony. Są one dostępne tylko dla Ciebie.
           </li>
         </ul>
         <p>

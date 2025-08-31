@@ -60,7 +60,7 @@ const ConnectGuestAccount: React.FC = () => {
 
   useEffect(() => {
     const quizzesString = localStorage.getItem("guest_quizzes");
-    if (quizzesString) {
+    if (quizzesString !== null) {
       try {
         const quizzes = JSON.parse(quizzesString);
         setGuestQuizzes(quizzes);
@@ -78,12 +78,16 @@ const ConnectGuestAccount: React.FC = () => {
     localStorage.removeItem("is_staff");
     localStorage.removeItem("user_id");
     appContext.setAuthenticated(false);
-    navigate("/");
+    void navigate("/");
   };
 
   const uploadQuizzes = async (quizIds?: string[]) => {
     for (const quiz of guestQuizzes) {
-      if (!quizIds || quizIds.includes(quiz.id)) {
+      if (
+        quizIds === null ||
+        quizIds === undefined ||
+        quizIds.includes(quiz.id)
+      ) {
         console.warn("Uploading quiz", quiz.id);
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
@@ -95,7 +99,7 @@ const ConnectGuestAccount: React.FC = () => {
           console.warn("Quiz uploaded:", response.data);
           if (categories.progress) {
             const progress = JSON.parse(
-              localStorage.getItem(`${quiz.id}_progress`) || "{}",
+              localStorage.getItem(`${quiz.id}_progress`) ?? "{}",
             );
             if (progress) {
               setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
@@ -118,7 +122,7 @@ const ConnectGuestAccount: React.FC = () => {
 
   const uploadSettings = async () => {
     setMigratingText("Przenoszenie ustawień...");
-    const settings = JSON.parse(localStorage.getItem("settings") || "{}");
+    const settings = JSON.parse(localStorage.getItem("settings") ?? "{}");
     try {
       await appContext.axiosInstance.put("/settings/", {
         initial_reoccurrences: settings.initial_reoccurrences,
@@ -202,7 +206,7 @@ const ConnectGuestAccount: React.FC = () => {
                   localStorage.removeItem("guest_quizzes");
                   localStorage.removeItem("guest_migrated");
                   appContext.setGuest(false);
-                  navigate("/");
+                  void navigate("/");
                 }}
               >
                 Usuń dane gościa
@@ -211,7 +215,7 @@ const ConnectGuestAccount: React.FC = () => {
                 variant="outline"
                 onClick={() => {
                   appContext.setGuest(false);
-                  navigate("/");
+                  void navigate("/");
                 }}
               >
                 Pozostaw
@@ -389,7 +393,7 @@ const ConnectGuestAccount: React.FC = () => {
               USOS, możesz kontynuować jako gość.
             </CardDescription>
           </CardHeader>
-          {error ? (
+          {error !== null ? (
             <Alert variant="destructive">
               <p>Wystąpił błąd podczas logowania.</p>
               {error === "not_student" ? (
@@ -409,14 +413,14 @@ const ConnectGuestAccount: React.FC = () => {
             <div className="grid gap-2">
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
                 >
                   Zaloguj się z USOS
                 </a>
               </Button>
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login?jwt=true&redirect=${String(document.location)}`}
                 >
                   Zaloguj się z Solvro Auth
                 </a>

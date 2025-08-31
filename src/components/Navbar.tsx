@@ -46,14 +46,14 @@ function Navbar() {
   const refreshToken = queryParameters.get("refresh_token");
 
   const handleLogin = useCallback(async () => {
-    if (accessToken && refreshToken) {
+    if (accessToken !== null && refreshToken !== null) {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
 
       queryParameters.delete("access_token");
       queryParameters.delete("refresh_token");
 
-      navigate({
+      void navigate({
         search: queryParameters.toString(),
       });
 
@@ -62,7 +62,7 @@ function Navbar() {
   }, [accessToken, refreshToken, queryParameters, navigate]);
 
   useEffect(() => {
-    handleLogin();
+    void handleLogin();
   }, [handleLogin]);
 
   const handleLogout = () => {
@@ -72,7 +72,7 @@ function Navbar() {
     localStorage.removeItem("is_staff");
     localStorage.removeItem("user_id");
     appContext.setAuthenticated(false);
-    navigate("/");
+    void navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -143,14 +143,14 @@ function Navbar() {
             <>
               <Link to="/profile">
                 <Button variant="default">
-                  {localStorage.getItem("profile_picture") ? (
+                  {localStorage.getItem("profile_picture") === null ? (
+                    <CircleUserRoundIcon className="size-6" />
+                  ) : (
                     <img
-                      src={localStorage.getItem("profile_picture")!}
+                      src={localStorage.getItem("profile_picture") ?? ""}
                       alt="Profilowe"
                       className="size-6 rounded-full object-cover"
                     />
-                  ) : (
-                    <CircleUserRoundIcon className="size-6" />
                   )}
                   <span>Profil</span>
                 </Button>
@@ -167,7 +167,7 @@ function Navbar() {
           ) : (
             <Button variant="default" asChild>
               <a
-                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
               >
                 <LogInIcon />
                 Zaloguj się
@@ -251,14 +251,14 @@ function Navbar() {
               <>
                 <Link to="/profile">
                   <Button variant="default" className="flex-1">
-                    {localStorage.getItem("profile_picture") ? (
+                    {localStorage.getItem("profile_picture") === null ? (
+                      <CircleUserRoundIcon className="size-6" />
+                    ) : (
                       <img
-                        src={localStorage.getItem("profile_picture")!}
+                        src={localStorage.getItem("profile_picture") ?? ""}
                         alt="Profilowe"
                         className="size-6 rounded-full object-cover"
                       />
-                    ) : (
-                      <CircleUserRoundIcon className="size-6" />
                     )}
                     <span>Profil</span>
                   </Button>
@@ -275,7 +275,7 @@ function Navbar() {
             ) : (
               <Button variant="outline" asChild className="flex-1">
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
                 >
                   <LogInIcon />
                   Zaloguj się

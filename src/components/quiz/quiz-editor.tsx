@@ -54,12 +54,12 @@ const QuizEditor: React.FC<QuizEditorProps> = ({
   onSaveAndClose,
   saving = false,
 }) => {
-  const [title, setTitle] = useState(initialQuiz?.title || "");
+  const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [description, setDescription] = useState(
-    initialQuiz?.description || "",
+    initialQuiz?.description ?? "",
   );
   const [questions, setQuestions] = useState<Question[]>(
-    initialQuiz?.questions?.length
+    (initialQuiz?.questions?.length ?? 0) > 0
       ? initialQuiz.questions
       : [
           {
@@ -83,8 +83,15 @@ const QuizEditor: React.FC<QuizEditorProps> = ({
   useEffect(() => {
     if (
       initialQuiz?.questions?.some(
-        (q) => q.image || q.explanation || q.answers.some((a) => a.image),
-      )
+        (question) =>
+          (question.image !== null && question.image !== undefined) ||
+          (question.explanation !== null &&
+            question.explanation !== undefined) ||
+          question.answers.some(
+            (answer) => answer.image !== null && answer.image !== undefined,
+          ),
+      ) ??
+      false
     ) {
       setAdvancedMode(true);
     }

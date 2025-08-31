@@ -20,14 +20,14 @@ const SearchInQuizPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  document.title = `Wyszukaj w quizach - ${quiz?.title || "Ładowanie..."} - Testownik Solvro`;
+  document.title = `Wyszukaj w quizach - ${quiz?.title ?? "Ładowanie..."} - Testownik Solvro`;
 
   useEffect(() => {
     const fetchQuiz = async () => {
       setLoading(true);
       try {
         const response = await appContext.axiosInstance.get(
-          `/quizzes/${quizId}/`,
+          `/quizzes/${quizId ?? ""}/`,
         );
         if (response.status === 200) {
           const data: Quiz = response.data;
@@ -43,12 +43,12 @@ const SearchInQuizPage: React.FC = () => {
       }
     };
 
-    fetchQuiz();
+    void fetchQuiz();
   }, [quizId, appContext.axiosInstance]);
 
   useEffect(() => {
-    if (!quiz || !query.trim()) {
-      setFilteredQuestions(quiz?.questions || []);
+    if (quiz === null || !query.trim()) {
+      setFilteredQuestions(quiz?.questions ?? []);
       return;
     }
 
@@ -199,8 +199,8 @@ const SearchInQuizPage: React.FC = () => {
       <Input
         placeholder="Wyszukaj w pytaniach lub odpowiedziach..."
         value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
+        onChange={(event_) => {
+          setQuery(event_.target.value);
         }}
       />
       {filteredQuestions.length > 0 ? (

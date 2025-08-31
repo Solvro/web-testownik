@@ -109,8 +109,8 @@ const QuestionForm: React.FC<Props> = ({
           id={`question-text-${question.id}`}
           placeholder="Podaj treść pytania"
           value={question.question}
-          onChange={(e) => {
-            handleTextChange(e.target.value);
+          onChange={(event_) => {
+            handleTextChange(event_.target.value);
           }}
         />
       </div>
@@ -125,9 +125,9 @@ const QuestionForm: React.FC<Props> = ({
               <Input
                 id={`question-image-${question.id}`}
                 placeholder="Podaj URL zdjęcia"
-                value={question.image || ""}
-                onChange={(e) => {
-                  handleImageUrlChange(e.target.value);
+                value={question.image ?? ""}
+                onChange={(event_) => {
+                  handleImageUrlChange(event_.target.value);
                 }}
               />
             </div>
@@ -138,9 +138,9 @@ const QuestionForm: React.FC<Props> = ({
               <Textarea
                 id={`question-expl-${question.id}`}
                 placeholder="Podaj wyjaśnienie pytania"
-                value={question.explanation || ""}
-                onChange={(e) => {
-                  handleExplanationChange(e.target.value);
+                value={question.explanation ?? ""}
+                onChange={(event_) => {
+                  handleExplanationChange(event_.target.value);
                 }}
               />
             </div>
