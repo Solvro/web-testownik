@@ -1,38 +1,22 @@
 import React from "react";
-import {Row, Col} from "react-bootstrap";
 import QuestionQuizCard from "../components/dashboard/QuestionQuizCard.tsx";
 import LastUsedCard from "../components/dashboard/LastUsedCard.tsx";
 import AboutCard from "../components/dashboard/AboutCard.tsx";
 import SearchCard from "../components/dashboard/SearchCard.tsx";
 import ImportButtonsCard from "../components/dashboard/ImportButtonsCard.tsx";
-import '../styles/dashboard.css';
 
 const DashboardPage: React.FC = () => {
+  document.title = "Testownik Solvro";
 
-    document.title = "Testownik Solvro";
-
-    return (
-        <Row className="mh-1 row-gap-3">
-            {/* Dev */}
-
-            {/* Left Column */}
-            <Col md={4} className="d-flex flex-column gap-3 order-1 order-md-0">
-                <QuestionQuizCard/>
-            </Col>
-
-            {/* Middle Column */}
-            <Col md={4} className="d-flex flex-column gap-3 order-0 order-md-1">
-                <LastUsedCard/>
-                <ImportButtonsCard/>
-            </Col>
-
-            {/* Right Column */}
-            <Col md={4} className="d-flex flex-column gap-3 order-2">
-                <SearchCard/>
-                <AboutCard/>
-            </Col>
-        </Row>
-    );
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 sm:grid-rows-3 md:h-[70vh] md:grid-cols-3 md:grid-rows-2">
+      <LastUsedCard className="md:order-2" />
+      <ImportButtonsCard className="md:order-4" />
+      <QuestionQuizCard className="row-span-2 md:order-1" />
+      <SearchCard className="md:order-3" />
+      <AboutCard className="md:order-5" />
+    </div>
+  );
 };
 
 export default DashboardPage;

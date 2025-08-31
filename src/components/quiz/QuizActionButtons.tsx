@@ -1,87 +1,111 @@
-import React, {useContext} from "react";
-import {Button, Card, OverlayTrigger, Tooltip} from "react-bootstrap";
-import {Icon} from "@iconify/react";
+import React, { useContext } from "react";
+import {
+  ClipboardCopyIcon,
+  MessageSquareWarningIcon,
+  PencilLineIcon,
+  SkullIcon,
+} from "lucide-react";
+import { SiOpenai } from "@icons-pack/react-simple-icons";
 import AppContext from "../../AppContext.tsx";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface QuizActionButtonsProps {
-    onCopy: () => void;
-    onOpenChatGPT: () => void;
-    onReportIssue: () => void;
-    onEditQuestion: () => void;
-    toggleBrainrot: () => void;
-    isMaintainer: boolean;
-    theme: string;
-    disabled?: boolean;
+  onCopy: () => void;
+  onOpenChatGPT: () => void;
+  onReportIssue: () => void;
+  onEditQuestion: () => void;
+  toggleBrainrot: () => void;
+  isMaintainer: boolean;
+  disabled?: boolean;
 }
 
 const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
-                                                                 onCopy,
-                                                                 onOpenChatGPT,
-                                                                 onReportIssue,
-                                                                 onEditQuestion,
-                                                                 toggleBrainrot,
-                                                                 isMaintainer,
-                                                                 theme,
-                                                                 disabled = false,
-                                                             }) => {
-    const appContext = useContext(AppContext);
+  onCopy,
+  onOpenChatGPT,
+  onReportIssue,
+  onEditQuestion,
+  toggleBrainrot,
+  isMaintainer,
+  disabled = false,
+}) => {
+  const appContext = useContext(AppContext);
 
-    return (
-        <Card className="border-0 shadow mt-3">
-            <Card.Body>
-                <div className="d-flex justify-content-around">
-                    <OverlayTrigger
-                        placement="top"
-                        overlay={<Tooltip>Kopiuj pytanie i odpowiedzi do schowka</Tooltip>}
-                    >
-                        <Button variant={theme} onClick={onCopy} disabled={disabled}>
-                            <Icon icon="solar:clipboard-bold"/>
-                        </Button>
-                    </OverlayTrigger>
-
-                    <OverlayTrigger
-                        placement="top"
-                        overlay={<Tooltip>Otwórz pytanie w ChatGPT</Tooltip>}
-                    >
-                        <Button variant={theme} onClick={onOpenChatGPT} disabled={disabled}>
-                            <Icon icon="simple-icons:openai"/>
-                        </Button>
-                    </OverlayTrigger>
-
-                    {(!isMaintainer && appContext.isAuthenticated && !appContext.isGuest) && (
-                        <OverlayTrigger
-                            placement="top"
-                            overlay={<Tooltip>Zgłoś problem z pytaniem</Tooltip>}
-                        >
-                            <Button variant={theme} onClick={onReportIssue} disabled={disabled}>
-                                <Icon icon="tabler:message-report-filled"/>
-                            </Button>
-                        </OverlayTrigger>
-                    )}
-
-                    {(isMaintainer) && (
-                        <OverlayTrigger
-                            placement="top"
-                            overlay={<Tooltip>Edytuj pytanie</Tooltip>}
-                        >
-                            <Button variant={theme} onClick={onEditQuestion} disabled={disabled}>
-                                <Icon icon="mdi:edit"/>
-                            </Button>
-                        </OverlayTrigger>
-                    )}
-
-                    <OverlayTrigger
-                        placement="top"
-                        overlay={<Tooltip>Włącz/wyłącz dodatkowe efekty</Tooltip>}
-                    >
-                        <Button variant={theme} onClick={toggleBrainrot}>
-                            <Icon icon="healthicons:skull-24px"/>
-                        </Button>
-                    </OverlayTrigger>
-                </div>
-            </Card.Body>
-        </Card>
-    );
+  return (
+    <Card className="py-4">
+      <CardContent className="flex justify-around">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onCopy}
+              disabled={disabled}
+            >
+              <ClipboardCopyIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onOpenChatGPT}
+              disabled={disabled}
+            >
+              <SiOpenai />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Otwórz w ChatGPT</TooltipContent>
+        </Tooltip>
+        {!isMaintainer && appContext.isAuthenticated && !appContext.isGuest && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onReportIssue}
+                disabled={disabled}
+              >
+                <MessageSquareWarningIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
+          </Tooltip>
+        )}
+        {isMaintainer && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onEditQuestion}
+                disabled={disabled}
+              >
+                <PencilLineIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edytuj pytanie</TooltipContent>
+          </Tooltip>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" onClick={toggleBrainrot}>
+              <SkullIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Brainrot mode</TooltipContent>
+        </Tooltip>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default QuizActionButtons;

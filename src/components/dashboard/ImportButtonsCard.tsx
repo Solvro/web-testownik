@@ -1,31 +1,26 @@
 import React from "react";
-import {Card, Button} from "react-bootstrap";
-import AppContext from "../../AppContext.tsx";
-import {Link} from "react-router";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router";
 
-const ImportButtonsCard: React.FC = () => {
-    const appContext = React.useContext(AppContext);
-
-    return (
-        <Card className="border-0 shadow flex-fill">
-            <Card.Body className="d-flex align-items-center">
-                <div className="row gap-3 p-2 justify-content-center">
-                    <Link to="/create-quiz" className="w-auto">
-                        <Button className="w-auto" variant={`outline-${appContext.theme.getOppositeTheme()}`}>Dodaj nowy
-                            quiz</Button>
-                    </Link>
-                    <Link to="/import-quiz" className="w-auto">
-                        <Button variant={`outline-${appContext.theme.getOppositeTheme()}`}>Importuj
-                            quiz</Button>
-                    </Link>
-                    <Link to="/import-quiz-legacy" className="w-auto">
-                        <Button className="w-auto" variant={`outline-${appContext.theme.getOppositeTheme()}`}>Importuj
-                            quiz (stara wersja)</Button>
-                    </Link>
-                </div>
-            </Card.Body>
-        </Card>
-    );
+const ImportButtonsCard: React.FC<React.ComponentProps<typeof Card>> = ({
+  ...props
+}) => {
+  return (
+    <Card {...props}>
+      <CardContent className="flex h-full flex-wrap content-center justify-center gap-3">
+        <Button variant="outline" asChild>
+          <Link to="/create-quiz">Dodaj nowy quiz</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/import-quiz">Importuj quiz</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/import-quiz-legacy">Importuj quiz (stara wersja)</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default ImportButtonsCard;

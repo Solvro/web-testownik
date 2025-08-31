@@ -1,110 +1,164 @@
-import React, {useEffect, useState} from "react";
-import {Card, Table} from "react-bootstrap";
-import {Icon} from "@iconify/react";
-
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button.tsx";
+import { SiGithub } from "@icons-pack/react-simple-icons";
+import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import { cn } from "@/lib/utils.ts";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 interface Contributor {
-    login: string;
-    id: number;
-    node_id: string;
-    avatar_url: string;
-    gravatar_id: string;
-    url: string;
-    html_url: string;
-    followers_url: string;
-    following_url: string;
-    gists_url: string;
-    starred_url: string;
-    subscriptions_url: string;
-    organizations_url: string;
-    repos_url: string;
-    events_url: string;
-    received_events_url: string;
-    type: string;
-    site_admin: boolean;
-    contributions: number;
+  login: string;
+  id: number;
+  node_id: string;
+  avatar_url: string;
+  gravatar_id: string;
+  url: string;
+  html_url: string;
+  followers_url: string;
+  following_url: string;
+  gists_url: string;
+  starred_url: string;
+  subscriptions_url: string;
+  organizations_url: string;
+  repos_url: string;
+  events_url: string;
+  received_events_url: string;
+  type: string;
+  site_admin: boolean;
+  contributions: number;
 }
 
-const AboutCard: React.FC = () => {
-    const [contributors, setContributors] = useState<Contributor[]>([]);
+const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
+  className,
+  ...props
+}) => {
+  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-    useEffect(() => {
-        fetchContributors();
-    }, []);
+  useEffect(() => {
+    fetchContributors();
+  }, []);
 
-    const fetchContributors = async () => {
-        try {
-            const coreResponse = await fetch("https://api.github.com/repos/Solvro/backend-testownik/contributors?anon=1");
-            const frontendResponse = await fetch("https://api.github.com/repos/Solvro/web-testownik/contributors?anon=1");
+  const fetchContributors = async () => {
+    setLoading(true);
+    try {
+      const coreResponse = await fetch(
+        "https://api.github.com/repos/Solvro/backend-testownik/contributors?anon=1",
+      );
+      const frontendResponse = await fetch(
+        "https://api.github.com/repos/Solvro/web-testownik/contributors?anon=1",
+      );
 
-            const coreData = await coreResponse.json();
-            const frontendData = await frontendResponse.json();
+      const coreData = await coreResponse.json();
+      const frontendData = await frontendResponse.json();
 
-            if (coreData.message || frontendData.message) {
-                throw new Error("API rate limit exceeded");
+      if (coreData.message || frontendData.message) {
+        throw new Error("API rate limit exceeded");
+      }
+
+      // merge data from both repositories and if there are any duplicates, sum their contributions
+      const data = coreData
+        .concat(frontendData)
+        .filter((contributor: Contributor) => contributor.type === "User")
+        .reduce((acc: Contributor[], contributor: Contributor) => {
+          const existingContributor = acc.find(
+            (c) => c.login === contributor.login,
+          );
+          if (existingContributor) {
+            existingContributor.contributions += contributor.contributions;
+          } else {
+            acc.push(contributor);
+          }
+          return acc;
+        }, []);
+
+      setContributors(
+        data.sort(
+          (a: Contributor, b: Contributor) => b.contributions - a.contributions,
+        ),
+      );
+    } catch (e) {
+      console.error(e);
+      setContributors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
+      <CardContent className="flex h-full flex-col space-y-3">
+        <CardTitle className="flex items-center justify-between">
+          <span>Twórcy</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              window.open("https://github.com/solvro/web-testownik")
             }
-
-            // merge data from both repositories and if there are any duplicates, sum their contributions
-            const data = coreData.concat(frontendData)
-                .filter((contributor: Contributor) => contributor.type === "User")
-                .reduce((acc: Contributor[], contributor: Contributor) => {
-                    const existingContributor = acc.find((c) => c.login === contributor.login);
-                    if (existingContributor) {
-                        existingContributor.contributions += contributor.contributions;
-                    } else {
-                        acc.push(contributor);
-                    }
-                    return acc;
-                }, []);
-
-            setContributors(data.sort((a: Contributor, b: Contributor) => b.contributions - a.contributions));
-        } catch (e) {
-            console.error(e);
-            setContributors([]);
-        }
-    };
-
-    return (
-        <Card className="border-0 shadow flex-fill">
-            <Card.Body>
-                <h5 className="card-title d-flex justify-content-between align-items-center">
-                    <span>Twórcy</span>
-                    <div>
-                        <Icon icon="mdi:github" width="24" height="24" cursor="pointer"
-                              onClick={() => window.open("https://github.com/solvro/web-testownik")}/>
-                    </div>
-                </h5>
-                <div className="overflow-y-auto">
-                    <Table className="mb-0">
-                        <tbody>
-                        {contributors.length > 0 ? (
-                            contributors.map((contributor) => (
-                                <tr key={contributor.id}>
-                                    <td>
-                                        <a href={contributor.html_url} target="_blank" className="text-decoration-none">
-                                            <img src={contributor.avatar_url} alt={contributor.login} style={{
-                                                borderRadius: '50%',
-                                                width: '1.5em',
-                                                height: '1.5em',
-                                                objectFit: 'cover'
-                                            }}/>
-                                            <span className="ms-2 link-secondary">{contributor.login}</span>
-                                        </a>
-                                    </td>
-                                    <td className="text-muted">{contributor.contributions} commits</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td className="text-muted">Nie udało się pobrać informacji o autorach</td>
-                            </tr>
-                        )}
-                        </tbody>
-                    </Table>
-                </div>
-            </Card.Body>
-        </Card>
-    );
+            className="size-6 rounded-full"
+          >
+            <SiGithub className="size-5" />
+          </Button>
+        </CardTitle>
+        <ScrollArea className="min-h-0 flex-1">
+          <Table>
+            <TableBody>
+              {loading ? (
+                [...Array(10)].map((_, i) => (
+                  <TableRow key={i} className="hover:bg-transparent">
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="size-6 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Skeleton className="h-3 w-16" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : contributors.length > 0 ? (
+                contributors.map((contributor) => (
+                  <TableRow
+                    key={contributor.id}
+                    className="hover:bg-transparent"
+                  >
+                    <TableCell className="flex items-center gap-2 py-2">
+                      <a
+                        href={contributor.html_url}
+                        target="_blank"
+                        className="flex items-center gap-2 hover:underline"
+                      >
+                        <img
+                          src={contributor.avatar_url}
+                          alt={contributor.login}
+                          className="size-6 rounded-full object-cover"
+                        />
+                        <span className="text-muted-foreground text-sm">
+                          {contributor.login}
+                        </span>
+                      </a>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground py-2 text-xs">
+                      {contributor.contributions} commits
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell className="text-muted-foreground text-xs">
+                    Nie udało się pobrać informacji o autorach
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default AboutCard;

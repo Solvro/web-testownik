@@ -1,278 +1,372 @@
-import React, {useCallback, useContext, useEffect, useState} from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import AppContext from "../AppContext.tsx";
-import {Alert, Button, Card, Form, Navbar, Table} from "react-bootstrap";
-import PropagateLoader from "react-spinners/PropagateLoader";
-import {Icon} from "@iconify/react";
-import {useNavigate} from "react-router";
-import {AxiosError} from "axios";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Link } from "react-router";
+import { AxiosError } from "axios";
+import Loader from "@/components/loader.tsx";
+import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
+import { Label } from "@/components/ui/label.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx";
+import { Toggle } from "@/components/ui/toggle.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { cn } from "@/lib/utils.ts";
 
 interface Grade {
-    value: number;
-    value_symbol: string;
-    counts_into_average: boolean;
+  value: number;
+  value_symbol: string;
+  counts_into_average: boolean;
 }
 
 interface Course {
-    course_id: string;
-    course_name: string;
-    ects: number;
-    grades: Grade[];
-    term_id: string;
-    passing_status: "passed" | "failed" | "not_yet_passed";
+  course_id: string;
+  course_name: string;
+  ects: number;
+  grades: Grade[];
+  term_id: string;
+  passing_status: "passed" | "failed" | "not_yet_passed";
 }
 
 interface Term {
-    id: string;
-    name: string;
-    start_date: string;
-    end_date: string;
-    finish_date: string;
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  finish_date: string;
 }
 
 interface GradesData {
-    courses: Course[];
-    terms: Term[];
+  courses: Course[];
+  terms: Term[];
 }
 
 const GradesPage: React.FC = () => {
-    const appContext = useContext(AppContext);
-    const navigate = useNavigate();
+  const appContext = useContext(AppContext);
 
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [selectedTerm, setSelectedTerm] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editedGrades, setEditedGrades] = useState<
+    Record<string, number | string>
+  >({});
 
-    const [loading, setLoading] = useState(true);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [terms, setTerms] = useState<Term[]>([]);
-    const [selectedTerm, setSelectedTerm] = useState<string>("");
-    const [error, setError] = useState<string | null>(null);
-    const [editing, setEditing] = useState(false);
-    const [editedGrades, setEditedGrades] = useState<Record<string, number | string>>({});
+  document.title = "Oceny - Testownik Solvro";
 
-    document.title = "Oceny - Testownik Solvro";
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await appContext.axiosInstance.get("/grades/");
+        if (response.status !== 200) {
+          throw new Error("Invalid response status");
+        }
+        const data: GradesData = response.data;
+        setTerms(data.terms);
+        setCourses(data.courses);
+        setSelectedTerm(
+          data.terms.find(
+            (term) =>
+              new Date() >= new Date(term.start_date) &&
+              new Date() <= new Date(term.finish_date),
+          )?.id ||
+            data.terms.sort(
+              (a, b) =>
+                new Date(b.start_date).getTime() -
+                new Date(a.start_date).getTime(),
+            )[0].id,
+        );
+        setError(null);
+      } catch (error) {
+        console.error("Error fetching grades:", error);
+        if (error instanceof AxiosError && error.response) {
+          setError(
+            error.response.data.detail ||
+              "Wystąpił błąd podczas pobierania ocen.",
+          );
+        } else {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Wystąpił błąd podczas pobierania ocen.",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (!appContext.isGuest) {
+      fetchData();
+    }
+  }, [appContext.axiosInstance, appContext.isGuest]);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await appContext.axiosInstance.get('/grades/')
-                if (response.status !== 200) {
-                    throw new Error("Invalid response status");
-                }
-                const data: GradesData = response.data;
-                setTerms(data.terms);
-                setCourses(data.courses);
-                setSelectedTerm(
-                    data.terms.find(
-                        (term) =>
-                            new Date() >= new Date(term.start_date) &&
-                            new Date() <= new Date(term.finish_date)
-                    )?.id || data.terms.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())[0].id
-                );
-                setError(null);
-            } catch (error) {
-                console.error("Error fetching grades:", error);
-                if (error instanceof AxiosError && error.response) {
-                    setError(error.response.data.detail || "Wystąpił błąd podczas pobierania ocen.");
-                } else {
-                    setError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania ocen.");
-                }
-            } finally {
-                setLoading(false);
+  useEffect(() => {
+    if (!editing) {
+      setEditedGrades({});
+    }
+  }, [editing]);
+
+  const calculateAverage = useCallback(
+    (filteredCourses: Course[]) => {
+      const sum = filteredCourses.reduce((acc, course) => {
+        const courseSum =
+          course.grades.reduce((courseAcc, grade) => {
+            const gradeValue = editedGrades[course.course_id] ?? grade.value;
+            if (typeof gradeValue === "string") {
+              return courseAcc;
             }
-        };
-        if (!appContext.isGuest) {
-            fetchData();
-        }
-    }, [appContext.axiosInstance, appContext.isGuest]);
+            return (
+              courseAcc +
+              (grade.counts_into_average ? gradeValue * course.ects : 0)
+            );
+          }, 0) +
+          (editing &&
+          typeof editedGrades[course.course_id] === "number" &&
+          course.grades.length === 0
+            ? (editedGrades[course.course_id] as number) * course.ects
+            : 0);
+        return acc + courseSum;
+      }, 0);
 
-    useEffect(() => {
-        if (!editing) {
-            setEditedGrades({});
-        }
-    }, [editing]);
+      const totalWeight = filteredCourses.reduce((acc, course) => {
+        const courseWeight =
+          course.grades.reduce(
+            (courseAcc, grade) =>
+              courseAcc + (grade.counts_into_average ? course.ects : 0),
+            0,
+          ) +
+          (editing &&
+          typeof editedGrades[course.course_id] === "number" &&
+          course.grades.length === 0
+            ? course.ects
+            : 0);
+        return acc + courseWeight;
+      }, 0);
 
-    const calculateAverage = useCallback((filteredCourses: Course[]) => {
-        const sum = filteredCourses.reduce((acc, course) => {
-            const courseSum = course.grades.reduce(
-                (courseAcc, grade) => {
-                    const gradeValue = editedGrades[course.course_id] ?? grade.value;
-                    if (typeof gradeValue === "string") {
-                        return courseAcc;
-                    }
-                    return courseAcc + (grade.counts_into_average ? gradeValue * course.ects : 0);
-                },
-                0
-            ) + (editing && typeof editedGrades[course.course_id] === "number" && course.grades.length === 0 ? (editedGrades[course.course_id] as number) * course.ects : 0);
-            return acc + courseSum;
-        }, 0);
+      if (totalWeight === 0) {
+        return "-";
+      }
 
-        const totalWeight = filteredCourses.reduce((acc, course) => {
-            const courseWeight = course.grades.reduce(
-                (courseAcc, grade) =>
-                    courseAcc + (grade.counts_into_average ? course.ects : 0),
-                0
-            ) + (editing && typeof editedGrades[course.course_id] === "number" && course.grades.length === 0 ? course.ects : 0);
-            return acc + courseWeight;
-        }, 0);
+      return (sum / totalWeight).toFixed(2);
+    },
+    [editedGrades, editing],
+  );
 
-        if (totalWeight === 0) {
-            return "-";
-        }
+  const filteredCourses = selectedTerm
+    ? courses.filter((course) => course.term_id === selectedTerm)
+    : courses;
 
-        return (sum / totalWeight).toFixed(2);
-    }, [editedGrades, editing]);
-
-    const filteredCourses = selectedTerm
-        ? courses.filter((course) => course.term_id === selectedTerm)
-        : courses;
-
-
-    if (appContext.isGuest) {
-        return (
-            <Card className="shadow border-0">
-                <Card.Title className="text-center mt-4">Oceny</Card.Title>
-                <Card.Body className="text-center">
-                    <p>Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna w trybie gościa.</p>
-                    <Button
-                        variant={appContext.theme.getTheme()}
-                        onClick={() => navigate("/connect-account")}
-                    >
-                        Połącz konto
-                    </Button>
-                </Card.Body>
-            </Card>
-        );
-    }
-
-    if (error) {
-        return (
-            <Card className="shadow border-0">
-                <Card.Body>
-                    <Alert variant="danger">
-                        <p>Wystąpił błąd podczas pobierania ocen.</p>
-                        <p>{error}</p>
-                        <Button
-                            variant="link"
-                            className="alert-link p-0"
-                            onClick={() => window.location.reload()}
-                        >
-                            Spróbuj ponownie
-                        </Button>
-                    </Alert>
-                </Card.Body>
-            </Card>
-        );
-    }
-
-    if (loading) {
-        return (
-            <Card className="shadow border-0">
-                <Card.Body>
-                    <div className="text-center mb-5">
-                        <p>Ładowanie ocen...</p>
-                        <PropagateLoader color={appContext.theme.getOppositeThemeColor()} size={15}/>
-                    </div>
-                </Card.Body>
-            </Card>
-        );
-    }
-
+  if (appContext.isGuest) {
     return (
-        <Card className="p-4 shadow border-0">
-            <Navbar className="mb-4 justify-content-between align-items-end">
-                <Form.Group>
-                    <Form.Label htmlFor="term-select" className="me-2 mb-0">
-                        Wybierz semestr
-                    </Form.Label>
-                    <Form.Select
-                        id="term-select"
-                        aria-label="Wybierz semestr"
-                        disabled={!terms.length}
-                        value={selectedTerm}
-                        onChange={(e) => {
-                            setSelectedTerm(e.target.value);
-                            setEditing(false);
-                        }}
-                    >
-                        {terms.map((term) => (
-                            <option key={term.id} value={term.id}>
-                                {term.name}
-                            </option>
-                        ))}
-                    </Form.Select>
-                </Form.Group>
-                <Button
-                    variant={editing ? "warning" : appContext.theme.getTheme()}
-                    size="sm"
-                    onClick={() => setEditing((prev) => !prev)}
-                >
-                    <Icon icon={editing ? "fluent:text-edit-style-24-filled" : "fluent:text-edit-style-24-regular"}
-                          fontSize="1.5em"/>
-                </Button>
-            </Navbar>
-            {error && (
-                <Alert variant="danger">
-                    <p>Wystąpił błąd podczas pobierania ocen.</p>
-                    <p>{error}</p>
-                    <Button
-                        variant="link"
-                        className="alert-link p-0"
-                        onClick={() => window.location.reload()}
-                    >
-                        Spróbuj ponownie
-                    </Button>
-                </Alert>
-            )}
-            <Table hover responsive>
-                <thead>
-                <tr>
-                    <th>Przedmiot</th>
-                    <th>ECTS</th>
-                    <th>Ocena</th>
-                </tr>
-                </thead>
-                <tfoot>
-                <tr>
-                    <th>Średnia</th>
-                    <th></th>
-                    <th id="average">{calculateAverage(filteredCourses) || "-"}</th>
-                </tr>
-                </tfoot>
-                <tbody>
-                {filteredCourses.map((course) => (
-                    <tr key={course.course_id}>
-                        <td>{course.course_name}</td>
-                        <td>{course.ects}</td>
-                        <td
-                            className={
-                                course.passing_status === "passed"
-                                    ? "text-success"
-                                    : course.passing_status === "failed"
-                                        ? "text-danger"
-                                        : ""
-                            }
-                        >
-                            {editing ? (
-                                <Form.Control
-                                    type="number"
-                                    step="0.5"
-                                    min="2"
-                                    max="5.5"
-                                    size="sm"
-                                    value={editedGrades[course.course_id] !== undefined ? editedGrades[course.course_id] : course.grades.map((grade) => grade.value).join("; ")}
-                                    onChange={(e) =>
-                                        setEditedGrades((prev) => ({
-                                            ...prev,
-                                            [course.course_id]: parseFloat(e.target.value) || e.target.value
-                                        }))
-                                    }
-                                />
-                            ) : course.grades.map((grade) => grade.value_symbol).join("; ") || "-"}
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </Table>
-        </Card>
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>Oceny</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center text-sm">
+          <p>
+            Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
+            w trybie gościa.
+          </p>
+          <Link to="/connect-account">
+            <Button>Połącz konto</Button>
+          </Link>
+        </CardContent>
+      </Card>
     );
-}
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircleIcon />
+        <AlertTitle>Wystąpił błąd podczas pobierania ocen.</AlertTitle>
+        <AlertDescription>
+          {error}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Spróbuj ponownie
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <div className="space-y-2 pb-8 text-center">
+            <p>Ładowanie ocen...</p>
+            <Loader size={15} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <CardTitle>Oceny</CardTitle>
+            <CardDescription>Średnia ważona według ECTS</CardDescription>
+          </div>
+          <div>
+            <Label htmlFor="term-select" className="sr-only">
+              Semestr
+            </Label>
+            <Select
+              value={selectedTerm}
+              onValueChange={(value) => {
+                setSelectedTerm(value);
+                setEditing(false);
+              }}
+              disabled={!terms.length}
+            >
+              <SelectTrigger className="w-full sm:w-60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {terms.map((term) => (
+                  <SelectItem key={term.id} value={term.id}>
+                    {term.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">Przedmiot</TableHead>
+                <TableHead className="font-semibold">ECTS</TableHead>
+                <TableHead className="font-semibold">Ocena</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCourses.map((course) => {
+                const passState = course.passing_status;
+                return (
+                  <TableRow key={course.course_id} className="h-12">
+                    <TableCell className="font-medium break-words whitespace-normal">
+                      {course.course_name}
+                    </TableCell>
+                    <TableCell>{course.ects}</TableCell>
+                    <TableCell
+                      className={cn(
+                        "w-20",
+                        passState === "passed"
+                          ? "text-green-600 dark:text-green-400"
+                          : passState === "failed"
+                            ? "text-destructive"
+                            : "",
+                      )}
+                    >
+                      {editing ? (
+                        <Input
+                          type="number"
+                          step={0.5}
+                          min={2}
+                          max={5.5}
+                          className="h-7 w-16"
+                          value={
+                            editedGrades[course.course_id] !== undefined
+                              ? editedGrades[course.course_id]
+                              : course.grades.map((g) => g.value).join("; ")
+                          }
+                          onChange={(e) =>
+                            setEditedGrades((prev) => ({
+                              ...prev,
+                              [course.course_id]:
+                                parseFloat(e.target.value) || e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <span>
+                          {course.grades
+                            .map((g) => g.value_symbol)
+                            .join("; ") || "-"}
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-semibold">Średnia</TableCell>
+                <TableCell></TableCell>
+                <TableCell id="average" className="font-semibold">
+                  {calculateAverage(filteredCourses) || "-"}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+        <div className="flex justify-end">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                className={
+                  editing
+                    ? "bg-yellow-500 text-white hover:bg-yellow-600 hover:text-white dark:bg-yellow-600 dark:hover:bg-yellow-700"
+                    : ""
+                }
+                pressed={editing}
+                onPressedChange={(pressed) => setEditing(pressed)}
+              >
+                <span>Tryb edycji</span>
+                <NotebookPenIcon />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+              {editing
+                ? "Tryb edycji (oceny nie są zapisywane, służy do podglądu średniej)"
+                : "Włącz tryb edycji, aby sprawdzić średnią z wybranymi ocenami"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default GradesPage;

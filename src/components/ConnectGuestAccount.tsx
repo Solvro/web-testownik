@@ -1,357 +1,438 @@
-import React, {useContext, useEffect, useState} from 'react';
-import {Alert, Button, Card, Form} from 'react-bootstrap';
-import {Link, useLocation, useNavigate} from 'react-router';
+import React, { useContext, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import AppContext from "../AppContext.tsx";
-import {SERVER_URL} from "../config.ts";
+import { SERVER_URL } from "../config.ts";
 import PrivacyModal from "./PrivacyModal.tsx";
-import {Quiz} from "./quiz/types.ts";
-import PropagateLoader from "react-spinners/PropagateLoader";
+import { Quiz } from "./quiz/types.ts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Loader from "@/components/loader.tsx";
+import { Alert } from "@/components/ui/alert.tsx";
+import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const ConnectGuestAccount: React.FC = () => {
-    const appContext = useContext(AppContext);
-    const navigate = useNavigate();
-    const location = useLocation();
-    const queryParams = new URLSearchParams(location.search);
-    const error = queryParams.get('error');
+  const appContext = useContext(AppContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const error = queryParams.get("error");
 
-    // Modal state
-    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  // Modal state
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
-    const [migrating, setMigrating] = useState(false);
-    const [migratingText, setMigratingText] = useState("");
-    const [migrated, setMigrated] = useState(localStorage.getItem("guest_migrated") === "true");
+  const [migrating, setMigrating] = useState(false);
+  const [migratingText, setMigratingText] = useState("");
+  const [migrated, setMigrated] = useState(
+    localStorage.getItem("guest_migrated") === "true",
+  );
 
-    // Category migration checkboxes:
-    // – By default, "Quizy" and "Postępy quizów" are enabled, "Ustawienia" is off.
-    // – The "Postępy quizów" checkbox is disabled if "Quizy" is off.
-    const [categories, setCategories] = useState({
-        quizzes: true,
-        progress: true,
-        settings: false,
+  // Category migration checkboxes:
+  // – By default, "Quizy" and "Postępy quizów" are enabled, "Ustawienia" is off.
+  // – The "Postępy quizów" checkbox is disabled if "Quizy" is off.
+  const [categories, setCategories] = useState({
+    quizzes: true,
+    progress: true,
+    settings: false,
+  });
+
+  // Guest quizzes state
+  const [guestQuizzes, setGuestQuizzes] = useState<Quiz[]>([]);
+  const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const quizzesStr = localStorage.getItem("guest_quizzes");
+    if (quizzesStr) {
+      try {
+        const quizzes = JSON.parse(quizzesStr);
+        setGuestQuizzes(quizzes);
+        setSelectedQuizIds(quizzes.map((quiz: Quiz) => quiz.id));
+      } catch (err) {
+        console.error("Error parsing guest_quizzes", err);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("profile_picture");
+    localStorage.removeItem("is_staff");
+    localStorage.removeItem("user_id");
+    appContext.setAuthenticated(false);
+    navigate("/");
+  };
+
+  const uploadQuizzes = async (quizIds?: string[]) => {
+    for (const quiz of guestQuizzes) {
+      if (!quizIds || quizIds.includes(quiz.id)) {
+        console.log("Uploading quiz", quiz.id);
+        try {
+          setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
+          const response = await appContext.axiosInstance.post(
+            "/quizzes/",
+            quiz,
+          );
+          const newQuizId = response.data.id;
+          console.log("Quiz uploaded:", response.data);
+          if (categories.progress) {
+            const progress = JSON.parse(
+              localStorage.getItem(`${quiz.id}_progress`) || "{}",
+            );
+            if (progress) {
+              setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
+              await appContext.axiosInstance.post(
+                `/quiz/${newQuizId}/progress/`,
+                progress,
+              );
+            }
+          }
+          // Replace the quiz ID in the local storage with the new ID
+          localStorage.removeItem(`${quiz.id}_progress`);
+          localStorage.setItem(`${newQuizId}_progress`, "{}");
+        } catch (err) {
+          console.error("Error uploading quiz", quiz.id, err);
+          throw err;
+        }
+      }
+    }
+  };
+
+  const uploadSettings = async () => {
+    setMigratingText("Przenoszenie ustawień...");
+    const settings = JSON.parse(localStorage.getItem("settings") || "{}");
+    try {
+      await appContext.axiosInstance.put("/settings/", {
+        initial_reoccurrences: settings.initial_reoccurrences,
+        wrong_answer_reoccurrences: settings.wrong_answer_reoccurrences,
+      });
+    } catch (err) {
+      console.error("Error uploading settings", err);
+      throw err;
+    }
+  };
+
+  // Start migration after explicit confirmation
+  const executeMigration = async () => {
+    setMigrating(true);
+    try {
+      if (selectedQuizIds.length > 0) {
+        await uploadQuizzes(selectedQuizIds);
+      }
+      if (categories.settings) {
+        await uploadSettings();
+      }
+      setMigrated(true);
+      localStorage.setItem("guest_migrated", "true");
+    } catch (err) {
+      console.error("Error migrating data", err);
+      alert(
+        "Wystąpił błąd podczas przenoszenia danych. Spróbuj ponownie później.",
+      );
+    } finally {
+      setMigrating(false);
+    }
+  };
+
+  // Handler for category checkbox changes. When unchecking "Quizy", also disable "Postępy quizów"
+  const handleCategoryToggle = (field: "quizzes" | "progress" | "settings") => {
+    setCategories((prev) => {
+      const newValue = !prev[field];
+      if (field === "quizzes" && !newValue) {
+        // If quizzes is turned off, force progress off as well
+        return { ...prev, quizzes: false, progress: false };
+      }
+      return { ...prev, [field]: newValue };
     });
+  };
 
-    // Guest quizzes state
-    const [guestQuizzes, setGuestQuizzes] = useState<Quiz[]>([]);
-    const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
-
-    useEffect(() => {
-        const quizzesStr = localStorage.getItem('guest_quizzes');
-        if (quizzesStr) {
-            try {
-                const quizzes = JSON.parse(quizzesStr);
-                setGuestQuizzes(quizzes);
-                setSelectedQuizIds(quizzes.map((quiz: Quiz) => quiz.id));
-            } catch (err) {
-                console.error("Error parsing guest_quizzes", err);
-            }
-        }
-    }, []);
-
-    const handleLogout = () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("profile_picture");
-        localStorage.removeItem("is_staff");
-        localStorage.removeItem("user_id");
-        appContext.setAuthenticated(false);
-        navigate("/");
-    };
-
-    const uploadQuizzes = async (quizIds?: string[]) => {
-        for (const quiz of guestQuizzes) {
-            if (!quizIds || quizIds.includes(quiz.id)) {
-                console.log("Uploading quiz", quiz.id);
-                try {
-                    setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
-                    const response = await appContext.axiosInstance.post('/quizzes/', quiz);
-                    const newQuizId = response.data.id;
-                    console.log("Quiz uploaded:", response.data);
-                    if (categories.progress) {
-                        const progress = JSON.parse(localStorage.getItem(`${quiz.id}_progress`) || "{}");
-                        if (progress) {
-                            setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
-                            await appContext.axiosInstance.post(`/quiz/${newQuizId}/progress/`, progress);
-                        }
-                    }
-                    // Replace the quiz ID in the local storage with the new ID
-                    localStorage.removeItem(`${quiz.id}_progress`);
-                    localStorage.setItem(`${newQuizId}_progress`, "{}");
-                } catch (err) {
-                    console.error("Error uploading quiz", quiz.id, err);
-                    throw err;
-                }
-            }
-        }
-    };
-
-
-    const uploadSettings = async () => {
-        setMigratingText("Przenoszenie ustawień...");
-        const settings = JSON.parse(localStorage.getItem("settings") || "{}");
-        try {
-            await appContext.axiosInstance.put('/settings/', {
-                initial_reoccurrences: settings.initial_reoccurrences,
-                wrong_answer_reoccurrences: settings.wrong_answer_reoccurrences,
-            });
-        } catch (err) {
-            console.error("Error uploading settings", err);
-            throw err;
-        }
-    };
-
-    // When the user clicks the migration button, process both category-level and individual quiz migrations.
-    const handleMigration = async () => {
-        // Ask for confirmation before proceeding
-        if (!window.confirm("Czy na pewno chcesz przenieść swoje dane?\nTej operacji nie można cofnąć.")) {
-            return;
-        }
-        setMigrating(true);
-
-        try {
-            // Migrate quizzes and progress
-            if (selectedQuizIds.length > 0) {
-                await uploadQuizzes(selectedQuizIds);
-            }
-
-            // Migrate settings
-            if (categories.settings) {
-                await uploadSettings();
-            }
-            setMigrated(true);
-            localStorage.setItem("guest_migrated", "true");
-        } catch (err) {
-            console.error("Error migrating data", err);
-            alert("Wystąpił błąd podczas przenoszenia danych. Spróbuj ponownie później.");
-        } finally {
-            setMigrating(false);
-        }
-    };
-
-    // Handler for category checkbox changes. When unchecking "Quizy", also disable "Postępy quizów"
-    const handleCategoryToggle = (field: 'quizzes' | 'progress' | 'settings') => {
-        setCategories(prev => {
-            const newValue = !prev[field];
-            if (field === 'quizzes' && !newValue) {
-                // If quizzes is turned off, force progress off as well
-                return {...prev, quizzes: false, progress: false};
-            }
-            return {...prev, [field]: newValue};
-        });
-    };
-
-    // Handler for toggling individual quiz selection.
-    const handleQuizToggle = (quizId: string) => {
-        setSelectedQuizIds(prev =>
-            prev.includes(quizId)
-                ? prev.filter(id => id !== quizId)
-                : [...prev, quizId]
-        );
-    };
-
-    if (migrated) {
-        return (
-            <div className="d-flex justify-content-center">
-                <Card className="border-0 shadow" style={{minWidth: "50%"}}>
-                    <Card.Body className="d-flex flex-column align-items-center">
-                        <Card.Text className="fs-4">Dane przeniesione pomyślnie!</Card.Text>
-                        <Card.Text>
-                            Twoje dane zostały przeniesione pomyślnie. Teraz możesz korzystać z pełni funkcji Testownika
-                            jako zalogowany użytkownik. Dziękujemy za korzystanie z Testownika!
-                        </Card.Text>
-                        <Card.Text>
-                            Zdecyduj czy dane z konta gościa mają zostać usunięte. Wszystkie wybrane quizy oraz postępy
-                            zostały już przeniesione na Twoje konto. Jeśli chcesz zachować dane z konta gościa, kliknij
-                            przycisk "Pozostaw". W przeciwnym wypadku kliknij przycisk "Usuń dane gościa".
-                        </Card.Text>
-                        <Card.Text>
-                            Jeśli zdecydujesz się na pozostawienie danych z konta gościa, będziesz miała/miał dostęp do
-                            nich w przyszłości po przelogowaniu się na konto gościa, jednak ponowne przeniesienie danych
-                            na konto zalogowanego użytkownika nie będzie możliwe.
-                        </Card.Text>
-                        <div className="d-flex gap-2">
-                            <Button
-                                onClick={() => {
-                                    localStorage.removeItem("guest_quizzes");
-                                    localStorage.removeItem("guest_migrated");
-                                    appContext.setGuest(false);
-                                    navigate("/");
-                                }}
-                                variant="danger"
-                            >
-                                Usuń dane gościa
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    appContext.setGuest(false);
-                                    navigate("/");
-                                }}
-                                variant="outline-primary"
-                            >
-                                Pozostaw
-                            </Button>
-                        </div>
-                    </Card.Body>
-                </Card>
-            </div>
-        );
-    }
-
-    if (migrating) {
-        return (
-            <div className="d-flex justify-content-center">
-                <Card className="border-0 shadow" style={{minWidth: "50%"}}>
-                    <Card.Body className="d-flex flex-column align-items-center">
-                        <Card.Text className="fs-4">Przenoszenie danych...</Card.Text>
-                        <PropagateLoader color={appContext.theme.getOppositeThemeColor()} loading={true} size={15}/>
-                        <Card.Text className="mt-4">{migratingText}</Card.Text>
-                    </Card.Body>
-                </Card>
-            </div>
-        );
-    }
-
-    return (
-        <div className="d-flex justify-content-center">
-            <Card className="border-0 shadow" style={{minWidth: "50%"}}>
-                {appContext.isAuthenticated ? (
-                    <Card.Body className="d-flex flex-column align-items-center">
-                        <Card.Text className="fs-4">Zalogowano pomyślnie!</Card.Text>
-
-                        {/* Migration – Category selection using checkboxes */}
-                        <div className="w-100 mt-3">
-                            <h5>Wybierz kategorie do migracji:</h5>
-                            <Form>
-                                <Form.Check
-                                    type="checkbox"
-                                    id="category-quizzes"
-                                    label="Quizy"
-                                    checked={categories.quizzes}
-                                    onChange={() => handleCategoryToggle('quizzes')}
-                                />
-                                <Form.Check
-                                    type="checkbox"
-                                    id="category-progress"
-                                    label="Postępy quizów"
-                                    checked={categories.progress}
-                                    onChange={() => handleCategoryToggle('progress')}
-                                    disabled={!categories.quizzes}
-                                />
-                                <Form.Check
-                                    type="checkbox"
-                                    id="category-settings"
-                                    label="Ustawienia"
-                                    checked={categories.settings}
-                                    onChange={() => handleCategoryToggle('settings')}
-                                />
-                            </Form>
-                        </div>
-
-                        {/* Migration – Individual quiz selection using checkboxes */}
-                        {categories.quizzes && (
-                            <div className="w-100 mt-3">
-                                <h5>Wybierz quizy do migracji</h5>
-                                {categories.progress && (
-                                    <p>(Postępy zostaną przeniesione automatycznie)</p>
-                                )}
-                                {guestQuizzes.length > 0 ? (
-                                    <Form>
-                                        {guestQuizzes.map((quiz: Quiz) => (
-                                            <Form.Check
-                                                type="checkbox"
-                                                id={`quiz-${quiz.id}`}
-                                                key={quiz.id}
-                                                label={quiz.title || `Quiz ${quiz.id}`}
-                                                checked={selectedQuizIds.includes(quiz.id)}
-                                                onChange={() => handleQuizToggle(quiz.id)}
-                                            />
-                                        ))}
-                                    </Form>
-                                ) : (
-                                    <p>Brak dostępnych quizów do migracji.</p>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Migration action button */}
-                        <div className="w-100 mt-3">
-                            <Button variant="primary" onClick={handleMigration} className="w-100">
-                                Przenieś dane
-                            </Button>
-                        </div>
-
-                        {/* Cancel button */}
-                        <div className="w-100 mt-3">
-                            <Button onClick={handleLogout} variant="danger" className="w-100">
-                                Anuluj
-                            </Button>
-                        </div>
-                    </Card.Body>
-                ) : (
-                    // If not authenticated, show the original guest/login card.
-                    <Card.Body>
-                        <Card.Title>Połącz swoje konto</Card.Title>
-                        {error && (
-                            <Alert variant="danger">
-                                <p>Wystąpił błąd podczas logowania.</p>
-                                {error === "not_student" ? (
-                                    <span>
-                                        Niestety, nie udało nam się zidentyfikować Cię jako studenta PWr. Upewnij się, że
-                                        logujesz się na swoje konto studenta. Jeśli problem będzie się powtarzał,{" "}
-                                        <a href="mailto:testownik@solvro.pl">skontaktuj się z nami</a>.
-                                    </span>
-                                ) : (
-                                    <span>{error}</span>
-                                )}
-                            </Alert>
-                        )}
-                        <Card.Text>
-                            Obecnie korzystasz z Testownika jako gość. Aby móc korzystać z pełni funkcji Testownika,
-                            możesz połączyć swoje konto z USOS. W ten sposób będziesz mógł synchronizować swoje quizy
-                            oraz wyniki, udostępniać quizy oraz przeglądać swoje oceny. Po zalogowaniu za pomocą USOS
-                            będziesz mógł również przenieść swoje quizy oraz wyniki z konta gościa. Jeśli nie chcesz
-                            logować się za pomocą USOS, możesz kontynuować jako gość.
-                        </Card.Text>
-                        <Card.Text>
-                            <b>
-                                Klikając przyciski poniżej, potwierdzasz, że zapoznałeś się z naszym{" "}
-                                <Link to={"/terms"}>regulaminem</Link> oraz że go akceptujesz.
-                            </b>
-                        </Card.Text>
-                        <div className="d-grid gap-2">
-                            <Button
-                                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
-                                variant="primary"
-                                className="w-100"
-                            >
-                                Zaloguj się z USOS
-                            </Button>
-                            <Button
-                                href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
-                                variant="primary"
-                                className="w-100"
-                            >
-                                Zaloguj się z Solvro Auth
-                            </Button>
-                            <Button onClick={handleLogout} variant="outline-primary" className="w-100">
-                                Kontynuuj jako gość
-                            </Button>
-                        </div>
-                        <div className="text-center mt-2">
-                            <a
-                                href="#"
-                                className="fs-6 link-secondary"
-                                onClick={() => setShowPrivacyModal(true)}
-                            >
-                                Jak wykorzystujemy Twoje dane?
-                            </a>
-                        </div>
-                    </Card.Body>
-                )}
-            </Card>
-
-            <PrivacyModal show={showPrivacyModal} onHide={() => setShowPrivacyModal(false)}/>
-        </div>
+  // Handler for toggling individual quiz selection.
+  const handleQuizToggle = (quizId: string) => {
+    setSelectedQuizIds((prev) =>
+      prev.includes(quizId)
+        ? prev.filter((id) => id !== quizId)
+        : [...prev, quizId],
     );
+  };
+
+  if (migrated) {
+    return (
+      <div className="flex justify-center">
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle>Dane przeniesione pomyślnie!</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm leading-relaxed">
+            <p>
+              Twoje dane zostały przeniesione pomyślnie. Teraz możesz korzystać
+              z pełni funkcji Testownika jako zalogowany użytkownik.
+            </p>
+            <p>
+              Zdecyduj czy dane z konta gościa mają zostać usunięte. Wszystkie
+              wybrane quizy oraz postępy zostały już przeniesione na Twoje
+              konto.
+            </p>
+            <p>
+              Jeśli zdecydujesz się na pozostawienie danych z konta gościa,
+              będziesz miał(a) do nich dostęp w przyszłości po przelogowaniu się
+              na konto gościa.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  localStorage.removeItem("guest_quizzes");
+                  localStorage.removeItem("guest_migrated");
+                  appContext.setGuest(false);
+                  navigate("/");
+                }}
+              >
+                Usuń dane gościa
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  appContext.setGuest(false);
+                  navigate("/");
+                }}
+              >
+                Pozostaw
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (migrating) {
+    return (
+      <div className="flex justify-center">
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle>Przenoszenie danych...</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <Loader size={15} />
+            <p className="text-muted-foreground text-sm">{migratingText}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-center">
+      {appContext.isAuthenticated ? (
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle>Zalogowano pomyślnie!</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <section className="mb-8 space-y-3">
+              <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+                Kategorie do migracji
+              </h5>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="quizzes"
+                    checked={categories.quizzes}
+                    onCheckedChange={() => handleCategoryToggle("quizzes")}
+                  />
+                  <Label htmlFor="quizzes">Quizy</Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="progress"
+                    checked={categories.progress}
+                    disabled={!categories.quizzes}
+                    onCheckedChange={() => handleCategoryToggle("progress")}
+                  />
+                  <Label htmlFor="progress">Postępy quizów</Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="settings"
+                    checked={categories.settings}
+                    onCheckedChange={() => handleCategoryToggle("settings")}
+                  />
+                  <Label htmlFor="settings">Ustawienia</Label>
+                </div>
+              </div>
+            </section>
+            {categories.quizzes && (
+              <section className="space-y-3">
+                <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+                  Wybierz quizy do migracji
+                </h5>
+                {categories.progress && (
+                  <p className="text-muted-foreground text-xs">
+                    (Postępy zostaną przeniesione automatycznie)
+                  </p>
+                )}
+                {guestQuizzes.length > 0 ? (
+                  <div className="grid gap-1">
+                    {guestQuizzes.map((quiz: Quiz) => (
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          key={quiz.id}
+                          id={`quiz-${quiz.id}`}
+                          checked={selectedQuizIds.includes(quiz.id)}
+                          onCheckedChange={() => handleQuizToggle(quiz.id)}
+                        />
+                        <Label htmlFor={`quiz-${quiz.id}`}>{quiz.title}</Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Brak quizów do migracji.
+                  </p>
+                )}
+              </section>
+            )}
+            <div className="flex flex-wrap justify-center gap-3">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    disabled={
+                      migrating ||
+                      (categories.quizzes &&
+                        selectedQuizIds.length === 0 &&
+                        guestQuizzes.length > 0)
+                    }
+                  >
+                    Rozpocznij migrację
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Potwierdź migrację danych</DialogTitle>
+                    <DialogDescription>
+                      Czy na pewno chcesz przenieść swoje dane? Tej operacji nie
+                      można cofnąć.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <p className="text-muted-foreground text-sm">
+                    Wybrane kategorie:{" "}
+                    {[
+                      categories.quizzes && "Quizy",
+                      categories.progress && categories.quizzes && "Postępy",
+                      categories.settings && "Ustawienia",
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "Brak"}
+                    .
+                  </p>
+                  {categories.quizzes && (
+                    <p className="text-muted-foreground text-xs">
+                      Quizy do migracji: {selectedQuizIds.length} /{" "}
+                      {guestQuizzes.length}
+                    </p>
+                  )}
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline">Anuluj</Button>
+                    </DialogClose>
+                    <DialogClose asChild>
+                      <Button onClick={executeMigration} disabled={migrating}>
+                        Potwierdź
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" onClick={handleLogout}>
+                Wyloguj
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="w-full max-w-3xl pb-2">
+          <CardHeader>
+            <CardTitle>Połącz konto</CardTitle>
+            <CardDescription>
+              Obecnie korzystasz z Testownika jako gość. Aby móc korzystać z
+              pełni funkcji Testownika, możesz przejść na konto online. W ten
+              sposób będziesz mógł synchronizować swoje quizy oraz wyniki,
+              udostępniać quizy oraz przeglądać swoje oceny. Po zalogowaniu za
+              pomocą USOS będziesz mógł również przenieść swoje quizy oraz
+              wyniki z konta gościa. Jeśli nie chcesz logować się za pomocą
+              USOS, możesz kontynuować jako gość.
+            </CardDescription>
+          </CardHeader>
+          {error && (
+            <Alert variant="destructive">
+              <p>Wystąpił błąd podczas logowania.</p>
+              {error === "not_student" ? (
+                <span>
+                  Niestety, nie udało nam się zidentyfikować Cię jako studenta
+                  PWr. Upewnij się, że logujesz się na swoje konto studenta.
+                  Jeśli problem będzie się powtarzał,{" "}
+                  <a href="mailto:testownik@solvro.pl">skontaktuj się z nami</a>
+                  .
+                </span>
+              ) : (
+                <span>{error}</span>
+              )}
+            </Alert>
+          )}
+          <CardContent className="text-sm">
+            <div className="grid gap-2">
+              <Button asChild>
+                <a
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                >
+                  Zaloguj się z USOS
+                </a>
+              </Button>
+              <Button asChild>
+                <a
+                  href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
+                >
+                  Zaloguj się z Solvro Auth
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/">Kontynuuj jako gość</Link>
+              </Button>
+            </div>
+            <div className="text-center">
+              <Button
+                variant="link"
+                className="text-muted-foreground text-xs hover:underline"
+                onClick={() => setShowPrivacyModal(true)}
+              >
+                Jak wykorzystujemy Twoje dane?
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      <PrivacyModal
+        show={showPrivacyModal}
+        onHide={() => setShowPrivacyModal(false)}
+      />
+    </div>
+  );
 };
 
 export default ConnectGuestAccount;
