@@ -253,13 +253,11 @@ const ImportQuizLegacyPage: React.FC = () => {
         }
         try {
           const decoder = new TextDecoder("utf-8", { fatal: true });
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         } catch {
           const decoder = new TextDecoder("windows-1250");
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         }
       });

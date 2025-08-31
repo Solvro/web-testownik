@@ -102,7 +102,7 @@ const ProfilePage: React.FC = () => {
     appContext.axiosInstance
       .put("/settings/", { [name]: value })
       .then((res) => {
-        console.log("Settings updated:", res.data);
+        console.warn("Settings updated:", res.data);
       })
       .catch((error) => {
         console.error("Error updating settings:", error);

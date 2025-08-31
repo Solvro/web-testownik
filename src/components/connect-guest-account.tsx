@@ -84,7 +84,7 @@ const ConnectGuestAccount: React.FC = () => {
   const uploadQuizzes = async (quizIds?: string[]) => {
     for (const quiz of guestQuizzes) {
       if (!quizIds || quizIds.includes(quiz.id)) {
-        console.log("Uploading quiz", quiz.id);
+        console.warn("Uploading quiz", quiz.id);
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
           const response = await appContext.axiosInstance.post(
@@ -92,7 +92,7 @@ const ConnectGuestAccount: React.FC = () => {
             quiz,
           );
           const newQuizId = response.data.id;
-          console.log("Quiz uploaded:", response.data);
+          console.warn("Quiz uploaded:", response.data);
           if (categories.progress) {
             const progress = JSON.parse(
               localStorage.getItem(`${quiz.id}_progress`) || "{}",

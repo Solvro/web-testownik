@@ -28,9 +28,9 @@ import {
 
 import AppContext from "../app-context.tsx";
 import { SERVER_URL } from "../config.ts";
-import ReportBugModal from "./report-bug-modal.tsx";
+import { ReportBugModal } from "./report-bug-modal.tsx";
 
-const Navbar: React.FC = () => {
+function Navbar() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -293,6 +293,6 @@ const Navbar: React.FC = () => {
       />
     </nav>
   );
-};
+}
 
-export default Navbar;
+export { Navbar };

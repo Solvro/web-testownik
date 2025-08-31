@@ -24,8 +24,8 @@ const axiosInstance = axios.create({
   },
 });
 
-axiosInstance.interceptors.request.use(requestInterceptor, async (error) => {
-  throw error;
+axiosInstance.interceptors.request.use(requestInterceptor, (error) => {
+  throw new Error(String(error));
 });
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -34,16 +34,20 @@ axiosInstance.interceptors.response.use(
 
 const AppContext = createContext<AppContextType>({
   isAuthenticated: false,
-  setAuthenticated: () => {},
+  setAuthenticated: () => {
+    // Default implementation - will be overridden by provider
+  },
   isGuest: false,
-  setGuest: () => {},
+  setGuest: () => {
+    // Default implementation - will be overridden by provider
+  },
   axiosInstance,
-  fetchUserData: async () => {},
+  fetchUserData: async () => {
+    // Default implementation - will be overridden by provider
+  },
 });
 
-const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+function AppContextProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     Boolean(localStorage.getItem("access_token")),
   );
@@ -51,20 +55,24 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.getItem("is_guest") === "true",
   );
 
-  const setGuest = (isGuest: boolean) => {
-    localStorage.setItem("is_guest", isGuest.toString());
-    setIsGuest(isGuest);
+  const setGuest = (guestStatus: boolean) => {
+    localStorage.setItem("is_guest", guestStatus.toString());
+    setIsGuest(guestStatus);
   };
 
   const fetchUserData = useCallback(async () => {
     try {
       const response = await axiosInstance.get("/user/");
-      if (!response.data) {
+      if (response.data === null || response.data === undefined) {
         throw new Error("No user data available");
       }
-      const userData = response.data;
+      const userData = response.data as {
+        photo: string;
+        is_staff: boolean;
+        id: string;
+      };
       localStorage.setItem("profile_picture", userData.photo);
-      localStorage.setItem("is_staff", userData.is_staff);
+      localStorage.setItem("is_staff", userData.is_staff.toString());
       localStorage.setItem("user_id", userData.id);
       setIsAuthenticated(true);
     } catch {
@@ -83,19 +91,19 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   axiosInstance.interceptors.response.use(
     (response) => response,
-    async (error) => {
+    (error) => {
       if (error instanceof RefreshTokenExpiredError) {
         localStorage.removeItem("profile_picture");
         localStorage.removeItem("is_staff");
         localStorage.removeItem("user_id");
         context.setAuthenticated(false);
       }
-      throw error;
+      throw new Error(String(error));
     },
   );
 
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
-};
+}
 
 export { AppContextProvider };
 

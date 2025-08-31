@@ -5,10 +5,10 @@ import AppLogo from "@/components/app-logo.tsx";
 import ToastContainer from "@/components/toast-container.tsx";
 
 import AppContext from "./app-context.tsx";
-import Alerts from "./components/alerts.tsx";
+import { Alerts } from "./components/Alerts.tsx";
+import { Navbar } from "./components/Navbar.tsx";
 import ConnectGuestAccount from "./components/connect-guest-account.tsx";
 import LoginPrompt from "./components/login-prompt.tsx";
-import Navbar from "./components/navbar.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
 import CreateQuizPage from "./pages/create-quiz-page.tsx";
 import DashboardPage from "./pages/dashboard-page.tsx";
@@ -24,9 +24,9 @@ import ProfilePage from "./pages/profile-page.tsx";
 import QuizPage from "./pages/quiz-page.tsx";
 import QuizzesPage from "./pages/quizzes-page.tsx";
 import SearchInQuizPage from "./pages/search-in-quiz-page.tsx";
-import TermsPage from "./pages/terms-page.tsx";
+import { TermsPage } from "./pages/terms-page.tsx";
 
-const App: React.FC = () => {
+function App() {
   const context = useContext(AppContext);
 
   return (
@@ -39,7 +39,7 @@ const App: React.FC = () => {
           <Navbar />
           <Alerts />
           <Routes>
-            {((context.isAuthenticated || context.isGuest) && (
+            {context.isAuthenticated || context.isGuest ? (
               <>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
@@ -58,7 +58,7 @@ const App: React.FC = () => {
                 />
                 <Route path="*" element={<Error404Page />} />
               </>
-            )) || (
+            ) : (
               <>
                 <Route path="/login-otp" element={<OTPLoginPage />} />
                 <Route path="/login-link/:token" element={<LoginLinkPage />} />
@@ -101,6 +101,6 @@ const App: React.FC = () => {
       </ThemeProvider>
     </Router>
   );
-};
+}
 
-export default App;
+export { App };

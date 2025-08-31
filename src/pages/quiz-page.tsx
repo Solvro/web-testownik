@@ -139,7 +139,7 @@ const QuizPage: React.FC = () => {
         applyLoadedProgress(quizData, savedProgress);
       } else {
         // If no progress, create fresh reoccurrences & pick random question
-        console.log(quizData);
+        console.warn(quizData);
         const newReoccurrences = quizData.questions.map((q) => ({
           id: q.id,
           reoccurrences: settings.initial_reoccurrences,
@@ -157,7 +157,7 @@ const QuizPage: React.FC = () => {
         );
         // If we filtered out some reoccurrences, log it for debugging
         if (cleanedReoccurrences.length !== previousReoccurrences.length) {
-          console.log(
+          console.warn(
             "Cleaned up orphaned reoccurrences:",
             previousReoccurrences.length - cleanedReoccurrences.length,
             "removed",
@@ -302,7 +302,7 @@ const QuizPage: React.FC = () => {
           return response.data;
         }
       } catch (error) {
-        console.log(
+        console.warn(
           "No server progress found or error retrieving. Falling back. Error:",
           error,
         );
@@ -402,7 +402,7 @@ const QuizPage: React.FC = () => {
       localStorage.setItem(localVersionKey, fetchedVersion.toString());
     } else if (fetchedVersion !== storedVersion) {
       // Show a quick alert or set a special toast that DB updated
-      console.log("Quiz został zaktualizowany!");
+      console.warn("Quiz został zaktualizowany!");
       localStorage.setItem(localVersionKey, fetchedVersion.toString());
     }
   };
@@ -796,7 +796,7 @@ const QuizPage: React.FC = () => {
       });
 
       hostPeer.on("open", (id) => {
-        console.log("Peer opened with ID:", id);
+        console.warn("Peer opened with ID:", id);
         peerRef.current = hostPeer;
         setIsContinuityHost(true);
       });
@@ -877,7 +877,7 @@ const QuizPage: React.FC = () => {
   };
 
   const handlePeerConnectionAsHost = (conn: DataConnection) => {
-    console.log("New client connected:", conn.peer);
+    console.warn("New client connected:", conn.peer);
     setPeerConnections((previous) => [...previous, conn]);
 
     conn.on("open", () => {
@@ -946,7 +946,7 @@ const QuizPage: React.FC = () => {
   };
 
   const handlePeerClose = (conn: DataConnection) => {
-    console.log("Peer disconnected:", conn.peer);
+    console.warn("Peer disconnected:", conn.peer);
     setPeerConnections((previous) =>
       previous.filter((c) => c.open && c.peer !== conn.peer),
     );
@@ -1073,7 +1073,7 @@ const QuizPage: React.FC = () => {
     wrongAnswersCount: number,
     correctAnswersCount: number,
   ) => {
-    console.log("Initial sync to peer:", conn.peer);
+    console.warn("Initial sync to peer:", conn.peer);
     if (!currentQuestion) {
       return;
     }

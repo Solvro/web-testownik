@@ -117,4 +117,4 @@ function TermsPage() {
   );
 }
 
-export default TermsPage;
+export { TermsPage };

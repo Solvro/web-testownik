@@ -42,7 +42,7 @@ const DEFAULT_FORM_STATE = {
   reportType: "bug",
 };
 
-const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
+function ReportBugModal({ show, onHide }: ReportBugModalProps) {
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
@@ -287,6 +287,6 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
       </DialogContent>
     </Dialog>
   );
-};
+}
 
-export default ReportBugModal;
+export { ReportBugModal };

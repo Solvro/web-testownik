@@ -118,8 +118,8 @@ const SearchInQuizPage: React.FC = () => {
         const matchDensity =
           questionWordCount > 0 ? wordMatches / questionWordCount : 0;
 
-        console.log(
-          `Question: ${question.question}, Relevance: ${relevance}, Word Matches: ${wordMatches}, Exact Match: ${exactMatch}, Match Density: ${matchDensity}`,
+        console.warn(
+          `Question: ${question.question}, Relevance: ${relevance.toString()}, Word Matches: ${wordMatches.toString()}, Exact Match: ${exactMatch.toString()}, Match Density: ${matchDensity.toString()}`,
         );
         return {
           ...question,

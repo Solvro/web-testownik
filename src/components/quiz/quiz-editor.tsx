@@ -130,7 +130,7 @@ const QuizEditor: React.FC<QuizEditorProps> = ({
     // Scroll after render
     requestAnimationFrame(() => {
       const element = document.getElementById(`question-${newId}`);
-      console.log("Scrolling to", element);
+      console.warn("Scrolling to", element);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
         const textarea = element.querySelector("textarea");
