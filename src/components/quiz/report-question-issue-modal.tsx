@@ -33,12 +33,12 @@ export function ReportQuestionIssueModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!quizId) {
+    if (quizId == null) {
       console.error("Quiz ID is not set in ReportQuestionIssueModal");
       onClose();
       return;
     }
-    if (!questionId) {
+    if (questionId == null) {
       console.error("Question ID is not set in ReportQuestionIssueModal");
       onClose();
     }
@@ -80,7 +80,7 @@ export function ReportQuestionIssueModal({
         const errorData = error.response?.data as { error?: string };
         toast.error(
           `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${
-            errorData?.error ?? ""
+            errorData.error ?? ""
           }`,
         );
       } else {
@@ -113,8 +113,8 @@ export function ReportQuestionIssueModal({
             id="report-question-issue-textarea"
             rows={4}
             value={issue}
-            onChange={(e) => {
-              setIssue(e.target.value);
+            onChange={(event_) => {
+              setIssue(event_.target.value);
             }}
             onKeyDown={(e) => {
               if (e.key !== "Escape") {

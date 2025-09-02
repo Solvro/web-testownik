@@ -84,7 +84,7 @@ export function QuestionCard({
     );
   }
 
-  if (!question) {
+  if (question == null) {
     return null;
   }
 
@@ -133,12 +133,12 @@ export function QuestionCard({
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
             >
-              {`${question.id}\\. ${question.question}`}
+              {`${question.id.toString()}\\. ${question.question}`}
             </Markdown>
           </CardTitle>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-        {question.image ? (
+        {question.image == null ? null : (
           <CardDescription>
             <img
               src={question.image}
@@ -146,15 +146,15 @@ export function QuestionCard({
               className="mx-auto mt-4 max-h-80 rounded border object-contain"
             />
           </CardDescription>
-        ) : null}
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
           {question.answers.map((answer: Answer, index: number) => {
             return (
               <button
-                key={`answer-${index}`}
-                id={`answer-${index}`}
+                key={`answer-${index.toString()}`}
+                id={`answer-${index.toString()}`}
                 onClick={() => {
                   handleAnswerClick(index);
                 }}
@@ -169,13 +169,13 @@ export function QuestionCard({
                 )}
               >
                 <span className="w-full">{answer.answer}</span>
-                {answer.image ? (
+                {answer.image == null ? null : (
                   <img
                     src={answer.image}
                     alt={answer.answer}
                     className="max-h-40 w-full rounded object-contain"
                   />
-                ) : null}
+                )}
               </button>
             );
           })}
@@ -204,7 +204,7 @@ export function QuestionCard({
             <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
           )}
         </div>
-        {question.explanation && questionChecked ? (
+        {question.explanation != null && questionChecked ? (
           <div
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"

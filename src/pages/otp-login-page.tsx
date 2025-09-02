@@ -51,16 +51,16 @@ export function OTPLoginPage() {
       } else {
         setError(response.statusText);
       }
-    } catch (error) {
-      if ((error as AxiosError)?.response?.status === 404) {
+    } catch (error_) {
+      if ((error_ as AxiosError).response?.status === 404) {
         setError("Nie znaleziono użytkownika o podanym adresie e-mail.");
       } else {
         setError(
           (
-            (error as AxiosError)?.response?.data as {
+            (error_ as AxiosError).response?.data as {
               error?: string;
             }
-          )?.error || "Niezidentyfikowany błąd.",
+          ).error ?? "Niezidentyfikowany błąd.",
         );
       }
     } finally {
@@ -69,8 +69,8 @@ export function OTPLoginPage() {
   };
 
   const handleOTPSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+    async (event_: React.FormEvent<HTMLFormElement>) => {
+      event_.preventDefault();
       if (submitting) {
         return;
       }
@@ -86,17 +86,17 @@ export function OTPLoginPage() {
           await appContext.fetchUserData();
           appContext.setAuthenticated(true);
           appContext.setGuest(false);
-          navigate("/");
+          await navigate("/");
         } else {
           setError(response.statusText);
         }
-      } catch (error) {
+      } catch (error_) {
         setError(
           (
-            (error as AxiosError)?.response?.data as {
+            (error_ as AxiosError).response?.data as {
               error?: string;
             }
-          )?.error || "Niezidentyfikowany błąd.",
+          ).error ?? "Niezidentyfikowany błąd.",
         );
       } finally {
         setSubmitting(false);
@@ -120,10 +120,11 @@ export function OTPLoginPage() {
               onSubmit={handleOTPSubmit}
               className="flex flex-col items-center"
             >
-              <Label className="mb-2 text-sm font-medium">
+              <Label className="mb-2 text-sm font-medium" htmlFor="otp">
                 Wprowadź kod jednorazowy
               </Label>
               <InputOTP
+                id="otp"
                 maxLength={6}
                 value={otp}
                 onChange={(value) => {
@@ -151,7 +152,7 @@ export function OTPLoginPage() {
                 {submitting ? "Logowanie..." : "Zaloguj się"}
               </Button>
             </form>
-            {error ? (
+            {error != null && (
               <Alert variant="destructive" className="mt-4 space-y-2">
                 <AlertDescription>
                   <p>
@@ -172,7 +173,7 @@ export function OTPLoginPage() {
                   </Button>
                 </AlertDescription>
               </Alert>
-            ) : null}
+            )}
           </CardContent>
         </Card>
       </div>
@@ -199,8 +200,8 @@ export function OTPLoginPage() {
                 type="email"
                 placeholder="E-mail"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
+                onChange={(event_) => {
+                  setEmail(event_.target.value);
                 }}
                 required
               />
@@ -209,14 +210,14 @@ export function OTPLoginPage() {
               {submitting ? "Wysyłanie..." : "Wyślij kod"}
             </Button>
           </form>
-          {error ? (
+          {error != null && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>
                 <p>Wystąpił błąd podczas wysyłania kodu.</p>
                 <p>{error}</p>
               </AlertDescription>
             </Alert>
-          ) : null}
+          )}
         </CardContent>
       </Card>
     </div>

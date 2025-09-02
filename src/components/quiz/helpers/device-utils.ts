@@ -21,5 +21,5 @@ export const getDeviceFriendlyName = () => {
 export const getDeviceType = () => {
   const parser = new UAParser();
   const ua = parser.getResult();
-  return ua.device.type || "desktop";
+  return ua.device.type ?? "desktop";
 };

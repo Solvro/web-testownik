@@ -16,7 +16,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 
 interface AccessListProps {
-  quizMetadata: QuizMetadata | null;
+  quizMetadata: QuizMetadata;
   usersWithAccess: (User & { shared_quiz_id?: string; allow_edit: boolean })[];
   groupsWithAccess: (Group & {
     shared_quiz_id?: string;
@@ -48,7 +48,7 @@ export function AccessList({
   return (
     <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
       <div className="flex flex-col gap-2">
-        {quizMetadata?.maintainer ? (
+        {quizMetadata.maintainer ? (
           <div
             className="flex w-full items-center gap-1"
             key={`maintainer-${quizMetadata.maintainer.id}`}
@@ -129,7 +129,6 @@ export function AccessList({
             <Button
               variant="ghost"
               size="icon"
-              className="h-full"
               onClick={() => {
                 handleRemoveUserAccess(user);
               }}
@@ -174,7 +173,6 @@ export function AccessList({
             <Button
               variant="ghost"
               size="icon"
-              className="h-full"
               onClick={() => {
                 handleRemoveGroupAccess(group);
               }}

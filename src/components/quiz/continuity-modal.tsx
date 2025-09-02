@@ -29,6 +29,23 @@ interface ContinuityModalProps {
   isContinuityHost: boolean;
 }
 
+const getIconByDevice = (type: string) => {
+  switch (type) {
+    case "desktop": {
+      return "fluent-emoji:desktop-computer";
+    }
+    case "tablet": {
+      return "flat-color-icons:tablet-android";
+    }
+    case "mobile": {
+      return "flat-color-icons:phone-android";
+    }
+    default: {
+      return "flat-color-icons:multiple-devices";
+    }
+  }
+};
+
 export function ContinuityModal({
   peerConnections,
   isContinuityHost,
@@ -90,20 +107,3 @@ export function ContinuityModal({
     </Dialog>
   );
 }
-
-const getIconByDevice = (type: string) => {
-  switch (type) {
-    case "desktop": {
-      return "fluent-emoji:desktop-computer";
-    }
-    case "tablet": {
-      return "flat-color-icons:tablet-android";
-    }
-    case "mobile": {
-      return "flat-color-icons:phone-android";
-    }
-    default: {
-      return "flat-color-icons:multiple-devices";
-    }
-  }
-};

@@ -53,9 +53,9 @@ export function QuizEditor({
   onSaveAndClose,
   saving = false,
 }: QuizEditorProps) {
-  const [title, setTitle] = useState(initialQuiz?.title || "");
+  const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [description, setDescription] = useState(
-    initialQuiz?.description || "",
+    initialQuiz?.description ?? "",
   );
   const [questions, setQuestions] = useState<Question[]>(
     initialQuiz?.questions?.length
@@ -128,25 +128,27 @@ export function QuizEditor({
     setPreviousQuestionId(newId);
     // Scroll after render
     requestAnimationFrame(() => {
-      const element = document.getElementById(`question-${newId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-        const textarea = element.querySelector("textarea");
-        if (textarea) {
-          textarea.focus({ preventScroll: true });
-        }
-      } else {
+      const element = document.getElementById(`question-${newId.toString()}`);
+      if (element == null) {
         // fallback slight delay
         setTimeout(() => {
-          const element2 = document.getElementById(`question-${newId}`);
-          if (element2) {
+          const element2 = document.getElementById(
+            `question-${newId.toString()}`,
+          );
+          if (element2 != null) {
             element2.scrollIntoView({ behavior: "smooth" });
             const textarea2 = element2.querySelector("textarea");
-            if (textarea2) {
+            if (textarea2 != null) {
               textarea2.focus({ preventScroll: true });
             }
           }
         }, 50);
+      } else {
+        element.scrollIntoView({ behavior: "smooth" });
+        const textarea = element.querySelector("textarea");
+        if (textarea != null) {
+          textarea.focus({ preventScroll: true });
+        }
       }
     });
   };
@@ -167,7 +169,7 @@ export function QuizEditor({
       questions: sanitizeQuestions(questions, advancedMode),
     };
     const validationError = validateQuiz(draft as unknown as Quiz);
-    if (validationError) {
+    if (validationError != null) {
       setError(validationError);
       return;
     }
@@ -234,11 +236,11 @@ export function QuizEditor({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error ? (
+        {error == null ? null : (
           <Alert variant="destructive">
             <AlertTitle>{error}</AlertTitle>
           </Alert>
-        ) : null}
+        )}
         <div className="grid gap-6">
           <div className="space-y-2">
             <Label htmlFor="quiz-title">Tytuł</Label>
@@ -246,8 +248,8 @@ export function QuizEditor({
               id="quiz-title"
               placeholder="Podaj tytuł quizu"
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
+              onChange={(event_) => {
+                setTitle(event_.target.value);
               }}
             />
           </div>
@@ -258,8 +260,8 @@ export function QuizEditor({
               rows={3}
               placeholder="Podaj opis quizu"
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
+              onChange={(event_) => {
+                setDescription(event_.target.value);
               }}
             />
           </div>

@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 
 import { AppContext } from "@/app-context.tsx";
-import ProfileDetails from "@/components/profile/profile-details.tsx";
+import { ProfileDetails } from "@/components/profile/profile-details.tsx";
 import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 

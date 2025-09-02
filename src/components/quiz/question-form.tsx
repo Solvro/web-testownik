@@ -86,11 +86,14 @@ export function QuestionForm({
   return (
     <div
       className="group/question bg-card/20 hover:bg-card/30 relative space-y-4 rounded-lg px-2 transition-colors sm:px-4"
-      id={`question-${question.id}`}
+      id={`question-${question.id.toString()}`}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor={`question-text-${question.id}`} className="pr-4">
+          <Label
+            htmlFor={`question-text-${question.id.toString()}`}
+            className="pr-4"
+          >
             Pytanie {question.id}
           </Label>
           <Button
@@ -105,11 +108,11 @@ export function QuestionForm({
           </Button>
         </div>
         <Textarea
-          id={`question-text-${question.id}`}
+          id={`question-text-${question.id.toString()}`}
           placeholder="Podaj treść pytania"
           value={question.question}
-          onChange={(e) => {
-            handleTextChange(e.target.value);
+          onChange={(event_) => {
+            handleTextChange(event_.target.value);
           }}
         />
       </div>
@@ -118,41 +121,41 @@ export function QuestionForm({
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor={`question-image-${question.id}`}>
+              <Label htmlFor={`question-image-${question.id.toString()}`}>
                 URL zdjęcia dla pytania
               </Label>
               <Input
-                id={`question-image-${question.id}`}
+                id={`question-image-${question.id.toString()}`}
                 placeholder="Podaj URL zdjęcia"
-                value={question.image || ""}
-                onChange={(e) => {
-                  handleImageUrlChange(e.target.value);
+                value={question.image ?? ""}
+                onChange={(event_) => {
+                  handleImageUrlChange(event_.target.value);
                 }}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`question-expl-${question.id}`}>
+              <Label htmlFor={`question-expl-${question.id.toString()}`}>
                 Wyjaśnienie
               </Label>
               <Textarea
-                id={`question-expl-${question.id}`}
+                id={`question-expl-${question.id.toString()}`}
                 placeholder="Podaj wyjaśnienie pytania"
-                value={question.explanation || ""}
-                onChange={(e) => {
-                  handleExplanationChange(e.target.value);
+                value={question.explanation ?? ""}
+                onChange={(event_) => {
+                  handleExplanationChange(event_.target.value);
                 }}
               />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
-                id={`multiple-choice-${question.id}`}
+                id={`multiple-choice-${question.id.toString()}`}
                 checked={question.multiple}
                 onCheckedChange={(checked) => {
                   handleMultipleChange(Boolean(checked));
                 }}
               />
               <Label
-                htmlFor={`multiple-choice-${question.id}`}
+                htmlFor={`multiple-choice-${question.id.toString()}`}
                 className="cursor-pointer"
               >
                 Wielokrotny wybór (można zaznaczyć więcej niż jedną odpowiedź)
@@ -172,23 +175,29 @@ export function QuestionForm({
         <div>
           {question.answers.map((answer, index) => (
             <div
-              key={index}
+              key={`answer-multiple-${index.toString()}`}
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
                 <Input
                   placeholder="Treść odpowiedzi"
                   value={answer.answer}
-                  onChange={(e) => {
-                    updateAnswer(index, { ...answer, answer: e.target.value });
+                  onChange={(event_) => {
+                    updateAnswer(index, {
+                      ...answer,
+                      answer: event_.target.value,
+                    });
                   }}
                 />
                 {advancedMode ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
-                    value={answer.image || ""}
-                    onChange={(e) => {
-                      updateAnswer(index, { ...answer, image: e.target.value });
+                    value={answer.image ?? ""}
+                    onChange={(event_) => {
+                      updateAnswer(index, {
+                        ...answer,
+                        image: event_.target.value,
+                      });
                     }}
                   />
                 ) : null}
@@ -239,23 +248,29 @@ export function QuestionForm({
         >
           {question.answers.map((answer, index) => (
             <div
-              key={index}
+              key={`answer-single-${index.toString()}`}
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
                 <Input
                   placeholder="Treść odpowiedzi"
                   value={answer.answer}
-                  onChange={(e) => {
-                    updateAnswer(index, { ...answer, answer: e.target.value });
+                  onChange={(event_) => {
+                    updateAnswer(index, {
+                      ...answer,
+                      answer: event_.target.value,
+                    });
                   }}
                 />
                 {advancedMode ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
-                    value={answer.image || ""}
-                    onChange={(e) => {
-                      updateAnswer(index, { ...answer, image: e.target.value });
+                    value={answer.image ?? ""}
+                    onChange={(event_) => {
+                      updateAnswer(index, {
+                        ...answer,
+                        image: event_.target.value,
+                      });
                     }}
                   />
                 ) : null}

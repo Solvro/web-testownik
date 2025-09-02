@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { AppContext } from "@/app-context.tsx";
@@ -23,42 +23,45 @@ export function LastUsedCard({
   const [fetchedAll, setFetchedAll] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    void fetchLastUsedQuizzes(10);
-  }, []);
-
-  const fetchLastUsedQuizzes = async (limit: number) => {
-    setLoading(true);
-    try {
-      if (appContext.isGuest) {
-        const guestQuizzes = localStorage.getItem("guest_quizzes");
-        const selectedQuizzes = guestQuizzes
-          ? JSON.parse(guestQuizzes).slice(0, limit)
-          : [];
-        if (selectedQuizzes.length < limit) {
+  const fetchLastUsedQuizzes = useCallback(
+    async (limit: number) => {
+      setLoading(true);
+      try {
+        if (appContext.isGuest) {
+          const guestQuizzes = localStorage.getItem("guest_quizzes");
+          const selectedQuizzes = guestQuizzes
+            ? JSON.parse(guestQuizzes).slice(0, limit)
+            : [];
+          if (selectedQuizzes.length < limit) {
+            setFetchedAll(true);
+          }
+          setLastUsedQuizzes(selectedQuizzes);
+          setLoading(false);
+          return;
+        }
+        const response = await appContext.axiosInstance.get(
+          "/last-used-quizzes/",
+          {
+            params: { limit },
+          },
+        );
+        const data = response.data as Quiz[];
+        if (data.length < limit) {
           setFetchedAll(true);
         }
-        setLastUsedQuizzes(selectedQuizzes);
+        setLastUsedQuizzes(data);
+      } catch {
+        setLastUsedQuizzes([]);
+      } finally {
         setLoading(false);
-        return;
       }
-      const response = await appContext.axiosInstance.get(
-        "/last-used-quizzes/",
-        {
-          params: { limit },
-        },
-      );
-      const data: Quiz[] = response.data;
-      if (data.length < limit) {
-        setFetchedAll(true);
-      }
-      setLastUsedQuizzes(data);
-    } catch {
-      setLastUsedQuizzes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [appContext],
+  );
+
+  useEffect(() => {
+    void fetchLastUsedQuizzes(10);
+  }, [fetchLastUsedQuizzes]);
 
   return (
     <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
@@ -106,7 +109,10 @@ export function LastUsedCard({
                   const randomWidth =
                     widths[Math.floor(Math.random() * widths.length)];
                   return (
-                    <TableRow key={index} className="hover:bg-transparent">
+                    <TableRow
+                      key={`loading-last-used-${index.toString()}`}
+                      className="hover:bg-transparent"
+                    >
                       <TableCell>
                         <Skeleton className={cn("h-5", randomWidth)} />
                       </TableCell>

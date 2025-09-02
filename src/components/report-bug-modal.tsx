@@ -68,9 +68,9 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event_: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { id, value, type, checked } = e.target as HTMLInputElement;
+    const { id, value, type, checked } = event_.target as HTMLInputElement;
     setForm((previous) => ({
       ...previous,
       [id]: type === "checkbox" ? checked : value,
@@ -108,12 +108,10 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
         localStorage: {
           user_id: localStorage.getItem("user_id"),
           is_guest: localStorage.getItem("is_guest"),
-          is_authenticated: localStorage.getItem("access_token")
-            ? "true"
-            : "false",
-          quiz_progress: quizId
-            ? localStorage.getItem(`${quizId}_progress`)
-            : null,
+          is_authenticated:
+            localStorage.getItem("access_token") == null ? "false" : "true",
+          quiz_progress:
+            quizId == null ? null : localStorage.getItem(`${quizId}_progress`),
         },
         sessionStorage: JSON.stringify(sessionStorage),
       };
@@ -130,7 +128,7 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
         onHide();
         toast.success("Dziękujemy za zgłoszenie!");
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         toast.error("Wystąpił błąd podczas wysyłania zgłoszenia!", {
           position: "top-center",
         });
@@ -158,7 +156,7 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
-          {quizId ? (
+          {quizId != null && (
             <Alert
               variant="default"
               className="border-fuchsia-500 bg-fuchsia-50 dark:bg-fuchsia-900/20"
@@ -172,7 +170,7 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
                 </span>
               </AlertDescription>
             </Alert>
-          ) : null}
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium">
@@ -287,5 +285,3 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
     </Dialog>
   );
 }
-
-// no default export

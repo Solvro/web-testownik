@@ -37,10 +37,6 @@ export function AboutCard({
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    void fetchContributors();
-  }, []);
-
   const fetchContributors = async () => {
     setLoading(true);
     try {
@@ -59,17 +55,16 @@ export function AboutCard({
       const frontendData = (await frontendResponse.json()) as Contributor[];
 
       // merge data from both repositories and if there are any duplicates, sum their contributions
-      const data = coreData
-        .concat(frontendData)
+      const data = [...coreData, ...frontendData]
         .filter((contributor: Contributor) => contributor.type === "User")
         .reduce((accumulator: Contributor[], contributor: Contributor) => {
           const existingContributor = accumulator.find(
             (c) => c.login === contributor.login,
           );
-          if (existingContributor) {
-            existingContributor.contributions += contributor.contributions;
-          } else {
+          if (existingContributor === undefined) {
             accumulator.push(contributor);
+          } else {
+            existingContributor.contributions += contributor.contributions;
           }
           return accumulator;
         }, []);
@@ -86,6 +81,10 @@ export function AboutCard({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchContributors();
+  }, []);
 
   return (
     <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
@@ -108,7 +107,10 @@ export function AboutCard({
             <TableBody>
               {loading ? (
                 Array.from({ length: 10 }).map((_, index) => (
-                  <TableRow key={index} className="hover:bg-transparent">
+                  <TableRow
+                    key={`loading-contributor-${index.toString()}`}
+                    className="hover:bg-transparent"
+                  >
                     <TableCell className="py-2">
                       <div className="flex items-center gap-2">
                         <Skeleton className="size-6 rounded-full" />

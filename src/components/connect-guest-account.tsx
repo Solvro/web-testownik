@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.tsx";
 import { Loader } from "@/components/loader.tsx";
@@ -81,20 +82,23 @@ export function ConnectGuestAccount() {
     }
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("profile_picture");
     localStorage.removeItem("is_staff");
     localStorage.removeItem("user_id");
     appContext.setAuthenticated(false);
-    navigate("/");
+    await navigate("/");
   };
 
   const uploadQuizzes = async (quizIds?: string[]) => {
     for (const quiz of guestQuizzes) {
-      if (!quizIds || quizIds.includes(quiz.id)) {
-        console.log("Uploading quiz", quiz.id);
+      if (
+        quizIds == null ||
+        quizIds.length === 0 ||
+        quizIds.includes(quiz.id)
+      ) {
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
           const response =
@@ -103,7 +107,6 @@ export function ConnectGuestAccount() {
               quiz,
             );
           const newQuizId = response.data.id;
-          console.log("Quiz uploaded:", response.data);
           if (categories.progress) {
             const progressString = localStorage.getItem(`${quiz.id}_progress`);
             const progress: QuizProgress =
@@ -161,7 +164,7 @@ export function ConnectGuestAccount() {
       localStorage.setItem("guest_migrated", "true");
     } catch (error_) {
       console.error("Error migrating data", error_);
-      alert(
+      toast.error(
         "Wystąpił błąd podczas przenoszenia danych. Spróbuj ponownie później.",
       );
     } finally {
@@ -215,20 +218,20 @@ export function ConnectGuestAccount() {
             <div className="flex gap-2">
               <Button
                 variant="destructive"
-                onClick={() => {
+                onClick={async () => {
                   localStorage.removeItem("guest_quizzes");
                   localStorage.removeItem("guest_migrated");
                   appContext.setGuest(false);
-                  navigate("/");
+                  await navigate("/");
                 }}
               >
                 Usuń dane gościa
               </Button>
               <Button
                 variant="outline"
-                onClick={() => {
+                onClick={async () => {
                   appContext.setGuest(false);
-                  navigate("/");
+                  await navigate("/");
                 }}
               >
                 Pozostaw
@@ -315,7 +318,7 @@ export function ConnectGuestAccount() {
                 {guestQuizzes.length > 0 ? (
                   <div className="grid gap-1">
                     {guestQuizzes.map((quiz: Quiz) => (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3" key={quiz.id}>
                         <Checkbox
                           key={quiz.id}
                           id={`quiz-${quiz.id}`}
@@ -340,10 +343,9 @@ export function ConnectGuestAccount() {
                 <DialogTrigger asChild>
                   <Button
                     disabled={
-                      migrating ||
-                      (categories.quizzes &&
-                        selectedQuizIds.length === 0 &&
-                        guestQuizzes.length > 0)
+                      categories.quizzes && selectedQuizIds.length === 0
+                        ? guestQuizzes.length > 0
+                        : null
                     }
                   >
                     Rozpocznij migrację
@@ -406,7 +408,7 @@ export function ConnectGuestAccount() {
               USOS, możesz kontynuować jako gość.
             </CardDescription>
           </CardHeader>
-          {error ? (
+          {error == null ? null : (
             <Alert variant="destructive">
               <p>Wystąpił błąd podczas logowania.</p>
               {error === "not_student" ? (
@@ -421,7 +423,7 @@ export function ConnectGuestAccount() {
                 <span>{error}</span>
               )}
             </Alert>
-          ) : null}
+          )}
           <CardContent className="text-sm">
             <div className="grid gap-2">
               <Button asChild>
@@ -465,5 +467,3 @@ export function ConnectGuestAccount() {
     </div>
   );
 }
-
-// no default export

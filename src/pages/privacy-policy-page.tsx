@@ -13,12 +13,13 @@ export function PrivacyPolicyPage() {
         <h2 id="postanowienia">1. Postanowienia ogólne</h2>
         <p>
           1. Niniejsza Polityka Prywatności określa zasady przetwarzania danych
-          osobowych przez serwis Testownik (dalej "Serwis"), dostępny pod
-          adresem <a href="https://testownik.solvro.pl">testownik.solvro.pl</a>.
+          osobowych przez serwis Testownik (dalej &quot;Serwis&quot;), dostępny
+          pod adresem{" "}
+          <a href="https://testownik.solvro.pl">testownik.solvro.pl</a>.
         </p>
         <p>
           2. Administratorem danych osobowych jest właściciel Serwisu (dalej
-          "Administrator").
+          &quot;Administrator&quot;).
         </p>
         <p>
           3. Serwis przetwarza dane osobowe zgodnie z obowiązującymi przepisami

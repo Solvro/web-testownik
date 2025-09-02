@@ -1,6 +1,6 @@
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
@@ -72,28 +72,6 @@ export function ShareQuizModal({
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-  useEffect(() => {
-    setAccessLevel(quiz.visibility);
-    setIsMaintainerAnonymous(quiz.is_anonymous);
-    setAllowAnonymous(quiz.allow_anonymous);
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchData = async () => {
-    if (appContext.isGuest) {
-      return;
-    }
-    setLoading(true);
-    try {
-      await Promise.all([fetchUserGroups(), fetchAccess()]);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchAccess = async () => {
     if (appContext.isGuest) {
       setUsersWithAccess([]);
@@ -106,29 +84,29 @@ export function ShareQuizModal({
       const response = await appContext.axiosInstance.get(
         `/shared-quizzes/?quiz=${quiz.id}`,
       );
-      const sharedData = response.data;
-      const foundUsers = sharedData.flatMap((sq: SharedQuiz) =>
-        sq.user
-          ? [
+      const sharedData = response.data as SharedQuiz[];
+      const foundUsers = sharedData.flatMap((sq) =>
+        sq.user == null
+          ? []
+          : [
               {
                 ...sq.user,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
               },
-            ]
-          : [],
+            ],
       );
       const foundGroups = sharedData.flatMap((sq: SharedQuiz) =>
-        sq.group
-          ? [
+        sq.group == null
+          ? []
+          : [
               {
                 ...sq.group,
                 photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
               },
-            ]
-          : [],
+            ],
       );
 
       setUsersWithAccess(foundUsers);
@@ -146,7 +124,7 @@ export function ShareQuizModal({
   const fetchUserGroups = async () => {
     try {
       const response = await appContext.axiosInstance.get("/study-groups/");
-      const data = response.data.map((group: Group) => ({
+      const data = (response.data as Group[]).map((group: Group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
           group.name.split(" ")[0]
@@ -158,8 +136,30 @@ export function ShareQuizModal({
     }
   };
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const fetchData = async () => {
+    if (appContext.isGuest) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await Promise.all([fetchUserGroups(), fetchAccess()]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setAccessLevel(quiz.visibility);
+    setIsMaintainerAnonymous(quiz.is_anonymous);
+    setAllowAnonymous(quiz.allow_anonymous);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event_.target.value);
   };
 
   const handleSearch = useCallback(
@@ -180,12 +180,12 @@ export function ShareQuizModal({
 
         // If query is exactly 6 digits, prioritize matching student_number
         let userByIndex: User | undefined;
-        if (query.length === 6 && !isNaN(Number.parseInt(query))) {
+        if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
           userByIndex = data.find(
             (object) =>
               "student_number" in object && object.student_number === query,
-          ) as User;
-          if (userByIndex) {
+          ) as User | undefined;
+          if (userByIndex != null) {
             data = data.filter((item) => item !== userByIndex);
           }
         }
@@ -220,7 +220,7 @@ export function ShareQuizModal({
           }
         });
 
-        if (userByIndex) {
+        if (userByIndex != null) {
           data.unshift(userByIndex);
         }
 
@@ -239,7 +239,7 @@ export function ShareQuizModal({
     if ("full_name" in entity) {
       // Prevent duplicates
       if (
-        !usersWithAccess.find((u) => u.id === entity.id) &&
+        !usersWithAccess.some((u) => u.id === entity.id) &&
         entity.id !== quiz.maintainer?.id
       ) {
         setUsersWithAccess((previous) => [
@@ -249,7 +249,7 @@ export function ShareQuizModal({
       }
     } else {
       // It's a group
-      if (!groupsWithAccess.find((g) => g.id === entity.id)) {
+      if (!groupsWithAccess.some((g) => g.id === entity.id)) {
         setGroupsWithAccess((previous) => [
           ...previous,
           { ...entity, allow_edit: false },
@@ -321,20 +321,26 @@ export function ShareQuizModal({
       // Find existing users/groups with changed allow_edit status
       const changedUsers = usersWithAccess.filter((u) => {
         const initial = initialUsersWithAccess.find((u2) => u2.id === u.id);
-        return initial && initial.allow_edit !== u.allow_edit;
+        return initial != null && initial.allow_edit !== u.allow_edit;
       });
       const changedGroups = groupsWithAccess.filter((g) => {
         const initial = initialGroupsWithAccess.find((g2) => g2.id === g.id);
-        return initial && initial.allow_edit !== g.allow_edit;
+        return initial != null && initial.allow_edit !== g.allow_edit;
       });
 
       for (const rUser of removedUsers) {
+        if (rUser.shared_quiz_id == null) {
+          continue;
+        }
         await appContext.axiosInstance.delete(
           `/shared-quizzes/${rUser.shared_quiz_id}/`,
         );
       }
 
       for (const rGroup of removedGroups) {
+        if (rGroup.shared_quiz_id == null) {
+          continue;
+        }
         await appContext.axiosInstance.delete(
           `/shared-quizzes/${rGroup.shared_quiz_id}/`,
         );
@@ -358,6 +364,9 @@ export function ShareQuizModal({
 
       // Update existing users/groups with changed allow_edit status
       for (const cUser of changedUsers) {
+        if (cUser.shared_quiz_id == null) {
+          continue;
+        }
         await appContext.axiosInstance.patch(
           `/shared-quizzes/${cUser.shared_quiz_id}/`,
           {
@@ -367,6 +376,9 @@ export function ShareQuizModal({
       }
 
       for (const cGroup of changedGroups) {
+        if (cGroup.shared_quiz_id == null) {
+          continue;
+        }
         await appContext.axiosInstance.patch(
           `/shared-quizzes/${cGroup.shared_quiz_id}/`,
           {
@@ -379,8 +391,8 @@ export function ShareQuizModal({
       setInitialUsersWithAccess(usersWithAccess);
       setInitialGroupsWithAccess(groupsWithAccess);
 
-      if (setQuiz) {
-        setQuiz(quizResponse.data);
+      if (setQuiz != null) {
+        setQuiz(quizResponse.data as QuizMetadata);
       }
 
       onHide();
@@ -400,7 +412,7 @@ export function ShareQuizModal({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Udostępnij "{quiz.title}"</DialogTitle>
+          <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
         </DialogHeader>
         {appContext.isGuest ? (
           <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-4 text-center text-sm">
@@ -428,7 +440,7 @@ export function ShareQuizModal({
                     onChange={handleSearchInput}
                     onKeyUp={() => {
                       if (searchQuery.length >= 3) {
-                        handleSearch(searchQuery);
+                        void handleSearch(searchQuery);
                       } else {
                         setSearchResults([]);
                       }
@@ -479,7 +491,7 @@ export function ShareQuizModal({
                 <Checkbox
                   id="allow-anonymous"
                   checked={
-                    allowAnonymous ? accessLevel >= AccessLevel.UNLISTED : null
+                    allowAnonymous ? accessLevel >= AccessLevel.UNLISTED : false
                   }
                   onCheckedChange={(checked) => {
                     setAllowAnonymous(Boolean(checked));
@@ -491,7 +503,7 @@ export function ShareQuizModal({
                 </Label>
               </div>
             </div>
-            {accessLevel == AccessLevel.PRIVATE &&
+            {accessLevel === AccessLevel.PRIVATE &&
               (usersWithAccess.length > 0 || groupsWithAccess.length > 0) && (
                 <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs text-yellow-700 dark:text-yellow-400">
                   Ustawiono dostęp prywatny, ale dodano użytkowników/grupy. Quiz
@@ -508,8 +520,8 @@ export function ShareQuizModal({
         >
           <Button
             variant="outline"
-            onClick={() => {
-              navigator.clipboard.writeText(
+            onClick={async () => {
+              await navigator.clipboard.writeText(
                 `${window.location.origin}/quiz/${quiz.id}`,
               );
               toast.success("Skopiowano link do quizu");
@@ -532,8 +544,8 @@ export function ShareQuizModal({
           <Button
             variant="link"
             size="sm"
-            onClick={() => {
-              navigator.clipboard.writeText(
+            onClick={async () => {
+              await navigator.clipboard.writeText(
                 `${window.location.origin}/quiz/${quiz.id}`,
               );
               toast.success("Skopiowano link do quizu");

@@ -1277,7 +1277,7 @@ export function QuizPage(): React.JSX.Element {
             setShowReportModal(false);
           }}
           quizId={quiz.id}
-          questionId={currentQuestion?.id}
+          questionId={currentQuestion.id}
         />
       ) : null}
     </>

@@ -138,7 +138,7 @@ export function QuizzesPage() {
         const downloadableQuiz = {
           title: fullQuiz.title,
           description: fullQuiz.description,
-          maintainer: fullQuiz.maintainer?.full_name || null,
+          maintainer: fullQuiz.maintainer?.full_name ?? null,
           version: fullQuiz.version,
           questions: fullQuiz.questions,
           is_anonymous: fullQuiz.is_anonymous,
@@ -179,7 +179,7 @@ export function QuizzesPage() {
     );
   }
 
-  if (error) {
+  if (error != null) {
     return (
       <Alert variant="destructive">
         <AlertCircleIcon />
@@ -283,7 +283,7 @@ export function QuizzesPage() {
         </>
       )}
       <div className="p-5" />
-      {selectedQuizToShare ? (
+      {selectedQuizToShare != null && (
         <ShareQuizModal
           show={true}
           onHide={() => {
@@ -292,9 +292,7 @@ export function QuizzesPage() {
           quiz={selectedQuizToShare}
           setQuiz={updateQuiz}
         />
-      ) : null}
+      )}
     </div>
   );
 }
-
-// no default export

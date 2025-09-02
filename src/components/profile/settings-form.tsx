@@ -69,10 +69,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               type="number"
               min={1}
               value={settings.initial_reoccurrences}
-              onChange={(e) => {
+              onChange={(event_) => {
                 onSettingChange(
                   "initial_reoccurrences",
-                  Number(e.target.value),
+                  Number(event_.target.value),
                 );
               }}
             />
@@ -89,10 +89,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               type="number"
               min={0}
               value={settings.wrong_answer_reoccurrences}
-              onChange={(e) => {
+              onChange={(event_) => {
                 onSettingChange(
                   "wrong_answer_reoccurrences",
-                  Number(e.target.value),
+                  Number(event_.target.value),
                 );
               }}
             />

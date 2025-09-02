@@ -31,7 +31,7 @@ export function QuizPreviewModal({
 }: QuizPreviewModalProps) {
   const [showShareModal, setShowShareModal] = useState(false);
 
-  if (!quiz) {
+  if (quiz == null) {
     return null;
   }
 
@@ -67,8 +67,8 @@ export function QuizPreviewModal({
             <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
               Pytania{" "}
               {questions.length > 10
-                ? `(pierwsze 10, łącznie ${questions.length})`
-                : `(${questions.length})`}
+                ? `(pierwsze 10, łącznie ${questions.length.toString()})`
+                : `(${questions.length.toString()})`}
             </h5>
             <ScrollArea>
               <div className="max-h-80">

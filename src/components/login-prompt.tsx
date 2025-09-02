@@ -60,7 +60,7 @@ export function LoginPrompt(): React.JSX.Element {
               <CardTitle>Witaj w Testowniku Solvro!</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {error ? (
+              {error == null ? null : (
                 <Alert variant="destructive" className="text-sm">
                   <p className="font-medium">
                     Wystąpił błąd podczas logowania.
@@ -82,7 +82,7 @@ export function LoginPrompt(): React.JSX.Element {
                     <span>{error}</span>
                   )}
                 </Alert>
-              ) : null}
+              )}
               <p className="text-sm leading-relaxed">
                 Testownik by{" "}
                 <a

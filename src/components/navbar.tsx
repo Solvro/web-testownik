@@ -52,7 +52,7 @@ export function Navbar(): React.JSX.Element {
       queryParameters.delete("access_token");
       queryParameters.delete("refresh_token");
 
-      navigate({
+      await navigate({
         search: queryParameters.toString(),
       });
 
@@ -64,14 +64,14 @@ export function Navbar(): React.JSX.Element {
     void handleLogin();
   }, [handleLogin]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("profile_picture");
     localStorage.removeItem("is_staff");
     localStorage.removeItem("user_id");
     appContext.setAuthenticated(false);
-    navigate("/");
+    await navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path;

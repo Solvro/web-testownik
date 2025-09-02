@@ -29,8 +29,8 @@ export function SearchResultsPopover({
       align="start"
       side="bottom"
       sideOffset={4}
-      onOpenAutoFocus={(e) => {
-        e.preventDefault();
+      onOpenAutoFocus={(event_) => {
+        event_.preventDefault();
       }}
       className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
     >

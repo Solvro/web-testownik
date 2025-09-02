@@ -1,5 +1,5 @@
 import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
@@ -36,21 +36,21 @@ interface ProfileDetailsProps {
   setUserData: (data: UserData) => void;
 }
 
-const ProfileDetails: React.FC<ProfileDetailsProps> = ({
+export function ProfileDetails({
   userData,
   loading,
   setUserData,
-}) => {
+}: ProfileDetailsProps) {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo || "");
+  const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
 
   const handleOpenModal = () => {
     setShowModal(true);
   };
   const handleCloseModal = () => {
-    setSelectedPhoto(userData?.photo || "");
+    setSelectedPhoto(userData?.photo ?? "");
     setShowModal(false);
   };
 
@@ -178,12 +178,12 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
             {userData?.student_number}
           </h2>
           <div className="flex flex-wrap justify-center gap-2">
-            {userData?.is_superuser ? (
+            {userData?.is_superuser === true ? (
               <Badge className="bg-destructive/15 text-destructive">
                 Administrator
               </Badge>
             ) : null}
-            {userData?.is_staff ? (
+            {userData?.is_staff === true ? (
               <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
                 Obsługa
               </Badge>
@@ -215,7 +215,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
             </div>
             <Switch
               id="hide-profile"
-              checked={userData?.hide_profile || false}
+              checked={userData?.hide_profile ?? false}
               onCheckedChange={handleHideProfile}
               className="ml-auto"
             />
@@ -247,12 +247,12 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
           <div className="flex flex-wrap justify-center gap-4">
             {avatarOptions.map((url, index) => (
               <img
-                key={index}
+                key={`avatar-option-${index.toString()}`}
                 src={url}
-                alt={`Avatar ${index}`}
+                alt={`Avatar ${index.toString()}`}
                 className={`h-20 w-20 cursor-pointer rounded-full object-cover ring-2 ${selectedPhoto === url ? "ring-primary shadow-lg" : "ring-transparent"}`}
                 onClick={() => {
-                  setSelectedPhoto(url || "");
+                  setSelectedPhoto(url ?? "");
                 }}
               />
             ))}
@@ -279,6 +279,4 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
       </Dialog>
     </Card>
   );
-};
-
-export default ProfileDetails;
+}
