@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 
-function PrivacyPolicyPage() {
+export function PrivacyPolicyPage() {
   document.title = "Polityka Prywatności - Testownik Solvro";
 
   return (
@@ -150,5 +150,3 @@ function PrivacyPolicyPage() {
     </Card>
   );
 }
-
-export default PrivacyPolicyPage;

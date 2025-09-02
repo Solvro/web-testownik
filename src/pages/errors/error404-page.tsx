@@ -2,7 +2,7 @@ import React from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
-const Error404Page: React.FC = () => {
+export function Error404Page(): React.JSX.Element {
   document.title = "404 - Testownik Solvro";
 
   return (
@@ -30,6 +30,4 @@ const Error404Page: React.FC = () => {
       </Card>
     </div>
   );
-};
-
-export default Error404Page;
+}

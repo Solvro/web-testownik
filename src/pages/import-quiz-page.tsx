@@ -3,6 +3,11 @@ import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
+import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
+import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";
+import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle as DialogTitleShad,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,12 +25,6 @@ import { Label } from "@/components/ui/label.tsx";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-
-import AppContext from "../app-context.tsx";
-import { validateQuiz } from "../components/quiz/helpers/quiz-validation.ts";
-import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
-import QuizPreviewModal from "../components/quiz/quiz-preview-modal.tsx";
-import type { Quiz } from "../components/quiz/types.ts";
 
 function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -37,7 +36,7 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
 
 type UploadType = "file" | "link" | "json";
 
-const ImportQuizPage: React.FC = () => {
+export function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [uploadType, setUploadType] = useState<UploadType>("link");
@@ -56,11 +55,11 @@ const ImportQuizPage: React.FC = () => {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file === undefined) {
+      setFileName(null);
+    } else {
       setFileName(file.name);
       setError(null);
-    } else {
-      setFileName(null);
     }
   };
 
@@ -70,16 +69,16 @@ const ImportQuizPage: React.FC = () => {
     setLoading(false);
   };
 
-  const addQuestionIdsIfMissing = (quiz: Quiz): Quiz => {
+  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
     let id = 1;
-    for (const question of quiz.questions) {
+    for (const question of quizData.questions) {
       if (question.id) {
         id = Math.max(id, question.id + 1);
       } else {
         question.id = id++;
       }
     }
-    return quiz;
+    return quizData;
   };
 
   const handleImport = async () => {
@@ -88,29 +87,29 @@ const ImportQuizPage: React.FC = () => {
     switch (uploadType) {
       case "file": {
         const file = fileInputRef.current?.files?.[0];
-        if (!file) {
+        if (file === undefined) {
           setErrorAndNotify("Wybierz plik z quizem.");
           return;
         }
         const reader = new FileReader();
         reader.addEventListener("load", async () => {
           try {
-            const data = JSON.parse(reader.result as string);
+            const data = JSON.parse(reader.result as string) as Quiz;
             const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-            if (validationError) {
+            if (validationError !== null) {
               setErrorAndNotify(validationError);
               return false;
             }
             await submitImport("json", data);
-          } catch (error) {
-            if (error instanceof Error) {
+          } catch (fileError) {
+            if (fileError instanceof Error) {
               setError(
-                `Wystąpił błąd podczas wczytywania pliku: ${error.message}`,
+                `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
               );
             } else {
               setError("Wystąpił błąd podczas wczytywania pliku.");
             }
-            console.error("Błąd podczas wczytywania pliku:", error);
+            console.error("Błąd podczas wczytywania pliku:", fileError);
           }
         });
         reader.readAsText(file);
@@ -118,8 +117,9 @@ const ImportQuizPage: React.FC = () => {
         break;
       }
       case "link": {
-        const linkInput = document.querySelector("#link-input")?.value;
-        if (!linkInput) {
+        const linkInput =
+          document.querySelector<HTMLInputElement>("#link-input")?.value;
+        if (!linkInput || linkInput.trim() === "") {
           setErrorAndNotify("Wklej link do quizu.");
           setLoading(false);
           return;
@@ -134,14 +134,15 @@ const ImportQuizPage: React.FC = () => {
         break;
       }
       case "json": {
-        const textInput = document.querySelector("#text-input")?.value;
-        if (!textInput) {
+        const textInput =
+          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
+        if (!textInput || textInput.trim() === "") {
           setError("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
         try {
-          const data = JSON.parse(textInput);
+          const data = JSON.parse(textInput) as Quiz;
           const validationError = validateQuiz(addQuestionIdsIfMissing(data));
           if (validationError) {
             setErrorAndNotify(validationError);
@@ -189,9 +190,11 @@ const ImportQuizPage: React.FC = () => {
           is_anonymous: true,
           can_edit: true,
         };
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const userQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes =
+          userQuizzesString === null
+            ? []
+            : (JSON.parse(userQuizzesString) as QuizMetadata[]);
         userQuizzes.push(temporaryQuiz);
         localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
         setQuiz(temporaryQuiz);
@@ -199,9 +202,9 @@ const ImportQuizPage: React.FC = () => {
       }
       let response;
       if (type === "json") {
-        response = await appContext.axiosInstance.post("/quizzes/", data);
+        response = await appContext.axiosInstance.post<Quiz>("/quizzes/", data);
       } else if (type === "link") {
-        response = await appContext.axiosInstance.post(
+        response = await appContext.axiosInstance.post<Quiz>(
           "/import-quiz-from-link/",
           { link: data },
         );
@@ -210,12 +213,12 @@ const ImportQuizPage: React.FC = () => {
       }
 
       if (response.status === 201) {
-        const result = await response.data;
+        const result = response.data;
         setQuiz(result);
       } else {
-        const errorData = await response.data;
+        const errorData = response.data as { error?: string };
         setError(
-          errorData.error || "Wystąpił błąd podczas importowania quizu.",
+          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
         );
       }
     } catch {
@@ -329,7 +332,7 @@ const ImportQuizPage: React.FC = () => {
         </DialogTrigger>
         <DialogContent className="flex h-[80vh] flex-col">
           <DialogHeader>
-            <DialogTitleShad>Format JSON quizu</DialogTitleShad>
+            <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
               Struktura wymagana przy imporcie z pliku lub tekstu
             </DialogDescription>
@@ -431,6 +434,4 @@ const ImportQuizPage: React.FC = () => {
       </Dialog>
     </>
   );
-};
-
-export default ImportQuizPage;
+}

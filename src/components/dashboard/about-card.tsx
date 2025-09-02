@@ -30,15 +30,15 @@ interface Contributor {
   contributions: number;
 }
 
-const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
+export function AboutCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchContributors();
+    void fetchContributors();
   }, []);
 
   const fetchContributors = async () => {
@@ -51,12 +51,12 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
         "https://api.github.com/repos/Solvro/web-testownik/contributors?anon=1",
       );
 
-      const coreData = await coreResponse.json();
-      const frontendData = await frontendResponse.json();
-
-      if (coreData.message || frontendData.message) {
-        throw new Error("API rate limit exceeded");
+      if (!coreResponse.ok || !frontendResponse.ok) {
+        throw new Error("Failed to fetch contributors");
       }
+
+      const coreData = (await coreResponse.json()) as Contributor[];
+      const frontendData = (await frontendResponse.json()) as Contributor[];
 
       // merge data from both repositories and if there are any duplicates, sum their contributions
       const data = coreData
@@ -161,6 +161,4 @@ const AboutCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default AboutCard;
+}

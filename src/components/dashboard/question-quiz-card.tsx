@@ -6,6 +6,7 @@ import { Link } from "react-router";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
+import { AppContext } from "@/app-context.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +21,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { cn } from "@/lib/utils.ts";
 
-import AppContext from "../../app-context.tsx";
-
 interface Answer {
   answer: string;
   correct: boolean;
@@ -35,10 +34,10 @@ interface Question {
   answers: Answer[];
 }
 
-const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
+export function QuestionQuizCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [questionData, setQuestionData] = useState<Question | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
@@ -47,7 +46,7 @@ const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchQuestion();
+    void fetchQuestion();
   }, []);
 
   const fetchQuestion = async () => {
@@ -194,7 +193,7 @@ const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
             </ScrollArea>
             <CardDescription>
               <Link
-                to={`/quiz/${questionData.quiz_id}`}
+                to={`/quiz/${String(questionData.quiz_id)}`}
                 className="text-muted-foreground hover:text-foreground block text-xs transition-colors"
               >
                 {questionData.quiz_title}
@@ -258,6 +257,4 @@ const QuestionQuizCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardFooter>
     </Card>
   );
-};
-
-export default QuestionQuizCard;
+}

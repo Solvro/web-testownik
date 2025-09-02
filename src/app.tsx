@@ -1,32 +1,32 @@
 import React, { useContext } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router";
 
-import AppLogo from "@/components/app-logo.tsx";
-import ToastContainer from "@/components/toast-container.tsx";
+import { AppLogo } from "@/components/app-logo.tsx";
+import { ToastContainer } from "@/components/toast-container.tsx";
 
-import AppContext from "./app-context.tsx";
-import Alerts from "./components/alerts.tsx";
-import ConnectGuestAccount from "./components/connect-guest-account.tsx";
-import LoginPrompt from "./components/login-prompt.tsx";
-import Navbar from "./components/navbar.tsx";
+import { AppContext } from "./app-context.tsx";
+import { Alerts } from "./components/alerts.tsx";
+import { ConnectGuestAccount } from "./components/connect-guest-account.tsx";
+import { LoginPrompt } from "./components/login-prompt.tsx";
+import { Navbar } from "./components/navbar.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
-import CreateQuizPage from "./pages/create-quiz-page.tsx";
-import DashboardPage from "./pages/dashboard-page.tsx";
-import EditQuizPage from "./pages/edit-quiz-page.tsx";
-import Error404Page from "./pages/errors/error404-page.tsx";
-import GradesPage from "./pages/grades-page.tsx";
-import ImportQuizLegacyPage from "./pages/import-quiz-legacy-page.tsx";
-import ImportQuizPage from "./pages/import-quiz-page.tsx";
-import LoginLinkPage from "./pages/login-link-page.tsx";
-import OTPLoginPage from "./pages/otp-login-page.tsx";
-import PrivacyPolicyPage from "./pages/privacy-policy-page.tsx";
-import ProfilePage from "./pages/profile-page.tsx";
-import QuizPage from "./pages/quiz-page.tsx";
-import QuizzesPage from "./pages/quizzes-page.tsx";
-import SearchInQuizPage from "./pages/search-in-quiz-page.tsx";
-import TermsPage from "./pages/terms-page.tsx";
+import { CreateQuizPage } from "./pages/create-quiz-page.tsx";
+import { DashboardPage } from "./pages/dashboard-page.tsx";
+import { EditQuizPage } from "./pages/edit-quiz-page.tsx";
+import { Error404Page } from "./pages/errors/error404-page.tsx";
+import { GradesPage } from "./pages/grades-page.tsx";
+import { ImportQuizLegacyPage } from "./pages/import-quiz-legacy-page.tsx";
+import { ImportQuizPage } from "./pages/import-quiz-page.tsx";
+import { LoginLinkPage } from "./pages/login-link-page.tsx";
+import { OTPLoginPage } from "./pages/otp-login-page.tsx";
+import { PrivacyPolicyPage } from "./pages/privacy-policy-page.tsx";
+import { ProfilePage } from "./pages/profile-page.tsx";
+import { QuizPage } from "./pages/quiz-page.tsx";
+import { QuizzesPage } from "./pages/quizzes-page.tsx";
+import { SearchInQuizPage } from "./pages/search-in-quiz-page.tsx";
+import { TermsPage } from "./pages/terms-page.tsx";
 
-const App: React.FC = () => {
+export function App(): React.JSX.Element {
   const context = useContext(AppContext);
 
   return (
@@ -101,6 +101,4 @@ const App: React.FC = () => {
       </ThemeProvider>
     </Router>
   );
-};
-
-export default App;
+}

@@ -5,8 +5,9 @@ import {
   PencilLineIcon,
   SkullIcon,
 } from "lucide-react";
-import React, { useContext } from "react";
+import { useContext } from "react";
 
+import { AppContext } from "@/app-context.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -14,8 +15,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-import AppContext from "../../app-context.tsx";
 
 interface QuizActionButtonsProps {
   onCopy: () => void;
@@ -27,7 +26,7 @@ interface QuizActionButtonsProps {
   disabled?: boolean;
 }
 
-const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
+export function QuizActionButtons({
   onCopy,
   onOpenChatGPT,
   onReportIssue,
@@ -35,7 +34,7 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
   toggleBrainrot,
   isMaintainer,
   disabled = false,
-}) => {
+}: QuizActionButtonsProps) {
   const appContext = useContext(AppContext);
 
   return (
@@ -108,6 +107,4 @@ const QuizActionButtons: React.FC<QuizActionButtonsProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default QuizActionButtons;
+}

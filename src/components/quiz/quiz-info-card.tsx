@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import AppContext from "../../app-context.tsx";
 import type { Quiz, Reoccurrence } from "./types.ts";
 
 interface QuizInfoCardProps {
@@ -54,23 +54,23 @@ const getProgressColor = (percentage: number): string => {
       const b = Math.round(
         startColor[2] + (endColor[2] - startColor[2]) * ratio,
       );
-      return `rgb(${r}, ${g}, ${b})`;
+      return `rgb(${String(r)}, ${String(g)}, ${String(b)})`;
     }
   }
   return "rgb(25, 135, 84)";
 };
 
-const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
+export function QuizInfoCard({
   quiz,
   correctAnswersCount,
   wrongAnswersCount,
   reoccurrences,
   studyTime,
   resetProgress,
-}) => {
+}: QuizInfoCardProps): React.JSX.Element | null {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
-  if (!quiz) {
+  if (quiz === null) {
     return null;
   }
 
@@ -84,9 +84,9 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer ? (
+        {quiz.maintainer === undefined ? null : (
           <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
-        ) : null}
+        )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="space-y-1">
@@ -149,7 +149,7 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
                   variant="outline"
                   className="size-8"
                   onClick={() => {
-                    navigator.clipboard
+                    void navigator.clipboard
                       .writeText(window.location.href)
                       .then(() => {
                         toast.success("Skopiowano link do quizu");
@@ -174,6 +174,4 @@ const QuizInfoCard: React.FC<QuizInfoCardProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default QuizInfoCard;
+}

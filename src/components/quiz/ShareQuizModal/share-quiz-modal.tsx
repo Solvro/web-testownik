@@ -1,10 +1,21 @@
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { AccessLevelSelector } from "@/components/quiz/ShareQuizModal/access-level-selector.tsx";
+import { AccessList } from "@/components/quiz/ShareQuizModal/access-list.tsx";
+import { SearchResultsPopover } from "@/components/quiz/ShareQuizModal/search-results-popover.tsx";
+import type {
+  Group,
+  SharedQuiz,
+  User,
+} from "@/components/quiz/ShareQuizModal/types.ts";
+import { AccessLevel } from "@/components/quiz/ShareQuizModal/types.ts";
+import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import {
@@ -20,14 +31,6 @@ import { Label } from "@/components/ui/label.tsx";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-import AppContext from "../../../app-context.tsx";
-import type { QuizMetadata } from "../types.ts";
-import AccessLevelSelector from "./access-level-selector.tsx";
-import AccessList from "./access-list.tsx";
-import SearchResultsPopover from "./search-results-popover.tsx";
-import type { Group, SharedQuiz, User } from "./types";
-import { AccessLevel } from "./types";
-
 interface ShareQuizModalProps {
   show: boolean;
   onHide: () => void;
@@ -35,12 +38,12 @@ interface ShareQuizModalProps {
   setQuiz?: (quiz: QuizMetadata) => void;
 }
 
-const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
+export function ShareQuizModal({
   show,
   onHide,
   quiz,
   setQuiz,
-}) => {
+}: ShareQuizModalProps) {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -413,7 +416,10 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            <Popover open={show ? searchQuery.length > 0 : null} modal={true}>
+            <Popover
+              open={show ? searchQuery.length > 0 : undefined}
+              modal={true}
+            >
               <PopoverTrigger asChild>
                 <div className="relative w-full">
                   <Input
@@ -541,6 +547,4 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ShareQuizModal;
+}

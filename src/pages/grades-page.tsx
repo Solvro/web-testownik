@@ -3,7 +3,8 @@ import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +40,6 @@ import {
 } from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils.ts";
 
-import AppContext from "../app-context.tsx";
-
 interface Grade {
   value: number;
   value_symbol: string;
@@ -69,7 +68,7 @@ interface GradesData {
   terms: Term[];
 }
 
-const GradesPage: React.FC = () => {
+export function GradesPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
@@ -87,11 +86,12 @@ const GradesPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await appContext.axiosInstance.get("/grades/");
+        const response =
+          await appContext.axiosInstance.get<GradesData>("/grades/");
         if (response.status !== 200) {
           throw new Error("Invalid response status");
         }
-        const data: GradesData = response.data;
+        const data = response.data;
         setTerms(data.terms);
         setCourses(data.courses);
         setSelectedTerm(
@@ -110,9 +110,9 @@ const GradesPage: React.FC = () => {
       } catch (error) {
         console.error("Error fetching grades:", error);
         if (error instanceof AxiosError && error.response) {
+          const errorData = error.response.data as { detail?: string };
           setError(
-            error.response.data.detail ||
-              "Wystąpił błąd podczas pobierania ocen.",
+            errorData.detail ?? "Wystąpił błąd podczas pobierania ocen.",
           );
         } else {
           setError(
@@ -126,7 +126,7 @@ const GradesPage: React.FC = () => {
       }
     };
     if (!appContext.isGuest) {
-      fetchData();
+      void fetchData();
     }
   }, [appContext.axiosInstance, appContext.isGuest]);
 
@@ -374,6 +374,4 @@ const GradesPage: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
-
-export default GradesPage;
+}

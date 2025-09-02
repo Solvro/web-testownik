@@ -6,15 +6,14 @@ import {
   TrashIcon,
   UserIcon,
 } from "lucide-react";
-import React from "react";
+import type { Dispatch, SetStateAction } from "react";
 
+import type { Group, User } from "@/components/quiz/ShareQuizModal/types.ts";
+import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
-
-import type { QuizMetadata } from "../types.ts";
-import type { Group, User } from "./types";
 
 interface AccessListProps {
   quizMetadata: QuizMetadata | null;
@@ -24,7 +23,7 @@ interface AccessListProps {
     allow_edit: boolean;
   })[];
   isMaintainerAnonymous: boolean;
-  setIsMaintainerAnonymous: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsMaintainerAnonymous: Dispatch<SetStateAction<boolean>>;
   handleRemoveUserAccess: (user: User) => void;
   handleRemoveGroupAccess: (group: Group) => void;
   handleToggleUserEdit: (
@@ -35,7 +34,7 @@ interface AccessListProps {
   ) => void;
 }
 
-const AccessList: React.FC<AccessListProps> = ({
+export function AccessList({
   quizMetadata,
   usersWithAccess,
   groupsWithAccess,
@@ -45,7 +44,7 @@ const AccessList: React.FC<AccessListProps> = ({
   handleRemoveGroupAccess,
   handleToggleUserEdit,
   handleToggleGroupEdit,
-}) => {
+}: AccessListProps) {
   return (
     <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
       <div className="flex flex-col gap-2">
@@ -187,6 +186,4 @@ const AccessList: React.FC<AccessListProps> = ({
       </div>
     </ScrollArea>
   );
-};
-
-export default AccessList;
+}

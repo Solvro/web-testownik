@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 
+import { AppContext } from "@/app-context.tsx";
+import ProfileDetails from "@/components/profile/profile-details.tsx";
+import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import AppContext from "../app-context.tsx";
-import ProfileDetails from "../components/profile/profile-details.tsx";
-import SettingsForm from "../components/profile/settings-form.tsx";
 
 interface UserData {
   id: string;
@@ -26,7 +25,7 @@ interface SettingsData {
   wrong_answer_reoccurrences: number;
 }
 
-const ProfilePage: React.FC = () => {
+export function ProfilePage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>("account");
@@ -47,10 +46,11 @@ const ProfilePage: React.FC = () => {
     }
 
     if (appContext.isGuest) {
+      const savedSettings = localStorage.getItem("settings");
       setSettings(
-        localStorage.getItem("settings")
-          ? JSON.parse(localStorage.getItem("settings")!)
-          : settings,
+        savedSettings === null
+          ? settings
+          : (JSON.parse(savedSettings) as SettingsData),
       );
       return;
     }
@@ -142,6 +142,4 @@ const ProfilePage: React.FC = () => {
       </Tabs>
     </div>
   );
-};
-
-export default ProfilePage;
+}

@@ -2,16 +2,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
-import QuizEditor from "@/components/quiz/quiz-editor";
+import { QuizEditor } from "@/components/quiz/quiz-editor";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 
-import AppContext from "../app-context.tsx";
-import type { Quiz } from "../components/quiz/types.ts";
-
-const EditQuizPage: React.FC = () => {
+export function EditQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
@@ -42,7 +41,7 @@ const EditQuizPage: React.FC = () => {
           return;
         }
         const response = await appContext.axiosInstance.get(
-          `/quizzes/${quizId}/`,
+          `/quizzes/${String(quizId)}/`,
         );
         if (response.status === 200) {
           const data: Quiz = response.data;
@@ -106,7 +105,7 @@ const EditQuizPage: React.FC = () => {
         return true;
       }
       const response = await appContext.axiosInstance.put(
-        `/quizzes/${quizId}/`,
+        `/quizzes/${String(quizId)}/`,
         payload,
       );
       if (response.status !== 200) {
@@ -162,6 +161,4 @@ const EditQuizPage: React.FC = () => {
       />
     </>
   );
-};
-
-export default EditQuizPage;
+}

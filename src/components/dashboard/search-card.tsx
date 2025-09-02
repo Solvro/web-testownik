@@ -2,15 +2,14 @@ import { SearchIcon } from "lucide-react";
 import React, { useContext, useState } from "react";
 import { Link } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils.ts";
-
-import AppContext from "../../app-context.tsx";
 
 interface SearchResult {
   id: string;
@@ -19,10 +18,10 @@ interface SearchResult {
   is_anonymous: boolean;
 }
 
-const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
+export function SearchCard({
   className,
   ...props
-}) => {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -71,12 +70,12 @@ const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
           <Input
             placeholder="Wyszukaj quiz"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch();
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void handleSearch();
               }
             }}
           />
@@ -139,6 +138,4 @@ const SearchCard: React.FC<React.ComponentProps<typeof Card>> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default SearchCard;
+}

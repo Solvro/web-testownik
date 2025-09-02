@@ -1,8 +1,6 @@
 import { Icon } from "@iconify/react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { CrownIcon } from "lucide-react";
-import type { PeerConnectOption } from "peerjs";
-import React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,22 +14,32 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+interface DeviceMetadata {
+  device: string;
+  type: string;
+}
+
+interface PeerConnectionWithMetadata {
+  metadata?: DeviceMetadata;
+  [key: string]: unknown;
+}
+
 interface ContinuityModalProps {
-  peerConnections: PeerConnectOption[];
+  peerConnections: PeerConnectionWithMetadata[];
   isContinuityHost: boolean;
 }
 
-const ContinuityModal: React.FC<ContinuityModalProps> = ({
+export function ContinuityModal({
   peerConnections,
   isContinuityHost,
-}) => {
+}: ContinuityModalProps) {
   const connectedDevices = peerConnections
-    .map((c) => c.metadata?.device || "Unknown")
+    .map((c) => c.metadata?.device ?? "Unknown")
     .join(", ")
     .replace(/,([^,]*)$/, " i$1");
   const iconName =
     peerConnections.length === 1
-      ? getIconByDevice(peerConnections[0]?.metadata?.type)
+      ? getIconByDevice(peerConnections[0]?.metadata?.type ?? "unknown")
       : "flat-color-icons:multiple-devices";
   return (
     <Dialog>
@@ -81,7 +89,7 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 const getIconByDevice = (type: string) => {
   switch (type) {
@@ -99,5 +107,3 @@ const getIconByDevice = (type: string) => {
     }
   }
 };
-
-export default ContinuityModal;

@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 import { Card, CardContent } from "@/components/ui/card";
 
-function TermsPage() {
+export function TermsPage() {
   document.title = "Regulamin - Testownik Solvro";
 
   return (
@@ -116,5 +116,3 @@ function TermsPage() {
     </Card>
   );
 }
-
-export default TermsPage;

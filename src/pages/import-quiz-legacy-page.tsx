@@ -8,18 +8,17 @@ import {
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
+import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal";
+import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-// Migrated from react-bootstrap to shadcn/ui + Tailwind
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
 
-import AppContext from "../app-context";
-import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
-import QuizPreviewModal from "../components/quiz/quiz-preview-modal";
-import type { Question, Quiz } from "../components/quiz/types.ts";
+import { AppContext } from "../app-context";
 
 const trueFalseStrings = {
   prawda: true,
@@ -30,7 +29,7 @@ const trueFalseStrings = {
   false: false,
 };
 
-const ImportQuizLegacyPage: React.FC = () => {
+export function ImportQuizLegacyPage() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -193,9 +192,11 @@ const ImportQuizLegacyPage: React.FC = () => {
       };
 
       if (appContext.isGuest) {
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes: Quiz[] =
+          guestQuizzesString === null
+            ? []
+            : (JSON.parse(guestQuizzesString) as Quiz[]);
         const temporaryQuiz = {
           ...quizData,
           id: uuidv4(),
@@ -212,7 +213,7 @@ const ImportQuizLegacyPage: React.FC = () => {
         return;
       }
 
-      const response = await appContext.axiosInstance.post(
+      const response = await appContext.axiosInstance.post<Quiz>(
         "/quizzes/",
         quizData,
       );
@@ -221,9 +222,9 @@ const ImportQuizLegacyPage: React.FC = () => {
         const quiz = response.data;
         setQuiz(quiz);
       } else {
-        const errorData = await response.data;
+        const errorData = response.data as { error?: string };
         setError(
-          errorData.error || "Wystąpił błąd podczas importowania quizu.",
+          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
         );
       }
     } catch (error_) {
@@ -253,13 +254,11 @@ const ImportQuizLegacyPage: React.FC = () => {
         }
         try {
           const decoder = new TextDecoder("utf-8", { fatal: true });
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         } catch {
           const decoder = new TextDecoder("windows-1250");
-          // @ts-expect-error: This is necessary to allow reading the result as an ArrayBuffer
-          const content = decoder.decode(reader.result);
+          const content = decoder.decode(reader.result as ArrayBuffer);
           resolve(content);
         }
       });
@@ -538,9 +537,7 @@ const ImportQuizLegacyPage: React.FC = () => {
                 <input
                   type="file"
                   ref={directoryInputRef}
-                  /* @ts-expect-error: directory selection */
-                  directory=""
-                  webkitdirectory=""
+                  {...({ webkitdirectory: "" } as { webkitdirectory: string })}
                   onChange={handleDirectorySelect}
                   className="hidden"
                 />
@@ -601,6 +598,4 @@ const ImportQuizLegacyPage: React.FC = () => {
       />
     </>
   );
-};
-
-export default ImportQuizLegacyPage;
+}

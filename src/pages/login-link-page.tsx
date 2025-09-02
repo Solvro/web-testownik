@@ -3,15 +3,14 @@ import axios from "axios";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-
-function LoginLinkPage() {
+export function LoginLinkPage() {
   const { token } = useParams<{ token: string }>();
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
@@ -78,5 +77,3 @@ function LoginLinkPage() {
     </div>
   );
 }
-
-export default LoginLinkPage;

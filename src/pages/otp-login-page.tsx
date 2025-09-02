@@ -4,6 +4,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import React, { useCallback, useContext, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { AppContext } from "@/app-context.tsx";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,11 +22,9 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp.tsx";
 import { Label } from "@/components/ui/label.tsx";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-
-function OTPLoginPage() {
+export function OTPLoginPage() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
@@ -223,5 +222,3 @@ function OTPLoginPage() {
     </div>
   );
 }
-
-export default OTPLoginPage;

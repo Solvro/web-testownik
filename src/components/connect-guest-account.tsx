@@ -1,7 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { PrivacyModal } from "@/components/privacy-modal.tsx";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert } from "@/components/ui/alert.tsx";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +26,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-import PrivacyModal from "./privacy-modal.tsx";
-import type { Quiz } from "./quiz/types.ts";
+interface QuizUploadResponse {
+  id: string;
+}
 
-const ConnectGuestAccount: React.FC = () => {
+type QuizProgress = Record<string, unknown>;
+
+interface UserSettings {
+  initial_reoccurrences?: number;
+  wrong_answer_reoccurrences?: number;
+}
+
+export function ConnectGuestAccount() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,11 +70,11 @@ const ConnectGuestAccount: React.FC = () => {
 
   useEffect(() => {
     const quizzesString = localStorage.getItem("guest_quizzes");
-    if (quizzesString) {
+    if (quizzesString !== null) {
       try {
-        const quizzes = JSON.parse(quizzesString);
+        const quizzes = JSON.parse(quizzesString) as Quiz[];
         setGuestQuizzes(quizzes);
-        setSelectedQuizIds(quizzes.map((quiz: Quiz) => quiz.id));
+        setSelectedQuizIds(quizzes.map((quiz) => quiz.id));
       } catch (error_) {
         console.error("Error parsing guest_quizzes", error_);
       }
@@ -87,17 +97,20 @@ const ConnectGuestAccount: React.FC = () => {
         console.log("Uploading quiz", quiz.id);
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
-          const response = await appContext.axiosInstance.post(
-            "/quizzes/",
-            quiz,
-          );
+          const response =
+            await appContext.axiosInstance.post<QuizUploadResponse>(
+              "/quizzes/",
+              quiz,
+            );
           const newQuizId = response.data.id;
           console.log("Quiz uploaded:", response.data);
           if (categories.progress) {
-            const progress = JSON.parse(
-              localStorage.getItem(`${quiz.id}_progress`) || "{}",
-            );
-            if (progress) {
+            const progressString = localStorage.getItem(`${quiz.id}_progress`);
+            const progress: QuizProgress =
+              progressString === null
+                ? {}
+                : (JSON.parse(progressString) as QuizProgress);
+            if (Object.keys(progress).length > 0) {
               setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
               await appContext.axiosInstance.post(
                 `/quiz/${newQuizId}/progress/`,
@@ -118,7 +131,11 @@ const ConnectGuestAccount: React.FC = () => {
 
   const uploadSettings = async () => {
     setMigratingText("Przenoszenie ustawień...");
-    const settings = JSON.parse(localStorage.getItem("settings") || "{}");
+    const settingsString = localStorage.getItem("settings");
+    const settings: UserSettings =
+      settingsString === null
+        ? {}
+        : (JSON.parse(settingsString) as UserSettings);
     try {
       await appContext.axiosInstance.put("/settings/", {
         initial_reoccurrences: settings.initial_reoccurrences,
@@ -447,6 +464,6 @@ const ConnectGuestAccount: React.FC = () => {
       />
     </div>
   );
-};
+}
 
-export default ConnectGuestAccount;
+// no default export

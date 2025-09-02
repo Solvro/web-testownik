@@ -16,8 +16,10 @@ import React, {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import AppLogo from "@/components/app-logo.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { AppLogo } from "@/components/app-logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { ReportBugModal } from "@/components/report-bug-modal.tsx";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -25,12 +27,9 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-import ReportBugModal from "./report-bug-modal.tsx";
-
-const Navbar: React.FC = () => {
+export function Navbar(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,7 +45,7 @@ const Navbar: React.FC = () => {
   const refreshToken = queryParameters.get("refresh_token");
 
   const handleLogin = useCallback(async () => {
-    if (accessToken && refreshToken) {
+    if (accessToken !== null && refreshToken !== null) {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
 
@@ -62,7 +61,7 @@ const Navbar: React.FC = () => {
   }, [accessToken, refreshToken, queryParameters, navigate]);
 
   useEffect(() => {
-    handleLogin();
+    void handleLogin();
   }, [handleLogin]);
 
   const handleLogout = () => {
@@ -143,14 +142,14 @@ const Navbar: React.FC = () => {
             <>
               <Link to="/profile">
                 <Button variant="default">
-                  {localStorage.getItem("profile_picture") ? (
+                  {localStorage.getItem("profile_picture") === null ? (
+                    <CircleUserRoundIcon className="size-6" />
+                  ) : (
                     <img
-                      src={localStorage.getItem("profile_picture")!}
+                      src={localStorage.getItem("profile_picture") ?? ""}
                       alt="Profilowe"
                       className="size-6 rounded-full object-cover"
                     />
-                  ) : (
-                    <CircleUserRoundIcon className="size-6" />
                   )}
                   <span>Profil</span>
                 </Button>
@@ -167,7 +166,7 @@ const Navbar: React.FC = () => {
           ) : (
             <Button variant="default" asChild>
               <a
-                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
               >
                 <LogInIcon />
                 Zaloguj się
@@ -251,14 +250,14 @@ const Navbar: React.FC = () => {
               <>
                 <Link to="/profile">
                   <Button variant="default" className="flex-1">
-                    {localStorage.getItem("profile_picture") ? (
+                    {localStorage.getItem("profile_picture") === null ? (
+                      <CircleUserRoundIcon className="size-6" />
+                    ) : (
                       <img
-                        src={localStorage.getItem("profile_picture")!}
+                        src={localStorage.getItem("profile_picture") ?? ""}
                         alt="Profilowe"
                         className="size-6 rounded-full object-cover"
                       />
-                    ) : (
-                      <CircleUserRoundIcon className="size-6" />
                     )}
                     <span>Profil</span>
                   </Button>
@@ -275,7 +274,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Button variant="outline" asChild className="flex-1">
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
                 >
                   <LogInIcon />
                   Zaloguj się
@@ -293,6 +292,4 @@ const Navbar: React.FC = () => {
       />
     </nav>
   );
-};
-
-export default Navbar;
+}

@@ -24,8 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Textarea } from "@/components/ui/textarea";
-
-import { SERVER_URL } from "../config.ts";
+import { SERVER_URL } from "@/config.ts";
 
 interface ReportBugModalProps {
   show: boolean;
@@ -42,7 +41,7 @@ const DEFAULT_FORM_STATE = {
   reportType: "bug",
 };
 
-const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
+export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
@@ -287,6 +286,6 @@ const ReportBugModal: React.FC<ReportBugModalProps> = ({ show, onHide }) => {
       </DialogContent>
     </Dialog>
   );
-};
+}
 
-export default ReportBugModal;
+// no default export
