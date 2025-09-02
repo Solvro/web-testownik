@@ -3,7 +3,7 @@ import type { LoaderSizeProps } from "react-spinners/helpers/props";
 
 import { useTheme } from "@/components/theme-provider.tsx";
 
-function Loader(props: LoaderSizeProps) {
+export function Loader(props: LoaderSizeProps) {
   let { theme } = useTheme();
 
   if (theme === "system") {
@@ -16,5 +16,3 @@ function Loader(props: LoaderSizeProps) {
 
   return <PropagateLoader color={color} {...props} />;
 }
-
-export default Loader;

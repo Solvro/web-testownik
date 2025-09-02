@@ -2,7 +2,7 @@ import React from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
-function Error404Page(): React.JSX.Element {
+export function Error404Page(): React.JSX.Element {
   document.title = "404 - Testownik Solvro";
 
   return (
@@ -31,5 +31,3 @@ function Error404Page(): React.JSX.Element {
     </div>
   );
 }
-
-export default Error404Page;

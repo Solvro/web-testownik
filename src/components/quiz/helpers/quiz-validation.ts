@@ -1,6 +1,5 @@
-import type { Quiz } from "../types.ts";
+import type { Quiz } from "@/components/quiz/types.ts";
 
-// Allowed keys for each object type
 const ALLOWED_QUIZ_KEYS = [
   "title",
   "description",
@@ -21,7 +20,6 @@ const ALLOWED_QUESTION_KEYS = [
 ];
 const ALLOWED_ANSWER_KEYS = ["answer", "correct", "image"];
 
-// Utility function to check if an object contains only allowed keys
 const containsOnlyAllowedKeys = (
   object: object,
   allowedKeys: string[],

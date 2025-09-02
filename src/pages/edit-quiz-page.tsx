@@ -2,16 +2,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
-import QuizEditor from "@/components/quiz/quiz-editor";
+import { QuizEditor } from "@/components/quiz/quiz-editor";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 
-import AppContext from "../app-context.tsx";
-import type { Quiz } from "../components/quiz/types.ts";
-
-function EditQuizPage(): React.JSX.Element {
+export function EditQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
@@ -163,5 +162,3 @@ function EditQuizPage(): React.JSX.Element {
     </>
   );
 }
-
-export default EditQuizPage;

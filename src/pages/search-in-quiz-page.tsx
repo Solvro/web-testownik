@@ -3,14 +3,13 @@ import { AlertCircleIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 
+import { AppContext } from "@/app-context.tsx";
+import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-import AppContext from "../app-context.tsx";
-import type { Question, Quiz } from "../components/quiz/types.ts";
-
-function SearchInQuizPage(): React.JSX.Element {
+export function SearchInQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = React.useContext(AppContext);
 
@@ -254,5 +253,3 @@ function SearchInQuizPage(): React.JSX.Element {
     </div>
   );
 }
-
-export default SearchInQuizPage;

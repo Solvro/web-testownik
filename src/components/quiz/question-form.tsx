@@ -1,5 +1,4 @@
 import { Trash2, TrashIcon } from "lucide-react";
-import React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,12 +16,12 @@ interface Props {
   advancedMode?: boolean;
 }
 
-const QuestionForm: React.FC<Props> = ({
+export function QuestionForm({
   question,
   onUpdate,
   onRemove,
   advancedMode = false,
-}) => {
+}: Props) {
   const handleTextChange = (text: string) => {
     onUpdate({ ...question, question: text });
   };
@@ -289,6 +288,4 @@ const QuestionForm: React.FC<Props> = ({
       </Button>
     </div>
   );
-};
-
-export default QuestionForm;
+}

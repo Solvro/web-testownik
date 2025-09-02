@@ -23,7 +23,7 @@ interface PrivacyModalProps {
   onHide: () => void;
 }
 
-const PrivacyModal: React.FC<PrivacyModalProps> = ({ show, onHide }) => {
+export function PrivacyModal({ show, onHide }: PrivacyModalProps) {
   return (
     <Dialog
       open={show}
@@ -101,6 +101,4 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ show, onHide }) => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default PrivacyModal;
+}

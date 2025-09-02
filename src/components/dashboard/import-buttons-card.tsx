@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-function ImportButtonsCard({
+export function ImportButtonsCard({
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   return (
@@ -23,5 +23,3 @@ function ImportButtonsCard({
     </Card>
   );
 }
-
-export default ImportButtonsCard;

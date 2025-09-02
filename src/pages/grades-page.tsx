@@ -3,7 +3,8 @@ import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +40,6 @@ import {
 } from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils.ts";
 
-import AppContext from "../app-context.tsx";
-
 interface Grade {
   value: number;
   value_symbol: string;
@@ -69,7 +68,7 @@ interface GradesData {
   terms: Term[];
 }
 
-function GradesPage(): React.JSX.Element {
+export function GradesPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
@@ -376,5 +375,3 @@ function GradesPage(): React.JSX.Element {
     </Card>
   );
 }
-
-export default GradesPage;

@@ -33,7 +33,7 @@ const processQueue = (
   failedQueue = [];
 };
 
-class RefreshTokenExpiredError extends AxiosError {
+export class RefreshTokenExpiredError extends AxiosError {
   constructor(error: AxiosError) {
     super(
       error.message,
@@ -46,7 +46,7 @@ class RefreshTokenExpiredError extends AxiosError {
   }
 }
 
-const responseInterceptor = async (error: AxiosError) => {
+export const responseInterceptor = async (error: AxiosError) => {
   const originalRequest = error.config as CustomAxiosRequestConfig;
   if (error.response?.status === 401 && !originalRequest._retry) {
     if (isRefreshing) {
@@ -89,11 +89,9 @@ const responseInterceptor = async (error: AxiosError) => {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
           console.warn("Refresh token expired, logging out");
-          return Promise.reject(
-            new RefreshTokenExpiredError(refreshError as AxiosError),
-          );
+          throw new RefreshTokenExpiredError(refreshError as AxiosError);
         }
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     } else {
       console.warn("No refresh token available");
@@ -102,7 +100,3 @@ const responseInterceptor = async (error: AxiosError) => {
   }
   throw error;
 };
-
-export default responseInterceptor;
-
-export { RefreshTokenExpiredError };

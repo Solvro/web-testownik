@@ -1,7 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { PrivacyModal } from "@/components/privacy-modal.tsx";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert } from "@/components/ui/alert.tsx";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,11 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
-
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-import PrivacyModal from "./privacy-modal.tsx";
-import type { Quiz } from "./quiz/types.ts";
+import { SERVER_URL } from "@/config.ts";
 
 interface QuizUploadResponse {
   id: string;
@@ -40,7 +39,7 @@ interface UserSettings {
   wrong_answer_reoccurrences?: number;
 }
 
-const ConnectGuestAccount: React.FC = () => {
+export function ConnectGuestAccount() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -465,6 +464,6 @@ const ConnectGuestAccount: React.FC = () => {
       />
     </div>
   );
-};
+}
 
-export default ConnectGuestAccount;
+// no default export

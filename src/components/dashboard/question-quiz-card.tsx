@@ -6,6 +6,7 @@ import { Link } from "react-router";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
+import { AppContext } from "@/app-context.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +21,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { cn } from "@/lib/utils.ts";
 
-import AppContext from "../../app-context.tsx";
-
 interface Answer {
   answer: string;
   correct: boolean;
@@ -35,7 +34,7 @@ interface Question {
   answers: Answer[];
 }
 
-function QuestionQuizCard({
+export function QuestionQuizCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
@@ -259,5 +258,3 @@ function QuestionQuizCard({
     </Card>
   );
 }
-
-export default QuestionQuizCard;

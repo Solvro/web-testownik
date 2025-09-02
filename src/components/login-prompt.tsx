@@ -1,8 +1,10 @@
 import React, { useContext, useState } from "react";
 import { Link, useLocation } from "react-router";
 
-import AppLogo from "@/components/app-logo.tsx";
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { AppLogo } from "@/components/app-logo.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { PrivacyModal } from "@/components/privacy-modal.tsx";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-import PrivacyModal from "./privacy-modal.tsx";
-
-function LoginPrompt(): React.JSX.Element {
+export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
@@ -207,5 +206,3 @@ function LoginPrompt(): React.JSX.Element {
     </div>
   );
 }
-
-export default LoginPrompt;

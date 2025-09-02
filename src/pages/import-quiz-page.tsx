@@ -3,6 +3,11 @@ import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
+import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
+import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";
+import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle as DialogTitleShad,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,12 +25,6 @@ import { Label } from "@/components/ui/label.tsx";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-
-import AppContext from "../app-context.tsx";
-import { validateQuiz } from "../components/quiz/helpers/quiz-validation.ts";
-import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
-import QuizPreviewModal from "../components/quiz/quiz-preview-modal.tsx";
-import type { Quiz, QuizMetadata } from "../components/quiz/types.ts";
 
 function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -37,7 +36,7 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
 
 type UploadType = "file" | "link" | "json";
 
-function ImportQuizPage(): React.JSX.Element {
+export function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [uploadType, setUploadType] = useState<UploadType>("link");
@@ -333,7 +332,7 @@ function ImportQuizPage(): React.JSX.Element {
         </DialogTrigger>
         <DialogContent className="flex h-[80vh] flex-col">
           <DialogHeader>
-            <DialogTitleShad>Format JSON quizu</DialogTitleShad>
+            <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
               Struktura wymagana przy imporcie z pliku lub tekstu
             </DialogDescription>
@@ -436,5 +435,3 @@ function ImportQuizPage(): React.JSX.Element {
     </>
   );
 }
-
-export default ImportQuizPage;

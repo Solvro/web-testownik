@@ -4,11 +4,15 @@ import {
   PlusIcon,
   UploadIcon,
 } from "lucide-react";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import Loader from "@/components/loader.tsx";
-import QuizCard from "@/components/quiz/quiz-card.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { ShareQuizModal } from "@/components/quiz/ShareQuizModal/share-quiz-modal.tsx";
+import type { SharedQuiz } from "@/components/quiz/ShareQuizModal/types.ts";
+import { QuizCard } from "@/components/quiz/quiz-card.tsx";
+import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +28,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
 
-import AppContext from "../app-context.tsx";
-import ShareQuizModal from "../components/quiz/ShareQuizModal/share-quiz-modal.tsx";
-import type { SharedQuiz } from "../components/quiz/ShareQuizModal/types.ts";
-import type { QuizMetadata } from "../components/quiz/types.ts";
-
-const QuizzesPage: React.FC = () => {
+export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
@@ -296,6 +295,6 @@ const QuizzesPage: React.FC = () => {
       ) : null}
     </div>
   );
-};
+}
 
-export default QuizzesPage;
+// no default export

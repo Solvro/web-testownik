@@ -2,15 +2,14 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
+import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
-import QuizEditor from "@/components/quiz/quiz-editor";
+import { QuizEditor } from "@/components/quiz/quiz-editor";
+import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";
+import type { Quiz } from "@/components/quiz/types.ts";
 
-import AppContext from "../app-context.tsx";
-import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
-import QuizPreviewModal from "../components/quiz/quiz-preview-modal.tsx";
-import type { Quiz } from "../components/quiz/types.ts";
-
-function CreateQuizPage(): React.JSX.Element {
+export function CreateQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -76,5 +75,3 @@ function CreateQuizPage(): React.JSX.Element {
     </>
   );
 }
-
-export default CreateQuizPage;

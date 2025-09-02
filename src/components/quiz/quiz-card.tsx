@@ -8,6 +8,7 @@ import {
 import React from "react";
 import { Link } from "react-router";
 
+import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,8 +23,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils.ts";
-
-import type { QuizMetadata } from "./types.ts";
 
 export interface QuizCardProps extends React.ComponentProps<typeof Card> {
   quiz: QuizMetadata;
@@ -40,7 +39,7 @@ export interface QuizCardProps extends React.ComponentProps<typeof Card> {
   onDownload?: (quiz: QuizMetadata) => void;
 }
 
-const QuizCard: React.FC<QuizCardProps> = ({
+export function QuizCard({
   quiz,
   showEdit,
   showShare,
@@ -55,7 +54,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   onDownload,
   className,
   ...props
-}) => {
+}: QuizCardProps) {
   return (
     <Card className={cn("flex h-full flex-col", className)} {...props}>
       <CardHeader>
@@ -142,6 +141,4 @@ const QuizCard: React.FC<QuizCardProps> = ({
       </CardFooter>
     </Card>
   );
-};
-
-export default QuizCard;
+}

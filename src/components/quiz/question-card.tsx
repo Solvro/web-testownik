@@ -1,12 +1,13 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
 import { RotateCcwIcon } from "lucide-react";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import type { Answer, Question } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,8 +19,6 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils";
 
-import type { Answer, Question } from "./types.ts";
-
 interface QuestionCardProps {
   question: Question | null;
   selectedAnswers: number[];
@@ -30,7 +29,7 @@ interface QuestionCardProps {
   restartQuiz?: () => void;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({
+export function QuestionCard({
   question,
   selectedAnswers,
   setSelectedAnswers,
@@ -38,7 +37,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   nextAction,
   isQuizFinished,
   restartQuiz,
-}) => {
+}: QuestionCardProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only process number keys 1-9
@@ -221,6 +220,4 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default QuestionCard;
+}

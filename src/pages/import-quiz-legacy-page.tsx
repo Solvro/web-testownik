@@ -8,18 +8,17 @@ import {
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
+import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal";
+import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-// Migrated from react-bootstrap to shadcn/ui + Tailwind
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
 
-import AppContext from "../app-context";
-import { uuidv4 } from "../components/quiz/helpers/uuid.ts";
-import QuizPreviewModal from "../components/quiz/quiz-preview-modal";
-import type { Question, Quiz } from "../components/quiz/types.ts";
+import { AppContext } from "../app-context";
 
 const trueFalseStrings = {
   prawda: true,
@@ -30,7 +29,7 @@ const trueFalseStrings = {
   false: false,
 };
 
-const ImportQuizLegacyPage: React.FC = () => {
+export function ImportQuizLegacyPage() {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -599,6 +598,4 @@ const ImportQuizLegacyPage: React.FC = () => {
       />
     </>
   );
-};
-
-export default ImportQuizLegacyPage;
+}

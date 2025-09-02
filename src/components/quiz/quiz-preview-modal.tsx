@@ -1,7 +1,9 @@
 import { CheckIcon, XIcon } from "lucide-react";
-import React from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 
+import { ShareQuizModal } from "@/components/quiz/ShareQuizModal/share-quiz-modal.tsx";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,9 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 
-import ShareQuizModal from "./ShareQuizModal/share-quiz-modal.tsx";
-import type { Quiz } from "./types";
-
 interface QuizPreviewModalProps {
   show: boolean;
   onHide: () => void;
@@ -24,13 +23,13 @@ interface QuizPreviewModalProps {
   type: "created" | "imported"; // To distinguish between created and imported quizzes
 }
 
-const QuizPreviewModal: React.FC<QuizPreviewModalProps> = ({
+export function QuizPreviewModal({
   show,
   onHide,
   quiz,
   type,
-}) => {
-  const [showShareModal, setShowShareModal] = React.useState(false);
+}: QuizPreviewModalProps) {
+  const [showShareModal, setShowShareModal] = useState(false);
 
   if (!quiz) {
     return null;
@@ -168,6 +167,4 @@ const QuizPreviewModal: React.FC<QuizPreviewModalProps> = ({
       />
     </>
   );
-};
-
-export default QuizPreviewModal;
+}

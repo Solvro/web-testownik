@@ -1,7 +1,8 @@
 import { AxiosError } from "axios";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +15,6 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
 
-import AppContext from "../../app-context.tsx";
-
 interface ReportQuestionIssueModalProps {
   show: boolean;
   onClose: () => void;
@@ -23,12 +22,12 @@ interface ReportQuestionIssueModalProps {
   questionId?: number;
 }
 
-const ReportQuestionIssueModal: React.FC<ReportQuestionIssueModalProps> = ({
+export function ReportQuestionIssueModal({
   show,
   onClose,
   quizId,
   questionId,
-}) => {
+}: ReportQuestionIssueModalProps) {
   const appContext = useContext(AppContext);
   const [issue, setIssue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,6 +138,4 @@ const ReportQuestionIssueModal: React.FC<ReportQuestionIssueModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ReportQuestionIssueModal;
+}

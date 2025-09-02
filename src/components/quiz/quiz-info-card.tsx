@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.tsx";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import AppContext from "../../app-context.tsx";
 import type { Quiz, Reoccurrence } from "./types.ts";
 
 interface QuizInfoCardProps {
@@ -60,7 +60,7 @@ const getProgressColor = (percentage: number): string => {
   return "rgb(25, 135, 84)";
 };
 
-function QuizInfoCard({
+export function QuizInfoCard({
   quiz,
   correctAnswersCount,
   wrongAnswersCount,
@@ -175,5 +175,3 @@ function QuizInfoCard({
     </Card>
   );
 }
-
-export default QuizInfoCard;

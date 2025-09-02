@@ -5,8 +5,7 @@ import React from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button.tsx";
-
-import { SERVER_URL } from "../config.ts";
+import { SERVER_URL } from "@/config.ts";
 
 interface AlertData {
   id: string;
@@ -19,7 +18,7 @@ interface AlertData {
   updated_at: string;
 }
 
-function Alerts(): React.JSX.Element {
+export function Alerts(): React.JSX.Element | null {
   const [alerts, setAlerts] = React.useState<AlertData[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
     const stored = localStorage.getItem("dismissedAlerts");
@@ -98,5 +97,3 @@ function Alerts(): React.JSX.Element {
     </div>
   );
 }
-
-export default Alerts;

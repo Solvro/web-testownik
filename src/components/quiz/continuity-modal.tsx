@@ -1,7 +1,6 @@
 import { Icon } from "@iconify/react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { CrownIcon } from "lucide-react";
-import React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,10 +29,10 @@ interface ContinuityModalProps {
   isContinuityHost: boolean;
 }
 
-const ContinuityModal: React.FC<ContinuityModalProps> = ({
+export function ContinuityModal({
   peerConnections,
   isContinuityHost,
-}) => {
+}: ContinuityModalProps) {
   const connectedDevices = peerConnections
     .map((c) => c.metadata?.device ?? "Unknown")
     .join(", ")
@@ -90,7 +89,7 @@ const ContinuityModal: React.FC<ContinuityModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 const getIconByDevice = (type: string) => {
   switch (type) {
@@ -108,5 +107,3 @@ const getIconByDevice = (type: string) => {
     }
   }
 };
-
-export default ContinuityModal;

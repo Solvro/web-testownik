@@ -3,9 +3,10 @@ import axios from "axios";
 import React, { createContext, useCallback, useState } from "react";
 
 import { SERVER_URL } from "./config";
-import requestInterceptor from "./interceptors/request-interceptor.ts";
-import responseInterceptor, {
+import { requestInterceptor } from "./interceptors/request-interceptor.ts";
+import {
   RefreshTokenExpiredError,
+  responseInterceptor,
 } from "./interceptors/response-interceptor.ts";
 
 interface UserData {
@@ -38,7 +39,7 @@ axiosInstance.interceptors.response.use(
   responseInterceptor,
 );
 
-const AppContext = createContext<AppContextType>({
+export const AppContext = createContext<AppContextType>({
   isAuthenticated: false,
   setAuthenticated: () => {},
   isGuest: false,
@@ -47,7 +48,7 @@ const AppContext = createContext<AppContextType>({
   fetchUserData: async () => {},
 });
 
-function AppContextProvider({
+export function AppContextProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -104,7 +105,3 @@ function AppContextProvider({
 
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
 }
-
-export { AppContextProvider };
-
-export default AppContext;

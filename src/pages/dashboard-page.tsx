@@ -1,12 +1,12 @@
 import React from "react";
 
-import AboutCard from "../components/dashboard/about-card.tsx";
-import ImportButtonsCard from "../components/dashboard/import-buttons-card.tsx";
-import LastUsedCard from "../components/dashboard/last-used-card.tsx";
-import QuestionQuizCard from "../components/dashboard/question-quiz-card.tsx";
-import SearchCard from "../components/dashboard/search-card.tsx";
+import { AboutCard } from "@/components/dashboard/about-card.tsx";
+import { ImportButtonsCard } from "@/components/dashboard/import-buttons-card.tsx";
+import { LastUsedCard } from "@/components/dashboard/last-used-card.tsx";
+import { QuestionQuizCard } from "@/components/dashboard/question-quiz-card.tsx";
+import { SearchCard } from "@/components/dashboard/search-card.tsx";
 
-function DashboardPage(): React.JSX.Element {
+export function DashboardPage(): React.JSX.Element {
   document.title = "Testownik Solvro";
 
   return (
@@ -19,5 +19,3 @@ function DashboardPage(): React.JSX.Element {
     </div>
   );
 }
-
-export default DashboardPage;

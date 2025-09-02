@@ -13,24 +13,23 @@ import ReactPlayer from "react-player";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
-import Loader from "@/components/loader.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { Loader } from "@/components/loader.tsx";
+import { LoginPrompt } from "@/components/login-prompt.tsx";
+import { ContinuityModal } from "@/components/quiz/continuity-modal.tsx";
+import {
+  getDeviceFriendlyName,
+  getDeviceType,
+} from "@/components/quiz/helpers/device-utils.ts";
+import { QuestionCard } from "@/components/quiz/question-card.tsx";
+import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons.tsx";
+import { QuizInfoCard } from "@/components/quiz/quiz-info-card.tsx";
+import { ReportQuestionIssueModal } from "@/components/quiz/report-question-issue-modal.tsx";
+import type { Question, Quiz, Reoccurrence } from "@/components/quiz/types.ts";
 import { AspectRatio } from "@/components/ui/aspect-ratio.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils.ts";
-
-import AppContext from "../app-context.tsx";
-import LoginPrompt from "../components/login-prompt.tsx";
-import ContinuityModal from "../components/quiz/continuity-modal.tsx";
-import {
-  getDeviceFriendlyName,
-  getDeviceType,
-} from "../components/quiz/helpers/device-utils.ts";
-import QuestionCard from "../components/quiz/question-card.tsx";
-import QuizActionButtons from "../components/quiz/quiz-action-buttons.tsx";
-import QuizInfoCard from "../components/quiz/quiz-info-card.tsx";
-import ReportQuestionIssueModal from "../components/quiz/report-question-issue-modal.tsx";
-import type { Question, Quiz, Reoccurrence } from "../components/quiz/types.ts";
 
 interface UserSettings {
   sync_progress: boolean;
@@ -53,7 +52,7 @@ const PING_TIMEOUT = 15_000; // 15s
 /**
  * Main QuizPage component
  */
-function QuizPage(): React.JSX.Element {
+export function QuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
@@ -1284,5 +1283,3 @@ function QuizPage(): React.JSX.Element {
     </>
   );
 }
-
-export default QuizPage;

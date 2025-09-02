@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
+import { AppContext } from "@/app-context.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
@@ -8,14 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils.ts";
 
-import AppContext from "../../app-context.tsx";
-
 interface Quiz {
   id: number;
   title: string;
 }
 
-function LastUsedCard({
+export function LastUsedCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
@@ -128,5 +127,3 @@ function LastUsedCard({
     </Card>
   );
 }
-
-export default LastUsedCard;

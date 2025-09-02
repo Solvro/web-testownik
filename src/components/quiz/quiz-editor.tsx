@@ -1,6 +1,9 @@
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
+import { QuestionForm } from "@/components/quiz/question-form.tsx";
+import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,10 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-
-import { validateQuiz } from "./helpers/quiz-validation";
-import QuestionForm from "./question-form";
-import type { Question, Quiz } from "./types";
 
 export interface QuizEditorResult {
   title: string;
@@ -47,13 +46,13 @@ const sanitizeQuestions = (questions: Question[], advancedMode: boolean) =>
     })),
   }));
 
-const QuizEditor: React.FC<QuizEditorProps> = ({
+export function QuizEditor({
   mode,
   initialQuiz,
   onSave,
   onSaveAndClose,
   saving = false,
-}) => {
+}: QuizEditorProps) {
   const [title, setTitle] = useState(initialQuiz?.title || "");
   const [description, setDescription] = useState(
     initialQuiz?.description || "",
@@ -130,7 +129,6 @@ const QuizEditor: React.FC<QuizEditorProps> = ({
     // Scroll after render
     requestAnimationFrame(() => {
       const element = document.getElementById(`question-${newId}`);
-      console.log("Scrolling to", element);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
         const textarea = element.querySelector("textarea");
@@ -360,6 +358,4 @@ const QuizEditor: React.FC<QuizEditorProps> = ({
       </div>
     </Card>
   );
-};
-
-export default QuizEditor;
+}

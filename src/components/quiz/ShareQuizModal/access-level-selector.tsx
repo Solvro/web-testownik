@@ -1,5 +1,4 @@
 import { EarthIcon, Link2Icon, LockIcon, UsersIcon } from "lucide-react";
-import React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,10 +14,10 @@ const levels = [
   { value: 3, label: "Publiczny", icon: EarthIcon },
 ];
 
-const AccessLevelSelector: React.FC<AccessLevelSelectorProps> = ({
+export function AccessLevelSelector({
   value,
   onChange,
-}) => {
+}: AccessLevelSelectorProps) {
   return (
     <div className="flex w-full min-w-0 flex-wrap items-stretch justify-center gap-2 py-1 sm:gap-2 md:flex-nowrap">
       {levels.map((level) => {
@@ -73,6 +72,4 @@ const AccessLevelSelector: React.FC<AccessLevelSelectorProps> = ({
       })}
     </div>
   );
-};
-
-export default AccessLevelSelector;
+}

@@ -1,13 +1,12 @@
 import { AlertCircleIcon } from "lucide-react";
-import React, { useContext } from "react";
+import { useContext } from "react";
 
+import { AppContext } from "@/app-context.tsx";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch";
-
-import AppContext from "../../app-context.tsx";
 
 interface SettingsData {
   sync_progress: boolean;
@@ -20,10 +19,7 @@ interface SettingsFormProps {
   onSettingChange: (name: keyof SettingsData, value: boolean | number) => void;
 }
 
-const SettingsForm: React.FC<SettingsFormProps> = ({
-  settings,
-  onSettingChange,
-}) => {
+export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const appContext = useContext(AppContext);
 
   return (
@@ -105,6 +101,4 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
       </Card>
     </>
   );
-};
-
-export default SettingsForm;
+}

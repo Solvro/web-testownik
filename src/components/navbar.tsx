@@ -16,8 +16,10 @@ import React, {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import AppLogo from "@/components/app-logo.tsx";
+import { AppContext } from "@/app-context.tsx";
+import { AppLogo } from "@/components/app-logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { ReportBugModal } from "@/components/report-bug-modal.tsx";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -25,12 +27,9 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { SERVER_URL } from "@/config.ts";
 
-import AppContext from "../app-context.tsx";
-import { SERVER_URL } from "../config.ts";
-import ReportBugModal from "./report-bug-modal.tsx";
-
-function Navbar(): React.JSX.Element {
+export function Navbar(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -294,5 +293,3 @@ function Navbar(): React.JSX.Element {
     </nav>
   );
 }
-
-export default Navbar;
