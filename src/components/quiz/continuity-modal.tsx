@@ -1,7 +1,6 @@
 import { Icon } from "@iconify/react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { CrownIcon } from "lucide-react";
-import type { PeerConnectOption } from "peerjs";
 import React from "react";
 
 import { Button } from "@/components/ui/button";

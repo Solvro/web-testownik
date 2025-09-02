@@ -143,14 +143,14 @@ function Navbar(): React.JSX.Element {
             <>
               <Link to="/profile">
                 <Button variant="default">
-                  {localStorage.getItem("profile_picture") !== null ? (
+                  {localStorage.getItem("profile_picture") === null ? (
+                    <CircleUserRoundIcon className="size-6" />
+                  ) : (
                     <img
                       src={localStorage.getItem("profile_picture") ?? ""}
                       alt="Profilowe"
                       className="size-6 rounded-full object-cover"
                     />
-                  ) : (
-                    <CircleUserRoundIcon className="size-6" />
                   )}
                   <span>Profil</span>
                 </Button>
@@ -251,14 +251,14 @@ function Navbar(): React.JSX.Element {
               <>
                 <Link to="/profile">
                   <Button variant="default" className="flex-1">
-                    {localStorage.getItem("profile_picture") !== null ? (
+                    {localStorage.getItem("profile_picture") === null ? (
+                      <CircleUserRoundIcon className="size-6" />
+                    ) : (
                       <img
                         src={localStorage.getItem("profile_picture") ?? ""}
                         alt="Profilowe"
                         className="size-6 rounded-full object-cover"
                       />
-                    ) : (
-                      <CircleUserRoundIcon className="size-6" />
                     )}
                     <span>Profil</span>
                   </Button>

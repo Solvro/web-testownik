@@ -56,11 +56,11 @@ function ImportQuizPage(): React.JSX.Element {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file !== undefined) {
+    if (file === undefined) {
+      setFileName(null);
+    } else {
       setFileName(file.name);
       setError(null);
-    } else {
-      setFileName(null);
     }
   };
 
@@ -193,9 +193,9 @@ function ImportQuizPage(): React.JSX.Element {
         };
         const userQuizzesString = localStorage.getItem("guest_quizzes");
         const userQuizzes =
-          userQuizzesString !== null
-            ? (JSON.parse(userQuizzesString) as QuizMetadata[])
-            : [];
+          userQuizzesString === null
+            ? []
+            : (JSON.parse(userQuizzesString) as QuizMetadata[]);
         userQuizzes.push(temporaryQuiz);
         localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
         setQuiz(temporaryQuiz);

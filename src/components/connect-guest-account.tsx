@@ -33,14 +33,12 @@ interface QuizUploadResponse {
   id: string;
 }
 
-interface QuizProgress {
-  [key: string]: unknown;
-}
+type QuizProgress = Record<string, unknown>;
 
-type UserSettings = {
+interface UserSettings {
   initial_reoccurrences?: number;
   wrong_answer_reoccurrences?: number;
-};
+}
 
 const ConnectGuestAccount: React.FC = () => {
   const appContext = useContext(AppContext);
@@ -110,9 +108,9 @@ const ConnectGuestAccount: React.FC = () => {
           if (categories.progress) {
             const progressString = localStorage.getItem(`${quiz.id}_progress`);
             const progress: QuizProgress =
-              progressString !== null
-                ? (JSON.parse(progressString) as QuizProgress)
-                : {};
+              progressString === null
+                ? {}
+                : (JSON.parse(progressString) as QuizProgress);
             if (Object.keys(progress).length > 0) {
               setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
               await appContext.axiosInstance.post(
@@ -136,9 +134,9 @@ const ConnectGuestAccount: React.FC = () => {
     setMigratingText("Przenoszenie ustawień...");
     const settingsString = localStorage.getItem("settings");
     const settings: UserSettings =
-      settingsString !== null
-        ? (JSON.parse(settingsString) as UserSettings)
-        : {};
+      settingsString === null
+        ? {}
+        : (JSON.parse(settingsString) as UserSettings);
     try {
       await appContext.axiosInstance.put("/settings/", {
         initial_reoccurrences: settings.initial_reoccurrences,

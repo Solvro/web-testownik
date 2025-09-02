@@ -49,9 +49,9 @@ function ProfilePage(): React.JSX.Element {
     if (appContext.isGuest) {
       const savedSettings = localStorage.getItem("settings");
       setSettings(
-        savedSettings !== null
-          ? (JSON.parse(savedSettings) as SettingsData)
-          : settings,
+        savedSettings === null
+          ? settings
+          : (JSON.parse(savedSettings) as SettingsData),
       );
       return;
     }

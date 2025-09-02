@@ -195,9 +195,9 @@ const ImportQuizLegacyPage: React.FC = () => {
       if (appContext.isGuest) {
         const guestQuizzesString = localStorage.getItem("guest_quizzes");
         const userQuizzes: Quiz[] =
-          guestQuizzesString !== null
-            ? (JSON.parse(guestQuizzesString) as Quiz[])
-            : [];
+          guestQuizzesString === null
+            ? []
+            : (JSON.parse(guestQuizzesString) as Quiz[]);
         const temporaryQuiz = {
           ...quizData,
           id: uuidv4(),

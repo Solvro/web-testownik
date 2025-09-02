@@ -32,4 +32,4 @@ function Error404Page(): React.JSX.Element {
   );
 }
 
-export { Error404Page as default };
+export default Error404Page;

@@ -20,4 +20,4 @@ function DashboardPage(): React.JSX.Element {
   );
 }
 
-export { DashboardPage as default };
+export default DashboardPage;

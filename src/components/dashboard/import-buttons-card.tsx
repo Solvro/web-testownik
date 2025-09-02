@@ -24,4 +24,4 @@ function ImportButtonsCard({
   );
 }
 
-export { ImportButtonsCard as default };
+export default ImportButtonsCard;

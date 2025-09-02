@@ -84,9 +84,9 @@ function QuizInfoCard({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer !== undefined ? (
+        {quiz.maintainer === undefined ? null : (
           <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
-        ) : null}
+        )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="space-y-1">

@@ -23,7 +23,7 @@ function Alerts(): React.JSX.Element {
   const [alerts, setAlerts] = React.useState<AlertData[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
     const stored = localStorage.getItem("dismissedAlerts");
-    return stored !== null ? (JSON.parse(stored) as string[]) : [];
+    return stored === null ? [] : (JSON.parse(stored) as string[]);
   });
 
   const dismissAlert = (alertId: string) => {

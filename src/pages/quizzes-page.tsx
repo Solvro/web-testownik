@@ -46,9 +46,9 @@ const QuizzesPage: React.FC = () => {
       if (appContext.isGuest) {
         const guestQuizzesString = localStorage.getItem("guest_quizzes");
         setUserQuizzes(
-          guestQuizzesString !== null
-            ? (JSON.parse(guestQuizzesString) as QuizMetadata[])
-            : [],
+          guestQuizzesString === null
+            ? []
+            : (JSON.parse(guestQuizzesString) as QuizMetadata[]),
         );
 
         setLoading(false);

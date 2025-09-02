@@ -23,9 +23,9 @@ function CreateQuizPage(): React.JSX.Element {
       if (appContext.isGuest) {
         const guestQuizzesData = localStorage.getItem("guest_quizzes");
         const userQuizzes: Quiz[] =
-          guestQuizzesData !== null
-            ? (JSON.parse(guestQuizzesData) as Quiz[])
-            : [];
+          guestQuizzesData === null
+            ? []
+            : (JSON.parse(guestQuizzesData) as Quiz[]);
         const temporaryQuiz = {
           ...data,
           questions: data.questions,

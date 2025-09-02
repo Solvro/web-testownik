@@ -1285,4 +1285,4 @@ function QuizPage(): React.JSX.Element {
   );
 }
 
-export { QuizPage as default };
+export default QuizPage;
