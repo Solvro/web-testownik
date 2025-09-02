@@ -29,6 +29,7 @@ import type { Question, Quiz, Reoccurrence } from "@/components/quiz/types.ts";
 import { AspectRatio } from "@/components/ui/aspect-ratio.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { invariant } from "@/lib/invariant";
 import { cn } from "@/lib/utils.ts";
 
 interface UserSettings {
@@ -112,7 +113,7 @@ export function QuizPage(): React.JSX.Element {
 
     void (async () => {
       const quizData = await fetchQuiz();
-      if (!quizData) {
+      if (quizData == null) {
         console.error("Quiz not found or error fetching.");
         setLoading(false);
         return;
@@ -201,7 +202,7 @@ export function QuizPage(): React.JSX.Element {
     // Cleanup
     return () => {
       clearInterval(pingIntervalId);
-      if (timerRef.current) {
+      if (timerRef.current != null) {
         clearInterval(timerRef.current);
       }
       gracefullyClosePeerConnection();
@@ -211,8 +212,8 @@ export function QuizPage(): React.JSX.Element {
 
   // Whenever currentQuestion changes, we attempt to save progress
   useEffect(() => {
-    if (currentQuestion) {
-      saveProgress();
+    if (currentQuestion != null) {
+      void saveProgress();
     }
     currentQuestionRef.current = currentQuestion;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,47 +232,47 @@ export function QuizPage(): React.JSX.Element {
   }, [correctAnswersCount]);
 
   // ========== API & Local Storage Helpers ==========
-  const fetchQuiz = async (): Promise<Quiz | null> => {
+  async function fetchQuiz(): Promise<Quiz | null> {
     try {
       try {
-        const response = await appContext.axiosInstance.get(
+        invariant(typeof quizId === "string", "Quiz ID must be defined");
+        const response = await appContext.axiosInstance.get<Quiz | null>(
           `/quizzes/${quizId}/`,
         );
         if (response.status === 200) {
           return response.data;
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.info(
           "Error fetching quiz from server, falling back to local storage:",
           error,
         );
       }
       const userQuizzes = JSON.parse(
-        localStorage.getItem("guest_quizzes") || "[]",
-      );
-      const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
-      if (quiz) {
-        return quiz;
-      }
-      return null;
+        localStorage.getItem("guest_quizzes") ?? "[]",
+      ) as Quiz[];
+      return userQuizzes.find((q: Quiz) => q.id === quizId) ?? null;
     } catch (error) {
       console.error("Error fetching quiz:", error);
     }
     return null;
-  };
+  }
 
-  const fetchUserSettings = async (): Promise<UserSettings> => {
+  async function fetchUserSettings(): Promise<UserSettings> {
     try {
       if (appContext.isGuest || !appContext.isAuthenticated) {
-        return localStorage.getItem("settings")
-          ? JSON.parse(localStorage.getItem("settings")!)
-          : {
+        const settings = localStorage.getItem("settings");
+        return settings === null
+          ? {
               sync_progress: false,
               initial_reoccurrences: 1,
               wrong_answer_reoccurrences: 1,
-            };
+            }
+          : (JSON.parse(settings) as UserSettings);
       }
-      const response = await appContext.axiosInstance.get("/settings/");
+      const response =
+        await appContext.axiosInstance.get<UserSettings>("/settings/");
       if (response.status === 200) {
         localStorage.setItem("settings", JSON.stringify(response.data));
         return response.data;
@@ -279,20 +280,23 @@ export function QuizPage(): React.JSX.Element {
     } catch (error) {
       console.error("Error fetching user settings:", error);
     }
-    return localStorage.getItem("settings")
-      ? JSON.parse(localStorage.getItem("settings")!)
-      : {
+
+    const settings = localStorage.getItem("settings");
+    return settings === null
+      ? {
           sync_progress: false,
           initial_reoccurrences: 1,
           wrong_answer_reoccurrences: 1,
-        };
-  };
+        }
+      : (JSON.parse(settings) as UserSettings);
+  }
 
-  const loadProgress = async (sync: boolean): Promise<Progress | null> => {
+  async function loadProgress(sync: boolean): Promise<Progress | null> {
     // Try server if sync is enabled
     if (sync && appContext.isAuthenticated) {
       try {
-        const response = await appContext.axiosInstance.get(
+        invariant(typeof quizId === "string", "Quiz ID must be defined");
+        const response = await appContext.axiosInstance.get<Progress>(
           `/quiz/${quizId}/progress/`,
         );
         if (response.status === 200) {
@@ -307,16 +311,18 @@ export function QuizPage(): React.JSX.Element {
       }
     }
     // Fallback to local storage
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
     const stored = localStorage.getItem(`${quizId}_progress`);
-    const parsed = stored ? JSON.parse(stored) : null;
-    if (parsed) {
+    const parsed =
+      typeof stored === "string" ? (JSON.parse(stored) as Progress) : null;
+    if (parsed != null) {
       startTimeRef.current = Date.now() - parsed.study_time * 1000;
     }
     return parsed;
-  };
+  }
 
-  const saveProgress = useCallback(async () => {
-    if (!currentQuestion || isQuizFinished) {
+  async function saveProgress() {
+    if (currentQuestion == null || isQuizFinished) {
       return;
     }
 
@@ -328,6 +334,7 @@ export function QuizPage(): React.JSX.Element {
       reoccurrences,
     };
 
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
     // localStorage
     localStorage.setItem(`${quizId}_progress`, JSON.stringify(progress));
 
@@ -346,21 +353,11 @@ export function QuizPage(): React.JSX.Element {
         console.error("Error saving progress to server:", error);
       }
     }
-  }, [
-    currentQuestion,
-    correctAnswersCount,
-    wrongAnswersCount,
-    studyTime,
-    reoccurrences,
-    isQuizFinished,
-    isContinuityHost,
-    peerConnections,
-    quizId,
-    userSettings.sync_progress,
-    appContext.axiosInstance,
-  ]);
+  }
 
   const resetProgress = async () => {
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
+
     localStorage.removeItem(`${quizId}_progress`);
     if (userSettings.sync_progress) {
       try {
@@ -370,7 +367,7 @@ export function QuizPage(): React.JSX.Element {
       }
     }
     // Now re-initialize states
-    if (quiz) {
+    if (quiz !== null) {
       setQuestionChecked(false);
       setSelectedAnswers([]);
       const newReoccurrences = quiz.questions.map((q) => ({
@@ -388,14 +385,14 @@ export function QuizPage(): React.JSX.Element {
   };
 
   // ========== Version Checking ==========
-  const handleVersionUpdate = (fetchedVersion: number) => {
+  function handleVersionUpdate(fetchedVersion: number) {
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
     const localVersionKey = `${quizId}_version`;
     const storedVersionString = localStorage.getItem(localVersionKey);
-    const storedVersion = storedVersionString
-      ? Number.parseInt(storedVersionString)
-      : 0;
+    const storedVersion =
+      storedVersionString === null ? 0 : Number.parseInt(storedVersionString);
 
-    if (!storedVersionString) {
+    if (storedVersionString !== null) {
       // No local version set yet
       localStorage.setItem(localVersionKey, fetchedVersion.toString());
     } else if (fetchedVersion !== storedVersion) {
@@ -403,13 +400,10 @@ export function QuizPage(): React.JSX.Element {
       console.warn("Quiz został zaktualizowany!");
       localStorage.setItem(localVersionKey, fetchedVersion.toString());
     }
-  };
+  }
 
   // ========== Question Handling ==========
-  const applyLoadedProgress = (
-    quizData: Quiz,
-    savedProgress: Progress,
-  ): void => {
+  function applyLoadedProgress(quizData: Quiz, savedProgress: Progress): void {
     // Reconstruct
     setCorrectAnswersCount(savedProgress.correct_answers_count);
     setWrongAnswersCount(savedProgress.wrong_answers_count);
@@ -440,7 +434,10 @@ export function QuizPage(): React.JSX.Element {
     const questionFromProgress = quizData.questions.find(
       (q) => q.id === savedProgress.current_question,
     );
-    if (questionFromProgress) {
+    if (questionFromProgress === undefined) {
+      // The saved current question no longer exists, pick a new random one
+      pickRandomQuestion(quizData, finalReoccurrences);
+    } else {
       const sortedAnswers = [...questionFromProgress.answers].sort(
         () => Math.random() - 0.5,
       );
@@ -452,16 +449,10 @@ export function QuizPage(): React.JSX.Element {
       if (!anyWithReoccurrences) {
         setIsQuizFinished(true);
       }
-    } else {
-      // The saved current question no longer exists, pick a new random one
-      pickRandomQuestion(quizData, finalReoccurrences);
     }
-  };
+  }
 
-  const pickRandomQuestion = (
-    quizData: Quiz,
-    recurrencesData: Reoccurrence[],
-  ) => {
+  function pickRandomQuestion(quizData: Quiz, recurrencesData: Reoccurrence[]) {
     // Filter reoccurrences to only include questions that actually exist in the quiz
     const validQuestionIds = new Set(quizData.questions.map((q) => q.id));
     const validReoccurrences = recurrencesData.filter(
@@ -470,7 +461,7 @@ export function QuizPage(): React.JSX.Element {
 
     if (validReoccurrences.length === 0) {
       setIsQuizFinished(true);
-      saveProgress();
+      void saveProgress();
       setCurrentQuestion(null);
       return null;
     }
@@ -482,7 +473,7 @@ export function QuizPage(): React.JSX.Element {
     const questionObject = quizData.questions.find((q) => q.id === randId);
 
     // This should not happen now that we filtered, but let's be extra safe
-    if (!questionObject) {
+    if (questionObject === undefined) {
       console.error(
         "Question not found even after filtering - this should not happen",
         {
@@ -493,19 +484,19 @@ export function QuizPage(): React.JSX.Element {
       // Try to find any available question as fallback
       const anyAvailableQuestion = quizData.questions.find((q) => {
         const reoccurrence = recurrencesData.find((r) => r.id === q.id);
-        return reoccurrence && reoccurrence.reoccurrences > 0;
+        return reoccurrence !== undefined && reoccurrence.reoccurrences > 0;
       });
-      if (anyAvailableQuestion) {
+      if (anyAvailableQuestion === undefined) {
+        setCurrentQuestion(null);
+        setIsQuizFinished(true);
+        return null;
+      } else {
         const sortedAnswers = [...anyAvailableQuestion.answers].sort(
           () => Math.random() - 0.5,
         );
         setCurrentQuestion({ ...anyAvailableQuestion, answers: sortedAnswers });
         setIsQuizFinished(false);
         return { ...anyAvailableQuestion, answers: sortedAnswers };
-      } else {
-        setCurrentQuestion(null);
-        setIsQuizFinished(true);
-        return null;
       }
     }
 
@@ -515,11 +506,11 @@ export function QuizPage(): React.JSX.Element {
     setCurrentQuestion({ ...questionObject, answers: sortedAnswers });
     setIsQuizFinished(false);
     return { ...questionObject, answers: sortedAnswers };
-  };
+  }
 
   // use callback to avoid re-creating the function on every render
   const checkAnswer = (remote = false): void => {
-    if (questionChecked || !currentQuestionRef.current) {
+    if (questionChecked || currentQuestionRef.current === null) {
       return;
     }
 
@@ -570,13 +561,13 @@ export function QuizPage(): React.JSX.Element {
   };
 
   const nextQuestion = (): void => {
-    if (!quiz) {
+    if (quiz === null) {
       return;
     }
     const newQuestion = pickRandomQuestion(quiz, reoccurrences);
     setSelectedAnswers([]);
     setQuestionChecked(false);
-    if (newQuestion) {
+    if (newQuestion !== null) {
       sendToAllPeers({
         type: "question_update",
         question: newQuestion,
@@ -594,17 +585,17 @@ export function QuizPage(): React.JSX.Element {
   };
 
   // ========== Study time ==========
-  const updateStudyTime = useCallback(() => {
+  function updateStudyTime() {
     const diff = Math.floor((Date.now() - startTimeRef.current) / 1000);
     setStudyTime(diff);
-  }, []);
+  }
 
   // Stop timer when quiz is finished
   useEffect(() => {
-    if (isQuizFinished && timerRef.current) {
+    if (isQuizFinished && timerRef.current !== null) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-    } else if (!isQuizFinished && !timerRef.current) {
+    } else if (!isQuizFinished && timerRef.current === null) {
       // Restart timer if quiz is resumed (e.g., after continuity reset)
       timerRef.current = window.setInterval(() => {
         updateStudyTime();
@@ -668,20 +659,20 @@ export function QuizPage(): React.JSX.Element {
   // ========== Utility Actions (copy, chatgpt, report) ==========
   const copyToClipboard = (): void => {
     try {
-      if (!currentQuestion) {
+      if (currentQuestion === null) {
         return;
       }
       const { question, answers } = currentQuestion;
       const answersText = answers
         .map(
           (answer, index) =>
-            `Odpowiedź ${index + 1}: ${answer.answer} (Poprawna: ${
+            `Odpowiedź ${(index + 1).toString()}: ${answer.answer} (Poprawna: ${
               answer.correct ? "Tak" : "Nie"
             })`,
         )
         .join("\n");
       const fullText = `${question}\n\n${answersText}`;
-      navigator.clipboard.writeText(fullText).then(() => {
+      void navigator.clipboard.writeText(fullText).then(() => {
         toast.info("Pytanie skopiowane do schowka!");
       });
     } catch (error) {
@@ -692,14 +683,14 @@ export function QuizPage(): React.JSX.Element {
 
   const openInChatGPT = () => {
     try {
-      if (!currentQuestion) {
+      if (currentQuestion === null) {
         return;
       }
       const { question, answers } = currentQuestion;
       const answersText = answers
         .map(
           (answer, index) =>
-            `Odpowiedź ${index + 1}: ${answer.answer} (Poprawna: ${
+            `Odpowiedź ${(index + 1).toString()}: ${answer.answer} (Poprawna: ${
               answer.correct ? "Tak" : "Nie"
             })`,
         )
@@ -715,8 +706,8 @@ export function QuizPage(): React.JSX.Element {
     }
   };
 
-  const reportIncorrectQuestion = async () => {
-    if (!currentQuestion) {
+  const reportIncorrectQuestion = () => {
+    if (currentQuestion === null) {
       toast.error(
         "Nie można zgłosić problemu - brak aktywnego pytania. Spróbuj odświeżyć stronę.",
       );
@@ -726,10 +717,13 @@ export function QuizPage(): React.JSX.Element {
   };
 
   const editQuestion = () => {
-    if (!currentQuestion) {
+    if (currentQuestion === null) {
       return;
     }
-    navigate(`/edit-quiz/${quizId}#question-${currentQuestion.id}`);
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
+    void navigate(
+      `/edit-quiz/${quizId}#question-${currentQuestion.id.toString()}`,
+    );
   };
 
   interface InitialSyncMessage {
@@ -765,88 +759,56 @@ export function QuizPage(): React.JSX.Element {
     | PingMessage
     | PongMessage;
 
-  const initiateContinuity = () => {
-    if (peerRef.current) {
-      console.warn("Continuity already initialized");
+  // ========== Peer Utility ==========
+  const sendToPeer = (conn: DataConnection, data: PeerMessage) => {
+    if (conn.open) {
+      void conn.send(data);
+    }
+  };
+
+  function sendToAllPeers(data: PeerMessage) {
+    for (const conn of peerConnections) {
+      sendToPeer(conn, data);
+    }
+  }
+
+  const sendToAllPeersExcept = (
+    exceptConn: DataConnection | null,
+    data: PeerMessage,
+  ) => {
+    for (const conn of peerConnections) {
+      if (conn !== exceptConn) {
+        sendToPeer(conn, data);
+      }
+    }
+  };
+
+  const initialSyncToPeer = (
+    conn: DataConnection,
+    question: Question | null,
+    questionOccurrences: Reoccurrence[],
+    startTime: number,
+    wrongAnswers: number,
+    correctAnswers: number,
+  ) => {
+    console.warn("Initial sync to peer:", conn.peer);
+    if (question === null) {
       return;
     }
 
-    const userId = localStorage.getItem("user_id");
-    if (!userId) {
-      console.warn("User ID not found, cannot create Peer.");
-      return;
-    }
+    sendToPeer(conn, {
+      type: "initial_sync",
+      startTime,
+      correctAnswersCount: correctAnswers,
+      wrongAnswersCount: wrongAnswers,
+      reoccurrences: questionOccurrences,
+    });
 
-    const baseId = `${quizId}_${userId}`.replaceAll("/", "");
-    try {
-      const hostPeer = new Peer(baseId, {
-        config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            {
-              urls: "turn:freestun.net:3478",
-              username: "free",
-              credential: "free",
-            },
-          ],
-        },
-      });
-
-      hostPeer.on("open", (id) => {
-        console.warn("Peer opened with ID:", id);
-        peerRef.current = hostPeer;
-        setIsContinuityHost(true);
-      });
-
-      hostPeer.on("error", (error) => {
-        if (error.type === "unavailable-id") {
-          console.info(
-            "Unavailable ID, becoming client and connecting to host...",
-          );
-          setIsContinuityHost(false);
-
-          const clientPeer = new Peer({
-            config: {
-              iceServers: [
-                { urls: "stun:stun.l.google.com:19302" },
-                { urls: "stun:stun1.l.google.com:19302" },
-                {
-                  urls: "turn:freestun.net:3478",
-                  username: "free",
-                  credential: "free",
-                },
-              ],
-            },
-          });
-
-          clientPeer.on("open", () => {
-            peerRef.current = clientPeer;
-            connectToPeer(clientPeer, baseId)
-              .then((conn) => {
-                toast.info("🖥️ Połączono z hostem!");
-                handlePeerConnectionAsClient(conn);
-              })
-              .catch((error) => {
-                console.error("Error connecting to host:", error);
-                toast.error("Failed to connect to the host. Please try again.");
-              });
-          });
-
-          clientPeer.on("error", (error2) => {
-            console.error("Client peer error:", error2);
-          });
-
-          clientPeer.on("connection", handlePeerConnectionAsClient);
-        } else {
-          console.error("Peer error:", error);
-        }
-      });
-
-      hostPeer.on("connection", handlePeerConnectionAsHost);
-    } catch (error) {
-      console.error("Error creating peer:", error);
-    }
+    sendToPeer(conn, {
+      type: "question_update",
+      question,
+      selectedAnswers,
+    });
   };
 
   const connectToPeer = async (thePeer: Peer, peerId: string) => {
@@ -871,114 +833,6 @@ export function QuizPage(): React.JSX.Element {
         });
         conn.on("error", reject);
       }
-    });
-  };
-
-  const handlePeerConnectionAsHost = (conn: DataConnection) => {
-    console.warn("New client connected:", conn.peer);
-    setPeerConnections((previous) => [...previous, conn]);
-
-    conn.on("open", () => {
-      const currentQuestion = currentQuestionRef.current;
-      const reoccurrences = reoccurrencesRef.current;
-      const wrongAnswersCount = wrongAnswersCountRef.current;
-      const correctAnswersCount = correctAnswersCountRef.current;
-
-      if (currentQuestion) {
-        initialSyncToPeer(
-          conn,
-          currentQuestion,
-          reoccurrences,
-          startTimeRef.current,
-          wrongAnswersCount,
-          correctAnswersCount,
-        );
-      } else {
-        console.warn("No current question available for sync.");
-      }
-    });
-
-    conn.on("data", (data) => {
-      handlePeerDataAsHost(conn, data as PeerMessage);
-    });
-
-    conn.on("error", (error) => {
-      console.error("Peer connection error:", error);
-    });
-
-    conn.on("close", () => {
-      handlePeerClose(conn);
-    });
-  };
-
-  const handlePeerDataAsHost = (conn: DataConnection, data: PeerMessage) => {
-    switch (data.type) {
-      case "question_update": {
-        // Update host state based on client's changes
-        setCurrentQuestion(data.question);
-        setQuestionChecked(false);
-        setSelectedAnswers(data.selectedAnswers);
-
-        // Relay changes to other clients
-        sendToAllPeersExcept(conn, {
-          type: "question_update",
-          question: data.question,
-          selectedAnswers: data.selectedAnswers,
-        });
-        break;
-      }
-      case "answer_checked": {
-        checkAnswer(true);
-        // Relay answer checked to other clients
-        sendToAllPeersExcept(conn, { type: "answer_checked" });
-        break;
-      }
-      case "ping": {
-        sendToPeer(conn, { type: "pong" });
-        break;
-      }
-      default: {
-        console.warn("Unknown message type from client:", data.type);
-      }
-    }
-  };
-
-  const handlePeerClose = (conn: DataConnection) => {
-    console.warn("Peer disconnected:", conn.peer);
-    setPeerConnections((previous) =>
-      previous.filter((c) => c.open && c.peer !== conn.peer),
-    );
-    toast.info("🖥️ Klient rozłączony.");
-
-    // If we are not the host, try to reconnect or if the host is no longer available then we can attempt to become the host
-    if (!isContinuityHost && peerRef.current && !peerRef.current.destroyed) {
-      connectToPeer(peerRef.current, conn.peer)
-        .then((newConn) => {
-          handlePeerConnectionAsClient(newConn);
-        })
-        .catch(() => {
-          console.warn(
-            "Host is no longer available, attempting to become the host...",
-          );
-          initiateContinuity();
-        });
-    } else {
-      console.warn("Host disconnected, attempting to become the host...");
-      initiateContinuity();
-    }
-  };
-
-  const handlePeerConnectionAsClient = (conn: DataConnection) => {
-    conn.on("data", (data) => {
-      handlePeerDataAsClient(data as PeerMessage);
-    });
-
-    conn.on("error", (error) => {
-      console.error("Peer connection error:", error);
-    });
-
-    conn.on("close", () => {
-      handlePeerClose(conn);
     });
   };
 
@@ -1008,14 +862,211 @@ export function QuizPage(): React.JSX.Element {
         sendToPeer(peerConnections[0], { type: "pong" });
         break;
       }
-
+      case "pong":
       default: {
         console.warn("Unknown message type from host:", data.type);
       }
     }
   };
 
-  const pingPeers = () => {
+  const handlePeerDataAsHost = (conn: DataConnection, data: PeerMessage) => {
+    switch (data.type) {
+      case "question_update": {
+        // Update host state based on client's changes
+        setCurrentQuestion(data.question);
+        setQuestionChecked(false);
+        setSelectedAnswers(data.selectedAnswers);
+
+        // Relay changes to other clients
+        sendToAllPeersExcept(conn, {
+          type: "question_update",
+          question: data.question,
+          selectedAnswers: data.selectedAnswers,
+        });
+        break;
+      }
+      case "answer_checked": {
+        checkAnswer(true);
+        // Relay answer checked to other clients
+        sendToAllPeersExcept(conn, { type: "answer_checked" });
+        break;
+      }
+      case "ping": {
+        sendToPeer(conn, { type: "pong" });
+        break;
+      }
+      case "initial_sync":
+      case "pong":
+      default: {
+        console.warn("Unknown message type from client:", data.type);
+      }
+    }
+  };
+
+  const handlePeerConnectionAsHost = (conn: DataConnection) => {
+    console.warn("New client connected:", conn.peer);
+    setPeerConnections((previous) => [...previous, conn]);
+
+    conn.on("open", () => {
+      const activeQuestion = currentQuestionRef.current;
+
+      if (activeQuestion === null) {
+        console.warn("No current question available for sync.");
+      } else {
+        initialSyncToPeer(
+          conn,
+          activeQuestion,
+          reoccurrencesRef.current,
+          startTimeRef.current,
+          wrongAnswersCountRef.current,
+          correctAnswersCountRef.current,
+        );
+      }
+    });
+
+    conn.on("data", (data) => {
+      handlePeerDataAsHost(conn, data as PeerMessage);
+    });
+
+    conn.on("error", (error) => {
+      console.error("Peer connection error:", error);
+    });
+
+    conn.on("close", () => {
+      handlePeerClose(conn);
+    });
+  };
+
+  const handlePeerConnectionAsClient = (conn: DataConnection) => {
+    conn.on("data", (data) => {
+      handlePeerDataAsClient(data as PeerMessage);
+    });
+
+    conn.on("error", (error) => {
+      console.error("Peer connection error:", error);
+    });
+
+    conn.on("close", () => {
+      handlePeerClose(conn);
+    });
+  };
+
+  function initiateContinuity() {
+    if (peerRef.current !== null) {
+      console.warn("Continuity already initialized");
+      return;
+    }
+
+    const userId = localStorage.getItem("user_id");
+    if (userId === null) {
+      console.warn("User ID not found, cannot create Peer.");
+      return;
+    }
+
+    invariant(typeof quizId === "string", "Quiz ID must be defined");
+    const baseId = `${quizId}_${userId}`.replaceAll("/", "");
+    try {
+      const hostPeer = new Peer(baseId, {
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+            {
+              urls: "turn:freestun.net:3478",
+              username: "free",
+              credential: "free",
+            },
+          ],
+        },
+      });
+
+      hostPeer.on("open", (id) => {
+        console.warn("Peer opened with ID:", id);
+        peerRef.current = hostPeer;
+        setIsContinuityHost(true);
+      });
+
+      hostPeer.on("error", (error) => {
+        if (error.type === "unavailable-id") {
+          // eslint-disable-next-line no-console
+          console.info(
+            "Unavailable ID, becoming client and connecting to host...",
+          );
+          setIsContinuityHost(false);
+
+          const clientPeer = new Peer({
+            config: {
+              iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" },
+                {
+                  urls: "turn:freestun.net:3478",
+                  username: "free",
+                  credential: "free",
+                },
+              ],
+            },
+          });
+
+          clientPeer.on("open", () => {
+            peerRef.current = clientPeer;
+            connectToPeer(clientPeer, baseId)
+              .then((conn) => {
+                toast.info("🖥️ Połączono z hostem!");
+                handlePeerConnectionAsClient(conn);
+              })
+              .catch((nestedError: unknown) => {
+                console.error("Error connecting to host:", nestedError);
+                toast.error("Failed to connect to the host. Please try again.");
+              });
+          });
+
+          clientPeer.on("error", (error2) => {
+            console.error("Client peer error:", error2);
+          });
+
+          clientPeer.on("connection", handlePeerConnectionAsClient);
+        } else {
+          console.error("Peer error:", error);
+        }
+      });
+
+      hostPeer.on("connection", handlePeerConnectionAsHost);
+    } catch (error) {
+      console.error("Error creating peer:", error);
+    }
+  }
+
+  function handlePeerClose(conn: DataConnection) {
+    console.warn("Peer disconnected:", conn.peer);
+    setPeerConnections((previous) =>
+      previous.filter((c) => c.open && c.peer !== conn.peer),
+    );
+    toast.info("🖥️ Klient rozłączony.");
+
+    // If we are not the host, try to reconnect or if the host is no longer available then we can attempt to become the host
+    if (
+      !isContinuityHost &&
+      peerRef.current !== null &&
+      !peerRef.current.destroyed
+    ) {
+      connectToPeer(peerRef.current, conn.peer)
+        .then((newConn) => {
+          handlePeerConnectionAsClient(newConn);
+        })
+        .catch(() => {
+          console.warn(
+            "Host is no longer available, attempting to become the host...",
+          );
+          initiateContinuity();
+        });
+    } else {
+      console.warn("Host disconnected, attempting to become the host...");
+      initiateContinuity();
+    }
+  }
+
+  function pingPeers() {
     for (const conn of peerConnections) {
       if (conn.open) {
         sendToPeer(conn, { type: "ping" });
@@ -1031,65 +1082,13 @@ export function QuizPage(): React.JSX.Element {
         });
       }
     }
-  };
+  }
 
-  const gracefullyClosePeerConnection = () => {
-    if (peerRef.current && !peerRef.current.destroyed) {
+  function gracefullyClosePeerConnection() {
+    if (peerRef.current !== null && !peerRef.current.destroyed) {
       peerRef.current.destroy();
     }
-  };
-
-  // ========== Peer Utility ==========
-  const sendToPeer = (conn: DataConnection, data: PeerMessage) => {
-    if (conn.open) {
-      conn.send(data);
-    }
-  };
-
-  const sendToAllPeers = (data: PeerMessage) => {
-    for (const conn of peerConnections) {
-      sendToPeer(conn, data);
-    }
-  };
-
-  const sendToAllPeersExcept = (
-    exceptConn: DataConnection | null,
-    data: PeerMessage,
-  ) => {
-    for (const conn of peerConnections) {
-      if (conn !== exceptConn) {
-        sendToPeer(conn, data);
-      }
-    }
-  };
-
-  const initialSyncToPeer = (
-    conn: DataConnection,
-    currentQuestion: Question,
-    reoccurrences: Reoccurrence[],
-    startTime: number,
-    wrongAnswersCount: number,
-    correctAnswersCount: number,
-  ) => {
-    console.warn("Initial sync to peer:", conn.peer);
-    if (!currentQuestion) {
-      return;
-    }
-
-    sendToPeer(conn, {
-      type: "initial_sync",
-      startTime,
-      correctAnswersCount,
-      wrongAnswersCount,
-      reoccurrences,
-    });
-
-    sendToPeer(conn, {
-      type: "question_update",
-      question: currentQuestion,
-      selectedAnswers,
-    });
-  };
+  }
 
   // ========== Render ==========
   if (loading) {
@@ -1105,7 +1104,7 @@ export function QuizPage(): React.JSX.Element {
     );
   }
 
-  if (!quiz) {
+  if (quiz === null) {
     if (!appContext.isAuthenticated && !appContext.isGuest) {
       return <LoginPrompt />;
     }
@@ -1178,7 +1177,7 @@ export function QuizPage(): React.JSX.Element {
             selectedAnswers={selectedAnswers}
             setSelectedAnswers={(newSelected) => {
               // If question is not multiple, unselect everything except the new
-              if (currentQuestion && !currentQuestion.multiple) {
+              if (currentQuestion !== null && !currentQuestion.multiple) {
                 setSelectedAnswers(
                   newSelected.length > 0 ? [newSelected[0]] : [],
                 );
@@ -1193,7 +1192,7 @@ export function QuizPage(): React.JSX.Element {
               } else {
                 setSelectedAnswers(newSelected);
                 // If multiple, broadcast each toggle
-                if (currentQuestion) {
+                if (currentQuestion !== null) {
                   const last = newSelected.at(-1);
                   if (last !== undefined) {
                     sendToAllPeers({
@@ -1234,10 +1233,10 @@ export function QuizPage(): React.JSX.Element {
               setShowBrainrot(!showBrainrot);
             }}
             isMaintainer={
-              quiz.can_edit ||
+              (quiz.can_edit ?? false) ||
               quiz.maintainer?.id === localStorage.getItem("user_id")
             }
-            disabled={isQuizFinished || !currentQuestion}
+            disabled={isQuizFinished || currentQuestion == null}
           />
         </div>
         {showBrainrot ? (
@@ -1270,7 +1269,7 @@ export function QuizPage(): React.JSX.Element {
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
       />
-      {currentQuestion ? (
+      {currentQuestion == null ? null : (
         <ReportQuestionIssueModal
           show={showReportModal}
           onClose={() => {
@@ -1279,7 +1278,7 @@ export function QuizPage(): React.JSX.Element {
           quizId={quiz.id}
           questionId={currentQuestion.id}
         />
-      ) : null}
+      )}
     </>
   );
 }

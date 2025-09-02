@@ -88,6 +88,7 @@ export function QuizzesPage() {
   const handleDeleteQuiz = (quiz: QuizMetadata) => {
     // Ask for confirmation  and then delete the quiz
     if (
+      // eslint-disable-next-line no-alert
       window.confirm(
         "Czy na pewno chcesz usunąć ten quiz?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tego quizu.",
       )

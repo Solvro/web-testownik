@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { CrownIcon } from "lucide-react";
+import type { DataConnection } from "peerjs";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +20,8 @@ interface DeviceMetadata {
   type: string;
 }
 
-interface PeerConnectionWithMetadata {
-  metadata?: DeviceMetadata;
-  [key: string]: unknown;
+interface PeerConnectionWithMetadata extends DataConnection {
+  metadata: DeviceMetadata;
 }
 
 interface ContinuityModalProps {
@@ -51,6 +51,8 @@ export function ContinuityModal({
   isContinuityHost,
 }: ContinuityModalProps) {
   const connectedDevices = peerConnections
+    // not sure if that's neccesary
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     .map((c) => c.metadata?.device ?? "Unknown")
     .join(", ")
     .replace(/,([^,]*)$/, " i$1");
