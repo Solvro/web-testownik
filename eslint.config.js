@@ -9,5 +9,15 @@ export default await solvro({
         specialLink: ["to"],
       },
     ],
+    "@typescript-eslint/no-restricted-imports": [
+      "off",
+      {
+        paths: [
+          {
+            name: "axios",
+          },
+        ],
+      },
+    ],
   },
 });

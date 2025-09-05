@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.tsx";
@@ -11,42 +11,35 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
 
-interface ReportQuestionIssueModalProps {
-  show: boolean;
-  onClose: () => void;
+interface ReportQuestionIssueDialogProps {
+  children: React.ReactNode;
   quizId?: string;
   questionId?: number;
 }
 
-export function ReportQuestionIssueModal({
-  show,
-  onClose,
+export function ReportQuestionIssueDialog({
+  children,
   quizId,
   questionId,
-}: ReportQuestionIssueModalProps) {
+}: ReportQuestionIssueDialogProps) {
   const appContext = useContext(AppContext);
   const [issue, setIssue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (quizId == null) {
-      console.error("Quiz ID is not set in ReportQuestionIssueModal");
-      onClose();
-      return;
-    }
-    if (questionId == null) {
-      console.error("Question ID is not set in ReportQuestionIssueModal");
-      onClose();
-    }
-  }, [questionId, quizId, onClose]);
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!issue.trim()) {
       toast.error("Nie podano opisu błędu, zgłoszenie nie zostało wysłane.");
+      return;
+    }
+
+    if (quizId == null || questionId == null) {
+      toast.error("Brak ID quizu lub pytania, zgłoszenie nie zostało wysłane.");
       return;
     }
 
@@ -69,9 +62,9 @@ export function ReportQuestionIssueModal({
         setIssue("");
       } else {
         toast.error(
-          `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${
-            response.data
-          }`,
+          `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${JSON.stringify(
+            response.data,
+          )}`,
         );
       }
     } catch (error) {
@@ -90,19 +83,13 @@ export function ReportQuestionIssueModal({
       }
     } finally {
       setIsSubmitting(false);
-      onClose();
+      setOpen(false);
     }
   };
 
   return (
-    <Dialog
-      open={show}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Zgłoś problem z pytaniem</DialogTitle>
@@ -116,16 +103,11 @@ export function ReportQuestionIssueModal({
             onChange={(event_) => {
               setIssue(event_.target.value);
             }}
-            onKeyDown={(e) => {
-              if (e.key !== "Escape") {
-                e.stopPropagation();
-              }
-            }}
             placeholder="Opisz co jest nie tak z tym pytaniem..."
           />
         </div>
         <DialogFooter>
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant="outline">Anuluj</Button>
           </DialogClose>
           <Button
