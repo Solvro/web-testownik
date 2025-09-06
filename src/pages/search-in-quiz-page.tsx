@@ -1,10 +1,10 @@
 import { distance } from "fastest-levenshtein";
 import { AlertCircleIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 
 import { AppContext } from "@/app-context.tsx";
-import type { Question, Quiz } from "@/components/quiz/types.ts";
+import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ const highlightMatch = (text: string, q: string): React.ReactNode => {
     return parts.map((part, index) =>
       regex.test(part) ? (
         <span
-          key={index}
+          key={`highlight-${index.toString()}`}
           className="rounded bg-yellow-200 px-0.5 dark:bg-yellow-400/30"
         >
           {part}
@@ -42,7 +42,6 @@ export function SearchInQuizPage(): React.JSX.Element {
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [query, setQuery] = useState<string>("");
-  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +57,6 @@ export function SearchInQuizPage(): React.JSX.Element {
         if (response.status === 200) {
           const data = response.data as Quiz;
           setQuiz(data);
-          setFilteredQuestions(data.questions);
         } else {
           setError("Nie udało się załadować quizu.");
         }
@@ -72,10 +70,9 @@ export function SearchInQuizPage(): React.JSX.Element {
     void fetchQuiz();
   }, [quizId, appContext.axiosInstance]);
 
-  useEffect(() => {
+  const filteredQuestions = useMemo(() => {
     if (quiz == null || !query.trim()) {
-      setFilteredQuestions(quiz?.questions ?? []);
-      return;
+      return quiz?.questions ?? [];
     }
 
     const lowerCaseQuery = query.toLowerCase().trim();
@@ -84,7 +81,7 @@ export function SearchInQuizPage(): React.JSX.Element {
       .filter((word) => word.length > 1);
     const typoToleranceThreshold = 3;
 
-    const filtered = quiz.questions
+    return quiz.questions
       .map((question) => {
         const questionLower = question.question.toLowerCase();
         const questionWords = questionLower
@@ -168,8 +165,6 @@ export function SearchInQuizPage(): React.JSX.Element {
               question.wordMatchCount >= 3)), // Or at least 2 words match
       )
       .sort((a, b) => a.relevance - b.relevance);
-
-    setFilteredQuestions(filtered);
   }, [query, quiz]);
 
   if (loading) {
@@ -223,7 +218,7 @@ export function SearchInQuizPage(): React.JSX.Element {
                 <ul className="space-y-1 text-sm">
                   {q.answers.map((answer, index) => (
                     <li
-                      key={index}
+                      key={`answer-${index.toString()}`}
                       className={
                         answer.correct
                           ? "font-medium text-green-600 dark:text-green-400"

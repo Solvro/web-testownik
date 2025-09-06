@@ -4,6 +4,11 @@ import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.tsx";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
+import { cn, getInitials } from "@/lib/utils.ts";
 
 interface UserData {
   id: string;
@@ -46,6 +52,11 @@ export function ProfileDetails({
   const [showModal, setShowModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
 
+  useEffect(() => {
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
+    setSelectedPhoto(userData?.photo ?? "");
+  }, [userData?.photo]);
+
   const handleOpenModal = () => {
     setShowModal(true);
   };
@@ -66,11 +77,11 @@ export function ProfileDetails({
         document
           .querySelector("#profile-pic")
           ?.setAttribute("src", selectedPhoto);
-        if (userData) {
+        if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Error saving photo:", error);
         toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
       });
@@ -80,45 +91,41 @@ export function ProfileDetails({
     appContext.axiosInstance
       .patch("/user/", { hide_profile: hide })
       .then(() => {
-        if (userData) {
+        if (userData !== null) {
           setUserData({ ...userData, hide_profile: hide });
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Error saving photo:", error);
         toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
       });
   };
 
-  useEffect(() => {
-    setSelectedPhoto(userData?.photo || "");
-  }, [userData?.photo]);
-
   const avatarOptions = [
-    userData?.photo_url,
+    userData?.photo_url ?? "",
     encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name}`,
+      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"}`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name} 2`,
+      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"} 2`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name} 3`,
+      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"} 3`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/dylan/svg?seed=${userData?.full_name}`,
+      `https://api.dicebear.com/9.x/dylan/svg?seed=${userData?.full_name ?? "default"}`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name}`,
+      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name ?? "default"}`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name} 2`,
+      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name ?? "default"} 2`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/shapes/svg?seed=${userData?.full_name}`,
+      `https://api.dicebear.com/9.x/shapes/svg?seed=${userData?.full_name ?? "default"}`,
     ),
     encodeURI(
-      `https://api.dicebear.com/9.x/initials/svg?seed=${userData?.full_name}`,
+      `https://api.dicebear.com/9.x/initials/svg?seed=${userData?.full_name ?? "default"}`,
     ),
   ];
 
@@ -159,11 +166,12 @@ export function ProfileDetails({
       ) : (
         <CardContent className="flex flex-col items-center space-y-4 text-center">
           <div className="relative">
-            <img
-              src={userData?.photo}
-              alt="Profilowe"
-              className="h-24 w-24 rounded-full object-cover"
-            />
+            <Avatar className="size-24">
+              <AvatarImage src={userData?.photo} />
+              <AvatarFallback className="text-3xl" delayMs={600}>
+                {getInitials(userData?.full_name ?? "")}
+              </AvatarFallback>
+            </Avatar>
             <button
               onClick={handleOpenModal}
               className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
@@ -246,27 +254,43 @@ export function ProfileDetails({
           </DialogHeader>
           <div className="flex flex-wrap justify-center gap-4">
             {avatarOptions.map((url, index) => (
-              <img
-                key={`avatar-option-${index.toString()}`}
-                src={url}
-                alt={`Avatar ${index.toString()}`}
-                className={`h-20 w-20 cursor-pointer rounded-full object-cover ring-2 ${selectedPhoto === url ? "ring-primary shadow-lg" : "ring-transparent"}`}
+              <Button
+                key={`avatar-select-${index.toString()}`}
+                variant="ghost"
+                className={cn(
+                  "size-20 rounded-full p-0 ring-2 transition-all hover:shadow-xl",
+                  selectedPhoto === url
+                    ? "ring-primary shadow-lg"
+                    : "ring-transparent",
+                )}
                 onClick={() => {
-                  setSelectedPhoto(url ?? "");
+                  setSelectedPhoto(url);
                 }}
-              />
+              >
+                <img
+                  key={`avatar-option-${index.toString()}`}
+                  src={url}
+                  alt={`Avatar ${index.toString()}`}
+                  className="size-20 rounded-full object-cover"
+                />
+              </Button>
             ))}
             {!avatarOptions.includes(selectedPhoto) && selectedPhoto ? (
-              <img
-                src={selectedPhoto}
-                alt="Avatar"
-                className="ring-primary h-20 w-20 cursor-pointer rounded-full object-cover shadow-lg ring-2"
+              <Button
+                variant="ghost"
+                className="ring-primary size-20 rounded-full p-0 shadow-lg ring-2 transition-all hover:shadow-xl"
                 onClick={() =>
                   toast(
                     "To zdjęcie nie jest już dostępne. Po zmianie na inne nie będzie możliwości powrotu.",
                   )
                 }
-              />
+              >
+                <img
+                  src={selectedPhoto}
+                  alt="Avatar"
+                  className="ring-primary h-20 w-20 cursor-pointer rounded-full object-cover shadow-lg ring-2"
+                />
+              </Button>
             ) : null}
           </div>
           <DialogFooter className="flex justify-end gap-2">

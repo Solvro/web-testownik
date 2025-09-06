@@ -2,9 +2,14 @@ import React from "react";
 
 import { Loader } from "@/components/loader.tsx";
 import type { Group, User } from "@/components/quiz/ShareQuizModal/types.ts";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
 import { PopoverContent } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 interface SearchResultsPopoverProps {
   searchResults: (User | Group)[];
@@ -50,11 +55,14 @@ export function SearchResultsPopover({
                   handleAddEntity(result);
                 }}
               >
-                <img
-                  src={result.photo}
-                  alt="avatar"
-                  className="size-8 rounded-full"
-                />
+                <Avatar>
+                  <AvatarImage src={result.photo} />
+                  <AvatarFallback delayMs={600}>
+                    {getInitials(
+                      "full_name" in result ? result.full_name : result.name,
+                    )}
+                  </AvatarFallback>
+                </Avatar>
                 {"full_name" in result ? result.full_name : result.name}
               </button>
             ))

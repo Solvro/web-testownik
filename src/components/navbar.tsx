@@ -20,6 +20,11 @@ import { AppContext } from "@/app-context.tsx";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { ReportBugModal } from "@/components/report-bug-modal.tsx";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -58,7 +63,7 @@ export function Navbar(): React.JSX.Element {
 
       await appContext.fetchUserData();
     }
-  }, [accessToken, refreshToken, queryParameters, navigate]);
+  }, [accessToken, refreshToken, queryParameters, navigate, appContext]);
 
   useEffect(() => {
     void handleLogin();
@@ -102,7 +107,9 @@ export function Navbar(): React.JSX.Element {
                   }}
                   asChild
                 >
-                  <Link to="#">Zgłoś błąd</Link>
+                  <Button variant="ghost" className="font-normal">
+                    Zgłoś błąd
+                  </Button>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               {localStorage.getItem("is_staff") === "true" && (
@@ -145,11 +152,14 @@ export function Navbar(): React.JSX.Element {
                   {localStorage.getItem("profile_picture") === null ? (
                     <CircleUserRoundIcon className="size-6" />
                   ) : (
-                    <img
-                      src={localStorage.getItem("profile_picture") ?? ""}
-                      alt="Profilowe"
-                      className="size-6 rounded-full object-cover"
-                    />
+                    <Avatar className="size-6">
+                      <AvatarImage
+                        src={localStorage.getItem("profile_picture") ?? ""}
+                      />
+                      <AvatarFallback delayMs={600} className="bg-transparent">
+                        <CircleUserRoundIcon className="size-6" />
+                      </AvatarFallback>
+                    </Avatar>
                   )}
                   <span>Profil</span>
                 </Button>
@@ -212,15 +222,15 @@ export function Navbar(): React.JSX.Element {
           >
             Oceny
           </Link>
-          <Link
-            to="#"
+          <Button
+            variant="ghost"
             onClick={() => {
               setShowReportModal(true);
             }}
-            className="text-muted-foreground hover:text-foreground text-left transition-colors"
+            className="text-muted-foreground hover:text-foreground h-auto justify-start p-0 text-left text-base font-normal transition-colors"
           >
             Zgłoś błąd
-          </Link>
+          </Button>
           {localStorage.getItem("is_staff") === "true" && (
             <a
               href={`${SERVER_URL}/admin/`}
@@ -253,11 +263,17 @@ export function Navbar(): React.JSX.Element {
                     {localStorage.getItem("profile_picture") === null ? (
                       <CircleUserRoundIcon className="size-6" />
                     ) : (
-                      <img
-                        src={localStorage.getItem("profile_picture") ?? ""}
-                        alt="Profilowe"
-                        className="size-6 rounded-full object-cover"
-                      />
+                      <Avatar className="size-6">
+                        <AvatarImage
+                          src={localStorage.getItem("profile_picture") ?? ""}
+                        />
+                        <AvatarFallback
+                          delayMs={600}
+                          className="bg-transparent"
+                        >
+                          <CircleUserRoundIcon className="size-6" />
+                        </AvatarFallback>
+                      </Avatar>
                     )}
                     <span>Profil</span>
                   </Button>

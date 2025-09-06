@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router";
+import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.tsx";
 import { ProfileDetails } from "@/components/profile/profile-details.tsx";
@@ -30,53 +31,28 @@ export function ProfilePage(): React.JSX.Element {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>("account");
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [settings, setSettings] = useState<SettingsData>({
-    sync_progress: false,
-    initial_reoccurrences: 1,
-    wrong_answer_reoccurrences: 1,
-  });
-
-  useEffect(() => {
-    // Set page title
-    document.title = "Profil - Testownik Solvro";
-
-    if (location.hash) {
-      handleTabSelect(location.hash.slice(1));
-      window.history.replaceState(null, "", location.pathname);
-    }
-
+  const [settings, setSettings] = useState<SettingsData>(() => {
     if (appContext.isGuest) {
       const savedSettings = localStorage.getItem("settings");
-      setSettings(
-        savedSettings === null
-          ? settings
-          : (JSON.parse(savedSettings) as SettingsData),
-      );
-      return;
+      if (savedSettings != null && savedSettings.trim() !== "") {
+        try {
+          return JSON.parse(savedSettings) as SettingsData;
+        } catch {
+          // If parsing fails, use default
+        }
+      }
+      return {
+        sync_progress: false,
+        initial_reoccurrences: 1,
+        wrong_answer_reoccurrences: 1,
+      };
     }
-
-    // Fetch user data
-    appContext.axiosInstance
-      .get("/user/")
-      .then((res) => res.data)
-      .then((data: UserData) => {
-        setUserData(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-      });
-
-    // Fetch settings data
-    appContext.axiosInstance
-      .get("/settings/")
-      .then((res) => res.data)
-      .then((data: SettingsData) => {
-        setSettings(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching settings:", error);
-      });
-  }, []);
+    return {
+      sync_progress: false,
+      initial_reoccurrences: 1,
+      wrong_answer_reoccurrences: 1,
+    };
+  });
 
   const handleTabSelect = (tabKey: string) => {
     setActiveTab(tabKey);
@@ -86,6 +62,46 @@ export function ProfilePage(): React.JSX.Element {
     };
     document.title = `${titles[tabKey] || "Profil"} - Testownik Solvro`;
   };
+
+  useEffect(() => {
+    document.title = "Profil - Testownik Solvro";
+
+    if (location.hash) {
+      handleTabSelect(location.hash.slice(1));
+      window.history.replaceState(null, "", location.pathname);
+    }
+
+    if (appContext.isGuest) {
+      return;
+    }
+
+    // Fetch user data
+    appContext.axiosInstance
+      .get<UserData>("/user/")
+      .then((r) => r.data)
+      .then((data) => {
+        setUserData(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Error fetching user data:", error);
+      });
+
+    // Fetch settings data
+    appContext.axiosInstance
+      .get<SettingsData>("/settings/")
+      .then((r) => r.data)
+      .then((data) => {
+        setSettings(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Error fetching settings:", error);
+      });
+  }, [
+    appContext.axiosInstance,
+    appContext.isGuest,
+    location.hash,
+    location.pathname,
+  ]);
 
   const handleSettingChange = (
     name: keyof SettingsData,
@@ -101,11 +117,11 @@ export function ProfilePage(): React.JSX.Element {
     }
     appContext.axiosInstance
       .put("/settings/", { [name]: value })
-      .then((res) => {
-        console.log("Settings updated:", res.data);
-      })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Error updating settings:", error);
+        toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
+        setSettings(settings); // Revert to previous settings on error
+        localStorage.setItem("settings", JSON.stringify(settings));
       });
   };
 
@@ -128,7 +144,7 @@ export function ProfilePage(): React.JSX.Element {
           <TabsContent value="account" className="space-y-6 md:mt-0">
             <ProfileDetails
               userData={userData}
-              loading={!userData}
+              loading={userData == null}
               setUserData={setUserData}
             />
           </TabsContent>

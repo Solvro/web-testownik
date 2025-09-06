@@ -1,12 +1,17 @@
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import React, { useEffect, useState } from "react";
 
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils.ts";
+import { cn, getInitials } from "@/lib/utils.ts";
 
 interface Contributor {
   login: string;
@@ -135,11 +140,12 @@ export function AboutCard({
                         className="flex items-center gap-2 hover:underline"
                         rel="noreferrer"
                       >
-                        <img
-                          src={contributor.avatar_url}
-                          alt={contributor.login}
-                          className="size-6 rounded-full object-cover"
-                        />
+                        <Avatar className="size-6">
+                          <AvatarImage src={contributor.avatar_url} />
+                          <AvatarFallback delayMs={600}>
+                            {getInitials(contributor.login)}
+                          </AvatarFallback>
+                        </Avatar>
                         <span className="text-muted-foreground text-sm">
                           {contributor.login}
                         </span>

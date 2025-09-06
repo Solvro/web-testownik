@@ -85,6 +85,7 @@ export function Alerts(): React.JSX.Element | null {
               {alert.title ? <AlertTitle>{alert.title}</AlertTitle> : null}
               <AlertDescription>
                 <div
+                  // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(alert.content),
                   }}

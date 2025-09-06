@@ -39,7 +39,7 @@ export function App(): React.JSX.Element {
           <Navbar />
           <Alerts />
           <Routes>
-            {((context.isAuthenticated || context.isGuest) && (
+            {context.isAuthenticated || context.isGuest ? (
               <>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
@@ -58,7 +58,7 @@ export function App(): React.JSX.Element {
                 />
                 <Route path="*" element={<Error404Page />} />
               </>
-            )) || (
+            ) : (
               <>
                 <Route path="/login-otp" element={<OTPLoginPage />} />
                 <Route path="/login-link/:token" element={<LoginLinkPage />} />

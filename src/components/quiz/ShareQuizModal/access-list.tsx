@@ -10,10 +10,15 @@ import type { Dispatch, SetStateAction } from "react";
 
 import type { Group, User } from "@/components/quiz/ShareQuizModal/types.ts";
 import type { QuizMetadata } from "@/components/quiz/types.ts";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 interface AccessListProps {
   quizMetadata: QuizMetadata;
@@ -48,7 +53,7 @@ export function AccessList({
   return (
     <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
       <div className="flex flex-col gap-2">
-        {quizMetadata.maintainer ? (
+        {quizMetadata.maintainer != null && (
           <div
             className="flex w-full items-center gap-1"
             key={`maintainer-${quizMetadata.maintainer.id}`}
@@ -59,11 +64,12 @@ export function AccessList({
               )}
             >
               <div className="flex items-center gap-2">
-                <img
-                  src={quizMetadata.maintainer.photo}
-                  alt="avatar"
-                  className="size-8 rounded-full object-cover"
-                />
+                <Avatar>
+                  <AvatarImage src={quizMetadata.maintainer.photo} />
+                  <AvatarFallback delayMs={600}>
+                    {getInitials(quizMetadata.maintainer.full_name)}
+                  </AvatarFallback>
+                </Avatar>
                 <p className="m-0 text-sm font-medium">
                   {quizMetadata.maintainer.full_name}
                 </p>
@@ -92,18 +98,19 @@ export function AccessList({
               <CrownIcon className="size-5 text-amber-500" />
             </Button>
           </div>
-        ) : null}
+        )}
 
         {/* Users with access */}
         {usersWithAccess.map((user) => (
           <div className="flex w-full items-center gap-1" key={user.id}>
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
-                <img
-                  src={user.photo}
-                  alt="avatar"
-                  className="size-8 rounded-full object-cover"
-                />
+                <Avatar>
+                  <AvatarImage src={user.photo} />
+                  <AvatarFallback delayMs={600}>
+                    {getInitials(user.full_name)}
+                  </AvatarFallback>
+                </Avatar>
                 <p className="m-0 text-sm font-medium">{user.full_name}</p>
               </div>
               <div className="flex items-center gap-2">
@@ -143,11 +150,12 @@ export function AccessList({
           <div className="flex w-full items-center gap-1" key={group.id}>
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
-                <img
-                  src={group.photo}
-                  alt="avatar"
-                  className="size-8 rounded-full"
-                />
+                <Avatar>
+                  <AvatarImage src={group.photo} />
+                  <AvatarFallback delayMs={600}>
+                    {getInitials(group.name)}
+                  </AvatarFallback>
+                </Avatar>
                 <p className="m-0 text-sm font-medium">{group.name}</p>
               </div>
               <div className="flex items-center gap-2">

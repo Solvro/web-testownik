@@ -41,11 +41,17 @@ axiosInstance.interceptors.response.use(
 
 export const AppContext = createContext<AppContextType>({
   isAuthenticated: false,
-  setAuthenticated: () => {},
+  setAuthenticated: () => {
+    // no-op
+  },
   isGuest: false,
-  setGuest: () => {},
+  setGuest: () => {
+    // no-op
+  },
   axiosInstance,
-  fetchUserData: async () => {},
+  fetchUserData: async () => {
+    // no-op
+  },
 });
 
 export function AppContextProvider({
