@@ -1,5 +1,5 @@
 // types.ts
-import { QuizMetadata } from "../types.ts";
+import type { QuizMetadata } from "../types.ts";
 
 export enum AccessLevel {
   PRIVATE = 0,
