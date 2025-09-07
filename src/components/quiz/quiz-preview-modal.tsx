@@ -134,15 +134,9 @@ export function QuizPreviewModal({
           </div>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
             <div className="grid grid-cols-3 gap-2 sm:flex">
-              <Link to={`/quiz/${id}`}>
-                <Button
-                  variant="outline"
-                  autoFocus={false}
-                  className="w-full sm:w-auto"
-                >
-                  Otwórz
-                </Button>
-              </Link>
+              <DialogClose asChild>
+                <Button variant="outline">Zamknij</Button>
+              </DialogClose>
               <Button variant="outline" onClick={handleShare}>
                 Udostępnij
               </Button>
@@ -152,9 +146,9 @@ export function QuizPreviewModal({
                 </Button>
               </Link>
             </div>
-            <DialogClose asChild>
-              <Button>Zamknij</Button>
-            </DialogClose>
+            <Link to={`/quiz/${id}`}>
+              <Button className="w-full sm:w-auto">Otwórz</Button>
+            </Link>
           </DialogFooter>
         </DialogContent>
       </Dialog>
