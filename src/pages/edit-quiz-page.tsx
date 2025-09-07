@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";

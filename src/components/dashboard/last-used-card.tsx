@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
@@ -29,9 +29,11 @@ export function LastUsedCard({
       try {
         if (appContext.isGuest) {
           const guestQuizzes = localStorage.getItem("guest_quizzes");
-          const selectedQuizzes = guestQuizzes
-            ? JSON.parse(guestQuizzes).slice(0, limit)
-            : [];
+          const parsedQuizzes =
+            guestQuizzes !== null && guestQuizzes !== ""
+              ? (JSON.parse(guestQuizzes) as Quiz[])
+              : [];
+          const selectedQuizzes = parsedQuizzes.slice(0, limit);
           if (selectedQuizzes.length < limit) {
             setFetchedAll(true);
           }

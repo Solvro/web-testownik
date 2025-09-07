@@ -1,6 +1,8 @@
-import type { AxiosInstance } from "axios";
 import axios from "axios";
-import React, { createContext, useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
+
+import type { AppContextType } from "@/app-context-type";
+import { AppContext } from "@/app-context.ts";
 
 import { SERVER_URL } from "./config";
 import { requestInterceptor } from "./interceptors/request-interceptor.ts";
@@ -13,15 +15,6 @@ interface UserData {
   photo: string;
   is_staff: string;
   id: string;
-}
-
-export interface AppContextType {
-  isAuthenticated: boolean;
-  setAuthenticated: (isAuthenticated: boolean) => void;
-  isGuest: boolean;
-  setGuest: (isGuest: boolean) => void;
-  axiosInstance: AxiosInstance;
-  fetchUserData: () => Promise<void>;
 }
 
 const axiosInstance = axios.create({
@@ -38,21 +31,6 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   responseInterceptor,
 );
-
-export const AppContext = createContext<AppContextType>({
-  isAuthenticated: false,
-  setAuthenticated: () => {
-    // no-op
-  },
-  isGuest: false,
-  setGuest: () => {
-    // no-op
-  },
-  axiosInstance,
-  fetchUserData: async () => {
-    // no-op
-  },
-});
 
 export function AppContextProvider({
   children,

@@ -13,6 +13,55 @@ import type {
 import { useQuizContinuity } from "./use-quiz-continuity";
 import { useStudyTimer } from "./use-study-timer";
 
+function validateProgress(object: unknown): object is Progress {
+  return (
+    object != null &&
+    typeof object === "object" &&
+    "current_question" in object &&
+    typeof object.current_question === "number" &&
+    "correct_answers_count" in object &&
+    typeof object.correct_answers_count === "number" &&
+    "wrong_answers_count" in object &&
+    typeof object.wrong_answers_count === "number" &&
+    "study_time" in object &&
+    typeof object.study_time === "number" &&
+    "reoccurrences" in object &&
+    Array.isArray(object.reoccurrences)
+  );
+}
+
+function validateSettings(object: unknown): object is UserSettings {
+  return (
+    object != null &&
+    typeof object === "object" &&
+    "sync_progress" in object &&
+    typeof object.sync_progress === "boolean" &&
+    "initial_reoccurrences" in object &&
+    typeof object.initial_reoccurrences === "number" &&
+    "wrong_answer_reoccurrences" in object &&
+    typeof object.wrong_answer_reoccurrences === "number"
+  );
+}
+
+function loadFromLocalStorage<T>(
+  key: string,
+  validator: (object: unknown) => object is T,
+): T | null {
+  const stored = localStorage.getItem(key);
+  if (stored == null || stored === "") {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (validator(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // Ignore invalid JSON or validation failure
+  }
+  return null;
+}
+
 export function useQuizLogic({
   quizId,
   appContext,
@@ -139,10 +188,9 @@ export function useQuizLogic({
   async function fetchSettings(): Promise<UserSettings> {
     try {
       if (appContext.isGuest || !appContext.isAuthenticated) {
-        const settingsText = localStorage.getItem("settings");
-        if (settingsText != null && settingsText !== "") {
-          const parsed: unknown = JSON.parse(settingsText);
-          return parsed as UserSettings; // trusted local structure
+        const parsed = loadFromLocalStorage("settings", validateSettings);
+        if (parsed != null) {
+          return parsed;
         }
         return {
           sync_progress: false,
@@ -159,10 +207,9 @@ export function useQuizLogic({
     } catch {
       /* ignore */
     }
-    const s = localStorage.getItem("settings");
-    if (s != null && s !== "") {
-      const parsed: unknown = JSON.parse(s);
-      return parsed as UserSettings;
+    const parsed = loadFromLocalStorage("settings", validateSettings);
+    if (parsed != null) {
+      return parsed;
     }
     return {
       sync_progress: false,
@@ -188,11 +235,7 @@ export function useQuizLogic({
         /* fallback */
       }
     }
-    const stored = localStorage.getItem(`${quizId}_progress`);
-    let parsed: Progress | null = null;
-    if (stored != null && stored !== "") {
-      parsed = JSON.parse(stored) as Progress;
-    }
+    const parsed = loadFromLocalStorage(`${quizId}_progress`, validateProgress);
     if (parsed != null) {
       setTimer(parsed.study_time, Date.now() - parsed.study_time * 1000);
     }

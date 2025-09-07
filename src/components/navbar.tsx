@@ -16,7 +16,7 @@ import React, {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { ReportBugModal } from "@/components/report-bug-modal.tsx";
@@ -140,7 +140,7 @@ export function Navbar(): React.JSX.Element {
                 </Button>
               </Link>
               <Link to="/connect-account">
-                <Button variant="secondary" className="p-2">
+                <Button variant="outline" size="icon" className="p-2">
                   <CloudUploadIcon />
                 </Button>
               </Link>
@@ -251,7 +251,7 @@ export function Navbar(): React.JSX.Element {
                   </Button>
                 </Link>
                 <Link to="/connect-account">
-                  <Button variant="secondary" className="p-2">
+                  <Button variant="outline" size="icon" className="p-2">
                     <CloudUploadIcon />
                   </Button>
                 </Link>

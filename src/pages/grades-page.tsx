@@ -3,7 +3,7 @@ import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

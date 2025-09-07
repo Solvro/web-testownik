@@ -1,6 +1,6 @@
 import type { DataConnection } from "peerjs";
 
-import type { AppContextType } from "@/app-context.tsx";
+import type { AppContextType } from "@/app-context-type";
 
 import type { Question, Quiz, Reoccurrence } from "../types";
 

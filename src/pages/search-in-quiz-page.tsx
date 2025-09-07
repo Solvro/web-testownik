@@ -3,7 +3,7 @@ import { AlertCircleIcon } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

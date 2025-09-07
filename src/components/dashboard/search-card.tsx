@@ -2,7 +2,7 @@ import { SearchIcon } from "lucide-react";
 import React, { useContext, useState } from "react";
 import { Link } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,7 +40,10 @@ export function SearchCard({
       setLoading(true);
       if (appContext.isGuest) {
         const guestQuizzes = localStorage.getItem("guest_quizzes");
-        const data = guestQuizzes ? JSON.parse(guestQuizzes) : [];
+        const data =
+          guestQuizzes !== null && guestQuizzes !== ""
+            ? (JSON.parse(guestQuizzes) as SearchResult[])
+            : [];
         const filteredData = data.filter((quiz: SearchResult) =>
           quiz.title.toLowerCase().includes(searchQuery.toLowerCase()),
         );
@@ -52,7 +55,9 @@ export function SearchCard({
         `/search-quizzes/?query=${encodeURIComponent(searchQuery)}`,
       );
 
-      const data = Object.values(response.data).flat() as SearchResult[];
+      const data = Object.values(
+        response.data as Record<string, unknown>,
+      ).flat() as SearchResult[];
       const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>
         data.find((item) => item.id === id),
       ) as SearchResult[];

@@ -4,7 +4,7 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { AccessLevelSelector } from "@/components/quiz/ShareQuizModal/access-level-selector.tsx";
 import { AccessList } from "@/components/quiz/ShareQuizModal/access-list.tsx";
@@ -47,9 +47,7 @@ export function ShareQuizModal({
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
 
-  const [accessLevel, setAccessLevel] = useState<AccessLevel>(
-    AccessLevel.PRIVATE,
-  );
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
   const [loading, setLoading] = useState(false);
 
   const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<
@@ -64,15 +62,17 @@ export function ShareQuizModal({
   const [groupsWithAccess, setGroupsWithAccess] = useState<
     (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
   >([]);
-  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(false);
-  const [allowAnonymous, setAllowAnonymous] = useState(false);
+  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(
+    quiz.is_anonymous,
+  );
+  const [allowAnonymous, setAllowAnonymous] = useState(quiz.allow_anonymous);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-  const fetchAccess = async () => {
+  const fetchAccess = useCallback(async () => {
     if (appContext.isGuest) {
       setUsersWithAccess([]);
       setInitialUsersWithAccess([]);
@@ -119,9 +119,9 @@ export function ShareQuizModal({
       setGroupsWithAccess([]);
       setInitialGroupsWithAccess([]);
     }
-  };
+  }, [appContext.axiosInstance, appContext.isGuest, quiz.id]);
 
-  const fetchUserGroups = async () => {
+  const fetchUserGroups = useCallback(async () => {
     try {
       const response = await appContext.axiosInstance.get("/study-groups/");
       const data = (response.data as Group[]).map((group: Group) => ({
@@ -134,9 +134,9 @@ export function ShareQuizModal({
     } catch {
       setUserGroups([]);
     }
-  };
+  }, [appContext.axiosInstance]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (appContext.isGuest) {
       return;
     }
@@ -148,15 +148,11 @@ export function ShareQuizModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [appContext.isGuest, fetchUserGroups, fetchAccess]);
 
   useEffect(() => {
-    setAccessLevel(quiz.visibility);
-    setIsMaintainerAnonymous(quiz.is_anonymous);
-    setAllowAnonymous(quiz.allow_anonymous);
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void fetchData();
+  }, [fetchData]);
 
   const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event_.target.value);

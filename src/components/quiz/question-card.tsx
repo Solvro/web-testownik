@@ -1,7 +1,7 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
 import { RotateCcwIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -38,12 +38,41 @@ export function QuestionCard({
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
+  const handleAnswerClick = useCallback(
+    (index: number) => {
+      if (questionChecked) {
+        return;
+      }
+      const newSelectedAnswers = [...selectedAnswers];
+      const answerIndex = newSelectedAnswers.indexOf(index);
+
+      if (question?.multiple === true) {
+        if (answerIndex === -1) {
+          newSelectedAnswers.push(index); // Add answer if not already selected
+        } else {
+          newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
+        }
+      } else {
+        // If the answer is already selected, remove it
+        if (answerIndex !== -1) {
+          newSelectedAnswers.splice(answerIndex, 1);
+        }
+        if (answerIndex === -1) {
+          newSelectedAnswers.splice(0, newSelectedAnswers.length, index);
+        }
+      }
+
+      setSelectedAnswers(newSelectedAnswers);
+    },
+    [questionChecked, selectedAnswers, setSelectedAnswers, question],
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
         const answerIndex = Number.parseInt(event.key, 10) - 1;
-        if (question && answerIndex < question.answers.length) {
+        if (question !== null && answerIndex < question.answers.length) {
           handleAnswerClick(answerIndex);
         }
       }
@@ -53,7 +82,7 @@ export function QuestionCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [question, selectedAnswers]);
+  }, [question, selectedAnswers, handleAnswerClick]);
 
   if (isQuizFinished) {
     return (
@@ -96,32 +125,6 @@ export function QuestionCard({
         return answer.correct !== selectedAnswers.includes(index);
       }).length === 0
     );
-  };
-
-  const handleAnswerClick = (index: number) => {
-    if (questionChecked) {
-      return;
-    }
-    const newSelectedAnswers = [...selectedAnswers];
-    const answerIndex = newSelectedAnswers.indexOf(index);
-
-    if (question.multiple) {
-      if (answerIndex === -1) {
-        newSelectedAnswers.push(index); // Add answer if not already selected
-      } else {
-        newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
-      }
-    } else {
-      // If the answer is already selected, remove it
-      if (answerIndex !== -1) {
-        newSelectedAnswers.splice(answerIndex, 1);
-      }
-      if (answerIndex === -1) {
-        newSelectedAnswers.splice(0, newSelectedAnswers.length, index);
-      }
-    }
-
-    setSelectedAnswers(newSelectedAnswers);
   };
 
   return (

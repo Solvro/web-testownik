@@ -1,13 +1,14 @@
 import "katex/dist/katex.min.css";
 import { LoaderCircleIcon } from "lucide-react";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { Link } from "react-router";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,17 +22,9 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { cn } from "@/lib/utils.ts";
 
-interface Answer {
-  answer: string;
-  correct: boolean;
-}
-
-interface Question {
-  id: number;
-  question: string;
+interface ExtendedQuestion extends Question {
   quiz_title: string;
-  quiz_id: number;
-  answers: Answer[];
+  quiz_id: string;
 }
 
 export function QuestionQuizCard({
@@ -39,25 +32,24 @@ export function QuestionQuizCard({
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
-  const [questionData, setQuestionData] = useState<Question | null>(null);
+  const [questionData, setQuestionData] = useState<ExtendedQuestion | null>(
+    null,
+  );
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [enableEdit, setEnableEdit] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    void fetchQuestion();
-  }, []);
-
-  const fetchQuestion = async () => {
+  const fetchQuestion = useCallback(async () => {
     setLoading(true);
     try {
       if (appContext.isGuest) {
-        const guestQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
+        const guestQuizzes =
+          guestQuizzesString !== null && guestQuizzesString !== ""
+            ? (JSON.parse(guestQuizzesString) as Quiz[])
+            : [];
         if (guestQuizzes.length === 0) {
-          setQuestionData(null);
           throw new Error("No questions available");
         }
         const randomQuiz =
@@ -66,19 +58,25 @@ export function QuestionQuizCard({
           randomQuiz.questions[
             Math.floor(Math.random() * randomQuiz.questions.length)
           ];
-        setQuestionData(randomQuestion);
+        setQuestionData({
+          ...randomQuestion,
+          quiz_title: randomQuiz.title,
+          quiz_id: randomQuiz.id,
+        });
         setSelectedAnswers([]);
         setEnableEdit(true);
         setResult(null);
         setLoading(false);
         return;
       }
-      const response = await appContext.axiosInstance.get("/random-question/");
-      if (!response.data) {
-        setQuestionData(null);
+      const response =
+        await appContext.axiosInstance.get<ExtendedQuestion>(
+          "/random-question/",
+        );
+      if (response.status !== 200) {
         throw new Error("No questions available");
       }
-      const data: Question = response.data;
+      const data = response.data;
       setQuestionData(data);
       setSelectedAnswers([]);
       setEnableEdit(true);
@@ -88,7 +86,11 @@ export function QuestionQuizCard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [appContext]);
+
+  useEffect(() => {
+    void fetchQuestion();
+  }, [fetchQuestion]);
 
   const toggleAnswer = (index: number) => {
     if (!enableEdit) {
@@ -102,7 +104,7 @@ export function QuestionQuizCard({
   };
 
   const checkAnswers = () => {
-    if (!questionData) {
+    if (questionData === null) {
       return;
     }
 
@@ -119,7 +121,7 @@ export function QuestionQuizCard({
     setEnableEdit(false);
   };
 
-  if (!questionData) {
+  if (questionData === null) {
     if (loading) {
       return (
         <Card
@@ -163,6 +165,7 @@ export function QuestionQuizCard({
           <iframe
             src="https://pointerpointer.com"
             className="h-full w-full rounded-lg"
+            title="Pointer Pointer Game"
           ></iframe>
         </CardContent>
       </Card>
@@ -193,7 +196,7 @@ export function QuestionQuizCard({
             </ScrollArea>
             <CardDescription>
               <Link
-                to={`/quiz/${String(questionData.quiz_id)}`}
+                to={`/quiz/${questionData.quiz_id}`}
                 className="text-muted-foreground hover:text-foreground block text-xs transition-colors"
               >
                 {questionData.quiz_title}
@@ -204,7 +207,7 @@ export function QuestionQuizCard({
             <div className="grid gap-2">
               {questionData.answers.map((answer, index) => (
                 <button
-                  key={index}
+                  key={answer.answer}
                   onClick={() => {
                     toggleAnswer(index);
                   }}
@@ -226,7 +229,7 @@ export function QuestionQuizCard({
         </div>
       </ScrollArea>
       <CardFooter className="flex flex-col items-start gap-2">
-        {result ? (
+        {result !== null && result !== "" ? (
           <p
             className={cn(
               "mt-3 text-sm font-medium",

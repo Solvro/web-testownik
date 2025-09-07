@@ -1,7 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { AppContextProvider } from "./app-context.tsx";
+import { AppContextProvider } from "@/app-context-provider";
+
 import { App } from "./app.tsx";
 import "./styles/index.css";
 

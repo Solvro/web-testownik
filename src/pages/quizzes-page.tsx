@@ -7,7 +7,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { ShareQuizModal } from "@/components/quiz/ShareQuizModal/share-quiz-modal.tsx";
 import type { SharedQuiz } from "@/components/quiz/ShareQuizModal/types.ts";

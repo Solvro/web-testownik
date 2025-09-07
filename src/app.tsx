@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router";
 
+import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { ToastContainer } from "@/components/toast-container.tsx";
 
-import { AppContext } from "./app-context.tsx";
 import { Alerts } from "./components/alerts.tsx";
 import { ConnectGuestAccount } from "./components/connect-guest-account.tsx";
 import { LoginPrompt } from "./components/login-prompt.tsx";

@@ -5,7 +5,7 @@ import ReactPlayer from "react-player";
 import { Link, useParams } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader";
 import { LoginPrompt } from "@/components/login-prompt";
 import { ContinuityModal } from "@/components/quiz/continuity-modal";

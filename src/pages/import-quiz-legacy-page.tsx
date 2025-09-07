@@ -8,6 +8,7 @@ import {
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { AppContext } from "@/app-context.ts";
 import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal";
 import type { Question, Quiz } from "@/components/quiz/types.ts";
@@ -17,8 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
-
-import { AppContext } from "../app-context";
 
 const trueFalseStrings = {
   prawda: true,

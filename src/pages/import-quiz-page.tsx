@@ -3,7 +3,7 @@ import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
 import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";

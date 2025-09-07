@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { PrivacyModal } from "@/components/privacy-modal.tsx";
 import type { Quiz } from "@/components/quiz/types.ts";
@@ -66,21 +66,32 @@ export function ConnectGuestAccount() {
   });
 
   // Guest quizzes state
-  const [guestQuizzes, setGuestQuizzes] = useState<Quiz[]>([]);
-  const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
+  const guestQuizzes: Quiz[] = (() => {
+    const quizzesString = localStorage.getItem("guest_quizzes");
+    if (quizzesString !== null) {
+      try {
+        return JSON.parse(quizzesString) as Quiz[];
+      } catch (error_) {
+        console.error("Error parsing guest_quizzes", error_);
+        return [];
+      }
+    }
+    return [];
+  })();
 
-  useEffect(() => {
+  const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>(() => {
     const quizzesString = localStorage.getItem("guest_quizzes");
     if (quizzesString !== null) {
       try {
         const quizzes = JSON.parse(quizzesString) as Quiz[];
-        setGuestQuizzes(quizzes);
-        setSelectedQuizIds(quizzes.map((quiz) => quiz.id));
+        return quizzes.map((quiz) => quiz.id);
       } catch (error_) {
         console.error("Error parsing guest_quizzes", error_);
+        return [];
       }
     }
-  }, []);
+    return [];
+  });
 
   const handleLogout = async () => {
     localStorage.removeItem("access_token");
@@ -154,7 +165,7 @@ export function ConnectGuestAccount() {
   const executeMigration = async () => {
     setMigrating(true);
     try {
-      if (selectedQuizIds.length > 0) {
+      if (categories.quizzes && selectedQuizIds.length > 0) {
         await uploadQuizzes(selectedQuizIds);
       }
       if (categories.settings) {
@@ -345,7 +356,7 @@ export function ConnectGuestAccount() {
                     disabled={
                       categories.quizzes && selectedQuizIds.length === 0
                         ? guestQuizzes.length > 0
-                        : null
+                        : false
                     }
                   >
                     Rozpocznij migrację
@@ -428,14 +439,14 @@ export function ConnectGuestAccount() {
             <div className="grid gap-2">
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location.href}`}
                 >
                   Zaloguj się z USOS
                 </a>
               </Button>
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login?jwt=true&redirect=${document.location}`}
+                  href={`${SERVER_URL}/login?jwt=true&redirect=${document.location.href}`}
                 >
                   Zaloguj się z Solvro Auth
                 </a>

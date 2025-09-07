@@ -9,7 +9,7 @@ import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
 import type { Question, Quiz } from "@/components/quiz/types";
 import { Button } from "@/components/ui/button";

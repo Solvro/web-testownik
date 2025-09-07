@@ -1,7 +1,7 @@
 import PropagateLoader from "react-spinners/PropagateLoader";
 import type { LoaderSizeProps } from "react-spinners/helpers/props";
 
-import { useTheme } from "@/components/theme-provider.tsx";
+import { useTheme } from "@/components/use-theme";
 
 export function Loader(props: LoaderSizeProps) {
   let { theme } = useTheme();

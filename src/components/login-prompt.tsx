@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Link, useLocation } from "react-router";
 
-import { AppContext } from "@/app-context.tsx";
+import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { Loader } from "@/components/loader.tsx";
 import { PrivacyModal } from "@/components/privacy-modal.tsx";
@@ -30,12 +30,15 @@ export function LoginPrompt(): React.JSX.Element {
   const signInAsGuest = () => {
     appContext.setGuest(true);
     setShowGuestModal(false);
+    const settings = localStorage.getItem("settings");
+    const parsedSettings =
+      settings !== null && settings !== ""
+        ? (JSON.parse(settings) as Record<string, unknown>)
+        : {};
     localStorage.setItem(
       "settings",
       JSON.stringify({
-        ...(localStorage.getItem("settings")
-          ? JSON.parse(localStorage.getItem("settings")!)
-          : {}),
+        ...parsedSettings,
         sync_progress: false,
       }),
     );
@@ -44,7 +47,7 @@ export function LoginPrompt(): React.JSX.Element {
   return (
     <div className="flex justify-center">
       <Card className="w-full max-w-xl min-w-1/2 pb-2">
-        {accessToken && refreshToken ? (
+        {accessToken !== null && refreshToken !== null ? (
           <CardContent className="flex flex-col items-center py-10">
             <p className="mb-2 text-xl font-semibold text-green-600 dark:text-green-400">
               Zalogowano pomyślnie!
