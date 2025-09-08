@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { Loader } from "@/components/loader.tsx";
-import { PrivacyModal } from "@/components/privacy-modal.tsx";
+import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +19,8 @@ import { SERVER_URL } from "@/config.ts";
 
 export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const location = useLocation();
   const queryParameters = new URLSearchParams(location.search);
   const accessToken = queryParameters.get("access_token");
@@ -29,7 +29,7 @@ export function LoginPrompt(): React.JSX.Element {
 
   const signInAsGuest = () => {
     appContext.setGuest(true);
-    setShowGuestModal(false);
+    setShowGuestDialog(false);
     const settings = localStorage.getItem("settings");
     const parsedSettings =
       settings !== null && settings !== ""
@@ -139,7 +139,7 @@ export function LoginPrompt(): React.JSX.Element {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    setShowGuestModal(true);
+                    setShowGuestDialog(true);
                   }}
                 >
                   Kontynuuj jako gość
@@ -150,7 +150,7 @@ export function LoginPrompt(): React.JSX.Element {
                   variant="link"
                   className="text-muted-foreground text-xs hover:underline"
                   onClick={() => {
-                    setShowPrivacyModal(true);
+                    setShowPrivacyDialog(true);
                   }}
                 >
                   Jak wykorzystujemy Twoje dane?
@@ -160,17 +160,17 @@ export function LoginPrompt(): React.JSX.Element {
           </>
         )}
       </Card>
-      <PrivacyModal
-        show={showPrivacyModal}
-        onHide={() => {
-          setShowPrivacyModal(false);
+      <PrivacyDialog
+        open={showPrivacyDialog}
+        onOpenChange={(open) => {
+          setShowPrivacyDialog(open);
         }}
       />
       <Dialog
-        open={showGuestModal}
+        open={showGuestDialog}
         onOpenChange={(open) => {
           if (!open) {
-            setShowGuestModal(false);
+            setShowGuestDialog(false);
           }
         }}
       >
@@ -197,7 +197,7 @@ export function LoginPrompt(): React.JSX.Element {
             <Button
               variant="outline"
               onClick={() => {
-                setShowGuestModal(false);
+                setShowGuestDialog(false);
               }}
             >
               Anuluj

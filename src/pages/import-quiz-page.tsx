@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { AppContext } from "@/app-context.ts";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
 import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
-import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";
+import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
 import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -317,9 +317,13 @@ export function ImportQuizPage(): React.JSX.Element {
           </div>
         </CardContent>
       </Card>
-      <QuizPreviewModal
-        show={quiz !== null}
-        onHide={async () => navigate("/")}
+      <QuizPreviewDialog
+        open={quiz !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            void navigate("/");
+          }
+        }}
         quiz={quiz}
         type="imported"
       />

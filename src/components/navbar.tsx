@@ -19,7 +19,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
-import { ReportBugModal } from "@/components/report-bug-modal.tsx";
+import { ReportBugDialog } from "@/components/report-bug-dialog.tsx";
 import {
   Avatar,
   AvatarFallback,
@@ -40,7 +40,7 @@ export function Navbar(): React.JSX.Element {
   const location = useLocation();
 
   const [expanded, setExpanded] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   const queryParameters = useMemo(
     () => new URLSearchParams(location.search),
@@ -103,7 +103,7 @@ export function Navbar(): React.JSX.Element {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   onClick={() => {
-                    setShowReportModal(true);
+                    setShowReportDialog(true);
                   }}
                   asChild
                 >
@@ -225,7 +225,7 @@ export function Navbar(): React.JSX.Element {
           <Button
             variant="ghost"
             onClick={() => {
-              setShowReportModal(true);
+              setShowReportDialog(true);
             }}
             className="text-muted-foreground hover:text-foreground h-auto justify-start p-0 text-left text-base font-normal transition-colors"
           >
@@ -300,10 +300,10 @@ export function Navbar(): React.JSX.Element {
           </div>
         </div>
       ) : null}
-      <ReportBugModal
-        show={showReportModal}
-        onHide={() => {
-          setShowReportModal(false);
+      <ReportBugDialog
+        open={showReportDialog}
+        onOpenChange={(open) => {
+          setShowReportDialog(open);
         }}
       />
     </nav>

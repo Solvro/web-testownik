@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Loader } from "@/components/loader.tsx";
-import type { Group, User } from "@/components/quiz/ShareQuizModal/types.ts";
+import type { Group, User } from "@/components/quiz/share-quiz-dialog/types.ts";
 import {
   Avatar,
   AvatarFallback,

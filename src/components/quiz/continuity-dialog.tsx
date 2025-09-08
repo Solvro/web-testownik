@@ -24,7 +24,7 @@ interface PeerConnectionWithMetadata extends DataConnection {
   metadata: DeviceMetadata;
 }
 
-interface ContinuityModalProps {
+interface ContinuityDialogProps {
   peerConnections: PeerConnectionWithMetadata[];
   isContinuityHost: boolean;
 }
@@ -46,10 +46,10 @@ const getIconByDevice = (type: string) => {
   }
 };
 
-export function ContinuityModal({
+export function ContinuityDialog({
   peerConnections,
   isContinuityHost,
-}: ContinuityModalProps) {
+}: ContinuityDialogProps) {
   const connectedDevices = peerConnections
     // not sure if that's neccesary
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

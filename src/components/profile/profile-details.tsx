@@ -49,7 +49,7 @@ export function ProfileDetails({
 }: ProfileDetailsProps) {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
 
   useEffect(() => {
@@ -57,16 +57,16 @@ export function ProfileDetails({
     setSelectedPhoto(userData?.photo ?? "");
   }, [userData?.photo]);
 
-  const handleOpenModal = () => {
-    setShowModal(true);
+  const handleOpenDialog = () => {
+    setShowDialog(true);
   };
-  const handleCloseModal = () => {
+  const handleCloseDialog = () => {
     setSelectedPhoto(userData?.photo ?? "");
-    setShowModal(false);
+    setShowDialog(false);
   };
 
   const handleSavePhoto = () => {
-    handleCloseModal();
+    handleCloseDialog();
     appContext.axiosInstance
       .patch("/user/", {
         overriden_photo_url:
@@ -173,7 +173,7 @@ export function ProfileDetails({
               </AvatarFallback>
             </Avatar>
             <button
-              onClick={handleOpenModal}
+              onClick={handleOpenDialog}
               className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
             >
               <PencilIcon className="size-4" />
@@ -239,12 +239,12 @@ export function ProfileDetails({
         </CardContent>
       )}
       <Dialog
-        open={showModal}
+        open={showDialog}
         onOpenChange={(open) => {
           if (open) {
-            setShowModal(true);
+            setShowDialog(true);
           } else {
-            handleCloseModal();
+            handleCloseDialog();
           }
         }}
       >
@@ -294,7 +294,7 @@ export function ProfileDetails({
             ) : null}
           </div>
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCloseModal}>
+            <Button variant="outline" onClick={handleCloseDialog}>
               Anuluj
             </Button>
             <Button onClick={handleSavePhoto}>Zapisz</Button>

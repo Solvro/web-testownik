@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader";
 import { LoginPrompt } from "@/components/login-prompt";
-import { ContinuityModal } from "@/components/quiz/continuity-modal";
+import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
@@ -216,7 +216,7 @@ export function QuizPage(): React.JSX.Element {
       </div>
 
       {/* Continuity */}
-      <ContinuityModal
+      <ContinuityDialog
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
       />

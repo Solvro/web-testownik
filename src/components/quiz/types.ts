@@ -1,4 +1,4 @@
-import type { AccessLevel, User } from "./ShareQuizModal/types.ts";
+import type { AccessLevel, User } from "./share-quiz-dialog/types.ts";
 
 export interface QuizMetadata {
   id: string;

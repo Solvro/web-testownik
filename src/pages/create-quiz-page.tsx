@@ -6,7 +6,7 @@ import { AppContext } from "@/app-context.ts";
 import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
-import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal.tsx";
+import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
 import type { Quiz } from "@/components/quiz/types.ts";
 
 export function CreateQuizPage(): React.JSX.Element {
@@ -66,9 +66,13 @@ export function CreateQuizPage(): React.JSX.Element {
   return (
     <>
       <QuizEditor mode="create" onSave={handleSave} />
-      <QuizPreviewModal
-        show={quiz !== null}
-        onHide={async () => navigate("/")}
+      <QuizPreviewDialog
+        open={quiz !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            void navigate("/");
+          }
+        }}
         quiz={quiz}
         type="created"
       />

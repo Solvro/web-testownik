@@ -9,9 +9,9 @@ import { Link } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
-import { ShareQuizModal } from "@/components/quiz/ShareQuizModal/share-quiz-modal.tsx";
-import type { SharedQuiz } from "@/components/quiz/ShareQuizModal/types.ts";
 import { QuizCard } from "@/components/quiz/quiz-card.tsx";
+import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
+import type { SharedQuiz } from "@/components/quiz/share-quiz-dialog/types.ts";
 import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
@@ -301,10 +301,12 @@ export function QuizzesPage() {
       )}
       <div className="p-5" />
       {currentDialog.type === "share" && currentDialog.quiz !== null && (
-        <ShareQuizModal
-          show={true}
-          onHide={() => {
-            setCurrentDialog({ type: null, quiz: null });
+        <ShareQuizDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCurrentDialog({ type: null, quiz: null });
+            }
           }}
           quiz={currentDialog.quiz}
           setQuiz={updateQuiz}

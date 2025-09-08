@@ -6,15 +6,15 @@ import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
-import { AccessLevelSelector } from "@/components/quiz/ShareQuizModal/access-level-selector.tsx";
-import { AccessList } from "@/components/quiz/ShareQuizModal/access-list.tsx";
-import { SearchResultsPopover } from "@/components/quiz/ShareQuizModal/search-results-popover.tsx";
+import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector.tsx";
+import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list.tsx";
+import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover.tsx";
 import type {
   Group,
   SharedQuiz,
   User,
-} from "@/components/quiz/ShareQuizModal/types.ts";
-import { AccessLevel } from "@/components/quiz/ShareQuizModal/types.ts";
+} from "@/components/quiz/share-quiz-dialog/types.ts";
+import { AccessLevel } from "@/components/quiz/share-quiz-dialog/types.ts";
 import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
@@ -31,19 +31,19 @@ import { Label } from "@/components/ui/label.tsx";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-interface ShareQuizModalProps {
-  show: boolean;
-  onHide: () => void;
+interface ShareQuizDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   quiz: QuizMetadata;
   setQuiz?: (quiz: QuizMetadata) => void;
 }
 
-export function ShareQuizModal({
-  show,
-  onHide,
+export function ShareQuizDialog({
+  open,
+  onOpenChange,
   quiz,
   setQuiz,
-}: ShareQuizModalProps) {
+}: ShareQuizDialogProps) {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -392,21 +392,14 @@ export function ShareQuizModal({
         setQuiz(quizResponse.data);
       }
 
-      onHide();
+      onOpenChange(false);
     } catch (error) {
       console.error("Failed to save quiz settings:", error);
     }
   };
 
   return (
-    <Dialog
-      open={show}
-      onOpenChange={(open) => {
-        if (!open) {
-          onHide();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
@@ -426,7 +419,7 @@ export function ShareQuizModal({
         ) : (
           <div className="space-y-4">
             <Popover
-              open={show ? searchQuery.length > 0 : undefined}
+              open={open ? searchQuery.length > 0 : undefined}
               modal={true}
             >
               <PopoverTrigger asChild>

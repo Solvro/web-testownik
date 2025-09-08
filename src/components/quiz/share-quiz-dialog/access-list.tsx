@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
-import type { Group, User } from "@/components/quiz/ShareQuizModal/types.ts";
+import type { Group, User } from "@/components/quiz/share-quiz-dialog/types.ts";
 import type { QuizMetadata } from "@/components/quiz/types.ts";
 import {
   Avatar,

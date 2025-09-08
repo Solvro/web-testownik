@@ -10,7 +10,7 @@ import { useNavigate } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
 import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
-import { QuizPreviewModal } from "@/components/quiz/quiz-preview-modal";
+import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -636,9 +636,13 @@ export function ImportQuizLegacyPage() {
         </CardContent>
       </Card>
 
-      <QuizPreviewModal
-        show={quiz !== null}
-        onHide={async () => navigate("/")}
+      <QuizPreviewDialog
+        open={quiz !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            void navigate("/");
+          }
+        }}
         quiz={quiz}
         type="imported"
       />

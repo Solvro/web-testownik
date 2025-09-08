@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -26,9 +27,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { SERVER_URL } from "@/config.ts";
 
-interface ReportBugModalProps {
-  show: boolean;
-  onHide: () => void;
+interface ReportBugDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const DEFAULT_FORM_STATE = {
@@ -41,7 +42,7 @@ const DEFAULT_FORM_STATE = {
   reportType: "bug",
 };
 
-export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
+export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
@@ -127,7 +128,7 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
       })
       .then(() => {
         setForm(DEFAULT_FORM_STATE);
-        onHide();
+        onOpenChange(false);
         toast.success("Dziękujemy za zgłoszenie!");
       })
       .catch((error: unknown) => {
@@ -142,14 +143,7 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
   };
 
   return (
-    <Dialog
-      open={show}
-      onOpenChange={(open) => {
-        if (!open) {
-          onHide();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
@@ -276,9 +270,9 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
           </div>
         </div>
         <DialogFooter className="pt-6">
-          <Button variant="outline" onClick={onHide}>
-            Anuluj
-          </Button>
+          <DialogClose asChild>
+            <Button variant="outline">Anuluj</Button>
+          </DialogClose>
           <Button disabled={isSending} onClick={handleSend}>
             Wyślij formularz
           </Button>

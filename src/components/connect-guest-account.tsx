@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
-import { PrivacyModal } from "@/components/privacy-modal.tsx";
+import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
 import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert } from "@/components/ui/alert.tsx";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,7 @@ export function ConnectGuestAccount() {
   const queryParameters = new URLSearchParams(location.search);
   const error = queryParameters.get("error");
 
-  // Modal state
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
 
   const [migrating, setMigrating] = useState(false);
   const [migratingText, setMigratingText] = useState("");
@@ -460,7 +459,7 @@ export function ConnectGuestAccount() {
                 variant="link"
                 className="text-muted-foreground text-xs hover:underline"
                 onClick={() => {
-                  setShowPrivacyModal(true);
+                  setShowPrivacyDialog(true);
                 }}
               >
                 Jak wykorzystujemy Twoje dane?
@@ -469,10 +468,10 @@ export function ConnectGuestAccount() {
           </CardContent>
         </Card>
       )}
-      <PrivacyModal
-        show={showPrivacyModal}
-        onHide={() => {
-          setShowPrivacyModal(false);
+      <PrivacyDialog
+        open={showPrivacyDialog}
+        onOpenChange={(open) => {
+          setShowPrivacyDialog(open);
         }}
       />
     </div>

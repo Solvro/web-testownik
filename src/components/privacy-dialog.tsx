@@ -18,21 +18,14 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   );
 }
 
-interface PrivacyModalProps {
-  show: boolean;
-  onHide: () => void;
+interface PrivacyDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function PrivacyModal({ show, onHide }: PrivacyModalProps) {
+export function PrivacyDialog({ open, onOpenChange }: PrivacyDialogProps) {
   return (
-    <Dialog
-      open={show}
-      onOpenChange={(open) => {
-        if (!open) {
-          onHide();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Jak wykorzystujemy Twoje dane</DialogTitle>
@@ -94,7 +87,12 @@ export function PrivacyModal({ show, onHide }: PrivacyModalProps) {
           są one wykorzystywane.
         </p>
         <DialogFooter>
-          <Button variant="outline" onClick={onHide}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
             Zamknij
           </Button>
         </DialogFooter>

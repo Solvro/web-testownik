@@ -2,7 +2,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { ShareQuizModal } from "@/components/quiz/ShareQuizModal/share-quiz-modal.tsx";
+import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
 import type { Quiz } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,20 +16,20 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 
-interface QuizPreviewModalProps {
-  show: boolean;
-  onHide: () => void;
+interface QuizPreviewDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   quiz: Quiz | null;
   type: "created" | "imported"; // To distinguish between created and imported quizzes
 }
 
-export function QuizPreviewModal({
-  show,
-  onHide,
+export function QuizPreviewDialog({
+  open,
+  onOpenChange,
   quiz,
   type,
-}: QuizPreviewModalProps) {
-  const [showShareModal, setShowShareModal] = useState(false);
+}: QuizPreviewDialogProps) {
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   if (quiz == null) {
     return null;
@@ -39,19 +39,12 @@ export function QuizPreviewModal({
   const previewQuestions = questions.slice(0, 10);
 
   const handleShare = () => {
-    setShowShareModal(true);
+    setShowShareDialog(true);
   };
 
   return (
     <>
-      <Dialog
-        open={show}
-        onOpenChange={(open) => {
-          if (!open) {
-            onHide();
-          }
-        }}
-      >
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -152,10 +145,12 @@ export function QuizPreviewModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <ShareQuizModal
-        show={showShareModal}
-        onHide={() => {
-          setShowShareModal(false);
+      <ShareQuizDialog
+        open={showShareDialog}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowShareDialog(false);
+          }
         }}
         quiz={quiz}
       />
