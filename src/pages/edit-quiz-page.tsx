@@ -1,0 +1,174 @@
+import React, { useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router";
+import { toast } from "react-toastify";
+
+import { AppContext } from "@/app-context.ts";
+import { Loader } from "@/components/loader.tsx";
+import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
+import { QuizEditor } from "@/components/quiz/quiz-editor";
+import type { Quiz } from "@/components/quiz/types.ts";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+
+export function EditQuizPage(): React.JSX.Element {
+  const { quizId } = useParams<{ quizId: string }>();
+  const appContext = useContext(AppContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [initialQuiz, setInitialQuiz] = useState<Quiz | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  document.title = "Edytuj quiz - Testownik Solvro";
+
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        if (appContext.isGuest) {
+          const guestQuizzesString = localStorage.getItem("guest_quizzes");
+          const userQuizzes: Quiz[] =
+            guestQuizzesString === null
+              ? []
+              : (JSON.parse(guestQuizzesString) as Quiz[]);
+          const quiz = userQuizzes.find((q) => q.id === quizId);
+          if (quiz === undefined) {
+            setError("Nie znaleziono quizu.");
+            setLoading(false);
+            return;
+          }
+          setInitialQuiz(quiz);
+          setLoading(false);
+          return;
+        }
+        const response = await appContext.axiosInstance.get<Quiz>(
+          `/quizzes/${String(quizId)}/`,
+        );
+        if (response.status === 200) {
+          const data: Quiz = response.data;
+          setInitialQuiz(data);
+          setTimeout(async () => {
+            const queryParameters = new URLSearchParams(location.search);
+            if (location.hash || queryParameters.has("scroll_to")) {
+              const hashId = window.location.hash.slice(1);
+              const scrollId = queryParameters.get("scroll_to");
+              const id = scrollId ?? hashId;
+              const element = document.querySelector(`#${id}`);
+              if (element !== null) {
+                element.scrollIntoView({ behavior: "smooth" });
+                if (window.location.hash) {
+                  window.history.replaceState(
+                    null,
+                    "",
+                    window.location.pathname + window.location.search,
+                  );
+                } else {
+                  queryParameters.delete("scroll_to");
+                  await navigate({
+                    search: queryParameters.toString(),
+                  });
+                }
+              }
+            }
+          }, 100);
+        } else {
+          setError("Nie udało się załadować quizu.");
+        }
+      } catch {
+        setError("Wystąpił błąd podczas ładowania quizu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchQuiz();
+  }, [
+    quizId,
+    appContext.axiosInstance,
+    appContext.isGuest,
+    location.hash,
+    location.search,
+    navigate,
+  ]);
+
+  const handleSave = async (data: QuizEditorResult) => {
+    const payload = {
+      title: data.title,
+      description: data.description,
+      questions: data.questions,
+    };
+    try {
+      if (appContext.isGuest) {
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes: Quiz[] =
+          guestQuizzesString === null
+            ? []
+            : (JSON.parse(guestQuizzesString) as Quiz[]);
+        const quizIndex = userQuizzes.findIndex((q) => q.id === quizId);
+        if (quizIndex === -1) {
+          toast.error("Nie znaleziono quizu.");
+          return false;
+        }
+        userQuizzes[quizIndex] = { ...userQuizzes[quizIndex], ...payload };
+        localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
+        toast.success("Quiz został zaktualizowany.");
+        return true;
+      }
+      const response = await appContext.axiosInstance.put(
+        `/quizzes/${String(quizId)}/`,
+        payload,
+      );
+      if (response.status !== 200) {
+        const errorData = response.data as { error?: string };
+        toast.error(
+          errorData.error ?? "Wystąpił błąd podczas aktualizacji quizu.",
+        );
+        return false;
+      }
+      toast.success("Quiz został zaktualizowany.");
+      return true;
+    } catch {
+      toast.error("Wystąpił błąd podczas aktualizacji quizu.");
+      return false;
+    }
+  };
+
+  const handleSaveAndClose = async (
+    data: QuizEditorResult,
+  ): Promise<boolean> => {
+    const ok = await handleSave(data);
+    if (ok) {
+      await navigate("/");
+    }
+    return ok;
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <div className="space-y-2 pb-8 text-center">
+            <p>Ładowanie quizu...</p>
+            <Loader size={15} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {error !== null && error !== "" ? (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      <QuizEditor
+        mode="edit"
+        initialQuiz={initialQuiz ?? undefined}
+        onSave={handleSave}
+        onSaveAndClose={handleSaveAndClose}
+      />
+    </>
+  );
+}

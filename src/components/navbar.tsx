@@ -1,0 +1,311 @@
+import {
+  CircleUserRoundIcon,
+  CloudUploadIcon,
+  IdCardLanyardIcon,
+  LogInIcon,
+  LogOutIcon,
+  MenuIcon,
+  XIcon,
+} from "lucide-react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router";
+
+import { AppContext } from "@/app-context.ts";
+import { AppLogo } from "@/components/app-logo.tsx";
+import { ModeToggle } from "@/components/mode-toggle.tsx";
+import { ReportBugDialog } from "@/components/report-bug-dialog.tsx";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
+import { Button } from "@/components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@/components/ui/navigation-menu";
+import { SERVER_URL } from "@/config.ts";
+
+export function Navbar(): React.JSX.Element {
+  const appContext = useContext(AppContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [expanded, setExpanded] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+
+  const queryParameters = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
+  const accessToken = queryParameters.get("access_token");
+  const refreshToken = queryParameters.get("refresh_token");
+
+  const handleLogin = useCallback(async () => {
+    if (accessToken !== null && refreshToken !== null) {
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("refresh_token", refreshToken);
+
+      queryParameters.delete("access_token");
+      queryParameters.delete("refresh_token");
+
+      await navigate({
+        search: queryParameters.toString(),
+      });
+
+      await appContext.fetchUserData();
+    }
+  }, [accessToken, refreshToken, queryParameters, navigate, appContext]);
+
+  useEffect(() => {
+    void handleLogin();
+  }, [handleLogin]);
+
+  const handleLogout = async () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("profile_picture");
+    localStorage.removeItem("is_staff");
+    localStorage.removeItem("user_id");
+    appContext.setAuthenticated(false);
+    await navigate("/");
+  };
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <nav className="flex flex-col gap-2 py-4">
+      <div className="flex items-center justify-between gap-4 sm:px-4">
+        <div className="flex items-center gap-6">
+          <Link to="/">
+            <AppLogo width={40} />
+          </Link>
+          <NavigationMenu className="hidden sm:flex" viewport={false}>
+            <NavigationMenuList className="gap-1">
+              <NavigationMenuItem>
+                <NavigationMenuLink active={isActive("/quizzes")} asChild>
+                  <Link to="/quizzes">Twoje quizy</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink active={isActive("/grades")} asChild>
+                  <Link to="/grades">Oceny</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  onClick={() => {
+                    setShowReportDialog(true);
+                  }}
+                  asChild
+                >
+                  <Button variant="ghost" className="font-normal">
+                    Zgłoś błąd
+                  </Button>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              {localStorage.getItem("is_staff") === "true" && (
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <a
+                      href={`${SERVER_URL}/admin/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex"
+                    >
+                      Panel administratora
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              )}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+        <div className="hidden items-center gap-2 sm:flex">
+          <ModeToggle />
+          {appContext.isGuest ? (
+            <>
+              <Link to="/profile">
+                <Button variant="default">
+                  <IdCardLanyardIcon />
+                  <span>Gość</span>
+                </Button>
+              </Link>
+              <Link to="/connect-account">
+                <Button variant="outline" size="icon" className="p-2">
+                  <CloudUploadIcon />
+                </Button>
+              </Link>
+            </>
+          ) : appContext.isAuthenticated ? (
+            <>
+              <Link to="/profile">
+                <Button variant="default">
+                  {localStorage.getItem("profile_picture") === null ? (
+                    <CircleUserRoundIcon className="size-6" />
+                  ) : (
+                    <Avatar className="size-6">
+                      <AvatarImage
+                        src={localStorage.getItem("profile_picture") ?? ""}
+                      />
+                      <AvatarFallback delayMs={600} className="bg-transparent">
+                        <CircleUserRoundIcon className="size-6" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <span>Profil</span>
+                </Button>
+              </Link>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={handleLogout}
+                className="p-2"
+              >
+                <LogOutIcon />
+              </Button>
+            </>
+          ) : (
+            <Button variant="default" asChild>
+              <a
+                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
+              >
+                <LogInIcon />
+                Zaloguj się
+              </a>
+            </Button>
+          )}
+        </div>
+        <Button
+          aria-label="Menu"
+          variant="ghost"
+          size="icon"
+          className="sm:hidden"
+          onClick={() => {
+            setExpanded(!expanded);
+          }}
+        >
+          {expanded ? (
+            <XIcon className="size-6" />
+          ) : (
+            <MenuIcon className="size-6" />
+          )}
+        </Button>
+      </div>
+      {expanded ? (
+        <div className="flex flex-col gap-4 border-t pt-2 sm:hidden">
+          <Link
+            to="/quizzes"
+            className={
+              isActive("/quizzes")
+                ? "text-foreground text-left font-medium"
+                : "text-muted-foreground hover:text-foreground text-left transition-colors"
+            }
+          >
+            Twoje quizy
+          </Link>
+          <Link
+            to="/grades"
+            className={
+              isActive("/grades")
+                ? "text-foreground text-left font-medium"
+                : "text-muted-foreground hover:text-foreground text-left transition-colors"
+            }
+          >
+            Oceny
+          </Link>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowReportDialog(true);
+            }}
+            className="text-muted-foreground hover:text-foreground h-auto justify-start p-0 text-left text-base font-normal transition-colors"
+          >
+            Zgłoś błąd
+          </Button>
+          {localStorage.getItem("is_staff") === "true" && (
+            <a
+              href={`${SERVER_URL}/admin/`}
+              target="_blank"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              rel="noreferrer"
+            >
+              Panel administratora
+            </a>
+          )}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {appContext.isGuest ? (
+              <>
+                <Link to="/profile">
+                  <Button variant="outline" className="flex-1">
+                    <IdCardLanyardIcon />
+                    <span>Gość</span>
+                  </Button>
+                </Link>
+                <Link to="/connect-account">
+                  <Button variant="outline" size="icon" className="p-2">
+                    <CloudUploadIcon />
+                  </Button>
+                </Link>
+              </>
+            ) : appContext.isAuthenticated ? (
+              <>
+                <Link to="/profile">
+                  <Button variant="default" className="flex-1">
+                    {localStorage.getItem("profile_picture") === null ? (
+                      <CircleUserRoundIcon className="size-6" />
+                    ) : (
+                      <Avatar className="size-6">
+                        <AvatarImage
+                          src={localStorage.getItem("profile_picture") ?? ""}
+                        />
+                        <AvatarFallback
+                          delayMs={600}
+                          className="bg-transparent"
+                        >
+                          <CircleUserRoundIcon className="size-6" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <span>Profil</span>
+                  </Button>
+                </Link>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={handleLogout}
+                  className="p-2"
+                >
+                  <LogOutIcon />
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" asChild className="flex-1">
+                <a
+                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
+                >
+                  <LogInIcon />
+                  Zaloguj się
+                </a>
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
+      <ReportBugDialog
+        open={showReportDialog}
+        onOpenChange={(open) => {
+          setShowReportDialog(open);
+        }}
+      />
+    </nav>
+  );
+}

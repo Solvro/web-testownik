@@ -1,10 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./styles/index.css";
-import App from "./App.tsx";
-import { AppContextProvider } from "./AppContext.tsx";
 
-createRoot(document.getElementById("root")!).render(
+import { AppContextProvider } from "@/app-context-provider";
+
+import { App } from "./app.tsx";
+import "./styles/index.css";
+
+const root = document.querySelector("#root");
+if (root == null) {
+  throw new Error("Failed to find the root element");
+}
+
+createRoot(root).render(
   <StrictMode>
     <AppContextProvider>
       <App />

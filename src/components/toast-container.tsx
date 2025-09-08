@@ -1,8 +1,8 @@
 import { ToastContainer as ReactToastContainer } from "react-toastify";
-import React from "react";
-import { useTheme } from "@/components/theme-provider.tsx";
 
-const ToastContainer: React.FC = () => {
+import { useTheme } from "@/components/use-theme";
+
+export function ToastContainer() {
   let { theme } = useTheme();
 
   if (theme === "system") {
@@ -19,6 +19,4 @@ const ToastContainer: React.FC = () => {
       draggable={true}
     />
   );
-};
-
-export default ToastContainer;
+}
