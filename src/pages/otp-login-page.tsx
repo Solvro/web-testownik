@@ -35,8 +35,8 @@ export function OTPLoginPage() {
 
   document.title = "Logowanie OTP - Testownik Solvro";
 
-  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (submitting) {
       return;
     }
@@ -81,8 +81,12 @@ export function OTPLoginPage() {
           otp,
         });
         if (response.status === 200) {
-          localStorage.setItem("access_token", response.data.access_token);
-          localStorage.setItem("refresh_token", response.data.refresh_token);
+          const data = response.data as {
+            access_token: string;
+            refresh_token: string;
+          };
+          localStorage.setItem("access_token", data.access_token);
+          localStorage.setItem("refresh_token", data.refresh_token);
           await appContext.fetchUserData();
           appContext.setAuthenticated(true);
           appContext.setGuest(false);
@@ -102,7 +106,7 @@ export function OTPLoginPage() {
         setSubmitting(false);
       }
     },
-    [email, otp],
+    [email, otp, appContext, navigate, submitting],
   );
 
   if (submitted) {

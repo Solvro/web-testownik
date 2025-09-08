@@ -23,10 +23,10 @@ const processQueue = (
   token: string | null = null,
 ) => {
   for (const prom of failedQueue) {
-    if (error) {
-      prom.reject(error);
-    } else {
+    if (error == null) {
       prom.resolve(token);
+    } else {
+      prom.reject(error);
     }
   }
 
@@ -48,16 +48,20 @@ export class RefreshTokenExpiredError extends AxiosError {
 
 export const responseInterceptor = async (error: AxiosError) => {
   const originalRequest = error.config as CustomAxiosRequestConfig;
-  if (error.response?.status === 401 && !originalRequest._retry) {
+  if (
+    error.response != null &&
+    error.response.status === 401 &&
+    originalRequest._retry !== true
+  ) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
         .then(async (token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          originalRequest.headers.Authorization = `Bearer ${token as string}`;
           return axios(originalRequest);
         })
-        .catch(async (error_) => {
+        .catch((error_: unknown) => {
           throw error_;
         });
     }
@@ -66,7 +70,10 @@ export const responseInterceptor = async (error: AxiosError) => {
     isRefreshing = true;
 
     const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
+    if (refreshToken === null) {
+      console.warn("No refresh token available");
+      throw error;
+    } else {
       try {
         const response = await axios.post<TokenRefreshResponse>(
           `${SERVER_URL}/token/refresh/`,
@@ -81,7 +88,7 @@ export const responseInterceptor = async (error: AxiosError) => {
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
         isRefreshing = false;
-        return axios(originalRequest);
+        return await axios(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
@@ -93,9 +100,6 @@ export const responseInterceptor = async (error: AxiosError) => {
         }
         throw refreshError;
       }
-    } else {
-      console.warn("No refresh token available");
-      throw error;
     }
   }
   throw error;

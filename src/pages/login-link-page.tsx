@@ -22,35 +22,41 @@ export function LoginLinkPage() {
     try {
       const response = await axios.post(`${SERVER_URL}/login-link/`, { token });
       if (response.status === 200) {
-        localStorage.setItem("access_token", response.data.access_token);
-        localStorage.setItem("refresh_token", response.data.refresh_token);
+        const data = response.data as {
+          access_token: string;
+          refresh_token: string;
+        };
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
         await appContext.fetchUserData();
         appContext.setAuthenticated(true);
         appContext.setGuest(false);
-        navigate("/");
+        void navigate("/");
       } else {
         setError(response.statusText);
       }
-    } catch (error) {
-      setError(
-        (
-          (error as AxiosError)?.response?.data as {
-            error?: string;
-          }
-        )?.error || "Niezidentyfikowany błąd.",
-      );
+    } catch (loginError) {
+      const errorData = (loginError as AxiosError).response?.data as
+        | { error?: string }
+        | undefined;
+      setError(errorData?.error ?? "Niezidentyfikowany błąd.");
     }
-  }, [token]);
+  }, [token, appContext, navigate]);
 
   useEffect(() => {
-    handleLogin();
+    void handleLogin();
   }, [handleLogin]);
 
   return (
     <div className="flex justify-center">
       <Card className="w-full max-w-md">
         <CardContent>
-          {error ? (
+          {error == null ? (
+            <div className="space-y-4 text-center">
+              <p>Trwa logowanie...</p>
+              <Loader loading={true} size={15} />
+            </div>
+          ) : (
             <Alert variant="destructive" className="space-y-2">
               <AlertDescription className="space-y-2">
                 <p>Wystąpił błąd podczas logowania za pomocą linku.</p>
@@ -66,11 +72,6 @@ export function LoginLinkPage() {
                 </Button>
               </AlertDescription>
             </Alert>
-          ) : (
-            <div className="space-y-4 text-center">
-              <p>Trwa logowanie...</p>
-              <Loader loading={true} size={15} />
-            </div>
           )}
         </CardContent>
       </Card>

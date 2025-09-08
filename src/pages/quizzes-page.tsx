@@ -14,6 +14,16 @@ import type { SharedQuiz } from "@/components/quiz/ShareQuizModal/types.ts";
 import { QuizCard } from "@/components/quiz/quiz-card.tsx";
 import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,8 +45,10 @@ export function QuizzesPage() {
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQuizToShare, setSelectedQuizToShare] =
-    useState<QuizMetadata | null>(null);
+  const [currentDialog, setCurrentDialog] = useState<{
+    type: "share" | "delete" | null;
+    quiz: QuizMetadata | null;
+  }>({ type: null, quiz: null });
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -82,25 +94,27 @@ export function QuizzesPage() {
   }, [appContext.axiosInstance, appContext.isGuest]);
 
   const handleShareQuiz = (quiz: QuizMetadata) => {
-    setSelectedQuizToShare(quiz);
+    setCurrentDialog({ type: "share", quiz });
   };
 
   const handleDeleteQuiz = (quiz: QuizMetadata) => {
-    // Ask for confirmation  and then delete the quiz
-    if (
-      // eslint-disable-next-line no-alert
-      window.confirm(
-        "Czy na pewno chcesz usunąć ten quiz?\nTej operacji nie można cofnąć!\n\nTy oraz inni użytkownicy nie będą mogli już korzystać z tego quizu.",
-      )
-    ) {
-      if (appContext.isGuest) {
-        localStorage.setItem(
-          "guest_quizzes",
-          JSON.stringify(userQuizzes.filter((q) => q.id !== quiz.id)),
-        );
-        setUserQuizzes((previous) => previous.filter((q) => q.id !== quiz.id));
-        return;
-      }
+    setCurrentDialog({ type: "delete", quiz });
+  };
+
+  const confirmDeleteQuiz = () => {
+    if (currentDialog.quiz === null) {
+      return;
+    }
+
+    const quiz = currentDialog.quiz;
+
+    if (appContext.isGuest) {
+      localStorage.setItem(
+        "guest_quizzes",
+        JSON.stringify(userQuizzes.filter((q) => q.id !== quiz.id)),
+      );
+      setUserQuizzes((previous) => previous.filter((q) => q.id !== quiz.id));
+    } else {
       appContext.axiosInstance
         .delete(`/quizzes/${quiz.id}/`)
         .then(() => {
@@ -112,6 +126,8 @@ export function QuizzesPage() {
           setError("Nie udało się usunąć quizu.");
         });
     }
+
+    setCurrentDialog({ type: null, quiz: null });
   };
 
   const handleDownloadQuiz = (quiz: QuizMetadata) => {
@@ -284,16 +300,42 @@ export function QuizzesPage() {
         </>
       )}
       <div className="p-5" />
-      {selectedQuizToShare != null && (
+      {currentDialog.type === "share" && currentDialog.quiz !== null && (
         <ShareQuizModal
           show={true}
           onHide={() => {
-            setSelectedQuizToShare(null);
+            setCurrentDialog({ type: null, quiz: null });
           }}
-          quiz={selectedQuizToShare}
+          quiz={currentDialog.quiz}
           setQuiz={updateQuiz}
         />
       )}
+      <AlertDialog
+        open={currentDialog.type === "delete"}
+        onOpenChange={(open) => {
+          setCurrentDialog({
+            type: open ? "delete" : null,
+            quiz: open ? currentDialog.quiz : null,
+          });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Potwierdź usunięcie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć ten quiz? Tej operacji nie można
+              cofnąć! Ty oraz inni użytkownicy nie będą mogli już korzystać z
+              tego quizu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteQuiz}>
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

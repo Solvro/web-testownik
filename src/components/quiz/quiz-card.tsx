@@ -68,7 +68,7 @@ export function QuizCard({
           <Button size="sm">Otwórz</Button>
         </Link>
         <div className="flex gap-1 opacity-80">
-          {showEdit ? (
+          {Boolean(showEdit) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to={onEditPath(quiz)}>
@@ -79,8 +79,8 @@ export function QuizCard({
               </TooltipTrigger>
               <TooltipContent>Edytuj quiz</TooltipContent>
             </Tooltip>
-          ) : null}
-          {showShare ? (
+          )}
+          {Boolean(showShare) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -94,7 +94,7 @@ export function QuizCard({
               </TooltipTrigger>
               <TooltipContent>Udostępnij quiz</TooltipContent>
             </Tooltip>
-          ) : null}
+          )}
           {showDownload ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -110,7 +110,7 @@ export function QuizCard({
               <TooltipContent>Pobierz quiz</TooltipContent>
             </Tooltip>
           ) : null}
-          {showSearch ? (
+          {Boolean(showSearch) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to={onSearchPath(quiz)}>
@@ -121,8 +121,8 @@ export function QuizCard({
               </TooltipTrigger>
               <TooltipContent>Szukaj w quizie</TooltipContent>
             </Tooltip>
-          ) : null}
-          {showDelete ? (
+          )}
+          {Boolean(showDelete) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -136,7 +136,7 @@ export function QuizCard({
               </TooltipTrigger>
               <TooltipContent>Usuń quiz</TooltipContent>
             </Tooltip>
-          ) : null}
+          )}
         </div>
       </CardFooter>
     </Card>

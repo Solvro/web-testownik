@@ -25,6 +25,7 @@ export function ThemeProvider({
 
     root.classList.remove("light", "dark");
 
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches

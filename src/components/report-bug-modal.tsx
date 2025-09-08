@@ -94,7 +94,9 @@ export function ReportBugModal({ show, onHide }: ReportBugModalProps) {
     if (form.sendDiagnostics) {
       const diagnostics = {
         userAgent: navigator.userAgent,
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         platform: navigator.platform,
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         vendor: navigator.vendor,
 
         innerWidth: window.innerWidth,

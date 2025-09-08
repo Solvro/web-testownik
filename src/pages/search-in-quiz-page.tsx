@@ -51,11 +51,11 @@ export function SearchInQuizPage(): React.JSX.Element {
     const fetchQuiz = async () => {
       setLoading(true);
       try {
-        const response = await appContext.axiosInstance.get(
+        const response = await appContext.axiosInstance.get<Quiz>(
           `/quizzes/${String(quizId)}/`,
         );
         if (response.status === 200) {
-          const data = response.data as Quiz;
+          const data = response.data;
           setQuiz(data);
         } else {
           setError("Nie udało się załadować quizu.");

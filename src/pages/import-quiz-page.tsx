@@ -81,92 +81,6 @@ export function ImportQuizPage(): React.JSX.Element {
     return quizData;
   };
 
-  const handleImport = async () => {
-    setError(null);
-    setLoading(true);
-    switch (uploadType) {
-      case "file": {
-        const file = fileInputRef.current?.files?.[0];
-        if (file === undefined) {
-          setErrorAndNotify("Wybierz plik z quizem.");
-          return;
-        }
-        const reader = new FileReader();
-        reader.addEventListener("load", async () => {
-          try {
-            const data = JSON.parse(reader.result as string) as Quiz;
-            const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-            if (validationError !== null) {
-              setErrorAndNotify(validationError);
-              return false;
-            }
-            await submitImport("json", data);
-          } catch (fileError) {
-            if (fileError instanceof Error) {
-              setError(
-                `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
-              );
-            } else {
-              setError("Wystąpił błąd podczas wczytywania pliku.");
-            }
-            console.error("Błąd podczas wczytywania pliku:", fileError);
-          }
-        });
-        reader.readAsText(file);
-
-        break;
-      }
-      case "link": {
-        const linkInput =
-          document.querySelector<HTMLInputElement>("#link-input")?.value;
-        if (!linkInput || linkInput.trim() === "") {
-          setErrorAndNotify("Wklej link do quizu.");
-          setLoading(false);
-          return;
-        }
-        try {
-          new URL(linkInput);
-          await submitImport("link", linkInput);
-        } catch {
-          setError("Link jest niepoprawny.");
-        }
-
-        break;
-      }
-      case "json": {
-        const textInput =
-          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
-        if (!textInput || textInput.trim() === "") {
-          setError("Wklej quiz w formie tekstu.");
-          setLoading(false);
-          return;
-        }
-        try {
-          const data = JSON.parse(textInput) as Quiz;
-          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-          if (validationError) {
-            setErrorAndNotify(validationError);
-            return false;
-          }
-          await submitImport("json", data);
-        } catch (error) {
-          if (error instanceof Error) {
-            setError(`Wystąpił błąd podczas parsowania JSON: ${error.message}`);
-          } else {
-            setError(
-              "Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.",
-            );
-          }
-          console.error("Błąd podczas parsowania JSON:", error);
-        }
-
-        break;
-      }
-      // No default
-    }
-    setLoading(false);
-  };
-
   const submitImport = async (type: "json" | "link", data: string | Quiz) => {
     try {
       if (appContext.isGuest) {
@@ -200,17 +114,13 @@ export function ImportQuizPage(): React.JSX.Element {
         setQuiz(temporaryQuiz);
         return;
       }
-      let response;
-      if (type === "json") {
-        response = await appContext.axiosInstance.post<Quiz>("/quizzes/", data);
-      } else if (type === "link") {
-        response = await appContext.axiosInstance.post<Quiz>(
-          "/import-quiz-from-link/",
-          { link: data },
-        );
-      } else {
-        return;
-      }
+      const response =
+        type === "json"
+          ? await appContext.axiosInstance.post<Quiz>("/quizzes/", data)
+          : await appContext.axiosInstance.post<Quiz>(
+              "/import-quiz-from-link/",
+              { link: data },
+            );
 
       if (response.status === 201) {
         const result = response.data;
@@ -226,6 +136,91 @@ export function ImportQuizPage(): React.JSX.Element {
     }
   };
 
+  const handleImport = async () => {
+    setError(null);
+    setLoading(true);
+    switch (uploadType) {
+      case "file": {
+        const file = fileInputRef.current?.files?.[0];
+        if (file === undefined) {
+          setErrorAndNotify("Wybierz plik z quizem.");
+          return;
+        }
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text) as Quiz;
+          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
+          if (validationError !== null) {
+            setErrorAndNotify(validationError);
+            return false;
+          }
+          await submitImport("json", data);
+        } catch (fileError) {
+          if (fileError instanceof Error) {
+            setError(
+              `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
+            );
+          } else {
+            setError("Wystąpił błąd podczas wczytywania pliku.");
+          }
+          console.error("Błąd podczas wczytywania pliku:", fileError);
+        }
+
+        break;
+      }
+      case "link": {
+        const linkInput =
+          document.querySelector<HTMLInputElement>("#link-input")?.value;
+        if (linkInput == null || linkInput.trim() === "") {
+          setErrorAndNotify("Wklej link do quizu.");
+          setLoading(false);
+          return;
+        }
+        try {
+          void new URL(linkInput);
+          await submitImport("link", linkInput);
+        } catch {
+          setError("Link jest niepoprawny.");
+        }
+
+        break;
+      }
+      case "json": {
+        const textInput =
+          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
+        if (textInput == null || textInput.trim() === "") {
+          setError("Wklej quiz w formie tekstu.");
+          setLoading(false);
+          return;
+        }
+        try {
+          const data = JSON.parse(textInput) as Quiz;
+          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
+          if (validationError !== null) {
+            setErrorAndNotify(validationError);
+            return false;
+          }
+          await submitImport("json", data);
+        } catch (parseError) {
+          if (parseError instanceof Error) {
+            setError(
+              `Wystąpił błąd podczas parsowania JSON: ${parseError.message}`,
+            );
+          } else {
+            setError(
+              "Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.",
+            );
+          }
+          console.error("Błąd podczas parsowania JSON:", error);
+        }
+
+        break;
+      }
+      // No default
+    }
+    setLoading(false);
+  };
+
   return (
     <>
       <Card>
@@ -233,11 +228,11 @@ export function ImportQuizPage(): React.JSX.Element {
           <CardTitle>Zaimportuj quiz</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error ? (
+          {error != null && (
             <Alert variant="destructive">
               <AlertTitle>{error}</AlertTitle>
             </Alert>
-          ) : null}
+          )}
 
           <Tabs
             value={uploadType}
@@ -253,30 +248,38 @@ export function ImportQuizPage(): React.JSX.Element {
             </TabsList>
             <TabsContent value="file" className="mt-4">
               <div className="space-y-2">
-                <Label>Plik z quizem</Label>
+                <Label htmlFor="file-input">Plik z quizem</Label>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="hover:bg-accent/40 dark:bg-input/30 border-input cursor-pointer rounded-md border p-6 text-center shadow-xs transition-colors"
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      fileInputRef.current?.click();
+                    }
+                  }}
                 >
                   <input
+                    id="file-input"
                     type="file"
                     accept=".json"
                     ref={fileInputRef}
                     onChange={handleFileSelect}
                     className="hidden"
                   />
-                  {fileName ? (
+                  {fileName == null ? (
+                    <div className="space-y-2">
+                      <FileUpIcon className="mx-auto size-8" />
+                      <p className="text-sm">Wybierz plik...</p>
+                    </div>
+                  ) : (
                     <div className="space-y-2">
                       <FileJsonIcon className="mx-auto size-8" />
                       <p className="text-sm">Wybrano plik:</p>
                       <span className="bg-secondary inline-flex rounded px-2 py-0.5 text-xs">
                         {fileName}
                       </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <FileUpIcon className="mx-auto size-8" />
-                      <p className="text-sm">Wybierz plik...</p>
                     </div>
                   )}
                 </div>

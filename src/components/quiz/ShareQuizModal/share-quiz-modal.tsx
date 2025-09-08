@@ -81,10 +81,10 @@ export function ShareQuizModal({
       return;
     }
     try {
-      const response = await appContext.axiosInstance.get(
+      const response = await appContext.axiosInstance.get<SharedQuiz[]>(
         `/shared-quizzes/?quiz=${quiz.id}`,
       );
-      const sharedData = response.data as SharedQuiz[];
+      const sharedData = response.data;
       const foundUsers = sharedData.flatMap((sq) =>
         sq.user == null
           ? []
@@ -123,8 +123,9 @@ export function ShareQuizModal({
 
   const fetchUserGroups = useCallback(async () => {
     try {
-      const response = await appContext.axiosInstance.get("/study-groups/");
-      const data = (response.data as Group[]).map((group: Group) => ({
+      const response =
+        await appContext.axiosInstance.get<Group[]>("/study-groups/");
+      const data = response.data.map((group: Group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
           group.name.split(" ")[0]
@@ -290,7 +291,7 @@ export function ShareQuizModal({
   const handleSave = async () => {
     try {
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-      const quizResponse = await appContext.axiosInstance.patch(
+      const quizResponse = await appContext.axiosInstance.patch<QuizMetadata>(
         `/quizzes/${quiz.id}/`,
         {
           visibility: accessLevel,
@@ -388,7 +389,7 @@ export function ShareQuizModal({
       setInitialGroupsWithAccess(groupsWithAccess);
 
       if (setQuiz != null) {
-        setQuiz(quizResponse.data as QuizMetadata);
+        setQuiz(quizResponse.data);
       }
 
       onHide();

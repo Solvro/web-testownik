@@ -41,13 +41,13 @@ export function LastUsedCard({
           setLoading(false);
           return;
         }
-        const response = await appContext.axiosInstance.get(
+        const response = await appContext.axiosInstance.get<Quiz[]>(
           "/last-used-quizzes/",
           {
             params: { limit },
           },
         );
-        const data = response.data as Quiz[];
+        const data = response.data;
         if (data.length < limit) {
           setFetchedAll(true);
         }

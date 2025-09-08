@@ -15,7 +15,6 @@ export function EditQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
-  const queryParameters = new URLSearchParams(location.search);
 
   const [initialQuiz, setInitialQuiz] = useState<Quiz | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +26,13 @@ export function EditQuizPage(): React.JSX.Element {
     const fetchQuiz = async () => {
       try {
         if (appContext.isGuest) {
-          const userQuizzes = localStorage.getItem("guest_quizzes")
-            ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-            : [];
-          const quiz = userQuizzes.find((q: Quiz) => q.id === quizId);
-          if (!quiz) {
+          const guestQuizzesString = localStorage.getItem("guest_quizzes");
+          const userQuizzes: Quiz[] =
+            guestQuizzesString === null
+              ? []
+              : (JSON.parse(guestQuizzesString) as Quiz[]);
+          const quiz = userQuizzes.find((q) => q.id === quizId);
+          if (quiz === undefined) {
             setError("Nie znaleziono quizu.");
             setLoading(false);
             return;
@@ -40,20 +41,20 @@ export function EditQuizPage(): React.JSX.Element {
           setLoading(false);
           return;
         }
-        const response = await appContext.axiosInstance.get(
+        const response = await appContext.axiosInstance.get<Quiz>(
           `/quizzes/${String(quizId)}/`,
         );
         if (response.status === 200) {
           const data: Quiz = response.data;
           setInitialQuiz(data);
-          setTimeout(() => {
+          setTimeout(async () => {
+            const queryParameters = new URLSearchParams(location.search);
             if (location.hash || queryParameters.has("scroll_to")) {
-              const element = document.getElementById(
-                window.location.hash.slice(1) ||
-                  queryParameters.get("scroll_to") ||
-                  "",
-              );
-              if (element) {
+              const hashId = window.location.hash.slice(1);
+              const scrollId = queryParameters.get("scroll_to");
+              const id = scrollId ?? hashId;
+              const element = document.querySelector(`#${id}`);
+              if (element !== null) {
                 element.scrollIntoView({ behavior: "smooth" });
                 if (window.location.hash) {
                   window.history.replaceState(
@@ -63,7 +64,7 @@ export function EditQuizPage(): React.JSX.Element {
                   );
                 } else {
                   queryParameters.delete("scroll_to");
-                  navigate({
+                  await navigate({
                     search: queryParameters.toString(),
                   });
                 }
@@ -80,8 +81,15 @@ export function EditQuizPage(): React.JSX.Element {
       }
     };
 
-    fetchQuiz();
-  }, [quizId, appContext.axiosInstance]);
+    void fetchQuiz();
+  }, [
+    quizId,
+    appContext.axiosInstance,
+    appContext.isGuest,
+    location.hash,
+    location.search,
+    navigate,
+  ]);
 
   const handleSave = async (data: QuizEditorResult) => {
     const payload = {
@@ -91,10 +99,12 @@ export function EditQuizPage(): React.JSX.Element {
     };
     try {
       if (appContext.isGuest) {
-        const userQuizzes = localStorage.getItem("guest_quizzes")
-          ? JSON.parse(localStorage.getItem("guest_quizzes")!)
-          : [];
-        const quizIndex = userQuizzes.findIndex((q: Quiz) => q.id === quizId);
+        const guestQuizzesString = localStorage.getItem("guest_quizzes");
+        const userQuizzes: Quiz[] =
+          guestQuizzesString === null
+            ? []
+            : (JSON.parse(guestQuizzesString) as Quiz[]);
+        const quizIndex = userQuizzes.findIndex((q) => q.id === quizId);
         if (quizIndex === -1) {
           toast.error("Nie znaleziono quizu.");
           return false;
@@ -109,9 +119,9 @@ export function EditQuizPage(): React.JSX.Element {
         payload,
       );
       if (response.status !== 200) {
-        const errorData = await response.data;
+        const errorData = response.data as { error?: string };
         toast.error(
-          errorData.error || "Wystąpił błąd podczas aktualizacji quizu.",
+          errorData.error ?? "Wystąpił błąd podczas aktualizacji quizu.",
         );
         return false;
       }
@@ -128,7 +138,7 @@ export function EditQuizPage(): React.JSX.Element {
   ): Promise<boolean> => {
     const ok = await handleSave(data);
     if (ok) {
-      navigate("/");
+      await navigate("/");
     }
     return ok;
   };
@@ -148,14 +158,14 @@ export function EditQuizPage(): React.JSX.Element {
 
   return (
     <>
-      {error ? (
+      {error !== null && error !== "" ? (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
       <QuizEditor
         mode="edit"
-        initialQuiz={initialQuiz || undefined}
+        initialQuiz={initialQuiz ?? undefined}
         onSave={handleSave}
         onSaveAndClose={handleSaveAndClose}
       />

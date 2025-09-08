@@ -99,7 +99,7 @@ export function GradesPage(): React.JSX.Element {
             (term) =>
               new Date() >= new Date(term.start_date) &&
               new Date() <= new Date(term.finish_date),
-          )?.id ||
+          )?.id ??
             data.terms.sort(
               (a, b) =>
                 new Date(b.start_date).getTime() -
@@ -107,17 +107,18 @@ export function GradesPage(): React.JSX.Element {
             )[0].id,
         );
         setError(null);
-      } catch (error) {
-        console.error("Error fetching grades:", error);
-        if (error instanceof AxiosError && error.response) {
-          const errorData = error.response.data as { detail?: string };
+      } catch (fetchError) {
+        console.error("Error fetching grades:", fetchError);
+
+        if (fetchError instanceof AxiosError && fetchError.response != null) {
+          const errorData = fetchError.response.data as { detail?: string };
           setError(
             errorData.detail ?? "Wystąpił błąd podczas pobierania ocen.",
           );
         } else {
           setError(
-            error instanceof Error
-              ? error.message
+            fetchError instanceof Error
+              ? fetchError.message
               : "Wystąpił błąd podczas pobierania ocen.",
           );
         }
@@ -129,12 +130,6 @@ export function GradesPage(): React.JSX.Element {
       void fetchData();
     }
   }, [appContext.axiosInstance, appContext.isGuest]);
-
-  useEffect(() => {
-    if (!editing) {
-      setEditedGrades({});
-    }
-  }, [editing]);
 
   const calculateAverage = useCallback(
     (filteredCourses: Course[]) => {
@@ -205,7 +200,7 @@ export function GradesPage(): React.JSX.Element {
     );
   }
 
-  if (error) {
+  if (error != null) {
     return (
       <Alert variant="destructive">
         <AlertCircleIcon />
@@ -256,6 +251,7 @@ export function GradesPage(): React.JSX.Element {
               onValueChange={(value) => {
                 setSelectedTerm(value);
                 setEditing(false);
+                setEditedGrades({});
               }}
               disabled={terms.length === 0}
             >
@@ -310,16 +306,15 @@ export function GradesPage(): React.JSX.Element {
                           max={5.5}
                           className="h-7 w-16"
                           value={
-                            editedGrades[course.course_id] === undefined
-                              ? course.grades.map((g) => g.value).join("; ")
-                              : editedGrades[course.course_id]
+                            editedGrades[course.course_id] ??
+                            course.grades.map((g) => g.value).join("; ")
                           }
-                          onChange={(e) => {
+                          onChange={(event) => {
                             setEditedGrades((previous) => ({
                               ...previous,
                               [course.course_id]:
-                                Number.parseFloat(e.target.value) ||
-                                e.target.value,
+                                Number.parseFloat(event.target.value) ||
+                                event.target.value,
                             }));
                           }}
                         />
@@ -358,6 +353,9 @@ export function GradesPage(): React.JSX.Element {
                 pressed={editing}
                 onPressedChange={(pressed) => {
                   setEditing(pressed);
+                  if (!pressed) {
+                    setEditedGrades({});
+                  }
                 }}
               >
                 <span>Tryb edycji</span>

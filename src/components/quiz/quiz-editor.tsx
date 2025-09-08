@@ -46,6 +46,14 @@ const sanitizeQuestions = (questions: Question[], advancedMode: boolean) =>
     })),
   }));
 
+const scrollToBottom = () => {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+};
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
 export function QuizEditor({
   mode,
   initialQuiz,
@@ -57,37 +65,34 @@ export function QuizEditor({
   const [description, setDescription] = useState(
     initialQuiz?.description ?? "",
   );
-  const [questions, setQuestions] = useState<Question[]>(
-    initialQuiz?.questions?.length
-      ? initialQuiz.questions
-      : [
-          {
-            id: 1,
-            question: "",
-            multiple: true,
-            answers: [
-              { answer: "", correct: false },
-              { answer: "", correct: false },
-            ],
-          },
+  const [questions, setQuestions] = useState<Question[]>(() => {
+    if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
+      return initialQuiz.questions;
+    }
+    return [
+      {
+        id: 1,
+        question: "",
+        multiple: true,
+        answers: [
+          { answer: "", correct: false },
+          { answer: "", correct: false },
         ],
-  );
+      },
+    ];
+  });
   const [error, setError] = useState<string | null>(null);
-  const [advancedMode, setAdvancedMode] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState(
+    initialQuiz?.questions?.some(
+      (q) =>
+        Boolean(q.image) ||
+        Boolean(q.explanation) ||
+        q.answers.some((a) => Boolean(a.image)),
+    ) ?? false,
+  );
   const [previousQuestionId, setPreviousQuestionId] = useState<number>(() =>
     questions.reduce((max, q) => Math.max(q.id, max), 0),
   );
-
-  // Detect advanced fields in provided quiz (edit mode) -> auto enable
-  useEffect(() => {
-    if (
-      initialQuiz?.questions?.some(
-        (q) => q.image || q.explanation || q.answers.some((a) => a.image),
-      )
-    ) {
-      setAdvancedMode(true);
-    }
-  }, [initialQuiz]);
 
   // all questions multiple toggle state (true / false / mixed null)
   const allQuestionsMultiple: boolean | null = useMemo(() => {
@@ -128,12 +133,12 @@ export function QuizEditor({
     setPreviousQuestionId(newId);
     // Scroll after render
     requestAnimationFrame(() => {
-      const element = document.getElementById(`question-${newId.toString()}`);
+      const element = document.querySelector(`#question-${newId.toString()}`);
       if (element == null) {
         // fallback slight delay
         setTimeout(() => {
-          const element2 = document.getElementById(
-            `question-${newId.toString()}`,
+          const element2 = document.querySelector(
+            `#question-${newId.toString()}`,
           );
           if (element2 != null) {
             element2.scrollIntoView({ behavior: "smooth" });
@@ -169,22 +174,14 @@ export function QuizEditor({
       questions: sanitizeQuestions(questions, advancedMode),
     };
     const validationError = validateQuiz(draft as unknown as Quiz);
-    if (validationError != null) {
+    if (validationError !== null) {
       setError(validationError);
       return;
     }
     setError(null);
-    await (closeAfter && onSaveAndClose
+    await (closeAfter === true && onSaveAndClose !== undefined
       ? onSaveAndClose(draft)
       : onSave(draft));
-  };
-
-  const scrollToBottom = () => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const [atBottom, setAtBottom] = useState(false);
@@ -309,11 +306,11 @@ export function QuizEditor({
 
         <div className="pointer-events-none sticky bottom-4 z-10 mt-6 flex justify-center sm:bottom-10">
           <div className="bg-background/60 pointer-events-auto -mx-16 flex flex-wrap items-center justify-center gap-3 rounded-md px-6 py-3 shadow-sm backdrop-blur sm:mx-0">
-            {onSaveAndClose ? (
+            {onSaveAndClose != null && (
               <Button disabled={saving} onClick={async () => triggerSave(true)}>
                 Zapisz i zakończ
               </Button>
-            ) : null}
+            )}
             <Button
               variant="outline"
               disabled={saving}

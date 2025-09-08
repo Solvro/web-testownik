@@ -41,20 +41,20 @@ export function CreateQuizPage(): React.JSX.Element {
         toast.success("Quiz został utworzony.");
         return true;
       }
-      const response = await appContext.axiosInstance.post("/quizzes/", {
+      const response = await appContext.axiosInstance.post<Quiz>("/quizzes/", {
         title: data.title,
         description: data.description,
         questions: data.questions,
       });
       if (response.status === 201) {
-        const result = await response.data;
+        const result = response.data;
         setQuiz(result);
         toast.success("Quiz został utworzony.");
         return true;
       }
-      const errorData = await response.data;
+      const errorData = response.data as { error?: string };
       toast.error(
-        errorData.error || "Wystąpił błąd podczas importowania quizu.",
+        errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
       );
       return false;
     } catch {
