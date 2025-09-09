@@ -6,52 +6,20 @@ import { AppContext } from "@/app-context.ts";
 import { ProfileDetails } from "@/components/profile/profile-details.tsx";
 import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface UserData {
-  id: string;
-  full_name: string;
-  student_number: string;
-  email: string;
-  photo_url: string;
-  overriden_photo_url: string;
-  photo: string;
-  is_superuser: boolean;
-  is_staff: boolean;
-  hide_profile: boolean;
-}
-
-interface SettingsData {
-  sync_progress: boolean;
-  initial_reoccurrences: number;
-  wrong_answer_reoccurrences: number;
-}
+import type { UserData, UserSettings } from "@/types/user.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 export function ProfilePage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>("account");
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [settings, setSettings] = useState<SettingsData>(() => {
-    if (appContext.isGuest) {
-      const savedSettings = localStorage.getItem("settings");
-      if (savedSettings != null && savedSettings.trim() !== "") {
-        try {
-          return JSON.parse(savedSettings) as SettingsData;
-        } catch {
-          // If parsing fails, use default
-        }
-      }
-      return {
-        sync_progress: false,
-        initial_reoccurrences: 1,
-        wrong_answer_reoccurrences: 1,
-      };
+  const [settings, setSettings] = useState<UserSettings>(() => {
+    const storedSettings = appContext.services.user.getStoredSettings();
+    if (storedSettings != null) {
+      return storedSettings;
     }
-    return {
-      sync_progress: false,
-      initial_reoccurrences: 1,
-      wrong_answer_reoccurrences: 1,
-    };
+    return { ...DEFAULT_USER_SETTINGS };
   });
 
   const handleTabSelect = (tabKey: string) => {
@@ -76,9 +44,8 @@ export function ProfilePage(): React.JSX.Element {
     }
 
     // Fetch user data
-    appContext.axiosInstance
-      .get<UserData>("/user/")
-      .then((r) => r.data)
+    appContext.services.user
+      .getUserData()
       .then((data) => {
         setUserData(data);
       })
@@ -87,9 +54,8 @@ export function ProfilePage(): React.JSX.Element {
       });
 
     // Fetch settings data
-    appContext.axiosInstance
-      .get<SettingsData>("/settings/")
-      .then((r) => r.data)
+    appContext.services.user
+      .getUserSettings()
       .then((data) => {
         setSettings(data);
       })
@@ -97,32 +63,24 @@ export function ProfilePage(): React.JSX.Element {
         console.error("Error fetching settings:", error);
       });
   }, [
-    appContext.axiosInstance,
+    appContext.services.user,
     appContext.isGuest,
     location.hash,
     location.pathname,
   ]);
 
-  const handleSettingChange = (
-    name: keyof SettingsData,
+  const handleSettingChange = async (
+    name: keyof UserSettings,
     value: boolean | number,
   ) => {
     setSettings({ ...settings, [name]: value });
-    localStorage.setItem(
-      "settings",
-      JSON.stringify({ ...settings, [name]: value }),
-    );
-    if (appContext.isGuest) {
-      return;
+    try {
+      await appContext.services.user.updateUserSettings({ [name]: value });
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
+      setSettings(settings); // Revert to previous settings on error
     }
-    appContext.axiosInstance
-      .put("/settings/", { [name]: value })
-      .catch((error: unknown) => {
-        console.error("Error updating settings:", error);
-        toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
-        setSettings(settings); // Revert to previous settings on error
-        localStorage.setItem("settings", JSON.stringify(settings));
-      });
   };
 
   return (

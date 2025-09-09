@@ -8,18 +8,14 @@ import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils.ts";
-
-interface Quiz {
-  id: number;
-  title: string;
-}
+import type { QuizMetadata } from "@/types/quiz.ts";
 
 export function LastUsedCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
-  const [lastUsedQuizzes, setLastUsedQuizzes] = useState<Quiz[]>([]);
+  const [lastUsedQuizzes, setLastUsedQuizzes] = useState<QuizMetadata[]>([]);
   const [fetchedAll, setFetchedAll] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -27,27 +23,7 @@ export function LastUsedCard({
     async (limit: number) => {
       setLoading(true);
       try {
-        if (appContext.isGuest) {
-          const guestQuizzes = localStorage.getItem("guest_quizzes");
-          const parsedQuizzes =
-            guestQuizzes !== null && guestQuizzes !== ""
-              ? (JSON.parse(guestQuizzes) as Quiz[])
-              : [];
-          const selectedQuizzes = parsedQuizzes.slice(0, limit);
-          if (selectedQuizzes.length < limit) {
-            setFetchedAll(true);
-          }
-          setLastUsedQuizzes(selectedQuizzes);
-          setLoading(false);
-          return;
-        }
-        const response = await appContext.axiosInstance.get<Quiz[]>(
-          "/last-used-quizzes/",
-          {
-            params: { limit },
-          },
-        );
-        const data = response.data;
+        const data = await appContext.services.quiz.getLastUsedQuizzes(limit);
         if (data.length < limit) {
           setFetchedAll(true);
         }
@@ -78,7 +54,7 @@ export function LastUsedCard({
                     <TableRow key={quiz.id} className="hover:bg-transparent">
                       <TableCell>
                         <Link
-                          to={`/quiz/${String(quiz.id)}`}
+                          to={`/quiz/${quiz.id}`}
                           className="text-sm font-medium hover:underline"
                         >
                           <div className="elipsis w-full truncate">

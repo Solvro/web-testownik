@@ -65,12 +65,7 @@ export function App(): React.JSX.Element {
                 <Route path="*" element={<LoginPrompt />} />
               </>
             )}
-            {context.isGuest ? (
-              <Route
-                path="/connect-account"
-                element={<ConnectGuestAccount />}
-              />
-            ) : null}
+            <Route path="/connect-account" element={<ConnectGuestAccount />} />
             <Route path="/quiz/:quizId" element={<QuizPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

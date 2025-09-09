@@ -7,16 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch";
-
-interface SettingsData {
-  sync_progress: boolean;
-  initial_reoccurrences: number;
-  wrong_answer_reoccurrences: number;
-}
+import type { UserSettings } from "@/types/user.ts";
 
 interface SettingsFormProps {
-  settings: SettingsData;
-  onSettingChange: (name: keyof SettingsData, value: boolean | number) => void;
+  settings: UserSettings;
+  onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
 }
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {

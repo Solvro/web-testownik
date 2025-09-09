@@ -1,23 +1,8 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
-
-import type { Question, Quiz, Reoccurrence } from "../types";
-
-export interface UserSettings {
-  sync_progress: boolean;
-  initial_reoccurrences: number;
-  wrong_answer_reoccurrences: number;
-}
-
-export interface Progress {
-  current_question: number;
-  correct_answers_count: number;
-  wrong_answers_count: number;
-  study_time: number;
-  last_activity?: string;
-  reoccurrences: Reoccurrence[];
-}
+import type { Question, Quiz, Reoccurrence } from "@/types/quiz.ts";
+import type { UserSettings } from "@/types/user.ts";
 
 export interface UseQuizLogicParameters {
   quizId: string;

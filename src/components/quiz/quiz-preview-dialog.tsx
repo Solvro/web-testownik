@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
-import type { Quiz } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import type { Quiz } from "@/types/quiz.ts";
 
 interface QuizPreviewDialogProps {
   open: boolean;

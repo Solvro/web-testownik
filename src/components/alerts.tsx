@@ -1,24 +1,14 @@
-import axios from "axios";
 import DOMPurify from "dompurify";
 import { XIcon } from "lucide-react";
 import React from "react";
 
+import { AppContext } from "@/app-context.ts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button.tsx";
-import { SERVER_URL } from "@/config.ts";
-
-interface AlertData {
-  id: string;
-  title: string;
-  content: string;
-  active: boolean;
-  dismissible: boolean;
-  color: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { AlertData } from "@/types/alert.ts";
 
 export function Alerts(): React.JSX.Element | null {
+  const appContext = React.useContext(AppContext);
   const [alerts, setAlerts] = React.useState<AlertData[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
     const stored = localStorage.getItem("dismissedAlerts");
@@ -34,15 +24,15 @@ export function Alerts(): React.JSX.Element | null {
   };
 
   React.useEffect(() => {
-    axios
-      .get<AlertData[]>(`${SERVER_URL}/alerts/`)
-      .then((response) => {
-        setAlerts(response.data);
+    appContext.services.user
+      .getAlerts()
+      .then((fetchedAlerts) => {
+        setAlerts(fetchedAlerts);
       })
       .catch((error: unknown) => {
         console.error("Failed to fetch alerts:", error);
       });
-  }, []);
+  }, [appContext.services.user]);
 
   if (
     alerts.every(

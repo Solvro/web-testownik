@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -46,41 +45,21 @@ export function ReportQuestionIssueDialog({
     setIsSubmitting(true);
 
     try {
-      const response = await appContext.axiosInstance.post(
-        "/report-question-issue/",
-        {
-          quiz_id: quizId,
-          question_id: questionId,
-          issue,
-        },
+      await appContext.services.quiz.reportQuestionIssue(
+        quizId,
+        String(questionId),
+        issue,
       );
 
-      if (response.status === 201) {
-        toast.success(
-          "Zgłoszenie zostało wysłane do właściciela quizu. Dziękujemy!",
-        );
-        setIssue("");
-      } else {
-        toast.error(
-          `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${JSON.stringify(
-            response.data,
-          )}`,
-        );
-      }
+      toast.success(
+        "Zgłoszenie zostało wysłane do właściciela quizu. Dziękujemy!",
+      );
+      setIssue("");
     } catch (error) {
       console.error("Error reporting incorrect question:", error);
-      if (error instanceof AxiosError) {
-        const errorData = error.response?.data as { error?: string };
-        toast.error(
-          `Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później. \n${
-            errorData.error ?? ""
-          }`,
-        );
-      } else {
-        toast.error(
-          "Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później.",
-        );
-      }
+      toast.error(
+        "Wystąpił błąd podczas wysyłania zgłoszenia. Spróbuj ponownie później.",
+      );
     } finally {
       setIsSubmitting(false);
       setOpen(false);

@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import type { Answer, Question } from "@/types/quiz.ts";
 
-import type { Answer, Question } from "./types.ts";
-
-interface Props {
+interface questionFormProps {
   question: Question;
   onUpdate: (updatedQuestion: Question) => void;
   onRemove: (id: number) => void;
@@ -21,7 +20,7 @@ export function QuestionForm({
   onUpdate,
   onRemove,
   advancedMode = false,
-}: Props) {
+}: questionFormProps) {
   const handleTextChange = (text: string) => {
     onUpdate({ ...question, question: text });
   };

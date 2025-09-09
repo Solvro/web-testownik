@@ -1,5 +1,3 @@
-import type { AxiosError } from "axios";
-import axios from "axios";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import React, { useCallback, useContext, useState } from "react";
 import { useNavigate } from "react-router";
@@ -22,7 +20,6 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp.tsx";
 import { Label } from "@/components/ui/label.tsx";
-import { SERVER_URL } from "@/config.ts";
 
 export function OTPLoginPage() {
   const appContext = useContext(AppContext);
@@ -42,26 +39,15 @@ export function OTPLoginPage() {
     }
     setSubmitting(true);
     try {
-      const response = await axios.post(`${SERVER_URL}/generate-otp/`, {
-        email,
-      });
-      if (response.status === 200) {
-        setSubmitted(true);
-        setError(null);
-      } else {
-        setError(response.statusText);
-      }
+      await appContext.services.user.generateOTP(email);
+      setSubmitted(true);
+      setError(null);
     } catch (error_) {
-      if ((error_ as AxiosError).response?.status === 404) {
+      const apiError = error_ as Error;
+      if (apiError.message.includes("404")) {
         setError("Nie znaleziono użytkownika o podanym adresie e-mail.");
       } else {
-        setError(
-          (
-            (error_ as AxiosError).response?.data as {
-              error?: string;
-            }
-          ).error ?? "Niezidentyfikowany błąd.",
-        );
+        setError("Niezidentyfikowany błąd.");
       }
     } finally {
       setSubmitting(false);
@@ -76,32 +62,22 @@ export function OTPLoginPage() {
       }
       setSubmitting(true);
       try {
-        const response = await axios.post(`${SERVER_URL}/login-otp/`, {
-          email: email.trim(),
+        const data = await appContext.services.user.verifyOTP(
+          email.trim(),
           otp,
-        });
-        if (response.status === 200) {
-          const data = response.data as {
-            access_token: string;
-            refresh_token: string;
-          };
-          localStorage.setItem("access_token", data.access_token);
-          localStorage.setItem("refresh_token", data.refresh_token);
-          await appContext.fetchUserData();
-          appContext.setAuthenticated(true);
-          appContext.setGuest(false);
-          await navigate("/");
-        } else {
-          setError(response.statusText);
-        }
-      } catch (error_) {
-        setError(
-          (
-            (error_ as AxiosError).response?.data as {
-              error?: string;
-            }
-          ).error ?? "Niezidentyfikowany błąd.",
         );
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem(
+          "access_token_expires_at",
+          (Date.now() + 3600 * 1000).toString(),
+        );
+        await appContext.services.user.getUserData();
+        appContext.setAuthenticated(true);
+        appContext.setGuest(false);
+        await navigate("/");
+      } catch {
+        setError("Niezidentyfikowany błąd.");
       } finally {
         setSubmitting(false);
       }

@@ -8,7 +8,6 @@ import remarkMath from "remark-math";
 
 import { AppContext } from "@/app-context.ts";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
-import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,18 +20,14 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { cn } from "@/lib/utils.ts";
-
-interface ExtendedQuestion extends Question {
-  quiz_title: string;
-  quiz_id: string;
-}
+import type { QuestionWithQuizInfo } from "@/services/types.ts";
 
 export function QuestionQuizCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
-  const [questionData, setQuestionData] = useState<ExtendedQuestion | null>(
+  const [questionData, setQuestionData] = useState<QuestionWithQuizInfo | null>(
     null,
   );
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
@@ -43,40 +38,7 @@ export function QuestionQuizCard({
   const fetchQuestion = useCallback(async () => {
     setLoading(true);
     try {
-      if (appContext.isGuest) {
-        const guestQuizzesString = localStorage.getItem("guest_quizzes");
-        const guestQuizzes =
-          guestQuizzesString !== null && guestQuizzesString !== ""
-            ? (JSON.parse(guestQuizzesString) as Quiz[])
-            : [];
-        if (guestQuizzes.length === 0) {
-          throw new Error("No questions available");
-        }
-        const randomQuiz =
-          guestQuizzes[Math.floor(Math.random() * guestQuizzes.length)];
-        const randomQuestion =
-          randomQuiz.questions[
-            Math.floor(Math.random() * randomQuiz.questions.length)
-          ];
-        setQuestionData({
-          ...randomQuestion,
-          quiz_title: randomQuiz.title,
-          quiz_id: randomQuiz.id,
-        });
-        setSelectedAnswers([]);
-        setEnableEdit(true);
-        setResult(null);
-        setLoading(false);
-        return;
-      }
-      const response =
-        await appContext.axiosInstance.get<ExtendedQuestion>(
-          "/random-question/",
-        );
-      if (response.status !== 200) {
-        throw new Error("No questions available");
-      }
-      const data = response.data;
+      const data = await appContext.services.quiz.getRandomQuestion();
       setQuestionData(data);
       setSelectedAnswers([]);
       setEnableEdit(true);

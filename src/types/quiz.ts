@@ -1,4 +1,4 @@
-import type { AccessLevel, User } from "./share-quiz-dialog/types.ts";
+import type { Group, User } from "./user.ts";
 
 export interface QuizMetadata {
   id: string;
@@ -27,6 +27,11 @@ export interface Question {
   answers: Answer[];
 }
 
+export interface QuestionWithQuizInfo extends Question {
+  quiz_title: string;
+  quiz_id: string;
+}
+
 export interface Quiz extends QuizMetadata {
   questions: Question[];
 }
@@ -34,4 +39,29 @@ export interface Quiz extends QuizMetadata {
 export interface Reoccurrence {
   id: number;
   reoccurrences: number;
+}
+
+export interface QuizProgress {
+  current_question: number;
+  correct_answers_count: number;
+  wrong_answers_count: number;
+  study_time: number;
+  last_activity?: string;
+  reoccurrences: Reoccurrence[];
+}
+
+export interface SharedQuiz {
+  id: string;
+  quiz: QuizMetadata;
+  access_level: AccessLevel;
+  user: User | null;
+  group: Group | null;
+  allow_edit: boolean;
+}
+
+export enum AccessLevel {
+  PRIVATE = 0,
+  SHARED = 1,
+  UNLISTED = 2,
+  PUBLIC = 3,
 }

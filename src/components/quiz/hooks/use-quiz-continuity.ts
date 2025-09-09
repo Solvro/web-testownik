@@ -3,8 +3,9 @@ import type { DataConnection } from "peerjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
+import type { Question, Reoccurrence } from "@/types/quiz.ts";
+
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
-import type { Question, Reoccurrence } from "../types";
 
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;

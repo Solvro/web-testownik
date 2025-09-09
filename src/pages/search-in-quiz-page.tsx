@@ -4,10 +4,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
-import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { Quiz } from "@/types/quiz.ts";
 
 // Function to highlight the matched text
 const escapeRegExp = (s: string) =>
@@ -49,17 +49,16 @@ export function SearchInQuizPage(): React.JSX.Element {
 
   useEffect(() => {
     const fetchQuiz = async () => {
+      if (quizId == null || quizId.trim() === "") {
+        setError("Nieprawidłowy identyfikator quizu.");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        const response = await appContext.axiosInstance.get<Quiz>(
-          `/quizzes/${String(quizId)}/`,
-        );
-        if (response.status === 200) {
-          const data = response.data;
-          setQuiz(data);
-        } else {
-          setError("Nie udało się załadować quizu.");
-        }
+        const data = await appContext.services.quiz.getQuiz(quizId);
+        setQuiz(data);
       } catch {
         setError("Wystąpił błąd podczas ładowania quizu.");
       } finally {
@@ -68,7 +67,7 @@ export function SearchInQuizPage(): React.JSX.Element {
     };
 
     void fetchQuiz();
-  }, [quizId, appContext.axiosInstance]);
+  }, [quizId, appContext.services.quiz]);
 
   const filteredQuestions = useMemo(() => {
     if (quiz == null || !query.trim()) {

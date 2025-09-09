@@ -6,13 +6,12 @@ import {
 } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { QuizCard } from "@/components/quiz/quiz-card.tsx";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
-import type { SharedQuiz } from "@/components/quiz/share-quiz-dialog/types.ts";
-import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -37,6 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
+import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
@@ -54,35 +54,20 @@ export function QuizzesPage() {
 
   useEffect(() => {
     const fetchQuizzes = async () => {
-      if (appContext.isGuest) {
-        const guestQuizzesString = localStorage.getItem("guest_quizzes");
-        setUserQuizzes(
-          guestQuizzesString === null
-            ? []
-            : (JSON.parse(guestQuizzesString) as QuizMetadata[]),
-        );
-
-        setLoading(false);
-        return;
-      }
       try {
-        const [userResponse, sharedResponse] = await Promise.all([
-          appContext.axiosInstance.get<QuizMetadata[]>("/quizzes/"),
-          appContext.axiosInstance.get<SharedQuiz[]>("/shared-quizzes/"),
+        const [fetchedUserQuizzes, fetchedSharedQuizzes] = await Promise.all([
+          appContext.services.quiz.getQuizzes(),
+          appContext.services.quiz.getSharedQuizzes(),
         ]);
 
-        if (userResponse.status === 200) {
-          setUserQuizzes(userResponse.data);
-        }
+        setUserQuizzes(fetchedUserQuizzes);
 
-        if (sharedResponse.status === 200) {
-          const uniqueSharedQuizzes = sharedResponse.data.filter(
-            (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
-              index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-              sq.quiz.maintainer?.id !== localStorage.getItem("user_id"),
-          );
-          setSharedQuizzes(uniqueSharedQuizzes);
-        }
+        const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
+          (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
+            index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
+            sq.quiz.maintainer?.id !== localStorage.getItem("user_id"),
+        );
+        setSharedQuizzes(uniqueSharedQuizzes);
       } catch {
         setError("Nie udało się załadować quizów.");
       } finally {
@@ -91,7 +76,7 @@ export function QuizzesPage() {
     };
 
     void fetchQuizzes();
-  }, [appContext.axiosInstance, appContext.isGuest]);
+  }, [appContext.services.quiz, appContext.isGuest]);
 
   const handleShareQuiz = (quiz: QuizMetadata) => {
     setCurrentDialog({ type: "share", quiz });
@@ -101,80 +86,50 @@ export function QuizzesPage() {
     setCurrentDialog({ type: "delete", quiz });
   };
 
-  const confirmDeleteQuiz = () => {
+  const confirmDeleteQuiz = async () => {
     if (currentDialog.quiz === null) {
       return;
     }
 
     const quiz = currentDialog.quiz;
 
-    if (appContext.isGuest) {
-      localStorage.setItem(
-        "guest_quizzes",
-        JSON.stringify(userQuizzes.filter((q) => q.id !== quiz.id)),
-      );
+    try {
+      await appContext.services.quiz.deleteQuiz(quiz.id);
       setUserQuizzes((previous) => previous.filter((q) => q.id !== quiz.id));
-    } else {
-      appContext.axiosInstance
-        .delete(`/quizzes/${quiz.id}/`)
-        .then(() => {
-          setUserQuizzes((previous) =>
-            previous.filter((q) => q.id !== quiz.id),
-          );
-        })
-        .catch(() => {
-          setError("Nie udało się usunąć quizu.");
-        });
+      toast.success(`Quiz "${quiz.title}" został usunięty.`);
+    } catch {
+      toast.error("Nie udało się usunąć quizu.");
     }
 
     setCurrentDialog({ type: null, quiz: null });
   };
 
-  const handleDownloadQuiz = (quiz: QuizMetadata) => {
-    if (appContext.isGuest) {
-      // Create a copy without the id for download
-      const { id, ...quizToDownload } = quiz;
+  const handleDownloadQuiz = async (quiz: QuizMetadata) => {
+    try {
+      const fullQuiz = await appContext.services.quiz.getQuiz(quiz.id);
+      // Create a downloadable version
+      const downloadableQuiz = {
+        title: fullQuiz.title,
+        description: fullQuiz.description,
+        maintainer: fullQuiz.maintainer?.full_name ?? null,
+        version: fullQuiz.version,
+        questions: fullQuiz.questions,
+        is_anonymous: fullQuiz.is_anonymous,
+      };
       const url = window.URL.createObjectURL(
-        new Blob([JSON.stringify(quizToDownload, null, 2)], {
+        new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
         }),
       );
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${quiz.title}.json`);
+      link.setAttribute("download", `${fullQuiz.title}.json`);
       document.body.append(link);
       link.click();
       link.remove();
-      return;
+    } catch {
+      toast.error("Nie udało się pobrać quizu.");
     }
-    void appContext.axiosInstance
-      .get<Quiz>(`/quizzes/${quiz.id}/`)
-      .then((response) => {
-        const fullQuiz = response.data;
-        // Create a downloadable version
-        const downloadableQuiz = {
-          title: fullQuiz.title,
-          description: fullQuiz.description,
-          maintainer: fullQuiz.maintainer?.full_name ?? null,
-          version: fullQuiz.version,
-          questions: fullQuiz.questions,
-          is_anonymous: fullQuiz.is_anonymous,
-        };
-        const url = window.URL.createObjectURL(
-          new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
-            type: "application/json",
-          }),
-        );
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${fullQuiz.title}.json`);
-        document.body.append(link);
-        link.click();
-        link.remove();
-      })
-      .catch(() => {
-        setError("Nie udało się pobrać quizu.");
-      });
   };
 
   const updateQuiz = (quiz: QuizMetadata) => {

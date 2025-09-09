@@ -22,19 +22,7 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { cn, getInitials } from "@/lib/utils.ts";
-
-interface UserData {
-  id: string;
-  full_name: string;
-  student_number: string;
-  email: string;
-  photo_url: string;
-  overriden_photo_url: string;
-  photo: string;
-  is_superuser: boolean;
-  is_staff: boolean;
-  hide_profile: boolean;
-}
+import type { UserData } from "@/types/user.ts";
 
 interface ProfileDetailsProps {
   userData: UserData | null;
@@ -67,16 +55,16 @@ export function ProfileDetails({
 
   const handleSavePhoto = () => {
     handleCloseDialog();
-    appContext.axiosInstance
-      .patch("/user/", {
+    appContext.services.user
+      .updateUserProfile({
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
       })
       .then(() => {
         localStorage.setItem("profile_picture", selectedPhoto);
-        document
-          .querySelector("#profile-pic")
-          ?.setAttribute("src", selectedPhoto);
+        for (const element of document.querySelectorAll(".user-avatar")) {
+          (element as HTMLImageElement).src = selectedPhoto;
+        }
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
         }
@@ -88,8 +76,8 @@ export function ProfileDetails({
   };
 
   const handleHideProfile = (hide: boolean) => {
-    appContext.axiosInstance
-      .patch("/user/", { hide_profile: hide })
+    appContext.services.user
+      .updateUserProfile({ hide_profile: hide })
       .then(() => {
         if (userData !== null) {
           setUserData({ ...userData, hide_profile: hide });

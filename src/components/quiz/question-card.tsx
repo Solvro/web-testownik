@@ -7,7 +7,6 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
-import type { Answer, Question } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils";
+import type { Answer, Question } from "@/types/quiz.ts";
 
 interface QuestionCardProps {
   question: Question | null;

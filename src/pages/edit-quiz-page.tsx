@@ -6,9 +6,9 @@ import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
-import type { Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Quiz } from "@/types/quiz.ts";
 
 export function EditQuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
@@ -24,56 +24,38 @@ export function EditQuizPage(): React.JSX.Element {
 
   useEffect(() => {
     const fetchQuiz = async () => {
+      if (quizId == null || quizId.trim() === "") {
+        setError("Nieprawidłowy identyfikator quizu.");
+        setLoading(false);
+        return;
+      }
       try {
-        if (appContext.isGuest) {
-          const guestQuizzesString = localStorage.getItem("guest_quizzes");
-          const userQuizzes: Quiz[] =
-            guestQuizzesString === null
-              ? []
-              : (JSON.parse(guestQuizzesString) as Quiz[]);
-          const quiz = userQuizzes.find((q) => q.id === quizId);
-          if (quiz === undefined) {
-            setError("Nie znaleziono quizu.");
-            setLoading(false);
-            return;
-          }
-          setInitialQuiz(quiz);
-          setLoading(false);
-          return;
-        }
-        const response = await appContext.axiosInstance.get<Quiz>(
-          `/quizzes/${String(quizId)}/`,
-        );
-        if (response.status === 200) {
-          const data: Quiz = response.data;
-          setInitialQuiz(data);
-          setTimeout(async () => {
-            const queryParameters = new URLSearchParams(location.search);
-            if (location.hash || queryParameters.has("scroll_to")) {
-              const hashId = window.location.hash.slice(1);
-              const scrollId = queryParameters.get("scroll_to");
-              const id = scrollId ?? hashId;
-              const element = document.querySelector(`#${id}`);
-              if (element !== null) {
-                element.scrollIntoView({ behavior: "smooth" });
-                if (window.location.hash) {
-                  window.history.replaceState(
-                    null,
-                    "",
-                    window.location.pathname + window.location.search,
-                  );
-                } else {
-                  queryParameters.delete("scroll_to");
-                  await navigate({
-                    search: queryParameters.toString(),
-                  });
-                }
+        const data: Quiz = await appContext.services.quiz.getQuiz(quizId);
+        setInitialQuiz(data);
+        setTimeout(async () => {
+          const queryParameters = new URLSearchParams(location.search);
+          if (location.hash || queryParameters.has("scroll_to")) {
+            const hashId = window.location.hash.slice(1);
+            const scrollId = queryParameters.get("scroll_to");
+            const id = scrollId ?? hashId;
+            const element = document.querySelector(`#${id}`);
+            if (element !== null) {
+              element.scrollIntoView({ behavior: "smooth" });
+              if (window.location.hash) {
+                window.history.replaceState(
+                  null,
+                  "",
+                  window.location.pathname + window.location.search,
+                );
+              } else {
+                queryParameters.delete("scroll_to");
+                await navigate({
+                  search: queryParameters.toString(),
+                });
               }
             }
-          }, 100);
-        } else {
-          setError("Nie udało się załadować quizu.");
-        }
+          }
+        }, 100);
       } catch {
         setError("Wystąpił błąd podczas ładowania quizu.");
       } finally {
@@ -84,7 +66,7 @@ export function EditQuizPage(): React.JSX.Element {
     void fetchQuiz();
   }, [
     quizId,
-    appContext.axiosInstance,
+    appContext.services.quiz,
     appContext.isGuest,
     location.hash,
     location.search,
@@ -92,39 +74,17 @@ export function EditQuizPage(): React.JSX.Element {
   ]);
 
   const handleSave = async (data: QuizEditorResult) => {
+    if (quizId === undefined || quizId.trim() === "") {
+      toast.error("Nieprawidłowy identyfikator quizu.");
+      return false;
+    }
     const payload = {
       title: data.title,
       description: data.description,
       questions: data.questions,
     };
     try {
-      if (appContext.isGuest) {
-        const guestQuizzesString = localStorage.getItem("guest_quizzes");
-        const userQuizzes: Quiz[] =
-          guestQuizzesString === null
-            ? []
-            : (JSON.parse(guestQuizzesString) as Quiz[]);
-        const quizIndex = userQuizzes.findIndex((q) => q.id === quizId);
-        if (quizIndex === -1) {
-          toast.error("Nie znaleziono quizu.");
-          return false;
-        }
-        userQuizzes[quizIndex] = { ...userQuizzes[quizIndex], ...payload };
-        localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
-        toast.success("Quiz został zaktualizowany.");
-        return true;
-      }
-      const response = await appContext.axiosInstance.put(
-        `/quizzes/${String(quizId)}/`,
-        payload,
-      );
-      if (response.status !== 200) {
-        const errorData = response.data as { error?: string };
-        toast.error(
-          errorData.error ?? "Wystąpił błąd podczas aktualizacji quizu.",
-        );
-        return false;
-      }
+      await appContext.services.quiz.updateQuiz(quizId, payload);
       toast.success("Quiz został zaktualizowany.");
       return true;
     } catch {

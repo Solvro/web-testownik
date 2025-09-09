@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SERVER_URL } from "@/config.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
@@ -38,6 +39,7 @@ export function LoginPrompt(): React.JSX.Element {
     localStorage.setItem(
       "settings",
       JSON.stringify({
+        ...DEFAULT_USER_SETTINGS,
         ...parsedSettings,
         sync_progress: false,
       }),

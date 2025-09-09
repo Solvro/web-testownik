@@ -1,4 +1,4 @@
-import type { Quiz } from "@/components/quiz/types.ts";
+import type { Quiz } from "@/types/quiz.ts";
 
 const ALLOWED_QUIZ_KEYS = [
   "title",

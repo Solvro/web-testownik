@@ -1,10 +1,9 @@
-import type { AxiosInstance } from "axios";
+import type { ServiceRegistry } from "./services";
 
 export interface AppContextType {
   isAuthenticated: boolean;
   setAuthenticated: (isAuthenticated: boolean) => void;
   isGuest: boolean;
   setGuest: (isGuest: boolean) => void;
-  axiosInstance: AxiosInstance;
-  fetchUserData: () => Promise<void>;
+  services: ServiceRegistry;
 }

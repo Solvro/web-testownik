@@ -8,8 +8,6 @@ import {
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
-import type { Group, User } from "@/components/quiz/share-quiz-dialog/types.ts";
-import type { QuizMetadata } from "@/components/quiz/types.ts";
 import {
   Avatar,
   AvatarFallback,
@@ -19,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { cn, getInitials } from "@/lib/utils";
+import type { QuizMetadata } from "@/types/quiz.ts";
+import type { Group, User } from "@/types/user.ts";
 
 interface AccessListProps {
   quizMetadata: QuizMetadata;
