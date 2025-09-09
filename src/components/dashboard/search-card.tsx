@@ -38,25 +38,8 @@ export function SearchCard({
 
     try {
       setLoading(true);
-      if (appContext.isGuest) {
-        const guestQuizzes = localStorage.getItem("guest_quizzes");
-        const data =
-          guestQuizzes !== null && guestQuizzes !== ""
-            ? (JSON.parse(guestQuizzes) as SearchResult[])
-            : [];
-        const filteredData = data.filter((quiz: SearchResult) =>
-          quiz.title.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-        setSearchResults(filteredData);
-        setLoading(false);
-        return;
-      }
-      const response = await appContext.axiosInstance.get(
-        `/search-quizzes/?query=${encodeURIComponent(searchQuery)}`,
-      );
-
       const data = Object.values(
-        response.data as Record<string, unknown>,
+        await appContext.services.quiz.searchQuizzes(searchQuery),
       ).flat() as SearchResult[];
       const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>
         data.find((item) => item.id === id),

@@ -1,8 +1,8 @@
-import axios from "axios";
 import { MessageSquareWarningIcon } from "lucide-react";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
+import { AppContext } from "@/app-context.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
@@ -25,7 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Textarea } from "@/components/ui/textarea";
-import { SERVER_URL } from "@/config.ts";
 
 interface ReportBugDialogProps {
   open: boolean;
@@ -43,6 +42,7 @@ const DEFAULT_FORM_STATE = {
 };
 
 export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
+  const appContext = useContext(AppContext);
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
@@ -121,8 +121,8 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       form.diagnostic = JSON.stringify(diagnostics, null, 2);
     }
 
-    axios
-      .post(`${SERVER_URL}/feedback/send`, {
+    appContext.services.user
+      .sendFeedback({
         ...form,
         sendDiagnostics: form.sendDiagnostics ? "true" : "false",
       })

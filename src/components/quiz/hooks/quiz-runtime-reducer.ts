@@ -1,4 +1,4 @@
-import type { Question, Reoccurrence } from "../types";
+import type { Question, Reoccurrence } from "@/types/quiz.ts";
 
 export interface RuntimeState {
   currentQuestion: Question | null;

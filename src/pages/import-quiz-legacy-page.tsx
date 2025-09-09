@@ -9,15 +9,14 @@ import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
-import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
-import type { Question, Quiz } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea";
+import type { Question, Quiz } from "@/types/quiz.ts";
 
 const trueFalseStrings = {
   prawda: true,
@@ -450,42 +449,8 @@ export function ImportQuizLegacyPage() {
         questions,
       };
 
-      if (appContext.isGuest) {
-        const guestQuizzesString = localStorage.getItem("guest_quizzes");
-        const userQuizzes: Quiz[] =
-          guestQuizzesString === null
-            ? []
-            : (JSON.parse(guestQuizzesString) as Quiz[]);
-        const temporaryQuiz = {
-          ...quizData,
-          id: uuidv4(),
-          visibility: 0,
-          version: 1,
-          allow_anonymous: false,
-          is_anonymous: true,
-          can_edit: true,
-        };
-        userQuizzes.push(temporaryQuiz);
-        localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
-        setQuiz(temporaryQuiz);
-        setLoading(false);
-        return;
-      }
-
-      const response = await appContext.axiosInstance.post<Quiz>(
-        "/quizzes/",
-        quizData,
-      );
-
-      if (response.status === 201) {
-        const importedQuiz = response.data;
-        setQuiz(importedQuiz);
-      } else {
-        const errorData = response.data as { error?: string };
-        setError(
-          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
-        );
-      }
+      const importedQuiz = await appContext.services.quiz.createQuiz(quizData);
+      setQuiz(importedQuiz);
     } catch (error_) {
       setError(
         `Wystąpił błąd podczas przetwarzania plików: ${error_ instanceof Error ? error_.message : String(error_)}`,

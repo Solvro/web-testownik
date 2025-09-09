@@ -1,36 +1,12 @@
-import axios from "axios";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 
 import type { AppContextType } from "@/app-context-type";
 import { AppContext } from "@/app-context.ts";
 
 import { SERVER_URL } from "./config";
-import { requestInterceptor } from "./interceptors/request-interceptor.ts";
-import {
-  RefreshTokenExpiredError,
-  responseInterceptor,
-} from "./interceptors/response-interceptor.ts";
+import { getServices, initializeServices } from "./services";
 
-interface UserData {
-  photo: string;
-  is_staff: string;
-  id: string;
-}
-
-const axiosInstance = axios.create({
-  baseURL: SERVER_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-axiosInstance.interceptors.request.use(requestInterceptor, (error) => {
-  throw error;
-});
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  responseInterceptor,
-);
+initializeServices(SERVER_URL);
 
 export function AppContextProvider({
   children,
@@ -49,43 +25,13 @@ export function AppContextProvider({
     setIsGuest(isGuestParameter);
   };
 
-  const fetchUserData = useCallback(async () => {
-    try {
-      const response = await axiosInstance.get<UserData>("/user/");
-      const userData = response.data;
-      if (!userData.id || !userData.photo || !userData.is_staff) {
-        throw new Error("Incomplete user data received");
-      }
-      localStorage.setItem("profile_picture", userData.photo);
-      localStorage.setItem("is_staff", userData.is_staff);
-      localStorage.setItem("user_id", userData.id);
-      setIsAuthenticated(true);
-    } catch {
-      console.error("Failed to fetch user data");
-    }
-  }, []);
-
   const context: AppContextType = {
     isAuthenticated,
     setAuthenticated: setIsAuthenticated,
     isGuest,
     setGuest,
-    axiosInstance,
-    fetchUserData,
+    services: getServices(),
   };
-
-  axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error instanceof RefreshTokenExpiredError) {
-        localStorage.removeItem("profile_picture");
-        localStorage.removeItem("is_staff");
-        localStorage.removeItem("user_id");
-        context.setAuthenticated(false);
-      }
-      throw error;
-    },
-  );
 
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
 }

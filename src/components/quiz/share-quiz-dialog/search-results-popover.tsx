@@ -1,7 +1,6 @@
 import React from "react";
 
 import { Loader } from "@/components/loader.tsx";
-import type { Group, User } from "@/components/quiz/share-quiz-dialog/types.ts";
 import {
   Avatar,
   AvatarFallback,
@@ -10,6 +9,7 @@ import {
 import { PopoverContent } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, getInitials } from "@/lib/utils";
+import type { Group, User } from "@/types/user.ts";
 
 interface SearchResultsPopoverProps {
   searchResults: (User | Group)[];

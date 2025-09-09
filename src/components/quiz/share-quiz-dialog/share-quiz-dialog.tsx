@@ -9,13 +9,6 @@ import { Loader } from "@/components/loader.tsx";
 import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector.tsx";
 import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list.tsx";
 import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover.tsx";
-import type {
-  Group,
-  SharedQuiz,
-  User,
-} from "@/components/quiz/share-quiz-dialog/types.ts";
-import { AccessLevel } from "@/components/quiz/share-quiz-dialog/types.ts";
-import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import {
@@ -30,6 +23,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
+import { AccessLevel } from "@/types/quiz.ts";
+import type { Group, User } from "@/types/user.ts";
 
 interface ShareQuizDialogProps {
   open: boolean;
@@ -81,10 +77,9 @@ export function ShareQuizDialog({
       return;
     }
     try {
-      const response = await appContext.axiosInstance.get<SharedQuiz[]>(
-        `/shared-quizzes/?quiz=${quiz.id}`,
+      const sharedData = await appContext.services.quiz.getSharedQuizzesForQuiz(
+        quiz.id,
       );
-      const sharedData = response.data;
       const foundUsers = sharedData.flatMap((sq) =>
         sq.user == null
           ? []
@@ -119,13 +114,12 @@ export function ShareQuizDialog({
       setGroupsWithAccess([]);
       setInitialGroupsWithAccess([]);
     }
-  }, [appContext.axiosInstance, appContext.isGuest, quiz.id]);
+  }, [appContext.services.quiz, appContext.isGuest, quiz.id]);
 
   const fetchUserGroups = useCallback(async () => {
     try {
-      const response =
-        await appContext.axiosInstance.get<Group[]>("/study-groups/");
-      const data = response.data.map((group: Group) => ({
+      const groups = await appContext.services.quiz.getStudyGroups();
+      const data = groups.map((group: Group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
           group.name.split(" ")[0]
@@ -135,7 +129,7 @@ export function ShareQuizDialog({
     } catch {
       setUserGroups([]);
     }
-  }, [appContext.axiosInstance]);
+  }, [appContext.services.quiz]);
 
   const fetchData = useCallback(async () => {
     if (appContext.isGuest) {
@@ -164,10 +158,8 @@ export function ShareQuizDialog({
       setSearchResultsLoading(true);
       try {
         // Fetch users
-        const usersResponse = await appContext.axiosInstance.get<User[]>(
-          `/users/?search=${encodeURIComponent(query)}`,
-        );
-        let data: (User | Group)[] = [...usersResponse.data];
+        const users = await appContext.services.quiz.searchUsers(query);
+        let data: (User | Group)[] = [...users];
 
         // Filter groups by the query
         const matchedGroups = userGroups.filter((g) =>
@@ -228,7 +220,7 @@ export function ShareQuizDialog({
         setSearchResultsLoading(false);
       }
     },
-    [userGroups, appContext.axiosInstance],
+    [userGroups, appContext.services.quiz],
   );
 
   const handleAddEntity = (entity: User | Group) => {
@@ -291,15 +283,11 @@ export function ShareQuizDialog({
   const handleSave = async () => {
     try {
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-      const quizResponse = await appContext.axiosInstance.patch<QuizMetadata>(
-        `/quizzes/${quiz.id}/`,
-        {
-          visibility: accessLevel,
-          allow_anonymous:
-            allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
-          is_anonymous: isMaintainerAnonymous,
-        },
-      );
+      const quizResponse = await appContext.services.quiz.updateQuiz(quiz.id, {
+        visibility: accessLevel,
+        allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
+        is_anonymous: isMaintainerAnonymous,
+      });
 
       const removedUsers = initialUsersWithAccess.filter(
         (u) => !usersWithAccess.some((u2) => u2.id === u.id),
@@ -329,34 +317,30 @@ export function ShareQuizDialog({
         if (rUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.axiosInstance.delete(
-          `/shared-quizzes/${rUser.shared_quiz_id}/`,
-        );
+        await appContext.services.quiz.deleteSharedQuiz(rUser.shared_quiz_id);
       }
 
       for (const rGroup of removedGroups) {
         if (rGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.axiosInstance.delete(
-          `/shared-quizzes/${rGroup.shared_quiz_id}/`,
-        );
+        await appContext.services.quiz.deleteSharedQuiz(rGroup.shared_quiz_id);
       }
 
       for (const aUser of addedUsers) {
-        await appContext.axiosInstance.post(`/shared-quizzes/`, {
-          quiz_id: quiz.id,
-          user_id: aUser.id,
-          allow_edit: aUser.allow_edit || false,
-        });
+        await appContext.services.quiz.shareQuizWithUser(
+          quiz.id,
+          aUser.id,
+          aUser.allow_edit || false,
+        );
       }
 
       for (const aGroup of addedGroups) {
-        await appContext.axiosInstance.post(`/shared-quizzes/`, {
-          quiz_id: quiz.id,
-          study_group_id: aGroup.id,
-          allow_edit: aGroup.allow_edit || false,
-        });
+        await appContext.services.quiz.shareQuizWithGroup(
+          quiz.id,
+          aGroup.id,
+          aGroup.allow_edit || false,
+        );
       }
 
       // Update existing users/groups with changed allow_edit status
@@ -364,11 +348,9 @@ export function ShareQuizDialog({
         if (cUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.axiosInstance.patch(
-          `/shared-quizzes/${cUser.shared_quiz_id}/`,
-          {
-            allow_edit: cUser.allow_edit,
-          },
+        await appContext.services.quiz.updateSharedQuiz(
+          cUser.shared_quiz_id,
+          cUser.allow_edit,
         );
       }
 
@@ -376,11 +358,9 @@ export function ShareQuizDialog({
         if (cGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.axiosInstance.patch(
-          `/shared-quizzes/${cGroup.shared_quiz_id}/`,
-          {
-            allow_edit: cGroup.allow_edit,
-          },
+        await appContext.services.quiz.updateSharedQuiz(
+          cGroup.shared_quiz_id,
+          cGroup.allow_edit,
         );
       }
 
@@ -389,7 +369,7 @@ export function ShareQuizDialog({
       setInitialGroupsWithAccess(groupsWithAccess);
 
       if (setQuiz != null) {
-        setQuiz(quizResponse.data);
+        setQuiz(quizResponse);
       }
 
       onOpenChange(false);

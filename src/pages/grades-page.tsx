@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -39,34 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils.ts";
-
-interface Grade {
-  value: number;
-  value_symbol: string;
-  counts_into_average: boolean;
-}
-
-interface Course {
-  course_id: string;
-  course_name: string;
-  ects: number;
-  grades: Grade[];
-  term_id: string;
-  passing_status: "passed" | "failed" | "not_yet_passed";
-}
-
-interface Term {
-  id: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  finish_date: string;
-}
-
-interface GradesData {
-  courses: Course[];
-  terms: Term[];
-}
+import type { Course, Term } from "@/types/user.ts";
 
 export function GradesPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
@@ -86,12 +58,7 @@ export function GradesPage(): React.JSX.Element {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response =
-          await appContext.axiosInstance.get<GradesData>("/grades/");
-        if (response.status !== 200) {
-          throw new Error("Invalid response status");
-        }
-        const data = response.data;
+        const data = await appContext.services.user.getGrades();
         setTerms(data.terms);
         setCourses(data.courses);
         setSelectedTerm(
@@ -110,17 +77,10 @@ export function GradesPage(): React.JSX.Element {
       } catch (fetchError) {
         console.error("Error fetching grades:", fetchError);
 
-        if (fetchError instanceof AxiosError && fetchError.response != null) {
-          const errorData = fetchError.response.data as { detail?: string };
-          setError(
-            errorData.detail ?? "Wystąpił błąd podczas pobierania ocen.",
-          );
+        if (fetchError instanceof Error) {
+          setError(fetchError.message);
         } else {
-          setError(
-            fetchError instanceof Error
-              ? fetchError.message
-              : "Wystąpił błąd podczas pobierania ocen.",
-          );
+          setError("Wystąpił błąd podczas pobierania ocen.");
         }
       } finally {
         setLoading(false);
@@ -129,7 +89,7 @@ export function GradesPage(): React.JSX.Element {
     if (!appContext.isGuest) {
       void fetchData();
     }
-  }, [appContext.axiosInstance, appContext.isGuest]);
+  }, [appContext.services.user, appContext.isGuest]);
 
   const calculateAverage = useCallback(
     (filteredCourses: Course[]) => {

@@ -18,8 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-import type { Quiz, Reoccurrence } from "./types.ts";
+import type { Quiz, Reoccurrence } from "@/types/quiz.ts";
 
 interface QuizInfoCardProps {
   quiz: Quiz | null;

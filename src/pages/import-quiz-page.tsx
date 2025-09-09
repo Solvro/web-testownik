@@ -1,18 +1,17 @@
-import { FileJsonIcon, FileUpIcon } from "lucide-react";
+import { AlertCircleIcon, FileJsonIcon, FileUpIcon } from "lucide-react";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
-import { uuidv4 } from "@/components/quiz/helpers/uuid.ts";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
-import type { Quiz, QuizMetadata } from "@/components/quiz/types.ts";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -25,6 +24,7 @@ import { Label } from "@/components/ui/label.tsx";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { Quiz } from "@/types/quiz.ts";
 
 function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -39,7 +39,9 @@ type UploadType = "file" | "link" | "json";
 export function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
-  const [uploadType, setUploadType] = useState<UploadType>("link");
+  const [uploadType, setUploadType] = useState<UploadType>(
+    appContext.isGuest ? "file" : "link",
+  );
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,54 +85,12 @@ export function ImportQuizPage(): React.JSX.Element {
 
   const submitImport = async (type: "json" | "link", data: string | Quiz) => {
     try {
-      if (appContext.isGuest) {
-        if (type === "link" || typeof data === "string") {
-          try {
-            const response = await fetch(data as string);
-            data = (await response.json()) as Quiz;
-          } catch {
-            setError(
-              "Wystąpił błąd podczas importowania quizu, będąc gościem możesz tylko importować quizy z domeny testownik.solvro.pl, które są dostępne publicznie. Ciągle możesz skorzystać z opcji importu z pliku lub wprowadzić quiz ręcznie.",
-            );
-            return;
-          }
-        }
-        const temporaryQuiz = {
-          ...data,
-          id: uuidv4(),
-          visibility: 0,
-          version: 1,
-          allow_anonymous: false,
-          is_anonymous: true,
-          can_edit: true,
-        };
-        const userQuizzesString = localStorage.getItem("guest_quizzes");
-        const userQuizzes =
-          userQuizzesString === null
-            ? []
-            : (JSON.parse(userQuizzesString) as QuizMetadata[]);
-        userQuizzes.push(temporaryQuiz);
-        localStorage.setItem("guest_quizzes", JSON.stringify(userQuizzes));
-        setQuiz(temporaryQuiz);
-        return;
-      }
-      const response =
+      const result =
         type === "json"
-          ? await appContext.axiosInstance.post<Quiz>("/quizzes/", data)
-          : await appContext.axiosInstance.post<Quiz>(
-              "/import-quiz-from-link/",
-              { link: data },
-            );
+          ? await appContext.services.quiz.createQuiz(data as Quiz)
+          : await appContext.services.quiz.importQuizFromLink(data as string);
 
-      if (response.status === 201) {
-        const result = response.data;
-        setQuiz(result);
-      } else {
-        const errorData = response.data as { error?: string };
-        setError(
-          errorData.error ?? "Wystąpił błąd podczas importowania quizu.",
-        );
-      }
+      setQuiz(result);
     } catch {
       setError("Wystąpił błąd podczas importowania quizu.");
     }
@@ -223,6 +183,15 @@ export function ImportQuizPage(): React.JSX.Element {
 
   return (
     <>
+      {appContext.isGuest ? (
+        <Alert>
+          <AlertCircleIcon />
+          <AlertTitle>
+            Importowanie quizów z linku jest dostępne tylko dla zarejestrowanych
+            użytkowników.
+          </AlertTitle>
+        </Alert>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Zaimportuj quiz</CardTitle>
@@ -243,7 +212,9 @@ export function ImportQuizPage(): React.JSX.Element {
           >
             <TabsList className="dark:bg-background mx-auto dark:border-1">
               <TabsTrigger value="file">Plik</TabsTrigger>
-              <TabsTrigger value="link">Link</TabsTrigger>
+              <TabsTrigger value="link" disabled={appContext.isGuest}>
+                Link
+              </TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
             </TabsList>
             <TabsContent value="file" className="mt-4">
@@ -435,7 +406,9 @@ export function ImportQuizPage(): React.JSX.Element {
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
           <DialogFooter>
-            <Button variant="outline">Zamknij</Button>
+            <DialogClose asChild>
+              <Button variant="outline">Zamknij</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>

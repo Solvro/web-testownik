@@ -1,3 +1,4 @@
+import { AlertCircleIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -5,8 +6,7 @@ import { toast } from "react-toastify";
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
-import type { Quiz } from "@/components/quiz/types.ts";
-import { Alert } from "@/components/ui/alert.tsx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,17 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
 import { SERVER_URL } from "@/config.ts";
-
-interface QuizUploadResponse {
-  id: string;
-}
-
-type QuizProgress = Record<string, unknown>;
-
-interface UserSettings {
-  initial_reoccurrences?: number;
-  wrong_answer_reoccurrences?: number;
-}
+import type { Quiz, QuizProgress } from "@/types/quiz.ts";
+import type { UserSettings } from "@/types/user.ts";
 
 export function ConnectGuestAccount() {
   const appContext = useContext(AppContext);
@@ -95,9 +86,8 @@ export function ConnectGuestAccount() {
   const handleLogout = async () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("profile_picture");
-    localStorage.removeItem("is_staff");
-    localStorage.removeItem("user_id");
+    localStorage.removeItem("access_token_expires_at");
+    appContext.services.user.clearStoredUserData();
     appContext.setAuthenticated(false);
     await navigate("/");
   };
@@ -111,22 +101,18 @@ export function ConnectGuestAccount() {
       ) {
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
-          const response =
-            await appContext.axiosInstance.post<QuizUploadResponse>(
-              "/quizzes/",
-              quiz,
-            );
-          const newQuizId = response.data.id;
+          const newQuiz = await appContext.services.quiz.createQuiz(quiz);
+          const newQuizId = newQuiz.id;
           if (categories.progress) {
             const progressString = localStorage.getItem(`${quiz.id}_progress`);
-            const progress: QuizProgress =
-              progressString === null
-                ? {}
-                : (JSON.parse(progressString) as QuizProgress);
+            if (progressString === null) {
+              continue;
+            }
+            const progress = JSON.parse(progressString) as QuizProgress;
             if (Object.keys(progress).length > 0) {
               setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
-              await appContext.axiosInstance.post(
-                `/quiz/${newQuizId}/progress/`,
+              await appContext.services.quiz.setQuizProgress(
+                newQuizId,
                 progress,
               );
             }
@@ -147,10 +133,15 @@ export function ConnectGuestAccount() {
     const settingsString = localStorage.getItem("settings");
     const settings: UserSettings =
       settingsString === null
-        ? {}
+        ? {
+            sync_progress: true,
+            initial_reoccurrences: 0,
+            wrong_answer_reoccurrences: 0,
+          }
         : (JSON.parse(settingsString) as UserSettings);
     try {
-      await appContext.axiosInstance.put("/settings/", {
+      await appContext.services.user.updateUserSettings({
+        sync_progress: settings.sync_progress,
         initial_reoccurrences: settings.initial_reoccurrences,
         wrong_answer_reoccurrences: settings.wrong_answer_reoccurrences,
       });
@@ -163,6 +154,7 @@ export function ConnectGuestAccount() {
   // Start migration after explicit confirmation
   const executeMigration = async () => {
     setMigrating(true);
+    appContext.setGuest(false);
     try {
       if (categories.quizzes && selectedQuizIds.length > 0) {
         await uploadQuizzes(selectedQuizIds);
@@ -231,7 +223,6 @@ export function ConnectGuestAccount() {
                 onClick={async () => {
                   localStorage.removeItem("guest_quizzes");
                   localStorage.removeItem("guest_migrated");
-                  appContext.setGuest(false);
                   await navigate("/");
                 }}
               >
@@ -240,7 +231,6 @@ export function ConnectGuestAccount() {
               <Button
                 variant="outline"
                 onClick={async () => {
-                  appContext.setGuest(false);
                   await navigate("/");
                 }}
               >
@@ -271,7 +261,7 @@ export function ConnectGuestAccount() {
 
   return (
     <div className="flex justify-center">
-      {appContext.isAuthenticated ? (
+      {appContext.isAuthenticated && appContext.isGuest ? (
         <Card className="w-full max-w-3xl">
           <CardHeader>
             <CardTitle>Zalogowano pomyślnie!</CardTitle>
@@ -404,7 +394,7 @@ export function ConnectGuestAccount() {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : appContext.isGuest ? (
         <Card className="w-full max-w-3xl pb-2">
           <CardHeader>
             <CardTitle>Połącz konto</CardTitle>
@@ -420,17 +410,18 @@ export function ConnectGuestAccount() {
           </CardHeader>
           {error == null ? null : (
             <Alert variant="destructive">
-              <p>Wystąpił błąd podczas logowania.</p>
+              <AlertCircleIcon />
+              <AlertTitle>Wystąpił błąd podczas logowania.</AlertTitle>
               {error === "not_student" ? (
-                <span>
+                <AlertDescription>
                   Niestety, nie udało nam się zidentyfikować Cię jako studenta
                   PWr. Upewnij się, że logujesz się na swoje konto studenta.
                   Jeśli problem będzie się powtarzał,{" "}
                   <a href="mailto:testownik@solvro.pl">skontaktuj się z nami</a>
                   .
-                </span>
+                </AlertDescription>
               ) : (
-                <span>{error}</span>
+                <AlertDescription>{error}</AlertDescription>
               )}
             </Alert>
           )}
@@ -451,7 +442,7 @@ export function ConnectGuestAccount() {
                 </a>
               </Button>
               <Button variant="outline" asChild>
-                <Link to="/">Kontynuuj jako gość</Link>
+                <Link to="/">Anuluj i kontynuuj jako gość</Link>
               </Button>
             </div>
             <div className="text-center">
@@ -467,6 +458,20 @@ export function ConnectGuestAccount() {
             </div>
           </CardContent>
         </Card>
+      ) : (
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertTitle>Błąd autoryzacji</AlertTitle>
+          <AlertDescription>
+            Migracja danych jest dostępna tylko dla użytkowników zalogowanych
+            jako gość.
+            <div className="mt-2">
+              <Button variant="outline" asChild>
+                <Link to="/">Strona główna</Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
       <PrivacyDialog
         open={showPrivacyDialog}

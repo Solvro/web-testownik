@@ -53,6 +53,10 @@ export function Navbar(): React.JSX.Element {
     if (accessToken !== null && refreshToken !== null) {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
+      localStorage.setItem(
+        "access_token_expires_at",
+        (Date.now() + 3600 * 1000).toString(),
+      );
 
       queryParameters.delete("access_token");
       queryParameters.delete("refresh_token");
@@ -61,7 +65,9 @@ export function Navbar(): React.JSX.Element {
         search: queryParameters.toString(),
       });
 
-      await appContext.fetchUserData();
+      const user = await appContext.services.user.getUserData();
+      appContext.services.user.storeUserData(user);
+      appContext.setAuthenticated(true);
     }
   }, [accessToken, refreshToken, queryParameters, navigate, appContext]);
 
@@ -72,9 +78,8 @@ export function Navbar(): React.JSX.Element {
   const handleLogout = async () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("profile_picture");
-    localStorage.removeItem("is_staff");
-    localStorage.removeItem("user_id");
+    localStorage.removeItem("access_token_expires_at");
+    appContext.services.user.clearStoredUserData();
     appContext.setAuthenticated(false);
     await navigate("/");
   };
@@ -155,6 +160,7 @@ export function Navbar(): React.JSX.Element {
                     <Avatar className="size-6">
                       <AvatarImage
                         src={localStorage.getItem("profile_picture") ?? ""}
+                        className="user-avatar"
                       />
                       <AvatarFallback delayMs={600} className="bg-transparent">
                         <CircleUserRoundIcon className="size-6" />
@@ -265,6 +271,7 @@ export function Navbar(): React.JSX.Element {
                     ) : (
                       <Avatar className="size-6">
                         <AvatarImage
+                          className="user-avatar"
                           src={localStorage.getItem("profile_picture") ?? ""}
                         />
                         <AvatarFallback

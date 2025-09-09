@@ -8,7 +8,6 @@ import {
 import React from "react";
 import { Link } from "react-router";
 
-import type { QuizMetadata } from "@/components/quiz/types.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils.ts";
+import type { QuizMetadata } from "@/types/quiz.ts";
 
 export interface QuizCardProps extends React.ComponentProps<typeof Card> {
   quiz: QuizMetadata;

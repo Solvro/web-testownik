@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
-import type { Question, Quiz } from "@/components/quiz/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -19,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { Question, Quiz } from "@/types/quiz.ts";
 
 interface QuizActionButtonsProps {
   quiz: Quiz;

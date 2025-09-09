@@ -1,66 +1,19 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 import { invariant } from "@/lib/invariant";
-
-import type { Question, Quiz, Reoccurrence } from "../types";
-import { initialRuntime, runtimeReducer } from "./quiz-runtime-reducer";
 import type {
-  Progress,
-  UseQuizLogicParameters,
-  UseQuizLogicResult,
-  UserSettings,
-} from "./types";
+  Question,
+  Quiz,
+  QuizProgress,
+  Reoccurrence,
+} from "@/types/quiz.ts";
+import type { UserSettings } from "@/types/user.ts";
+
+import { initialRuntime, runtimeReducer } from "./quiz-runtime-reducer";
+import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
 import { useQuizContinuity } from "./use-quiz-continuity";
 import { useStudyTimer } from "./use-study-timer";
-
-function validateProgress(object: unknown): object is Progress {
-  return (
-    object != null &&
-    typeof object === "object" &&
-    "current_question" in object &&
-    typeof object.current_question === "number" &&
-    "correct_answers_count" in object &&
-    typeof object.correct_answers_count === "number" &&
-    "wrong_answers_count" in object &&
-    typeof object.wrong_answers_count === "number" &&
-    "study_time" in object &&
-    typeof object.study_time === "number" &&
-    "reoccurrences" in object &&
-    Array.isArray(object.reoccurrences)
-  );
-}
-
-function validateSettings(object: unknown): object is UserSettings {
-  return (
-    object != null &&
-    typeof object === "object" &&
-    "sync_progress" in object &&
-    typeof object.sync_progress === "boolean" &&
-    "initial_reoccurrences" in object &&
-    typeof object.initial_reoccurrences === "number" &&
-    "wrong_answer_reoccurrences" in object &&
-    typeof object.wrong_answer_reoccurrences === "number"
-  );
-}
-
-function loadFromLocalStorage<T>(
-  key: string,
-  validator: (object: unknown) => object is T,
-): T | null {
-  const stored = localStorage.getItem(key);
-  if (stored == null || stored === "") {
-    return null;
-  }
-  try {
-    const parsed: unknown = JSON.parse(stored);
-    if (validator(parsed)) {
-      return parsed;
-    }
-  } catch {
-    // Ignore invalid JSON or validation failure
-  }
-  return null;
-}
 
 export function useQuizLogic({
   quizId,
@@ -166,20 +119,7 @@ export function useQuizLogic({
   async function fetchQuiz(): Promise<Quiz | null> {
     try {
       invariant(quizId, "Quiz ID must be defined");
-      try {
-        const response = await appContext.axiosInstance.get<Quiz | null>(
-          `/quizzes/${quizId}/`,
-        );
-        if (response.status === 200) {
-          return response.data;
-        }
-      } catch {
-        /* fallback below */
-      }
-      const userQuizzes = JSON.parse(
-        localStorage.getItem("guest_quizzes") ?? "[]",
-      ) as Quiz[];
-      return userQuizzes.find((q) => q.id === quizId) ?? null;
+      return await appContext.services.quiz.getQuiz(quizId);
     } catch {
       return null;
     }
@@ -187,89 +127,47 @@ export function useQuizLogic({
 
   async function fetchSettings(): Promise<UserSettings> {
     try {
-      if (appContext.isGuest || !appContext.isAuthenticated) {
-        const parsed = loadFromLocalStorage("settings", validateSettings);
-        if (parsed != null) {
-          return parsed;
-        }
-        return {
-          sync_progress: false,
-          initial_reoccurrences: 1,
-          wrong_answer_reoccurrences: 1,
-        } satisfies UserSettings;
-      }
-      const settingsResponse =
-        await appContext.axiosInstance.get<UserSettings>("/settings/");
-      if (settingsResponse.status === 200) {
-        localStorage.setItem("settings", JSON.stringify(settingsResponse.data));
-        return settingsResponse.data;
-      }
+      return await appContext.services.user.getUserSettings();
     } catch {
       /* ignore */
-    }
-    const parsed = loadFromLocalStorage("settings", validateSettings);
-    if (parsed != null) {
-      return parsed;
     }
     return {
       sync_progress: false,
       initial_reoccurrences: 1,
       wrong_answer_reoccurrences: 1,
-    } satisfies UserSettings;
+    };
   }
 
-  async function loadProgress(sync: boolean): Promise<Progress | null> {
-    if (sync && appContext.isAuthenticated) {
-      try {
-        const progressResponse = await appContext.axiosInstance.get<Progress>(
-          `/quiz/${quizId}/progress/`,
-        );
-        if (progressResponse.status === 200) {
-          setTimer(
-            progressResponse.data.study_time,
-            Date.now() - progressResponse.data.study_time * 1000,
-          );
-          return progressResponse.data;
-        }
-      } catch {
-        /* fallback */
-      }
-    }
-    const parsed = loadFromLocalStorage(`${quizId}_progress`, validateProgress);
-    if (parsed != null) {
-      setTimer(parsed.study_time, Date.now() - parsed.study_time * 1000);
-    }
-    return parsed;
+  async function loadProgress(sync: boolean): Promise<QuizProgress | null> {
+    return await appContext.services.quiz.getQuizProgress(quizId, sync);
   }
 
   const saveProgress = useCallback(async () => {
     if (currentQuestionRef.current == null || isQuizFinished) {
       return;
     }
-    const progress: Progress = {
+    const progress: QuizProgress = {
       current_question: currentQuestionRef.current.id,
       correct_answers_count: correctAnswersCountRef.current,
       wrong_answers_count: wrongAnswersCountRef.current,
       study_time: studyTime,
       reoccurrences: reoccurrencesRef.current,
     };
-    localStorage.setItem(`${quizId}_progress`, JSON.stringify(progress));
-    if (
+    const syncToServer =
       userSettings.sync_progress &&
       appContext.isAuthenticated &&
-      (continuity.isHost || continuity.peerConnections.length === 0)
-    ) {
-      try {
-        await appContext.axiosInstance.post(
-          `/quiz/${quizId}/progress/`,
-          progress,
-        );
-      } catch {
-        /* ignore */
-      }
+      (continuity.isHost || continuity.peerConnections.length === 0);
+    try {
+      await appContext.services.quiz.setQuizProgress(
+        quizId,
+        progress,
+        syncToServer,
+      );
+    } catch {
+      toast.warning("Nie udało się zsynchronizować postępu quizu z serwerem.");
     }
   }, [
-    appContext.axiosInstance,
+    appContext.services.quiz,
     appContext.isAuthenticated,
     continuity.isHost,
     continuity.peerConnections.length,
@@ -312,7 +210,7 @@ export function useQuizLogic({
   );
 
   const applyLoadedProgress = useCallback(
-    (quizData: Quiz, saved: Progress) => {
+    (quizData: Quiz, saved: QuizProgress) => {
       const validIds = new Set(quizData.questions.map((q) => q.id));
       const filtered = saved.reoccurrences.filter((r) => validIds.has(r.id));
       const existingIds = new Set(filtered.map((r) => r.id));
@@ -351,8 +249,9 @@ export function useQuizLogic({
       if (!mergedReoccurrences.some((r) => r.reoccurrences > 0)) {
         dispatch({ type: "MARK_FINISHED" });
       }
+      setTimer(saved.study_time, Date.now() - saved.study_time * 1000);
     },
-    [pickRandomQuestion, userSettings.initial_reoccurrences],
+    [pickRandomQuestion, setTimer, userSettings.initial_reoccurrences],
   );
 
   const checkAnswer = useCallback(
@@ -406,14 +305,10 @@ export function useQuizLogic({
   }, [checkAnswer, nextQuestion, questionChecked]);
 
   const resetProgress = useCallback(async () => {
-    localStorage.removeItem(`${quizId}_progress`);
-    if (userSettings.sync_progress) {
-      try {
-        await appContext.axiosInstance.delete(`/quiz/${quizId}/progress/`);
-      } catch {
-        /* ignore */
-      }
-    }
+    await appContext.services.quiz.deleteQuizProgress(
+      quizId,
+      userSettings.sync_progress,
+    );
     if (quiz != null) {
       const initialReoccurrences = quiz.questions.map((q) => ({
         id: q.id,
@@ -427,7 +322,7 @@ export function useQuizLogic({
       pickRandomQuestion(quiz, initialReoccurrences);
     }
   }, [
-    appContext.axiosInstance,
+    appContext.services.quiz,
     pickRandomQuestion,
     quiz,
     quizId,
