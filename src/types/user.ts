@@ -20,6 +20,12 @@ export interface UserSettings {
   wrong_answer_reoccurrences: number;
 }
 
+export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
+  sync_progress: false,
+  initial_reoccurrences: 1,
+  wrong_answer_reoccurrences: 1,
+});
+
 export interface Term {
   id: string;
   name: string;

@@ -7,6 +7,7 @@ import { ProfileDetails } from "@/components/profile/profile-details.tsx";
 import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { UserData, UserSettings } from "@/types/user.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 export function ProfilePage(): React.JSX.Element {
   const appContext = useContext(AppContext);
@@ -18,11 +19,7 @@ export function ProfilePage(): React.JSX.Element {
     if (storedSettings != null) {
       return storedSettings;
     }
-    return {
-      sync_progress: false,
-      initial_reoccurrences: 1,
-      wrong_answer_reoccurrences: 1,
-    };
+    return { ...DEFAULT_USER_SETTINGS };
   });
 
   const handleTabSelect = (tabKey: string) => {

@@ -9,6 +9,7 @@ import type {
   Reoccurrence,
 } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 import { initialRuntime, runtimeReducer } from "./quiz-runtime-reducer";
 import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
@@ -26,11 +27,7 @@ export function useQuizLogic({
   }>({
     quiz: null,
     loading: true,
-    userSettings: {
-      sync_progress: false,
-      initial_reoccurrences: 1,
-      wrong_answer_reoccurrences: 1,
-    },
+    userSettings: { ...DEFAULT_USER_SETTINGS },
   });
   const { quiz, loading, userSettings } = meta;
 
@@ -131,11 +128,7 @@ export function useQuizLogic({
     } catch {
       /* ignore */
     }
-    return {
-      sync_progress: false,
-      initial_reoccurrences: 1,
-      wrong_answer_reoccurrences: 1,
-    };
+    return { ...DEFAULT_USER_SETTINGS };
   }
 
   async function loadProgress(sync: boolean): Promise<QuizProgress | null> {

@@ -1,3 +1,5 @@
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+
 import { BaseApiService } from "./base-api.service";
 import type { AlertData, GradesData, UserData, UserSettings } from "./types";
 import { STORAGE_KEYS } from "./types";
@@ -34,11 +36,7 @@ export class UserService extends BaseApiService {
       if (storedSettings != null) {
         return storedSettings;
       }
-      return {
-        sync_progress: false,
-        initial_reoccurrences: 1,
-        wrong_answer_reoccurrences: 1,
-      };
+      return { ...DEFAULT_USER_SETTINGS };
     }
     const response = await this.get<UserSettings>("/settings/");
     const settings = response.data;
@@ -51,14 +49,15 @@ export class UserService extends BaseApiService {
    */
   async updateUserSettings(
     settings: Partial<UserSettings>,
-  ): Promise<Partial<UserSettings>> {
+  ): Promise<UserSettings> {
     if (this.isGuestMode()) {
       const storedSettings = this.getStoredSettings();
       this.storeSettings({
+        ...DEFAULT_USER_SETTINGS,
         ...storedSettings,
         ...settings,
-      } as UserSettings);
-      return { ...storedSettings, ...settings };
+      });
+      return { ...DEFAULT_USER_SETTINGS, ...storedSettings, ...settings };
     }
     const response = await this.put<UserSettings>("/settings/", settings);
     const updatedSettings = response.data;

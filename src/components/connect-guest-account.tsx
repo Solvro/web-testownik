@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label.tsx";
 import { SERVER_URL } from "@/config.ts";
 import type { Quiz, QuizProgress } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 export function ConnectGuestAccount() {
   const appContext = useContext(AppContext);
@@ -131,14 +132,20 @@ export function ConnectGuestAccount() {
   const uploadSettings = async () => {
     setMigratingText("Przenoszenie ustawień...");
     const settingsString = localStorage.getItem("settings");
-    const settings: UserSettings =
-      settingsString === null
-        ? {
-            sync_progress: true,
-            initial_reoccurrences: 0,
-            wrong_answer_reoccurrences: 0,
-          }
-        : (JSON.parse(settingsString) as UserSettings);
+    let settings: UserSettings;
+    if (settingsString === null) {
+      settings = { ...DEFAULT_USER_SETTINGS };
+    } else {
+      try {
+        const parsed = JSON.parse(settingsString) as Partial<UserSettings>;
+        settings = {
+          ...DEFAULT_USER_SETTINGS,
+          ...parsed,
+        };
+      } catch {
+        settings = { ...DEFAULT_USER_SETTINGS };
+      }
+    }
     try {
       await appContext.services.user.updateUserSettings({
         sync_progress: settings.sync_progress,
