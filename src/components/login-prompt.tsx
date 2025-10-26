@@ -46,10 +46,6 @@ export function LoginPrompt(): React.JSX.Element {
     );
   };
 
-  const handleLoginUsos = () => {
-    window.location.href = `${SERVER_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(window.location.href)}`;
-  };
-
   let errorMessage: string | null = null;
   if (error != null) {
     switch (error) {
@@ -141,8 +137,12 @@ export function LoginPrompt(): React.JSX.Element {
               </p>
 
               <div className="mb-0 grid gap-2">
-                <Button className="w-full" onClick={handleLoginUsos}>
-                  Zaloguj się z USOS
+                <Button asChild className="w-full">
+                  <a
+                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
+                  >
+                    Zaloguj się z USOS
+                  </a>
                 </Button>
                 <Button asChild className="w-full">
                   <a
