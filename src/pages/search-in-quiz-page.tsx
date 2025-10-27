@@ -163,7 +163,7 @@ export function SearchInQuizPage(): React.JSX.Element {
               question.matchDensity >= 0.3 || // At least 15% of words match
               question.wordMatchCount >= 3)), // Or at least 2 words match
       )
-      .sort((a, b) => a.relevance - b.relevance);
+      .toSorted((a, b) => a.relevance - b.relevance);
   }, [query, quiz]);
 
   if (loading) {

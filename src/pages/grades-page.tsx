@@ -67,7 +67,7 @@ export function GradesPage(): React.JSX.Element {
               new Date() >= new Date(term.start_date) &&
               new Date() <= new Date(term.finish_date),
           )?.id ??
-            data.terms.sort(
+            data.terms.toSorted(
               (a, b) =>
                 new Date(b.start_date).getTime() -
                 new Date(a.start_date).getTime(),

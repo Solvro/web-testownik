@@ -75,7 +75,7 @@ export function AboutCard({
         }, []);
 
       setContributors(
-        data.sort(
+        data.toSorted(
           (a: Contributor, b: Contributor) => b.contributions - a.contributions,
         ),
       );

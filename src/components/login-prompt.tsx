@@ -5,7 +5,7 @@ import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
 import { Loader } from "@/components/loader.tsx";
 import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -67,11 +67,11 @@ export function LoginPrompt(): React.JSX.Element {
             <CardContent className="space-y-2">
               {error == null ? null : (
                 <Alert variant="destructive" className="text-sm">
-                  <p className="font-medium">
+                  <AlertTitle className="font-medium">
                     Wystąpił błąd podczas logowania.
-                  </p>
+                  </AlertTitle>
                   {error === "not_student" ? (
-                    <span>
+                    <AlertDescription>
                       Niestety, nie udało nam się zidentyfikować Cię jako
                       studenta PWr. Upewnij się, że logujesz się na swoje konto
                       studenta. Jeśli problem będzie się powtarzał,{" "}
@@ -82,9 +82,24 @@ export function LoginPrompt(): React.JSX.Element {
                         skontaktuj się z nami
                       </a>
                       .
-                    </span>
+                    </AlertDescription>
+                  ) : error === "invalid_token" ? (
+                    <AlertDescription>
+                      Token logowania jest nieprawidłowy lub wygasł. Spróbuj
+                      ponownie się zalogować.
+                    </AlertDescription>
+                  ) : error === "usos_unavailable" ? (
+                    <AlertDescription>
+                      System USOS jest obecnie niedostępny. Spróbuj ponownie
+                      później.
+                    </AlertDescription>
+                  ) : error === "authorization_failed" ? (
+                    <AlertDescription>
+                      Nie udało się autoryzować Twojego konta. Spróbuj ponownie
+                      się zalogować.
+                    </AlertDescription>
                   ) : (
-                    <span>{error}</span>
+                    <AlertDescription>{error}</AlertDescription>
                   )}
                 </Alert>
               )}
@@ -122,17 +137,18 @@ export function LoginPrompt(): React.JSX.Element {
                 </Link>{" "}
                 oraz że go akceptujesz.
               </p>
+
               <div className="mb-0 grid gap-2">
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
+                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
                   >
                     Zaloguj się z USOS
                   </a>
                 </Button>
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login?jwt=true&redirect=${String(document.location)}`}
+                    href={`${SERVER_URL}/login?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
                   >
                     Zaloguj się z Solvro Auth
                   </a>
@@ -147,6 +163,7 @@ export function LoginPrompt(): React.JSX.Element {
                   Kontynuuj jako gość
                 </Button>
               </div>
+
               <div className="text-center">
                 <Button
                   variant="link"
@@ -162,11 +179,10 @@ export function LoginPrompt(): React.JSX.Element {
           </>
         )}
       </Card>
+
       <PrivacyDialog
         open={showPrivacyDialog}
-        onOpenChange={(open) => {
-          setShowPrivacyDialog(open);
-        }}
+        onOpenChange={setShowPrivacyDialog}
       />
       <Dialog
         open={showGuestDialog}
@@ -186,7 +202,7 @@ export function LoginPrompt(): React.JSX.Element {
               jako gość. W takim przypadku będziesz mógł korzystać z
               podstawowych funkcji Testownika. Wszystkie quizy oraz wyniki będą
               zapisywane lokalnie na Twoim urządzeniu (w{" "}
-              <code>localStorage</code> ).
+              <code>localStorage</code>).
             </p>
             <p>
               Jeśli zdecydujesz się na zalogowanie za pomocą USOS w przyszłości,

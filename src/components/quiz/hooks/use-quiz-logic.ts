@@ -187,7 +187,7 @@ export function useQuizLogic({
       if (selectedQuestion == null) {
         return null;
       }
-      const sorted = [...selectedQuestion.answers].sort(
+      const sorted = [...selectedQuestion.answers].toSorted(
         () => Math.random() - 0.5,
       );
       const randomizedQuestion = { ...selectedQuestion, answers: sorted };
@@ -232,7 +232,7 @@ export function useQuizLogic({
         pickRandomQuestion(quizData, mergedReoccurrences);
         return;
       }
-      const sorted = [...loadedSavedQuestion.answers].sort(
+      const sorted = [...loadedSavedQuestion.answers].toSorted(
         () => Math.random() - 0.5,
       );
       dispatch({
