@@ -83,7 +83,7 @@ export function QuizInfoCard({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer === undefined ? null : (
+        {quiz.maintainer == null ? null : (
           <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
         )}
       </CardHeader>
