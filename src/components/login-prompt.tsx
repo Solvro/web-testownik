@@ -46,6 +46,29 @@ export function LoginPrompt(): React.JSX.Element {
     );
   };
 
+  let errorMessage: string | null = null;
+  if (error != null) {
+    switch (error) {
+      case "400": {
+        errorMessage = "Nieprawidłowe żądanie logowania. Spróbuj ponownie.";
+        break;
+      }
+      case "403": {
+        errorMessage =
+          "USOS jest chwilowo niedostępny. Spróbuj ponownie za chwilę.";
+        break;
+      }
+      case "usos_unavailable": {
+        errorMessage =
+          "Nie udało się połączyć z serwerem USOS. Spróbuj ponownie.";
+        break;
+      }
+      default: {
+        errorMessage = "Wystąpił błąd podczas logowania. Spróbuj ponownie.";
+      }
+    }
+  }
+
   return (
     <div className="flex justify-center">
       <Card className="w-full max-w-xl min-w-1/2 pb-2">
@@ -65,29 +88,19 @@ export function LoginPrompt(): React.JSX.Element {
               <CardTitle>Witaj w Testowniku Solvro!</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {error == null ? null : (
-                <Alert variant="destructive" className="text-sm">
-                  <p className="font-medium">
-                    Wystąpił błąd podczas logowania.
+              {(errorMessage ?? "") ? (
+                <Alert
+                  variant="destructive"
+                  className="flex flex-col gap-1 text-sm leading-relaxed"
+                >
+                  <p className="font-semibold text-red-700 dark:text-red-400">
+                    Błąd logowania
                   </p>
-                  {error === "not_student" ? (
-                    <span>
-                      Niestety, nie udało nam się zidentyfikować Cię jako
-                      studenta PWr. Upewnij się, że logujesz się na swoje konto
-                      studenta. Jeśli problem będzie się powtarzał,{" "}
-                      <a
-                        className="underline"
-                        href="mailto:testownik@solvro.pl"
-                      >
-                        skontaktuj się z nami
-                      </a>
-                      .
-                    </span>
-                  ) : (
-                    <span>{error}</span>
-                  )}
+                  <p className="text-red-600 dark:text-red-300">
+                    {errorMessage}
+                  </p>
                 </Alert>
-              )}
+              ) : null}
               <p className="text-sm leading-relaxed">
                 Testownik by{" "}
                 <a
@@ -122,17 +135,18 @@ export function LoginPrompt(): React.JSX.Element {
                 </Link>{" "}
                 oraz że go akceptujesz.
               </p>
+
               <div className="mb-0 grid gap-2">
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
+                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
                   >
                     Zaloguj się z USOS
                   </a>
                 </Button>
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login?jwt=true&redirect=${String(document.location)}`}
+                    href={`${SERVER_URL}/login?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
                   >
                     Zaloguj się z Solvro Auth
                   </a>
@@ -147,6 +161,7 @@ export function LoginPrompt(): React.JSX.Element {
                   Kontynuuj jako gość
                 </Button>
               </div>
+
               <div className="text-center">
                 <Button
                   variant="link"
@@ -162,11 +177,10 @@ export function LoginPrompt(): React.JSX.Element {
           </>
         )}
       </Card>
+
       <PrivacyDialog
         open={showPrivacyDialog}
-        onOpenChange={(open) => {
-          setShowPrivacyDialog(open);
-        }}
+        onOpenChange={setShowPrivacyDialog}
       />
       <Dialog
         open={showGuestDialog}
@@ -186,12 +200,12 @@ export function LoginPrompt(): React.JSX.Element {
               jako gość. W takim przypadku będziesz mógł korzystać z
               podstawowych funkcji Testownika. Wszystkie quizy oraz wyniki będą
               zapisywane lokalnie na Twoim urządzeniu (w{" "}
-              <code>localStorage</code> ).
+              <code>localStorage</code>).
             </p>
             <p>
               Jeśli zdecydujesz się na zalogowanie za pomocą USOS w przyszłości,
               będziesz mógł przenieść swoje quizy oraz wyniki do swojego konta i
-              w pełni korzystać z funkcji Testownika - m.in. synchronizacji,
+              w pełni korzystać z funkcji Testownika — m.in. synchronizacji,
               udostępniania quizów oraz przeglądania swoich ocen.
             </p>
           </div>
