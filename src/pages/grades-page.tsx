@@ -200,7 +200,10 @@ export function GradesPage(): React.JSX.Element {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <CardTitle>Oceny</CardTitle>
-            <CardDescription>Średnia ważona według ECTS</CardDescription>
+            <CardDescription>
+              Dzięki tej zakładce możesz szybko policzyć swoją średnią ważoną
+              według ECTS
+            </CardDescription>
           </div>
           <div>
             <Label htmlFor="term-select" className="sr-only">
