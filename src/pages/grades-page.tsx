@@ -184,6 +184,17 @@ export function GradesPage(): React.JSX.Element {
   if (loading) {
     return (
       <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Oceny</CardTitle>
+              <CardDescription>
+                Dzięki tej zakładce możesz szybko policzyć swoją średnią ważoną
+                według ECTS
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           <div className="space-y-2 pb-8 text-center">
             <p>Ładowanie ocen...</p>
@@ -200,7 +211,10 @@ export function GradesPage(): React.JSX.Element {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <CardTitle>Oceny</CardTitle>
-            <CardDescription>Średnia ważona według ECTS</CardDescription>
+            <CardDescription>
+              Dzięki tej zakładce możesz szybko policzyć swoją średnią ważoną
+              według ECTS
+            </CardDescription>
           </div>
           <div>
             <Label htmlFor="term-select" className="sr-only">
