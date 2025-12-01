@@ -45,9 +45,9 @@
 
 3. **Uruchom serwer deweloperski**
 
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
 
 4. **Otwórz przeglądarkę** i przejdź do `http://localhost:5173`
 
