@@ -51,6 +51,7 @@ export function QuizzesPage() {
     type: "share" | "delete" | null;
     quiz: QuizMetadata | null;
   }>({ type: null, quiz: null });
+  const [quizNameRegex, setQuizNameRegex] = useState<RegExp>(/.*/);
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -147,6 +148,10 @@ export function QuizzesPage() {
     setUserQuizzes(userQuizzes.toSorted(comparator));
   };
 
+  const handleNameFilter = (regex: RegExp) => {
+    setQuizNameRegex(regex);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -171,27 +176,31 @@ export function QuizzesPage() {
 
   return (
     <div>
-      {/* TODO: Change this to container with sorter component and header */}
       <div className="mb-4 flex">
         <h3 className="text-2xl font-semibold">Twoje quizy</h3>
-        <QuizSort onSortChange={handleSort} />
+        <QuizSort
+          onSortChange={handleSort}
+          onNameFilterChange={handleNameFilter}
+        />
       </div>
       {userQuizzes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {userQuizzes.map((quiz) => (
-            <QuizCard
-              key={quiz.id}
-              quiz={quiz}
-              showEdit
-              showShare
-              showDownload
-              showSearch={!appContext.isGuest}
-              showDelete
-              onShare={handleShareQuiz}
-              onDelete={handleDeleteQuiz}
-              onDownload={handleDownloadQuiz}
-            />
-          ))}
+          {userQuizzes
+            .filter((quiz) => quizNameRegex.test(quiz.title))
+            .map((quiz) => (
+              <QuizCard
+                key={quiz.id}
+                quiz={quiz}
+                showEdit
+                showShare
+                showDownload
+                showSearch={!appContext.isGuest}
+                showDelete
+                onShare={handleShareQuiz}
+                onDelete={handleDeleteQuiz}
+                onDownload={handleDownloadQuiz}
+              />
+            ))}
           <Card className="flex h-full flex-col" key="create-quiz">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-base">

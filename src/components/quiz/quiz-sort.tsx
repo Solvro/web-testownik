@@ -29,6 +29,7 @@ interface QuizSortProps {
   onSortChange: (
     comparator: (a: QuizMetadata, b: QuizMetadata) => number,
   ) => void;
+  onNameFilterChange: (regex: RegExp) => void;
 }
 
 const options: Option[] = [
@@ -48,8 +49,13 @@ const options: Option[] = [
   },
 ];
 
-export function QuizSort({ onSortChange }: QuizSortProps) {
+const buildRegex = (value: string): RegExp => {
+  return new RegExp(value, "i");
+};
+
+export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
+  const [searchedValue, setSearchedValue] = useState<string>("");
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
@@ -64,8 +70,21 @@ export function QuizSort({ onSortChange }: QuizSortProps) {
           </TooltipTrigger>
           <TooltipContent>Szukaj</TooltipContent>
         </Tooltip>
-        <PopoverContent side="left" className="p-0">
-          <Input type="text" placeholder="Szukaj" />
+        <PopoverContent
+          collisionPadding={16}
+          side="left"
+          style={{ "--search-width": "20rem" } as React.CSSProperties}
+          className="w-[min(var(--radix-popover-content-available-width),var(--search-width))] p-0"
+        >
+          <Input
+            type="text"
+            value={searchedValue}
+            placeholder="Wyszukaj quiz"
+            onChange={(event) => {
+              onNameFilterChange(buildRegex(event.target.value));
+              setSearchedValue(event.target.value);
+            }}
+          />
         </PopoverContent>
       </Popover>
       <DropdownMenu>
