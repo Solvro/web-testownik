@@ -5,7 +5,7 @@ import {
   SearchIcon,
   X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button.tsx";
 import type { QuizMetadata } from "@/types/quiz";
@@ -39,14 +39,14 @@ const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
 
 const options: Option[] = [
   {
-    label: "A do Z",
+    label: "A - Z",
     icon: <ArrowDownAZ className="text-white" />,
     comparator: (a: QuizMetadata, b: QuizMetadata): number => {
       return a.title.localeCompare(b.title);
     },
   },
   {
-    label: "Z do A",
+    label: "Z - A",
     icon: <ArrowDownZA className="text-white" />,
     comparator: (a: QuizMetadata, b: QuizMetadata): number => {
       return b.title.localeCompare(a.title);
@@ -132,13 +132,18 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button
-        variant={"outline"}
-        className={`size-9 ${isFiltered ? "" : "hidden"}`}
-        onClick={handleClearFilters}
-      >
-        <X />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={`size-9 ${isFiltered ? "" : "hidden"}`}
+            onClick={handleClearFilters}
+          >
+            <X />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Wyczyść filtry</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
