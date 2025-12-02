@@ -3,8 +3,9 @@ import {
   ArrowDownUp,
   ArrowDownZA,
   SearchIcon,
+  X,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button.tsx";
 import type { QuizMetadata } from "@/types/quiz";
@@ -32,6 +33,10 @@ interface QuizSortProps {
   onNameFilterChange: (regex: RegExp) => void;
 }
 
+const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
+  return 0;
+};
+
 const options: Option[] = [
   {
     label: "A do Z",
@@ -56,6 +61,15 @@ const buildRegex = (value: string): RegExp => {
 export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [searchedValue, setSearchedValue] = useState<string>("");
+
+  const isFiltered: boolean = selectedOption !== null || searchedValue !== "";
+
+  const handleClearFilters = () => {
+    setSelectedOption(null);
+    setSearchedValue("");
+    onNameFilterChange(/.*/);
+    onSortChange(defaultComparator);
+  };
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
@@ -118,6 +132,13 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+      <Button
+        variant={"outline"}
+        className={`size-9 ${isFiltered ? "" : "hidden"}`}
+        onClick={handleClearFilters}
+      >
+        <X />
+      </Button>
     </div>
   );
 }

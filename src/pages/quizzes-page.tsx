@@ -42,8 +42,10 @@ import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
-  // * Change this
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
+  const [sortedUserQuizzes, setSortedUserQuizzes] = useState<QuizMetadata[]>(
+    [],
+  );
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function QuizzesPage() {
     type: "share" | "delete" | null;
     quiz: QuizMetadata | null;
   }>({ type: null, quiz: null });
-  const [quizNameRegex, setQuizNameRegex] = useState<RegExp>(/.*/);
+  const [quizRegex, setQuizRegex] = useState<RegExp>(/.*/);
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -63,8 +65,8 @@ export function QuizzesPage() {
           appContext.services.quiz.getSharedQuizzes(),
         ]);
 
-        // TODO: OR apply filters here and then set quizes as filtered.
         setUserQuizzes(fetchedUserQuizzes);
+        setSortedUserQuizzes(fetchedUserQuizzes);
 
         const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
           (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
@@ -142,14 +144,14 @@ export function QuizzesPage() {
     );
   };
 
-  const handleSort = (
+  const handleSortQuizzes = (
     comparator: (a: QuizMetadata, b: QuizMetadata) => number,
   ) => {
-    setUserQuizzes(userQuizzes.toSorted(comparator));
+    setSortedUserQuizzes(userQuizzes.toSorted(comparator));
   };
 
-  const handleNameFilter = (regex: RegExp) => {
-    setQuizNameRegex(regex);
+  const handleFilterQuizzes = (regex: RegExp) => {
+    setQuizRegex(regex);
   };
 
   if (loading) {
@@ -179,14 +181,14 @@ export function QuizzesPage() {
       <div className="mb-4 flex">
         <h3 className="text-2xl font-semibold">Twoje quizy</h3>
         <QuizSort
-          onSortChange={handleSort}
-          onNameFilterChange={handleNameFilter}
+          onSortChange={handleSortQuizzes}
+          onNameFilterChange={handleFilterQuizzes}
         />
       </div>
-      {userQuizzes.length > 0 ? (
+      {sortedUserQuizzes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {userQuizzes
-            .filter((quiz) => quizNameRegex.test(quiz.title))
+          {sortedUserQuizzes
+            .filter((quiz) => quizRegex.test(quiz.title))
             .map((quiz) => (
               <QuizCard
                 key={quiz.id}
