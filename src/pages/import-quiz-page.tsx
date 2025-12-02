@@ -181,6 +181,21 @@ export function ImportQuizPage(): React.JSX.Element {
     setLoading(false);
   };
 
+  const textRef = useRef<HTMLDivElement | null>(null);
+  const handleTextCopy = () => {
+    let copyTextElement = textRef.current;
+    if (!copyTextElement) return;
+
+    let copyText = "";
+
+    for (let i = 0; i < copyTextElement.children.length; i++) {
+      const child = copyTextElement.children[i];
+      copyText += child.textContent + "\n\n";
+    }
+
+    navigator.clipboard.writeText(copyText);
+  };
+
   return (
     <>
       {appContext.isGuest ? (
@@ -316,7 +331,7 @@ export function ImportQuizPage(): React.JSX.Element {
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm" ref={textRef}>
               <p>
                 Quiz w formacie JSON powinien składać się z dwóch głównych
                 kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
@@ -406,6 +421,9 @@ export function ImportQuizPage(): React.JSX.Element {
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
           <DialogFooter>
+            <Button variant="outline" onClick={handleTextCopy}>
+              Kopiuj instrukcję
+            </Button>
             <DialogClose asChild>
               <Button variant="outline">Zamknij</Button>
             </DialogClose>
