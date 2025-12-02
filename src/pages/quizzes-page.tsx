@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { QuizCard } from "@/components/quiz/quiz-card.tsx";
+import { QuizSort } from "@/components/quiz/quiz-sort.tsx";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
@@ -41,6 +42,7 @@ import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
+  // * Change this
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,7 @@ export function QuizzesPage() {
           appContext.services.quiz.getSharedQuizzes(),
         ]);
 
+        // TODO: OR apply filters here and then set quizes as filtered.
         setUserQuizzes(fetchedUserQuizzes);
 
         const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
@@ -138,6 +141,12 @@ export function QuizzesPage() {
     );
   };
 
+  const handleSort = (
+    comparator: (a: QuizMetadata, b: QuizMetadata) => number,
+  ) => {
+    setUserQuizzes(userQuizzes.toSorted(comparator));
+  };
+
   if (loading) {
     return (
       <Card>
@@ -162,8 +171,11 @@ export function QuizzesPage() {
 
   return (
     <div>
-      <h3 className="mb-4 text-2xl font-semibold">Twoje quizy</h3>
-
+      {/* TODO: Change this to container with sorter component and header */}
+      <div className="mb-4 flex">
+        <h3 className="text-2xl font-semibold">Twoje quizy</h3>
+        <QuizSort onSortChange={handleSort} />
+      </div>
       {userQuizzes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {userQuizzes.map((quiz) => (
