@@ -1,4 +1,10 @@
-import { AlertCircleIcon, FileJsonIcon, FileUpIcon } from "lucide-react";
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  FileJsonIcon,
+  FileUpIcon,
+} from "lucide-react";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -182,18 +188,25 @@ export function ImportQuizPage(): React.JSX.Element {
   };
 
   const textRef = useRef<HTMLDivElement | null>(null);
-  const handleTextCopy = () => {
-    let copyTextElement = textRef.current;
-    if (!copyTextElement) return;
+  const [checkIcon, setCheckIcon] = useState<boolean>(false);
+  const handleTextCopy = async () => {
+    const copyTextElement = textRef.current;
+    if (copyTextElement == null) {
+      return;
+    }
 
     let copyText = "";
 
-    for (let i = 0; i < copyTextElement.children.length; i++) {
-      const child = copyTextElement.children[i];
-      copyText += child.textContent + "\n\n";
+    for (const child of copyTextElement.children) {
+      copyText += `${child.textContent}\n\n`;
     }
 
-    navigator.clipboard.writeText(copyText);
+    setCheckIcon(true);
+    setTimeout(() => {
+      setCheckIcon(false);
+    }, 2000); // 2 seconds
+
+    await navigator.clipboard.writeText(copyText);
   };
 
   return (
@@ -422,6 +435,7 @@ export function ImportQuizPage(): React.JSX.Element {
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={handleTextCopy}>
+              {checkIcon ? <CheckIcon /> : <CopyIcon />}
               Kopiuj instrukcję
             </Button>
             <DialogClose asChild>
