@@ -1,4 +1,9 @@
-import { AlertCircleIcon, FileJsonIcon, FileUpIcon } from "lucide-react";
+import {
+  FileJsonIcon,
+  FileUpIcon,
+  FolderArchiveIcon,
+  FolderOpenIcon,
+} from "lucide-react";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -19,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,14 +39,12 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   );
 }
 
-type UploadType = "file" | "link" | "json";
+type UploadType = "file" | "json" | "old";
 
 export function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
-  const [uploadType, setUploadType] = useState<UploadType>(
-    appContext.isGuest ? "file" : "link",
-  );
+  const [uploadType, setUploadType] = useState<UploadType>("file");
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,23 +131,6 @@ export function ImportQuizPage(): React.JSX.Element {
 
         break;
       }
-      case "link": {
-        const linkInput =
-          document.querySelector<HTMLInputElement>("#link-input")?.value;
-        if (linkInput == null || linkInput.trim() === "") {
-          setErrorAndNotify("Wklej link do quizu.");
-          setLoading(false);
-          return;
-        }
-        try {
-          void new URL(linkInput);
-          await submitImport("link", linkInput);
-        } catch {
-          setError("Link jest niepoprawny.");
-        }
-
-        break;
-      }
       case "json": {
         const textInput =
           document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
@@ -176,6 +162,9 @@ export function ImportQuizPage(): React.JSX.Element {
 
         break;
       }
+      case "old": {
+        break;
+      }
       // No default
     }
     setLoading(false);
@@ -183,15 +172,6 @@ export function ImportQuizPage(): React.JSX.Element {
 
   return (
     <>
-      {appContext.isGuest ? (
-        <Alert>
-          <AlertCircleIcon />
-          <AlertTitle>
-            Importowanie quizów z linku jest dostępne tylko dla zarejestrowanych
-            użytkowników.
-          </AlertTitle>
-        </Alert>
-      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>Zaimportuj quiz</CardTitle>
@@ -212,14 +192,12 @@ export function ImportQuizPage(): React.JSX.Element {
           >
             <TabsList className="dark:bg-background mx-auto dark:border-1">
               <TabsTrigger value="file">Plik</TabsTrigger>
-              <TabsTrigger value="link" disabled={appContext.isGuest}>
-                Link
-              </TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
+              <TabsTrigger value="old">Stara wersja</TabsTrigger>
             </TabsList>
             <TabsContent value="file" className="mt-4">
               <div className="space-y-2">
-                <Label htmlFor="file-input">Plik z quizem</Label>
+                <Label htmlFor="file-input">Plik JSON z quizem</Label>
                 <div
                   role="button"
                   tabIndex={0}
@@ -256,20 +234,124 @@ export function ImportQuizPage(): React.JSX.Element {
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="link" className="mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="link-input">Link do quizu</Label>
-                <Input id="link-input" placeholder="Wklej link do quizu" />
-              </div>
-            </TabsContent>
             <TabsContent value="json" className="mt-4">
               <div className="space-y-2">
-                <Label htmlFor="text-input">Quiz w formie tekstu</Label>
+                <Label htmlFor="text-input">Quiz w formacie JSON</Label>
                 <Textarea
                   id="text-input"
                   rows={5}
                   placeholder="Wklej quiz w formie tekstu"
                 />
+              </div>
+            </TabsContent>
+            <TabsContent value="old" className="mt-4">
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-11">
+                  <div className="space-y-2 md:col-span-5">
+                    <Label htmlFor="file-input">Plik zip z pytaniami</Label>
+                    <div
+                      className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
+                      onClick={() => fileInputRef.current?.click()}
+                      // onDrop={handleFileDrop}
+                      // onDragOver={handleDragOverFile}
+                      // onDragLeave={handleDragLeave}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          fileInputRef.current?.click();
+                          event.preventDefault();
+                        }
+                      }}
+                    >
+                      <input
+                        id="file-input"
+                        type="file"
+                        accept=".zip"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      {fileName === null ? (
+                        <div className="space-y-1">
+                          <FolderArchiveIcon className="mx-auto size-6" />
+                          <p>Wybierz plik...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <FolderOpenIcon className="mx-auto size-6" />
+                          <p className="break-all">{fileName}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground flex items-center justify-center text-sm md:col-span-1">
+                    lub
+                  </div>
+                  <div className="space-y-2 md:col-span-5">
+                    <Label htmlFor="directory-input">Folder z pytaniami</Label>
+                    <div
+                      className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
+                      // onClick={() => directoryInputRef.current?.click()}
+                      // onDrop={handleDirectoryDrop}
+                      // onDragOver={handleDragOverDirectory}
+                      // onDragLeave={handleDragLeave}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          // directoryInputRef.current?.click();
+                          event.preventDefault();
+                        }
+                      }}
+                    >
+                      <input
+                        id="directory-input"
+                        type="file"
+                        // ref={directoryInputRef}
+                        {...({ webkitdirectory: "" } as {
+                          webkitdirectory: string;
+                        })}
+                        // onChange={handleDirectorySelect}
+                        className="hidden"
+                      />
+                      {/*{directoryName === null ? (*/}
+                      {/*  <div className="space-y-1">*/}
+                      {/*    <FolderIcon className="mx-auto size-6" />*/}
+                      {/*    <p>Wybierz folder...</p>*/}
+                      {/*  </div>*/}
+                      {/*) : (*/}
+                      {/*  <div className="space-y-1">*/}
+                      {/*    <FolderOpenIcon className="mx-auto size-6" />*/}
+                      {/*    <p className="break-all">{directoryName}</p>*/}
+                      {/*  </div>*/}
+                      {/*)}*/}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quiz-title">Nazwa</Label>
+                  <Input
+                    id="quiz-title"
+                    placeholder="Nazwa quizu"
+                    // value={quizTitle}
+                    // onChange={(event) => {
+                    //   setQuizTitle(event.target.value);
+                    // }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quiz-description">Opis</Label>
+                  <Textarea
+                    id="quiz-description"
+                    rows={3}
+                    placeholder="Dodatkowy opis"
+                    // value={quizDescription}
+                    // onChange={(event) => {
+                    //   setQuizDescription(event.target.value);
+                    // }}
+                  />
+                </div>
               </div>
             </TabsContent>
           </Tabs>
