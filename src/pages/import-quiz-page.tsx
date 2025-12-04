@@ -251,8 +251,10 @@ export function ImportQuizPage(): React.JSX.Element {
   const navigate = useNavigate();
   const [uploadType, setUploadType] = useState<UploadType>("file");
   const [error, setError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileNameInput, setFileNameInput] = useState<string | null>(null);
+  const [fileNameOld, setFileNameOld] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileOldRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -263,18 +265,52 @@ export function ImportQuizPage(): React.JSX.Element {
 
   document.title = "Importuj quiz - Testownik Solvro";
 
+  // const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = event.target.files?.[0];
+  //   if (file === undefined) {
+  //     setFileName(null);
+  //   } else {
+  //     setFileName(file.name);
+  //     setError(null);
+  //   }
+  // };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files !== null && files.length > 0) {
-      const file = files[0];
-      setFileName(file.name);
-      setDirectoryName(null);
-      setDirectoryFiles([]);
-      if (directoryInputRef.current !== null) {
-        directoryInputRef.current.value = "";
+
+    switch (uploadType) {
+      case "file": {
+        const fileInput = files?.[0];
+        if (fileInput === undefined) {
+          setFileNameInput(null);
+          setFileNameOld(null);
+        } else {
+          setFileNameInput(fileInput.name);
+          setError(null);
+        }
+        break;
       }
-    } else {
-      setFileName(null);
+
+      case "old": {
+        if (files !== null && files.length > 0) {
+          const fileOld = files[0];
+          setFileNameOld(fileOld.name);
+          setFileNameInput(null);
+          setDirectoryName(null);
+          setDirectoryFiles([]);
+          if (directoryInputRef.current !== null) {
+            directoryInputRef.current.value = "";
+          }
+        } else {
+          setFileNameOld(null);
+        }
+        break;
+      }
+
+      case "json": {
+        // No usage
+        break;
+      }
     }
   };
 
@@ -287,30 +323,69 @@ export function ImportQuizPage(): React.JSX.Element {
       const directoryPath = filesArray[0].webkitRelativePath.split("/")[0];
       setDirectoryName(directoryPath);
       setDirectoryFiles(filesArray);
-      setFileName(null);
-      if (fileInputRef.current !== null) {
-        fileInputRef.current.value = "";
+      setFileNameOld(null);
+      if (fileOldRef.current !== null) {
+        fileOldRef.current.value = "";
       }
     } else {
       setDirectoryName(null);
     }
   };
 
+  // const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  //   if (event.dataTransfer.files.length > 0) {
+  //     const file = event.dataTransfer.files[0];
+  //     if (fileInputRef.current !== null) {
+  //       fileInputRef.current.files = event.dataTransfer.files;
+  //     }
+  //     setFileName(file.name);
+  //     setDirectoryName(null);
+  //     setDirectoryFiles([]);
+  //     if (directoryInputRef.current !== null) {
+  //       directoryInputRef.current.value = "";
+  //     }
+  //   }
+  // };
+
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+
     if (event.dataTransfer.files.length > 0) {
       const file = event.dataTransfer.files[0];
-      if (fileInputRef.current !== null) {
-        fileInputRef.current.files = event.dataTransfer.files;
+      switch (uploadType) {
+        case "file": {
+          if (fileInputRef.current !== null) {
+            fileInputRef.current.files = event.dataTransfer.files;
+          }
+          setFileNameOld(null);
+          setFileNameInput(file.name);
+          break;
+        }
+        case "old": {
+          if (fileOldRef.current !== null) {
+            fileOldRef.current.files = event.dataTransfer.files;
+          }
+          setFileNameOld(file.name);
+          setFileNameInput(null);
+
+          break;
+        }
+        case "json": {
+          // No usage
+          break;
+        }
       }
-      setFileName(file.name);
       setDirectoryName(null);
       setDirectoryFiles([]);
       if (directoryInputRef.current !== null) {
         directoryInputRef.current.value = "";
       }
     }
+
+    // TODO: handle input and old drop separately
   };
 
   const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -368,7 +443,7 @@ export function ImportQuizPage(): React.JSX.Element {
         await readDirectoryRecursively(reader);
         setDirectoryFiles(files);
         setDirectoryName(directory.name);
-        setFileName(null);
+        setFileNameOld(null);
         if (fileInputRef.current !== null) {
           fileInputRef.current.value = "";
         }
@@ -540,7 +615,7 @@ export function ImportQuizPage(): React.JSX.Element {
         break;
       }
       case "old": {
-        if (fileName == null && directoryName == null) {
+        if (fileNameOld == null && directoryName == null) {
           setError("Nie wybrano pliku ani folderu.");
           return;
         }
@@ -600,16 +675,6 @@ export function ImportQuizPage(): React.JSX.Element {
   };
 
   // const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (file === undefined) {
-  //     setFileName(null);
-  //   } else {
-  //     setFileName(file.name);
-  //     setError(null);
-  //   }
-  // };
-
-  // const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
   //   const files = event.target.files;
   //   if (files !== null && files.length > 0) {
   //     const file = files[0];
@@ -642,22 +707,7 @@ export function ImportQuizPage(): React.JSX.Element {
   //   }
   // };
   //
-  // const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   if (event.dataTransfer.files.length > 0) {
-  //     const file = event.dataTransfer.files[0];
-  //     if (fileInputRef.current !== null) {
-  //       fileInputRef.current.files = event.dataTransfer.files;
-  //     }
-  //     setFileName(file.name);
-  //     setDirectoryName(null);
-  //     setDirectoryFiles([]);
-  //     if (directoryInputRef.current !== null) {
-  //       directoryInputRef.current.value = "";
-  //     }
-  //   }
-  // };
+
   //
   // const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
   //   event.preventDefault();
@@ -851,7 +901,7 @@ export function ImportQuizPage(): React.JSX.Element {
                     onChange={handleFileSelect}
                     className="hidden"
                   />
-                  {fileName == null ? (
+                  {fileNameInput == null ? (
                     <div className="space-y-2">
                       <FileUpIcon className="mx-auto size-8" />
                       <p className="text-sm">Wybierz plik...</p>
@@ -861,7 +911,7 @@ export function ImportQuizPage(): React.JSX.Element {
                       <FileJsonIcon className="mx-auto size-8" />
                       <p className="text-sm">Wybrano plik:</p>
                       <span className="bg-secondary inline-flex rounded px-2 py-0.5 text-xs">
-                        {fileName}
+                        {fileNameInput}
                       </span>
                     </div>
                   )}
@@ -885,7 +935,7 @@ export function ImportQuizPage(): React.JSX.Element {
                     <Label htmlFor="file-input">Plik zip z pytaniami</Label>
                     <div
                       className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => fileOldRef.current?.click()}
                       onDrop={handleFileDrop}
                       onDragOver={handleDragOverFile}
                       onDragLeave={handleDragLeave}
@@ -893,7 +943,7 @@ export function ImportQuizPage(): React.JSX.Element {
                       tabIndex={0}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
-                          fileInputRef.current?.click();
+                          fileOldRef.current?.click();
                           event.preventDefault();
                         }
                       }}
@@ -902,11 +952,11 @@ export function ImportQuizPage(): React.JSX.Element {
                         id="file-input"
                         type="file"
                         accept=".zip"
-                        ref={fileInputRef}
+                        ref={fileOldRef}
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-                      {fileName === null ? (
+                      {fileNameOld === null ? (
                         <div className="space-y-1">
                           <FolderArchiveIcon className="mx-auto size-6" />
                           <p>Wybierz plik...</p>
@@ -914,7 +964,7 @@ export function ImportQuizPage(): React.JSX.Element {
                       ) : (
                         <div className="space-y-1">
                           <FolderOpenIcon className="mx-auto size-6" />
-                          <p className="break-all">{fileName}</p>
+                          <p className="break-all">{fileNameOld}</p>
                         </div>
                       )}
                     </div>
