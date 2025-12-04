@@ -52,23 +52,6 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
 
 type UploadType = "file" | "json" | "old";
 
-const handleDragOverFile = (event: React.DragEvent<HTMLDivElement>) => {
-  event.preventDefault();
-  event.stopPropagation();
-  const items = event.dataTransfer.items;
-  event.dataTransfer.dropEffect =
-    items.length === 1 &&
-    items[0].kind === "file" &&
-    [
-      "application/zip",
-      "application/zip-compressed",
-      "application/x-zip-compressed",
-      "multipart/x-zip",
-    ].includes(items[0].type)
-      ? "copy"
-      : "none";
-};
-
 const handleDragOverDirectory = (event: React.DragEvent<HTMLDivElement>) => {
   event.preventDefault();
   event.stopPropagation();
@@ -385,7 +368,42 @@ export function ImportQuizPage(): React.JSX.Element {
       }
     }
 
-    // TODO: handle input and old drop separately
+    // TODO: test
+  };
+
+  const handleDragOverFile = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const items = event.dataTransfer.items;
+    switch (uploadType) {
+      case "file": {
+        event.dataTransfer.dropEffect =
+          items.length === 1 &&
+          items[0].kind === "file" &&
+          items[0].type === "application/json"
+            ? "copy"
+            : "none";
+        break;
+      }
+      case "old": {
+        event.dataTransfer.dropEffect =
+          items.length === 1 &&
+          items[0].kind === "file" &&
+          [
+            "application/zip",
+            "application/zip-compressed",
+            "application/x-zip-compressed",
+            "multipart/x-zip",
+          ].includes(items[0].type)
+            ? "copy"
+            : "none";
+        break;
+      }
+      case "json": {
+        // No usage
+        break;
+      }
+    }
   };
 
   const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -883,10 +901,13 @@ export function ImportQuizPage(): React.JSX.Element {
               <div className="space-y-2">
                 <Label htmlFor="file-input">Plik JSON z quizem</Label>
                 <div
-                  role="button"
-                  tabIndex={0}
                   className="hover:bg-accent/40 dark:bg-input/30 border-input cursor-pointer rounded-md border p-6 text-center shadow-xs transition-colors"
                   onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleFileDrop}
+                  onDragOver={handleDragOverFile}
+                  onDragLeave={handleDragLeave}
+                  role="button"
+                  tabIndex={0}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       fileInputRef.current?.click();
