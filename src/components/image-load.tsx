@@ -1,5 +1,5 @@
 import { AlertCircleIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ImageLoadProps {
   url: string | null | undefined;
@@ -9,19 +9,6 @@ interface ImageLoadProps {
 
 export function ImageLoad({ url, alt, className }: ImageLoadProps) {
   const [hasError, setHasError] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (url == null || url === "") {
-      setHasError(false);
-      return;
-    }
-
-    const img = new Image();
-    img.src = url;
-    img.addEventListener("error", () => {
-      setHasError(true);
-    });
-  }, [url]);
 
   if (url == null || url === "") {
     return null;
@@ -41,5 +28,14 @@ export function ImageLoad({ url, alt, className }: ImageLoadProps) {
     );
   }
 
-  return <img src={url} alt={alt} className={className} />;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className={className}
+      onError={() => {
+        setHasError(true);
+      }}
+    />
+  );
 }

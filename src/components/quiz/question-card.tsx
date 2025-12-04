@@ -144,6 +144,7 @@ export function QuestionCard({
         </ScrollArea>
         <CardDescription>
           <ImageLoad
+            key={`question-image-${question.id.toString()}`}
             url={question.image}
             alt={question.question}
             className="mx-auto mt-4 max-h-80 rounded border object-contain"
@@ -172,6 +173,7 @@ export function QuestionCard({
               >
                 <span className="w-full">{answer.answer}</span>
                 <ImageLoad
+                  key={`answer-image-${question.id.toString()}-${index.toString()}`}
                   url={answer.image}
                   alt={answer.answer}
                   className="max-h-40 w-full rounded object-contain"
