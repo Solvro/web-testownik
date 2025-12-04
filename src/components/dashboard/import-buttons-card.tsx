@@ -16,9 +16,6 @@ export function ImportButtonsCard({
         <Button variant="outline" asChild>
           <Link to="/import-quiz">Importuj quiz</Link>
         </Button>
-        <Button variant="outline" asChild>
-          <Link to="/import-quiz-legacy">Importuj quiz (stara wersja)</Link>
-        </Button>
       </CardContent>
     </Card>
   );
