@@ -1,4 +1,10 @@
-import { AlertCircleIcon, FileJsonIcon, FileUpIcon } from "lucide-react";
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  FileJsonIcon,
+  FileUpIcon,
+} from "lucide-react";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -181,6 +187,28 @@ export function ImportQuizPage(): React.JSX.Element {
     setLoading(false);
   };
 
+  const textRef = useRef<HTMLDivElement | null>(null);
+  const [checkIcon, setCheckIcon] = useState<boolean>(false);
+  const handleTextCopy = async () => {
+    const copyTextElement = textRef.current;
+    if (copyTextElement == null) {
+      return;
+    }
+
+    let copyText = "";
+
+    for (const child of copyTextElement.children) {
+      copyText += `${child.textContent}\n\n`;
+    }
+
+    setCheckIcon(true);
+    setTimeout(() => {
+      setCheckIcon(false);
+    }, 2000); // 2 seconds
+
+    await navigator.clipboard.writeText(copyText);
+  };
+
   return (
     <>
       {appContext.isGuest ? (
@@ -316,7 +344,7 @@ export function ImportQuizPage(): React.JSX.Element {
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm" ref={textRef}>
               <p>
                 Quiz w formacie JSON powinien składać się z dwóch głównych
                 kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
@@ -406,6 +434,10 @@ export function ImportQuizPage(): React.JSX.Element {
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
           <DialogFooter>
+            <Button variant="outline" onClick={handleTextCopy}>
+              {checkIcon ? <CheckIcon /> : <CopyIcon />}
+              Kopiuj instrukcję
+            </Button>
             <DialogClose asChild>
               <Button variant="outline">Zamknij</Button>
             </DialogClose>
