@@ -88,7 +88,7 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
         </TooltipTrigger>
         <TooltipContent>Wyczyść filtry</TooltipContent>
       </Tooltip>
-      <InputGroup className="w-full sm:w-sm">
+      <InputGroup className="w-full sm:w-xs">
         <InputGroupInput
           placeholder="Wyszukaj quiz"
           value={searchValue}
