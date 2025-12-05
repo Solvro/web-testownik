@@ -9,7 +9,7 @@
 
 **Twoje narzędzie do nauki na Politechnice Wrocławskiej**
 
-[🌐 Odwiedź aplikację](https://testownik.solvro.pl) • [🧑‍💻 Zobacz backend](https://github.com/Solvro/backend-testownik)
+[🌐 Odwiedź aplikację](https://testownik.solvro.pl) • [🧑‍💻 Repozytorium backend](https://github.com/Solvro/backend-testownik)
 
 </div>
 
@@ -149,6 +149,15 @@ docs: update contribution section
 refactor(api): simplify fetch wrapper
 test(quiz): add missing unit tests
 ```
+---
+
+## 🐞 Zgłaszanie problemów, pomysłów i pytań
+
+Jeśli nie masz pewności czy temat dotyczy frontendu czy backendu,
+zgłoś go **najpierw [tutaj](https://github.com/Solvro/web-testownik/issues/new)**.
+
+Jeśli jesteś dość pewien, że sprawa dotyczy **wyłącznie backendu**
+(API, baza danych, logika serwera), wtedy wrzuć zgłoszenie na backendzie: [🧑‍💻 Repozytorium backend](https://github.com/Solvro/backend-testownik).
 
 ---
 

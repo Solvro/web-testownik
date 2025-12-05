@@ -1,0 +1,70 @@
+name: Bug report
+description: Coś nie działa, działa losowo albo inaczej niż powinno.
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Co nie działa?
+      description: |
+        Jedno konkretne zdanie: co i gdzie.
+      placeholder: |
+        Np. Po kliknięciu "Zaloguj" strona zostaje na loaderze.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Kroki odtworzenia
+      description: |
+        Najkrótsza ścieżka do błędu.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Oczekiwane zachowanie
+      description: |
+        Jak powinno być normalnie.
+      placeholder: |
+        Np. Po zalogowaniu powinien pojawić się ekran główny.
+    validations:
+      required: false
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Co dzieje się teraz?
+      description: |
+        Co widzisz zamiast oczekiwanego wyniku.
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Środowisko
+      description: |
+        Podaj tyle, ile masz: system, przeglądarka, wersja aplikacji/commit.
+      placeholder: |
+        - OS:
+        - Przeglądarka:
+        - Wersja/commit:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logi / screeny (opcjonalnie)
+      description: |
+        Jeśli możesz, dorzuć screen lub fragment logów.
+    validations:
+      required: false
