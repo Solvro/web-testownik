@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/consistent-type-specifier-style
 import { type VariantProps, cva } from "class-variance-authority";
 import * as React from "react";
 
@@ -61,16 +62,18 @@ function InputGroupAddon({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       role="group"
       data-slot="input-group-addon"
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}
-      onClick={(e) => {
-        if ((e.target as HTMLElement).closest("button")) {
+      onClick={(event) => {
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        if ((event.target as HTMLElement).closest("button")) {
           return;
         }
-        e.currentTarget.parentElement?.querySelector("input")?.focus();
+        event.currentTarget.parentElement?.querySelector("input")?.focus();
       }}
       {...props}
     />
