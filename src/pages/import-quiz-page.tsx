@@ -97,7 +97,7 @@ export function ImportQuizPage(): React.JSX.Element {
     let copyText = "";
 
     for (const child of copyTextElement.children) {
-      if (child.nodeName == "DIV") {
+      if (child.nodeName === "DIV") {
         copyText += `${child.children[1].textContent}\n\n`;
         continue;
       }
