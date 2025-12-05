@@ -4,7 +4,7 @@ import {
   PlusIcon,
   UploadIcon,
 } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
 
@@ -43,9 +43,9 @@ export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
-  const [sortedUserQuizzes, setSortedUserQuizzes] = useState<QuizMetadata[]>(
-    [],
-  );
+  // const [sortedUserQuizzes, setSortedUserQuizzes] = useState<QuizMetadata[]>(
+  //   [],
+  // );
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +54,13 @@ export function QuizzesPage() {
     quiz: QuizMetadata | null;
   }>({ type: null, quiz: null });
   const [quizRegex, setQuizRegex] = useState<RegExp>(/.*/);
+  const [quizComparator, setQuizComparator] = useState<
+    (a: QuizMetadata, b: QuizMetadata) => number
+  >(() => (_a: QuizMetadata, _b: QuizMetadata) => 0);
+
+  const sortedUserQuizzes: QuizMetadata[] = useMemo(() => {
+    return userQuizzes.toSorted(quizComparator);
+  }, [userQuizzes, quizComparator]);
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -66,7 +73,6 @@ export function QuizzesPage() {
         ]);
 
         setUserQuizzes(fetchedUserQuizzes);
-        setSortedUserQuizzes(fetchedUserQuizzes);
 
         const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
           (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
@@ -147,7 +153,7 @@ export function QuizzesPage() {
   const handleSortQuizzes = (
     comparator: (a: QuizMetadata, b: QuizMetadata) => number,
   ) => {
-    setSortedUserQuizzes(userQuizzes.toSorted(comparator));
+    setQuizComparator(() => comparator);
   };
 
   const handleFilterQuizzes = (regex: RegExp) => {

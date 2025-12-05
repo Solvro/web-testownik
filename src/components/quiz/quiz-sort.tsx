@@ -8,6 +8,7 @@ import {
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button.tsx";
+import { cn } from "@/lib/utils.ts";
 import type { QuizMetadata } from "@/types/quiz";
 
 import {
@@ -136,7 +137,7 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
         <TooltipTrigger asChild>
           <Button
             variant={"outline"}
-            className={`size-9 ${isFiltered ? "" : "hidden"}`}
+            className={cn("size-9", !isFiltered && "hidden")}
             onClick={handleClearFilters}
           >
             <X />
