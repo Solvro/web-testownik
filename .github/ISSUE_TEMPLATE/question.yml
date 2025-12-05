@@ -1,0 +1,24 @@
+name: Question / Help
+description: Pytanie o działanie projektu lub prośba o pomoc w użyciu.
+title: "[QUESTION] "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: O co chodzi?
+      description: |
+        Napisz krótko, czego próbujesz i gdzie utknąłeś.
+      placeholder: |
+        Np. Jak uruchomić projekt lokalnie bez Dockera?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontekst
+      description: |
+        System, wersja, logi, screeny — cokolwiek pomoże.
+    validations:
+      required: false
