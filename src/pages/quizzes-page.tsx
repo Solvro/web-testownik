@@ -43,9 +43,6 @@ export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
-  // const [sortedUserQuizzes, setSortedUserQuizzes] = useState<QuizMetadata[]>(
-  //   [],
-  // );
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -184,7 +181,7 @@ export function QuizzesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row">
         <h3 className="text-2xl font-semibold">Twoje quizy</h3>
         <QuizSort
           onSortChange={handleSortQuizzes}

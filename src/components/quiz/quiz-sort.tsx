@@ -3,23 +3,29 @@ import {
   ArrowDownUp,
   ArrowDownZA,
   SearchIcon,
-  X,
+  X as XIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button.tsx";
-import { cn } from "@/lib/utils.ts";
-import type { QuizMetadata } from "@/types/quiz";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu.tsx";
-import { Input } from "../ui/input.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover.tsx";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.tsx";
+} from "@/components/ui/dropdown-menu.tsx";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
+import { cn } from "@/lib/utils.ts";
+import type { QuizMetadata } from "@/types/quiz";
 
 interface Option {
   label: string;
@@ -56,52 +62,50 @@ const options: Option[] = [
 ];
 
 const buildRegex = (value: string): RegExp => {
+  value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
   return new RegExp(value, "i");
 };
 
 export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
-  const [searchedValue, setSearchedValue] = useState<string>("");
+  const [searchValue, setSearchValue] = useState<string>("");
 
-  const isFiltered: boolean = selectedOption !== null || searchedValue !== "";
+  const isFiltered: boolean = selectedOption !== null || searchValue !== "";
 
   const handleClearFilters = () => {
     setSelectedOption(null);
-    setSearchedValue("");
+    setSearchValue("");
     onNameFilterChange(/.*/);
     onSortChange(defaultComparator);
   };
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
-      <Popover>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <Button variant={"outline"} className="size-9">
-                <SearchIcon />
-              </Button>
-            </PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Szukaj</TooltipContent>
-        </Tooltip>
-        <PopoverContent
-          collisionPadding={16}
-          side="left"
-          style={{ "--search-width": "20rem" } as React.CSSProperties}
-          className="w-[min(var(--radix-popover-content-available-width),var(--search-width))] p-0"
-        >
-          <Input
-            type="text"
-            value={searchedValue}
-            placeholder="Wyszukaj quiz"
-            onChange={(event) => {
-              onNameFilterChange(buildRegex(event.target.value));
-              setSearchedValue(event.target.value);
-            }}
-          />
-        </PopoverContent>
-      </Popover>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={cn("size-9", !isFiltered && "hidden")}
+            onClick={handleClearFilters}
+          >
+            <XIcon />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Wyczyść filtry</TooltipContent>
+      </Tooltip>
+      <InputGroup className="w-full sm:w-sm">
+        <InputGroupInput
+          placeholder="Wyszukaj quiz"
+          value={searchValue}
+          onChange={(event) => {
+            setSearchValue(event.target.value);
+            onNameFilterChange(buildRegex(event.target.value));
+          }}
+        />
+        <InputGroupAddon>
+          <SearchIcon />
+        </InputGroupAddon>
+      </InputGroup>
       <DropdownMenu>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -133,18 +137,6 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={"outline"}
-            className={cn("size-9", !isFiltered && "hidden")}
-            onClick={handleClearFilters}
-          >
-            <X />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Wyczyść filtry</TooltipContent>
-      </Tooltip>
     </div>
   );
 }
