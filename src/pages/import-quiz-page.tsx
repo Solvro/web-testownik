@@ -248,16 +248,6 @@ export function ImportQuizPage(): React.JSX.Element {
 
   document.title = "Importuj quiz - Testownik Solvro";
 
-  // const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (file === undefined) {
-  //     setFileName(null);
-  //   } else {
-  //     setFileName(file.name);
-  //     setError(null);
-  //   }
-  // };
-
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
 
@@ -266,9 +256,10 @@ export function ImportQuizPage(): React.JSX.Element {
         const fileInput = files?.[0];
         if (fileInput === undefined) {
           setFileNameInput(null);
-          setFileNameOld(null);
         } else {
           setFileNameInput(fileInput.name);
+          setFileNameOld(null);
+          setDirectoryName(null);
           setError(null);
         }
         break;
@@ -307,6 +298,7 @@ export function ImportQuizPage(): React.JSX.Element {
       setDirectoryName(directoryPath);
       setDirectoryFiles(filesArray);
       setFileNameOld(null);
+      setFileNameInput(null);
       if (fileOldRef.current !== null) {
         fileOldRef.current.value = "";
       }
@@ -314,23 +306,6 @@ export function ImportQuizPage(): React.JSX.Element {
       setDirectoryName(null);
     }
   };
-
-  // const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   if (event.dataTransfer.files.length > 0) {
-  //     const file = event.dataTransfer.files[0];
-  //     if (fileInputRef.current !== null) {
-  //       fileInputRef.current.files = event.dataTransfer.files;
-  //     }
-  //     setFileName(file.name);
-  //     setDirectoryName(null);
-  //     setDirectoryFiles([]);
-  //     if (directoryInputRef.current !== null) {
-  //       directoryInputRef.current.value = "";
-  //     }
-  //   }
-  // };
 
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -367,8 +342,6 @@ export function ImportQuizPage(): React.JSX.Element {
         directoryInputRef.current.value = "";
       }
     }
-
-    // TODO: test
   };
 
   const handleDragOverFile = (event: React.DragEvent<HTMLDivElement>) => {
@@ -529,10 +502,10 @@ export function ImportQuizPage(): React.JSX.Element {
     if (directoryFiles.length > 0) {
       return processDirectory(directoryFiles);
     } else if (
-      fileInputRef.current?.files != null &&
-      fileInputRef.current.files.length > 0
+      fileOldRef.current?.files != null &&
+      fileOldRef.current.files.length > 0
     ) {
-      return processZip(fileInputRef.current.files[0]);
+      return processZip(fileOldRef.current.files[0]);
     } else {
       throw new Error("Nie wybrano pliku ani folderu.");
     }
@@ -726,35 +699,6 @@ export function ImportQuizPage(): React.JSX.Element {
   // };
   //
 
-  //
-  // const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   const item = event.dataTransfer.items[0];
-  //   const entry = item.webkitGetAsEntry();
-  //   if (entry?.isDirectory === true) {
-  //     const directory = entry as FileSystemDirectoryEntry;
-  //     const reader = directory.createReader();
-  //     const files: File[] = [];
-  //     const readAllEntries = async (
-  //       directoryReader: FileSystemDirectoryReader,
-  //     ): Promise<FileSystemEntry[]> => {
-  //       return new Promise((resolve) => {
-  //         const allEntries: FileSystemEntry[] = [];
-  //         const read = () => {
-  //           directoryReader.readEntries((entries) => {
-  //             if (entries.length > 0) {
-  //               allEntries.push(...entries);
-  //               read();
-  //             } else {
-  //               resolve(allEntries);
-  //             }
-  //           });
-  //         };
-  //         read();
-  //       });
-  //     };
-  //
   //     const getFile = async (fileEntry: FileSystemFileEntry): Promise<File> => {
   //       return new Promise((resolve) => {
   //         fileEntry.file(resolve);
