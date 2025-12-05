@@ -40,14 +40,14 @@ const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
 const options: Option[] = [
   {
     label: "A - Z",
-    icon: <ArrowDownAZ className="text-white" />,
+    icon: <ArrowDownAZ />,
     comparator: (a: QuizMetadata, b: QuizMetadata): number => {
       return a.title.localeCompare(b.title);
     },
   },
   {
     label: "Z - A",
-    icon: <ArrowDownZA className="text-white" />,
+    icon: <ArrowDownZA />,
     comparator: (a: QuizMetadata, b: QuizMetadata): number => {
       return b.title.localeCompare(a.title);
     },
