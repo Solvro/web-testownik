@@ -37,7 +37,7 @@ interface QuizSortProps {
   onSortChange: (
     comparator: (a: QuizMetadata, b: QuizMetadata) => number,
   ) => void;
-  onNameFilterChange: (regex: RegExp) => void;
+  onNameFilterChange: (value: string) => void;
 }
 
 const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
@@ -61,11 +61,6 @@ const options: Option[] = [
   },
 ];
 
-const buildRegex = (value: string): RegExp => {
-  value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-  return new RegExp(value, "i");
-};
-
 export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [searchValue, setSearchValue] = useState<string>("");
@@ -75,7 +70,7 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
   const handleClearFilters = () => {
     setSelectedOption(null);
     setSearchValue("");
-    onNameFilterChange(/.*/);
+    onNameFilterChange("");
     onSortChange(defaultComparator);
   };
 
@@ -99,7 +94,7 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
           value={searchValue}
           onChange={(event) => {
             setSearchValue(event.target.value);
-            onNameFilterChange(buildRegex(event.target.value));
+            onNameFilterChange(event.target.value);
           }}
         />
         <InputGroupAddon>

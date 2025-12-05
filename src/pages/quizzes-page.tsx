@@ -153,8 +153,9 @@ export function QuizzesPage() {
     setQuizComparator(() => comparator);
   };
 
-  const handleFilterQuizzes = (regex: RegExp) => {
-    setQuizRegex(regex);
+  const handleFilterQuizzes = (value: string) => {
+    value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    setQuizRegex(value ? new RegExp(value, "i") : /.*/);
   };
 
   if (loading) {
