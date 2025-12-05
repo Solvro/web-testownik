@@ -153,7 +153,7 @@ test(quiz): add missing unit tests
 
 ## 🐞 Zgłaszanie problemów, pomysłów i pytań
 
-Jeśli nie masz pewności czy temat dotyczy frontendu czy backendu,  
+Jeśli nie masz pewności czy temat dotyczy frontendu czy backendu,
 zgłoś go **najpierw [tutaj](https://github.com/Solvro/web-testownik/issues/new)**.
 
 Jeśli jesteś dość pewien, że sprawa dotyczy **wyłącznie backendu**  
