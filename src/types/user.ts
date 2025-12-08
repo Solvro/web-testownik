@@ -26,6 +26,12 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
   wrong_answer_reoccurrences: 1,
 });
 
+export interface UserNotifications {
+  quiz_share: boolean;
+  issue_report: boolean;
+  marketing: boolean;
+}
+
 export interface Term {
   id: string;
   name: string;
