@@ -69,6 +69,22 @@ export class UserService extends BaseApiService {
   }
 
   /**
+   * Update user notifications
+   */
+  async updateUserNotifications(
+    notifications: Record<string, boolean>,
+  ): Promise<Record<string, boolean>> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot update notifications in guest mode");
+    }
+    const response = await this.put<Record<string, boolean>>(
+      "/notifications/",
+      notifications,
+    );
+    return response.data;
+  }
+
+  /**
    * Get user grades
    */
   async getGrades(): Promise<GradesData> {

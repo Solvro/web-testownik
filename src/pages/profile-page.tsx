@@ -3,10 +3,15 @@ import { useLocation } from "react-router";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
+import { NotificationsForm } from "@/components/profile/notifications-form.tsx";
 import { ProfileDetails } from "@/components/profile/profile-details.tsx";
 import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { UserData, UserSettings } from "@/types/user.ts";
+import type {
+  UserData,
+  UserNotifications,
+  UserSettings,
+} from "@/types/user.ts";
 import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
 export function ProfilePage(): React.JSX.Element {
@@ -21,12 +26,18 @@ export function ProfilePage(): React.JSX.Element {
     }
     return { ...DEFAULT_USER_SETTINGS };
   });
+  const [notifications, setNotifications] = useState<UserNotifications>({
+    quiz_share: true,
+    issue_report: true,
+    marketing: false,
+  });
 
   const handleTabSelect = (tabKey: string) => {
     setActiveTab(tabKey);
     const titles: Record<string, string> = {
       account: "Profil",
       settings: "Ustawienia",
+      notifications: "Powiadomienia",
     };
     document.title = `${titles[tabKey] || "Profil"} - Testownik Solvro`;
   };
@@ -83,6 +94,23 @@ export function ProfilePage(): React.JSX.Element {
     }
   };
 
+  const handleNotificationChange = async (
+    name: keyof UserNotifications,
+    value: boolean | number,
+  ) => {
+    const boolValue = Boolean(value);
+    setNotifications({ ...notifications, [name]: boolValue });
+    try {
+      await appContext.services.user.updateUserNotifications({
+        [name]: boolValue,
+      });
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
+      setNotifications(notifications);
+    }
+  };
+
   return (
     <div className="mt-6">
       <Tabs
@@ -97,6 +125,12 @@ export function ProfilePage(): React.JSX.Element {
           <TabsTrigger value="settings" className="md:w-full md:justify-start">
             Ustawienia
           </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="md:w-full md:justify-start"
+          >
+            Powiadomienia
+          </TabsTrigger>
         </TabsList>
         <div className="space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
@@ -110,6 +144,12 @@ export function ProfilePage(): React.JSX.Element {
             <SettingsForm
               settings={settings}
               onSettingChange={handleSettingChange}
+            />
+          </TabsContent>
+          <TabsContent value="notifications" className="space-y-6 md:mt-0">
+            <NotificationsForm
+              notifications={notifications}
+              onNotificationsChange={handleNotificationChange}
             />
           </TabsContent>
         </div>
