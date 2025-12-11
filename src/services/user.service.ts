@@ -1,4 +1,5 @@
 import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import type { UserNotifications } from "@/types/user.ts";
 
 import { BaseApiService } from "./base-api.service";
 import type { AlertData, GradesData, UserData, UserSettings } from "./types";
@@ -69,15 +70,26 @@ export class UserService extends BaseApiService {
   }
 
   /**
+   * Get user notifications
+   */
+  async getUserNotifications(): Promise<UserNotifications> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot fetch notifications in guest mode");
+    }
+    const response = await this.get<UserNotifications>("/notifications/");
+    return response.data;
+  }
+
+  /**
    * Update user notifications
    */
   async updateUserNotifications(
-    notifications: Record<string, boolean>,
-  ): Promise<Record<string, boolean>> {
+    notifications: Partial<UserNotifications>,
+  ): Promise<UserNotifications> {
     if (this.isGuestMode()) {
       throw new Error("Cannot update notifications in guest mode");
     }
-    const response = await this.put<Record<string, boolean>>(
+    const response = await this.put<UserNotifications>(
       "/notifications/",
       notifications,
     );

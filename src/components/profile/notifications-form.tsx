@@ -12,7 +12,7 @@ interface NotificationsFormProps {
   notifications: UserNotifications;
   onNotificationsChange: (
     name: keyof UserNotifications,
-    value: boolean | number,
+    value: boolean,
   ) => void;
 }
 
@@ -33,6 +33,9 @@ export function NotificationsForm({
       <Card>
         <CardHeader>
           <CardTitle>Powiadomienia</CardTitle>
+          <p className="text-muted-foreground text-xs">
+            Wybierz, które powiadomienia chcesz otrzymywać
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
@@ -88,7 +91,8 @@ export function NotificationsForm({
                 Marketingowe
               </Label>
               <p className="text-muted-foreground text-xs">
-                Otrzymuj powiadomienia o nowych funkcjon
+                Otrzymuj powiadomienia o nowych funkcjonalnościach i ofertach
+                specjalnych
               </p>
             </div>
             <Switch
