@@ -238,7 +238,7 @@ export function ImportQuizPage(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="dark:bg-background mx-auto dark:border-1">
+            <TabsList className="dark:bg-background mx-auto dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="link" disabled={appContext.isGuest}>
                 Link
