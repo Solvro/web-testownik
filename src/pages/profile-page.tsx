@@ -32,6 +32,21 @@ export function ProfilePage(): React.JSX.Element {
     marketing: false,
   });
 
+  useEffect(() => {
+    if (appContext.isGuest) {
+      return;
+    }
+
+    appContext.services.user
+      .getUserNotifications()
+      .then((data: UserNotifications) => {
+        setNotifications(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Error fetching notifications:", error);
+      });
+  }, [appContext.services.user, appContext.isGuest]);
+
   const handleTabSelect = (tabKey: string) => {
     setActiveTab(tabKey);
     const titles: Record<string, string> = {
@@ -99,15 +114,16 @@ export function ProfilePage(): React.JSX.Element {
     value: boolean | number,
   ) => {
     const boolValue = Boolean(value);
+    const previousNotifications = notifications;
     setNotifications({ ...notifications, [name]: boolValue });
     try {
       await appContext.services.user.updateUserNotifications({
         [name]: boolValue,
       });
     } catch (error) {
-      console.error("Error updating settings:", error);
-      toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
-      setNotifications(notifications);
+      console.error("Error updating notifications:", error);
+      toast.error("Wystąpił błąd podczas aktualizacji powiadomień.");
+      setNotifications(previousNotifications);
     }
   };
 
