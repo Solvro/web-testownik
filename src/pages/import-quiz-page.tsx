@@ -335,41 +335,45 @@ export function ImportQuizPage(): React.JSX.Element {
             Jak powinien wyglądać quiz w formacie JSON?
           </Button>
         </DialogTrigger>
-        <DialogContent className="flex h-[80vh] w-full flex-col">
+        <DialogContent className="flex w-full flex-col">
           <DialogHeader>
             <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
               Struktura wymagana przy imporcie z pliku lub tekstu
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 overflow-y-auto text-sm" ref={textRef}>
-            <p>
-              Quiz w formacie JSON powinien składać się z dwóch głównych kluczy:{" "}
-              <TypographyInlineCode>title</TypographyInlineCode> i{" "}
-              <TypographyInlineCode>questions</TypographyInlineCode>.
-            </p>
-            <p>
-              Klucz <TypographyInlineCode>title</TypographyInlineCode> powinien
-              zawierać tytuł quizu w formie tekstu.
-            </p>
-            <p>
-              Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
-              powinien zawierać tablicę obiektów reprezentujących pytania. Każde
-              pytanie powinno zawierać klucze{" "}
-              <TypographyInlineCode>id</TypographyInlineCode>,{" "}
-              <TypographyInlineCode>question</TypographyInlineCode> i{" "}
-              <TypographyInlineCode>answers</TypographyInlineCode> oraz
-              opcjonalnie <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
-              (domyślnie <TypographyInlineCode>false</TypographyInlineCode>) i{" "}
-              <TypographyInlineCode>explanation</TypographyInlineCode>. Jeśli
-              nie podano <TypographyInlineCode>id</TypographyInlineCode>,
-              zostanie on nadany automatycznie od 1.
-            </p>
-            <p>Przykładowy quiz w formacie JSON:</p>
-            <ScrollArea className="relative min-h-0 flex-1">
-              <pre className="bg-muted rounded-md p-3 text-xs">
-                {`{
+          <div className="relative w-full space-y-4">
+            <div className="relative w-full space-y-4 text-sm" ref={textRef}>
+              <p>
+                Quiz w formacie JSON powinien składać się z dwóch głównych
+                kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
+                <TypographyInlineCode>questions</TypographyInlineCode>.
+              </p>
+              <p>
+                Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
+                powinien zawierać tytuł quizu w formie tekstu.
+              </p>
+              <p>
+                Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
+                powinien zawierać tablicę obiektów reprezentujących pytania.
+                Każde pytanie powinno zawierać klucze{" "}
+                <TypographyInlineCode>id</TypographyInlineCode>,{" "}
+                <TypographyInlineCode>question</TypographyInlineCode> i{" "}
+                <TypographyInlineCode>answers</TypographyInlineCode> oraz
+                opcjonalnie{" "}
+                <TypographyInlineCode>multiple</TypographyInlineCode> (domyślnie{" "}
+                <TypographyInlineCode>false</TypographyInlineCode>) i{" "}
+                <TypographyInlineCode>explanation</TypographyInlineCode>. Jeśli
+                nie podano <TypographyInlineCode>id</TypographyInlineCode>,
+                zostanie on nadany automatycznie od 1.
+              </p>
+              <p>Przykładowy quiz w formacie JSON:</p>
+              <ScrollArea
+                type="always"
+                className="relative h-64 w-full overflow-visible"
+              >
+                <pre className="bg-muted rounded-md p-3 text-xs">
+                  {`{
     "title": "Przykładowy quiz",
     "description": "Opis quizu", // Opcjonalny
     "questions": [
@@ -428,10 +432,15 @@ export function ImportQuizPage(): React.JSX.Element {
         }
     ]
 }`}
-              </pre>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                </pre>
+                <ScrollBar
+                  orientation="horizontal"
+                  className="sticky bottom-0"
+                />
+              </ScrollArea>
+            </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={handleTextCopy}>
               {checkIcon ? <CheckIcon /> : <CopyIcon />}
