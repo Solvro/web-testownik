@@ -225,7 +225,7 @@ const parseQuestion = (
     question,
     answers,
     multiple: !isTrueFalse,
-    id: index++,
+    id: index,
   };
 };
 
@@ -382,6 +382,7 @@ export function ImportQuizPage(): React.JSX.Element {
   const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (event.dataTransfer.items.length === 0) return;
     const item = event.dataTransfer.items[0];
     const entry = item.webkitGetAsEntry();
     if (entry?.isDirectory === true) {
@@ -474,7 +475,11 @@ export function ImportQuizPage(): React.JSX.Element {
     let index = 1;
     for (const filename of Object.keys(zip.files)) {
       if (filename.endsWith(".txt")) {
-        const content = await zip.file(filename)?.async("uint8array");
+        const fileData = zip.file(filename);
+        if (fileData == null) {
+          continue;
+        }
+        const content = await fileData.async("uint8array");
         let lines;
         try {
           const decoder = new TextDecoder("utf8", { fatal: true });
@@ -608,16 +613,13 @@ export function ImportQuizPage(): React.JSX.Element {
       case "old": {
         if (fileNameOld == null && directoryName == null) {
           setError("Nie wybrano pliku ani folderu.");
+          setLoading(false);
           return;
         }
-
         if (!quizTitle.trim()) {
           setError("Nie podano nazwy quiz.");
-          return;
+          setLoading(false);
         }
-
-        setLoading(true);
-        setError(null);
 
         try {
           const questions = await processFiles();
@@ -763,7 +765,7 @@ export function ImportQuizPage(): React.JSX.Element {
                       }}
                     >
                       <input
-                        id="file-input"
+                        id="file-old-input"
                         type="file"
                         accept=".zip"
                         ref={fileOldRef}
