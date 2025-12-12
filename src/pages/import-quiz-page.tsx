@@ -181,7 +181,7 @@ export function ImportQuizPage(): React.JSX.Element {
               <div className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-11">
                   <div className="space-y-2 md:col-span-5">
-                    <Label htmlFor="file-input">Plik zip z pytaniami</Label>
+                    <Label htmlFor="file-old-input">Plik zip z pytaniami</Label>
                     <div
                       className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
                       onClick={() => fileOldRef.current?.click()}
