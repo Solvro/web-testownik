@@ -17,6 +17,170 @@ const trueFalseStrings = {
 
 export type UploadType = "file" | "json" | "old";
 
+const parseQTemplate = (
+  lines: string[],
+  filename: string,
+  index: number,
+): Question | null => {
+  // Validate template format
+  const templateLine = lines[0]?.trim();
+  if (!templateLine.startsWith("QQ")) {
+    console.error(
+      `Error in file ${filename}. Template does not start with QQ. Skipping.`,
+    );
+    return null;
+  }
+
+  // Extract correctness indicators (1/0) from the template
+  const templateParts = templateLine.split(";")[0]; // Ignore parts after semicolon
+  const segmenter = new Intl.Segmenter();
+  const correctness = Array.from(
+    segmenter.segment(templateParts.slice(2)),
+    ({ segment }) => segment,
+  ); // Remove "QQ" and split into individual characters
+
+  // Validate correctness indicators
+  if (!correctness.every((c) => c === "1" || c === "0")) {
+    console.error(
+      `Error in file ${filename}. Invalid correctness indicators. Skipping.`,
+    );
+    return null;
+  }
+
+  // Extract question text from the second line
+  const questionLine = lines[1]?.trim();
+  const questionMatch = /^(\d+)\.\t(.*)/.exec(questionLine); // Match number, period, tab, and question text
+  if (questionMatch === null) {
+    console.error(
+      `Error in file ${filename}. Invalid question format. Skipping.`,
+    );
+    return null;
+  }
+  const questionText = questionMatch[2];
+
+  // Extract answers from subsequent lines
+  const answers: { answer: string; correct: boolean }[] = [];
+  for (let index_ = 2; index_ < lines.length; index_++) {
+    const answerLine = lines[index_]?.trim();
+    const answerMatch = /^\t?\(([a-z])\)\s+(.*)/.exec(answerLine); // Match optional tab, "(letter)", and answer text
+    if (answerMatch !== null) {
+      const answerIndex = answers.length; // Determine the index of the answer based on its position
+      answers.push({
+        answer: answerMatch[2], // The answer text
+        correct: correctness[answerIndex] === "1", // Check if it's correct
+      });
+    } else if (answerLine) {
+      console.error(
+        `Error in file ${filename} at line ${String(index_ + 1)}. Invalid answer format. Skipping.`,
+      );
+    }
+  }
+
+  // Ensure that the number of answers matches the correctness indicators
+  if (answers.length !== correctness.length) {
+    console.error(
+      `Error in file ${filename}. Mismatch between answers and correctness indicators. Skipping.`,
+    );
+    return null;
+  }
+
+  return {
+    question: questionText,
+    answers,
+    multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
+    id: index,
+  };
+};
+
+const parseQuestion = (
+  lines: string[],
+  filename: string,
+  index: number,
+): Question | null => {
+  if (lines.length < 2) {
+    console.error(`Error in file ${filename}. Not enough lines. Skipping.`);
+    return null;
+  }
+  const template = lines[0]?.trim();
+  const segmenter = new Intl.Segmenter();
+  const questionLinesCount = Array.from(
+    segmenter.segment(template),
+    ({ segment }) => segment,
+  ).filter((c) => c.toLowerCase() === "x").length;
+
+  if (!template) {
+    console.error(`Error in file ${filename}. Template not found. Skipping.`);
+    return null;
+  } else if (template.startsWith("QQ")) {
+    return parseQTemplate(lines, filename, index);
+  } else if (!["x", "y"].includes(template[0].toLowerCase())) {
+    console.error(
+      `Error in file ${filename}. Template not recognized. Skipping.`,
+    );
+    return null;
+  } else if (
+    Array.from(
+      segmenter.segment(template.slice(questionLinesCount)),
+      ({ segment }) => segment,
+    ).some((c) => c !== "0" && c !== "1")
+  ) {
+    console.error(
+      `Error in file ${filename}. Template not recognized. Skipping.`,
+    );
+    return null;
+  }
+
+  let question = lines.slice(1, questionLinesCount + 1).join("\n");
+
+  // Extract number from filename
+  const filenameNumberMatch = /^0*(\d+)/.exec(filename);
+  if (filenameNumberMatch !== null) {
+    const filenameNumber = filenameNumberMatch[1];
+    // Remove the number from the beginning of the question if it matches the filename number
+    const questionNumberMatch = /^0*(\d+)\.\s*(0*\d+\.\s*)?(.*)/.exec(question);
+    if (questionNumberMatch?.[1] === filenameNumber) {
+      question = questionNumberMatch[3];
+    }
+  }
+
+  const answers = [];
+  for (
+    let s = questionLinesCount + 1;
+    s < Math.min(lines.length, template.length + 1);
+    s++
+  ) {
+    if (!lines[s] || lines[s]?.trim() === "") {
+      continue;
+    }
+    try {
+      answers.push({
+        answer: lines[s]?.trim(),
+        correct: template[s - 1] === "1",
+      });
+    } catch (error_) {
+      console.error(
+        `Error in file ${filename} at line ${String(s)}. Replacing the unknown value with False. Error: ${error_ instanceof Error ? error_.message : String(error_)}`,
+      );
+      answers.push({
+        answer: lines[s]?.trim(),
+        correct: false,
+      });
+    }
+  }
+
+  const isTrueFalse =
+    (template.endsWith("X01") || template.endsWith("X10")) &&
+    answers.length === 2 &&
+    answers.every((a) => a.answer.toLowerCase() in trueFalseStrings);
+
+  return {
+    question,
+    answers,
+    multiple: !isTrueFalse,
+    id: index,
+  };
+};
+
 export const useImportQuiz = () => {
   const appContext = useContext(AppContext);
   const [uploadType, setUploadType] = useState<UploadType>("old");
@@ -232,6 +396,64 @@ export const useImportQuiz = () => {
     }
   };
 
+  const processDirectory = async (files: File[]): Promise<Question[]> => {
+    const questions: Question[] = [];
+    let index = 1;
+    for (const file of files) {
+      if (file.name.endsWith(".txt")) {
+        let content;
+        try {
+          content = await detectEncodingAndReadFile(file);
+        } catch (error_) {
+          console.error(
+            `Error reading file ${file.name}: ${error_ instanceof Error ? error_.message : String(error_)}`,
+          );
+          continue;
+        }
+        const lines = content.split("\n").map((line) => line.trim());
+        const question = parseQuestion(lines, file.name, index++);
+        if (question !== null) {
+          questions.push(question);
+        }
+      }
+    }
+    return questions;
+  };
+
+  const processZip = async (file: File): Promise<Question[]> => {
+    const questions: Question[] = [];
+    const zip = await JSZip.loadAsync(file);
+    let index = 1;
+    for (const filename of Object.keys(zip.files)) {
+      if (filename.endsWith(".txt")) {
+        const fileData = zip.file(filename);
+        if (fileData == null) {
+          continue;
+        }
+        const content = await fileData.async("uint8array");
+        let lines;
+        try {
+          const decoder = new TextDecoder("utf8", { fatal: true });
+          lines = decoder
+            .decode(content)
+            .split("\n")
+            .map((line) => line.trim());
+        } catch {
+          const decoder = new TextDecoder("windows-1250");
+          lines = decoder
+            .decode(content)
+            .split("\n")
+            .map((line) => line.trim());
+        }
+        const question = parseQuestion(lines, filename, index++);
+        if (question !== null) {
+          questions.push(question);
+        }
+      }
+    }
+    return questions;
+  };
+
   const processFiles = async (): Promise<Question[]> => {
     if (directoryFiles.length > 0) {
       return processDirectory(directoryFiles);
@@ -242,6 +464,37 @@ export const useImportQuiz = () => {
       return processZip(fileOldRef.current.files[0]);
     } else {
       throw new Error("Nie wybrano pliku ani folderu.");
+    }
+  };
+
+  const setErrorAndNotify = (message: string) => {
+    setError(message);
+    toast.error(message);
+    setLoading(false);
+  };
+
+  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
+    let id = 1;
+    for (const question of quizData.questions) {
+      if (question.id) {
+        id = Math.max(id, question.id + 1);
+      } else {
+        question.id = id++;
+      }
+    }
+    return quizData;
+  };
+
+  const submitImport = async (type: "json" | "link", data: string | Quiz) => {
+    try {
+      const result =
+        type === "json"
+          ? await appContext.services.quiz.createQuiz(data as Quiz)
+          : await appContext.services.quiz.importQuizFromLink(data as string);
+
+      setQuiz(result);
+    } catch {
+      setError("Wystąpił błąd podczas importowania quizu.");
     }
   };
 
@@ -315,8 +568,9 @@ export const useImportQuiz = () => {
           return;
         }
         if (!quizTitle.trim()) {
-          setError("Nie podano nazwy quiz.");
+          setError("Nie podano nazwy quizu.");
           setLoading(false);
+          return;
         }
 
         try {
@@ -365,95 +619,6 @@ export const useImportQuiz = () => {
     setError(null);
   };
 
-  const setErrorAndNotify = (message: string) => {
-    setError(message);
-    toast.error(message);
-    setLoading(false);
-  };
-
-  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
-    let id = 1;
-    for (const question of quizData.questions) {
-      if (question.id) {
-        id = Math.max(id, question.id + 1);
-      } else {
-        question.id = id++;
-      }
-    }
-    return quizData;
-  };
-
-  const submitImport = async (type: "json" | "link", data: string | Quiz) => {
-    try {
-      const result =
-        type === "json"
-          ? await appContext.services.quiz.createQuiz(data as Quiz)
-          : await appContext.services.quiz.importQuizFromLink(data as string);
-
-      setQuiz(result);
-    } catch {
-      setError("Wystąpił błąd podczas importowania quizu.");
-    }
-  };
-
-  const processDirectory = async (files: File[]): Promise<Question[]> => {
-    const questions: Question[] = [];
-    let index = 1;
-    for (const file of files) {
-      if (file.name.endsWith(".txt")) {
-        let content;
-        try {
-          content = await detectEncodingAndReadFile(file);
-        } catch (error_) {
-          console.error(
-            `Error reading file ${file.name}: ${error_ instanceof Error ? error_.message : String(error_)}`,
-          );
-          continue;
-        }
-        const lines = content.split("\n").map((line) => line.trim());
-        const question = parseQuestion(lines, file.name, index++);
-        if (question !== null) {
-          questions.push(question);
-        }
-      }
-    }
-    return questions;
-  };
-
-  const processZip = async (file: File): Promise<Question[]> => {
-    const questions: Question[] = [];
-    const zip = await JSZip.loadAsync(file);
-    let index = 1;
-    for (const filename of Object.keys(zip.files)) {
-      if (filename.endsWith(".txt")) {
-        const fileData = zip.file(filename);
-        if (fileData == null) {
-          continue;
-        }
-        const content = await fileData.async("uint8array");
-        let lines;
-        try {
-          const decoder = new TextDecoder("utf8", { fatal: true });
-          lines = decoder
-            .decode(content)
-            .split("\n")
-            .map((line) => line.trim());
-        } catch {
-          const decoder = new TextDecoder("windows-1250");
-          lines = decoder
-            .decode(content)
-            .split("\n")
-            .map((line) => line.trim());
-        }
-        const question = parseQuestion(lines, filename, index++);
-        if (question !== null) {
-          questions.push(question);
-        }
-      }
-    }
-    return questions;
-  };
-
   return {
     // States
     uploadType,
@@ -479,169 +644,5 @@ export const useImportQuiz = () => {
     setQuizTitle,
     setQuizDescription,
     handleImport,
-  };
-};
-
-const parseQTemplate = (
-  lines: string[],
-  filename: string,
-  index: number,
-): Question | null => {
-  // Validate template format
-  const templateLine = lines[0]?.trim();
-  if (!templateLine.startsWith("QQ")) {
-    console.error(
-      `Error in file ${filename}. Template does not start with QQ. Skipping.`,
-    );
-    return null;
-  }
-
-  // Extract correctness indicators (1/0) from the template
-  const templateParts = templateLine.split(";")[0]; // Ignore parts after semicolon
-  const segmenter = new Intl.Segmenter();
-  const correctness = Array.from(
-    segmenter.segment(templateParts.slice(2)),
-    ({ segment }) => segment,
-  ); // Remove "QQ" and split into individual characters
-
-  // Validate correctness indicators
-  if (!correctness.every((c) => c === "1" || c === "0")) {
-    console.error(
-      `Error in file ${filename}. Invalid correctness indicators. Skipping.`,
-    );
-    return null;
-  }
-
-  // Extract question text from the second line
-  const questionLine = lines[1]?.trim();
-  const questionMatch = /^(\d+)\.\t(.*)/.exec(questionLine); // Match number, period, tab, and question text
-  if (questionMatch === null) {
-    console.error(
-      `Error in file ${filename}. Invalid question format. Skipping.`,
-    );
-    return null;
-  }
-  const questionText = questionMatch[2];
-
-  // Extract answers from subsequent lines
-  const answers: { answer: string; correct: boolean }[] = [];
-  for (let index_ = 2; index_ < lines.length; index_++) {
-    const answerLine = lines[index_]?.trim();
-    const answerMatch = /^\t?\(([a-z])\)\s+(.*)/.exec(answerLine); // Match optional tab, "(letter)", and answer text
-    if (answerMatch !== null) {
-      const answerIndex = answers.length; // Determine the index of the answer based on its position
-      answers.push({
-        answer: answerMatch[2], // The answer text
-        correct: correctness[answerIndex] === "1", // Check if it's correct
-      });
-    } else if (answerLine) {
-      console.error(
-        `Error in file ${filename} at line ${String(index_ + 1)}. Invalid answer format. Skipping.`,
-      );
-    }
-  }
-
-  // Ensure that the number of answers matches the correctness indicators
-  if (answers.length !== correctness.length) {
-    console.error(
-      `Error in file ${filename}. Mismatch between answers and correctness indicators. Skipping.`,
-    );
-    return null;
-  }
-
-  return {
-    question: questionText,
-    answers,
-    multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
-    id: index,
-  };
-};
-
-const parseQuestion = (
-  lines: string[],
-  filename: string,
-  index: number,
-): Question | null => {
-  if (lines.length < 2) {
-    console.error(`Error in file ${filename}. Not enough lines. Skipping.`);
-    return null;
-  }
-  const template = lines[0]?.trim();
-  const segmenter = new Intl.Segmenter();
-  const questionLinesCount = Array.from(
-    segmenter.segment(template),
-    ({ segment }) => segment,
-  ).filter((c) => c.toLowerCase() === "x").length;
-
-  if (!template) {
-    console.error(`Error in file ${filename}. Template not found. Skipping.`);
-    return null;
-  } else if (template.startsWith("QQ")) {
-    return parseQTemplate(lines, filename, index);
-  } else if (!["x", "y"].includes(template[0].toLowerCase())) {
-    console.error(
-      `Error in file ${filename}. Template not recognized. Skipping.`,
-    );
-    return null;
-  } else if (
-    Array.from(
-      segmenter.segment(template.slice(questionLinesCount)),
-      ({ segment }) => segment,
-    ).some((c) => c !== "0" && c !== "1")
-  ) {
-    console.error(
-      `Error in file ${filename}. Template not recognized. Skipping.`,
-    );
-    return null;
-  }
-
-  let question = lines.slice(1, questionLinesCount + 1).join("\n");
-
-  // Extract number from filename
-  const filenameNumberMatch = /^0*(\d+)/.exec(filename);
-  if (filenameNumberMatch !== null) {
-    const filenameNumber = filenameNumberMatch[1];
-    // Remove the number from the beginning of the question if it matches the filename number
-    const questionNumberMatch = /^0*(\d+)\.\s*(0*\d+\.\s*)?(.*)/.exec(question);
-    if (questionNumberMatch?.[1] === filenameNumber) {
-      question = questionNumberMatch[3];
-    }
-  }
-
-  const answers = [];
-  for (
-    let s = questionLinesCount + 1;
-    s < Math.min(lines.length, template.length + 1);
-    s++
-  ) {
-    if (!lines[s] || lines[s]?.trim() === "") {
-      continue;
-    }
-    try {
-      answers.push({
-        answer: lines[s]?.trim(),
-        correct: template[s - 1] === "1",
-      });
-    } catch (error_) {
-      console.error(
-        `Error in file ${filename} at line ${String(s)}. Replacing the unknown value with False. Error: ${error_ instanceof Error ? error_.message : String(error_)}`,
-      );
-      answers.push({
-        answer: lines[s]?.trim(),
-        correct: false,
-      });
-    }
-  }
-
-  const isTrueFalse =
-    (template.endsWith("X01") || template.endsWith("X10")) &&
-    answers.length === 2 &&
-    answers.every((a) => a.answer.toLowerCase() in trueFalseStrings);
-
-  return {
-    question,
-    answers,
-    multiple: !isTrueFalse,
-    id: index,
   };
 };
