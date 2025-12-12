@@ -232,7 +232,7 @@ const parseQuestion = (
 export function ImportQuizPage(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const navigate = useNavigate();
-  const [uploadType, setUploadType] = useState<UploadType>("file");
+  const [uploadType, setUploadType] = useState<UploadType>("old");
   const [error, setError] = useState<string | null>(null);
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
