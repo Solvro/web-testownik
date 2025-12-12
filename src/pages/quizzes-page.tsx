@@ -1,9 +1,4 @@
-import {
-  AlertCircleIcon,
-  FolderArchiveIcon,
-  PlusIcon,
-  UploadIcon,
-} from "lucide-react";
+import { AlertCircleIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
@@ -205,18 +200,6 @@ export function QuizzesPage() {
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>Importuj quiz z pliku JSON</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/import-quiz-legacy">
-                      <Button size="sm">
-                        <FolderArchiveIcon />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Importuj quiz ze starego formatu
-                  </TooltipContent>
                 </Tooltip>
               </div>
             </CardFooter>
