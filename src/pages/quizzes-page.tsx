@@ -192,7 +192,7 @@ export function QuizzesPage() {
               <div className="flex gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to="/import-quiz">
+                    <Link to="/import-quiz" state={{ fromImportButton: true }}>
                       <Button size="sm">
                         Importuj
                         <UploadIcon />

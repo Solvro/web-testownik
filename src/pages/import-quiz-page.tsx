@@ -6,8 +6,8 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from "lucide-react";
-import React from "react";
-import { useNavigate } from "react-router";
+import React, { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -257,6 +257,19 @@ export function ImportQuizPage(): React.JSX.Element {
 
   // const appContext = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { fromImportButton } =
+    (location.state as { fromImportButton?: boolean }) || {};
+
+  useEffect(() => {
+    if (fromImportButton) {
+      handleUploadTypeChange("file");
+
+      window.history.replaceState({}, document.title);
+    }
+  }, [fromImportButton]);
+
   // // const [uploadType, setUploadType] = useState<UploadType>("old");
   // const [error, setError] = useState<string | null>(null);
   // // const [fileNameInput, setFileNameInput] = useState<string | null>(null);
