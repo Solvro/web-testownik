@@ -1,11 +1,13 @@
 import {
+  CheckIcon,
+  CopyIcon,
   FileJsonIcon,
   FileUpIcon,
   FolderArchiveIcon,
   FolderIcon,
   FolderOpenIcon,
 } from "lucide-react";
-import React from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
