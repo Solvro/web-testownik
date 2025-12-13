@@ -38,6 +38,7 @@ interface QuizSortProps {
     comparator: (a: QuizMetadata, b: QuizMetadata) => number,
   ) => void;
   onNameFilterChange: (value: string) => void;
+  onResetFilters: () => void;
 }
 
 const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
@@ -61,7 +62,11 @@ const options: Option[] = [
   },
 ];
 
-export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
+export function QuizSort({
+  onSortChange,
+  onNameFilterChange,
+  onResetFilters,
+}: QuizSortProps) {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [searchValue, setSearchValue] = useState<string>("");
 
@@ -74,6 +79,8 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
     onSortChange(defaultComparator);
   };
 
+  // Local state only; parent can force a remount by changing `key`.
+
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
       <Tooltip>
@@ -81,7 +88,10 @@ export function QuizSort({ onSortChange, onNameFilterChange }: QuizSortProps) {
           <Button
             variant={"outline"}
             className={cn("size-9", !isFiltered && "hidden")}
-            onClick={handleClearFilters}
+            onClick={() => {
+              onResetFilters();
+              handleClearFilters();
+            }}
           >
             <XIcon />
           </Button>

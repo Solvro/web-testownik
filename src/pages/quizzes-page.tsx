@@ -33,6 +33,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -41,6 +48,9 @@ import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
+
+  // Stable empty comparator for resets (moved out of handler to satisfy lint rules)
+  const emptyComparator = (_a: QuizMetadata, _b: QuizMetadata) => 0;
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
@@ -58,6 +68,10 @@ export function QuizzesPage() {
   const sortedUserQuizzes: QuizMetadata[] = useMemo(() => {
     return userQuizzes.toSorted(quizComparator);
   }, [userQuizzes, quizComparator]);
+
+  const filteredUserQuizes: QuizMetadata[] = sortedUserQuizzes.filter((quiz) =>
+    quizRegex.test(quiz.title),
+  );
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -158,6 +172,17 @@ export function QuizzesPage() {
     setQuizRegex(value ? new RegExp(value, "i") : /.*/);
   };
 
+  // Trigger to force QuizSort internal state to reset when parent needs it.
+  const [resetFiltersTrigger, setResetFiltersTrigger] = useState(0);
+
+  const handleResetFilters = () => {
+    // Reset parent-side state
+    setQuizComparator(() => emptyComparator);
+    setQuizRegex(/.*/);
+    // Bump trigger so child resets internal state
+    setResetFiltersTrigger((n) => n + 1);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -185,28 +210,28 @@ export function QuizzesPage() {
       <div className="mb-4 flex flex-col gap-4 sm:flex-row">
         <h3 className="text-2xl font-semibold">Twoje quizy</h3>
         <QuizSort
+          key={resetFiltersTrigger}
           onSortChange={handleSortQuizzes}
           onNameFilterChange={handleFilterQuizzes}
+          onResetFilters={handleResetFilters}
         />
       </div>
-      {sortedUserQuizzes.length > 0 ? (
+      {filteredUserQuizes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedUserQuizzes
-            .filter((quiz) => quizRegex.test(quiz.title))
-            .map((quiz) => (
-              <QuizCard
-                key={quiz.id}
-                quiz={quiz}
-                showEdit
-                showShare
-                showDownload
-                showSearch={!appContext.isGuest}
-                showDelete
-                onShare={handleShareQuiz}
-                onDelete={handleDeleteQuiz}
-                onDownload={handleDownloadQuiz}
-              />
-            ))}
+          {filteredUserQuizes.map((quiz) => (
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              showEdit
+              showShare
+              showDownload
+              showSearch={!appContext.isGuest}
+              showDelete
+              onShare={handleShareQuiz}
+              onDelete={handleDeleteQuiz}
+              onDownload={handleDownloadQuiz}
+            />
+          ))}
           <Card className="flex h-full flex-col" key="create-quiz">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-base">
@@ -249,6 +274,18 @@ export function QuizzesPage() {
             </CardFooter>
           </Card>
         </div>
+      ) : userQuizzes.length > 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>Nie znaleźliśmy quizu, którego szukasz</EmptyTitle>
+            <EmptyDescription>
+              Usuń albo zmień wybrane filtry, aby znaleźć inne quizy
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={handleResetFilters}>Wyczyść Filtry</Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="space-y-3 text-center">
           <p className="text-muted-foreground text-sm">
