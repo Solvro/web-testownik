@@ -5,8 +5,8 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from "lucide-react";
-import React, { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
+import React from "react";
+import { useNavigate } from "react-router";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog.tsx";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -81,21 +81,6 @@ export function ImportQuizPage(): React.JSX.Element {
   } = useImportQuiz();
 
   const navigate = useNavigate();
-  const location = useLocation();
-
-  interface LocationState {
-    fromImportButton?: boolean;
-  }
-
-  const state = location.state as LocationState | null;
-  const fromImportButton = state?.fromImportButton ?? false;
-
-  useEffect(() => {
-    if (fromImportButton) {
-      handleUploadTypeChange("file");
-      window.history.replaceState({}, document.title);
-    }
-  }, [fromImportButton]);
 
   document.title = "Importuj quiz - Testownik Solvro";
 
