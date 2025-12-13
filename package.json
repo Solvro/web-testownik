@@ -43,7 +43,6 @@
     "@tailwindcss/vite": "^4.1.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "dompurify": "^3.2.4",
     "fastest-levenshtein": "^1.0.16",
     "input-otp": "^1.4.2",
