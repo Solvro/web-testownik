@@ -80,7 +80,6 @@ export function ImportQuizPage(): React.JSX.Element {
     handleImport,
   } = useImportQuiz();
 
-  // const appContext = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
