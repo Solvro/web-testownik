@@ -26,11 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 
 export function QuizzesPage() {
@@ -190,17 +185,12 @@ export function QuizzesPage() {
                 </Button>
               </Link>
               <div className="flex gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/import-quiz" state={{ fromImportButton: true }}>
-                      <Button size="sm">
-                        Importuj
-                        <UploadIcon />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Importuj quiz z pliku JSON</TooltipContent>
-                </Tooltip>
+                <Link to="/import-quiz">
+                  <Button size="sm">
+                    Importuj
+                    <UploadIcon />
+                  </Button>
+                </Link>
               </div>
             </CardFooter>
           </Card>
