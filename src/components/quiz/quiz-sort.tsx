@@ -25,39 +25,58 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils.ts";
-import type { QuizMetadata } from "@/types/quiz";
+import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface Option {
   label: string;
   icon: React.ReactNode;
-  comparator: (a: QuizMetadata, b: QuizMetadata) => number;
+  comparator: (
+    a: QuizMetadata | SharedQuiz,
+    b: QuizMetadata | SharedQuiz,
+  ) => number;
 }
 
 interface QuizSortProps {
   onSortChange: (
-    comparator: (a: QuizMetadata, b: QuizMetadata) => number,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ) => number,
   ) => void;
   onNameFilterChange: (value: string) => void;
   onResetFilters: () => void;
 }
 
-const defaultComparator = (_a: QuizMetadata, _b: QuizMetadata): number => {
+const defaultComparator = (
+  _a: QuizMetadata | SharedQuiz,
+  _b: QuizMetadata | SharedQuiz,
+): number => {
   return 0;
+};
+
+const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
+  return "quiz" in quiz ? quiz.quiz.title : quiz.title;
 };
 
 const options: Option[] = [
   {
     label: "A - Z",
     icon: <ArrowDownAZ />,
-    comparator: (a: QuizMetadata, b: QuizMetadata): number => {
-      return a.title.localeCompare(b.title);
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getTitle(a).localeCompare(getTitle(b));
     },
   },
   {
     label: "Z - A",
     icon: <ArrowDownZA />,
-    comparator: (a: QuizMetadata, b: QuizMetadata): number => {
-      return b.title.localeCompare(a.title);
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getTitle(b).localeCompare(getTitle(a));
     },
   },
 ];
@@ -78,8 +97,6 @@ export function QuizSort({
     onNameFilterChange("");
     onSortChange(defaultComparator);
   };
-
-  // Local state only; parent can force a remount by changing `key`.
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">

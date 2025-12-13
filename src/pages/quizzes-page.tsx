@@ -49,8 +49,10 @@ import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
 
-  // Stable empty comparator for resets (moved out of handler to satisfy lint rules)
-  const emptyComparator = (_a: QuizMetadata, _b: QuizMetadata) => 0;
+  const emptyComparator = (
+    _a: QuizMetadata | SharedQuiz,
+    _b: QuizMetadata | SharedQuiz,
+  ) => 0;
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
@@ -62,8 +64,8 @@ export function QuizzesPage() {
   }>({ type: null, quiz: null });
   const [quizRegex, setQuizRegex] = useState<RegExp>(/.*/);
   const [quizComparator, setQuizComparator] = useState<
-    (a: QuizMetadata, b: QuizMetadata) => number
-  >(() => (_a: QuizMetadata, _b: QuizMetadata) => 0);
+    (a: QuizMetadata | SharedQuiz, b: QuizMetadata | SharedQuiz) => number
+  >(() => emptyComparator);
 
   const sortedUserQuizzes: QuizMetadata[] = useMemo(() => {
     return userQuizzes.toSorted(quizComparator);
@@ -71,6 +73,14 @@ export function QuizzesPage() {
 
   const filteredUserQuizes: QuizMetadata[] = sortedUserQuizzes.filter((quiz) =>
     quizRegex.test(quiz.title),
+  );
+
+  const sortedSharedQuizzes: SharedQuiz[] = useMemo(() => {
+    return sharedQuizzes.toSorted(quizComparator);
+  }, [sharedQuizzes, quizComparator]);
+
+  const filteredSharedQuizes: SharedQuiz[] = sortedSharedQuizzes.filter(
+    (quiz) => quizRegex.test(quiz.quiz.title),
   );
 
   document.title = "Twoje quizy - Testownik Solvro";
@@ -162,7 +172,10 @@ export function QuizzesPage() {
   };
 
   const handleSortQuizzes = (
-    comparator: (a: QuizMetadata, b: QuizMetadata) => number,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ) => number,
   ) => {
     setQuizComparator(() => comparator);
   };
@@ -172,14 +185,11 @@ export function QuizzesPage() {
     setQuizRegex(value ? new RegExp(value, "i") : /.*/);
   };
 
-  // Trigger to force QuizSort internal state to reset when parent needs it.
   const [resetFiltersTrigger, setResetFiltersTrigger] = useState(0);
 
   const handleResetFilters = () => {
-    // Reset parent-side state
     setQuizComparator(() => emptyComparator);
     setQuizRegex(/.*/);
-    // Bump trigger so child resets internal state
     setResetFiltersTrigger((n) => n + 1);
   };
 
@@ -297,13 +307,13 @@ export function QuizzesPage() {
         </div>
       )}
 
-      {sharedQuizzes.length > 0 && (
+      {filteredSharedQuizes.length > 0 && (
         <>
           <h3 className="mt-8 mb-4 text-2xl font-semibold">
             Udostępnione quizy
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sharedQuizzes.map((sq) => (
+            {filteredSharedQuizes.map((sq) => (
               <QuizCard
                 key={sq.id}
                 quiz={sq.quiz}
