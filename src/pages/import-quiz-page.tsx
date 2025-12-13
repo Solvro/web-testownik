@@ -97,6 +97,13 @@ export function ImportQuizPage(): React.JSX.Element {
     let copyText = "";
 
     for (const child of copyTextElement.children) {
+      if (child.nodeName === "DIV") {
+        const pre = child.querySelector("pre");
+        if (pre?.textContent != null) {
+          copyText += `${pre.textContent}\n\n`;
+        }
+        continue;
+      }
       copyText += `${child.textContent}\n\n`;
     }
 
@@ -331,15 +338,15 @@ export function ImportQuizPage(): React.JSX.Element {
             Jak powinien wyglądać quiz w formacie JSON?
           </Button>
         </DialogTrigger>
-        <DialogContent className="flex h-[80vh] flex-col">
+        <DialogContent className="flex w-full flex-col">
           <DialogHeader>
             <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
               Struktura wymagana przy imporcie z pliku lub tekstu
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 text-sm" ref={textRef}>
+          <div className="relative w-full space-y-4">
+            <div className="relative w-full space-y-4 text-sm" ref={textRef}>
               <p>
                 Quiz w formacie JSON powinien składać się z dwóch głównych
                 kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
@@ -364,8 +371,12 @@ export function ImportQuizPage(): React.JSX.Element {
                 zostanie on nadany automatycznie od 1.
               </p>
               <p>Przykładowy quiz w formacie JSON:</p>
-              <pre className="bg-muted rounded-md p-3 text-xs">
-                {`{
+              <ScrollArea
+                type="always"
+                className="relative h-64 w-full overflow-visible"
+              >
+                <pre className="bg-muted rounded-md p-3 text-xs">
+                  {`{
     "title": "Przykładowy quiz",
     "description": "Opis quizu", // Opcjonalny
     "questions": [
@@ -424,10 +435,15 @@ export function ImportQuizPage(): React.JSX.Element {
         }
     ]
 }`}
-              </pre>
+                </pre>
+                <ScrollBar
+                  orientation="horizontal"
+                  className="sticky bottom-0"
+                />
+              </ScrollArea>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={handleTextCopy}>
               {checkIcon ? <CheckIcon /> : <CopyIcon />}
