@@ -6,20 +6,12 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch";
-import type { UserNotifications } from "@/types/user.ts";
-
-interface NotificationsFormProps {
-  notifications: UserNotifications;
-  onNotificationsChange: (
-    name: keyof UserNotifications,
-    value: boolean,
-  ) => void;
-}
+import type { SettingsFormProps } from "@/types/user.ts";
 
 export function NotificationsForm({
-  notifications,
-  onNotificationsChange,
-}: NotificationsFormProps) {
+  settings,
+  onSettingChange,
+}: SettingsFormProps) {
   const appContext = useContext(AppContext);
 
   return (
@@ -52,9 +44,9 @@ export function NotificationsForm({
             </div>
             <Switch
               id="quiz_share"
-              checked={notifications.quiz_share}
+              checked={settings.notify_quiz_shared}
               onCheckedChange={(checked) => {
-                onNotificationsChange("quiz_share", checked);
+                onSettingChange("notify_quiz_shared", checked);
               }}
               disabled={appContext.isGuest}
               className="ml-auto"
@@ -74,9 +66,9 @@ export function NotificationsForm({
             </div>
             <Switch
               id="issue_report"
-              checked={notifications.issue_report}
+              checked={settings.notify_bug_reported}
               onCheckedChange={(checked) => {
-                onNotificationsChange("issue_report", checked);
+                onSettingChange("notify_bug_reported", checked);
               }}
               disabled={appContext.isGuest}
               className="ml-auto"
@@ -97,9 +89,9 @@ export function NotificationsForm({
             </div>
             <Switch
               id="marketing"
-              checked={notifications.marketing}
+              checked={settings.notify_marketing}
               onCheckedChange={(checked) => {
-                onNotificationsChange("marketing", checked);
+                onSettingChange("notify_marketing", checked);
               }}
               disabled={appContext.isGuest}
               className="ml-auto"

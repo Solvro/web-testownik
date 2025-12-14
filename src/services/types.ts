@@ -11,7 +11,6 @@ export type {
   Group,
   GradesData,
   UserSettings,
-  UserNotifications,
   UserData,
 } from "@/types/user.ts";
 export type { AlertData } from "@/types/alert.ts";

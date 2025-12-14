@@ -18,19 +18,24 @@ export interface UserSettings {
   sync_progress: boolean;
   initial_reoccurrences: number;
   wrong_answer_reoccurrences: number;
+  notify_quiz_shared: boolean;
+  notify_bug_reported: boolean;
+  notify_marketing: boolean;
+}
+
+export interface SettingsFormProps {
+  settings: UserSettings;
+  onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
   sync_progress: false,
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
+  notify_quiz_shared: true,
+  notify_bug_reported: true,
+  notify_marketing: false,
 });
-
-export interface UserNotifications {
-  quiz_share: boolean;
-  issue_report: boolean;
-  marketing: boolean;
-}
 
 export interface Term {
   id: string;

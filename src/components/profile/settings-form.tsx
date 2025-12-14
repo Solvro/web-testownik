@@ -7,12 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label.tsx";
 import { Switch } from "@/components/ui/switch";
-import type { UserSettings } from "@/types/user.ts";
-
-interface SettingsFormProps {
-  settings: UserSettings;
-  onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
-}
+import type { SettingsFormProps } from "@/types/user.ts";
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const appContext = useContext(AppContext);
