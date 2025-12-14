@@ -34,7 +34,7 @@ export function NotificationsForm({
             <div>
               <Label
                 className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
-                htmlFor="quiz_share"
+                htmlFor="notify-quiz-share"
               >
                 Udostępnienie quizu
               </Label>
@@ -43,7 +43,7 @@ export function NotificationsForm({
               </p>
             </div>
             <Switch
-              id="quiz_share"
+              id="notify-quiz-share"
               checked={settings.notify_quiz_shared}
               onCheckedChange={(checked) => {
                 onSettingChange("notify_quiz_shared", checked);
@@ -56,7 +56,7 @@ export function NotificationsForm({
             <div>
               <Label
                 className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
-                htmlFor="issue_report"
+                htmlFor="notify-bug-report"
               >
                 Zgłoszenie problemu
               </Label>
@@ -65,7 +65,7 @@ export function NotificationsForm({
               </p>
             </div>
             <Switch
-              id="issue_report"
+              id="notify-bug-report"
               checked={settings.notify_bug_reported}
               onCheckedChange={(checked) => {
                 onSettingChange("notify_bug_reported", checked);
@@ -78,7 +78,7 @@ export function NotificationsForm({
             <div>
               <Label
                 className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
-                htmlFor="marketing"
+                htmlFor="notify-marketing"
               >
                 Marketingowe
               </Label>
@@ -88,7 +88,7 @@ export function NotificationsForm({
               </p>
             </div>
             <Switch
-              id="marketing"
+              id="notify-marketing"
               checked={settings.notify_marketing}
               onCheckedChange={(checked) => {
                 onSettingChange("notify_marketing", checked);
