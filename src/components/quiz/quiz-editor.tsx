@@ -1,3 +1,4 @@
+// src/components/quiz/quiz-editor.tsx
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -34,17 +35,20 @@ interface QuizEditorProps {
   saving?: boolean;
 }
 
-// Utility to strip advanced fields when advancedMode is disabled
-const sanitizeQuestions = (questions: Question[], advancedMode: boolean) =>
-  questions.map((q) => ({
-    ...q,
-    image: advancedMode ? q.image : undefined,
-    explanation: advancedMode ? q.explanation : undefined,
-    answers: q.answers.map((a) => ({
-      ...a,
-      image: advancedMode ? a.image : undefined,
-    })),
-  }));
+// Utility to strip advanced fields when advancedMode is disabled per question
+const sanitizeQuestions = (questions: (Question & { advanced?: boolean })[]) =>
+  questions.map((q) => {
+    const isAdvanced = Boolean(q.advanced);
+    return {
+      ...q,
+      image: isAdvanced ? q.image : undefined,
+      explanation: isAdvanced ? q.explanation : undefined,
+      answers: q.answers.map((a) => ({
+        ...a,
+        image: isAdvanced ? a.image : undefined,
+      })),
+    };
+  });
 
 const scrollToBottom = () => {
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -61,13 +65,34 @@ export function QuizEditor({
   onSaveAndClose,
   saving = false,
 }: QuizEditorProps) {
+  // default advanced for existing quiz: if any question had advanced fields
+  const initialAdvancedDefault =
+    initialQuiz?.questions?.some(
+      (q) =>
+        Boolean(q.image) ||
+        Boolean(q.explanation) ||
+        q.answers.some((a) => Boolean(a.image)),
+    ) ?? false;
+
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [description, setDescription] = useState(
     initialQuiz?.description ?? "",
   );
-  const [questions, setQuestions] = useState<Question[]>(() => {
+
+  type Q = Question & { advanced?: boolean };
+
+  const [questions, setQuestions] = useState<Q[]>(() => {
     if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
-      return initialQuiz.questions;
+      return initialQuiz.questions.map((q) => ({
+        ...q,
+        // preserve per-question advanced if present, otherwise infer from content or global default
+        advanced:
+          Boolean((q as unknown as Q).advanced) ||
+          Boolean(q.image) ||
+          Boolean(q.explanation) ||
+          q.answers.some((a) => Boolean(a.image)) ||
+          initialAdvancedDefault,
+      }));
     }
     return [
       {
@@ -78,18 +103,16 @@ export function QuizEditor({
           { answer: "", correct: false },
           { answer: "", correct: false },
         ],
+        image: "",
+        explanation: "",
+        advanced: initialAdvancedDefault,
       },
     ];
   });
+
   const [error, setError] = useState<string | null>(null);
-  const [advancedMode, setAdvancedMode] = useState(
-    initialQuiz?.questions?.some(
-      (q) =>
-        Boolean(q.image) ||
-        Boolean(q.explanation) ||
-        q.answers.some((a) => Boolean(a.image)),
-    ) ?? false,
-  );
+  const [advancedMode, setAdvancedMode] = useState(initialAdvancedDefault);
+
   const [previousQuestionId, setPreviousQuestionId] = useState<number>(() =>
     questions.reduce((max, q) => Math.max(q.id, max), 0),
   );
@@ -128,6 +151,7 @@ export function QuizEditor({
         ],
         image: "",
         explanation: "",
+        advanced: advancedMode, // use global as default for new question
       },
     ]);
     setPreviousQuestionId(newId);
@@ -158,7 +182,7 @@ export function QuizEditor({
     });
   };
 
-  const updateQuestion = (updated: Question) => {
+  const updateQuestion = (updated: Q) => {
     setQuestions((previous) =>
       previous.map((q) => (q.id === updated.id ? updated : q)),
     );
@@ -171,7 +195,7 @@ export function QuizEditor({
     const draft = {
       title,
       description,
-      questions: sanitizeQuestions(questions, advancedMode),
+      questions: sanitizeQuestions(questions),
     };
     const validationError = validateQuiz(draft as unknown as Quiz);
     if (validationError !== null) {
@@ -220,7 +244,7 @@ export function QuizEditor({
           </div>
           <div className="bg-muted/40 flex items-center justify-between gap-3 rounded-md border px-3 py-2">
             <Label htmlFor="advanced-mode" className="cursor-pointer">
-              Tryb zaawansowany
+              Tryb zaawansowany (domyślny dla nowych pytań)
             </Label>
             <Switch
               id="advanced-mode"
@@ -268,13 +292,8 @@ export function QuizEditor({
                 <Checkbox
                   id="all-multiple"
                   checked={allQuestionsMultiple === true}
-                  className={
-                    allQuestionsMultiple === null
-                      ? "bg-yellow-500/20 dark:bg-yellow-500/30"
-                      : ""
-                  }
                   onCheckedChange={(checked) => {
-                    setAllQuestionsMultiple(Boolean(checked));
+                    setAllQuestionsMultiple(checked as boolean);
                   }}
                 />
                 <Label htmlFor="all-multiple" className="cursor-pointer">
@@ -297,7 +316,6 @@ export function QuizEditor({
                   question={q}
                   onUpdate={updateQuestion}
                   onRemove={removeQuestion}
-                  advancedMode={advancedMode}
                 />
               ))}
             </div>
