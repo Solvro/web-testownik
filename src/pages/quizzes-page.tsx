@@ -1,8 +1,4 @@
-import {
-  AlertCircleIcon,
-  PlusIcon,
-  UploadIcon,
-} from "lucide-react";
+import { AlertCircleIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
@@ -38,11 +34,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 
 export function QuizzesPage() {
