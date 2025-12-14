@@ -173,6 +173,9 @@ export function QuizEditor({
       description,
       questions: sanitizeQuestions(questions, advancedMode),
     };
+
+    draft.title = draft.title.trimEnd();
+
     const validationError = validateQuiz(draft as unknown as Quiz);
     if (validationError !== null) {
       setError(validationError);
@@ -246,7 +249,7 @@ export function QuizEditor({
               placeholder="Podaj tytuł quizu"
               value={title}
               onChange={(event_) => {
-                setTitle(event_.target.value);
+                setTitle(event_.target.value.trimStart());
               }}
             />
           </div>

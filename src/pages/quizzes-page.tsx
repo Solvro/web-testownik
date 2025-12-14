@@ -1,11 +1,12 @@
-import { AlertCircleIcon, PlusIcon, UploadIcon } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { AlertCircleIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
 import { QuizCard } from "@/components/quiz/quiz-card.tsx";
+import { QuizSort } from "@/components/quiz/quiz-sort.tsx";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
@@ -26,10 +27,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
 
 export function QuizzesPage() {
   const appContext = useContext(AppContext);
+
+  const emptyComparator = (
+    _a: QuizMetadata | SharedQuiz,
+    _b: QuizMetadata | SharedQuiz,
+  ) => 0;
 
   const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
   const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
@@ -39,6 +52,26 @@ export function QuizzesPage() {
     type: "share" | "delete" | null;
     quiz: QuizMetadata | null;
   }>({ type: null, quiz: null });
+  const [quizRegex, setQuizRegex] = useState<RegExp>(/.*/);
+  const [quizComparator, setQuizComparator] = useState<
+    (a: QuizMetadata | SharedQuiz, b: QuizMetadata | SharedQuiz) => number
+  >(() => emptyComparator);
+
+  const sortedUserQuizzes: QuizMetadata[] = useMemo(() => {
+    return userQuizzes.toSorted(quizComparator);
+  }, [userQuizzes, quizComparator]);
+
+  const filteredUserQuizes: QuizMetadata[] = sortedUserQuizzes.filter((quiz) =>
+    quizRegex.test(quiz.title),
+  );
+
+  const sortedSharedQuizzes: SharedQuiz[] = useMemo(() => {
+    return sharedQuizzes.toSorted(quizComparator);
+  }, [sharedQuizzes, quizComparator]);
+
+  const filteredSharedQuizes: SharedQuiz[] = sortedSharedQuizzes.filter(
+    (quiz) => quizRegex.test(quiz.quiz.title),
+  );
 
   document.title = "Twoje quizy - Testownik Solvro";
 
@@ -128,6 +161,28 @@ export function QuizzesPage() {
     );
   };
 
+  const handleSortQuizzes = (
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ) => number,
+  ) => {
+    setQuizComparator(() => comparator);
+  };
+
+  const handleFilterQuizzes = (value: string) => {
+    value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    setQuizRegex(value ? new RegExp(value, "i") : /.*/);
+  };
+
+  const [resetFiltersTrigger, setResetFiltersTrigger] = useState(0);
+
+  const handleResetFilters = () => {
+    setQuizComparator(() => emptyComparator);
+    setQuizRegex(/.*/);
+    setResetFiltersTrigger((n) => n + 1);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -152,11 +207,18 @@ export function QuizzesPage() {
 
   return (
     <div>
-      <h3 className="mb-4 text-2xl font-semibold">Twoje quizy</h3>
-
-      {userQuizzes.length > 0 ? (
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row">
+        <h3 className="text-2xl font-semibold">Twoje quizy</h3>
+        <QuizSort
+          key={resetFiltersTrigger}
+          onSortChange={handleSortQuizzes}
+          onNameFilterChange={handleFilterQuizzes}
+          onResetFilters={handleResetFilters}
+        />
+      </div>
+      {filteredUserQuizes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {userQuizzes.map((quiz) => (
+          {filteredUserQuizes.map((quiz) => (
             <QuizCard
               key={quiz.id}
               quiz={quiz}
@@ -195,6 +257,33 @@ export function QuizzesPage() {
             </CardFooter>
           </Card>
         </div>
+      ) : userQuizzes.length > 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>Nie znaleźliśmy quizu, którego szukasz</EmptyTitle>
+            <EmptyDescription>
+              Usuń albo zmień wybrane filtry, aby znaleźć inne quizy.
+              <br />
+              Albo utwórz lub importuj nowy quiz.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex flex-row">
+            <Button onClick={handleResetFilters} variant="outline">
+              Wyczyść Filtry <XIcon />
+            </Button>
+            <Link to="/create-quiz">
+              <Button>
+                Stwórz quiz <PlusIcon />
+              </Button>
+            </Link>
+            <Link to="/import-quiz">
+              <Button>
+                Importuj
+                <UploadIcon />
+              </Button>
+            </Link>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="space-y-3 text-center">
           <p className="text-muted-foreground text-sm">
@@ -206,13 +295,13 @@ export function QuizzesPage() {
         </div>
       )}
 
-      {sharedQuizzes.length > 0 && (
+      {filteredSharedQuizes.length > 0 && (
         <>
           <h3 className="mt-8 mb-4 text-2xl font-semibold">
             Udostępnione quizy
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sharedQuizzes.map((sq) => (
+            {filteredSharedQuizes.map((sq) => (
               <QuizCard
                 key={sq.id}
                 quiz={sq.quiz}
