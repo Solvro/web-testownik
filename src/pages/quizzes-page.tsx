@@ -1,4 +1,4 @@
-import { AlertCircleIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { AlertCircleIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "react-toastify";
@@ -262,11 +262,26 @@ export function QuizzesPage() {
           <EmptyHeader>
             <EmptyTitle>Nie znaleźliśmy quizu, którego szukasz</EmptyTitle>
             <EmptyDescription>
-              Usuń albo zmień wybrane filtry, aby znaleźć inne quizy
+              Usuń albo zmień wybrane filtry, aby znaleźć inne quizy.
+              <br />
+              Albo utwórz lub importuj nowy quiz.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={handleResetFilters}>Wyczyść Filtry</Button>
+          <EmptyContent className="flex flex-row">
+            <Button onClick={handleResetFilters}>
+              Wyczyść Filtry <XIcon />
+            </Button>
+            <Link to="/create-quiz">
+              <Button>
+                Stwórz quiz <PlusIcon />
+              </Button>
+            </Link>
+            <Link to="/import-quiz">
+              <Button>
+                Importuj
+                <UploadIcon />
+              </Button>
+            </Link>
           </EmptyContent>
         </Empty>
       ) : (
