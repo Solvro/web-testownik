@@ -6,6 +6,7 @@ import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
+import { ImageLoad } from "@/components/image-load.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
 import { Button } from "@/components/ui/button";
 import {
@@ -141,15 +142,14 @@ export function QuestionCard({
           </CardTitle>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-        {question.image == null ? null : (
-          <CardDescription>
-            <img
-              src={question.image}
-              alt={question.question}
-              className="mx-auto mt-4 max-h-80 rounded border object-contain"
-            />
-          </CardDescription>
-        )}
+        <CardDescription>
+          <ImageLoad
+            key={`question-image-${question.id.toString()}`}
+            url={question.image}
+            alt={question.question}
+            className="mx-auto mt-4 max-h-80 rounded border object-contain"
+          />
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
@@ -172,13 +172,12 @@ export function QuestionCard({
                 )}
               >
                 <span className="w-full">{answer.answer}</span>
-                {answer.image == null ? null : (
-                  <img
-                    src={answer.image}
-                    alt={answer.answer}
-                    className="max-h-40 w-full rounded object-contain"
-                  />
-                )}
+                <ImageLoad
+                  key={`answer-image-${question.id.toString()}-${index.toString()}`}
+                  url={answer.image}
+                  alt={answer.answer}
+                  className="max-h-40 w-full rounded object-contain"
+                />
               </button>
             );
           })}

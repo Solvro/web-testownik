@@ -1,6 +1,5 @@
 import {
   AlertCircleIcon,
-  FolderArchiveIcon,
   PlusIcon,
   UploadIcon,
 } from "lucide-react";
@@ -257,29 +256,12 @@ export function QuizzesPage() {
                 </Button>
               </Link>
               <div className="flex gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/import-quiz">
-                      <Button size="sm">
-                        Importuj
-                        <UploadIcon />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Importuj quiz z pliku JSON</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/import-quiz-legacy">
-                      <Button size="sm">
-                        <FolderArchiveIcon />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Importuj quiz ze starego formatu
-                  </TooltipContent>
-                </Tooltip>
+                <Link to="/import-quiz">
+                  <Button size="sm">
+                    Importuj
+                    <UploadIcon />
+                  </Button>
+                </Link>
               </div>
             </CardFooter>
           </Card>
