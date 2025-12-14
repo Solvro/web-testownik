@@ -1,4 +1,3 @@
-// src/components/quiz/quiz-editor.tsx
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -35,7 +34,6 @@ interface QuizEditorProps {
   saving?: boolean;
 }
 
-// Utility to strip advanced fields when advancedMode is disabled per question
 const sanitizeQuestions = (questions: (Question & { advanced?: boolean })[]) =>
   questions.map((q) => {
     const isAdvanced = Boolean(q.advanced);
@@ -65,7 +63,6 @@ export function QuizEditor({
   onSaveAndClose,
   saving = false,
 }: QuizEditorProps) {
-  // default advanced for existing quiz: if any question had advanced fields
   const initialAdvancedDefault =
     initialQuiz?.questions?.some(
       (q) =>
@@ -85,7 +82,7 @@ export function QuizEditor({
     if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
       return initialQuiz.questions.map((q) => ({
         ...q,
-        // preserve per-question advanced if present, otherwise infer from content or global default
+
         advanced:
           Boolean((q as unknown as Q).advanced) ||
           Boolean(q.image) ||
@@ -117,7 +114,6 @@ export function QuizEditor({
     questions.reduce((max, q) => Math.max(q.id, max), 0),
   );
 
-  // all questions multiple toggle state (true / false / mixed null)
   const allQuestionsMultiple: boolean | null = useMemo(() => {
     if (questions.length === 0) {
       return null;
@@ -151,7 +147,7 @@ export function QuizEditor({
         ],
         image: "",
         explanation: "",
-        advanced: advancedMode, // use global as default for new question
+        advanced: advancedMode,
       },
     ]);
     setPreviousQuestionId(newId);
