@@ -268,7 +268,7 @@ export function QuizzesPage() {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent className="flex flex-row">
-            <Button onClick={handleResetFilters}>
+            <Button onClick={handleResetFilters} variant="outline">
               Wyczyść Filtry <XIcon />
             </Button>
             <Link to="/create-quiz">
