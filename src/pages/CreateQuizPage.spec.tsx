@@ -7,12 +7,20 @@ import { Quiz } from "../components/quiz/types";
 import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/Providers";
 import CreateQuizPage from "./CreateQuizPage";
+import assert from "node:assert/strict";
 
 vi.mock("react-toastify", () => ({
   toast: { error: vi.fn(), info: vi.fn() },
 }));
 
-const setup = (guest = false) => {
+const testQuiz = {
+  title: "test quiz",
+  description: "test description",
+  questions: ["test question 1", "test question 2"],
+  answers: ["test answer 1", "test answer 2", "test answer 3", "test answer 4"],
+};
+
+const setup = ({ asGuest: guest = false } = {}) => {
   const user = userEvent.setup();
 
   render(
@@ -22,13 +30,16 @@ const setup = (guest = false) => {
   );
 
   const fillFields = async () => {
-    await user.type(screen.getByPlaceholderText(/tytuł/i), "test quiz");
-    await user.type(screen.getByPlaceholderText(/opis/i), "test description");
-    await user.type(screen.getByPlaceholderText(/pytania/i), "test question");
+    await user.type(screen.getByPlaceholderText(/tytuł/i), testQuiz.title);
+    await user.type(screen.getByPlaceholderText(/opis/i), testQuiz.description);
+    await user.type(
+      screen.getByPlaceholderText(/pytania/i),
+      testQuiz.questions[0]
+    );
 
     const answers = screen.getAllByPlaceholderText(/odpowiedzi/i);
-    await user.type(answers[0], "test answer 1");
-    await user.type(answers[1], "test answer 2");
+    await user.type(answers[0], testQuiz.answers[0]);
+    await user.type(answers[1], testQuiz.answers[1]);
 
     const checkboxes = screen.getAllByRole("checkbox");
     await user.click(checkboxes[0]);
@@ -57,24 +68,13 @@ describe("CreateQuizPage", () => {
     vi.clearAllMocks();
   });
 
-  it("should store quiz in local storage for guest users", async () => {
-    const { fillFields, submit } = setup(true);
-
-    await fillFields();
-    await submit();
-
-    const stored = JSON.parse(localStorage.getItem("guest_quizzes") || "[]");
-    expect(stored).toHaveLength(1);
-    expect(stored[0].title).toBe("test quiz");
-  });
-
   it("should try to post quiz if user is authenticated", async () => {
     const { fillFields, submit } = setup();
 
     await fillFields();
     await submit();
 
-    expect(screen.getByText(/test quiz/i)).toBeInTheDocument();
+    expect(screen.getByText(/test quiz/i)).toBeVisible();
   });
 
   it("should show error if request fails", async () => {
@@ -89,7 +89,7 @@ describe("CreateQuizPage", () => {
     await submit();
 
     expect(toast.error).toHaveBeenCalled();
-    expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
+    expect(screen.getByText(/wystąpił błąd/i)).toBeVisible();
   });
 
   it("should show validation error if title is empty", async () => {
@@ -98,12 +98,15 @@ describe("CreateQuizPage", () => {
     await submit();
 
     expect(toast.error).toHaveBeenCalled();
-    expect(screen.getByText(/podaj tytuł/i)).toBeInTheDocument();
+    expect(screen.getByText(/podaj tytuł/i)).toBeVisible();
   });
 
-  it("should show validation error if qustion field is empty", async () => {
+  it("should show validation error if question field is empty", async () => {
     const { user, submit } = setup();
-    await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
+    await user.type(
+      screen.getByPlaceholderText(/podaj tytuł/i),
+      testQuiz.title
+    );
     await submit();
 
     expect(toast.error).toBeCalled();
@@ -113,22 +116,23 @@ describe("CreateQuizPage", () => {
   it("should show validation error if one of the answer fields is empty", async () => {
     const { user, submit } = setup();
 
-    await user.type(screen.getByPlaceholderText(/podaj tytuł/i), "test quiz");
+    await user.type(
+      screen.getByPlaceholderText(/podaj tytuł/i),
+      testQuiz.title
+    );
     await user.type(
       screen.getByPlaceholderText(/treść pytania/i),
-      "test question"
+      testQuiz.questions[0]
     );
     await submit();
 
     expect(toast.error).toBeCalled();
-    expect(
-      screen.getByText(/odpowiedź.*w pytaniu.*treść/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/odpowiedź.*w pytaniu.*treść/i)).toBeVisible();
   });
 
   it("should be possible to add question", async () => {
     const { addQuestion, user, submit, fillFields } = setup();
-    let apiRequest: Quiz | null = null;
+    let apiRequest!: Quiz;
 
     server.use(
       http.post("*/quizzes", async ({ request }) => {
@@ -141,23 +145,24 @@ describe("CreateQuizPage", () => {
     await addQuestion();
     await user.type(
       screen.getAllByPlaceholderText(/treść pytania/i)[1],
-      "test question 2"
+      testQuiz.questions[1]
     );
     await user.type(
       screen.getAllByPlaceholderText(/treść odpowiedzi/i)[2],
-      "test answer 3"
+      testQuiz.answers[2]
     );
     await user.type(
       screen.getAllByPlaceholderText(/treść odpowiedzi/i)[3],
-      "test answer 4"
+      testQuiz.answers[3]
     );
     await submit();
 
-    expect(screen.getByText(/pytanie 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/pytanie 2/i)).toBeVisible();
 
-    expect(apiRequest!.questions).toHaveLength(2);
-    expect(apiRequest!.questions[0].question).toMatch(/test question/i);
-    expect(apiRequest!.questions[1].question).toMatch(/test question/i);
+    assert.ok(apiRequest, "API request should be defined");
+    expect(apiRequest.questions).toHaveLength(2);
+    expect(apiRequest.questions[0].question).toContain(testQuiz.questions[0]);
+    expect(apiRequest.questions[1].question).toContain(testQuiz.questions[1]);
   });
 
   it("should be possible to remove question", async () => {

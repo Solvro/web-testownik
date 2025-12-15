@@ -62,7 +62,7 @@ describe("QuizImportPage", () => {
       input("invalid-link");
       await clickImport();
 
-      expect(screen.getByText(/link.*niepoprawny/i)).toBeInTheDocument();
+      expect(screen.getByText(/link.*niepoprawny/i)).toBeVisible();
     });
 
     it("should submit valid link", async () => {
@@ -71,7 +71,7 @@ describe("QuizImportPage", () => {
       input("https://valid.com");
       await clickImport();
 
-      expect(screen.getByText(mockQuiz.title)).toBeInTheDocument();
+      expect(screen.getByText(mockQuiz.title)).toBeVisible();
     });
   });
 
@@ -83,7 +83,7 @@ describe("QuizImportPage", () => {
       input("{ invalid json");
       await clickImport();
 
-      expect(screen.getByText(/błąd.*JSON/i)).toBeInTheDocument();
+      expect(screen.getByText(/błąd.*JSON/i)).toBeVisible();
     });
 
     it("should submit valid JSON", async () => {
@@ -93,7 +93,7 @@ describe("QuizImportPage", () => {
       input(JSON.stringify(mockQuiz));
       await clickImport();
 
-      expect(screen.getByText(mockQuiz.title)).toBeInTheDocument();
+      expect(screen.getByText(mockQuiz.title)).toBeVisible();
     });
   });
 
@@ -104,7 +104,7 @@ describe("QuizImportPage", () => {
       await switchToFile();
       await clickImport();
 
-      expect(screen.getByText(/wybierz plik z quizem/i)).toBeInTheDocument();
+      expect(screen.getByText(/wybierz plik z quizem/i)).toBeVisible();
     });
 
     it("should show error when uploading file with invalid json", async () => {
@@ -115,7 +115,7 @@ describe("QuizImportPage", () => {
       await clickImport();
 
       await waitFor(() => {
-        expect(screen.getByText(/wystąpił błąd.*plik/i)).toBeInTheDocument();
+        expect(screen.getByText(/wystąpił błąd.*plik/i)).toBeVisible();
       });
     });
 
@@ -127,7 +127,7 @@ describe("QuizImportPage", () => {
       await clickImport();
 
       await waitFor(() => {
-        expect(screen.getByText(mockQuiz.title)).toBeInTheDocument();
+        expect(screen.getByText(mockQuiz.title)).toBeVisible();
       });
     });
   });
@@ -143,6 +143,6 @@ describe("QuizImportPage", () => {
     input("https://valid.com");
     await clickImport();
 
-    expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
+    expect(screen.getByText(/wystąpił błąd/i)).toBeVisible();
   });
 });
