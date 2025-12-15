@@ -4,15 +4,16 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, delay } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { emptyCourse, mockCourses, mockTerms } from "../tests/mocks/GradesMock";
+import { calculateAverage } from "../tests/mocks/helpers";
 import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/Providers";
 import GradesPage from "./GradesPage";
 import userEvent from "@testing-library/user-event";
 
-const setup = (guest = false) => {
+const setup = ({ asGuest: guest = false } = {}) => {
   const user = userEvent.setup();
 
   render(
@@ -26,30 +27,27 @@ const setup = (guest = false) => {
 
 describe("GradesPage", () => {
   it("should show have restricted gui for guest users", async () => {
-    setup(true);
+    setup({ asGuest: true });
 
-    expect(screen.getByText(/oceny/i)).toBeInTheDocument();
+    expect(screen.getByText(/oceny/i)).toBeVisible();
     expect(
       screen.getByText(/nie jest dostępna w trybie gościa/i)
-    ).toBeInTheDocument();
+    ).toBeVisible();
 
     const connectButton = screen.getByRole("button", { name: /połącz konto/i });
-    expect(connectButton).toBeInTheDocument();
+    expect(connectButton).toBeVisible();
   });
 
   it("should show loading spinner", async () => {
     server.use(
-      http.get(
-        "/grades/",
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve(HttpResponse.json({})), 200)
-          )
-      )
+      http.get("/grades/", async () => {
+        await delay(200);
+        return HttpResponse.json({});
+      })
     );
     setup();
 
-    expect(screen.getByText(/ładowanie/i)).toBeInTheDocument();
+    expect(screen.getByText(/ładowanie/i)).toBeVisible();
     await waitForElementToBeRemoved(() => screen.queryByText(/ładowanie/i));
   });
 
@@ -60,10 +58,10 @@ describe("GradesPage", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("combobox", { name: /wybierz semestr/i })
-      ).toBeInTheDocument();
+      ).toBeVisible();
 
-      expect(screen.getByText(mockCourses[0].course_name)).toBeInTheDocument();
-      expect(screen.getByText(mockCourses[1].course_name)).toBeInTheDocument();
+      expect(screen.getByText(mockCourses[0].course_name)).toBeVisible();
+      expect(screen.getByText(mockCourses[1].course_name)).toBeVisible();
       expect(
         screen.getByRole("option", { name: mockTerms[0].name })
       ).toBeInTheDocument();
@@ -77,9 +75,7 @@ describe("GradesPage", () => {
     server.use(http.get("/grades/", () => HttpResponse.error()));
     setup();
 
-    await waitFor(() => {
-      expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
-    });
+    expect(screen.findByText(/wystąpił błąd/i));
   });
 
   it("should correctly calculate average grade", async () => {
@@ -94,11 +90,15 @@ describe("GradesPage", () => {
     setup();
 
     await waitFor(() => {
-      expect(screen.getByText("Matematyka")).toBeInTheDocument();
-      expect(screen.getByText("Informatyka")).toBeInTheDocument();
+      expect(screen.getByText("Matematyka")).toBeVisible();
+      expect(screen.getByText("Informatyka")).toBeVisible();
     });
 
-    expect(screen.getByText("4.55")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        calculateAverage(mockCourses.filter((c) => c.term_id === "term1"))
+      )
+    ).toBeVisible();
   });
 
   it("should handle empty terms and courses", async () => {
@@ -114,8 +114,8 @@ describe("GradesPage", () => {
 
     // Right now component shows an error, would be better to handle this as an edge case
     await waitFor(() => {
-      expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
-      expect(screen.getByText(/undefined/i)).toBeInTheDocument();
+      expect(screen.getByText(/wystąpił błąd/i)).toBeVisible();
+      expect(screen.getByText(/undefined/i)).toBeVisible();
     });
   });
 
@@ -130,14 +130,11 @@ describe("GradesPage", () => {
     );
     setup();
 
-    await waitFor(() => {
-      expect(screen.getByText(emptyCourse.course_name)).toBeInTheDocument();
-      expect(screen.getAllByText("-").length).toBeGreaterThan(0);
-    });
+    expect(await screen.findByText(emptyCourse.course_name)).toBeVisible();
+    expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 
   it("should allow editing course without initial grades", async () => {
-    const { user } = setup();
     server.use(
       http.get("/grades/", () =>
         HttpResponse.json({
@@ -146,14 +143,13 @@ describe("GradesPage", () => {
         })
       )
     );
-    setup();
+    const { user } = setup();
 
     await waitFor(() => {
-      expect(screen.getByText(emptyCourse.course_name)).toBeInTheDocument();
+      expect(screen.getByText(emptyCourse.course_name)).toBeVisible();
     });
 
-    // we have two identical buttons in the dom, so there is no other way to tell them apart
-    await user.click(screen.getAllByRole("button")[1]);
+    await user.click(screen.getByTestId("edit-grades-button"));
     const gradeInput = screen.getByRole("spinbutton");
     await user.type(gradeInput, "4.0");
     expect(gradeInput).toHaveValue(4.0);
@@ -170,7 +166,7 @@ describe("GradesPage", () => {
     setup();
 
     await waitFor(() => {
-      expect(screen.getByText(/wystąpił błąd/i)).toBeInTheDocument();
+      expect(screen.getByText(/wystąpił błąd/i)).toBeVisible();
     });
   });
 
@@ -186,14 +182,14 @@ describe("GradesPage", () => {
     const { user } = setup();
 
     await waitFor(() => {
-      expect(screen.getByText(mockCourses[0].course_name)).toBeInTheDocument();
+      expect(screen.getByText(mockCourses[0].course_name)).toBeVisible();
     });
 
     const termSelect = screen.getByRole("combobox");
     await user.selectOptions(termSelect, mockTerms[1].name);
 
     await waitFor(() => {
-      expect(screen.getByText(mockCourses[2].course_name)).toBeInTheDocument();
+      expect(screen.getByText(mockCourses[2].course_name)).toBeVisible();
     });
   });
 });

@@ -1,4 +1,25 @@
-export const mockTerms = [
+export type Term = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  finish_date: string;
+};
+
+export type Course = {
+  course_id: string;
+  course_name: string;
+  ects: number;
+  term_id: Term["id"];
+  passing_status: "passed" | "not_yet_passed" | "failed";
+  grades: {
+    value: number;
+    value_symbol: string;
+    counts_into_average: boolean;
+  }[];
+};
+
+export const mockTerms: Term[] = [
   {
     id: "term1",
     name: "Semestr zimowy 2024/25",
@@ -15,7 +36,7 @@ export const mockTerms = [
   },
 ];
 
-export const mockCourses = [
+export const mockCourses: Course[] = [
   {
     course_id: "math101",
     course_name: "Matematyka",
