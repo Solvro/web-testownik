@@ -377,7 +377,10 @@ export function ImportQuizPage(): React.JSX.Element {
                 </p>
                 <p>Przykładowy quiz w formacie JSON:</p>
               </div>
-              <ScrollArea className="bg-muted min-h-40 w-full flex-1 rounded-md p-3 text-xs">
+              <ScrollArea
+                type="always"
+                className="bg-muted min-h-40 w-full flex-1 rounded-md p-3 text-xs"
+              >
                 <pre className="bg-muted w-full rounded-md p-3 text-xs">
                   {`{
     "title": "Przykładowy quiz",
