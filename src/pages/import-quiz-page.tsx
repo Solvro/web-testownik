@@ -445,7 +445,6 @@ export function ImportQuizPage(): React.JSX.Element {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
-            {/*<ScrollBar orientation="horizontal" />*/}
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={handleTextCopy}>
