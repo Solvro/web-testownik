@@ -135,7 +135,7 @@ export function ImportQuizPage(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border-1">
+            <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="old">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
@@ -338,7 +338,7 @@ export function ImportQuizPage(): React.JSX.Element {
             Jak powinien wyglądać quiz w formacie JSON?
           </Button>
         </DialogTrigger>
-        <DialogContent className="flex h-[80vh] flex-col">
+        <DialogContent className="flex h-[80dvh] flex-col md:max-w-xl">
           <DialogHeader>
             <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
@@ -350,7 +350,7 @@ export function ImportQuizPage(): React.JSX.Element {
               className="grid h-full w-full max-w-full grid-cols-1 flex-col space-y-4 text-sm"
               ref={textRef}
             >
-              <div className="space-y-4">
+              <div className="space-y-4 pr-3">
                 <p>
                   Quiz w formacie JSON powinien składać się z dwóch głównych
                   kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
@@ -377,10 +377,7 @@ export function ImportQuizPage(): React.JSX.Element {
                 </p>
                 <p>Przykładowy quiz w formacie JSON:</p>
               </div>
-              <ScrollArea
-                type="always"
-                className="bg-muted min-h-40 w-full flex-1 rounded-md p-3 text-xs"
-              >
+              <ScrollArea className="bg-muted static! min-h-40 w-full flex-1 rounded-md text-xs">
                 <pre className="bg-muted w-full rounded-md p-3 text-xs">
                   {`{
     "title": "Przykładowy quiz",
