@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "prepare": "husky || true",
     "preview": "vite preview",
+    "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "lint-staged": {
@@ -71,6 +72,9 @@
     "@commitlint/cli": "^19.8.1",
     "@eslint/js": "^9.17.0",
     "@solvro/config": "^2.0.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.3.0",
     "@types/react": "19.1.12",
     "@types/react-dom": "19.1.9",
@@ -80,12 +84,15 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^16.3.0",
     "husky": "^9.1.7",
+    "jsdom": "^27.3.0",
     "lint-staged": "^16.1.5",
+    "msw": "^2.12.4",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^7.1.3"
+    "vite": "^7.1.3",
+    "vitest": "^4.0.15"
   }
 }
