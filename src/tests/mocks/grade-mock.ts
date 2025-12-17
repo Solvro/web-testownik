@@ -1,12 +1,12 @@
-export type Term = {
+export interface Term {
   id: string;
   name: string;
   start_date: string;
   end_date: string;
   finish_date: string;
-};
+}
 
-export type Course = {
+export interface Course {
   course_id: string;
   course_name: string;
   ects: number;
@@ -17,7 +17,7 @@ export type Course = {
     value_symbol: string;
     counts_into_average: boolean;
   }[];
-};
+}
 
 export const mockTerms: Term[] = [
   {
@@ -43,7 +43,7 @@ export const mockCourses: Course[] = [
     ects: 5,
     term_id: mockTerms[0].id,
     passing_status: "passed" as const,
-    grades: [{ value: 4.0, value_symbol: "4.0", counts_into_average: true }],
+    grades: [{ value: 4, value_symbol: "4.0", counts_into_average: true }],
   },
   {
     course_id: "cs101",
@@ -51,7 +51,7 @@ export const mockCourses: Course[] = [
     ects: 6,
     term_id: mockTerms[0].id,
     passing_status: "not_yet_passed" as const,
-    grades: [{ value: 5.0, value_symbol: "5.0", counts_into_average: true }],
+    grades: [{ value: 5, value_symbol: "5.0", counts_into_average: true }],
   },
   {
     course_id: "hist101",
@@ -59,7 +59,7 @@ export const mockCourses: Course[] = [
     ects: 4,
     term_id: mockTerms[1].id,
     passing_status: "failed" as const,
-    grades: [{ value: 2.0, value_symbol: "2.0", counts_into_average: true }],
+    grades: [{ value: 2, value_symbol: "2.0", counts_into_average: true }],
   },
 ];
 

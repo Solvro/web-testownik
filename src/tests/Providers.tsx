@@ -1,24 +1,23 @@
-import axios from "axios";
-import { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
 import { MemoryRouter } from "react-router";
-import AppContext from "../AppContext";
-import { AppTheme } from "../Theme";
+
+import { AppContextProvider } from "@/app-context-provider";
 
 interface ProvidersProps extends PropsWithChildren {
   guest?: boolean;
 }
 
-export const Providers = ({ children, guest = false }: ProvidersProps) => {
-  const ctx = {
-    isGuest: guest,
-    isAuthenticated: !guest,
-    theme: new AppTheme(),
-    axiosInstance: guest ? undefined : axios.create({ baseURL: "/" }),
-  };
+export function Providers({ children, guest = false }: ProvidersProps) {
+  localStorage.setItem("is_guest", guest.toString());
+  if (guest) {
+    localStorage.removeItem("access_token");
+  } else {
+    localStorage.setItem("access_token", "test-token");
+  }
 
   return (
-    <AppContext.Provider value={ctx as never}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </AppContext.Provider>
+    <MemoryRouter>
+      <AppContextProvider>{children}</AppContextProvider>
+    </MemoryRouter>
   );
-};
+}
