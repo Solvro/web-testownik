@@ -1,5 +1,6 @@
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
 import { QuestionForm } from "@/components/quiz/question-form.tsx";
@@ -207,6 +208,8 @@ export function QuizEditor({
     };
   }, []);
 
+  const navigate = useNavigate();
+
   return (
     <Card className="relative">
       <CardHeader>
@@ -249,7 +252,7 @@ export function QuizEditor({
               placeholder="Podaj tytuł quizu"
               value={title}
               onChange={(event_) => {
-                setTitle(event_.target.value.trimStart());
+                setTitle(event_.target.value);
               }}
             />
           </div>
@@ -309,6 +312,17 @@ export function QuizEditor({
 
         <div className="pointer-events-none sticky bottom-4 z-10 mt-6 flex justify-center sm:bottom-10">
           <div className="bg-background/60 pointer-events-auto -mx-16 flex flex-wrap items-center justify-center gap-3 rounded-md px-6 py-3 shadow-sm backdrop-blur sm:mx-0">
+            {onSaveAndClose != null && (
+              <Button
+                disabled={saving}
+                onClick={async () => {
+                  await triggerSave(false);
+                  await navigate(`/quiz/${initialQuiz?.id ?? ""}`);
+                }}
+              >
+                Zapisz i wróć do quizu
+              </Button>
+            )}
             {onSaveAndClose != null && (
               <Button disabled={saving} onClick={async () => triggerSave(true)}>
                 Zapisz i zakończ
