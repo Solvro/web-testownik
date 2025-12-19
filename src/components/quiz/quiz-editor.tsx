@@ -1,6 +1,5 @@
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
 
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
 import { QuestionForm } from "@/components/quiz/question-form.tsx";
@@ -53,14 +52,6 @@ const scrollToBottom = () => {
 
 const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const fromQuizzes = () => {
-  const hash = window.location.hash;
-  if (hash.startsWith("#question")) {
-    return true;
-  }
-  return false;
 };
 
 export function QuizEditor({
@@ -215,8 +206,6 @@ export function QuizEditor({
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  const navigate = useNavigate();
 
   return (
     <Card className="relative">
