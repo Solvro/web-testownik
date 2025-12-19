@@ -55,6 +55,14 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
+const fromQuizzes = () => {
+  const hash = window.location.hash;
+  if (hash.startsWith("#question")) {
+    return true;
+  }
+  return false;
+};
+
 export function QuizEditor({
   mode,
   initialQuiz,
@@ -320,7 +328,11 @@ export function QuizEditor({
                   await navigate(`/quiz/${initialQuiz?.id ?? ""}`);
                 }}
               >
-                Zapisz i wróć do quizu
+                {fromQuizzes() ? (
+                  <>Zapisz i wróć do quizu</>
+                ) : (
+                  <>Zapisz i otwórz quiz</>
+                )}
               </Button>
             )}
             {onSaveAndClose != null && (
