@@ -15,7 +15,6 @@ import { DashboardPage } from "./pages/dashboard-page.tsx";
 import { EditQuizPage } from "./pages/edit-quiz-page.tsx";
 import { Error404Page } from "./pages/errors/error404-page.tsx";
 import { GradesPage } from "./pages/grades-page.tsx";
-import { ImportQuizLegacyPage } from "./pages/import-quiz-legacy-page.tsx";
 import { ImportQuizPage } from "./pages/import-quiz-page.tsx";
 import { LoginLinkPage } from "./pages/login-link-page.tsx";
 import { OTPLoginPage } from "./pages/otp-login-page.tsx";
@@ -47,10 +46,6 @@ export function App(): React.JSX.Element {
                 <Route path="/create-quiz" element={<CreateQuizPage />} />
                 <Route path="/edit-quiz/:quizId" element={<EditQuizPage />} />
                 <Route path="/import-quiz" element={<ImportQuizPage />} />
-                <Route
-                  path="/import-quiz-legacy"
-                  element={<ImportQuizLegacyPage />}
-                />
                 <Route path="/quizzes" element={<QuizzesPage />} />
                 <Route
                   path="/search-in-quiz/:quizId"

@@ -1,21 +1,9 @@
 import JSZip from "jszip";
-import {
-  FolderArchiveIcon,
-  FolderIcon,
-  FolderOpenIcon,
-  LoaderCircleIcon,
-} from "lucide-react";
-import React, { useContext, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useContext, useState } from "react";
+import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
-import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
-import { Alert, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
-import { Textarea } from "@/components/ui/textarea";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
 import type { Question, Quiz } from "@/types/quiz.ts";
 
 const trueFalseStrings = {
@@ -27,35 +15,7 @@ const trueFalseStrings = {
   false: false,
 };
 
-const handleDragOverFile = (event: React.DragEvent<HTMLDivElement>) => {
-  event.preventDefault();
-  event.stopPropagation();
-  const items = event.dataTransfer.items;
-  event.dataTransfer.dropEffect =
-    items.length === 1 &&
-    items[0].kind === "file" &&
-    [
-      "application/zip",
-      "application/zip-compressed",
-      "application/x-zip-compressed",
-      "multipart/x-zip",
-    ].includes(items[0].type)
-      ? "copy"
-      : "none";
-};
-
-const handleDragOverDirectory = (event: React.DragEvent<HTMLDivElement>) => {
-  event.preventDefault();
-  event.stopPropagation();
-  const items = event.dataTransfer.items;
-  event.dataTransfer.dropEffect =
-    items.length === 1 && items[0].kind === "file" ? "copy" : "none";
-};
-
-const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-  event.preventDefault();
-  event.stopPropagation();
-};
+export type UploadType = "file" | "json" | "old";
 
 const parseQTemplate = (
   lines: string[],
@@ -217,41 +177,25 @@ const parseQuestion = (
     question,
     answers,
     multiple: !isTrueFalse,
-    id: index++,
+    id: index,
   };
 };
 
-export function ImportQuizLegacyPage() {
+export const useImportQuiz = () => {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [uploadType, setUploadType] = useState<UploadType>("old");
+  const [fileNameInput, setFileNameInput] = useState<string | null>(null);
+  const [fileNameOld, setFileNameOld] = useState<string | null>(null);
   const [directoryName, setDirectoryName] = useState<string | null>(null);
-  const [quizTitle, setQuizTitle] = useState("");
-  const [quizDescription, setQuizDescription] = useState("");
   const [directoryFiles, setDirectoryFiles] = useState<File[]>([]);
+  const [quizTitle, setQuizTitle] = useState<string>("");
+  const [quizDescription, setQuizDescription] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileOldRef = React.useRef<HTMLInputElement>(null);
+  const directoryInputRef = React.useRef<HTMLInputElement>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const directoryInputRef = useRef<HTMLInputElement>(null);
-
-  document.title = "Importuj quiz (stara wersja) - Testownik Solvro";
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files !== null && files.length > 0) {
-      const file = files[0];
-      setFileName(file.name);
-      setDirectoryName(null);
-      setDirectoryFiles([]);
-      if (directoryInputRef.current !== null) {
-        directoryInputRef.current.value = "";
-      }
-    } else {
-      setFileName(null);
-    }
-  };
 
   const handleDirectorySelect = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -262,9 +206,10 @@ export function ImportQuizLegacyPage() {
       const directoryPath = filesArray[0].webkitRelativePath.split("/")[0];
       setDirectoryName(directoryPath);
       setDirectoryFiles(filesArray);
-      setFileName(null);
-      if (fileInputRef.current !== null) {
-        fileInputRef.current.value = "";
+      setFileNameOld(null);
+      setFileNameInput(null);
+      if (fileOldRef.current !== null) {
+        fileOldRef.current.value = "";
       }
     } else {
       setDirectoryName(null);
@@ -274,12 +219,32 @@ export function ImportQuizLegacyPage() {
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+
     if (event.dataTransfer.files.length > 0) {
       const file = event.dataTransfer.files[0];
-      if (fileInputRef.current !== null) {
-        fileInputRef.current.files = event.dataTransfer.files;
+      switch (uploadType) {
+        case "file": {
+          if (fileInputRef.current !== null) {
+            fileInputRef.current.files = event.dataTransfer.files;
+          }
+          setFileNameOld(null);
+          setFileNameInput(file.name);
+          break;
+        }
+        case "old": {
+          if (fileOldRef.current !== null) {
+            fileOldRef.current.files = event.dataTransfer.files;
+          }
+          setFileNameOld(file.name);
+          setFileNameInput(null);
+
+          break;
+        }
+        case "json": {
+          // No usage
+          break;
+        }
       }
-      setFileName(file.name);
       setDirectoryName(null);
       setDirectoryFiles([]);
       if (directoryInputRef.current !== null) {
@@ -288,9 +253,47 @@ export function ImportQuizLegacyPage() {
     }
   };
 
+  const handleDragOverFile = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const items = event.dataTransfer.items;
+    switch (uploadType) {
+      case "file": {
+        event.dataTransfer.dropEffect =
+          items.length === 1 &&
+          items[0].kind === "file" &&
+          items[0].type === "application/json"
+            ? "copy"
+            : "none";
+        break;
+      }
+      case "old": {
+        event.dataTransfer.dropEffect =
+          items.length === 1 &&
+          items[0].kind === "file" &&
+          [
+            "application/zip",
+            "application/zip-compressed",
+            "application/x-zip-compressed",
+            "multipart/x-zip",
+          ].includes(items[0].type)
+            ? "copy"
+            : "none";
+        break;
+      }
+      case "json": {
+        // No usage
+        break;
+      }
+    }
+  };
+
   const handleDirectoryDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (event.dataTransfer.items.length === 0) {
+      return;
+    }
     const item = event.dataTransfer.items[0];
     const entry = item.webkitGetAsEntry();
     if (entry?.isDirectory === true) {
@@ -343,13 +346,53 @@ export function ImportQuizLegacyPage() {
         await readDirectoryRecursively(reader);
         setDirectoryFiles(files);
         setDirectoryName(directory.name);
-        setFileName(null);
+        setFileNameOld(null);
         if (fileInputRef.current !== null) {
           fileInputRef.current.value = "";
         }
       })();
     } else {
       setError("Wybrano niepoprawny folder.");
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+
+    switch (uploadType) {
+      case "file": {
+        const fileInput = files?.[0];
+        if (fileInput === undefined) {
+          setFileNameInput(null);
+        } else {
+          setFileNameInput(fileInput.name);
+          setFileNameOld(null);
+          setDirectoryName(null);
+          setError(null);
+        }
+        break;
+      }
+
+      case "old": {
+        if (files !== null && files.length > 0) {
+          const fileOld = files[0];
+          setFileNameOld(fileOld.name);
+          setFileNameInput(null);
+          setDirectoryName(null);
+          setDirectoryFiles([]);
+          if (directoryInputRef.current !== null) {
+            directoryInputRef.current.value = "";
+          }
+        } else {
+          setFileNameOld(null);
+        }
+        break;
+      }
+
+      case "json": {
+        // No usage
+        break;
+      }
     }
   };
 
@@ -383,7 +426,11 @@ export function ImportQuizLegacyPage() {
     let index = 1;
     for (const filename of Object.keys(zip.files)) {
       if (filename.endsWith(".txt")) {
-        const content = await zip.file(filename)?.async("uint8array");
+        const fileData = zip.file(filename);
+        if (fileData == null) {
+          continue;
+        }
+        const content = await fileData.async("uint8array");
         let lines;
         try {
           const decoder = new TextDecoder("utf8", { fatal: true });
@@ -411,53 +458,149 @@ export function ImportQuizLegacyPage() {
     if (directoryFiles.length > 0) {
       return processDirectory(directoryFiles);
     } else if (
-      fileInputRef.current?.files != null &&
-      fileInputRef.current.files.length > 0
+      fileOldRef.current?.files != null &&
+      fileOldRef.current.files.length > 0
     ) {
-      return processZip(fileInputRef.current.files[0]);
+      return processZip(fileOldRef.current.files[0]);
     } else {
       throw new Error("Nie wybrano pliku ani folderu.");
     }
   };
 
-  const handleImport = async () => {
-    if (fileName == null && directoryName == null) {
-      setError("Nie wybrano pliku ani folderu.");
-      return;
-    }
+  const setErrorAndNotify = (message: string) => {
+    setError(message);
+    toast.error(message);
+    setLoading(false);
+  };
 
-    if (!quizTitle.trim()) {
-      setError("Nie podano nazwy quiz.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const questions = await processFiles();
-
-      if (questions.length === 0) {
-        setError("Nie znaleziono pytań w wybranych plikach.");
-        setLoading(false);
-        return;
+  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
+    let id = 1;
+    for (const question of quizData.questions) {
+      if (question.id) {
+        id = Math.max(id, question.id + 1);
+      } else {
+        question.id = id++;
       }
-
-      const quizData = {
-        title: quizTitle,
-        description: quizDescription,
-        questions,
-      };
-
-      const importedQuiz = await appContext.services.quiz.createQuiz(quizData);
-      setQuiz(importedQuiz);
-    } catch (error_) {
-      setError(
-        `Wystąpił błąd podczas przetwarzania plików: ${error_ instanceof Error ? error_.message : String(error_)}`,
-      );
-    } finally {
-      setLoading(false);
     }
+    return quizData;
+  };
+
+  const submitImport = async (type: "json" | "link", data: string | Quiz) => {
+    try {
+      const result =
+        type === "json"
+          ? await appContext.services.quiz.createQuiz(data as Quiz)
+          : await appContext.services.quiz.importQuizFromLink(data as string);
+
+      setQuiz(result);
+    } catch {
+      setError("Wystąpił błąd podczas importowania quizu.");
+    }
+  };
+
+  const handleImport = async () => {
+    setError(null);
+    setLoading(true);
+    switch (uploadType) {
+      case "file": {
+        const file = fileInputRef.current?.files?.[0];
+        if (file === undefined) {
+          setErrorAndNotify("Wybierz plik z quizem.");
+          return;
+        }
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text) as Quiz;
+          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
+          if (validationError !== null) {
+            setErrorAndNotify(validationError);
+            return false;
+          }
+          await submitImport("json", data);
+        } catch (fileError) {
+          if (fileError instanceof Error) {
+            setError(
+              `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
+            );
+          } else {
+            setError("Wystąpił błąd podczas wczytywania pliku.");
+          }
+          console.error("Błąd podczas wczytywania pliku:", fileError);
+        }
+
+        break;
+      }
+      case "json": {
+        const textInput =
+          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
+        if (textInput == null || textInput.trim() === "") {
+          setError("Wklej quiz w formie tekstu.");
+          setLoading(false);
+          return;
+        }
+        try {
+          const data = JSON.parse(textInput) as Quiz;
+          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
+          if (validationError !== null) {
+            setErrorAndNotify(validationError);
+            return false;
+          }
+          await submitImport("json", data);
+        } catch (parseError) {
+          if (parseError instanceof Error) {
+            setError(
+              `Wystąpił błąd podczas parsowania JSON: ${parseError.message}`,
+            );
+          } else {
+            setError(
+              "Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.",
+            );
+          }
+          console.error("Błąd podczas parsowania JSON:", error);
+        }
+
+        break;
+      }
+      case "old": {
+        if (fileNameOld == null && directoryName == null) {
+          setError("Nie wybrano pliku ani folderu.");
+          setLoading(false);
+          return;
+        }
+        if (!quizTitle.trim()) {
+          setError("Nie podano nazwy quizu.");
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const questions = await processFiles();
+
+          if (questions.length === 0) {
+            setError("Nie znaleziono pytań w wybranych plikach.");
+            setLoading(false);
+            return;
+          }
+
+          const quizData = {
+            title: quizTitle,
+            description: quizDescription,
+            questions,
+          };
+
+          const importedQuiz =
+            await appContext.services.quiz.createQuiz(quizData);
+          setQuiz(importedQuiz);
+        } catch (error_) {
+          setError(
+            `Wystąpił błąd podczas przetwarzania plików: ${error_ instanceof Error ? error_.message : String(error_)}`,
+          );
+        }
+        break;
+      }
+      // No default
+    }
+    setLoading(false);
   };
 
   async function detectEncodingAndReadFile(file: File): Promise<string> {
@@ -471,146 +614,35 @@ export function ImportQuizLegacyPage() {
     }
   }
 
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Zaimportuj quiz ze starej wersji</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {error === null ? null : (
-            <Alert variant="destructive">
-              <AlertTitle>{error}</AlertTitle>
-            </Alert>
-          )}
-          <div className="grid gap-6 md:grid-cols-11">
-            <div className="space-y-2 md:col-span-5">
-              <Label htmlFor="file-input">Plik zip z pytaniami</Label>
-              <div
-                className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={handleFileDrop}
-                onDragOver={handleDragOverFile}
-                onDragLeave={handleDragLeave}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    fileInputRef.current?.click();
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <input
-                  id="file-input"
-                  type="file"
-                  accept=".zip"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                {fileName === null ? (
-                  <div className="space-y-1">
-                    <FolderArchiveIcon className="mx-auto size-6" />
-                    <p>Wybierz plik...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <FolderOpenIcon className="mx-auto size-6" />
-                    <p className="break-all">{fileName}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-muted-foreground flex items-center justify-center text-sm md:col-span-1">
-              lub
-            </div>
-            <div className="space-y-2 md:col-span-5">
-              <Label htmlFor="directory-input">Folder z pytaniami</Label>
-              <div
-                className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
-                onClick={() => directoryInputRef.current?.click()}
-                onDrop={handleDirectoryDrop}
-                onDragOver={handleDragOverDirectory}
-                onDragLeave={handleDragLeave}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    directoryInputRef.current?.click();
-                    event.preventDefault();
-                  }
-                }}
-              >
-                <input
-                  id="directory-input"
-                  type="file"
-                  ref={directoryInputRef}
-                  {...({ webkitdirectory: "" } as { webkitdirectory: string })}
-                  onChange={handleDirectorySelect}
-                  className="hidden"
-                />
-                {directoryName === null ? (
-                  <div className="space-y-1">
-                    <FolderIcon className="mx-auto size-6" />
-                    <p>Wybierz folder...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <FolderOpenIcon className="mx-auto size-6" />
-                    <p className="break-all">{directoryName}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quiz-title">Nazwa</Label>
-            <Input
-              id="quiz-title"
-              placeholder="Nazwa quizu"
-              value={quizTitle}
-              onChange={(event) => {
-                setQuizTitle(event.target.value);
-              }}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quiz-description">Opis</Label>
-            <Textarea
-              id="quiz-description"
-              rows={3}
-              placeholder="Dodatkowy opis"
-              value={quizDescription}
-              onChange={(event) => {
-                setQuizDescription(event.target.value);
-              }}
-            />
-          </div>
-          <div className="text-center">
-            <Button onClick={handleImport} disabled={loading}>
-              {loading ? (
-                <>
-                  <LoaderCircleIcon className="animate-spin" /> Import...
-                </>
-              ) : (
-                "Importuj"
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+  const handleUploadTypeChange = (type: UploadType) => {
+    setUploadType(type);
+    setError(null);
+  };
 
-      <QuizPreviewDialog
-        open={quiz !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            void navigate("/");
-          }
-        }}
-        quiz={quiz}
-        type="imported"
-      />
-    </>
-  );
-}
+  return {
+    // States
+    uploadType,
+    fileNameInput,
+    fileNameOld,
+    error,
+    loading,
+    fileInputRef,
+    fileOldRef,
+    directoryInputRef,
+    directoryName,
+    quizTitle,
+    quizDescription,
+    quiz,
+
+    // Functions
+    handleFileDrop,
+    handleDragOverFile,
+    handleDirectoryDrop,
+    handleDirectorySelect,
+    handleUploadTypeChange,
+    handleFileSelect,
+    setQuizTitle,
+    setQuizDescription,
+    handleImport,
+  };
+};
