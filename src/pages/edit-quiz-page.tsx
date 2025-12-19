@@ -98,7 +98,7 @@ export function EditQuizPage(): React.JSX.Element {
   ): Promise<boolean> => {
     const ok = await handleSave(data);
     if (ok) {
-      await navigate("/");
+      await navigate(-1);
     }
     return ok;
   };
