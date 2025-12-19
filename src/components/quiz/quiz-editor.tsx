@@ -321,23 +321,8 @@ export function QuizEditor({
         <div className="pointer-events-none sticky bottom-4 z-10 mt-6 flex justify-center sm:bottom-10">
           <div className="bg-background/60 pointer-events-auto -mx-16 flex flex-wrap items-center justify-center gap-3 rounded-md px-6 py-3 shadow-sm backdrop-blur sm:mx-0">
             {onSaveAndClose != null && (
-              <Button
-                disabled={saving}
-                onClick={async () => {
-                  await triggerSave(false);
-                  await navigate(`/quiz/${initialQuiz?.id ?? ""}`);
-                }}
-              >
-                {fromQuizzes() ? (
-                  <>Zapisz i wróć do quizu</>
-                ) : (
-                  <>Zapisz i otwórz quiz</>
-                )}
-              </Button>
-            )}
-            {onSaveAndClose != null && (
               <Button disabled={saving} onClick={async () => triggerSave(true)}>
-                Zapisz i zakończ
+                Zapisz i wróć
               </Button>
             )}
             <Button

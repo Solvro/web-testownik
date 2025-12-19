@@ -41,7 +41,13 @@ export function EditQuizPage(): React.JSX.Element {
             const element = document.querySelector(`#${id}`);
             if (element !== null) {
               element.scrollIntoView({ behavior: "smooth" });
-              if (!window.location.hash) {
+              if (window.location.hash) {
+                window.history.replaceState(
+                  null,
+                  "",
+                  window.location.pathname + window.location.search,
+                );
+              } else {
                 queryParameters.delete("scroll_to");
                 await navigate({
                   search: queryParameters.toString(),
