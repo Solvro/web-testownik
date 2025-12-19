@@ -149,6 +149,7 @@ docs: update contribution section
 refactor(api): simplify fetch wrapper
 test(quiz): add missing unit tests
 ```
+
 ---
 
 ## 🐞 Zgłaszanie problemów, pomysłów i pytań
