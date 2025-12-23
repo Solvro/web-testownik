@@ -98,7 +98,13 @@ export function EditQuizPage(): React.JSX.Element {
   ): Promise<boolean> => {
     const ok = await handleSave(data);
     if (ok) {
-      await navigate("/");
+      const navigation = window.navigation as Navigation | null;
+
+      if (navigation == null) {
+        await navigate(-1);
+      } else {
+        await (navigation.canGoBack ? navigate(-1) : navigate("/quizzes"));
+      }
     }
     return ok;
   };
