@@ -174,7 +174,7 @@ export function QuizEditor({
       questions: sanitizeQuestions(questions, advancedMode),
     };
 
-    draft.title = draft.title.trimEnd();
+    draft.title = draft.title.trim();
 
     const validationError = validateQuiz(draft as unknown as Quiz);
     if (validationError !== null) {
