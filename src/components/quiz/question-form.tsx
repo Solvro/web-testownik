@@ -5,22 +5,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Answer, Question } from "@/types/quiz.ts";
 
 interface questionFormProps {
-  question: Question;
-  onUpdate: (updatedQuestion: Question) => void;
+  question: Question & { advanced?: boolean };
+  onUpdate: (updatedQuestion: Question & { advanced?: boolean }) => void;
   onRemove: (id: number) => void;
-  advancedMode?: boolean;
 }
 
 export function QuestionForm({
   question,
   onUpdate,
   onRemove,
-  advancedMode = false,
 }: questionFormProps) {
+  const isAdvanced = Boolean(question.advanced);
+
   const handleTextChange = (text: string) => {
     onUpdate({ ...question, question: text });
   };
@@ -34,8 +35,6 @@ export function QuestionForm({
   };
 
   const handleMultipleChange = (multiple: boolean) => {
-    // If switching from multiple choice to single choice and there are multiple correct answers,
-    // keep only the first correct answer
     if (
       !multiple &&
       question.multiple &&
@@ -53,13 +52,11 @@ export function QuestionForm({
   };
 
   const addAnswer = () => {
-    const newAnswer = { answer: "", correct: false, image: "" };
+    const newAnswer = { answer: "", correct: false, image: "" } as Answer;
     onUpdate({ ...question, answers: [...question.answers, newAnswer] });
   };
 
   const updateAnswer = (index: number, updatedAnswer: Answer) => {
-    // If this is a single-choice question and we're marking an answer as correct,
-    // unmark all other answers as correct
     if (!question.multiple && updatedAnswer.correct) {
       const updatedAnswers = question.answers.map((a, index_) => ({
         ...a,
@@ -95,16 +92,30 @@ export function QuestionForm({
           >
             Pytanie {question.id}
           </Label>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-7 w-7 shrink-0 rounded-full transition"
-            onClick={() => {
-              onRemove(question.id);
-            }}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Switch
+                id={`advanced-question-${question.id.toString()}`}
+                checked={isAdvanced}
+                onCheckedChange={(checked) => {
+                  onUpdate({ ...question, advanced: checked });
+                }}
+              />
+              <span className="text-muted-foreground text-xs">
+                Zaawansowane
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-7 w-7 shrink-0 rounded-full transition"
+              onClick={() => {
+                onRemove(question.id);
+              }}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
         </div>
         <Textarea
           id={`question-text-${question.id.toString()}`}
@@ -116,7 +127,7 @@ export function QuestionForm({
         />
       </div>
 
-      {advancedMode ? (
+      {isAdvanced ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
@@ -162,7 +173,25 @@ export function QuestionForm({
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`multiple-choice-${question.id.toString()}`}
+              checked={question.multiple}
+              onCheckedChange={(checked) => {
+                handleMultipleChange(Boolean(checked));
+              }}
+            />
+            <Label
+              htmlFor={`multiple-choice-${question.id.toString()}`}
+              className="cursor-pointer"
+            >
+              Wielokrotny wybór
+            </Label>
+          </div>
+        </div>
+      )}
 
       <h6 className="text-sm font-semibold tracking-tight">
         Odpowiedzi
@@ -188,7 +217,7 @@ export function QuestionForm({
                     });
                   }}
                 />
-                {advancedMode ? (
+                {isAdvanced ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
                     value={answer.image ?? ""}
@@ -261,7 +290,7 @@ export function QuestionForm({
                     });
                   }}
                 />
-                {advancedMode ? (
+                {isAdvanced ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
                     value={answer.image ?? ""}
