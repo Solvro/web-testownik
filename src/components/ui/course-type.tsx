@@ -13,7 +13,7 @@ const typeBgColors = {
 } as const;
 
 function CourseType({ courseId }: { courseId: string }) {
-  if (!courseId) {
+  if (!courseId || courseId.length === 0) {
     return null;
   }
   return (
