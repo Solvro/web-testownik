@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CourseType } from "@/components/ui/course-type.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import {
@@ -259,7 +260,8 @@ export function GradesPage(): React.JSX.Element {
                 return (
                   <TableRow key={course.course_id} className="h-12">
                     <TableCell className="font-medium break-words whitespace-normal">
-                      {course.course_name}
+                      {course.course_name}{" "}
+                      <CourseType courseId={course.course_id} />
                     </TableCell>
                     <TableCell>{course.ects}</TableCell>
                     <TableCell
