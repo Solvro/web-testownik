@@ -13,6 +13,9 @@ const typeBgColors = {
 } as const;
 
 function CourseType({ courseId }: { courseId: string }) {
+  if (!courseId) {
+    return null;
+  }
   return (
     <span
       className={cn(
