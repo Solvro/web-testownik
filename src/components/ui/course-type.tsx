@@ -12,7 +12,11 @@ const typeBgColors = {
   G: "bg-yellow-200 dark:bg-yellow-900",
 } as const;
 
-function CourseType({ courseId }: { courseId: string }) {
+interface CourseTypeProps {
+  courseId: string;
+}
+
+function CourseType({ courseId }: CourseTypeProps) {
   if (!courseId || courseId.length === 0) {
     return null;
   }
@@ -27,5 +31,7 @@ function CourseType({ courseId }: { courseId: string }) {
     </span>
   );
 }
+
+CourseType.displayName = "CourseType";
 
 export { CourseType };
