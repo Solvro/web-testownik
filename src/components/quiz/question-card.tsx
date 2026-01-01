@@ -1,6 +1,6 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
-import { RotateCcwIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -17,6 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils";
 import type { Answer, Question } from "@/types/quiz.ts";
 
@@ -199,7 +204,15 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex justify-end gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Undo2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Poprzednie pytanie</TooltipContent>
+          </Tooltip>
           {questionChecked ? (
             <Button onClick={nextAction}>Następne pytanie</Button>
           ) : (
