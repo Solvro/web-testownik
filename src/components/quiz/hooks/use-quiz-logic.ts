@@ -284,9 +284,16 @@ export function useQuizLogic({
       if (!remote) {
         continuity.sendAnswerChecked();
       }
+      const currentHistory = historyRef.current.find(
+        (history) => history.question.id === currentQuestion?.id,
+      );
+      if (currentHistory != null) {
+        currentHistory.answers = selectedAnswers;
+      }
     },
     [
       continuity,
+      currentQuestion?.id,
       questionChecked,
       selectedAnswers,
       userSettings.wrong_answer_reoccurrences,
@@ -332,6 +339,13 @@ export function useQuizLogic({
       type: "SET_CURRENT_QUESTION",
       payload: { question: useHistory.question },
     });
+    if (!isPreviousQuestionRef.current) {
+      dispatch({
+        type: "SET_SELECTED_ANSWERS",
+        payload: useHistory.answers,
+      });
+      checkAnswer();
+    }
 
     isPreviousQuestionRef.current = !isPreviousQuestionRef.current;
     dispatch({
