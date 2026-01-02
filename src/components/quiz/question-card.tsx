@@ -139,8 +139,6 @@ export function QuestionCard({
     );
   };
 
-  console.log(canGoBack);
-
   return (
     <Card>
       <CardHeader>
@@ -219,7 +217,7 @@ export function QuestionCard({
             </Button>
           ) : (
             <>
-              {canGoBack ? (
+              {canGoBack && !questionChecked ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="icon" onClick={goBack}>
