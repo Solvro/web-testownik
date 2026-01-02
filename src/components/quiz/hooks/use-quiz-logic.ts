@@ -41,6 +41,7 @@ export function useQuizLogic({
     wrongAnswersCount,
     reoccurrences,
     isQuizFinished,
+    canGoBack,
     showBrainrot,
   } = runtime;
 
@@ -173,8 +174,16 @@ export function useQuizLogic({
     userSettings.sync_progress,
   ]);
 
-  const addHistoryEntry = (question: Question | null, answers: number[]) => {
+  const addHistoryEntry = (question: Question, answers: number[]) => {
     historyRef.current.push({ question, answers });
+    if (historyRef.current.length === 2) {
+      dispatch({
+        type: "MARK_CAN_GO_BACK",
+      });
+    }
+    if (historyRef.current.length > 2) {
+      historyRef.current.shift();
+    }
   };
 
   const pickRandomQuestion = useCallback(
@@ -295,8 +304,8 @@ export function useQuizLogic({
       type: "SET_CURRENT_QUESTION",
       payload: { question: randomizedQuestion },
     });
-    addHistoryEntry(randomizedQuestion, []);
     if (randomizedQuestion != null) {
+      addHistoryEntry(randomizedQuestion, []);
       continuity.sendQuestionUpdate(randomizedQuestion, []);
     }
   }, [continuity, pickRandomQuestion, quiz, reoccurrences]);
@@ -310,9 +319,9 @@ export function useQuizLogic({
   }, [checkAnswer, nextQuestion, questionChecked]);
 
   const goBack = useCallback(() => {
-    // if (historyRef.current.length < 2) {
-    //   return;
-    // }
+    if (historyRef.current.length < 2) {
+      return;
+    }
     console.log(historyRef.current);
   }, []);
 
@@ -368,7 +377,9 @@ export function useQuizLogic({
             _quiz,
             initialReoccurrences,
           );
-          addHistoryEntry(randomQuestion, selectedAnswers);
+          if (randomQuestion != null) {
+            addHistoryEntry(randomQuestion, selectedAnswers);
+          }
         }
         nextMetaQuiz = _quiz;
       }
@@ -392,6 +403,7 @@ export function useQuizLogic({
       selectedAnswers,
       questionChecked,
       isQuizFinished,
+      canGoBack,
       showBrainrot,
     },
     stats: {

@@ -19,6 +19,7 @@ export interface UseQuizLogicResult {
     selectedAnswers: number[];
     questionChecked: boolean;
     isQuizFinished: boolean;
+    canGoBack: boolean;
     showBrainrot: boolean;
   };
   stats: {

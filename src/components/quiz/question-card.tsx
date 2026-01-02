@@ -33,6 +33,7 @@ interface QuestionCardProps {
   nextAction: () => void;
   goBack: () => void;
   isQuizFinished: boolean;
+  canGoBack: boolean;
   restartQuiz?: () => void;
 }
 
@@ -43,6 +44,7 @@ export function QuestionCard({
   questionChecked,
   nextAction,
   goBack,
+  canGoBack,
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
@@ -135,6 +137,8 @@ export function QuestionCard({
     );
   };
 
+  console.log(canGoBack);
+
   return (
     <Card>
       <CardHeader>
@@ -207,14 +211,16 @@ export function QuestionCard({
           )}
         </div>
         <div className="mt-2 flex justify-end gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={goBack}>
-                <Undo2 />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Poprzednie pytanie</TooltipContent>
-          </Tooltip>
+          {canGoBack ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={goBack}>
+                  <Undo2 />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Poprzednie pytanie</TooltipContent>
+            </Tooltip>
+          ) : null}
           {questionChecked ? (
             <Button onClick={nextAction}>Następne pytanie</Button>
           ) : (
