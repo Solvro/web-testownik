@@ -51,12 +51,14 @@ export function useQuizLogic({
   } = useStudyTimer(isQuizFinished, 0);
 
   // refs for continuity
+  const initRef = useRef(false);
   const currentQuestionRef = useRef<Question | null>(null);
   const reoccurrencesRef = useRef<Reoccurrence[]>([]);
   const wrongAnswersCountRef = useRef<number>(0);
   const correctAnswersCountRef = useRef<number>(0);
   const selectedAnswersRef = useRef<number[]>([]);
-  const historyref = useRef<{ question: Question; answers: number[] }[]>([]);
+  // [0]: previous, [1]: current
+  const historyRef = useRef<{ question: Question; answers: number[] }[]>([]);
 
   // we need a ref indirection to avoid use-before-define for checkAnswer used by continuity
   // placeholder ref; will be assigned after checkAnswer creation
@@ -171,8 +173,8 @@ export function useQuizLogic({
     userSettings.sync_progress,
   ]);
 
-  const addHistoryEntry = (question: Question, answers: number[]) => {
-    historyref.current.push({ question, answers });
+  const addHistoryEntry = (question: Question | null, answers: number[]) => {
+    historyRef.current.push({ question, answers });
   };
 
   const pickRandomQuestion = useCallback(
@@ -244,6 +246,9 @@ export function useQuizLogic({
         type: "SET_CURRENT_QUESTION",
         payload: { question: { ...loadedSavedQuestion, answers: sorted } },
       });
+      if (!initRef.current) {
+        addHistoryEntry(loadedSavedQuestion, []);
+      }
       if (!mergedReoccurrences.some((r) => r.reoccurrences > 0)) {
         dispatch({ type: "MARK_FINISHED" });
       }
@@ -290,6 +295,7 @@ export function useQuizLogic({
       type: "SET_CURRENT_QUESTION",
       payload: { question: randomizedQuestion },
     });
+    addHistoryEntry(randomizedQuestion, []);
     if (randomizedQuestion != null) {
       continuity.sendQuestionUpdate(randomizedQuestion, []);
     }
@@ -302,6 +308,13 @@ export function useQuizLogic({
       checkAnswer();
     }
   }, [checkAnswer, nextQuestion, questionChecked]);
+
+  const goBack = useCallback(() => {
+    // if (historyRef.current.length < 2) {
+    //   return;
+    // }
+    console.log(historyRef.current);
+  }, []);
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(
@@ -351,7 +364,11 @@ export function useQuizLogic({
             type: "INIT_REOCCURRENCES",
             payload: { reoccurrences: initialReoccurrences },
           });
-          pickRandomQuestion(_quiz, initialReoccurrences);
+          const randomQuestion = pickRandomQuestion(
+            _quiz,
+            initialReoccurrences,
+          );
+          addHistoryEntry(randomQuestion, selectedAnswers);
         }
         nextMetaQuiz = _quiz;
       }
@@ -360,6 +377,7 @@ export function useQuizLogic({
         loading: false,
         userSettings: nextSettings,
       });
+      initRef.current = true;
     })();
     // we only want to run this once on mount or when auth state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -389,6 +407,7 @@ export function useQuizLogic({
     actions: {
       nextAction,
       nextQuestion,
+      goBack,
       resetProgress,
       setSelectedAnswers: (ans: number[]) => {
         selectedAnswersRef.current = ans;

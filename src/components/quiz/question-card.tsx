@@ -31,6 +31,7 @@ interface QuestionCardProps {
   setSelectedAnswers: (selectedAnswers: number[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
+  goBack: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
 }
@@ -41,6 +42,7 @@ export function QuestionCard({
   setSelectedAnswers,
   questionChecked,
   nextAction,
+  goBack,
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
@@ -207,7 +209,7 @@ export function QuestionCard({
         <div className="mt-2 flex justify-end gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={goBack}>
                 <Undo2 />
               </Button>
             </TooltipTrigger>

@@ -34,6 +34,7 @@ export interface UseQuizLogicResult {
   actions: {
     nextAction: () => void;
     nextQuestion: () => void;
+    goBack: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: number[]) => void;
     toggleBrainrot: () => void;
