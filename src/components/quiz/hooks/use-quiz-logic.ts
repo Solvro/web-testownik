@@ -352,7 +352,7 @@ export function useQuizLogic({
       type: "SET_IS_PREVIOUS_QUESTION",
       payload: { state: isPreviousQuestionRef.current },
     });
-  }, []);
+  }, [checkAnswer]);
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(
