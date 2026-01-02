@@ -140,6 +140,8 @@ export function runtimeReducer(
         ...initialRuntime,
         reoccurrences: action.payload.reoccurrences,
         currentQuestion: action.payload.question,
+        isPreviousQuestion: false,
+        canGoBack: false,
         isQuizFinished: computeFinished(
           action.payload.reoccurrences,
           action.payload.question,

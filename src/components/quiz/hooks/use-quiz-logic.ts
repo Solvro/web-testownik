@@ -368,8 +368,12 @@ export function useQuizLogic({
         type: "RESET_PROGRESS",
         payload: { reoccurrences: initialReoccurrences, question: null },
       });
+      historyRef.current = [];
       setTimer(0, Date.now());
-      pickRandomQuestion(quiz, initialReoccurrences);
+      const randomQuestion = pickRandomQuestion(quiz, initialReoccurrences);
+      if (randomQuestion != null) {
+        addHistoryEntry(randomQuestion, []);
+      }
     }
   }, [
     appContext.services.quiz,
