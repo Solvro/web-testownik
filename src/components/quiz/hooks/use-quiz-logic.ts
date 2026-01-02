@@ -56,6 +56,7 @@ export function useQuizLogic({
   const wrongAnswersCountRef = useRef<number>(0);
   const correctAnswersCountRef = useRef<number>(0);
   const selectedAnswersRef = useRef<number[]>([]);
+  const historyref = useRef<{ question: Question; answers: number[] }[]>([]);
 
   // we need a ref indirection to avoid use-before-define for checkAnswer used by continuity
   // placeholder ref; will be assigned after checkAnswer creation
@@ -169,6 +170,10 @@ export function useQuizLogic({
     studyTime,
     userSettings.sync_progress,
   ]);
+
+  const addHistoryEntry = (question: Question, answers: number[]) => {
+    historyref.current.push({ question, answers });
+  };
 
   const pickRandomQuestion = useCallback(
     (quizData: Quiz, availableReoccurrences: Reoccurrence[]) => {
