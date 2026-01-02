@@ -32,6 +32,7 @@ export function QuizPage(): React.JSX.Element {
     questionChecked,
     isQuizFinished,
     canGoBack,
+    isPreviousQuestion,
     showBrainrot,
   } = state;
   const { correctAnswersCount, wrongAnswersCount, reoccurrences, studyTime } =
@@ -169,6 +170,7 @@ export function QuizPage(): React.JSX.Element {
             nextAction={nextAction}
             goBack={goBack}
             canGoBack={canGoBack}
+            isPreviousQuestion={isPreviousQuestion}
             isQuizFinished={isQuizFinished}
             restartQuiz={resetProgress}
           />

@@ -42,6 +42,7 @@ export function useQuizLogic({
     reoccurrences,
     isQuizFinished,
     canGoBack,
+    isPreviousQuestion,
     showBrainrot,
   } = runtime;
 
@@ -60,6 +61,7 @@ export function useQuizLogic({
   const selectedAnswersRef = useRef<number[]>([]);
   // [0]: previous, [1]: current
   const historyRef = useRef<{ question: Question; answers: number[] }[]>([]);
+  const isPreviousQuestionRef = useRef<boolean>(false);
 
   // we need a ref indirection to avoid use-before-define for checkAnswer used by continuity
   // placeholder ref; will be assigned after checkAnswer creation
@@ -322,7 +324,20 @@ export function useQuizLogic({
     if (historyRef.current.length < 2) {
       return;
     }
-    console.log(historyRef.current);
+    const useHistory = isPreviousQuestionRef.current
+      ? historyRef.current[1]
+      : historyRef.current[0];
+
+    dispatch({
+      type: "SET_CURRENT_QUESTION",
+      payload: { question: useHistory.question },
+    });
+
+    isPreviousQuestionRef.current = !isPreviousQuestionRef.current;
+    dispatch({
+      type: "SET_IS_PREVIOUS_QUESTION",
+      payload: { state: isPreviousQuestionRef.current },
+    });
   }, []);
 
   const resetProgress = useCallback(async () => {
@@ -404,6 +419,7 @@ export function useQuizLogic({
       questionChecked,
       isQuizFinished,
       canGoBack,
+      isPreviousQuestion,
       showBrainrot,
     },
     stats: {

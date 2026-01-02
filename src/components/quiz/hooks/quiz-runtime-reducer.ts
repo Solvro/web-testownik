@@ -9,6 +9,7 @@ export interface RuntimeState {
   reoccurrences: Reoccurrence[];
   isQuizFinished: boolean;
   canGoBack: boolean;
+  isPreviousQuestion: boolean;
   showBrainrot: boolean;
 }
 
@@ -17,6 +18,7 @@ export type Action =
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
   | { type: "MARK_FINISHED" }
   | { type: "MARK_CAN_GO_BACK" }
+  | { type: "SET_IS_PREVIOUS_QUESTION"; payload: { state: boolean } }
   | { type: "INIT_REOCCURRENCES"; payload: { reoccurrences: Reoccurrence[] } }
   | {
       type: "APPLY_LOADED_PROGRESS";
@@ -47,6 +49,7 @@ export const initialRuntime: RuntimeState = {
   reoccurrences: [],
   isQuizFinished: false,
   canGoBack: false,
+  isPreviousQuestion: false,
   showBrainrot: false,
 };
 
@@ -83,6 +86,9 @@ export function runtimeReducer(
     }
     case "MARK_CAN_GO_BACK": {
       return { ...state, canGoBack: true };
+    }
+    case "SET_IS_PREVIOUS_QUESTION": {
+      return { ...state, isPreviousQuestion: action.payload.state };
     }
     case "INIT_REOCCURRENCES": {
       return { ...state, reoccurrences: action.payload.reoccurrences };

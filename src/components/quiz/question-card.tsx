@@ -34,6 +34,7 @@ interface QuestionCardProps {
   goBack: () => void;
   isQuizFinished: boolean;
   canGoBack: boolean;
+  isPreviousQuestion: boolean;
   restartQuiz?: () => void;
 }
 
@@ -45,6 +46,7 @@ export function QuestionCard({
   nextAction,
   goBack,
   canGoBack,
+  isPreviousQuestion,
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
@@ -211,20 +213,28 @@ export function QuestionCard({
           )}
         </div>
         <div className="mt-2 flex justify-end gap-2">
-          {canGoBack ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={goBack}>
-                  <Undo2 />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Poprzednie pytanie</TooltipContent>
-            </Tooltip>
-          ) : null}
-          {questionChecked ? (
-            <Button onClick={nextAction}>Następne pytanie</Button>
+          {isPreviousQuestion ? (
+            <Button variant="outline" onClick={goBack}>
+              Powrót do pytań
+            </Button>
           ) : (
-            <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+            <>
+              {canGoBack ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={goBack}>
+                      <Undo2 />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Poprzednie pytanie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {questionChecked ? (
+                <Button onClick={nextAction}>Następne pytanie</Button>
+              ) : (
+                <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+              )}
+            </>
           )}
         </div>
         {question.explanation != null && questionChecked ? (

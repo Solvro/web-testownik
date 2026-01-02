@@ -20,6 +20,7 @@ export interface UseQuizLogicResult {
     questionChecked: boolean;
     isQuizFinished: boolean;
     canGoBack: boolean;
+    isPreviousQuestion: boolean;
     showBrainrot: boolean;
   };
   stats: {
