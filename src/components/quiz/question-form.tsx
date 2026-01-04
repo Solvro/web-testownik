@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Answer, Question } from "@/types/quiz.ts";
 
-interface questionFormProps {
+interface QuestionFormProps {
   question: Question & { advanced?: boolean };
   onUpdate: (updatedQuestion: Question & { advanced?: boolean }) => void;
   onRemove: (id: number) => void;
@@ -19,7 +19,7 @@ export function QuestionForm({
   question,
   onUpdate,
   onRemove,
-}: questionFormProps) {
+}: QuestionFormProps) {
   const isAdvanced = Boolean(question.advanced);
 
   const handleTextChange = (text: string) => {
@@ -54,7 +54,7 @@ export function QuestionForm({
   };
 
   const addAnswer = () => {
-    const newAnswer: Answer = { answer: "", correct: false, image: "" };
+    const newAnswer = { answer: "", correct: false, image: "" };
     onUpdate({ ...question, answers: [...question.answers, newAnswer] });
   };
 
@@ -160,42 +160,25 @@ export function QuestionForm({
                 }}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={`multiple-choice-${question.id.toString()}`}
-                checked={question.multiple}
-                onCheckedChange={(checked) => {
-                  handleMultipleChange(Boolean(checked));
-                }}
-              />
-              <Label
-                htmlFor={`multiple-choice-${question.id.toString()}`}
-                className="cursor-pointer"
-              >
-                Wielokrotny wybór (można zaznaczyć więcej niż jedną odpowiedź)
-              </Label>
-            </div>
           </div>
         </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={`multiple-choice-${question.id.toString()}`}
-              checked={question.multiple}
-              onCheckedChange={(checked) => {
-                handleMultipleChange(Boolean(checked));
-              }}
-            />
-            <Label
-              htmlFor={`multiple-choice-${question.id.toString()}`}
-              className="cursor-pointer"
-            >
-              Wielokrotny wybór
-            </Label>
-          </div>
-        </div>
-      )}
+      ) : null}
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`multiple-choice-${question.id.toString()}`}
+          checked={question.multiple}
+          onCheckedChange={(checked) => {
+            handleMultipleChange(Boolean(checked));
+          }}
+        />
+        <Label
+          htmlFor={`multiple-choice-${question.id.toString()}`}
+          className="cursor-pointer"
+        >
+          Wielokrotny wybór
+        </Label>
+      </div>
 
       <h6 className="text-sm font-semibold tracking-tight">
         Odpowiedzi

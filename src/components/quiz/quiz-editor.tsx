@@ -34,7 +34,9 @@ interface QuizEditorProps {
   saving?: boolean;
 }
 
-const sanitizeQuestions = (questions: (Question & { advanced?: boolean })[]) =>
+type QuestionWithAdvanced = Question & { advanced?: boolean };
+
+const sanitizeQuestions = (questions: QuestionWithAdvanced[]) =>
   questions.map((q) => {
     const isAdvanced = Boolean(q.advanced);
     const { advanced, ...rest } = q;
@@ -77,14 +79,11 @@ export function QuizEditor({
     initialQuiz?.description ?? "",
   );
 
-  type QuestionWithAdvanced = Question & { advanced?: boolean };
-
   const [questions, setQuestions] = useState<QuestionWithAdvanced[]>(() => {
     if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
       return initialQuiz.questions.map((q) => ({
         ...q,
         advanced:
-          Boolean((q as unknown as QuestionWithAdvanced).advanced) ||
           Boolean(q.image) ||
           Boolean(q.explanation) ||
           q.answers.some((a) => Boolean(a.image)),
