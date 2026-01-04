@@ -3,6 +3,7 @@ import { useLocation } from "react-router";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
+import { NotificationsForm } from "@/components/profile/notifications-form.tsx";
 import { ProfileDetails } from "@/components/profile/profile-details.tsx";
 import { SettingsForm } from "@/components/profile/settings-form.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ export function ProfilePage(): React.JSX.Element {
     const titles: Record<string, string> = {
       account: "Profil",
       settings: "Ustawienia",
+      notifications: "Powiadomienia",
     };
     document.title = `${titles[tabKey] || "Profil"} - Testownik Solvro`;
   };
@@ -97,6 +99,12 @@ export function ProfilePage(): React.JSX.Element {
           <TabsTrigger value="settings" className="md:w-full md:justify-start">
             Ustawienia
           </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="md:w-full md:justify-start"
+          >
+            Powiadomienia
+          </TabsTrigger>
         </TabsList>
         <div className="space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
@@ -108,6 +116,12 @@ export function ProfilePage(): React.JSX.Element {
           </TabsContent>
           <TabsContent value="settings" className="space-y-6 md:mt-0">
             <SettingsForm
+              settings={settings}
+              onSettingChange={handleSettingChange}
+            />
+          </TabsContent>
+          <TabsContent value="notifications" className="space-y-6 md:mt-0">
+            <NotificationsForm
               settings={settings}
               onSettingChange={handleSettingChange}
             />

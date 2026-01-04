@@ -1,0 +1,44 @@
+name: Feature request
+description: Pomysł na nową funkcję lub usprawnienie.
+title: "[FEATURE] "
+labels: ["feature", "request"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Jaki problem chcesz rozwiązać?
+      description: |
+        Krótko: co teraz przeszkadza albo czego brakuje.
+      placeholder: |
+        Np. Nie da się łatwo wyeksportować wyników testu.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propozycja rozwiązania
+      description: |
+        Jedna konkretna propozycja — bez eseju.
+      placeholder: |
+        Np. Dodać przycisk "Eksportuj do CSV" na ekranie wyników.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatywy (opcjonalnie)
+      description: |
+        Jeśli widzisz inne sensowne podejścia.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontekst / przykłady
+      description: |
+        Linki, screeny, inspiracje.
+    validations:
+      required: false

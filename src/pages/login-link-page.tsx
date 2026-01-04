@@ -28,7 +28,8 @@ export function LoginLinkPage() {
         "access_token_expires_at",
         (Date.now() + 3600 * 1000).toString(),
       );
-      await appContext.services.user.getUserData();
+      const user = await appContext.services.user.getUserData();
+      appContext.services.user.storeUserData(user);
       appContext.setAuthenticated(true);
       appContext.setGuest(false);
       void navigate("/");

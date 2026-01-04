@@ -97,6 +97,13 @@ export function ImportQuizPage(): React.JSX.Element {
     let copyText = "";
 
     for (const child of copyTextElement.children) {
+      if (child.nodeName === "DIV") {
+        const pre = child.querySelector("pre");
+        if (pre?.textContent != null) {
+          copyText += `${pre.textContent}\n\n`;
+        }
+        continue;
+      }
       copyText += `${child.textContent}\n\n`;
     }
 
@@ -128,7 +135,7 @@ export function ImportQuizPage(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border-1">
+            <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="old">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
@@ -331,7 +338,7 @@ export function ImportQuizPage(): React.JSX.Element {
             Jak powinien wyglądać quiz w formacie JSON?
           </Button>
         </DialogTrigger>
-        <DialogContent className="flex h-[80vh] flex-col">
+        <DialogContent className="flex h-[80dvh] flex-col md:max-w-xl">
           <DialogHeader>
             <DialogTitle>Format JSON quizu</DialogTitle>
             <DialogDescription>
@@ -339,33 +346,40 @@ export function ImportQuizPage(): React.JSX.Element {
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 text-sm" ref={textRef}>
-              <p>
-                Quiz w formacie JSON powinien składać się z dwóch głównych
-                kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
-                <TypographyInlineCode>questions</TypographyInlineCode>.
-              </p>
-              <p>
-                Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
-                powinien zawierać tytuł quizu w formie tekstu.
-              </p>
-              <p>
-                Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
-                powinien zawierać tablicę obiektów reprezentujących pytania.
-                Każde pytanie powinno zawierać klucze{" "}
-                <TypographyInlineCode>id</TypographyInlineCode>,{" "}
-                <TypographyInlineCode>question</TypographyInlineCode> i{" "}
-                <TypographyInlineCode>answers</TypographyInlineCode> oraz
-                opcjonalnie{" "}
-                <TypographyInlineCode>multiple</TypographyInlineCode> (domyślnie{" "}
-                <TypographyInlineCode>false</TypographyInlineCode>) i{" "}
-                <TypographyInlineCode>explanation</TypographyInlineCode>. Jeśli
-                nie podano <TypographyInlineCode>id</TypographyInlineCode>,
-                zostanie on nadany automatycznie od 1.
-              </p>
-              <p>Przykładowy quiz w formacie JSON:</p>
-              <pre className="bg-muted rounded-md p-3 text-xs">
-                {`{
+            <div
+              className="grid h-full w-full max-w-full grid-cols-1 flex-col space-y-4 text-sm"
+              ref={textRef}
+            >
+              <div className="space-y-4 pr-3">
+                <p>
+                  Quiz w formacie JSON powinien składać się z dwóch głównych
+                  kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
+                  <TypographyInlineCode>questions</TypographyInlineCode>.
+                </p>
+                <p>
+                  Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
+                  powinien zawierać tytuł quizu w formie tekstu.
+                </p>
+                <p>
+                  Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
+                  powinien zawierać tablicę obiektów reprezentujących pytania.
+                  Każde pytanie powinno zawierać klucze{" "}
+                  <TypographyInlineCode>id</TypographyInlineCode>,{" "}
+                  <TypographyInlineCode>question</TypographyInlineCode> i{" "}
+                  <TypographyInlineCode>answers</TypographyInlineCode> oraz
+                  opcjonalnie{" "}
+                  <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
+                  (domyślnie <TypographyInlineCode>false</TypographyInlineCode>)
+                  i <TypographyInlineCode>explanation</TypographyInlineCode>.
+                  Jeśli nie podano{" "}
+                  <TypographyInlineCode>id</TypographyInlineCode>, zostanie on
+                  nadany automatycznie od 1.
+                </p>
+                <p>Przykładowy quiz w formacie JSON:</p>
+              </div>
+              <ScrollArea className="bg-muted static! min-h-40 w-full flex-1 rounded-md text-xs">
+                <pre className="bg-muted w-full rounded-md p-3 text-xs">
+                  {`{
     "title": "Przykładowy quiz",
     "description": "Opis quizu", // Opcjonalny
     "questions": [
@@ -424,9 +438,10 @@ export function ImportQuizPage(): React.JSX.Element {
         }
     ]
 }`}
-              </pre>
+                </pre>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
-            <ScrollBar orientation="horizontal" />
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={handleTextCopy}>

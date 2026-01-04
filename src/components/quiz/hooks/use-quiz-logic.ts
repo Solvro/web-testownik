@@ -248,6 +248,7 @@ export function useQuizLogic({
   );
 
   const checkAnswer = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-useless-default-assignment
     (remote = false) => {
       if (questionChecked || currentQuestionRef.current == null) {
         return;

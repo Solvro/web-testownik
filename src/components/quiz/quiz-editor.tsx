@@ -194,7 +194,7 @@ export function QuizEditor({
       questions: sanitizeQuestions(questions),
     };
 
-    draft.title = draft.title.trimEnd();
+    draft.title = draft.title.trim();
 
     const validationError = validateQuiz(draft as unknown as Quiz);
     if (validationError !== null) {
@@ -269,7 +269,7 @@ export function QuizEditor({
               placeholder="Podaj tytuł quizu"
               value={title}
               onChange={(event_) => {
-                setTitle(event_.target.value.trimStart());
+                setTitle(event_.target.value);
               }}
             />
           </div>
@@ -325,7 +325,7 @@ export function QuizEditor({
           <div className="bg-background/60 pointer-events-auto -mx-16 flex flex-wrap items-center justify-center gap-3 rounded-md px-6 py-3 shadow-sm backdrop-blur sm:mx-0">
             {onSaveAndClose != null && (
               <Button disabled={saving} onClick={async () => triggerSave(true)}>
-                Zapisz i zakończ
+                Zapisz i wróć
               </Button>
             )}
             <Button

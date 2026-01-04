@@ -59,7 +59,7 @@ export class UserService extends BaseApiService {
       });
       return { ...DEFAULT_USER_SETTINGS, ...storedSettings, ...settings };
     }
-    const response = await this.put<UserSettings>("/settings/", settings);
+    const response = await this.patch<UserSettings>("/settings/", settings);
     const updatedSettings = response.data;
     localStorage.setItem(
       STORAGE_KEYS.SETTINGS,
