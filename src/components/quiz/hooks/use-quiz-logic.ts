@@ -176,17 +176,20 @@ export function useQuizLogic({
     userSettings.sync_progress,
   ]);
 
-  const addHistoryEntry = (question: Question, answers: number[]) => {
-    historyRef.current.push({ question, answers });
-    if (historyRef.current.length === 2) {
-      dispatch({
-        type: "MARK_CAN_GO_BACK",
-      });
-    }
-    if (historyRef.current.length > 2) {
-      historyRef.current.shift();
-    }
-  };
+  const addHistoryEntry = useCallback(
+    (question: Question, answers: number[]) => {
+      historyRef.current.push({ question, answers });
+      if (historyRef.current.length === 2) {
+        dispatch({
+          type: "MARK_CAN_GO_BACK",
+        });
+      }
+      if (historyRef.current.length > 2) {
+        historyRef.current.shift();
+      }
+    },
+    [],
+  );
 
   const pickRandomQuestion = useCallback(
     (quizData: Quiz, availableReoccurrences: Reoccurrence[]) => {
@@ -265,7 +268,12 @@ export function useQuizLogic({
       }
       setTimer(saved.study_time, Date.now() - saved.study_time * 1000);
     },
-    [pickRandomQuestion, setTimer, userSettings.initial_reoccurrences],
+    [
+      addHistoryEntry,
+      pickRandomQuestion,
+      setTimer,
+      userSettings.initial_reoccurrences,
+    ],
   );
 
   const checkAnswer = useCallback(
@@ -317,7 +325,7 @@ export function useQuizLogic({
       addHistoryEntry(randomizedQuestion, []);
       continuity.sendQuestionUpdate(randomizedQuestion, []);
     }
-  }, [continuity, pickRandomQuestion, quiz, reoccurrences]);
+  }, [addHistoryEntry, continuity, pickRandomQuestion, quiz, reoccurrences]);
 
   const nextAction = useCallback(() => {
     if (questionChecked) {
@@ -369,6 +377,11 @@ export function useQuizLogic({
         payload: { reoccurrences: initialReoccurrences, question: null },
       });
       historyRef.current = [];
+      isPreviousQuestionRef.current = false;
+      dispatch({
+        type: "SET_IS_PREVIOUS_QUESTION",
+        payload: { state: false },
+      });
       setTimer(0, Date.now());
       const randomQuestion = pickRandomQuestion(quiz, initialReoccurrences);
       if (randomQuestion != null) {
@@ -377,12 +390,13 @@ export function useQuizLogic({
     }
   }, [
     appContext.services.quiz,
-    pickRandomQuestion,
-    quiz,
     quizId,
-    userSettings.initial_reoccurrences,
     userSettings.sync_progress,
+    userSettings.initial_reoccurrences,
+    quiz,
     setTimer,
+    pickRandomQuestion,
+    addHistoryEntry,
   ]);
 
   // initial load
@@ -411,7 +425,7 @@ export function useQuizLogic({
             initialReoccurrences,
           );
           if (randomQuestion != null) {
-            addHistoryEntry(randomQuestion, selectedAnswers);
+            addHistoryEntry(randomQuestion, []);
           }
         }
         nextMetaQuiz = _quiz;
