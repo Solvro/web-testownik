@@ -3,6 +3,7 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
+import { CourseTypeBadge } from "@/components/course-type-badge";
 import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CourseType } from "@/components/ui/course-type.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import {
@@ -261,7 +261,7 @@ export function GradesPage(): React.JSX.Element {
                   <TableRow key={course.course_id} className="h-12">
                     <TableCell className="font-medium break-words whitespace-normal">
                       {course.course_name}{" "}
-                      <CourseType courseId={course.course_id} />
+                      <CourseTypeBadge courseId={course.course_id} />
                     </TableCell>
                     <TableCell>{course.ects}</TableCell>
                     <TableCell
