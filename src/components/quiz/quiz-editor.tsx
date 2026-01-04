@@ -37,8 +37,9 @@ interface QuizEditorProps {
 const sanitizeQuestions = (questions: (Question & { advanced?: boolean })[]) =>
   questions.map((q) => {
     const isAdvanced = Boolean(q.advanced);
+    const { advanced, ...rest } = q;
     return {
-      ...q,
+      ...rest,
       image: isAdvanced ? q.image : undefined,
       explanation: isAdvanced ? q.explanation : undefined,
       answers: q.answers.map((a) => ({
@@ -76,19 +77,17 @@ export function QuizEditor({
     initialQuiz?.description ?? "",
   );
 
-  type Q = Question & { advanced?: boolean };
+  type QuestionWithAdvanced = Question & { advanced?: boolean };
 
-  const [questions, setQuestions] = useState<Q[]>(() => {
+  const [questions, setQuestions] = useState<QuestionWithAdvanced[]>(() => {
     if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
       return initialQuiz.questions.map((q) => ({
         ...q,
-
         advanced:
-          Boolean((q as unknown as Q).advanced) ||
+          Boolean((q as unknown as QuestionWithAdvanced).advanced) ||
           Boolean(q.image) ||
           Boolean(q.explanation) ||
-          q.answers.some((a) => Boolean(a.image)) ||
-          initialAdvancedDefault,
+          q.answers.some((a) => Boolean(a.image)),
       }));
     }
     return [
@@ -178,7 +177,7 @@ export function QuizEditor({
     });
   };
 
-  const updateQuestion = (updated: Q) => {
+  const updateQuestion = (updated: QuestionWithAdvanced) => {
     setQuestions((previous) =>
       previous.map((q) => (q.id === updated.id ? updated : q)),
     );
@@ -285,22 +284,20 @@ export function QuizEditor({
               }}
             />
           </div>
-          {advancedMode ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="all-multiple"
-                  checked={allQuestionsMultiple === true}
-                  onCheckedChange={(checked) => {
-                    setAllQuestionsMultiple(checked as boolean);
-                  }}
-                />
-                <Label htmlFor="all-multiple" className="cursor-pointer">
-                  Wielokrotny wybór (dla wszystkich pytań)
-                </Label>
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="all-multiple"
+                checked={allQuestionsMultiple ?? "indeterminate"}
+                onCheckedChange={(checked) => {
+                  setAllQuestionsMultiple(Boolean(checked));
+                }}
+              />
+              <Label htmlFor="all-multiple" className="cursor-pointer">
+                Wielokrotny wybór (dla wszystkich pytań)
+              </Label>
             </div>
-          ) : null}
+          </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Pytania</h2>

@@ -35,6 +35,8 @@ export function QuestionForm({
   };
 
   const handleMultipleChange = (multiple: boolean) => {
+    // If switching from multiple choice to single choice and there are multiple correct answers,
+    // keep only the first correct answer
     if (
       !multiple &&
       question.multiple &&
@@ -52,11 +54,13 @@ export function QuestionForm({
   };
 
   const addAnswer = () => {
-    const newAnswer = { answer: "", correct: false, image: "" } as Answer;
+    const newAnswer: Answer = { answer: "", correct: false, image: "" };
     onUpdate({ ...question, answers: [...question.answers, newAnswer] });
   };
 
   const updateAnswer = (index: number, updatedAnswer: Answer) => {
+    // If this is a single-choice question and we're marking an answer as correct,
+    // unmark all other answers as correct
     if (!question.multiple && updatedAnswer.correct) {
       const updatedAnswers = question.answers.map((a, index_) => ({
         ...a,
