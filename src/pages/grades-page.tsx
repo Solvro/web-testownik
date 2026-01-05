@@ -259,8 +259,8 @@ export function GradesPage(): React.JSX.Element {
                 const passState = course.passing_status;
                 return (
                   <TableRow key={course.course_id} className="h-12">
-                    <TableCell className="font-medium break-words whitespace-normal">
-                      {course.course_name}{" "}
+                    <TableCell className="space-x-2 font-medium break-words whitespace-normal">
+                      <span>{course.course_name}</span>
                       <CourseTypeBadge courseId={course.course_id} />
                     </TableCell>
                     <TableCell>{course.ects}</TableCell>
