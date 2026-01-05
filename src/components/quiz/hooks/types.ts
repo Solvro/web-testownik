@@ -42,3 +42,17 @@ export interface UseQuizLogicResult {
     toggleBrainrot: () => void;
   };
 }
+
+export interface UseQuizHistoryLogicParameters {
+  quizId: string;
+}
+
+export interface UseQuizHistoryLogicResult {
+  state: {
+    canGoBack: boolean;
+  };
+  actions: {
+    addHistoryEntry: (question: Question, answers: number[]) => void;
+    clearHistory: () => void;
+  };
+}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
+import { useQuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { invariant } from "@/lib/invariant";
 import type {
   Question,
@@ -52,6 +53,9 @@ export function useQuizLogic({
     startTimeRef,
   } = useStudyTimer(isQuizFinished, 0);
 
+  const { actions } = useQuizHistory({ quizId });
+  const { addHistoryEntry, clearHistory } = actions;
+
   // refs for continuity
   const initRef = useRef(false);
   const currentQuestionRef = useRef<Question | null>(null);
@@ -59,8 +63,6 @@ export function useQuizLogic({
   const wrongAnswersCountRef = useRef<number>(0);
   const correctAnswersCountRef = useRef<number>(0);
   const selectedAnswersRef = useRef<number[]>([]);
-  // [0]: previous, [1]: current
-  const historyRef = useRef<{ question: Question; answers: number[] }[]>([]);
   const isPreviousQuestionRef = useRef<boolean>(false);
 
   // we need a ref indirection to avoid use-before-define for checkAnswer used by continuity
@@ -176,21 +178,6 @@ export function useQuizLogic({
     userSettings.sync_progress,
   ]);
 
-  const addHistoryEntry = useCallback(
-    (question: Question, answers: number[]) => {
-      historyRef.current.push({ question, answers });
-      if (historyRef.current.length === 2) {
-        dispatch({
-          type: "MARK_CAN_GO_BACK",
-        });
-      }
-      if (historyRef.current.length > 2) {
-        historyRef.current.shift();
-      }
-    },
-    [],
-  );
-
   const pickRandomQuestion = useCallback(
     (quizData: Quiz, availableReoccurrences: Reoccurrence[]) => {
       const validIds = new Set(quizData.questions.map((q) => q.id));
@@ -292,16 +279,15 @@ export function useQuizLogic({
       if (!remote) {
         continuity.sendAnswerChecked();
       }
-      const currentHistory = historyRef.current.find(
-        (history) => history.question.id === currentQuestion?.id,
-      );
-      if (currentHistory != null) {
-        currentHistory.answers = selectedAnswers;
+
+      if (currentQuestion != null) {
+        addHistoryEntry(currentQuestion, selectedAnswers);
       }
     },
     [
+      addHistoryEntry,
       continuity,
-      currentQuestion?.id,
+      currentQuestion,
       questionChecked,
       selectedAnswers,
       userSettings.wrong_answer_reoccurrences,
@@ -336,31 +322,31 @@ export function useQuizLogic({
   }, [checkAnswer, nextQuestion, questionChecked]);
 
   const goBack = useCallback(() => {
-    if (historyRef.current.length < 2) {
-      return;
-    }
-    const useHistory = isPreviousQuestionRef.current
-      ? historyRef.current[1]
-      : historyRef.current[0];
-
-    dispatch({
-      type: "SET_CURRENT_QUESTION",
-      payload: { question: useHistory.question },
-    });
-    if (!isPreviousQuestionRef.current) {
-      dispatch({
-        type: "SET_SELECTED_ANSWERS",
-        payload: useHistory.answers,
-      });
-      checkAnswer();
-    }
+    // if (historyRef.current.length < 2) {
+    //   return;
+    // }
+    // const useHistory = isPreviousQuestionRef.current
+    //   ? historyRef.current[1]
+    //   : historyRef.current[0];
+    //
+    // dispatch({
+    //   type: "SET_CURRENT_QUESTION",
+    //   payload: { question: useHistory.question },
+    // });
+    // if (!isPreviousQuestionRef.current) {
+    //   dispatch({
+    //     type: "SET_SELECTED_ANSWERS",
+    //     payload: useHistory.answers,
+    //   });
+    //   checkAnswer();
+    // }
 
     isPreviousQuestionRef.current = !isPreviousQuestionRef.current;
     dispatch({
       type: "SET_IS_PREVIOUS_QUESTION",
       payload: { state: isPreviousQuestionRef.current },
     });
-  }, [checkAnswer]);
+  }, []);
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(
@@ -376,12 +362,12 @@ export function useQuizLogic({
         type: "RESET_PROGRESS",
         payload: { reoccurrences: initialReoccurrences, question: null },
       });
-      historyRef.current = [];
-      isPreviousQuestionRef.current = false;
-      dispatch({
-        type: "SET_IS_PREVIOUS_QUESTION",
-        payload: { state: false },
-      });
+      clearHistory();
+      // isPreviousQuestionRef.current = false;
+      // dispatch({
+      //   type: "SET_IS_PREVIOUS_QUESTION",
+      //   payload: { state: false },
+      // });
       setTimer(0, Date.now());
       const randomQuestion = pickRandomQuestion(quiz, initialReoccurrences);
       if (randomQuestion != null) {
@@ -394,6 +380,7 @@ export function useQuizLogic({
     userSettings.sync_progress,
     userSettings.initial_reoccurrences,
     quiz,
+    clearHistory,
     setTimer,
     pickRandomQuestion,
     addHistoryEntry,
