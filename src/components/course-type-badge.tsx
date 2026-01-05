@@ -32,6 +32,4 @@ function CourseTypeBadge({ courseId }: CourseTypeBadgeProps) {
   );
 }
 
-CourseTypeBadge.displayName = "CourseType";
-
 export { CourseTypeBadge };
