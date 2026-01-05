@@ -34,17 +34,22 @@ interface QuizEditorProps {
   saving?: boolean;
 }
 
-// Utility to strip advanced fields when advancedMode is disabled
-const sanitizeQuestions = (questions: Question[], advancedMode: boolean) =>
-  questions.map((q) => ({
-    ...q,
-    image: advancedMode ? q.image : undefined,
-    explanation: advancedMode ? q.explanation : undefined,
-    answers: q.answers.map((a) => ({
-      ...a,
-      image: advancedMode ? a.image : undefined,
-    })),
-  }));
+type QuestionWithAdvanced = Question & { advanced?: boolean };
+
+const sanitizeQuestions = (questions: QuestionWithAdvanced[]) =>
+  questions.map((q) => {
+    const isAdvanced = Boolean(q.advanced);
+    const { advanced, ...rest } = q;
+    return {
+      ...rest,
+      image: isAdvanced ? q.image : undefined,
+      explanation: isAdvanced ? q.explanation : undefined,
+      answers: q.answers.map((a) => ({
+        ...a,
+        image: isAdvanced ? a.image : undefined,
+      })),
+    };
+  });
 
 const scrollToBottom = () => {
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -61,13 +66,28 @@ export function QuizEditor({
   onSaveAndClose,
   saving = false,
 }: QuizEditorProps) {
+  const initialAdvancedDefault =
+    initialQuiz?.questions?.some(
+      (q) =>
+        Boolean(q.image) ||
+        Boolean(q.explanation) ||
+        q.answers.some((a) => Boolean(a.image)),
+    ) ?? false;
+
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [description, setDescription] = useState(
     initialQuiz?.description ?? "",
   );
-  const [questions, setQuestions] = useState<Question[]>(() => {
+
+  const [questions, setQuestions] = useState<QuestionWithAdvanced[]>(() => {
     if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
-      return initialQuiz.questions;
+      return initialQuiz.questions.map((q) => ({
+        ...q,
+        advanced:
+          Boolean(q.image) ||
+          Boolean(q.explanation) ||
+          q.answers.some((a) => Boolean(a.image)),
+      }));
     }
     return [
       {
@@ -78,23 +98,20 @@ export function QuizEditor({
           { answer: "", correct: false },
           { answer: "", correct: false },
         ],
+        image: "",
+        explanation: "",
+        advanced: initialAdvancedDefault,
       },
     ];
   });
+
   const [error, setError] = useState<string | null>(null);
-  const [advancedMode, setAdvancedMode] = useState(
-    initialQuiz?.questions?.some(
-      (q) =>
-        Boolean(q.image) ||
-        Boolean(q.explanation) ||
-        q.answers.some((a) => Boolean(a.image)),
-    ) ?? false,
-  );
+  const [advancedMode, setAdvancedMode] = useState(initialAdvancedDefault);
+
   const [previousQuestionId, setPreviousQuestionId] = useState<number>(() =>
     questions.reduce((max, q) => Math.max(q.id, max), 0),
   );
 
-  // all questions multiple toggle state (true / false / mixed null)
   const allQuestionsMultiple: boolean | null = useMemo(() => {
     if (questions.length === 0) {
       return null;
@@ -128,6 +145,7 @@ export function QuizEditor({
         ],
         image: "",
         explanation: "",
+        advanced: advancedMode,
       },
     ]);
     setPreviousQuestionId(newId);
@@ -158,7 +176,7 @@ export function QuizEditor({
     });
   };
 
-  const updateQuestion = (updated: Question) => {
+  const updateQuestion = (updated: QuestionWithAdvanced) => {
     setQuestions((previous) =>
       previous.map((q) => (q.id === updated.id ? updated : q)),
     );
@@ -171,7 +189,7 @@ export function QuizEditor({
     const draft = {
       title,
       description,
-      questions: sanitizeQuestions(questions, advancedMode),
+      questions: sanitizeQuestions(questions),
     };
 
     draft.title = draft.title.trim();
@@ -223,7 +241,7 @@ export function QuizEditor({
           </div>
           <div className="bg-muted/40 flex items-center justify-between gap-3 rounded-md border px-3 py-2">
             <Label htmlFor="advanced-mode" className="cursor-pointer">
-              Tryb zaawansowany
+              Tryb zaawansowany (domyślny dla nowych pytań)
             </Label>
             <Switch
               id="advanced-mode"
@@ -265,27 +283,20 @@ export function QuizEditor({
               }}
             />
           </div>
-          {advancedMode ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="all-multiple"
-                  checked={allQuestionsMultiple === true}
-                  className={
-                    allQuestionsMultiple === null
-                      ? "bg-yellow-500/20 dark:bg-yellow-500/30"
-                      : ""
-                  }
-                  onCheckedChange={(checked) => {
-                    setAllQuestionsMultiple(Boolean(checked));
-                  }}
-                />
-                <Label htmlFor="all-multiple" className="cursor-pointer">
-                  Wielokrotny wybór (dla wszystkich pytań)
-                </Label>
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="all-multiple"
+                checked={allQuestionsMultiple ?? "indeterminate"}
+                onCheckedChange={(checked) => {
+                  setAllQuestionsMultiple(Boolean(checked));
+                }}
+              />
+              <Label htmlFor="all-multiple" className="cursor-pointer">
+                Wielokrotny wybór (dla wszystkich pytań)
+              </Label>
             </div>
-          ) : null}
+          </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Pytania</h2>
@@ -300,7 +311,6 @@ export function QuizEditor({
                   question={q}
                   onUpdate={updateQuestion}
                   onRemove={removeQuestion}
-                  advancedMode={advancedMode}
                 />
               ))}
             </div>
