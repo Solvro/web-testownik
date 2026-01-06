@@ -19,6 +19,8 @@ export interface UseQuizLogicResult {
     selectedAnswers: number[];
     questionChecked: boolean;
     isQuizFinished: boolean;
+    canGoBack: boolean;
+    isPreviousQuestion: boolean;
     showBrainrot: boolean;
   };
   stats: {
@@ -34,6 +36,7 @@ export interface UseQuizLogicResult {
   actions: {
     nextAction: () => void;
     nextQuestion: () => void;
+    goBack: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: number[]) => void;
     toggleBrainrot: () => void;

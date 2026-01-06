@@ -1,6 +1,6 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
-import { RotateCcwIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -17,6 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils";
 import type { Answer, Question } from "@/types/quiz.ts";
 
@@ -26,7 +31,10 @@ interface QuestionCardProps {
   setSelectedAnswers: (selectedAnswers: number[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
+  goBack: () => void;
   isQuizFinished: boolean;
+  canGoBack: boolean;
+  isPreviousQuestion: boolean;
   restartQuiz?: () => void;
 }
 
@@ -36,6 +44,9 @@ export function QuestionCard({
   setSelectedAnswers,
   questionChecked,
   nextAction,
+  goBack,
+  canGoBack,
+  isPreviousQuestion,
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
@@ -199,11 +210,29 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end">
-          {questionChecked ? (
-            <Button onClick={nextAction}>Następne pytanie</Button>
+        <div className="mt-2 flex justify-end gap-2">
+          {isPreviousQuestion ? (
+            <Button variant="outline" onClick={goBack}>
+              Powrót do pytań
+            </Button>
           ) : (
-            <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+            <>
+              {canGoBack && !questionChecked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={goBack}>
+                      <Undo2 />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Poprzednie pytanie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {questionChecked ? (
+                <Button onClick={nextAction}>Następne pytanie</Button>
+              ) : (
+                <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+              )}
+            </>
           )}
         </div>
         {question.explanation != null && questionChecked ? (

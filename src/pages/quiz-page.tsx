@@ -31,6 +31,8 @@ export function QuizPage(): React.JSX.Element {
     selectedAnswers,
     questionChecked,
     isQuizFinished,
+    canGoBack,
+    isPreviousQuestion,
     showBrainrot,
   } = state;
   const { correctAnswersCount, wrongAnswersCount, reoccurrences, studyTime } =
@@ -38,6 +40,7 @@ export function QuizPage(): React.JSX.Element {
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
+    goBack,
     nextQuestion,
     resetProgress,
     setSelectedAnswers,
@@ -165,6 +168,9 @@ export function QuizPage(): React.JSX.Element {
             }}
             questionChecked={questionChecked}
             nextAction={nextAction}
+            goBack={goBack}
+            canGoBack={canGoBack}
+            isPreviousQuestion={isPreviousQuestion}
             isQuizFinished={isQuizFinished}
             restartQuiz={resetProgress}
           />
