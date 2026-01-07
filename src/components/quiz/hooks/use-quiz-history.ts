@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
+import {
+  initialRuntime,
+  runtimeReducer,
+} from "@/components/quiz/hooks/quiz-history-runtime-reducer.ts";
 import type {
   UseQuizHistoryLogicParameters,
   UseQuizHistoryLogicResult,
@@ -17,6 +21,10 @@ export function useQuizHistory({
 }: UseQuizHistoryLogicParameters): UseQuizHistoryLogicResult {
   const initRef = useRef(false);
   const historyRef = useRef<QuizHistory[]>([]);
+
+  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime);
+
+  const { canGoBack } = runtime;
 
   const getStorage = useCallback(() => {
     const storage = sessionStorage.getItem("quiz_history");
@@ -63,6 +71,13 @@ export function useQuizHistory({
         currentHistory.answers = answers;
       }
 
+      if (historyRef.current.length >= 2) {
+        dispatch({
+          type: "MARK_CAN_GO_BACK",
+          payload: true,
+        });
+      }
+
       updateStorage();
 
       // historyRef.current.push({ question, answers });
@@ -80,17 +95,17 @@ export function useQuizHistory({
 
   const clearHistory = useCallback(() => {
     historyRef.current = [];
+    dispatch({
+      type: "MARK_CAN_GO_BACK",
+      payload: false,
+    });
     updateStorage();
   }, [updateStorage]);
 
-  const canGoBack = useCallback(() => {
-    return historyRef.current.length >= 2;
-  }, []);
-
   return {
-    // state: {
-    //   canGoBack,
-    // },
+    state: {
+      canGoBack,
+    },
     actions: {
       addHistoryEntry,
       clearHistory,

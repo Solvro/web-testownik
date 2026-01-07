@@ -42,7 +42,6 @@ export function useQuizLogic({
     wrongAnswersCount,
     reoccurrences,
     isQuizFinished,
-    canGoBack,
     isPreviousQuestion,
     showBrainrot,
   } = runtime;
@@ -53,7 +52,8 @@ export function useQuizLogic({
     startTimeRef,
   } = useStudyTimer(isQuizFinished, 0);
 
-  const { actions } = useQuizHistory({ quizId });
+  const { state, actions } = useQuizHistory({ quizId });
+  const { canGoBack } = state;
   const { addHistoryEntry, clearHistory } = actions;
 
   // refs for continuity
