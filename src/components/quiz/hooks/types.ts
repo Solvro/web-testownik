@@ -1,6 +1,7 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
+import { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import type { Question, Quiz, Reoccurrence } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 
@@ -53,6 +54,7 @@ export interface UseQuizHistoryLogicResult {
   };
   actions: {
     addHistoryEntry: (question: Question, answers: number[]) => void;
+    getHistory: (length?: number) => QuizHistory[];
     clearHistory: () => void;
   };
 }

@@ -10,21 +10,18 @@ import type {
 } from "@/components/quiz/hooks/types.ts";
 import type { Question } from "@/types/quiz.ts";
 
-interface QuizHistory {
+export interface QuizHistory {
   question: Question;
   answers: number[];
 }
-type QuizHistoryStorage = Record<string, QuizHistory>;
+
+type QuizHistoryStorage = Record<string, QuizHistory[]>;
 
 export function useQuizHistory({
   quizId,
 }: UseQuizHistoryLogicParameters): UseQuizHistoryLogicResult {
   const initRef = useRef(false);
   const historyRef = useRef<QuizHistory[]>([]);
-
-  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime);
-
-  const { canGoBack } = runtime;
 
   const getStorage = useCallback(() => {
     const storage = sessionStorage.getItem("quiz_history");
@@ -37,68 +34,84 @@ export function useQuizHistory({
     } catch {}
   }, []);
 
-  const updateStorage = useCallback(() => {
-    const json = {
-      [quizId]: historyRef.current,
-    };
-    sessionStorage.setItem("quiz_history", JSON.stringify(json));
-  }, [quizId]);
+  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime, () => {
+    try {
+      const history = getStorage()?.[quizId] ?? [];
 
-  // Initial load
+      historyRef.current = history;
+
+      return {
+        ...initialRuntime,
+        canGoBack: history.length >= 2,
+      };
+    } catch {
+      return initialRuntime;
+    }
+  });
+
+  const { canGoBack } = runtime;
+
+  const updateStorage = useCallback(() => {
+    const storage = getStorage() ?? {};
+    storage[quizId] = historyRef.current;
+    sessionStorage.setItem("quiz_history", JSON.stringify(storage));
+  }, [quizId, getStorage]);
+
   useEffect(() => {
     if (initRef.current) {
       return;
     }
     initRef.current = true;
 
-    const jsonStorage = getStorage();
-    if (jsonStorage?.[quizId] === undefined) {
+    const storage = getStorage();
+    if (storage?.[quizId] == null) {
       return;
     }
 
-    historyRef.current = jsonStorage[quizId] as unknown as QuizHistory[];
-  });
+    historyRef.current = storage[quizId];
+
+    dispatch({
+      type: "MARK_CAN_GO_BACK",
+      payload: historyRef.current.length >= 2,
+    });
+  }, [getStorage, quizId]);
 
   const addHistoryEntry = useCallback(
     (question: Question, answers: number[]) => {
-      const currentHistory = historyRef.current.find(
-        (history) => history.question.id === question.id,
+      const existing = historyRef.current.find(
+        (h) => h.question.id === question.id,
       );
 
-      if (currentHistory == null) {
+      if (existing == null) {
         historyRef.current.unshift({ question, answers });
       } else {
-        currentHistory.answers = answers;
+        existing.answers = answers;
       }
 
-      if (historyRef.current.length >= 2) {
-        dispatch({
-          type: "MARK_CAN_GO_BACK",
-          payload: true,
-        });
-      }
+      dispatch({
+        type: "MARK_CAN_GO_BACK",
+        payload: historyRef.current.length >= 2,
+      });
 
       updateStorage();
-
-      // historyRef.current.push({ question, answers });
-      // if (historyRef.current.length === 2) {
-      //   // dispatch({
-      //   //   type: "MARK_CAN_GO_BACK",
-      //   // });
-      // }
-      // if (historyRef.current.length > 2) {
-      //   historyRef.current.shift();
-      // }
     },
     [updateStorage],
   );
 
+  const getHistory = useCallback((length?: number) => {
+    return length === undefined
+      ? historyRef.current
+      : historyRef.current.slice(0, length);
+  }, []);
+
   const clearHistory = useCallback(() => {
     historyRef.current = [];
+
     dispatch({
       type: "MARK_CAN_GO_BACK",
       payload: false,
     });
+
     updateStorage();
   }, [updateStorage]);
 
@@ -108,6 +121,7 @@ export function useQuizHistory({
     },
     actions: {
       addHistoryEntry,
+      getHistory,
       clearHistory,
     },
   };
