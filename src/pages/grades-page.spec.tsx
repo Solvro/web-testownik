@@ -8,7 +8,7 @@ import { HttpResponse, delay, http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { emptyCourse, mockCourses, mockTerms } from "../tests/mocks/grade-mock";
-import { calculateAverage } from "../tests/mocks/helpers";
+import { calculateAverageGrade } from "../tests/mocks/helpers";
 import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/providers";
 import { GradesPage } from "./grades-page";
@@ -86,7 +86,7 @@ describe("GradesPage", () => {
 
     expect(
       screen.getByText(
-        calculateAverage(mockCourses.filter((c) => c.term_id === "term1")),
+        calculateAverageGrade(mockCourses.filter((c) => c.term_id === "term1")),
       ),
     ).toBeVisible();
   });

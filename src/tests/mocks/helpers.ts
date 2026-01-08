@@ -1,6 +1,6 @@
 import type { Course } from "./grade-mock";
 
-export const calculateAverage = (courses: Course[]) => {
+export const calculateAverageGrade = (courses: Course[]) => {
   const { total, ects } = courses.reduce(
     (accumulator, course) => {
       const grade = course.grades.find((g) => g.counts_into_average);
