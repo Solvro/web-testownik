@@ -1,7 +1,7 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
-import { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
+import type { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import type { Question, Quiz, Reoccurrence } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 

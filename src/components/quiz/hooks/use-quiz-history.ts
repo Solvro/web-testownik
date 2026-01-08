@@ -1,3 +1,4 @@
+// useQuizHistory.ts
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import {
@@ -15,66 +16,52 @@ export interface QuizHistory {
   answers: number[];
 }
 
-type QuizHistoryStorage = Record<string, QuizHistory[]>;
+export type QuizHistoryStorage = Record<string, QuizHistory[]>;
 
 export function useQuizHistory({
   quizId,
 }: UseQuizHistoryLogicParameters): UseQuizHistoryLogicResult {
-  const initRef = useRef(false);
   const historyRef = useRef<QuizHistory[]>([]);
+  const initializedRef = useRef(false);
 
-  const getStorage = useCallback(() => {
-    const storage = sessionStorage.getItem("quiz_history");
-    if (storage == null) {
-      return;
-    }
+  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime);
 
+  const readStorage = useCallback((): QuizHistory[] => {
     try {
-      return JSON.parse(storage) as QuizHistoryStorage;
-    } catch {}
-  }, []);
-
-  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime, () => {
-    try {
-      const history = getStorage()?.[quizId] ?? [];
-
-      historyRef.current = history;
-
-      return {
-        ...initialRuntime,
-        canGoBack: history.length >= 2,
-      };
+      const raw = sessionStorage.getItem("quiz_history");
+      if (raw == null) {
+        return [];
+      }
+      const parsed = JSON.parse(raw) as QuizHistoryStorage;
+      return parsed[quizId] ?? [];
     } catch {
-      return initialRuntime;
+      return [];
     }
-  });
+  }, [quizId]);
 
-  const { canGoBack } = runtime;
+  const writeStorage = useCallback(() => {
+    try {
+      const raw = sessionStorage.getItem("quiz_history");
+      const parsed: QuizHistoryStorage = raw ? JSON.parse(raw) : {};
+      parsed[quizId] = historyRef.current;
+      sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
+    } catch {}
+  }, [quizId]);
 
-  const updateStorage = useCallback(() => {
-    const storage = getStorage() ?? {};
-    storage[quizId] = historyRef.current;
-    sessionStorage.setItem("quiz_history", JSON.stringify(storage));
-  }, [quizId, getStorage]);
-
+  // init
   useEffect(() => {
-    if (initRef.current) {
+    if (initializedRef.current) {
       return;
     }
-    initRef.current = true;
+    initializedRef.current = true;
 
-    const storage = getStorage();
-    if (storage?.[quizId] == null) {
-      return;
-    }
-
-    historyRef.current = storage[quizId];
+    historyRef.current = readStorage();
 
     dispatch({
-      type: "MARK_CAN_GO_BACK",
+      type: "SET_CAN_GO_BACK",
       payload: historyRef.current.length >= 2,
     });
-  }, [getStorage, quizId]);
+  }, [readStorage]);
 
   const addHistoryEntry = useCallback(
     (question: Question, answers: number[]) => {
@@ -88,36 +75,40 @@ export function useQuizHistory({
         existing.answers = answers;
       }
 
+      const nextCanGoBack = historyRef.current.length >= 2;
+
       dispatch({
-        type: "MARK_CAN_GO_BACK",
-        payload: historyRef.current.length >= 2,
+        type: "SET_CAN_GO_BACK",
+        payload: nextCanGoBack,
       });
 
-      updateStorage();
+      writeStorage();
+
+      return nextCanGoBack;
     },
-    [updateStorage],
+    [writeStorage],
   );
 
-  const getHistory = useCallback((length?: number) => {
-    return length === undefined
+  const getHistory = useCallback((limit?: number) => {
+    return limit == null
       ? historyRef.current
-      : historyRef.current.slice(0, length);
+      : historyRef.current.slice(0, limit);
   }, []);
 
   const clearHistory = useCallback(() => {
     historyRef.current = [];
 
     dispatch({
-      type: "MARK_CAN_GO_BACK",
+      type: "SET_CAN_GO_BACK",
       payload: false,
     });
 
-    updateStorage();
-  }, [updateStorage]);
+    writeStorage();
+  }, [writeStorage]);
 
   return {
     state: {
-      canGoBack,
+      canGoBack: runtime.canGoBack,
     },
     actions: {
       addHistoryEntry,

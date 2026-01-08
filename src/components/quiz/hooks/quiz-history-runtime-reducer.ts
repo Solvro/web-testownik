@@ -1,21 +1,27 @@
-export interface RuntimeState {
+// quiz-history-runtime.ts
+export interface QuizHistoryRuntime {
   canGoBack: boolean;
 }
 
-export type Action = { type: "MARK_CAN_GO_BACK"; payload: boolean };
-
-export const initialRuntime: RuntimeState = {
+export const initialRuntime: QuizHistoryRuntime = {
   canGoBack: false,
 };
 
+type Action = { type: "SET_CAN_GO_BACK"; payload: boolean } | { type: "RESET" };
+
 export function runtimeReducer(
-  state: RuntimeState,
+  state: QuizHistoryRuntime,
   action: Action,
-): RuntimeState {
+): QuizHistoryRuntime {
   switch (action.type) {
-    case "MARK_CAN_GO_BACK": {
+    case "SET_CAN_GO_BACK": {
       return { ...state, canGoBack: action.payload };
     }
+
+    case "RESET": {
+      return initialRuntime;
+    }
+
     default: {
       return state;
     }
