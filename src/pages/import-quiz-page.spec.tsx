@@ -61,7 +61,7 @@ const setup = (guest = false) => {
   };
 };
 
-describe("QuizImportPage", () => {
+describe("ImportQuizPage", () => {
   describe("json import", () => {
     it("should show error if invalid json", async () => {
       const { clickImport, inputJson, switchToJson } = setup();

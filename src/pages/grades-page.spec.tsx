@@ -26,7 +26,7 @@ const setup = ({ asGuest: guest = false } = {}) => {
 };
 
 describe("GradesPage", () => {
-  it("should show have restricted gui for guest users", () => {
+  it("should have restricted gui for guest users", () => {
     setup({ asGuest: true });
 
     expect(screen.getByText(/oceny/i)).toBeVisible();
