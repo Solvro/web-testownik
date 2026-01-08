@@ -41,13 +41,9 @@ const setup = (guest = false) => {
   };
 
   const uploadJsonFile = async (content: string, name: string) => {
-    const fileInput = document.querySelector("#file-input");
-    expect(fileInput).not.toBeNull();
+    const fileInput = screen.getByLabelText(/plik/i);
     const file = new File([content], name, { type: "application/json" });
-    if (fileInput != null) {
-      await user.upload(fileInput as HTMLElement, file);
-    }
-    return file;
+    await user.upload(fileInput, file);
   };
 
   return {
