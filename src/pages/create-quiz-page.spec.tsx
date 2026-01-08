@@ -22,11 +22,11 @@ const testQuiz = {
   answers: ["test answer 1", "test answer 2", "test answer 3", "test answer 4"],
 };
 
-const setup = ({ asGuest: guest = false } = {}) => {
+const setup = ({ asGuest = false } = {}) => {
   const user = userEvent.setup();
 
   render(
-    <Providers guest={guest}>
+    <Providers guest={asGuest}>
       <CreateQuizPage />
     </Providers>,
   );

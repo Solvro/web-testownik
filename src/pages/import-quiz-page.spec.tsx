@@ -8,11 +8,11 @@ import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/providers";
 import { ImportQuizPage } from "./import-quiz-page";
 
-const setup = (guest = false) => {
+const setup = ({ asGuest = false } = {}) => {
   const user = userEvent.setup();
 
   render(
-    <Providers guest={guest}>
+    <Providers guest={asGuest}>
       <ImportQuizPage />
     </Providers>,
   );
@@ -23,10 +23,6 @@ const setup = (guest = false) => {
 
   const switchToFile = async () => {
     await user.click(screen.getByRole("tab", { name: /^plik$/i }));
-  };
-
-  const switchToOld = async () => {
-    await user.click(screen.getByRole("tab", { name: /stara wersja/i }));
   };
 
   const clickImport = async () => {
@@ -50,7 +46,6 @@ const setup = (guest = false) => {
     user,
     switchToFile,
     switchToJson,
-    switchToOld,
     clickImport,
     inputJson,
     uploadJsonFile,
