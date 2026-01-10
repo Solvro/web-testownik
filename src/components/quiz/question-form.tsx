@@ -194,7 +194,8 @@ export function QuestionForm({
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
-                <Input
+                <Textarea
+                  className="min-h-10"
                   placeholder="Treść odpowiedzi"
                   value={answer.answer}
                   onChange={(event_) => {
