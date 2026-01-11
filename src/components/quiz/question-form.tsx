@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
@@ -142,7 +143,7 @@ export function QuestionForm({
           newAnswers.push(updatedAnswer);
         }
         const updatedAnswers: Answer[] = [...question.answers];
-        updatedAnswers.splice(start, 0, ...newAnswers);
+        updatedAnswers.splice(start, 1, ...newAnswers);
         onUpdate({ ...question, answers: updatedAnswers });
       }
     }
@@ -274,7 +275,7 @@ export function QuestionForm({
             >
               <div className="flex-1 space-y-2">
                 <Textarea
-                  className="min-h-10"
+                  className="min-h-8"
                   placeholder="Treść odpowiedzi"
                   ref={(ref: HTMLTextAreaElement | null) => {
                     answersRef.current[index] = ref;
@@ -357,14 +358,25 @@ export function QuestionForm({
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
-                <Input
+                <Textarea
+                  className="min-h-8"
                   placeholder="Treść odpowiedzi"
+                  ref={(ref: HTMLTextAreaElement | null) => {
+                    answersRef.current[index] = ref;
+                  }}
                   value={answer.answer}
                   onChange={(event_) => {
                     updateAnswer(index, {
                       ...answer,
                       answer: event_.target.value,
                     });
+                  }}
+                  onFocus={(event_) => {
+                    event_.target.focus();
+                    setFocusedAnswer(index);
+                  }}
+                  onBlur={(_event) => {
+                    setFocusedAnswer(null);
                   }}
                 />
                 {isAdvanced ? (
@@ -406,6 +418,13 @@ export function QuestionForm({
       <Button variant="secondary" size="sm" onClick={addAnswer}>
         + Dodaj odpowiedź
       </Button>
+      <br />
+      <span className="text-muted-foreground text-xs font-normal">
+        <KbdGroup>
+          <Kbd>Ctrl</Kbd> + <Kbd>Shift</Kbd> + <Kbd>V</Kbd>
+        </KbdGroup>{" "}
+        aby wkleić wiele odpowiedzi naraz
+      </span>
     </div>
   );
 }
