@@ -1,4 +1,6 @@
+import { on } from "events";
 import { Trash2, TrashIcon } from "lucide-react";
+import { ref } from "process";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,39 +23,6 @@ export function QuestionForm({
   onUpdate,
   onRemove,
 }: QuestionFormProps) {
-  const answersRef = useRef<(HTMLTextAreaElement | null)[]>([]);
-  const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
-
-  const handleFocusAnswer = useCallback(
-    (event: KeyboardEvent) => {
-      if (
-        event.key === "Tab" &&
-        focusedAnswer !== null &&
-        focusedAnswer < answersRef.current.length
-      ) {
-        const references: HTMLTextAreaElement[] = [];
-        // Filter refs to only non-null values. i.e. omits removed answers
-        for (const element of answersRef.current) {
-          if (element !== null) {
-            references.push(element);
-          }
-        }
-        event.preventDefault();
-        references[(focusedAnswer + 1) % references.length]?.focus();
-        setFocusedAnswer((focusedAnswer + 1) % references.length);
-      }
-    },
-    [focusedAnswer, answersRef],
-  );
-
-  // Add override for tab key to cycle through answers
-  useEffect(() => {
-    document.addEventListener("keydown", handleFocusAnswer, false);
-    return () => {
-      document.removeEventListener("keydown", handleFocusAnswer, false);
-    };
-  });
-
   const isAdvanced = Boolean(question.advanced);
 
   const handleTextChange = (text: string) => {
@@ -116,6 +85,84 @@ export function QuestionForm({
     );
     onUpdate({ ...question, answers: updatedAnswers });
   };
+
+  const answersRef = useRef<(HTMLTextAreaElement | null)[]>([]);
+  const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
+
+  const handleFocusAnswer = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        event.key === "Tab" &&
+        focusedAnswer !== null &&
+        focusedAnswer < answersRef.current.length
+      ) {
+        const references: HTMLTextAreaElement[] = [];
+        // Filter refs to only non-null values. i.e. omits removed answers
+        for (const element of answersRef.current) {
+          if (element !== null) {
+            references.push(element);
+          }
+        }
+        event.preventDefault();
+        references[(focusedAnswer + 1) % references.length]?.focus();
+        setFocusedAnswer((focusedAnswer + 1) % references.length);
+      }
+    },
+    [focusedAnswer],
+  );
+
+  const handlePasteMultipleAnswers = async (event: KeyboardEvent) => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "v"
+    ) {
+      event.preventDefault();
+      const clipboardData = await navigator.clipboard.readText();
+      const pastedAnswers = clipboardData
+        .split("\n")
+        .map((line) => line.trim());
+      if (pastedAnswers.length > 0) {
+        const references: HTMLTextAreaElement[] = [];
+        // Filter non-null answer textareas
+        for (const element of answersRef.current) {
+          if (element !== null) {
+            references.push(element);
+          }
+        }
+        const start: number | null = focusedAnswer;
+        if (start === null) {
+          return;
+        }
+        const newAnswers: Answer[] = [];
+        for (const answerText of pastedAnswers) {
+          const updatedAnswer: Answer = {
+            answer: answerText,
+            correct: false,
+            image: "",
+          };
+          newAnswers.push(updatedAnswer);
+        }
+        const updatedAnswers: Answer[] = [...question.answers];
+        updatedAnswers.splice(start, newAnswers.length, ...newAnswers);
+        onUpdate({ ...question, answers: updatedAnswers });
+      }
+    }
+  };
+
+  // Add key overrides
+  useEffect(() => {
+    document.addEventListener("keydown", handleFocusAnswer, false);
+    document.addEventListener("keydown", handlePasteMultipleAnswers, false);
+    return () => {
+      document.removeEventListener("keydown", handleFocusAnswer, false);
+      document.removeEventListener(
+        "keydown",
+        handlePasteMultipleAnswers,
+        false,
+      );
+    };
+  });
 
   return (
     <div
