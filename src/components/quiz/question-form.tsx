@@ -142,7 +142,7 @@ export function QuestionForm({
           newAnswers.push(updatedAnswer);
         }
         const updatedAnswers: Answer[] = [...question.answers];
-        updatedAnswers.splice(start, newAnswers.length, ...newAnswers);
+        updatedAnswers.splice(start, 0, ...newAnswers);
         onUpdate({ ...question, answers: updatedAnswers });
       }
     }
