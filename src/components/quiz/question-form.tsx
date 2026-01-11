@@ -1,6 +1,4 @@
-import { on } from "events";
 import { Trash2, TrashIcon } from "lucide-react";
-import { ref } from "process";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
