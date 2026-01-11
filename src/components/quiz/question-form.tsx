@@ -1,4 +1,5 @@
 import { Trash2, TrashIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +21,39 @@ export function QuestionForm({
   onUpdate,
   onRemove,
 }: QuestionFormProps) {
+  const answersRef = useRef<(HTMLTextAreaElement | null)[]>([]);
+  const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
+
+  const handleFocusAnswer = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        event.key === "Tab" &&
+        focusedAnswer !== null &&
+        focusedAnswer < answersRef.current.length
+      ) {
+        const references: HTMLTextAreaElement[] = [];
+        // Filter refs to only non-null values. i.e. omits removed answers
+        for (const element of answersRef.current) {
+          if (element !== null) {
+            references.push(element);
+          }
+        }
+        event.preventDefault();
+        references[(focusedAnswer + 1) % references.length]?.focus();
+        setFocusedAnswer((focusedAnswer + 1) % references.length);
+      }
+    },
+    [focusedAnswer, answersRef],
+  );
+
+  // Add override for tab key to cycle through answers
+  useEffect(() => {
+    document.addEventListener("keydown", handleFocusAnswer, false);
+    return () => {
+      document.removeEventListener("keydown", handleFocusAnswer, false);
+    };
+  });
+
   const isAdvanced = Boolean(question.advanced);
 
   const handleTextChange = (text: string) => {
@@ -197,12 +231,22 @@ export function QuestionForm({
                 <Textarea
                   className="min-h-10"
                   placeholder="Treść odpowiedzi"
+                  ref={(ref: HTMLTextAreaElement | null) => {
+                    answersRef.current[index] = ref;
+                  }}
                   value={answer.answer}
                   onChange={(event_) => {
                     updateAnswer(index, {
                       ...answer,
                       answer: event_.target.value,
                     });
+                  }}
+                  onFocus={(event_) => {
+                    event_.target.focus();
+                    setFocusedAnswer(index);
+                  }}
+                  onBlur={(_event) => {
+                    setFocusedAnswer(null);
                   }}
                 />
                 {isAdvanced ? (
