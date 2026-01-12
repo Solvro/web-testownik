@@ -16,7 +16,7 @@ export type Action =
   | { type: "SET_SELECTED_ANSWERS"; payload: number[] }
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
   | { type: "MARK_FINISHED" }
-  | { type: "SET_IS_HISTORY_QUESTION"; payload: { state: boolean } }
+  | { type: "SET_IS_HISTORY_QUESTION"; payload: boolean }
   | { type: "INIT_REOCCURRENCES"; payload: { reoccurrences: Reoccurrence[] } }
   | {
       type: "APPLY_LOADED_PROGRESS";
@@ -82,7 +82,7 @@ export function runtimeReducer(
       return { ...state, isQuizFinished: true, currentQuestion: null };
     }
     case "SET_IS_HISTORY_QUESTION": {
-      return { ...state, isHistoryQuestion: action.payload.state };
+      return { ...state, isHistoryQuestion: action.payload };
     }
     case "INIT_REOCCURRENCES": {
       return { ...state, reoccurrences: action.payload.reoccurrences };

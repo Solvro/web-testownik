@@ -54,7 +54,7 @@ export function useQuizLogic({
 
   const { state, actions } = useQuizHistory({ quizId });
   const { canGoBack } = state;
-  const { addHistoryEntry, clearHistory } = actions;
+  const { addHistoryEntry, getHistory, clearHistory } = actions;
 
   // refs for continuity
   const initRef = useRef(false);
@@ -327,28 +327,29 @@ export function useQuizLogic({
       return;
     }
 
-    // TODO not working as it should
+    const previousHistory = getHistory(2);
+    const currentHistory = isHistoryQuestionRef.current
+      ? previousHistory[0]
+      : previousHistory[1];
 
-    // const currentHistory = isPreviousQuestionRef.current ? history[1] : history[0];
-    //
-    // dispatch({
-    //   type: "SET_CURRENT_QUESTION",
-    //   payload: { question: currentHistory.question },
-    // });
-    // if (!isPreviousQuestionRef.current) {
-    //   dispatch({
-    //     type: "SET_SELECTED_ANSWERS",
-    //     payload: currentHistory.answers,
-    //   });
-    //   checkAnswer();
-    // }
-    //
-    // isPreviousQuestionRef.current = !isPreviousQuestionRef.current;
-    // dispatch({
-    //   type: "SET_IS_PREVIOUS_QUESTION",
-    //   payload: { state: isPreviousQuestionRef.current },
-    // });
-  }, []);
+    dispatch({
+      type: "SET_CURRENT_QUESTION",
+      payload: { question: currentHistory.question },
+    });
+    if (!isHistoryQuestionRef.current) {
+      dispatch({
+        type: "SET_SELECTED_ANSWERS",
+        payload: currentHistory.answers,
+      });
+      checkAnswer();
+    }
+
+    isHistoryQuestionRef.current = !isHistoryQuestionRef.current;
+    dispatch({
+      type: "SET_IS_HISTORY_QUESTION",
+      payload: isHistoryQuestionRef.current,
+    });
+  }, [checkAnswer, getHistory]);
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(

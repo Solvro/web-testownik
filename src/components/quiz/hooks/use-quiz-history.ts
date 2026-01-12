@@ -44,9 +44,8 @@ export function useQuizHistory({
   const writeStorage = useCallback(() => {
     try {
       const raw = sessionStorage.getItem("quiz_history");
-      const parsed: QuizHistoryStorage = raw
-        ? (JSON.parse(raw) as QuizHistoryStorage)
-        : {};
+      const parsed: QuizHistoryStorage =
+        raw == null ? {} : (JSON.parse(raw) as QuizHistoryStorage);
       parsed[quizId] = historyRef.current;
       sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
     } catch {}
