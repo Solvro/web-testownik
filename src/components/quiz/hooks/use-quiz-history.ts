@@ -22,9 +22,11 @@ export function useQuizHistory({
   quizId,
 }: UseQuizHistoryLogicParameters): UseQuizHistoryLogicResult {
   const historyRef = useRef<QuizHistory[]>([]);
-  const initializedRef = useRef(false);
+  const initRef = useRef(false);
 
   const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime);
+  const { canGoBack } = runtime;
+  const canGoBackRef = useRef<boolean>(false);
 
   const readStorage = useCallback((): QuizHistory[] => {
     try {
@@ -42,7 +44,9 @@ export function useQuizHistory({
   const writeStorage = useCallback(() => {
     try {
       const raw = sessionStorage.getItem("quiz_history");
-      const parsed: QuizHistoryStorage = raw ? JSON.parse(raw) : {};
+      const parsed: QuizHistoryStorage = raw
+        ? (JSON.parse(raw) as QuizHistoryStorage)
+        : {};
       parsed[quizId] = historyRef.current;
       sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
     } catch {}
@@ -50,18 +54,20 @@ export function useQuizHistory({
 
   // init
   useEffect(() => {
-    if (initializedRef.current) {
-      return;
-    }
-    initializedRef.current = true;
-
     historyRef.current = readStorage();
 
     dispatch({
       type: "SET_CAN_GO_BACK",
       payload: historyRef.current.length >= 2,
     });
+
+    initRef.current = true;
   }, [readStorage]);
+
+  // effects to keep refs updated
+  useEffect(() => {
+    canGoBackRef.current = canGoBack;
+  }, [canGoBack]);
 
   const addHistoryEntry = useCallback(
     (question: Question, answers: number[]) => {
@@ -108,7 +114,7 @@ export function useQuizHistory({
 
   return {
     state: {
-      canGoBack: runtime.canGoBack,
+      canGoBack: canGoBackRef.current,
     },
     actions: {
       addHistoryEntry,

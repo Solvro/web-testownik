@@ -8,7 +8,7 @@ export interface RuntimeState {
   wrongAnswersCount: number;
   reoccurrences: Reoccurrence[];
   isQuizFinished: boolean;
-  isPreviousQuestion: boolean;
+  isHistoryQuestion: boolean;
   showBrainrot: boolean;
 }
 
@@ -16,7 +16,7 @@ export type Action =
   | { type: "SET_SELECTED_ANSWERS"; payload: number[] }
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
   | { type: "MARK_FINISHED" }
-  | { type: "SET_IS_PREVIOUS_QUESTION"; payload: { state: boolean } }
+  | { type: "SET_IS_HISTORY_QUESTION"; payload: { state: boolean } }
   | { type: "INIT_REOCCURRENCES"; payload: { reoccurrences: Reoccurrence[] } }
   | {
       type: "APPLY_LOADED_PROGRESS";
@@ -46,7 +46,7 @@ export const initialRuntime: RuntimeState = {
   wrongAnswersCount: 0,
   reoccurrences: [],
   isQuizFinished: false,
-  isPreviousQuestion: false,
+  isHistoryQuestion: false,
   showBrainrot: false,
 };
 
@@ -81,8 +81,8 @@ export function runtimeReducer(
     case "MARK_FINISHED": {
       return { ...state, isQuizFinished: true, currentQuestion: null };
     }
-    case "SET_IS_PREVIOUS_QUESTION": {
-      return { ...state, isPreviousQuestion: action.payload.state };
+    case "SET_IS_HISTORY_QUESTION": {
+      return { ...state, isHistoryQuestion: action.payload.state };
     }
     case "INIT_REOCCURRENCES": {
       return { ...state, reoccurrences: action.payload.reoccurrences };
@@ -134,7 +134,7 @@ export function runtimeReducer(
         ...initialRuntime,
         reoccurrences: action.payload.reoccurrences,
         currentQuestion: action.payload.question,
-        isPreviousQuestion: false,
+        isHistoryQuestion: false,
         isQuizFinished: computeFinished(
           action.payload.reoccurrences,
           action.payload.question,

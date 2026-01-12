@@ -21,7 +21,7 @@ export interface UseQuizLogicResult {
     questionChecked: boolean;
     isQuizFinished: boolean;
     canGoBack: boolean;
-    isPreviousQuestion: boolean;
+    isHistoryQuestion: boolean;
     showBrainrot: boolean;
   };
   stats: {
