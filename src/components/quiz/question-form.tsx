@@ -1,5 +1,5 @@
 import { Trash2, TrashIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -89,7 +89,7 @@ export function QuestionForm({
   const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
 
   const handlePasteMultipleAnswers = useCallback(
-    async (event: KeyboardEvent) => {
+    async (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (
         (event.ctrlKey || event.metaKey) &&
         event.shiftKey &&
@@ -101,13 +101,6 @@ export function QuestionForm({
           .split("\n")
           .map((line) => line.trim());
         if (pastedAnswers.length > 0) {
-          const references: HTMLTextAreaElement[] = [];
-          // Filter non-null answer textareas
-          for (const element of answersRef.current) {
-            if (element !== null) {
-              references.push(element);
-            }
-          }
           const start: number | null = focusedAnswer;
           if (start === null) {
             return;
@@ -130,22 +123,12 @@ export function QuestionForm({
     [focusedAnswer, question, onUpdate],
   );
 
-  // Add key overrides
-  useEffect(() => {
-    document.addEventListener("keydown", handlePasteMultipleAnswers, false);
-    return () => {
-      document.removeEventListener(
-        "keydown",
-        handlePasteMultipleAnswers,
-        false,
-      );
-    };
-  }, [handlePasteMultipleAnswers]);
-
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       className="group/question bg-card/20 hover:bg-card/30 relative space-y-4 rounded-lg px-2 transition-colors sm:px-4"
       id={`question-${question.id.toString()}`}
+      onKeyDown={handlePasteMultipleAnswers}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
