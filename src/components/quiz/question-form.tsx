@@ -263,7 +263,7 @@ export function QuestionForm({
                   onFocus={() => {
                     setFocusedAnswer(index);
                   }}
-                  onBlur={(_event) => {
+                  onBlur={() => {
                     setFocusedAnswer(null);
                   }}
                 />
@@ -343,7 +343,7 @@ export function QuestionForm({
                   onFocus={() => {
                     setFocusedAnswer(index);
                   }}
-                  onBlur={(_event) => {
+                  onBlur={() => {
                     setFocusedAnswer(null);
                   }}
                 />
