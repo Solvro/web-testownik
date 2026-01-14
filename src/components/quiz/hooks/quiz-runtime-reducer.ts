@@ -9,6 +9,7 @@ export interface RuntimeState {
   reoccurrences: Reoccurrence[];
   isQuizFinished: boolean;
   isHistoryQuestion: boolean;
+  showHistory: boolean;
   showBrainrot: boolean;
 }
 
@@ -36,6 +37,7 @@ export type Action =
       type: "RESET_PROGRESS";
       payload: { reoccurrences: Reoccurrence[]; question: Question | null };
     }
+  | { type: "TOGGLE_HISTORY" }
   | { type: "TOGGLE_BRAINROT" };
 
 export const initialRuntime: RuntimeState = {
@@ -47,6 +49,7 @@ export const initialRuntime: RuntimeState = {
   reoccurrences: [],
   isQuizFinished: false,
   isHistoryQuestion: false,
+  showHistory: false,
   showBrainrot: false,
 };
 
@@ -141,9 +144,17 @@ export function runtimeReducer(
         ),
       };
     }
-    case "TOGGLE_BRAINROT": {
-      return { ...state, showBrainrot: !state.showBrainrot };
+    case "TOGGLE_HISTORY": {
+      return { ...state, showBrainrot: false, showHistory: !state.showHistory };
     }
+    case "TOGGLE_BRAINROT": {
+      return {
+        ...state,
+        showBrainrot: !state.showBrainrot,
+        showHistory: false,
+      };
+    }
+
     default: {
       return state;
     }

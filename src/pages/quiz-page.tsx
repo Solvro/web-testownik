@@ -9,7 +9,9 @@ import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader";
 import { LoginPrompt } from "@/components/login-prompt";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
+import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
+import type { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
@@ -17,15 +19,26 @@ import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.tsx";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils";
 
 export function QuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
-  const { loading, quiz, state, stats, continuity, actions } = useQuizLogic({
-    quizId: quizId ?? "",
-    appContext,
-  });
+  const { loading, quiz, history, state, stats, continuity, actions } =
+    useQuizLogic({
+      quizId: quizId ?? "",
+      appContext,
+    });
   const {
     currentQuestion,
     selectedAnswers,
@@ -33,6 +46,7 @@ export function QuizPage(): React.JSX.Element {
     isQuizFinished,
     canGoBack,
     isHistoryQuestion,
+    showHistory,
     showBrainrot,
   } = state;
   const { correctAnswersCount, wrongAnswersCount, reoccurrences, studyTime } =
@@ -44,6 +58,7 @@ export function QuizPage(): React.JSX.Element {
     nextQuestion,
     resetProgress,
     setSelectedAnswers,
+    toggleHistory,
     toggleBrainrot,
   } = actions;
 
@@ -51,6 +66,8 @@ export function QuizPage(): React.JSX.Element {
     nextAction,
     nextQuestion,
   });
+
+  console.log(canGoBack);
 
   if (loading) {
     return (
@@ -192,6 +209,7 @@ export function QuizPage(): React.JSX.Element {
           <QuizActionButtons
             quiz={quiz}
             question={currentQuestion}
+            onToggleHistory={toggleHistory}
             onToggleBrainrot={toggleBrainrot}
             disabled={isQuizFinished || currentQuestion == null}
           />
@@ -220,6 +238,65 @@ export function QuizPage(): React.JSX.Element {
           </div>
         ) : null}
       </div>
+      <Dialog open={showHistory} onOpenChange={toggleHistory}>
+        <DialogContent className="flex flex-col md:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Historia pytań</DialogTitle>
+            <DialogDescription>
+              Wybierz pytanie poniżej aby zobaczyć jego podgląd
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="min-h-0 flex-1 overflow-y-scroll">
+            <div className="grid max-h-80 w-full flex-col gap-2">
+              {canGoBack
+                ? history
+                    .slice(1, 30)
+                    .map((historyEntry: QuizHistory, index: number) => {
+                      const correctIndexes = historyEntry.question.answers
+                        .map((a, answerIndex) => (a.correct ? answerIndex : -1))
+                        .filter((answerIndex) => answerIndex !== -1);
+                      const isCorrectQuestion =
+                        correctIndexes.length === historyEntry.answers.length &&
+                        correctIndexes.every((ci) =>
+                          historyEntry.answers.includes(ci),
+                        );
+                      return (
+                        <button
+                          key={`answer-${index.toString()}`}
+                          id={`answer-${index.toString()}`}
+                          onClick={() => {
+                            // handleAnswerClick(index);
+                          }}
+                          className={cn(
+                            "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors",
+                            computeAnswerVariant(
+                              historyEntry.answers.length > 0,
+                              true,
+                              historyEntry.answers.length > 0
+                                ? isCorrectQuestion
+                                : true,
+                            ),
+                          )}
+                        >
+                          <span className="w-full">
+                            {historyEntry.question.id}.{" "}
+                            {historyEntry.question.question}
+                          </span>
+                        </button>
+                      );
+                    })
+                : null}
+            </div>
+            <ScrollBar orientation="vertical"></ScrollBar>
+          </ScrollArea>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Zamknij</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Continuity */}
       <ContinuityDialog

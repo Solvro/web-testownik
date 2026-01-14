@@ -43,6 +43,7 @@ export function useQuizLogic({
     reoccurrences,
     isQuizFinished,
     isHistoryQuestion,
+    showHistory,
     showBrainrot,
   } = runtime;
 
@@ -52,18 +53,16 @@ export function useQuizLogic({
     startTimeRef,
   } = useStudyTimer(isQuizFinished, 0);
 
-  const { state, actions } = useQuizHistory({ quizId });
+  const { history, state, actions } = useQuizHistory({ quizId });
   const { canGoBack } = state;
-  const { addHistoryEntry, getHistory, clearHistory } = actions;
+  const { addHistoryEntry, clearHistory } = actions;
 
   // refs for continuity
-  const initRef = useRef(false);
   const currentQuestionRef = useRef<Question | null>(null);
   const reoccurrencesRef = useRef<Reoccurrence[]>([]);
   const wrongAnswersCountRef = useRef<number>(0);
   const correctAnswersCountRef = useRef<number>(0);
   const selectedAnswersRef = useRef<number[]>([]);
-  const canGoBackRef = useRef<boolean>(false);
   const isHistoryQuestionRef = useRef<boolean>(false);
 
   // we need a ref indirection to avoid use-before-define for checkAnswer used by continuity
@@ -248,9 +247,7 @@ export function useQuizLogic({
         type: "SET_CURRENT_QUESTION",
         payload: { question: { ...loadedSavedQuestion, answers: sorted } },
       });
-      if (!initRef.current) {
-        addHistoryEntry(loadedSavedQuestion, []);
-      }
+      addHistoryEntry(loadedSavedQuestion, []);
       if (!mergedReoccurrences.some((r) => r.reoccurrences > 0)) {
         dispatch({ type: "MARK_FINISHED" });
       }
@@ -323,11 +320,11 @@ export function useQuizLogic({
   }, [checkAnswer, nextQuestion, questionChecked]);
 
   const goBack = useCallback(() => {
-    if (!canGoBackRef.current) {
+    if (!canGoBack) {
       return;
     }
 
-    const previousHistory = getHistory(2);
+    const previousHistory = history.slice(0, 2);
     const currentHistory = isHistoryQuestionRef.current
       ? previousHistory[0]
       : previousHistory[1];
@@ -349,7 +346,7 @@ export function useQuizLogic({
       type: "SET_IS_HISTORY_QUESTION",
       payload: isHistoryQuestionRef.current,
     });
-  }, [checkAnswer, getHistory]);
+  }, [canGoBack, checkAnswer, history]);
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(
@@ -425,8 +422,6 @@ export function useQuizLogic({
         loading: false,
         userSettings: nextSettings,
       });
-      initRef.current = true;
-      canGoBackRef.current = canGoBack;
     })();
     // we only want to run this once on mount or when auth state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -436,6 +431,7 @@ export function useQuizLogic({
     loading,
     quiz,
     userSettings,
+    history,
     state: {
       currentQuestion,
       selectedAnswers,
@@ -443,6 +439,7 @@ export function useQuizLogic({
       isQuizFinished,
       canGoBack,
       isHistoryQuestion,
+      showHistory,
       showBrainrot,
     },
     stats: {
@@ -466,6 +463,9 @@ export function useQuizLogic({
         if (currentQuestion != null) {
           continuity.sendQuestionUpdate(currentQuestion, ans);
         }
+      },
+      toggleHistory: () => {
+        dispatch({ type: "TOGGLE_HISTORY" });
       },
       toggleBrainrot: () => {
         dispatch({ type: "TOGGLE_BRAINROT" });

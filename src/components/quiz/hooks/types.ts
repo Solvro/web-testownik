@@ -15,6 +15,7 @@ export interface UseQuizLogicResult {
   loading: boolean;
   quiz: Quiz | null;
   userSettings: UserSettings;
+  history: QuizHistory[];
   state: {
     currentQuestion: Question | null;
     selectedAnswers: number[];
@@ -22,6 +23,7 @@ export interface UseQuizLogicResult {
     isQuizFinished: boolean;
     canGoBack: boolean;
     isHistoryQuestion: boolean;
+    showHistory: boolean;
     showBrainrot: boolean;
   };
   stats: {
@@ -40,6 +42,7 @@ export interface UseQuizLogicResult {
     goBack: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: number[]) => void;
+    toggleHistory: () => void;
     toggleBrainrot: () => void;
   };
 }
@@ -49,12 +52,12 @@ export interface UseQuizHistoryLogicParameters {
 }
 
 export interface UseQuizHistoryLogicResult {
+  history: QuizHistory[];
   state: {
     canGoBack: boolean;
   };
   actions: {
     addHistoryEntry: (question: Question, answers: number[]) => void;
-    getHistory: (length?: number) => QuizHistory[];
     clearHistory: () => void;
   };
 }
