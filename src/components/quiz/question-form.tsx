@@ -88,80 +88,59 @@ export function QuestionForm({
   const answersRef = useRef<(HTMLTextAreaElement | null)[]>([]);
   const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
 
-  const handleFocusAnswer = useCallback(
-    (event: KeyboardEvent) => {
+  const handlePasteMultipleAnswers = useCallback(
+    async (event: KeyboardEvent) => {
       if (
-        event.key === "Tab" &&
-        focusedAnswer !== null &&
-        focusedAnswer < answersRef.current.length
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "v"
       ) {
-        const references: HTMLTextAreaElement[] = [];
-        // Filter refs to only non-null values. i.e. omits removed answers
-        for (const element of answersRef.current) {
-          if (element !== null) {
-            references.push(element);
-          }
-        }
         event.preventDefault();
-        references[(focusedAnswer + 1) % references.length]?.focus();
-        setFocusedAnswer((focusedAnswer + 1) % references.length);
+        const clipboardData = await navigator.clipboard.readText();
+        const pastedAnswers = clipboardData
+          .split("\n")
+          .map((line) => line.trim());
+        if (pastedAnswers.length > 0) {
+          const references: HTMLTextAreaElement[] = [];
+          // Filter non-null answer textareas
+          for (const element of answersRef.current) {
+            if (element !== null) {
+              references.push(element);
+            }
+          }
+          const start: number | null = focusedAnswer;
+          if (start === null) {
+            return;
+          }
+          const newAnswers: Answer[] = [];
+          for (const answerText of pastedAnswers) {
+            const updatedAnswer: Answer = {
+              answer: answerText,
+              correct: false,
+              image: "",
+            };
+            newAnswers.push(updatedAnswer);
+          }
+          const updatedAnswers: Answer[] = [...question.answers];
+          updatedAnswers.splice(start, 1, ...newAnswers);
+          onUpdate({ ...question, answers: updatedAnswers });
+        }
       }
     },
-    [focusedAnswer],
+    [focusedAnswer, question, onUpdate],
   );
-
-  const handlePasteMultipleAnswers = async (event: KeyboardEvent) => {
-    if (
-      (event.ctrlKey || event.metaKey) &&
-      event.shiftKey &&
-      event.key.toLowerCase() === "v"
-    ) {
-      event.preventDefault();
-      const clipboardData = await navigator.clipboard.readText();
-      const pastedAnswers = clipboardData
-        .split("\n")
-        .map((line) => line.trim());
-      if (pastedAnswers.length > 0) {
-        const references: HTMLTextAreaElement[] = [];
-        // Filter non-null answer textareas
-        for (const element of answersRef.current) {
-          if (element !== null) {
-            references.push(element);
-          }
-        }
-        const start: number | null = focusedAnswer;
-        if (start === null) {
-          return;
-        }
-        const newAnswers: Answer[] = [];
-        for (const answerText of pastedAnswers) {
-          const updatedAnswer: Answer = {
-            answer: answerText,
-            correct: false,
-            image: "",
-          };
-          newAnswers.push(updatedAnswer);
-        }
-        const updatedAnswers: Answer[] = [...question.answers];
-        updatedAnswers.splice(start, 1, ...newAnswers);
-        onUpdate({ ...question, answers: updatedAnswers });
-      }
-    }
-  };
 
   // Add key overrides
   useEffect(() => {
-    document.addEventListener("keydown", handleFocusAnswer, false);
     document.addEventListener("keydown", handlePasteMultipleAnswers, false);
     return () => {
-      document.removeEventListener("keydown", handleFocusAnswer, false);
       document.removeEventListener(
         "keydown",
         handlePasteMultipleAnswers,
         false,
       );
     };
-  });
+  }, [handlePasteMultipleAnswers]);
 
   return (
     <div
