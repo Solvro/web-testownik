@@ -55,11 +55,6 @@ export function useQuizHistory({
     } catch {}
   }, [history, quizId]);
 
-  // init
-  // useEffect(() => {
-  //   dispatch({ type: "INIT", payload: readStorage() });
-  // }, [readStorage]);
-
   useEffect(() => {
     writeStorage();
     dispatch({
@@ -77,8 +72,6 @@ export function useQuizHistory({
     },
     [],
   );
-
-  // TODO powrót do poprzedniego pytania - coś nie działa
 
   const clearHistory = useCallback(() => {
     dispatch({

@@ -67,8 +67,6 @@ export function QuizPage(): React.JSX.Element {
     nextQuestion,
   });
 
-  console.log(canGoBack);
-
   if (loading) {
     return (
       <Card>
