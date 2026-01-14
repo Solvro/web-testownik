@@ -37,7 +37,7 @@ const setup = ({ asGuest = false } = {}) => {
   };
 
   const uploadJsonFile = async (content: string, name: string) => {
-    const fileInput = screen.getByLabelText(/plik/i);
+    const fileInput = screen.getByLabelText(/Plik JSON z quizem/i);
     const file = new File([content], name, { type: "application/json" });
     await user.upload(fileInput, file);
   };

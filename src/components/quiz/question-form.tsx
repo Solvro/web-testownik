@@ -113,6 +113,7 @@ export function QuestionForm({
               variant="ghost"
               size="icon"
               className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-7 w-7 shrink-0 rounded-full transition"
+              aria-label="Usuń pytanie"
               onClick={() => {
                 onRemove(question.id);
               }}
