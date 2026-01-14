@@ -1,8 +1,11 @@
 import { Trash2, TrashIcon } from "lucide-react";
+import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { KbdShortcut } from "@/components/ui/kbd-shortcut";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
@@ -83,10 +86,62 @@ export function QuestionForm({
     onUpdate({ ...question, answers: updatedAnswers });
   };
 
+  const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
+
+  const handlePasteMultipleAnswers = useCallback(
+    async (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "v"
+      ) {
+        event.preventDefault();
+
+        try {
+          const clipboardData = await navigator.clipboard.readText();
+          const pastedAnswers = clipboardData
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+
+          if (pastedAnswers.length > 0) {
+            const start: number | null = focusedAnswer;
+            if (start === null) {
+              return;
+            }
+
+            const newAnswers: Answer[] = [];
+            for (const answerText of pastedAnswers) {
+              const updatedAnswer: Answer = {
+                answer: answerText,
+                correct: false,
+                image: "",
+              };
+              newAnswers.push(updatedAnswer);
+            }
+            const updatedAnswers: Answer[] = [...question.answers];
+            updatedAnswers.splice(start, 1, ...newAnswers);
+            onUpdate({ ...question, answers: updatedAnswers });
+          }
+        } catch (error) {
+          console.error("Failed to read clipboard:", error);
+          toast.error(
+            "Aby wkleić odpowiedzi, musisz włączyć dostęp do schowka w przeglądarce.",
+          );
+        }
+      }
+    },
+    [focusedAnswer, question, onUpdate],
+  );
+
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       className="group/question bg-card/20 hover:bg-card/30 relative space-y-4 rounded-lg px-2 transition-colors sm:px-4"
       id={`question-${question.id.toString()}`}
+      onKeyDown={handlePasteMultipleAnswers}
+      role="group"
+      aria-labelledby={`question-text-${question.id.toString()}`}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -195,7 +250,8 @@ export function QuestionForm({
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
-                <Input
+                <Textarea
+                  className="min-h-8"
                   placeholder="Treść odpowiedzi"
                   value={answer.answer}
                   onChange={(event_) => {
@@ -203,6 +259,12 @@ export function QuestionForm({
                       ...answer,
                       answer: event_.target.value,
                     });
+                  }}
+                  onFocus={() => {
+                    setFocusedAnswer(index);
+                  }}
+                  onBlur={() => {
+                    setFocusedAnswer(null);
                   }}
                 />
                 {isAdvanced ? (
@@ -268,7 +330,8 @@ export function QuestionForm({
               className="bg-background/40 pointer-fine:hover:ring-border -mx-2 flex flex-row items-start gap-3 rounded-md py-2 ring-1 ring-transparent sm:items-center sm:px-2"
             >
               <div className="flex-1 space-y-2">
-                <Input
+                <Textarea
+                  className="min-h-8"
                   placeholder="Treść odpowiedzi"
                   value={answer.answer}
                   onChange={(event_) => {
@@ -276,6 +339,12 @@ export function QuestionForm({
                       ...answer,
                       answer: event_.target.value,
                     });
+                  }}
+                  onFocus={() => {
+                    setFocusedAnswer(index);
+                  }}
+                  onBlur={() => {
+                    setFocusedAnswer(null);
                   }}
                 />
                 {isAdvanced ? (
@@ -317,6 +386,9 @@ export function QuestionForm({
       <Button variant="secondary" size="sm" onClick={addAnswer}>
         + Dodaj odpowiedź
       </Button>
+      <span className="text-muted-foreground hidden text-xs font-normal sm:block">
+        <KbdShortcut suffix="+ Shift + V" /> aby wkleić wiele odpowiedzi naraz
+      </span>
     </div>
   );
 }
