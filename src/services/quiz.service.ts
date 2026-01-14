@@ -1,11 +1,13 @@
-import type { AnswerRecord, Question, QuizSession } from "@/types/quiz.ts";
+import type { Question } from "@/types/quiz";
 
 import { BaseApiService } from "./base-api.service";
 import type {
+  AnswerRecord,
   Group,
   QuestionWithQuizInfo,
   Quiz,
   QuizMetadata,
+  QuizSession,
   SharedQuiz,
   User,
 } from "./types";

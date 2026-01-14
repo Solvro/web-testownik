@@ -8,17 +8,13 @@ import {
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { cn, getInitials } from "@/lib/utils";
-import type { QuizMetadata } from "@/types/quiz.ts";
-import type { Group, User } from "@/types/user.ts";
+import type { QuizMetadata } from "@/types/quiz";
+import type { Group, User } from "@/types/user";
 
 interface AccessListProps {
   quizMetadata: QuizMetadata;

@@ -1,9 +1,9 @@
 import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,13 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress.tsx";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Quiz } from "@/types/quiz.ts";
+import type { Quiz } from "@/types/quiz";
 
 interface QuizInfoCardProps {
   quiz: Quiz | null;
@@ -70,12 +70,14 @@ export function QuizInfoCard({
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
   if (quiz === null) {
     return null;
   }
 
-  const openSearchInQuiz = async () => navigate(`/search-in-quiz/${quiz.id}`);
+  const openSearchInQuiz = () => {
+    router.push(`/search-in-quiz/${quiz.id}`);
+  };
   const progressPercentage =
     totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 

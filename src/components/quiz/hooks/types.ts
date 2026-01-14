@@ -1,8 +1,8 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
-import type { AnswerRecord, Question, Quiz } from "@/types/quiz.ts";
-import type { UserSettings } from "@/types/user.ts";
+import type { AnswerRecord, Question, Quiz } from "@/types/quiz";
+import type { UserSettings } from "@/types/user";
 
 export interface UseQuizLogicParameters {
   quizId: string;

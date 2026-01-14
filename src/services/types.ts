@@ -6,15 +6,15 @@ export type {
   QuestionWithQuizInfo,
   AnswerRecord,
   QuizSession,
-} from "@/types/quiz.ts";
+} from "@/types/quiz";
 export type {
   User,
   Group,
   GradesData,
   UserSettings,
   UserData,
-} from "@/types/user.ts";
-export type { AlertData } from "@/types/alert.ts";
+} from "@/types/user";
+export type { AlertData } from "@/types/alert";
 
 export interface ApiResponse<T> {
   data: T;

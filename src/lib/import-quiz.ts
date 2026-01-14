@@ -2,12 +2,12 @@ import JSZip from "jszip";
 import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.ts";
-import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation.ts";
-import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
-import { migrateLegacyQuiz } from "@/lib/migration.ts";
-import type { LegacyQuiz } from "@/types/quiz-legacy.ts";
-import type { Answer, Question, Quiz } from "@/types/quiz.ts";
+import { AppContext } from "@/app-context";
+import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
+import { migrateLegacyQuiz } from "@/lib/migration";
+import type { Answer, Question, Quiz } from "@/types/quiz";
+import type { LegacyQuiz } from "@/types/quiz-legacy";
 
 const trueFalseStrings = {
   prawda: true,
@@ -206,6 +206,7 @@ export const useImportQuiz = () => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const fileOldRef = React.useRef<HTMLInputElement>(null);
   const directoryInputRef = React.useRef<HTMLInputElement>(null);
+  const textInputRef = React.useRef<HTMLTextAreaElement>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
   const handleDirectorySelect = (
@@ -544,8 +545,7 @@ export const useImportQuiz = () => {
         break;
       }
       case "json": {
-        const textInput =
-          document.querySelector<HTMLTextAreaElement>("#text-input")?.value;
+        const textInput = textInputRef.current?.value;
         if (textInput == null || textInput.trim() === "") {
           setError("Wklej quiz w formie tekstu.");
           setLoading(false);
@@ -651,5 +651,6 @@ export const useImportQuiz = () => {
     setQuizTitle,
     setQuizDescription,
     handleImport,
+    textInputRef,
   };
 };

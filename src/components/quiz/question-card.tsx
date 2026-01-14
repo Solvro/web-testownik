@@ -6,8 +6,8 @@ import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { ImageLoad } from "@/components/image-load.tsx";
-import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import { ImageLoad } from "@/components/image-load";
+import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +16,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { Question } from "@/types/quiz.ts";
+import type { Question } from "@/types/quiz";
 
 interface QuestionCardProps {
   question: Question | null;

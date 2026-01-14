@@ -1,0 +1,51 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useContext, useState } from "react";
+import { toast } from "react-toastify";
+
+import { AppContext } from "@/app-context";
+import { AuthGuard } from "@/components/auth-guard";
+import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
+import { QuizEditor } from "@/components/quiz/quiz-editor";
+import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
+import type { Quiz } from "@/types/quiz";
+
+export function CreateQuizPageClient() {
+  const appContext = useContext(AppContext);
+  const router = useRouter();
+
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+
+  const handleSave = async (data: QuizEditorResult) => {
+    try {
+      const result = await appContext.services.quiz.createQuiz({
+        title: data.title,
+        description: data.description,
+        questions: data.questions,
+      });
+      setQuiz(result);
+      toast.success("Quiz został utworzony.");
+      return true;
+    } catch {
+      toast.error("Wystąpił błąd podczas importowania quizu.");
+      return false;
+    }
+  };
+
+  return (
+    <AuthGuard>
+      <QuizEditor mode="create" onSave={handleSave} />
+      <QuizPreviewDialog
+        open={quiz !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            router.push("/");
+          }
+        }}
+        quiz={quiz}
+        type="created"
+      />
+    </AuthGuard>
+  );
+}

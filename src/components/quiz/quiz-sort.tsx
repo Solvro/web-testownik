@@ -5,26 +5,26 @@ import {
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 
-import { Button } from "@/components/ui/button.tsx";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu.tsx";
+} from "@/components/ui/dropdown-menu";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/input-group.tsx";
+} from "@/components/ui/input-group";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
-import { cn } from "@/lib/utils.ts";
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface Option {

@@ -1,15 +1,15 @@
 import { SearchIcon } from "lucide-react";
-import React, { useContext, useState } from "react";
-import { Link } from "react-router";
+import Link from "next/link";
+import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { Loader } from "@/components/loader.tsx";
+import { Loader } from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -89,7 +89,7 @@ export function SearchCard({
                     <TableRow key={result.id} className="hover:bg-transparent">
                       <TableCell>
                         <Link
-                          to={`/quiz/${result.id}`}
+                          href={`/quiz/${result.id}`}
                           className="text-sm font-medium hover:underline"
                         >
                           <div className="w-full text-wrap">

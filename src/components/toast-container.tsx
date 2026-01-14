@@ -1,18 +1,18 @@
+"use client";
+
+import { useTheme } from "next-themes";
 import { ToastContainer as ReactToastContainer } from "react-toastify";
 
-import { useTheme } from "@/components/use-theme";
-
 export function ToastContainer() {
-  let { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
-  if (theme === "system") {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
   return (
     <ReactToastContainer
-      theme={theme === "dark" ? "dark" : "light"}
+      theme={
+        resolvedTheme === "dark" || resolvedTheme === "light"
+          ? resolvedTheme
+          : "light"
+      }
       newestOnTop={false}
       pauseOnFocusLoss
       position="bottom-right"

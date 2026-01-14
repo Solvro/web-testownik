@@ -2,8 +2,8 @@ import {
   getAnswerCounts,
   isQuizComplete,
   pickNextQuestion,
-} from "@/lib/session-utils.ts";
-import type { AnswerRecord, Question } from "@/types/quiz.ts";
+} from "@/lib/session-utils";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 export interface ProgressSettings {
   initialReoccurrences: number;

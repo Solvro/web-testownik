@@ -1,8 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import "@testing-library/jest-dom/vitest";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "./mocks/server";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/",
+  useParams: () => ({}),
+}));
 
 // JSDOM doesn't implement matchMedia; used by Loader when theme === "system".
 if (typeof window.matchMedia !== "function") {
@@ -19,6 +32,12 @@ if (typeof window.matchMedia !== "function") {
     };
   };
 }
+
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 // JSDOM doesn't implement scrollIntoView; some components call it during UI interactions.
 if (

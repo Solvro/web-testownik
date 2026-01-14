@@ -1,12 +1,12 @@
-import type { LegacyQuiz, QuizProgress } from "@/types/quiz-legacy.ts";
 import type {
   Answer,
   AnswerRecord,
   Question,
   Quiz,
   QuizSession,
-} from "@/types/quiz.ts";
-import { AccessLevel } from "@/types/quiz.ts";
+} from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import type { LegacyQuiz, QuizProgress } from "@/types/quiz-legacy";
 
 const DATA_VERSION_KEY = "DATA_VERSION";
 

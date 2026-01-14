@@ -5,8 +5,7 @@ import {
   ShareIcon,
   TrashIcon,
 } from "lucide-react";
-import React from "react";
-import { Link } from "react-router";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +20,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils.ts";
-import type { QuizMetadata } from "@/types/quiz.ts";
+import { cn } from "@/lib/utils";
+import type { QuizMetadata } from "@/types/quiz";
 
 export interface QuizCardProps extends React.ComponentProps<typeof Card> {
   quiz: QuizMetadata;
@@ -64,18 +63,23 @@ export function QuizCard({
         ) : null}
       </CardHeader>
       <CardFooter className="mt-auto flex items-center justify-between">
-        <Link to={onOpenPath(quiz)}>
-          <Button size="sm">Otwórz</Button>
-        </Link>
+        <Button size="sm" asChild>
+          <Link href={onOpenPath(quiz)}>Otwórz</Link>
+        </Button>
         <div className="flex gap-1 opacity-80">
           {Boolean(showEdit) && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link to={onEditPath(quiz)}>
-                  <Button variant="outline" size="icon" className="size-8">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  asChild
+                >
+                  <Link href={onEditPath(quiz)}>
                     <PencilIcon />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>Edytuj quiz</TooltipContent>
             </Tooltip>
@@ -113,11 +117,16 @@ export function QuizCard({
           {Boolean(showSearch) && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link to={onSearchPath(quiz)}>
-                  <Button variant="outline" size="icon" className="size-8">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  asChild
+                >
+                  <Link href={onSearchPath(quiz)}>
                     <SearchIcon />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>Szukaj w quizie</TooltipContent>
             </Tooltip>

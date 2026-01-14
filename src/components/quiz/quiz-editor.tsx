@@ -1,8 +1,8 @@
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
-import { QuestionForm } from "@/components/quiz/question-form.tsx";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
+import { QuestionForm } from "@/components/quiz/question-form";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { Question, Quiz } from "@/types/quiz.ts";
+import type { Question, Quiz } from "@/types/quiz";
 
 export interface QuizEditorResult {
   title: string;

@@ -29,6 +29,7 @@ export function ImageLoad({ url, alt, className }: ImageLoadProps) {
   }
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url}
       alt={alt}

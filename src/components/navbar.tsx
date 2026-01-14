@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CircleUserRoundIcon,
   CloudUploadIcon,
@@ -7,25 +9,22 @@ import {
   MenuIcon,
   XIcon,
 } from "lucide-react";
-import React, {
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
+  useLayoutEffect,
   useState,
 } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
 
-import { AppContext } from "@/app-context.ts";
-import { AppLogo } from "@/components/app-logo.tsx";
-import { CopyJWTAccessTokenButton } from "@/components/copy-jwt-button.tsx";
-import { ModeToggle } from "@/components/mode-toggle.tsx";
-import { ReportBugDialog } from "@/components/report-bug-dialog.tsx";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
+import { AppContext } from "@/app-context";
+import { AppLogo } from "@/components/app-logo";
+import { CopyJWTAccessTokenButton } from "@/components/copy-jwt-button";
+import { ModeToggle } from "@/components/mode-toggle";
+import { ReportBugDialog } from "@/components/report-bug-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -33,22 +32,26 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
-import { SERVER_URL } from "@/config.ts";
+import { SERVER_URL } from "@/config";
 
-export function Navbar(): React.JSX.Element {
+export function Navbar() {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParameters = useSearchParams();
 
   const [expanded, setExpanded] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
-  const queryParameters = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search],
-  );
-  const accessToken = queryParameters.get("access_token");
-  const refreshToken = queryParameters.get("refresh_token");
+  useEffect(() => {
+    setIsStaff(localStorage.getItem("is_staff") === "true");
+    setProfilePicture(localStorage.getItem("profile_picture"));
+  }, [appContext.isAuthenticated]);
+
+  const accessToken = searchParameters.get("access_token");
+  const refreshToken = searchParameters.get("refresh_token");
 
   const handleLogin = useCallback(async () => {
     if (accessToken !== null && refreshToken !== null) {
@@ -59,51 +62,76 @@ export function Navbar(): React.JSX.Element {
         (Date.now() + 3600 * 1000).toString(),
       );
 
-      queryParameters.delete("access_token");
-      queryParameters.delete("refresh_token");
+      const newParameters = new URLSearchParams(searchParameters.toString());
+      newParameters.delete("access_token");
+      newParameters.delete("refresh_token");
 
-      await navigate({
-        search: queryParameters.toString(),
-      });
+      const newSearch = newParameters.toString();
+      const newUrl = pathname + (newSearch ? `?${newSearch}` : "");
+
+      router.replace(newUrl);
 
       const user = await appContext.services.user.getUserData();
       appContext.services.user.storeUserData(user);
       appContext.setAuthenticated(true);
     }
-  }, [accessToken, refreshToken, queryParameters, navigate, appContext]);
+  }, [
+    accessToken,
+    refreshToken,
+    searchParameters,
+    pathname,
+    router,
+    appContext,
+  ]);
 
   useEffect(() => {
     void handleLogin();
   }, [handleLogin]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("access_token_expires_at");
     appContext.services.user.clearStoredUserData();
     appContext.setAuthenticated(false);
-    await navigate("/");
+    setIsStaff(false);
+    setProfilePicture(null);
+    router.push("/");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => pathname === path;
+
+  const [loginUrl, setLoginUrl] = useState(`${SERVER_URL}/login/usos?jwt=true`);
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useLayoutEffect(() => {
+    setIsMounted(true);
+    setLoginUrl(
+      `${SERVER_URL}/login/usos?jwt=true&redirect=${window.location.href}`,
+    );
+  }, []);
+
+  const isAuthenticatedSafe = isMounted && appContext.isAuthenticated;
+  const isGuestSafe = isMounted && appContext.isGuest;
 
   return (
     <nav className="flex flex-col gap-2 py-4">
       <div className="flex items-center justify-between gap-4 sm:px-4">
         <div className="flex items-center gap-6">
-          <Link to="/">
+          <Link href="/">
             <AppLogo width={40} />
           </Link>
           <NavigationMenu className="hidden sm:flex" viewport={false}>
             <NavigationMenuList className="gap-1">
               <NavigationMenuItem>
                 <NavigationMenuLink active={isActive("/quizzes")} asChild>
-                  <Link to="/quizzes">Twoje quizy</Link>
+                  <Link href="/quizzes">Twoje quizy</Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink active={isActive("/grades")} asChild>
-                  <Link to="/grades">Oceny</Link>
+                  <Link href="/grades">Oceny</Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
@@ -118,7 +146,7 @@ export function Navbar(): React.JSX.Element {
                   </Button>
                 </NavigationMenuLink>
               </NavigationMenuItem>
-              {localStorage.getItem("is_staff") === "true" && (
+              {isStaff ? (
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <a
@@ -131,37 +159,37 @@ export function Navbar(): React.JSX.Element {
                     </a>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-              )}
+              ) : null}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
-          <CopyJWTAccessTokenButton />
+          {isMounted ? <CopyJWTAccessTokenButton /> : null}
           <ModeToggle />
-          {appContext.isGuest ? (
+          {isGuestSafe ? (
             <>
-              <Link to="/profile">
-                <Button variant="default">
+              <Button variant="default" asChild>
+                <Link href="/profile">
                   <IdCardLanyardIcon />
                   <span>Gość</span>
-                </Button>
-              </Link>
-              <Link to="/connect-account">
-                <Button variant="outline" size="icon" className="p-2">
+                </Link>
+              </Button>
+              <Button variant="outline" size="icon" className="p-2" asChild>
+                <Link href="/connect-account">
                   <CloudUploadIcon />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </>
-          ) : appContext.isAuthenticated ? (
+          ) : isAuthenticatedSafe ? (
             <>
-              <Link to="/profile">
-                <Button variant="default">
-                  {localStorage.getItem("profile_picture") === null ? (
+              <Button variant="default" asChild>
+                <Link href="/profile">
+                  {profilePicture === null ? (
                     <CircleUserRoundIcon className="size-6" />
                   ) : (
                     <Avatar className="size-6">
                       <AvatarImage
-                        src={localStorage.getItem("profile_picture") ?? ""}
+                        src={profilePicture}
                         className="user-avatar"
                       />
                       <AvatarFallback delayMs={600} className="bg-transparent">
@@ -170,8 +198,8 @@ export function Navbar(): React.JSX.Element {
                     </Avatar>
                   )}
                   <span>Profil</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <Button
                 variant="destructive"
                 size="icon"
@@ -183,9 +211,7 @@ export function Navbar(): React.JSX.Element {
             </>
           ) : (
             <Button variant="default" asChild>
-              <a
-                href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
-              >
+              <a href={loginUrl}>
                 <LogInIcon />
                 Zaloguj się
               </a>
@@ -211,7 +237,7 @@ export function Navbar(): React.JSX.Element {
       {expanded ? (
         <div className="flex flex-col gap-4 border-t pt-2 sm:hidden">
           <Link
-            to="/quizzes"
+            href="/quizzes"
             className={
               isActive("/quizzes")
                 ? "text-foreground text-left font-medium"
@@ -221,7 +247,7 @@ export function Navbar(): React.JSX.Element {
             Twoje quizy
           </Link>
           <Link
-            to="/grades"
+            href="/grades"
             className={
               isActive("/grades")
                 ? "text-foreground text-left font-medium"
@@ -239,7 +265,7 @@ export function Navbar(): React.JSX.Element {
           >
             Zgłoś błąd
           </Button>
-          {localStorage.getItem("is_staff") === "true" && (
+          {isStaff ? (
             <a
               href={`${SERVER_URL}/admin/`}
               target="_blank"
@@ -248,33 +274,33 @@ export function Navbar(): React.JSX.Element {
             >
               Panel administratora
             </a>
-          )}
+          ) : null}
           <div className="flex flex-wrap gap-2 pt-2">
-            {appContext.isGuest ? (
+            {isGuestSafe ? (
               <>
-                <Link to="/profile">
-                  <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" asChild>
+                  <Link href="/profile">
                     <IdCardLanyardIcon />
                     <span>Gość</span>
-                  </Button>
-                </Link>
-                <Link to="/connect-account">
-                  <Button variant="outline" size="icon" className="p-2">
+                  </Link>
+                </Button>
+                <Button variant="outline" size="icon" className="p-2" asChild>
+                  <Link href="/connect-account">
                     <CloudUploadIcon />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </>
-            ) : appContext.isAuthenticated ? (
+            ) : isAuthenticatedSafe ? (
               <>
-                <Link to="/profile">
-                  <Button variant="default" className="flex-1">
-                    {localStorage.getItem("profile_picture") === null ? (
+                <Button variant="default" className="flex-1" asChild>
+                  <Link href="/profile">
+                    {profilePicture === null ? (
                       <CircleUserRoundIcon className="size-6" />
                     ) : (
                       <Avatar className="size-6">
                         <AvatarImage
                           className="user-avatar"
-                          src={localStorage.getItem("profile_picture") ?? ""}
+                          src={profilePicture}
                         />
                         <AvatarFallback
                           delayMs={600}
@@ -285,8 +311,8 @@ export function Navbar(): React.JSX.Element {
                       </Avatar>
                     )}
                     <span>Profil</span>
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <Button
                   variant="destructive"
                   size="icon"
@@ -298,15 +324,13 @@ export function Navbar(): React.JSX.Element {
               </>
             ) : (
               <Button variant="outline" asChild className="flex-1">
-                <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${String(document.location)}`}
-                >
+                <a href={loginUrl}>
                   <LogInIcon />
                   Zaloguj się
                 </a>
               </Button>
             )}
-            <CopyJWTAccessTokenButton />
+            {isMounted ? <CopyJWTAccessTokenButton /> : null}
             <ModeToggle />
           </div>
         </div>

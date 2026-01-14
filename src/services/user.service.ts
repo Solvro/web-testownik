@@ -1,4 +1,4 @@
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import { BaseApiService } from "./base-api.service";
 import type { AlertData, GradesData, UserData, UserSettings } from "./types";

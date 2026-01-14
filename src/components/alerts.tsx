@@ -1,16 +1,21 @@
+"use client";
+
 import DOMPurify from "dompurify";
 import { XIcon } from "lucide-react";
-import React from "react";
+import { useContext, useEffect, useState } from "react";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button.tsx";
-import type { AlertData } from "@/types/alert.ts";
+import { Button } from "@/components/ui/button";
+import type { AlertData } from "@/types/alert";
 
 export function Alerts(): React.JSX.Element | null {
-  const appContext = React.useContext(AppContext);
-  const [alerts, setAlerts] = React.useState<AlertData[]>([]);
-  const [dismissedAlerts, setDismissedAlerts] = React.useState<string[]>(() => {
+  const appContext = useContext(AppContext);
+  const [alerts, setAlerts] = useState<AlertData[]>([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
     const stored = localStorage.getItem("dismissedAlerts");
     return stored === null ? [] : (JSON.parse(stored) as string[]);
   });
@@ -23,7 +28,7 @@ export function Alerts(): React.JSX.Element | null {
     );
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     appContext.services.user
       .getAlerts()
       .then((fetchedAlerts) => {

@@ -1,14 +1,14 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { Link } from "react-router";
+import Link from "next/link";
+import { useCallback, useContext, useEffect, useState } from "react";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils.ts";
-import type { QuizMetadata } from "@/types/quiz.ts";
+import { cn } from "@/lib/utils";
+import type { QuizMetadata } from "@/types/quiz";
 
 export function LastUsedCard({
   className,
@@ -57,7 +57,7 @@ export function LastUsedCard({
                     >
                       <TableCell>
                         <Link
-                          to={`/quiz/${quiz.id}`}
+                          href={`/quiz/${quiz.id}`}
                           className="text-sm font-medium hover:underline"
                         >
                           <div className="elipsis w-full truncate">

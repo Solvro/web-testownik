@@ -5,11 +5,11 @@ import {
   PencilLineIcon,
   SkullIcon,
 } from "lucide-react";
-import { useContext } from "react";
-import { useNavigate } from "react-router";
+import { useRouter } from "next/navigation";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Question, Quiz } from "@/types/quiz.ts";
+import type { Question, Quiz } from "@/types/quiz";
 
 interface QuizActionButtonsProps {
   quiz: Quiz;
@@ -34,11 +34,17 @@ export function QuizActionButtons({
   disabled = false,
 }: QuizActionButtonsProps) {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
 
-  const isMaintainer =
-    (quiz.can_edit ?? false) ||
-    quiz.maintainer?.id === localStorage.getItem("user_id");
+  const [isMaintainer, setIsMaintainer] = useState(false);
+
+  useEffect(() => {
+    setIsMaintainer(
+      (quiz.can_edit ?? false) ||
+        quiz.maintainer?.id === localStorage.getItem("user_id"),
+    );
+  }, [quiz.can_edit, quiz.maintainer?.id]);
+
   const canUseQuestion = !disabled && question != null;
 
   const handleCopy = () => {
@@ -76,12 +82,12 @@ export function QuizActionButtons({
     );
   };
 
-  const handleEdit = async () => {
+  const handleEdit = () => {
     if (question == null) {
       toast.error("Nie można edytować pytania: brak pytania");
       return;
     }
-    await navigate(`/edit-quiz/${quiz.id}#question-${question.id}`);
+    router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
   };
 
   return (

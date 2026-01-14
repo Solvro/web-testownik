@@ -3,17 +3,15 @@ import type { DataConnection } from "peerjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
-import type { AnswerRecord, Question } from "@/types/quiz.ts";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
 
-const TURN_USERNAME = import.meta.env.VITE_TURN_USERNAME as string | undefined;
-const TURN_CREDENTIAL = import.meta.env.VITE_TURN_CREDENTIAL as
-  | string
-  | undefined;
+const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME;
+const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
 
 const RTC_CONFIG = {
   iceServers: [

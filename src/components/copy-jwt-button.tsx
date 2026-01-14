@@ -2,13 +2,13 @@ import { KeyRoundIcon } from "lucide-react";
 import { useContext } from "react";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
+} from "@/components/ui/tooltip";
 
 async function copyJWTAccessToken() {
   const accessToken = localStorage.getItem("access_token");

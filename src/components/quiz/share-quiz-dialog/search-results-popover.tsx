@@ -1,15 +1,9 @@
-import React from "react";
-
-import { Loader } from "@/components/loader.tsx";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
+import { Loader } from "@/components/loader";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PopoverContent } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, getInitials } from "@/lib/utils";
-import type { Group, User } from "@/types/user.ts";
+import type { Group, User } from "@/types/user";
 
 interface SearchResultsPopoverProps {
   searchResults: (User | Group)[];

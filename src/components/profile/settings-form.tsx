@@ -1,14 +1,14 @@
 import { AlertCircleIcon } from "lucide-react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import type { SettingsFormProps } from "@/types/user.ts";
+import type { SettingsFormProps } from "@/types/user";
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const appContext = useContext(AppContext);

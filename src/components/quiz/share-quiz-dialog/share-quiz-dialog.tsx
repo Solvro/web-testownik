@@ -1,16 +1,16 @@
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useRouter } from "next/navigation";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-import { AppContext } from "@/app-context.ts";
-import { Loader } from "@/components/loader.tsx";
-import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector.tsx";
-import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list.tsx";
-import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover.tsx";
+import { AppContext } from "@/app-context";
+import { Loader } from "@/components/loader";
+import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector";
+import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list";
+import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -20,12 +20,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
-import { AccessLevel } from "@/types/quiz.ts";
-import type { Group, User } from "@/types/user.ts";
+import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import type { Group, User } from "@/types/user";
 
 interface ShareQuizDialogProps {
   open: boolean;
@@ -41,7 +41,7 @@ export function ShareQuizDialog({
   setQuiz,
 }: ShareQuizDialogProps) {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
   const [loading, setLoading] = useState(false);
@@ -391,7 +391,9 @@ export function ShareQuizDialog({
             </p>
             <Button
               variant="outline"
-              onClick={async () => navigate("/connect-account")}
+              onClick={() => {
+                router.push("/connect-account");
+              }}
             >
               Połącz konto
             </Button>

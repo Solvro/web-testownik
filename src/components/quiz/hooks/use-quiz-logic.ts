@@ -6,14 +6,9 @@ import {
   getMasteredCount,
   pickNextQuestion,
 } from "@/lib/session-utils";
-import type {
-  AnswerRecord,
-  Question,
-  Quiz,
-  QuizSession,
-} from "@/types/quiz.ts";
-import type { UserSettings } from "@/types/user.ts";
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import type { AnswerRecord, Question, Quiz, QuizSession } from "@/types/quiz";
+import type { UserSettings } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import {
   createAnswerRecord,

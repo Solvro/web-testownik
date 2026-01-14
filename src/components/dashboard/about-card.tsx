@@ -1,17 +1,13 @@
 import { SiGithub } from "@icons-pack/react-simple-icons";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
-import { Button } from "@/components/ui/button.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { cn, getInitials } from "@/lib/utils.ts";
+import { cn, getInitials } from "@/lib/utils";
 
 interface Contributor {
   login: string;

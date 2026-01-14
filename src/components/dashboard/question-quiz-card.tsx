@@ -1,13 +1,14 @@
 import "katex/dist/katex.min.css";
 import { LoaderCircleIcon } from "lucide-react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import Link from "next/link";
+import type { ComponentProps } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import Markdown from "react-markdown";
-import { Link } from "react-router";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { AppContext } from "@/app-context.ts";
-import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import { AppContext } from "@/app-context";
+import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,15 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { cn } from "@/lib/utils.ts";
-import type { QuestionWithQuizInfo } from "@/services/types.ts";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import type { QuestionWithQuizInfo } from "@/services/types";
 
 export function QuestionQuizCard({
   className,
   ...props
-}: React.ComponentProps<typeof Card>): React.JSX.Element {
+}: ComponentProps<typeof Card>) {
   const appContext = useContext(AppContext);
   const [questionData, setQuestionData] = useState<QuestionWithQuizInfo | null>(
     null,
@@ -161,7 +162,7 @@ export function QuestionQuizCard({
             </ScrollArea>
             <CardDescription>
               <Link
-                to={`/quiz/${questionData.quiz_id}`}
+                href={`/quiz/${questionData.quiz_id}`}
                 className="text-muted-foreground hover:text-foreground block text-xs transition-colors"
               >
                 {questionData.quiz_title}

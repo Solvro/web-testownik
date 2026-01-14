@@ -23,4 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
+coverage
+.next
 .eslintcache
+/tsconfig.tsbuildinfo

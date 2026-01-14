@@ -1,18 +1,11 @@
+import { useTheme } from "next-themes";
 import PropagateLoader from "react-spinners/PropagateLoader";
 import type { LoaderSizeProps } from "react-spinners/helpers/props";
 
-import { useTheme } from "@/components/use-theme";
-
 export function Loader(props: LoaderSizeProps) {
-  let { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
-  if (theme === "system") {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-
-  const color = theme === "dark" ? "#ffffff" : "#000000";
+  const color = resolvedTheme === "dark" ? "#ffffff" : "#000000";
 
   return <PropagateLoader color={color} {...props} />;
 }

@@ -1,4 +1,4 @@
-import type { Group, User } from "./user.ts";
+import type { Group, User } from "./user";
 
 export interface QuizMetadata {
   id: string;
