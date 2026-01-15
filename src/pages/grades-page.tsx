@@ -3,6 +3,7 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
+import { CourseTypeBadge } from "@/components/course-type-badge";
 import { Loader } from "@/components/loader.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -258,8 +259,9 @@ export function GradesPage(): React.JSX.Element {
                 const passState = course.passing_status;
                 return (
                   <TableRow key={course.course_id} className="h-12">
-                    <TableCell className="font-medium break-words whitespace-normal">
-                      {course.course_name}
+                    <TableCell className="space-x-2 font-medium break-words whitespace-normal">
+                      <span>{course.course_name}</span>
+                      <CourseTypeBadge courseId={course.course_id} />
                     </TableCell>
                     <TableCell>{course.ects}</TableCell>
                     <TableCell

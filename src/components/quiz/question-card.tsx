@@ -177,7 +177,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium whitespace-pre-wrap transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(index),
                     questionChecked,

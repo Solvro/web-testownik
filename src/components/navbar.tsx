@@ -18,6 +18,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 
 import { AppContext } from "@/app-context.ts";
 import { AppLogo } from "@/components/app-logo.tsx";
+import { CopyJWTAccessTokenButton } from "@/components/copy-jwt-button.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { ReportBugDialog } from "@/components/report-bug-dialog.tsx";
 import {
@@ -135,6 +136,7 @@ export function Navbar(): React.JSX.Element {
           </NavigationMenu>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
+          <CopyJWTAccessTokenButton />
           <ModeToggle />
           {appContext.isGuest ? (
             <>
@@ -304,6 +306,8 @@ export function Navbar(): React.JSX.Element {
                 </a>
               </Button>
             )}
+            <CopyJWTAccessTokenButton />
+            <ModeToggle />
           </div>
         </div>
       ) : null}
