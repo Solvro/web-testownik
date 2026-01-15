@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
+import type { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { useQuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { invariant } from "@/lib/invariant";
 import type {
@@ -55,9 +56,10 @@ export function useQuizLogic({
 
   const { history, state, actions } = useQuizHistory({ quizId });
   const { canGoBack } = state;
-  const { addHistoryEntry, clearHistory } = actions;
+  const { addHistoryEntry, updateHistoryEntry, clearHistory } = actions;
 
   // refs for continuity
+  const initRef = useRef<boolean>(false);
   const currentQuestionRef = useRef<Question | null>(null);
   const reoccurrencesRef = useRef<Reoccurrence[]>([]);
   const wrongAnswersCountRef = useRef<number>(0);
@@ -99,6 +101,7 @@ export function useQuizLogic({
     onQuestionUpdate: (q, selected) => {
       dispatch({ type: "SET_CURRENT_QUESTION", payload: { question: q } });
       dispatch({ type: "SET_SELECTED_ANSWERS", payload: selected });
+      updateHistoryEntry(selected);
     },
     onAnswerChecked: () => {
       checkAnswerRef.current(true);
@@ -237,17 +240,24 @@ export function useQuizLogic({
         (q) => q.id === saved.current_question,
       );
       if (loadedSavedQuestion == null) {
-        pickRandomQuestion(quizData, mergedReoccurrences);
+        const randomQuestion = pickRandomQuestion(
+          quizData,
+          mergedReoccurrences,
+        );
+        if (!initRef.current && randomQuestion != null) {
+          addHistoryEntry(randomQuestion, []);
+          initRef.current = true;
+        }
         return;
       }
-      const sorted = [...loadedSavedQuestion.answers].toSorted(
-        () => Math.random() - 0.5,
-      );
       dispatch({
         type: "SET_CURRENT_QUESTION",
-        payload: { question: { ...loadedSavedQuestion, answers: sorted } },
+        payload: { question: { ...loadedSavedQuestion } },
       });
-      addHistoryEntry(loadedSavedQuestion, []);
+      if (!initRef.current) {
+        addHistoryEntry(loadedSavedQuestion, []);
+        initRef.current = true;
+      }
       if (!mergedReoccurrences.some((r) => r.reoccurrences > 0)) {
         dispatch({ type: "MARK_FINISHED" });
       }
@@ -263,10 +273,14 @@ export function useQuizLogic({
 
   const checkAnswer = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-useless-default-assignment
-    (remote = false) => {
-      if (questionChecked || currentQuestionRef.current == null) {
+    (remote = false, overwrite = false) => {
+      if (
+        !overwrite &&
+        (questionChecked || currentQuestionRef.current == null)
+      ) {
         return;
       }
+
       dispatch({
         type: "CHECK_ANSWER",
         payload: {
@@ -277,15 +291,9 @@ export function useQuizLogic({
       if (!remote) {
         continuity.sendAnswerChecked();
       }
-
-      if (currentQuestion != null) {
-        addHistoryEntry(currentQuestion, selectedAnswers);
-      }
     },
     [
-      addHistoryEntry,
       continuity,
-      currentQuestion,
       questionChecked,
       selectedAnswers,
       userSettings.wrong_answer_reoccurrences,
@@ -319,34 +327,36 @@ export function useQuizLogic({
     }
   }, [checkAnswer, nextQuestion, questionChecked]);
 
-  const goBack = useCallback(() => {
-    if (!canGoBack) {
-      return;
-    }
+  const goToHistoryQuestion = useCallback(
+    (historyQuestion?: QuizHistory) => {
+      if (!canGoBack) {
+        return;
+      }
 
-    const previousHistory = history.slice(0, 2);
-    const currentHistory = isHistoryQuestionRef.current
-      ? previousHistory[0]
-      : previousHistory[1];
+      const currentHistory = historyQuestion ?? history[0];
 
-    dispatch({
-      type: "SET_CURRENT_QUESTION",
-      payload: { question: currentHistory.question },
-    });
-    if (!isHistoryQuestionRef.current) {
       dispatch({
-        type: "SET_SELECTED_ANSWERS",
-        payload: currentHistory.answers,
+        type: "SET_CURRENT_QUESTION",
+        payload: { question: currentHistory.question },
       });
-      checkAnswer();
-    }
+      if (historyQuestion == null) {
+        isHistoryQuestionRef.current = false;
+      } else {
+        dispatch({
+          type: "SET_SELECTED_ANSWERS",
+          payload: currentHistory.answers,
+        });
+        checkAnswer(false, true);
+        isHistoryQuestionRef.current = true;
+      }
 
-    isHistoryQuestionRef.current = !isHistoryQuestionRef.current;
-    dispatch({
-      type: "SET_IS_HISTORY_QUESTION",
-      payload: isHistoryQuestionRef.current,
-    });
-  }, [canGoBack, checkAnswer, history]);
+      dispatch({
+        type: "SET_IS_HISTORY_QUESTION",
+        payload: isHistoryQuestionRef.current,
+      });
+    },
+    [canGoBack, checkAnswer, history],
+  );
 
   const resetProgress = useCallback(async () => {
     await appContext.services.quiz.deleteQuizProgress(
@@ -363,11 +373,6 @@ export function useQuizLogic({
         payload: { reoccurrences: initialReoccurrences, question: null },
       });
       clearHistory();
-      // isPreviousQuestionRef.current = false;
-      // dispatch({
-      //   type: "SET_IS_PREVIOUS_QUESTION",
-      //   payload: { state: false },
-      // });
       setTimer(0, Date.now());
       const randomQuestion = pickRandomQuestion(quiz, initialReoccurrences);
       if (randomQuestion != null) {
@@ -455,11 +460,12 @@ export function useQuizLogic({
     actions: {
       nextAction,
       nextQuestion,
-      goBack,
+      goToHistoryQuestion,
       resetProgress,
       setSelectedAnswers: (ans: number[]) => {
         selectedAnswersRef.current = ans;
         dispatch({ type: "SET_SELECTED_ANSWERS", payload: ans });
+        updateHistoryEntry(ans);
         if (currentQuestion != null) {
           continuity.sendQuestionUpdate(currentQuestion, ans);
         }

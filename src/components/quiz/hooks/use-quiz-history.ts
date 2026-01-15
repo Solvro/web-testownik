@@ -11,6 +11,7 @@ import type {
 import type { Question } from "@/types/quiz.ts";
 
 export interface QuizHistory {
+  id: string;
   question: Question;
   answers: number[];
 }
@@ -50,7 +51,7 @@ export function useQuizHistory({
       const parsed: QuizHistoryStorage =
         raw == null ? {} : (JSON.parse(raw) as QuizHistoryStorage);
 
-      parsed[quizId satisfies string] = history;
+      parsed[quizId satisfies string] = history.slice(1);
       sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
     } catch {}
   }, [history, quizId]);
@@ -73,6 +74,13 @@ export function useQuizHistory({
     [],
   );
 
+  const updateHistoryEntry = useCallback((answers: number[]) => {
+    dispatch({
+      type: "UPDATE_ENTRY",
+      payload: { answers },
+    });
+  }, []);
+
   const clearHistory = useCallback(() => {
     dispatch({
       type: "RESET",
@@ -86,6 +94,7 @@ export function useQuizHistory({
     },
     actions: {
       addHistoryEntry,
+      updateHistoryEntry,
       clearHistory,
     },
   };

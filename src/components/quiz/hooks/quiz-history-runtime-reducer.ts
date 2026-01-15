@@ -14,6 +14,7 @@ export const initialRuntime: QuizHistoryRuntime = {
 type Action =
   | { type: "SET_CAN_GO_BACK"; payload: boolean }
   | { type: "ADD_ENTRY"; payload: { question: Question; answers: number[] } }
+  | { type: "UPDATE_ENTRY"; payload: { answers: number[] } }
   | { type: "INIT"; payload: QuizHistory[] }
   | { type: "RESET" };
 
@@ -29,24 +30,26 @@ export function runtimeReducer(
     case "ADD_ENTRY": {
       const { question, answers } = action.payload;
 
-      const index = state.history.findIndex(
-        (h) => h.question.id === question.id,
-      );
-
-      if (index !== -1) {
-        const nextHistory = state.history.map((h, index_) =>
-          index_ === index ? { ...h, answers } : h,
-        );
-
-        return {
-          ...state,
-          history: nextHistory,
-        };
-      }
+      // Max 50 history entries
+      const newHistory = [
+        { id: crypto.randomUUID(), question, answers },
+        ...state.history,
+      ].slice(0, 50);
 
       return {
         ...state,
-        history: [{ question, answers }, ...state.history],
+        history: newHistory,
+      };
+    }
+
+    case "UPDATE_ENTRY": {
+      const { answers } = action.payload;
+
+      return {
+        ...state,
+        history: state.history.map((h, index) =>
+          index === 0 ? { ...h, answers } : h,
+        ),
       };
     }
 

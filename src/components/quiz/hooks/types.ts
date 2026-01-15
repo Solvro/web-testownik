@@ -39,7 +39,7 @@ export interface UseQuizLogicResult {
   actions: {
     nextAction: () => void;
     nextQuestion: () => void;
-    goBack: () => void;
+    goToHistoryQuestion: (historyQuestion?: QuizHistory) => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: number[]) => void;
     toggleHistory: () => void;
@@ -58,6 +58,7 @@ export interface UseQuizHistoryLogicResult {
   };
   actions: {
     addHistoryEntry: (question: Question, answers: number[]) => void;
+    updateHistoryEntry: (answers: number[]) => void;
     clearHistory: () => void;
   };
 }
