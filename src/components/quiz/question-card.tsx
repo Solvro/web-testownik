@@ -8,6 +8,7 @@ import remarkMath from "remark-math";
 
 import { ImageLoad } from "@/components/image-load.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import type { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,11 +28,12 @@ import type { Answer, Question } from "@/types/quiz.ts";
 
 interface QuestionCardProps {
   question: Question | null;
+  history: QuizHistory[];
   selectedAnswers: number[];
   setSelectedAnswers: (selectedAnswers: number[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
-  goBack: () => void;
+  goToHistoryQuestion: (historyQuestion?: QuizHistory) => void;
   isQuizFinished: boolean;
   canGoBack: boolean;
   isHistoryQuestion: boolean;
@@ -40,11 +42,12 @@ interface QuestionCardProps {
 
 export function QuestionCard({
   question,
+  history,
   selectedAnswers,
   setSelectedAnswers,
   questionChecked,
   nextAction,
-  goBack,
+  goToHistoryQuestion,
   canGoBack,
   isHistoryQuestion,
   isQuizFinished,
@@ -212,7 +215,12 @@ export function QuestionCard({
         </div>
         <div className="mt-2 flex justify-end gap-2">
           {isHistoryQuestion ? (
-            <Button variant="outline" onClick={goBack}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                goToHistoryQuestion();
+              }}
+            >
               Powrót do pytań
             </Button>
           ) : (
@@ -220,7 +228,13 @@ export function QuestionCard({
               {canGoBack && !questionChecked ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={goBack}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        goToHistoryQuestion(history[1]);
+                      }}
+                    >
                       <Undo2 />
                     </Button>
                   </TooltipTrigger>

@@ -152,7 +152,12 @@ export function QuizActionButtons({
         ) : null}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onToggleHistory}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onToggleHistory}
+              disabled={!canUseQuestion}
+            >
               <History />
             </Button>
           </TooltipTrigger>

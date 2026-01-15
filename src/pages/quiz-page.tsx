@@ -54,7 +54,7 @@ export function QuizPage(): React.JSX.Element {
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
-    goBack,
+    goToHistoryQuestion,
     nextQuestion,
     resetProgress,
     setSelectedAnswers,
@@ -166,6 +166,7 @@ export function QuizPage(): React.JSX.Element {
         >
           <QuestionCard
             question={currentQuestion}
+            history={history}
             selectedAnswers={selectedAnswers}
             setSelectedAnswers={(newSelected) => {
               // If question is not multiple, unselect everything except the new
@@ -183,7 +184,7 @@ export function QuizPage(): React.JSX.Element {
             }}
             questionChecked={questionChecked}
             nextAction={nextAction}
-            goBack={goBack}
+            goToHistoryQuestion={goToHistoryQuestion}
             canGoBack={canGoBack}
             isHistoryQuestion={isHistoryQuestion}
             isQuizFinished={isQuizFinished}
@@ -247,42 +248,41 @@ export function QuizPage(): React.JSX.Element {
           <ScrollArea className="min-h-0 flex-1 overflow-y-scroll">
             <div className="grid max-h-80 w-full flex-col gap-2">
               {canGoBack
-                ? history
-                    .slice(1, 30)
-                    .map((historyEntry: QuizHistory, index: number) => {
-                      const correctIndexes = historyEntry.question.answers
-                        .map((a, answerIndex) => (a.correct ? answerIndex : -1))
-                        .filter((answerIndex) => answerIndex !== -1);
-                      const isCorrectQuestion =
-                        correctIndexes.length === historyEntry.answers.length &&
-                        correctIndexes.every((ci) =>
-                          historyEntry.answers.includes(ci),
-                        );
-                      return (
-                        <button
-                          key={`answer-${index.toString()}`}
-                          id={`answer-${index.toString()}`}
-                          onClick={() => {
-                            // handleAnswerClick(index);
-                          }}
-                          className={cn(
-                            "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors",
-                            computeAnswerVariant(
-                              historyEntry.answers.length > 0,
-                              true,
-                              historyEntry.answers.length > 0
-                                ? isCorrectQuestion
-                                : true,
-                            ),
-                          )}
-                        >
-                          <span className="w-full">
-                            {historyEntry.question.id}.{" "}
-                            {historyEntry.question.question}
-                          </span>
-                        </button>
+                ? history.slice(1).map((historyEntry: QuizHistory) => {
+                    const correctIndexes = historyEntry.question.answers
+                      .map((a, answerIndex) => (a.correct ? answerIndex : -1))
+                      .filter((answerIndex) => answerIndex !== -1);
+                    const isCorrectQuestion =
+                      correctIndexes.length === historyEntry.answers.length &&
+                      correctIndexes.every((ci) =>
+                        historyEntry.answers.includes(ci),
                       );
-                    })
+                    return (
+                      <button
+                        key={`answer-${historyEntry.id}`}
+                        id={`answer-${historyEntry.id}`}
+                        onClick={() => {
+                          goToHistoryQuestion(historyEntry);
+                          toggleHistory();
+                        }}
+                        className={cn(
+                          "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors",
+                          computeAnswerVariant(
+                            historyEntry.answers.length > 0,
+                            true,
+                            historyEntry.answers.length > 0
+                              ? isCorrectQuestion
+                              : true,
+                          ),
+                        )}
+                      >
+                        <span className="w-full">
+                          {historyEntry.question.id}.{" "}
+                          {historyEntry.question.question}
+                        </span>
+                      </button>
+                    );
+                  })
                 : null}
             </div>
             <ScrollBar orientation="vertical"></ScrollBar>
