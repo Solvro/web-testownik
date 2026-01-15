@@ -145,13 +145,12 @@ export function runtimeReducer(
       };
     }
     case "TOGGLE_HISTORY": {
-      return { ...state, showBrainrot: false, showHistory: !state.showHistory };
+      return { ...state, showHistory: !state.showHistory };
     }
     case "TOGGLE_BRAINROT": {
       return {
         ...state,
         showBrainrot: !state.showBrainrot,
-        showHistory: false,
       };
     }
 
