@@ -416,7 +416,7 @@ export function ConnectGuestAccount() {
             </CardDescription>
           </CardHeader>
           {error == null ? null : (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mx-6 w-auto">
               <AlertCircleIcon />
               <AlertTitle>Wystąpił błąd podczas logowania.</AlertTitle>
               {error === "not_student" ? (
