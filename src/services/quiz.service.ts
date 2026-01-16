@@ -265,17 +265,6 @@ export class QuizService extends BaseApiService {
   }
 
   /**
-   * Import quiz from link
-   */
-  async importQuizFromLink(link: string): Promise<Quiz> {
-    if (this.isGuestMode()) {
-      throw new Error("Cannot import quizzes in guest mode");
-    }
-    const response = await this.post<Quiz>("/import-from-link/", { link });
-    return response.data;
-  }
-
-  /**
    * Set quiz progress
    */
   async setQuizProgress(

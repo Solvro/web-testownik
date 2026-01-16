@@ -485,12 +485,9 @@ export const useImportQuiz = () => {
     return quizData;
   };
 
-  const submitImport = async (type: "json" | "link", data: string | Quiz) => {
+  const submitImport = async (data: Quiz) => {
     try {
-      const result =
-        type === "json"
-          ? await appContext.services.quiz.createQuiz(data as Quiz)
-          : await appContext.services.quiz.importQuizFromLink(data as string);
+      const result = await appContext.services.quiz.createQuiz(data);
 
       setQuiz(result);
     } catch {
@@ -516,7 +513,7 @@ export const useImportQuiz = () => {
             setErrorAndNotify(validationError);
             return false;
           }
-          await submitImport("json", data);
+          await submitImport(data);
         } catch (fileError) {
           if (fileError instanceof Error) {
             setError(
@@ -545,7 +542,7 @@ export const useImportQuiz = () => {
             setErrorAndNotify(validationError);
             return false;
           }
-          await submitImport("json", data);
+          await submitImport(data);
         } catch (parseError) {
           if (parseError instanceof Error) {
             setError(
