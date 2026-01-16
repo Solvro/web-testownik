@@ -430,7 +430,7 @@ export function useQuizLogic({
     })();
     // we only want to run this once on mount or when auth state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appContext.isAuthenticated, canGoBack]);
+  }, [appContext.isAuthenticated]);
 
   return {
     loading,
