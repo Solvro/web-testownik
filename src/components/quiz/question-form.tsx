@@ -117,9 +117,9 @@ export function QuestionForm({
               return;
             }
 
-            const newAnswers: Answer[] = pastedAnswers.map((text) => ({
+            const newAnswers: Answer[] = pastedAnswers.map((text, index) => ({
               id: crypto.randomUUID(),
-              order: 0, // Placeholder, will be recalculated
+              order: index + 1,
               text,
               is_correct: false,
               image: "",

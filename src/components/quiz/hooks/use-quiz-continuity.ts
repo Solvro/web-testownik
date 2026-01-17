@@ -10,30 +10,39 @@ import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
 
+const TURN_USERNAME = import.meta.env.VITE_TURN_USERNAME as string | undefined;
+const TURN_CREDENTIAL = import.meta.env.VITE_TURN_CREDENTIAL as
+  | string
+  | undefined;
+
 const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    {
-      urls: "turn:eu-central.turnix.io:3478?transport=udp",
-      username: import.meta.env.VITE_TURN_USERNAME as string,
-      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
-    },
-    {
-      urls: "turn:eu-central.turnix.io:3478?transport=tcp",
-      username: import.meta.env.VITE_TURN_USERNAME as string,
-      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
-    },
-    {
-      urls: "turns:eu-central.turnix.io:443?transport=udp",
-      username: import.meta.env.VITE_TURN_USERNAME as string,
-      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
-    },
-    {
-      urls: "turns:eu-central.turnix.io:443?transport=tcp",
-      username: import.meta.env.VITE_TURN_USERNAME as string,
-      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
-    },
+    ...(Boolean(TURN_USERNAME) && Boolean(TURN_CREDENTIAL)
+      ? [
+          {
+            urls: "turn:eu-central.turnix.io:3478?transport=udp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turn:eu-central.turnix.io:3478?transport=tcp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turns:eu-central.turnix.io:443?transport=udp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turns:eu-central.turnix.io:443?transport=tcp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+        ]
+      : []),
   ],
 };
 

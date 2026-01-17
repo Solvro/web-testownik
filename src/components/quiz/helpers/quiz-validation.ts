@@ -101,6 +101,8 @@ export const validateQuiz = (input: unknown): string | null => {
     }
     questionIds.add(q.id);
 
+    const answerIds = new Set<string>();
+
     for (const [answerIndex, answer] of q.answers.entries()) {
       if (typeof answer !== "object" || answer === null) {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
@@ -108,6 +110,19 @@ export const validateQuiz = (input: unknown): string | null => {
         )} jest nieprawidłowa.`;
       }
       const a = answer as Record<string, unknown>;
+
+      if (typeof a.id !== "string") {
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} musi mieć prawidłowe ID.`;
+      }
+
+      if (answerIds.has(a.id)) {
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} ma zduplikowane ID: ${a.id}.`;
+      }
+      answerIds.add(a.id);
 
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(a, ALLOWED_ANSWER_KEYS)) {

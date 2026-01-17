@@ -134,7 +134,7 @@ describe("GradesPage", () => {
     expect(await screen.findByText(emptyCourse.course_name)).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: /tryb edycji/i }));
-    const gradeInput = screen.getByRole("spinbutton");
+    const gradeInput = screen.getByDisplayValue("");
     await user.type(gradeInput, "4.0");
     expect(gradeInput).toHaveValue(4);
   });

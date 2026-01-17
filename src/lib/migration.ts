@@ -144,7 +144,17 @@ function migrateQuizProgress(
       const syntheticAnswers: AnswerRecord[] = [];
 
       for (const r of legacyProgress.reoccurrences) {
-        const questionId = questionIdMap?.get(r.id) ?? crypto.randomUUID();
+        if (!(questionIdMap?.has(r.id) ?? false)) {
+          console.warn(
+            `[Migration] Missing question ID mapping for legacy question ${String(r.id)} in quiz ${quizId}; skipping synthetic answer creation for this entry.`,
+          );
+          continue;
+        }
+        const questionId = questionIdMap?.get(r.id);
+
+        if (questionId === undefined) {
+          continue;
+        }
 
         // If reoccurrences is 0, the question was mastered (answered correctly)
         // We create a synthetic "correct" answer
@@ -281,5 +291,6 @@ function downloadBackup(data: string) {
   a.href = url;
   a.download = `testownik-backup-${new Date().toISOString()}.json`;
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 }
