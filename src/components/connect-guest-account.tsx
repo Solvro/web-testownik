@@ -28,7 +28,7 @@ import {
 import { Label } from "@/components/ui/label.tsx";
 import { SERVER_URL } from "@/config.ts";
 import { createGuestDataBackup } from "@/lib/migration.ts";
-import type { Quiz, QuizSession } from "@/types/quiz.ts";
+import type { Quiz } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
@@ -50,11 +50,9 @@ export function ConnectGuestAccount() {
   const [backupData, setBackupData] = useState<string | null>(null);
 
   // Category migration checkboxes:
-  // – By default, "Quizy" and "Postępy quizów" are enabled, "Ustawienia" is off.
-  // – The "Postępy quizów" checkbox is disabled if "Quizy" is off.
+  // – By default, "Quizy" is enabled, "Ustawienia" is off.
   const [categories, setCategories] = useState({
     quizzes: true,
-    progress: true,
     settings: false,
   });
 
@@ -106,20 +104,7 @@ export function ConnectGuestAccount() {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
           const newQuiz = await appContext.services.quiz.createQuiz(quiz);
           const newQuizId = newQuiz.id;
-          if (categories.progress) {
-            const progressString = localStorage.getItem(`${quiz.id}_progress`);
-            if (progressString === null) {
-              continue;
-            }
-            const progress = JSON.parse(progressString) as QuizSession;
-            if (progress.answers.length > 0) {
-              setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
-              await appContext.services.quiz.setQuizProgress(
-                newQuizId,
-                progress,
-              );
-            }
-          }
+
           // Replace the quiz ID in the local storage with the new ID
           localStorage.removeItem(`${quiz.id}_progress`);
           localStorage.setItem(`${newQuizId}_progress`, "{}");
@@ -202,14 +187,10 @@ export function ConnectGuestAccount() {
     }
   };
 
-  // Handler for category checkbox changes. When unchecking "Quizy", also disable "Postępy quizów"
-  const handleCategoryToggle = (field: "quizzes" | "progress" | "settings") => {
+  // Handler for category checkbox changes.
+  const handleCategoryToggle = (field: "quizzes" | "settings") => {
     setCategories((previous) => {
       const newValue = !previous[field];
-      if (field === "quizzes" && !newValue) {
-        // If quizzes is turned off, force progress off as well
-        return { ...previous, quizzes: false, progress: false };
-      }
       return { ...previous, [field]: newValue };
     });
   };
@@ -237,8 +218,7 @@ export function ConnectGuestAccount() {
             </p>
             <p>
               Zdecyduj czy dane z konta gościa mają zostać usunięte. Wszystkie
-              wybrane quizy oraz postępy zostały już przeniesione na Twoje
-              konto.
+              wybrane quizy zostały już przeniesione na Twoje konto.
             </p>
             <p>
               Jeśli zdecydujesz się na pozostawienie danych z konta gościa,
@@ -346,17 +326,6 @@ export function ConnectGuestAccount() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Checkbox
-                    id="progress"
-                    checked={categories.progress}
-                    disabled={!categories.quizzes}
-                    onCheckedChange={() => {
-                      handleCategoryToggle("progress");
-                    }}
-                  />
-                  <Label htmlFor="progress">Postępy quizów</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Checkbox
                     id="settings"
                     checked={categories.settings}
                     onCheckedChange={() => {
@@ -372,11 +341,6 @@ export function ConnectGuestAccount() {
                 <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
                   Wybierz quizy do migracji
                 </h5>
-                {categories.progress ? (
-                  <p className="text-muted-foreground text-xs">
-                    (Postępy zostaną przeniesione automatycznie)
-                  </p>
-                ) : null}
                 {guestQuizzes.length > 0 ? (
                   <div className="grid gap-1">
                     {guestQuizzes.map((quiz: Quiz) => (
@@ -425,7 +389,6 @@ export function ConnectGuestAccount() {
                     Wybrane kategorie:{" "}
                     {[
                       categories.quizzes && "Quizy",
-                      categories.progress && categories.quizzes && "Postępy",
                       categories.settings && "Ustawienia",
                     ]
                       .filter(Boolean)

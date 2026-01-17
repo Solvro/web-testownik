@@ -264,20 +264,6 @@ export class QuizService extends BaseApiService {
   }
 
   /**
-   * Set quiz progress - used only when uploading guest progress
-   */
-  async setQuizProgress(
-    quizId: string,
-    session: QuizSession,
-  ): Promise<QuizSession> {
-    const response = await this.post<QuizSession>(
-      `/quizzes/${quizId}/progress/`,
-      session,
-    );
-    return response.data;
-  }
-
-  /**
    * Get quiz progress
    */
   async getQuizProgress(
