@@ -137,7 +137,7 @@ export function ImportQuizPage(): React.JSX.Element {
           >
             <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
-              <TabsTrigger value="old">Stara wersja</TabsTrigger>
+              <TabsTrigger value="legacy">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
             </TabsList>
             <TabsContent value="file" className="mt-4">
@@ -192,7 +192,7 @@ export function ImportQuizPage(): React.JSX.Element {
                 />
               </div>
             </TabsContent>
-            <TabsContent value="old" className="mt-4">
+            <TabsContent value="legacy" className="mt-4">
               <div className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-11">
                   <div className="space-y-2 md:col-span-5">

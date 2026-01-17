@@ -18,7 +18,7 @@ const trueFalseStrings = {
   false: false,
 };
 
-export type UploadType = "file" | "json" | "old";
+export type UploadType = "file" | "json" | "legacy";
 
 const parseQTemplate = (
   lines: string[],
@@ -194,7 +194,7 @@ const parseQuestion = (
 
 export const useImportQuiz = () => {
   const appContext = useContext(AppContext);
-  const [uploadType, setUploadType] = useState<UploadType>("old");
+  const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
   const [directoryName, setDirectoryName] = useState<string | null>(null);
@@ -242,7 +242,7 @@ export const useImportQuiz = () => {
           setFileNameInput(file.name);
           break;
         }
-        case "old": {
+        case "legacy": {
           if (fileOldRef.current !== null) {
             fileOldRef.current.files = event.dataTransfer.files;
           }
@@ -278,7 +278,7 @@ export const useImportQuiz = () => {
             : "none";
         break;
       }
-      case "old": {
+      case "legacy": {
         event.dataTransfer.dropEffect =
           items.length === 1 &&
           items[0].kind === "file" &&
@@ -384,7 +384,7 @@ export const useImportQuiz = () => {
         break;
       }
 
-      case "old": {
+      case "legacy": {
         if (files !== null && files.length > 0) {
           const fileOld = files[0];
           setFileNameOld(fileOld.name);
@@ -568,7 +568,7 @@ export const useImportQuiz = () => {
 
         break;
       }
-      case "old": {
+      case "legacy": {
         if (fileNameOld == null && directoryName == null) {
           setError("Nie wybrano pliku ani folderu.");
           setLoading(false);
