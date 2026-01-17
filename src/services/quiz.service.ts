@@ -283,11 +283,11 @@ export class QuizService extends BaseApiService {
   async getQuizProgress(
     quizId: string,
     applyRemote = true,
-  ): Promise<QuizProgress | null> {
+  ): Promise<QuizSession | null> {
     if (!this.isGuestMode() && applyRemote) {
       try {
-        const response = await this.get<QuizProgress>(
-          `/quiz/${quizId}/progress/`,
+        const response = await this.get<QuizSession>(
+          `/quizzes/${quizId}/progress/`,
         );
         return response.data;
       } catch {
@@ -299,7 +299,7 @@ export class QuizService extends BaseApiService {
     );
     if (localProgress !== null) {
       try {
-        return JSON.parse(localProgress) as QuizProgress;
+        return JSON.parse(localProgress) as QuizSession;
       } catch (error) {
         console.error("Error parsing local quiz progress:", error);
         localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
@@ -314,8 +314,39 @@ export class QuizService extends BaseApiService {
   async deleteQuizProgress(quizId: string, applyRemote = true): Promise<void> {
     localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
     if (!this.isGuestMode() && applyRemote) {
-      await this.delete(`/quiz/${quizId}/progress/`);
+      await this.delete(`/quizzes/${quizId}/progress/`);
     }
+  }
+
+  /**
+   * Record an answer
+   */
+  async recordAnswer(
+    quizId: string,
+    questionId: string,
+    selectedAnswers: string[],
+    studyTime?: number,
+    nextQuestionId?: string,
+  ): Promise<AnswerRecord> {
+    if (this.isGuestMode()) {
+      return {
+        id: crypto.randomUUID(),
+        question_id: questionId,
+        answered_at: new Date().toISOString(),
+        selected_answers: selectedAnswers,
+        was_correct: false, // Will be calculated by reducer anyway
+      };
+    }
+    const response = await this.post<AnswerRecord>(
+      `/quizzes/${quizId}/answer/`,
+      {
+        question_id: questionId,
+        selected_answers: selectedAnswers,
+        study_time: studyTime,
+        next_question: nextQuestionId,
+      },
+    );
+    return response.data;
   }
 
   /**
