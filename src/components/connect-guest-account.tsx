@@ -1,7 +1,6 @@
 import { AlertCircleIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
@@ -28,7 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
 import { SERVER_URL } from "@/config.ts";
-import type { Quiz, QuizProgress } from "@/types/quiz.ts";
+import { createGuestDataBackup } from "@/lib/migration.ts";
+import type { Quiz, QuizSession } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
@@ -46,6 +46,8 @@ export function ConnectGuestAccount() {
   const [migrated, setMigrated] = useState(
     localStorage.getItem("guest_migrated") === "true",
   );
+  const [migrationError, setMigrationError] = useState<string | null>(null);
+  const [backupData, setBackupData] = useState<string | null>(null);
 
   // Category migration checkboxes:
   // – By default, "Quizy" and "Postępy quizów" are enabled, "Ustawienia" is off.
@@ -109,8 +111,8 @@ export function ConnectGuestAccount() {
             if (progressString === null) {
               continue;
             }
-            const progress = JSON.parse(progressString) as QuizProgress;
-            if (Object.keys(progress).length > 0) {
+            const progress = JSON.parse(progressString) as QuizSession;
+            if (progress.answers.length > 0) {
               setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
               await appContext.services.quiz.setQuizProgress(
                 newQuizId,
@@ -158,9 +160,28 @@ export function ConnectGuestAccount() {
     }
   };
 
+  const downloadBackup = () => {
+    if (backupData === null) {
+      return;
+    }
+    const blob = new Blob([backupData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `testownik-backup-${new Date().toISOString()}.json`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   // Start migration after explicit confirmation
   const executeMigration = async () => {
     setMigrating(true);
+    setMigrationError(null);
+    const backup = createGuestDataBackup();
+    setBackupData(backup);
+
     appContext.setGuest(false);
     try {
       if (categories.quizzes && selectedQuizIds.length > 0) {
@@ -173,8 +194,8 @@ export function ConnectGuestAccount() {
       localStorage.setItem("guest_migrated", "true");
     } catch (error_) {
       console.error("Error migrating data", error_);
-      toast.error(
-        "Wystąpił błąd podczas przenoszenia danych. Spróbuj ponownie później.",
+      setMigrationError(
+        "Wystąpił błąd podczas przenoszenia danych. Zalecamy pobranie kopii zapasowej (backup).",
       );
     } finally {
       setMigrating(false);
@@ -260,6 +281,40 @@ export function ConnectGuestAccount() {
           <CardContent className="flex flex-col items-center gap-4">
             <Loader size={15} />
             <p className="text-muted-foreground text-sm">{migratingText}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (migrationError !== null) {
+    return (
+      <div className="flex justify-center">
+        <Card className="border-destructive/50 w-full max-w-3xl">
+          <CardHeader>
+            <div className="text-destructive flex items-center gap-2">
+              <AlertCircleIcon className="size-5" />
+              <CardTitle>Błąd migracji</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">{migrationError}</p>
+            <p className="text-muted-foreground text-sm">
+              Twoje dane nie zostały utracone. Możesz pobrać plik z pełną kopią
+              zapasową (backup), aby zabezpieczyć swoje quizy i postępy.
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={downloadBackup}>Pobierz backup</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMigrationError(null);
+                  appContext.setGuest(true);
+                }}
+              >
+                Wróć
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

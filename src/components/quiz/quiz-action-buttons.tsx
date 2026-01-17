@@ -49,10 +49,10 @@ export function QuizActionButtons({
     const answersText = question.answers
       .map(
         (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.answer} (Poprawna: ${a.correct ? "Tak" : "Nie"})`,
+          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
       )
       .join("\n");
-    const full = `${question.question}\n\n${answersText}`;
+    const full = `${question.text}\n\n${answersText}`;
     void navigator.clipboard
       .writeText(full)
       .then(() => toast.info("Pytanie skopiowane do schowka!"));
@@ -66,10 +66,10 @@ export function QuizActionButtons({
     const answersText = question.answers
       .map(
         (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.answer} (Poprawna: ${a.correct ? "Tak" : "Nie"})`,
+          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
       )
       .join("\n");
-    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.question}\n\nOdpowiedzi:\n${answersText}`;
+    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\nOdpowiedzi:\n${answersText}`;
     window.open(
       `https://chat.openai.com/?q=${encodeURIComponent(fullText)}`,
       "_blank",
@@ -81,7 +81,7 @@ export function QuizActionButtons({
       toast.error("Nie można edytować pytania: brak pytania");
       return;
     }
-    await navigate(`/edit-quiz/${quiz.id}#question-${question.id.toString()}`);
+    await navigate(`/edit-quiz/${quiz.id}#question-${question.id}`);
   };
 
   return (

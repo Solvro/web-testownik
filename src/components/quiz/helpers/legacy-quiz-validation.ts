@@ -1,4 +1,4 @@
-const ALLOWED_QUIZ_KEYS = [
+const ALLOWED_LEGACY_QUIZ_KEYS = [
   "id",
   "title",
   "description",
@@ -10,17 +10,16 @@ const ALLOWED_QUIZ_KEYS = [
   "maintainer",
 ];
 
-const ALLOWED_QUESTION_KEYS = [
+const ALLOWED_LEGACY_QUESTION_KEYS = [
   "id",
-  "order",
-  "text",
+  "question",
   "explanation",
   "multiple",
   "image",
   "answers",
 ];
 
-const ALLOWED_ANSWER_KEYS = ["id", "order", "text", "is_correct", "image"];
+const ALLOWED_LEGACY_ANSWER_KEYS = ["answer", "correct", "image"];
 
 const containsOnlyAllowedKeys = (
   object: object,
@@ -29,7 +28,7 @@ const containsOnlyAllowedKeys = (
   return Object.keys(object).every((key) => allowedKeys.includes(key));
 };
 
-export const validateQuiz = (input: unknown): string | null => {
+export const validateLegacyQuiz = (input: unknown): string | null => {
   if (typeof input !== "object" || input === null) {
     return "Quiz musi być obiektem.";
   }
@@ -37,18 +36,14 @@ export const validateQuiz = (input: unknown): string | null => {
   const quiz = input as Record<string, unknown>;
 
   // Check if quiz contains only allowed properties
-  if (!containsOnlyAllowedKeys(quiz, ALLOWED_QUIZ_KEYS)) {
+  if (!containsOnlyAllowedKeys(quiz, ALLOWED_LEGACY_QUIZ_KEYS)) {
     const invalidKeys = Object.keys(quiz).filter(
-      (key) => !ALLOWED_QUIZ_KEYS.includes(key),
+      (key) => !ALLOWED_LEGACY_QUIZ_KEYS.includes(key),
     );
     return `Quiz zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
   }
 
-  if (typeof quiz.title !== "string") {
-    return "Tytuł quizu musi być tekstem.";
-  }
-
-  if (!quiz.title.trim()) {
+  if (typeof quiz.title !== "string" || quiz.title.trim() === "") {
     return "Podaj tytuł quizu.";
   }
 
@@ -65,16 +60,23 @@ export const validateQuiz = (input: unknown): string | null => {
     const q = question as Record<string, unknown>;
 
     // Check if question contains only allowed properties
-    if (!containsOnlyAllowedKeys(q, ALLOWED_QUESTION_KEYS)) {
+    if (!containsOnlyAllowedKeys(q, ALLOWED_LEGACY_QUESTION_KEYS)) {
       const invalidKeys = Object.keys(q).filter(
-        (key) => !ALLOWED_QUESTION_KEYS.includes(key),
+        (key) => !ALLOWED_LEGACY_QUESTION_KEYS.includes(key),
       );
       return `Pytanie nr ${String(
         questionIndex + 1,
       )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
     }
 
-    if (typeof q.text !== "string" || !q.text.trim()) {
+    if (typeof q.question === "string" && q.question.trim() === "") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
+    }
+    // Handle case where question might be missing/undefined if implied optional in legacy?
+    // Based on original code: (question.question?.trim() ?? "") === "" check suggests it could be missing.
+    // If it's missing (undefined), logic: (undefined?.trim() ?? "") === "" -> "" === "" -> true -> error.
+    // So if it's missing or empty string it errors.
+    if (typeof q.question !== "string" || q.question.trim() === "") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
     }
 
@@ -84,14 +86,21 @@ export const validateQuiz = (input: unknown): string | null => {
       )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
-    if (typeof q.id !== "string" && typeof q.id !== "number") {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe ID.`;
+    if (
+      q.id !== undefined &&
+      typeof q.id !== "string" &&
+      typeof q.id !== "number"
+    ) {
+      // ID is optional but if present must be string or number
+      return `Pytanie nr ${String(questionIndex + 1)} ma nieprawidłowe ID.`;
     }
 
-    if (questionIds.has(q.id)) {
+    if (q.id !== undefined && questionIds.has(q.id)) {
       return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${String(q.id)}.`;
     }
-    questionIds.add(q.id);
+    if (q.id !== undefined) {
+      questionIds.add(q.id);
+    }
 
     for (const [answerIndex, answer] of q.answers.entries()) {
       if (typeof answer !== "object" || answer === null) {
@@ -102,16 +111,17 @@ export const validateQuiz = (input: unknown): string | null => {
       const a = answer as Record<string, unknown>;
 
       // Check if answer contains only allowed properties
-      if (!containsOnlyAllowedKeys(a, ALLOWED_ANSWER_KEYS)) {
+      if (!containsOnlyAllowedKeys(a, ALLOWED_LEGACY_ANSWER_KEYS)) {
         const invalidKeys = Object.keys(a).filter(
-          (key) => !ALLOWED_ANSWER_KEYS.includes(key),
+          (key) => !ALLOWED_LEGACY_ANSWER_KEYS.includes(key),
         );
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
         )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
       }
 
-      if (typeof a.text !== "string" || !a.text.trim()) {
+      // Original logic: (answer.answer?.trim() ?? "") === ""
+      if (typeof a.answer !== "string" || a.answer.trim() === "") {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
         )} musi mieć treść.`;

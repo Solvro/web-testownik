@@ -1,57 +1,97 @@
-import type { Question, Reoccurrence } from "@/types/quiz.ts";
+import {
+  getAnswerCounts,
+  isQuizComplete,
+  pickNextQuestion,
+} from "@/lib/session-utils.ts";
+import type { AnswerRecord, Question } from "@/types/quiz.ts";
+
+export interface ProgressSettings {
+  initialReoccurrences: number;
+  wrongAnswerReoccurrences: number;
+}
 
 export interface RuntimeState {
+  // Current question state
   currentQuestion: Question | null;
-  selectedAnswers: number[];
+  selectedAnswers: string[];
   questionChecked: boolean;
-  correctAnswersCount: number;
-  wrongAnswersCount: number;
-  reoccurrences: Reoccurrence[];
+
+  // Next question is determined after answer is checked
+  nextQuestion: Question | null;
+
+  // Quiz state
+  questions: Question[];
+  settings: ProgressSettings;
+  answers: AnswerRecord[];
   isQuizFinished: boolean;
+
+  // UI state
   showBrainrot: boolean;
 }
 
 export type Action =
-  | { type: "SET_SELECTED_ANSWERS"; payload: number[] }
+  | { type: "SET_SELECTED_ANSWERS"; payload: string[] }
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
   | { type: "MARK_FINISHED" }
-  | { type: "INIT_REOCCURRENCES"; payload: { reoccurrences: Reoccurrence[] } }
+  | {
+      type: "INIT_SESSION";
+      payload: {
+        questions: Question[];
+        settings: ProgressSettings;
+        answers?: AnswerRecord[];
+        currentQuestionId?: string | null;
+      };
+    }
   | {
       type: "APPLY_LOADED_PROGRESS";
       payload: {
-        reoccurrences: Reoccurrence[];
+        answers: AnswerRecord[];
         question: Question | null;
-        correct: number;
-        wrong: number;
         finished: boolean;
       };
     }
   | {
-      type: "CHECK_ANSWER";
-      payload: { selectedAnswers: number[]; wrongAnswerReoccurrences: number };
+      type: "RECORD_ANSWER";
+      payload: {
+        answer: AnswerRecord;
+        nextQuestion: Question | null;
+      };
+    }
+  | {
+      type: "ADVANCE_QUESTION";
     }
   | {
       type: "RESET_PROGRESS";
-      payload: { reoccurrences: Reoccurrence[]; question: Question | null };
     }
   | { type: "TOGGLE_BRAINROT" };
 
 export const initialRuntime: RuntimeState = {
+  answers: [],
   currentQuestion: null,
+  nextQuestion: null,
   selectedAnswers: [],
   questionChecked: false,
-  correctAnswersCount: 0,
-  wrongAnswersCount: 0,
-  reoccurrences: [],
+  questions: [],
+  settings: { initialReoccurrences: 1, wrongAnswerReoccurrences: 1 },
   isQuizFinished: false,
   showBrainrot: false,
 };
 
-export function computeFinished(
-  reo: Reoccurrence[],
-  q: Question | null,
-): boolean {
-  return q == null && !reo.some((r) => r.reoccurrences > 0);
+/**
+ * Create a new answer record for the current question.
+ */
+export function createAnswerRecord(
+  questionId: string,
+  selectedAnswers: string[],
+  wasCorrect: boolean,
+): AnswerRecord {
+  return {
+    id: crypto.randomUUID(),
+    question_id: questionId,
+    answered_at: new Date().toISOString(),
+    selected_answers: selectedAnswers,
+    was_correct: wasCorrect,
+  };
 }
 
 export function runtimeReducer(
@@ -62,11 +102,12 @@ export function runtimeReducer(
     case "SET_SELECTED_ANSWERS": {
       return { ...state, selectedAnswers: action.payload };
     }
+
     case "SET_CURRENT_QUESTION": {
-      const isFinished = computeFinished(
-        state.reoccurrences,
-        action.payload.question,
-      );
+      const isFinished =
+        action.payload.question === null &&
+        isQuizComplete(state.questions, state.answers, state.settings);
+
       return {
         ...state,
         currentQuestion: action.payload.question,
@@ -75,70 +116,123 @@ export function runtimeReducer(
         isQuizFinished: isFinished,
       };
     }
+
     case "MARK_FINISHED": {
       return { ...state, isQuizFinished: true, currentQuestion: null };
     }
-    case "INIT_REOCCURRENCES": {
-      return { ...state, reoccurrences: action.payload.reoccurrences };
+
+    case "INIT_SESSION": {
+      const { questions, settings, answers, currentQuestionId } =
+        action.payload;
+
+      let firstQuestion: Question | null = null;
+      if (currentQuestionId !== undefined && currentQuestionId !== null) {
+        const savedQuestion = questions.find((q) => q.id === currentQuestionId);
+        if (savedQuestion !== undefined) {
+          firstQuestion = {
+            ...savedQuestion,
+            answers: savedQuestion.answers.toSorted(() => Math.random() - 0.5),
+          };
+        }
+      }
+
+      // Fall back to picking next if no saved question found
+      firstQuestion ??= pickNextQuestion(
+        questions,
+        answers ?? [],
+        settings,
+        null,
+      );
+
+      const isFinished =
+        firstQuestion === null &&
+        isQuizComplete(questions, answers ?? [], settings);
+
+      return {
+        ...state,
+        questions,
+        settings,
+        answers: answers ?? [],
+        currentQuestion: firstQuestion,
+        selectedAnswers: [],
+        questionChecked: false,
+        isQuizFinished: isFinished,
+      };
     }
+
     case "APPLY_LOADED_PROGRESS": {
       return {
         ...state,
-        reoccurrences: action.payload.reoccurrences,
+        answers: action.payload.answers,
         currentQuestion: action.payload.question,
-        correctAnswersCount: action.payload.correct,
-        wrongAnswersCount: action.payload.wrong,
         questionChecked: false,
         isQuizFinished: action.payload.finished,
       };
     }
-    case "CHECK_ANSWER": {
-      if (state.questionChecked || state.currentQuestion == null) {
+
+    case "RECORD_ANSWER": {
+      if (state.questionChecked || state.currentQuestion === null) {
         return state;
       }
-      const correctIndexes = state.currentQuestion.answers
-        .map((a, index) => (a.correct ? index : -1))
-        .filter((index) => index !== -1);
-      const isCorrect =
-        correctIndexes.length === action.payload.selectedAnswers.length &&
-        correctIndexes.every((ci) =>
-          action.payload.selectedAnswers.includes(ci),
-        );
-      const updatedReo = state.reoccurrences.map((r) =>
-        r.id === state.currentQuestion?.id
-          ? isCorrect
-            ? { ...r, reoccurrences: Math.max(r.reoccurrences - 1, 0) }
-            : {
-                ...r,
-                reoccurrences:
-                  r.reoccurrences + action.payload.wrongAnswerReoccurrences,
-              }
-          : r,
-      );
+
+      const { answer, nextQuestion } = action.payload;
+      const updatedAnswers = [...state.answers, answer];
+
       return {
         ...state,
         questionChecked: true,
-        correctAnswersCount: state.correctAnswersCount + (isCorrect ? 1 : 0),
-        wrongAnswersCount: state.wrongAnswersCount + (isCorrect ? 0 : 1),
-        reoccurrences: updatedReo,
+        answers: updatedAnswers,
+        nextQuestion,
       };
     }
-    case "RESET_PROGRESS": {
+
+    case "ADVANCE_QUESTION": {
+      const isFinished =
+        state.nextQuestion === null &&
+        isQuizComplete(state.questions, state.answers, state.settings);
+
       return {
-        ...initialRuntime,
-        reoccurrences: action.payload.reoccurrences,
-        currentQuestion: action.payload.question,
-        isQuizFinished: computeFinished(
-          action.payload.reoccurrences,
-          action.payload.question,
-        ),
+        ...state,
+        currentQuestion: state.nextQuestion,
+        selectedAnswers: [],
+        questionChecked: false,
+        isQuizFinished: isFinished,
+      };
+    }
+
+    case "RESET_PROGRESS": {
+      const firstQuestion = pickNextQuestion(
+        state.questions,
+        [],
+        state.settings,
+        null,
+      );
+
+      return {
+        ...state,
+        answers: [],
+        currentQuestion: firstQuestion,
+        selectedAnswers: [],
+        questionChecked: false,
+        isQuizFinished: false,
       };
     }
     case "TOGGLE_BRAINROT": {
       return { ...state, showBrainrot: !state.showBrainrot };
     }
+
     default: {
       return state;
     }
   }
+}
+
+/**
+ * Selectors to derive computed values from state.
+ */
+export function selectAnswerCounts(state: RuntimeState): {
+  correct: number;
+  wrong: number;
+} {
+  return getAnswerCounts(state.answers);
 }

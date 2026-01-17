@@ -15,7 +15,7 @@ import type { Answer, Question } from "@/types/quiz.ts";
 interface QuestionFormProps {
   question: Question & { advanced?: boolean };
   onUpdate: (updatedQuestion: Question & { advanced?: boolean }) => void;
-  onRemove: (id: number) => void;
+  onRemove: (id: string) => void;
 }
 
 export function QuestionForm({
@@ -26,7 +26,7 @@ export function QuestionForm({
   const isAdvanced = Boolean(question.advanced);
 
   const handleTextChange = (text: string) => {
-    onUpdate({ ...question, question: text });
+    onUpdate({ ...question, text });
   };
 
   const handleExplanationChange = (explanation: string) => {
@@ -43,12 +43,12 @@ export function QuestionForm({
     if (
       !multiple &&
       question.multiple &&
-      question.answers.filter((a) => a.correct).length > 1
+      question.answers.filter((a) => a.is_correct).length > 1
     ) {
-      const firstCorrectIndex = question.answers.findIndex((a) => a.correct);
+      const firstCorrectIndex = question.answers.findIndex((a) => a.is_correct);
       const updatedAnswers = question.answers.map((a, index) => ({
         ...a,
-        correct: index === firstCorrectIndex,
+        is_correct: index === firstCorrectIndex,
       }));
       onUpdate({ ...question, multiple, answers: updatedAnswers });
     } else {
@@ -57,17 +57,24 @@ export function QuestionForm({
   };
 
   const addAnswer = () => {
-    const newAnswer = { answer: "", correct: false, image: "" };
+    const newOrder = question.answers.length + 1;
+    const newAnswer = {
+      id: crypto.randomUUID(),
+      order: newOrder,
+      text: "",
+      is_correct: false,
+      image: "",
+    };
     onUpdate({ ...question, answers: [...question.answers, newAnswer] });
   };
 
   const updateAnswer = (index: number, updatedAnswer: Answer) => {
     // If this is a single-choice question and we're marking an answer as correct,
     // unmark all other answers as correct
-    if (!question.multiple && updatedAnswer.correct) {
+    if (!question.multiple && updatedAnswer.is_correct) {
       const updatedAnswers = question.answers.map((a, index_) => ({
         ...a,
-        correct: index_ === index,
+        is_correct: index_ === index,
       }));
       updatedAnswers[index] = updatedAnswer;
       onUpdate({ ...question, answers: updatedAnswers });
@@ -111,13 +118,16 @@ export function QuestionForm({
             }
 
             const newAnswers: Answer[] = [];
+            let orderCounter = question.answers.length;
             for (const answerText of pastedAnswers) {
-              const updatedAnswer: Answer = {
-                answer: answerText,
-                correct: false,
+              orderCounter++;
+              newAnswers.push({
+                id: crypto.randomUUID(),
+                order: orderCounter,
+                text: answerText,
+                is_correct: false,
                 image: "",
-              };
-              newAnswers.push(updatedAnswer);
+              });
             }
             const updatedAnswers: Answer[] = [...question.answers];
             updatedAnswers.splice(start, 1, ...newAnswers);
@@ -138,23 +148,20 @@ export function QuestionForm({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       className="group/question bg-card/20 hover:bg-card/30 relative space-y-4 rounded-lg px-2 transition-colors sm:px-4"
-      id={`question-${question.id.toString()}`}
+      id={`question-${question.id}`}
       onKeyDown={handlePasteMultipleAnswers}
       role="group"
-      aria-labelledby={`question-text-${question.id.toString()}`}
+      aria-labelledby={`question-text-${question.id}`}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label
-            htmlFor={`question-text-${question.id.toString()}`}
-            className="pr-4"
-          >
-            Pytanie {question.id}
+          <Label htmlFor={`question-text-${question.id}`} className="pr-4">
+            Pytanie {question.order}
           </Label>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Switch
-                id={`advanced-question-${question.id.toString()}`}
+                id={`advanced-question-${question.id}`}
                 checked={isAdvanced}
                 onCheckedChange={(checked) => {
                   onUpdate({ ...question, advanced: checked });
@@ -178,9 +185,9 @@ export function QuestionForm({
           </div>
         </div>
         <Textarea
-          id={`question-text-${question.id.toString()}`}
+          id={`question-text-${question.id}`}
           placeholder="Podaj treść pytania"
-          value={question.question}
+          value={question.text}
           onChange={(event_) => {
             handleTextChange(event_.target.value);
           }}
@@ -191,11 +198,11 @@ export function QuestionForm({
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor={`question-image-${question.id.toString()}`}>
+              <Label htmlFor={`question-image-${question.id}`}>
                 URL zdjęcia dla pytania
               </Label>
               <Input
-                id={`question-image-${question.id.toString()}`}
+                id={`question-image-${question.id}`}
                 placeholder="Podaj URL zdjęcia"
                 value={question.image ?? ""}
                 onChange={(event_) => {
@@ -204,11 +211,11 @@ export function QuestionForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`question-expl-${question.id.toString()}`}>
+              <Label htmlFor={`question-expl-${question.id}`}>
                 Wyjaśnienie
               </Label>
               <Textarea
-                id={`question-expl-${question.id.toString()}`}
+                id={`question-expl-${question.id}`}
                 placeholder="Podaj wyjaśnienie pytania"
                 value={question.explanation ?? ""}
                 onChange={(event_) => {
@@ -222,14 +229,14 @@ export function QuestionForm({
 
       <div className="flex items-center gap-2">
         <Checkbox
-          id={`multiple-choice-${question.id.toString()}`}
+          id={`multiple-choice-${question.id}`}
           checked={question.multiple}
           onCheckedChange={(checked) => {
             handleMultipleChange(Boolean(checked));
           }}
         />
         <Label
-          htmlFor={`multiple-choice-${question.id.toString()}`}
+          htmlFor={`multiple-choice-${question.id}`}
           className="cursor-pointer"
         >
           Wielokrotny wybór
@@ -253,11 +260,11 @@ export function QuestionForm({
                 <Textarea
                   className="min-h-8"
                   placeholder="Treść odpowiedzi"
-                  value={answer.answer}
+                  value={answer.text}
                   onChange={(event_) => {
                     updateAnswer(index, {
                       ...answer,
-                      answer: event_.target.value,
+                      text: event_.target.value,
                     });
                   }}
                   onFocus={() => {
@@ -283,15 +290,15 @@ export function QuestionForm({
               <div className="flex flex-row items-center gap-2">
                 <Checkbox
                   aria-label={
-                    answer.correct
+                    answer.is_correct
                       ? "Odpowiedź poprawna"
                       : "Oznacz jako poprawną"
                   }
-                  checked={answer.correct}
+                  checked={answer.is_correct}
                   onCheckedChange={(checked) => {
                     updateAnswer(index, {
                       ...answer,
-                      correct: Boolean(checked),
+                      is_correct: Boolean(checked),
                     });
                   }}
                 />
@@ -311,14 +318,14 @@ export function QuestionForm({
       ) : (
         <RadioGroup
           value={(() => {
-            const index = question.answers.findIndex((a) => a.correct);
+            const index = question.answers.findIndex((a) => a.is_correct);
             return index === -1 ? undefined : String(index);
           })()}
           onValueChange={(value) => {
             const selected = Number.parseInt(value, 10);
-            const newAnswers = question.answers.map((a, index) => ({
+            const newAnswers: Answer[] = question.answers.map((a, index) => ({
               ...a,
-              correct: index === selected,
+              is_correct: index === selected,
             }));
             onUpdate({ ...question, answers: newAnswers });
           }}
@@ -333,11 +340,11 @@ export function QuestionForm({
                 <Textarea
                   className="min-h-8"
                   placeholder="Treść odpowiedzi"
-                  value={answer.answer}
+                  value={answer.text}
                   onChange={(event_) => {
                     updateAnswer(index, {
                       ...answer,
-                      answer: event_.target.value,
+                      text: event_.target.value,
                     });
                   }}
                   onFocus={() => {
@@ -364,7 +371,7 @@ export function QuestionForm({
                 <RadioGroupItem
                   value={String(index)}
                   aria-label={
-                    answer.correct
+                    answer.is_correct
                       ? "Poprawna odpowiedź"
                       : "Wybierz jako poprawną"
                   }

@@ -3,7 +3,7 @@ import type { DataConnection } from "peerjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
-import type { Question, Reoccurrence } from "@/types/quiz.ts";
+import type { AnswerRecord, Question } from "@/types/quiz.ts";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
@@ -14,11 +14,12 @@ const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    {
-      urls: "turn:freestun.net:3478",
-      username: "free",
-      credential: "free",
-    },
+    // No longer working, we will need to host our own TURN server
+    // {
+    //   urls: "turn:freestun.net:3478",
+    //   username: "free",
+    //   credential: "free",
+    // },
   ],
 };
 
@@ -27,12 +28,13 @@ interface InitialSyncMessage {
   startTime: number;
   correctAnswersCount: number;
   wrongAnswersCount: number;
-  reoccurrences: Reoccurrence[];
+  answers: AnswerRecord[];
+  studyTime: number;
 }
 interface QuestionUpdateMessage {
   type: "question_update";
   question: Question;
-  selectedAnswers: number[];
+  selectedAnswers: string[];
 }
 interface AnswerCheckedMessage {
   type: "answer_checked";
@@ -56,19 +58,20 @@ interface UseQuizContinuityOptions {
   quizId: string;
   getCurrentState: () => {
     question: Question | null;
-    reoccurrences: Reoccurrence[];
+    answers: AnswerRecord[];
     startTime: number;
     wrongAnswers: number;
     correctAnswers: number;
-    selectedAnswers: number[];
+    selectedAnswers: string[];
   };
   onInitialSync: (d: {
     startTime: number;
     correctAnswersCount: number;
     wrongAnswersCount: number;
-    reoccurrences: Reoccurrence[];
+    answers?: AnswerRecord[];
+    studyTime?: number;
   }) => void;
-  onQuestionUpdate: (q: Question, selected: number[]) => void;
+  onQuestionUpdate: (q: Question, selected: string[]) => void;
   onAnswerChecked: () => void;
 }
 
@@ -122,13 +125,13 @@ export function useQuizContinuity({
     (conn: DataConnection) => {
       const {
         question,
-        reoccurrences,
+        answers,
         startTime,
         wrongAnswers,
         correctAnswers,
         selectedAnswers,
       } = getCurrentState();
-      if (question == null) {
+      if (question === null) {
         return;
       }
       send(conn, {
@@ -136,7 +139,8 @@ export function useQuizContinuity({
         startTime,
         correctAnswersCount: correctAnswers,
         wrongAnswersCount: wrongAnswers,
-        reoccurrences,
+        answers,
+        studyTime: 0,
       });
       send(conn, { type: "question_update", question, selectedAnswers });
     },
@@ -176,7 +180,8 @@ export function useQuizContinuity({
             startTime: data.startTime,
             correctAnswersCount: data.correctAnswersCount,
             wrongAnswersCount: data.wrongAnswersCount,
-            reoccurrences: data.reoccurrences,
+            answers: data.answers,
+            studyTime: data.studyTime,
           });
           break;
         }
@@ -361,7 +366,7 @@ export function useQuizContinuity({
     sendAnswerChecked: () => {
       broadcast({ type: "answer_checked" });
     },
-    sendQuestionUpdate: (question: Question, selectedAnswers: number[]) => {
+    sendQuestionUpdate: (question: Question, selectedAnswers: string[]) => {
       broadcast({ type: "question_update", question, selectedAnswers });
     },
   };

@@ -1,7 +1,7 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
-import type { Question, Quiz, Reoccurrence } from "@/types/quiz.ts";
+import type { AnswerRecord, Question, Quiz } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 
 export interface UseQuizLogicParameters {
@@ -16,7 +16,7 @@ export interface UseQuizLogicResult {
   userSettings: UserSettings;
   state: {
     currentQuestion: Question | null;
-    selectedAnswers: number[];
+    selectedAnswers: string[];
     questionChecked: boolean;
     isQuizFinished: boolean;
     showBrainrot: boolean;
@@ -24,8 +24,10 @@ export interface UseQuizLogicResult {
   stats: {
     correctAnswersCount: number;
     wrongAnswersCount: number;
-    reoccurrences: Reoccurrence[];
+    masteredCount: number;
+    totalQuestions: number;
     studyTime: number;
+    answers: AnswerRecord[];
   };
   continuity: {
     isHost: boolean;
@@ -33,9 +35,9 @@ export interface UseQuizLogicResult {
   };
   actions: {
     nextAction: () => void;
-    nextQuestion: () => void;
+    skipQuestion: () => void;
     resetProgress: () => Promise<void>;
-    setSelectedAnswers: (a: number[]) => void;
+    setSelectedAnswers: (a: string[]) => void;
     toggleBrainrot: () => void;
   };
 }

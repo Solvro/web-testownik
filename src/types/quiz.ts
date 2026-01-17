@@ -13,14 +13,17 @@ export interface QuizMetadata {
 }
 
 export interface Answer {
-  answer: string;
-  correct: boolean;
+  id: string;
+  order: number;
+  text: string;
+  is_correct: boolean;
   image?: string; // URL to image
 }
 
 export interface Question {
-  id: number;
-  question: string;
+  id: string;
+  order: number;
+  text: string;
   explanation?: string;
   multiple: boolean; // Single or multiple choice
   image?: string; // URL to image
@@ -36,18 +39,24 @@ export interface Quiz extends QuizMetadata {
   questions: Question[];
 }
 
-export interface Reoccurrence {
-  id: number;
-  reoccurrences: number;
+export interface AnswerRecord {
+  id: string;
+  question_id: string;
+  answered_at: string;
+  selected_answers: string[];
+  was_correct: boolean;
 }
 
-export interface QuizProgress {
-  current_question: number;
-  correct_answers_count: number;
-  wrong_answers_count: number;
+export interface QuizSession {
+  id: string;
+  started_at: string;
+  ended_at: string | null;
+  is_active: boolean;
   study_time: number;
-  last_activity?: string;
-  reoccurrences: Reoccurrence[];
+  correct_count: number;
+  wrong_count: number;
+  current_question: string | null;
+  answers: AnswerRecord[];
 }
 
 export interface SharedQuiz {

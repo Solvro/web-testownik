@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 interface ReportQuestionIssueDialogProps {
   children: React.ReactNode;
   quizId?: string;
-  questionId?: number;
+  questionId?: string;
 }
 
 export function ReportQuestionIssueDialog({
@@ -47,7 +47,7 @@ export function ReportQuestionIssueDialog({
     try {
       await appContext.services.quiz.reportQuestionIssue(
         quizId,
-        String(questionId),
+        questionId,
         issue,
       );
 

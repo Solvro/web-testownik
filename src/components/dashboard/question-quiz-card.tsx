@@ -74,7 +74,10 @@ export function QuestionQuizCard({
 
     for (const [index, answer] of questionData.answers.entries()) {
       const isSelected = selectedAnswers.includes(index);
-      if ((isSelected && !answer.correct) || (!isSelected && answer.correct)) {
+      if (
+        (isSelected && !answer.is_correct) ||
+        (!isSelected && answer.is_correct)
+      ) {
         isCorrect = false;
       }
     }
@@ -151,7 +154,7 @@ export function QuestionQuizCard({
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
                 >
-                  {questionData.question}
+                  {questionData.text}
                 </Markdown>
               </CardTitle>
               <ScrollBar orientation="horizontal" />
@@ -169,7 +172,7 @@ export function QuestionQuizCard({
             <div className="grid gap-2">
               {questionData.answers.map((answer, index) => (
                 <button
-                  key={answer.answer}
+                  key={answer.text}
                   onClick={() => {
                     toggleAnswer(index);
                   }}
@@ -179,11 +182,11 @@ export function QuestionQuizCard({
                     computeAnswerVariant(
                       selectedAnswers.includes(index),
                       Boolean(result),
-                      answer.correct,
+                      answer.is_correct,
                     ),
                   )}
                 >
-                  {answer.answer}
+                  {answer.text}
                 </button>
               ))}
             </div>

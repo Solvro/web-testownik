@@ -1,4 +1,4 @@
-import type { Question } from "@/types/quiz.ts";
+import type { AnswerRecord, Question, QuizSession } from "@/types/quiz.ts";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -6,7 +6,6 @@ import type {
   QuestionWithQuizInfo,
   Quiz,
   QuizMetadata,
-  QuizProgress,
   SharedQuiz,
   User,
 } from "./types";
@@ -265,23 +264,15 @@ export class QuizService extends BaseApiService {
   }
 
   /**
-   * Set quiz progress
+   * Set quiz progress - used only when uploading guest progress
    */
   async setQuizProgress(
     quizId: string,
-    progress: QuizProgress,
-    applyRemote = true,
-  ): Promise<QuizProgress> {
-    localStorage.setItem(
-      STORAGE_KEYS.QUIZ_PROGRESS(quizId),
-      JSON.stringify(progress),
-    );
-    if (this.isGuestMode() || !applyRemote) {
-      return progress;
-    }
-    const response = await this.post<QuizProgress>(
-      `/quiz/${quizId}/progress/`,
-      progress,
+    session: QuizSession,
+  ): Promise<QuizSession> {
+    const response = await this.post<QuizSession>(
+      `/quizzes/${quizId}/progress/`,
+      session,
     );
     return response.data;
   }

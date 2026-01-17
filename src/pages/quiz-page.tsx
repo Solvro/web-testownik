@@ -33,12 +33,17 @@ export function QuizPage(): React.JSX.Element {
     isQuizFinished,
     showBrainrot,
   } = state;
-  const { correctAnswersCount, wrongAnswersCount, reoccurrences, studyTime } =
-    stats;
+  const {
+    correctAnswersCount,
+    wrongAnswersCount,
+    masteredCount,
+    totalQuestions,
+    studyTime,
+  } = stats;
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
-    nextQuestion,
+    skipQuestion,
     resetProgress,
     setSelectedAnswers,
     toggleBrainrot,
@@ -46,7 +51,7 @@ export function QuizPage(): React.JSX.Element {
 
   useKeyShortcuts({
     nextAction,
-    nextQuestion,
+    skipQuestion,
   });
 
   if (loading) {
@@ -179,7 +184,8 @@ export function QuizPage(): React.JSX.Element {
             quiz={quiz}
             correctAnswersCount={correctAnswersCount}
             wrongAnswersCount={wrongAnswersCount}
-            reoccurrences={reoccurrences}
+            masteredCount={masteredCount}
+            totalQuestions={totalQuestions}
             studyTime={studyTime}
             resetProgress={resetProgress}
           />
