@@ -215,6 +215,7 @@ export function runtimeReducer(
         selectedAnswers: [],
         questionChecked: false,
         isQuizFinished: false,
+        nextQuestion: null,
       };
     }
     case "TOGGLE_BRAINROT": {

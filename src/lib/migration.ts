@@ -144,15 +144,14 @@ function migrateQuizProgress(
       const syntheticAnswers: AnswerRecord[] = [];
 
       for (const r of legacyProgress.reoccurrences) {
-        if (!(questionIdMap?.has(r.id) ?? false)) {
-          console.warn(
-            `[Migration] Missing question ID mapping for legacy question ${String(r.id)} in quiz ${quizId}; skipping synthetic answer creation for this entry.`,
-          );
-          continue;
-        }
         const questionId = questionIdMap?.get(r.id);
 
         if (questionId === undefined) {
+          if (!(questionIdMap?.has(r.id) ?? false)) {
+            console.warn(
+              `[Migration] Missing question ID mapping for legacy question ${String(r.id)} in quiz ${quizId}; skipping synthetic answer creation for this entry.`,
+            );
+          }
           continue;
         }
 
