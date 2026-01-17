@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { mockQuiz } from "../tests/mocks/quiz-mock";
+import { mockLegacyQuiz, mockQuiz } from "../tests/mocks/quiz-mock";
 import { server } from "../tests/mocks/server";
 import { Providers } from "../tests/providers";
 import { ImportQuizPage } from "./import-quiz-page";
@@ -61,7 +61,9 @@ describe("ImportQuizPage", () => {
       inputJson("{ invalid json");
       await clickImport();
 
-      expect(await screen.findByText(/błąd.*json/i)).toBeVisible();
+      expect(
+        await screen.findByText(/Wystąpił błąd podczas parsowania JSON/i),
+      ).toBeVisible();
     });
 
     it("should submit valid JSON", async () => {
@@ -89,6 +91,23 @@ describe("ImportQuizPage", () => {
 
       expect(await screen.findByText(/wklej quiz/i)).toBeVisible();
     });
+
+    it("should submit valid legacy JSON", async () => {
+      const { clickImport, inputJson, switchToJson } = setup();
+
+      await switchToJson();
+      inputJson(JSON.stringify(mockLegacyQuiz));
+      await clickImport();
+
+      expect(
+        await screen.findByRole("heading", {
+          name: new RegExp(
+            `quiz\\s+"${mockLegacyQuiz.title}"\\s+został\\s+zaimportowany`,
+            "i",
+          ),
+        }),
+      ).toBeVisible();
+    });
   });
 
   describe("file import", () => {
@@ -108,7 +127,9 @@ describe("ImportQuizPage", () => {
       await uploadJsonFile("{ invalid json", "invalid.json");
       await clickImport();
 
-      expect(await screen.findByText(/błąd.*plik/i)).toBeVisible();
+      expect(
+        await screen.findByText(/Wystąpił błąd podczas wczytywania pliku/i),
+      ).toBeVisible();
     });
 
     it("should accept valid file", async () => {
@@ -122,6 +143,23 @@ describe("ImportQuizPage", () => {
         await screen.findByRole("heading", {
           name: new RegExp(
             `quiz\\s+"${mockQuiz.title}"\\s+został\\s+zaimportowany`,
+            "i",
+          ),
+        }),
+      ).toBeVisible();
+    });
+
+    it("should accept valid legacy file", async () => {
+      const { switchToFile, clickImport, uploadJsonFile } = setup();
+
+      await switchToFile();
+      await uploadJsonFile(JSON.stringify(mockLegacyQuiz), "legacy.json");
+      await clickImport();
+
+      expect(
+        await screen.findByRole("heading", {
+          name: new RegExp(
+            `quiz\\s+"${mockLegacyQuiz.title}"\\s+został\\s+zaimportowany`,
             "i",
           ),
         }),

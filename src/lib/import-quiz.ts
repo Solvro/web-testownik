@@ -3,8 +3,11 @@ import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
+import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation.ts";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation.ts";
-import type { Question, Quiz } from "@/types/quiz.ts";
+import { migrateLegacyQuiz } from "@/lib/migration.ts";
+import type { LegacyQuiz } from "@/types/quiz-legacy.ts";
+import type { Answer, Question, Quiz } from "@/types/quiz.ts";
 
 const trueFalseStrings = {
   prawda: true,
@@ -15,7 +18,7 @@ const trueFalseStrings = {
   false: false,
 };
 
-export type UploadType = "file" | "json" | "old";
+export type UploadType = "file" | "json" | "legacy";
 
 const parseQTemplate = (
   lines: string[],
@@ -59,15 +62,17 @@ const parseQTemplate = (
   const questionText = questionMatch[2];
 
   // Extract answers from subsequent lines
-  const answers: { answer: string; correct: boolean }[] = [];
+  const answers: Answer[] = [];
   for (let index_ = 2; index_ < lines.length; index_++) {
     const answerLine = lines[index_]?.trim();
     const answerMatch = /^\t?\(([a-z])\)\s+(.*)/.exec(answerLine); // Match optional tab, "(letter)", and answer text
     if (answerMatch !== null) {
       const answerIndex = answers.length; // Determine the index of the answer based on its position
       answers.push({
-        answer: answerMatch[2], // The answer text
-        correct: correctness[answerIndex] === "1", // Check if it's correct
+        id: crypto.randomUUID(),
+        order: answerIndex + 1,
+        text: answerMatch[2], // The answer text
+        is_correct: correctness[answerIndex] === "1", // Check if it's correct
       });
     } else if (answerLine) {
       console.error(
@@ -85,10 +90,11 @@ const parseQTemplate = (
   }
 
   return {
-    question: questionText,
+    id: crypto.randomUUID(),
+    order: index,
+    text: questionText,
     answers,
     multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
-    id: index,
   };
 };
 
@@ -143,7 +149,7 @@ const parseQuestion = (
     }
   }
 
-  const answers = [];
+  const answers: Answer[] = [];
   for (
     let s = questionLinesCount + 1;
     s < Math.min(lines.length, template.length + 1);
@@ -154,16 +160,20 @@ const parseQuestion = (
     }
     try {
       answers.push({
-        answer: lines[s]?.trim(),
-        correct: template[s - 1] === "1",
+        id: crypto.randomUUID(),
+        order: answers.length + 1,
+        text: lines[s]?.trim(),
+        is_correct: template[s - 1] === "1",
       });
     } catch (error_) {
       console.error(
         `Error in file ${filename} at line ${String(s)}. Replacing the unknown value with False. Error: ${error_ instanceof Error ? error_.message : String(error_)}`,
       );
       answers.push({
-        answer: lines[s]?.trim(),
-        correct: false,
+        id: crypto.randomUUID(),
+        order: answers.length + 1,
+        text: lines[s]?.trim(),
+        is_correct: false,
       });
     }
   }
@@ -171,19 +181,20 @@ const parseQuestion = (
   const isTrueFalse =
     (template.endsWith("X01") || template.endsWith("X10")) &&
     answers.length === 2 &&
-    answers.every((a) => a.answer.toLowerCase() in trueFalseStrings);
+    answers.every((a) => a.text.toLowerCase() in trueFalseStrings);
 
   return {
-    question,
+    id: crypto.randomUUID(),
+    order: index,
+    text: question,
     answers,
     multiple: !isTrueFalse,
-    id: index,
   };
 };
 
 export const useImportQuiz = () => {
   const appContext = useContext(AppContext);
-  const [uploadType, setUploadType] = useState<UploadType>("old");
+  const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
   const [directoryName, setDirectoryName] = useState<string | null>(null);
@@ -231,7 +242,7 @@ export const useImportQuiz = () => {
           setFileNameInput(file.name);
           break;
         }
-        case "old": {
+        case "legacy": {
           if (fileOldRef.current !== null) {
             fileOldRef.current.files = event.dataTransfer.files;
           }
@@ -267,7 +278,7 @@ export const useImportQuiz = () => {
             : "none";
         break;
       }
-      case "old": {
+      case "legacy": {
         event.dataTransfer.dropEffect =
           items.length === 1 &&
           items[0].kind === "file" &&
@@ -373,7 +384,7 @@ export const useImportQuiz = () => {
         break;
       }
 
-      case "old": {
+      case "legacy": {
         if (files !== null && files.length > 0) {
           const fileOld = files[0];
           setFileNameOld(fileOld.name);
@@ -473,29 +484,37 @@ export const useImportQuiz = () => {
     setLoading(false);
   };
 
-  const addQuestionIdsIfMissing = (quizData: Quiz): Quiz => {
-    let id = 1;
-    for (const question of quizData.questions) {
-      if (question.id) {
-        id = Math.max(id, question.id + 1);
-      } else {
-        question.id = id++;
-      }
-    }
-    return quizData;
-  };
-
-  const submitImport = async (type: "json" | "link", data: string | Quiz) => {
+  const submitImport = async (data: Quiz) => {
     try {
-      const result =
-        type === "json"
-          ? await appContext.services.quiz.createQuiz(data as Quiz)
-          : await appContext.services.quiz.importQuizFromLink(data as string);
+      const { id, ...rest } = data;
+      const result = await appContext.services.quiz.createQuiz(rest);
 
       setQuiz(result);
     } catch {
       setError("Wystąpił błąd podczas importowania quizu.");
     }
+  };
+
+  const processAndSubmitImport = async (data: unknown) => {
+    const validationError = validateQuiz(data);
+    if (validationError === null) {
+      await submitImport(data as Quiz);
+      return;
+    }
+    const legacyError = validateLegacyQuiz(data);
+    if (legacyError === null) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      const { quiz: migratedQuiz } = migrateLegacyQuiz(data as LegacyQuiz);
+      const postMigrationError = validateQuiz(migratedQuiz);
+      if (postMigrationError !== null) {
+        setErrorAndNotify(`Błąd migracji quizu legacy: ${postMigrationError}`);
+        return;
+      }
+      await submitImport(migratedQuiz);
+      return;
+    }
+
+    setErrorAndNotify(`Nieprawidłowy format quizu. ${validationError}`);
   };
 
   const handleImport = async () => {
@@ -510,13 +529,7 @@ export const useImportQuiz = () => {
         }
         try {
           const text = await file.text();
-          const data = JSON.parse(text) as Quiz;
-          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-          if (validationError !== null) {
-            setErrorAndNotify(validationError);
-            return false;
-          }
-          await submitImport("json", data);
+          await processAndSubmitImport(JSON.parse(text));
         } catch (fileError) {
           if (fileError instanceof Error) {
             setError(
@@ -539,13 +552,7 @@ export const useImportQuiz = () => {
           return;
         }
         try {
-          const data = JSON.parse(textInput) as Quiz;
-          const validationError = validateQuiz(addQuestionIdsIfMissing(data));
-          if (validationError !== null) {
-            setErrorAndNotify(validationError);
-            return false;
-          }
-          await submitImport("json", data);
+          await processAndSubmitImport(JSON.parse(textInput));
         } catch (parseError) {
           if (parseError instanceof Error) {
             setError(
@@ -553,15 +560,15 @@ export const useImportQuiz = () => {
             );
           } else {
             setError(
-              "Quiz jest niepoprawny. Upewnij się, że jest w formacie JSON.",
+              `Wystąpił błąd podczas parsowania JSON: ${String(parseError)}`,
             );
           }
-          console.error("Błąd podczas parsowania JSON:", error);
+          console.error("Błąd podczas parsowania JSON:", parseError);
         }
 
         break;
       }
-      case "old": {
+      case "legacy": {
         if (fileNameOld == null && directoryName == null) {
           setError("Nie wybrano pliku ani folderu.");
           setLoading(false);

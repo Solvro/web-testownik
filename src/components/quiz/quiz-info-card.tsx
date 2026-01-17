@@ -18,13 +18,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Quiz, Reoccurrence } from "@/types/quiz.ts";
+import type { Quiz } from "@/types/quiz.ts";
 
 interface QuizInfoCardProps {
   quiz: Quiz | null;
   correctAnswersCount: number;
   wrongAnswersCount: number;
-  reoccurrences: Reoccurrence[];
+  masteredCount: number;
+  totalQuestions: number;
   studyTime: number; // in seconds
   resetProgress: () => void;
 }
@@ -63,7 +64,8 @@ export function QuizInfoCard({
   quiz,
   correctAnswersCount,
   wrongAnswersCount,
-  reoccurrences,
+  masteredCount,
+  totalQuestions,
   studyTime,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
@@ -75,9 +77,7 @@ export function QuizInfoCard({
 
   const openSearchInQuiz = async () => navigate(`/search-in-quiz/${quiz.id}`);
   const progressPercentage =
-    (reoccurrences.filter((q) => q.reoccurrences === 0).length /
-      quiz.questions.length) *
-    100;
+    totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 
   return (
     <Card>
@@ -97,14 +97,12 @@ export function QuizInfoCard({
           </div>
           <div className="flex justify-between">
             <span>Opanowane pytania</span>
-            <span className="text-muted-foreground">
-              {reoccurrences.filter((q) => q.reoccurrences === 0).length}
-            </span>
+            <span className="text-muted-foreground">{masteredCount}</span>
           </div>
           <div className="flex justify-between">
             <span>Liczba pytań</span>
             <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              {quiz.questions.length}
+              {totalQuestions}
             </span>
           </div>
           <div className="flex justify-between">

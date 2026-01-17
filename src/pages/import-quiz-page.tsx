@@ -137,7 +137,7 @@ export function ImportQuizPage(): React.JSX.Element {
           >
             <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
-              <TabsTrigger value="old">Stara wersja</TabsTrigger>
+              <TabsTrigger value="legacy">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
             </TabsList>
             <TabsContent value="file" className="mt-4">
@@ -192,7 +192,7 @@ export function ImportQuizPage(): React.JSX.Element {
                 />
               </div>
             </TabsContent>
-            <TabsContent value="old" className="mt-4">
+            <TabsContent value="legacy" className="mt-4">
               <div className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-11">
                   <div className="space-y-2 md:col-span-5">
@@ -365,15 +365,15 @@ export function ImportQuizPage(): React.JSX.Element {
                   powinien zawierać tablicę obiektów reprezentujących pytania.
                   Każde pytanie powinno zawierać klucze{" "}
                   <TypographyInlineCode>id</TypographyInlineCode>,{" "}
-                  <TypographyInlineCode>question</TypographyInlineCode> i{" "}
+                  <TypographyInlineCode>text</TypographyInlineCode> i{" "}
                   <TypographyInlineCode>answers</TypographyInlineCode> oraz
-                  opcjonalnie{" "}
-                  <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
+                  opcjonalnie <TypographyInlineCode>order</TypographyInlineCode>
+                  , <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
                   (domyślnie <TypographyInlineCode>false</TypographyInlineCode>)
                   i <TypographyInlineCode>explanation</TypographyInlineCode>.
                   Jeśli nie podano{" "}
-                  <TypographyInlineCode>id</TypographyInlineCode>, zostanie on
-                  nadany automatycznie od 1.
+                  <TypographyInlineCode>order</TypographyInlineCode>, zostanie
+                  on nadany automatycznie od 1.
                 </p>
                 <p>Przykładowy quiz w formacie JSON:</p>
               </div>
@@ -384,54 +384,61 @@ export function ImportQuizPage(): React.JSX.Element {
     "description": "Opis quizu", // Opcjonalny
     "questions": [
         {
-            "id": 1,
-            "question": "Jaki jest sens sesji?",
+            "order": 1, // Opcjonalny
+            "text": "Jaki jest sens sesji?",
             "answers": [
                 {
-                    "answer": "Nie ma sensu",
-                    "correct": false
+                    "order": 1, // Opcjonalny
+                    "text": "Nie ma sensu",
+                    "is_correct": false
                 },
                 {
-                    "answer": "Żeby zjeść obiad",
-                    "correct": true
+                    "order": 2,
+                    "text": "Żeby zjeść obiad",
+                    "is_correct": true
                 },
                 {
-                    "answer": "Żeby się wykończyć",
-                    "correct": false
+                    "order": 3,
+                    "text": "Żeby się wykończyć",
+                    "is_correct": false
                 }
             ],
             "multiple": false, // Opcjonalny, domyślnie false
             "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny, domyślnie null
         },
         {
-            "id": 2,
-            "question": "Kto jest najlepszy?",
+            "order": 2,
+            "text": "Kto jest najlepszy?",
             "answers": [
                 {
-                    "answer": "Ja",
-                    "correct": true
+                    "order": 1,
+                    "text": "Ja",
+                    "is_correct": true
                 },
                 {
-                    "answer": "Ty",
-                    "correct": false
+                    "order": 2,
+                    "text": "Ty",
+                    "is_correct": false
                 }
             ],
             "multiple": false
         },
         {
-            "id": 3,
-            "question": "Pytanie ze zdjęciem",
+            "order": 3,
+            "text": "Pytanie ze zdjęciem",
             "image": "https://example.com/image.jpg", // Opcjonalny
             "answers": [
                 {
-                    "answer": "Odpowiedź 1",
+                    "order": 1,
+                    "text": "Odpowiedź 1",
                     "image": "https://example.com/image2.jpg", // Opcjonalny
-                    "correct": true
+                    "is_correct": true
                 },
                 {
-                    "answer": "Odpowiedź 2",
+                    "order": 2,
+                    "text": "Odpowiedź 2",
                     "image": "https://example.com/image3.jpg", // Opcjonalny
-                    "correct": false
+                    "is_correct": false
                 }
             ],
             "multiple": true

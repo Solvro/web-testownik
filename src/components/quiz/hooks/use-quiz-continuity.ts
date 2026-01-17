@@ -3,22 +3,46 @@ import type { DataConnection } from "peerjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
-import type { Question, Reoccurrence } from "@/types/quiz.ts";
+import type { AnswerRecord, Question } from "@/types/quiz.ts";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
 
+const TURN_USERNAME = import.meta.env.VITE_TURN_USERNAME as string | undefined;
+const TURN_CREDENTIAL = import.meta.env.VITE_TURN_CREDENTIAL as
+  | string
+  | undefined;
+
 const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    {
-      urls: "turn:freestun.net:3478",
-      username: "free",
-      credential: "free",
-    },
+    ...(Boolean(TURN_USERNAME) && Boolean(TURN_CREDENTIAL)
+      ? [
+          {
+            urls: "turn:eu-central.turnix.io:3478?transport=udp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turn:eu-central.turnix.io:3478?transport=tcp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turns:eu-central.turnix.io:443?transport=udp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+          {
+            urls: "turns:eu-central.turnix.io:443?transport=tcp",
+            username: TURN_USERNAME,
+            credential: TURN_CREDENTIAL,
+          },
+        ]
+      : []),
   ],
 };
 
@@ -27,15 +51,17 @@ interface InitialSyncMessage {
   startTime: number;
   correctAnswersCount: number;
   wrongAnswersCount: number;
-  reoccurrences: Reoccurrence[];
+  answers: AnswerRecord[];
+  studyTime: number;
 }
 interface QuestionUpdateMessage {
   type: "question_update";
   question: Question;
-  selectedAnswers: number[];
+  selectedAnswers: string[];
 }
 interface AnswerCheckedMessage {
   type: "answer_checked";
+  nextQuestion: Question | null;
 }
 interface PingMessage {
   type: "ping";
@@ -56,20 +82,21 @@ interface UseQuizContinuityOptions {
   quizId: string;
   getCurrentState: () => {
     question: Question | null;
-    reoccurrences: Reoccurrence[];
+    answers: AnswerRecord[];
     startTime: number;
     wrongAnswers: number;
     correctAnswers: number;
-    selectedAnswers: number[];
+    selectedAnswers: string[];
   };
   onInitialSync: (d: {
     startTime: number;
     correctAnswersCount: number;
     wrongAnswersCount: number;
-    reoccurrences: Reoccurrence[];
+    answers?: AnswerRecord[];
+    studyTime?: number;
   }) => void;
-  onQuestionUpdate: (q: Question, selected: number[]) => void;
-  onAnswerChecked: () => void;
+  onQuestionUpdate: (q: Question, selected: string[]) => void;
+  onAnswerChecked: (nextQuestion: Question | null) => void;
 }
 
 export function useQuizContinuity({
@@ -122,13 +149,13 @@ export function useQuizContinuity({
     (conn: DataConnection) => {
       const {
         question,
-        reoccurrences,
+        answers,
         startTime,
         wrongAnswers,
         correctAnswers,
         selectedAnswers,
       } = getCurrentState();
-      if (question == null) {
+      if (question === null) {
         return;
       }
       send(conn, {
@@ -136,7 +163,8 @@ export function useQuizContinuity({
         startTime,
         correctAnswersCount: correctAnswers,
         wrongAnswersCount: wrongAnswers,
-        reoccurrences,
+        answers,
+        studyTime: 0,
       });
       send(conn, { type: "question_update", question, selectedAnswers });
     },
@@ -176,7 +204,8 @@ export function useQuizContinuity({
             startTime: data.startTime,
             correctAnswersCount: data.correctAnswersCount,
             wrongAnswersCount: data.wrongAnswersCount,
-            reoccurrences: data.reoccurrences,
+            answers: data.answers,
+            studyTime: data.studyTime,
           });
           break;
         }
@@ -185,7 +214,7 @@ export function useQuizContinuity({
           break;
         }
         case "answer_checked": {
-          onAnswerChecked();
+          onAnswerChecked(data.nextQuestion);
           break;
         }
         case "ping": {
@@ -215,7 +244,7 @@ export function useQuizContinuity({
           break;
         }
         case "answer_checked": {
-          onAnswerChecked();
+          onAnswerChecked(data.nextQuestion);
           broadcastExcept(conn, data);
           break;
         }
@@ -358,10 +387,10 @@ export function useQuizContinuity({
     peerConnections,
     broadcast,
     broadcastExcept,
-    sendAnswerChecked: () => {
-      broadcast({ type: "answer_checked" });
+    sendAnswerChecked: (nextQuestion: Question | null) => {
+      broadcast({ type: "answer_checked", nextQuestion });
     },
-    sendQuestionUpdate: (question: Question, selectedAnswers: number[]) => {
+    sendQuestionUpdate: (question: Question, selectedAnswers: string[]) => {
       broadcast({ type: "question_update", question, selectedAnswers });
     },
   };

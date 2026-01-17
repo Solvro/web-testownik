@@ -91,12 +91,13 @@ export function QuizEditor({
     }
     return [
       {
-        id: 1,
-        question: "",
+        id: crypto.randomUUID(),
+        order: 1,
+        text: "",
         multiple: true,
         answers: [
-          { answer: "", correct: false },
-          { answer: "", correct: false },
+          { id: crypto.randomUUID(), order: 1, text: "", is_correct: false },
+          { id: crypto.randomUUID(), order: 2, text: "", is_correct: false },
         ],
         image: "",
         explanation: "",
@@ -108,8 +109,8 @@ export function QuizEditor({
   const [error, setError] = useState<string | null>(null);
   const [advancedMode, setAdvancedMode] = useState(initialAdvancedDefault);
 
-  const [previousQuestionId, setPreviousQuestionId] = useState<number>(() =>
-    questions.reduce((max, q) => Math.max(q.id, max), 0),
+  const [previousQuestionOrder, setPreviousQuestionOrder] = useState<number>(
+    () => questions.reduce((max, q) => Math.max(q.order, max), 0),
   );
 
   const allQuestionsMultiple: boolean | null = useMemo(() => {
@@ -132,32 +133,32 @@ export function QuizEditor({
   };
 
   const addQuestion = () => {
-    const newId = previousQuestionId + 1;
+    const newOrder = previousQuestionOrder + 1;
+    const newId = crypto.randomUUID();
     setQuestions((previous) => [
       ...previous,
       {
         id: newId,
-        question: "",
+        order: newOrder,
+        text: "",
         multiple: true,
         answers: [
-          { answer: "", correct: false },
-          { answer: "", correct: false },
+          { id: crypto.randomUUID(), order: 1, text: "", is_correct: false },
+          { id: crypto.randomUUID(), order: 2, text: "", is_correct: false },
         ],
         image: "",
         explanation: "",
         advanced: advancedMode,
       },
     ]);
-    setPreviousQuestionId(newId);
+    setPreviousQuestionOrder(newOrder);
     // Scroll after render
     requestAnimationFrame(() => {
-      const element = document.querySelector(`#question-${newId.toString()}`);
+      const element = document.querySelector(`#question-${newId}`);
       if (element == null) {
         // fallback slight delay
         setTimeout(() => {
-          const element2 = document.querySelector(
-            `#question-${newId.toString()}`,
-          );
+          const element2 = document.querySelector(`#question-${newId}`);
           if (element2 != null) {
             element2.scrollIntoView({ behavior: "smooth" });
             const textarea2 = element2.querySelector("textarea");
@@ -181,7 +182,7 @@ export function QuizEditor({
       previous.map((q) => (q.id === updated.id ? updated : q)),
     );
   };
-  const removeQuestion = (id: number) => {
+  const removeQuestion = (id: string) => {
     setQuestions((previous) => previous.filter((q) => q.id !== id));
   };
 

@@ -2,9 +2,10 @@
 export type {
   Quiz,
   QuizMetadata,
-  QuizProgress,
   SharedQuiz,
   QuestionWithQuizInfo,
+  AnswerRecord,
+  QuizSession,
 } from "@/types/quiz.ts";
 export type {
   User,

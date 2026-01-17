@@ -1,7 +1,6 @@
 import { AlertCircleIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context.ts";
 import { Loader } from "@/components/loader.tsx";
@@ -28,7 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
 import { SERVER_URL } from "@/config.ts";
-import type { Quiz, QuizProgress } from "@/types/quiz.ts";
+import { createGuestDataBackup } from "@/lib/migration.ts";
+import type { Quiz } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
 
@@ -46,13 +46,13 @@ export function ConnectGuestAccount() {
   const [migrated, setMigrated] = useState(
     localStorage.getItem("guest_migrated") === "true",
   );
+  const [migrationError, setMigrationError] = useState<string | null>(null);
+  const [backupData, setBackupData] = useState<string | null>(null);
 
   // Category migration checkboxes:
-  // – By default, "Quizy" and "Postępy quizów" are enabled, "Ustawienia" is off.
-  // – The "Postępy quizów" checkbox is disabled if "Quizy" is off.
+  // – By default, "Quizy" is enabled, "Ustawienia" is off.
   const [categories, setCategories] = useState({
     quizzes: true,
-    progress: true,
     settings: false,
   });
 
@@ -102,25 +102,10 @@ export function ConnectGuestAccount() {
       ) {
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
-          const newQuiz = await appContext.services.quiz.createQuiz(quiz);
-          const newQuizId = newQuiz.id;
-          if (categories.progress) {
-            const progressString = localStorage.getItem(`${quiz.id}_progress`);
-            if (progressString === null) {
-              continue;
-            }
-            const progress = JSON.parse(progressString) as QuizProgress;
-            if (Object.keys(progress).length > 0) {
-              setMigratingText(`Przenoszenie postępów quizu ${quiz.title}...`);
-              await appContext.services.quiz.setQuizProgress(
-                newQuizId,
-                progress,
-              );
-            }
-          }
-          // Replace the quiz ID in the local storage with the new ID
+          await appContext.services.quiz.createQuiz(quiz);
+
+          // Remove old progress, new one will be created on the backend
           localStorage.removeItem(`${quiz.id}_progress`);
-          localStorage.setItem(`${newQuizId}_progress`, "{}");
         } catch (error_) {
           console.error("Error uploading quiz", quiz.id, error_);
           throw error_;
@@ -158,9 +143,28 @@ export function ConnectGuestAccount() {
     }
   };
 
+  const downloadBackup = () => {
+    if (backupData === null) {
+      return;
+    }
+    const blob = new Blob([backupData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `testownik-backup-${new Date().toISOString()}.json`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   // Start migration after explicit confirmation
   const executeMigration = async () => {
     setMigrating(true);
+    setMigrationError(null);
+    const backup = createGuestDataBackup();
+    setBackupData(backup);
+
     appContext.setGuest(false);
     try {
       if (categories.quizzes && selectedQuizIds.length > 0) {
@@ -173,22 +177,18 @@ export function ConnectGuestAccount() {
       localStorage.setItem("guest_migrated", "true");
     } catch (error_) {
       console.error("Error migrating data", error_);
-      toast.error(
-        "Wystąpił błąd podczas przenoszenia danych. Spróbuj ponownie później.",
+      setMigrationError(
+        "Wystąpił błąd podczas przenoszenia danych. Zalecamy pobranie kopii zapasowej (backup).",
       );
     } finally {
       setMigrating(false);
     }
   };
 
-  // Handler for category checkbox changes. When unchecking "Quizy", also disable "Postępy quizów"
-  const handleCategoryToggle = (field: "quizzes" | "progress" | "settings") => {
+  // Handler for category checkbox changes.
+  const handleCategoryToggle = (field: "quizzes" | "settings") => {
     setCategories((previous) => {
       const newValue = !previous[field];
-      if (field === "quizzes" && !newValue) {
-        // If quizzes is turned off, force progress off as well
-        return { ...previous, quizzes: false, progress: false };
-      }
       return { ...previous, [field]: newValue };
     });
   };
@@ -216,8 +216,7 @@ export function ConnectGuestAccount() {
             </p>
             <p>
               Zdecyduj czy dane z konta gościa mają zostać usunięte. Wszystkie
-              wybrane quizy oraz postępy zostały już przeniesione na Twoje
-              konto.
+              wybrane quizy zostały już przeniesione na Twoje konto.
             </p>
             <p>
               Jeśli zdecydujesz się na pozostawienie danych z konta gościa,
@@ -266,6 +265,40 @@ export function ConnectGuestAccount() {
     );
   }
 
+  if (migrationError !== null) {
+    return (
+      <div className="flex justify-center">
+        <Card className="border-destructive/50 w-full max-w-3xl">
+          <CardHeader>
+            <div className="text-destructive flex items-center gap-2">
+              <AlertCircleIcon className="size-5" />
+              <CardTitle>Błąd migracji</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">{migrationError}</p>
+            <p className="text-muted-foreground text-sm">
+              Twoje dane nie zostały utracone. Możesz pobrać plik z pełną kopią
+              zapasową (backup), aby zabezpieczyć swoje quizy i postępy.
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={downloadBackup}>Pobierz backup</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMigrationError(null);
+                  appContext.setGuest(true);
+                }}
+              >
+                Wróć
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-center">
       {appContext.isAuthenticated && appContext.isGuest ? (
@@ -291,17 +324,6 @@ export function ConnectGuestAccount() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Checkbox
-                    id="progress"
-                    checked={categories.progress}
-                    disabled={!categories.quizzes}
-                    onCheckedChange={() => {
-                      handleCategoryToggle("progress");
-                    }}
-                  />
-                  <Label htmlFor="progress">Postępy quizów</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Checkbox
                     id="settings"
                     checked={categories.settings}
                     onCheckedChange={() => {
@@ -317,11 +339,6 @@ export function ConnectGuestAccount() {
                 <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
                   Wybierz quizy do migracji
                 </h5>
-                {categories.progress ? (
-                  <p className="text-muted-foreground text-xs">
-                    (Postępy zostaną przeniesione automatycznie)
-                  </p>
-                ) : null}
                 {guestQuizzes.length > 0 ? (
                   <div className="grid gap-1">
                     {guestQuizzes.map((quiz: Quiz) => (
@@ -370,7 +387,6 @@ export function ConnectGuestAccount() {
                     Wybrane kategorie:{" "}
                     {[
                       categories.quizzes && "Quizy",
-                      categories.progress && categories.quizzes && "Postępy",
                       categories.settings && "Ustawienia",
                     ]
                       .filter(Boolean)

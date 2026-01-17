@@ -164,8 +164,8 @@ describe("CreateQuizPage", () => {
 
     assert.ok(apiRequest != null, "API request should be defined");
     expect(apiRequest.questions).toHaveLength(2);
-    expect(apiRequest.questions[0].question).toContain(testQuiz.questions[0]);
-    expect(apiRequest.questions[1].question).toContain(testQuiz.questions[1]);
+    expect(apiRequest.questions[0].text).toContain(testQuiz.questions[0]);
+    expect(apiRequest.questions[1].text).toContain(testQuiz.questions[1]);
   });
 
   it("should be possible to remove question", async () => {

@@ -82,7 +82,7 @@ export function SearchInQuizPage(): React.JSX.Element {
 
     return quiz.questions
       .map((question) => {
-        const questionLower = question.question.toLowerCase();
+        const questionLower = question.text.toLowerCase();
         const questionWords = questionLower
           .split(/\s+/)
           .filter((word) => word.length > 0);
@@ -112,12 +112,12 @@ export function SearchInQuizPage(): React.JSX.Element {
 
         // Check answers for matches
         const answerMatches = question.answers.some((answer) =>
-          answer.answer.toLowerCase().includes(lowerCaseQuery),
+          answer.text.toLowerCase().includes(lowerCaseQuery),
         );
 
         // Number of answer matches
         const answerMatchCount = question.answers.filter((answer) =>
-          answer.answer.toLowerCase().includes(lowerCaseQuery),
+          answer.text.toLowerCase().includes(lowerCaseQuery),
         ).length;
 
         // Calculate relevance score - lower is better
@@ -203,11 +203,11 @@ export function SearchInQuizPage(): React.JSX.Element {
             <Card key={q.id}>
               <CardHeader>
                 <CardTitle className="space-y-2 text-base font-medium">
-                  <div>{highlightMatch(q.question, query)}</div>
+                  <div>{highlightMatch(q.text, query)}</div>
                   {q.image != null && (
                     <img
                       src={q.image}
-                      alt={q.question}
+                      alt={q.text}
                       className="mx-auto block max-w-full rounded"
                     />
                   )}
@@ -215,21 +215,21 @@ export function SearchInQuizPage(): React.JSX.Element {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 text-sm">
-                  {q.answers.map((answer, index) => (
+                  {q.answers.map((answer) => (
                     <li
-                      key={`answer-${index.toString()}`}
+                      key={`answer-${answer.id}`}
                       className={
-                        answer.correct
+                        answer.is_correct
                           ? "font-medium text-green-600 dark:text-green-400"
                           : "text-muted-foreground"
                       }
                     >
-                      {highlightMatch(answer.answer, query)}
+                      {highlightMatch(answer.text, query)}
                       {answer.image != null && (
                         <img
                           src={answer.image}
-                          alt={answer.answer}
-                          className={`mx-auto mt-1 block max-w-full rounded ${answer.correct ? "ring-2 ring-green-500" : ""}`}
+                          alt={answer.text}
+                          className={`mx-auto mt-1 block max-w-full rounded ${answer.is_correct ? "ring-2 ring-green-500" : ""}`}
                         />
                       )}
                     </li>
