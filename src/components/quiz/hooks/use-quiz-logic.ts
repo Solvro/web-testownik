@@ -167,11 +167,10 @@ export function useQuizLogic({
         payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
       });
 
-      if (!remote && !appContext.isGuest) {
+      if (!remote) {
         void appContext.services.quiz.recordAnswer(
           quizId,
-          currentQuestionRef.current.id,
-          selectedAnswers,
+          newAnswer,
           studyTime,
           nextQuestion_?.id ?? null,
         );
@@ -182,7 +181,6 @@ export function useQuizLogic({
       }
     },
     [
-      appContext.isGuest,
       appContext.services.quiz,
       continuity,
       questionChecked,
@@ -245,15 +243,12 @@ export function useQuizLogic({
       payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
     });
 
-    if (!appContext.isGuest) {
-      void appContext.services.quiz.recordAnswer(
-        quizId,
-        currentQuestionRef.current.id,
-        [],
-        studyTime,
-        nextQuestion_?.id ?? null,
-      );
-    }
+    void appContext.services.quiz.recordAnswer(
+      quizId,
+      newAnswer,
+      studyTime,
+      nextQuestion_?.id ?? null,
+    );
 
     continuity.sendAnswerChecked(nextQuestion_);
     if (nextQuestion_ !== null) {
@@ -261,7 +256,6 @@ export function useQuizLogic({
     }
     dispatch({ type: "ADVANCE_QUESTION" });
   }, [
-    appContext.isGuest,
     appContext.services.quiz,
     continuity,
     nextQuestion,

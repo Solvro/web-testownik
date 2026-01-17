@@ -309,20 +309,11 @@ export class QuizService extends BaseApiService {
    */
   async recordAnswer(
     quizId: string,
-    questionId: string,
-    selectedAnswers: string[],
+    answer: AnswerRecord,
     studyTime?: number,
     nextQuestionId?: string | null,
   ): Promise<AnswerRecord> {
     if (this.isGuestMode()) {
-      const answerRecord: AnswerRecord = {
-        id: crypto.randomUUID(),
-        question: questionId,
-        answered_at: new Date().toISOString(),
-        selected_answers: selectedAnswers,
-        was_correct: false, // Will be calculated by reducer anyway
-      };
-
       try {
         const key = STORAGE_KEYS.QUIZ_PROGRESS(quizId);
         const existing = localStorage.getItem(key);
@@ -357,7 +348,7 @@ export class QuizService extends BaseApiService {
           }
         }
 
-        session.answers.push(answerRecord);
+        session.answers.push(answer);
         if (nextQuestionId != null) {
           session.current_question = nextQuestionId;
         }
@@ -370,13 +361,13 @@ export class QuizService extends BaseApiService {
         console.error("Failed to persist guest progress:", error);
       }
 
-      return answerRecord;
+      return answer;
     }
     const response = await this.post<AnswerRecord>(
       `/quizzes/${quizId}/answer/`,
       {
-        question_id: questionId,
-        selected_answers: selectedAnswers,
+        question_id: answer.question,
+        selected_answers: answer.selected_answers,
         study_time: studyTime,
         next_question: nextQuestionId,
       },
