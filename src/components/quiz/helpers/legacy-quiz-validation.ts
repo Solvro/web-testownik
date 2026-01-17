@@ -115,6 +115,12 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
           questionIndex + 1,
         )} musi mieć treść.`;
       }
+
+      if (a.correct !== undefined && typeof a.correct !== "boolean") {
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} ma nieprawidłowe pole "correct" – oczekiwano wartości logicznej (true/false).`;
+      }
     }
   }
 

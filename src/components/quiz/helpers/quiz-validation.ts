@@ -119,7 +119,7 @@ export const validateQuiz = (input: unknown): string | null => {
       if (answerIds.has(a.id)) {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
-        )} ma zduplikowane ID: ${a.id}.`;
+        )} ma zduplikowane ID w całym quizie: ${a.id}.`;
       }
       answerIds.add(a.id);
 
