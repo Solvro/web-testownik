@@ -377,12 +377,6 @@ describe("Migration", () => {
       expect(storedProgress.answers).toBeDefined();
       expect(Array.isArray(storedProgress.answers)).toBe(true);
       expect(storedProgress.study_time).toBe(mockLegacyProgress.study_time);
-      expect(storedProgress.correct_count).toBe(
-        mockLegacyProgress.correct_answers_count,
-      );
-      expect(storedProgress.wrong_count).toBe(
-        mockLegacyProgress.wrong_answers_count,
-      );
       expect(storedProgress.is_active).toBe(true);
     });
 
@@ -433,8 +427,6 @@ describe("Migration", () => {
         ended_at: null,
         is_active: true,
         study_time: 100,
-        correct_count: 5,
-        wrong_count: 2,
         current_question: "some-uuid",
         answers: [
           {

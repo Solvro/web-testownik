@@ -335,8 +335,6 @@ export class QuizService extends BaseApiService {
             ended_at: null,
             is_active: true,
             study_time: studyTime ?? 0,
-            correct_count: 0,
-            wrong_count: 0,
             current_question: null,
             answers: [],
           };
@@ -353,8 +351,6 @@ export class QuizService extends BaseApiService {
               ended_at: null,
               is_active: true,
               study_time: studyTime ?? 0,
-              correct_count: 0,
-              wrong_count: 0,
               current_question: null,
               answers: [],
             };

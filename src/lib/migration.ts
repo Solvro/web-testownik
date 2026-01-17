@@ -169,8 +169,6 @@ function migrateQuizProgress(
         ended_at: null,
         is_active: true,
         study_time: legacyProgress.study_time,
-        correct_count: legacyProgress.correct_answers_count,
-        wrong_count: legacyProgress.wrong_answers_count,
         current_question: currentQuestionId,
         answers: syntheticAnswers,
       };

@@ -53,8 +53,6 @@ export interface QuizSession {
   ended_at: string | null;
   is_active: boolean;
   study_time: number;
-  correct_count: number;
-  wrong_count: number;
   current_question: string | null;
   answers: AnswerRecord[];
 }
