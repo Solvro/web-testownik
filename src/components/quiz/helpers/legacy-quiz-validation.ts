@@ -69,13 +69,6 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
       )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
     }
 
-    if (typeof q.question === "string" && q.question.trim() === "") {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
-    }
-    // Handle case where question might be missing/undefined if implied optional in legacy?
-    // Based on original code: (question.question?.trim() ?? "") === "" check suggests it could be missing.
-    // If it's missing (undefined), logic: (undefined?.trim() ?? "") === "" -> "" === "" -> true -> error.
-    // So if it's missing or empty string it errors.
     if (typeof q.question !== "string" || q.question.trim() === "") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
     }

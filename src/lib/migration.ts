@@ -24,11 +24,36 @@ export function runMigrations(): void {
       // Migration successful
     } catch (error) {
       console.error("[Migration] Failed to migrate to v2:", error);
+      if (localStorage.getItem("is_guest") !== "true") {
+        // Preserve auth tokens so user stays logged in
+        const accessToken = localStorage.getItem("access_token");
+        const refreshToken = localStorage.getItem("refresh_token");
+        const profilePicture = localStorage.getItem("profile_picture");
+        localStorage.clear();
+        if (accessToken !== null) {
+          localStorage.setItem("access_token", accessToken);
+        }
+        if (refreshToken !== null) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+        if (profilePicture !== null) {
+          localStorage.setItem("profile_picture", profilePicture);
+        }
+        localStorage.setItem(DATA_VERSION_KEY, "2");
+        return; // All data is already on the server so we can just ignore this
+      }
       downloadBackup(backup);
       // eslint-disable-next-line no-alert
-      alert(
-        "Migracja danych nie powiodła się. Twoje dane zostały pobrane. Proszę zgłoś ten błąd.",
+      const shouldContinue = confirm(
+        "Nie udało się zaktualizować danych zapisanych lokalnie.\n\nKopia zapasowa została pobrana, czy chcesz wyczyścić dane aplikacji i ją zresetować?",
       );
+      if (shouldContinue) {
+        localStorage.clear();
+        localStorage.setItem(DATA_VERSION_KEY, "2");
+        location.reload();
+      } else {
+        throw new Error("Migration failed");
+      }
     }
   }
 }
@@ -37,17 +62,18 @@ export function runMigrations(): void {
  * Migration to v2: Convert to session-based progress (from reoccurrences to answers)
  */
 function migrateToV2(): void {
-  migrateGuestQuizzes();
-  migrateQuizProgress();
+  const idMappings = migrateGuestQuizzes();
+  migrateQuizProgress(idMappings);
 }
 
 /**
- * Migrate guest quizzes stored in localStorage
+ * Migrate guest quizzes stored in localStorage.
+ * Returns a map of quiz ID -> (legacy question ID -> new UUID) for progress migration.
  */
-function migrateGuestQuizzes(): void {
+function migrateGuestQuizzes(): Map<string, Map<number, string>> {
   const stored = localStorage.getItem("guest_quizzes");
   if (stored === null || stored.trim() === "") {
-    return;
+    return new Map();
   }
 
   try {
@@ -64,23 +90,20 @@ function migrateGuestQuizzes(): void {
 
     localStorage.setItem("guest_quizzes", JSON.stringify(migratedQuizzes));
 
-    // Store id mappings for progress migration
-    (
-      window as { __quizIdMappings?: Map<string, Map<number, string>> }
-    ).__quizIdMappings = idMappings;
+    return idMappings;
   } catch (error) {
     console.error("[Migration] Failed to migrate guest quizzes:", error);
+    return new Map();
   }
 }
 
 /**
- * Migrate quiz progress to session format
+ * Migrate quiz progress to session format.
+ * @param idMappings Map of quiz ID -> (legacy question ID -> new UUID) from quiz migration
  */
-function migrateQuizProgress(): void {
-  const idMappings = (
-    window as { __quizIdMappings?: Map<string, Map<number | string, string>> }
-  ).__quizIdMappings;
-
+function migrateQuizProgress(
+  idMappings: Map<string, Map<number, string>>,
+): void {
   const progressKeys: string[] = [];
   for (let index = 0; index < localStorage.length; index++) {
     const key = localStorage.key(index);
@@ -109,11 +132,15 @@ function migrateQuizProgress(): void {
       const legacyProgress = progress as QuizProgress;
 
       const quizId = key.replace("_progress", "");
-      const questionIdMap = idMappings?.get(quizId);
+      const questionIdMap = idMappings.get(quizId);
 
       // Create synthetic answers array from reoccurrences
       // For questions with reoccurrences=0, they were answered correctly once
       // For questions with reoccurrences>0, they still need to be answered
+      //
+      // NOTE: Synthetic answer records have empty selected_answers since we don't
+      // have historical selection data. This affects analytics that rely on answer
+      // history but preserves the correct mastery state via was_correct.
       const syntheticAnswers: AnswerRecord[] = [];
 
       for (const r of legacyProgress.reoccurrences) {
@@ -126,7 +153,7 @@ function migrateQuizProgress(): void {
             id: crypto.randomUUID(),
             question_id: questionId,
             answered_at: new Date().toISOString(),
-            selected_answers: [],
+            selected_answers: [], // Historical data unavailable during migration
             was_correct: true,
           });
         }
@@ -153,9 +180,6 @@ function migrateQuizProgress(): void {
       console.error(`[Migration] Failed to migrate progress ${key}:`, error);
     }
   }
-
-  delete (window as { __quizIdMappings?: Map<string, Map<number, string>> })
-    .__quizIdMappings;
 }
 
 /**

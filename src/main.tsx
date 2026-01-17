@@ -7,6 +7,8 @@ import { runMigrations } from "@/lib/migration";
 import { App } from "./app.tsx";
 import "./styles/index.css";
 
+// Migration to new data format, could be removed after a grace period
+// Migration was introduced 17.01.2026, could be removed after 17.02.2026
 runMigrations();
 
 const root = document.querySelector("#root");

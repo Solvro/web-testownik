@@ -561,7 +561,7 @@ export const useImportQuiz = () => {
           } else {
             setError("Wystąpił nieznany błąd.");
           }
-          console.error("Błąd podczas parsowania JSON:", error);
+          console.error("Błąd podczas parsowania JSON:", parseError);
         }
 
         break;

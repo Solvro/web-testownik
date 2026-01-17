@@ -27,7 +27,7 @@ export const mockLegacyQuiz = {
   questions: [
     {
       id: 1,
-      question: " Legacy Question?",
+      question: "Legacy Question?",
       multiple: false,
       answers: [
         { answer: "Yes", correct: true },
