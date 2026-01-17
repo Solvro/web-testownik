@@ -14,12 +14,26 @@ const RTC_CONFIG = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    // No longer working, we will need to host our own TURN server
-    // {
-    //   urls: "turn:freestun.net:3478",
-    //   username: "free",
-    //   credential: "free",
-    // },
+    {
+      urls: "turn:eu-central.turnix.io:3478?transport=udp",
+      username: import.meta.env.VITE_TURN_USERNAME as string,
+      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
+    },
+    {
+      urls: "turn:eu-central.turnix.io:3478?transport=tcp",
+      username: import.meta.env.VITE_TURN_USERNAME as string,
+      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
+    },
+    {
+      urls: "turns:eu-central.turnix.io:443?transport=udp",
+      username: import.meta.env.VITE_TURN_USERNAME as string,
+      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
+    },
+    {
+      urls: "turns:eu-central.turnix.io:443?transport=tcp",
+      username: import.meta.env.VITE_TURN_USERNAME as string,
+      credential: import.meta.env.VITE_TURN_CREDENTIAL as string,
+    },
   ],
 };
 
@@ -38,6 +52,7 @@ interface QuestionUpdateMessage {
 }
 interface AnswerCheckedMessage {
   type: "answer_checked";
+  nextQuestion: Question | null;
 }
 interface PingMessage {
   type: "ping";
@@ -72,7 +87,7 @@ interface UseQuizContinuityOptions {
     studyTime?: number;
   }) => void;
   onQuestionUpdate: (q: Question, selected: string[]) => void;
-  onAnswerChecked: () => void;
+  onAnswerChecked: (nextQuestion: Question | null) => void;
 }
 
 export function useQuizContinuity({
@@ -190,7 +205,7 @@ export function useQuizContinuity({
           break;
         }
         case "answer_checked": {
-          onAnswerChecked();
+          onAnswerChecked(data.nextQuestion);
           break;
         }
         case "ping": {
@@ -220,7 +235,7 @@ export function useQuizContinuity({
           break;
         }
         case "answer_checked": {
-          onAnswerChecked();
+          onAnswerChecked(data.nextQuestion);
           broadcastExcept(conn, data);
           break;
         }
@@ -363,8 +378,8 @@ export function useQuizContinuity({
     peerConnections,
     broadcast,
     broadcastExcept,
-    sendAnswerChecked: () => {
-      broadcast({ type: "answer_checked" });
+    sendAnswerChecked: (nextQuestion: Question | null) => {
+      broadcast({ type: "answer_checked", nextQuestion });
     },
     sendQuestionUpdate: (question: Question, selectedAnswers: string[]) => {
       broadcast({ type: "question_update", question, selectedAnswers });

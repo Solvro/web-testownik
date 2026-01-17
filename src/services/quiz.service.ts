@@ -315,13 +315,66 @@ export class QuizService extends BaseApiService {
     nextQuestionId?: string | null,
   ): Promise<AnswerRecord> {
     if (this.isGuestMode()) {
-      return {
+      const answerRecord: AnswerRecord = {
         id: crypto.randomUUID(),
         question: questionId,
         answered_at: new Date().toISOString(),
         selected_answers: selectedAnswers,
         was_correct: false, // Will be calculated by reducer anyway
       };
+
+      try {
+        const key = STORAGE_KEYS.QUIZ_PROGRESS(quizId);
+        const existing = localStorage.getItem(key);
+        let session: QuizSession;
+
+        if (existing === null) {
+          session = {
+            id: crypto.randomUUID(),
+            started_at: new Date().toISOString(),
+            ended_at: null,
+            is_active: true,
+            study_time: studyTime ?? 0,
+            correct_count: 0,
+            wrong_count: 0,
+            current_question: null,
+            answers: [],
+          };
+        } else {
+          try {
+            session = JSON.parse(existing) as QuizSession;
+            if (!Array.isArray(session.answers)) {
+              session.answers = [];
+            }
+          } catch {
+            session = {
+              id: crypto.randomUUID(),
+              started_at: new Date().toISOString(),
+              ended_at: null,
+              is_active: true,
+              study_time: studyTime ?? 0,
+              correct_count: 0,
+              wrong_count: 0,
+              current_question: null,
+              answers: [],
+            };
+          }
+        }
+
+        session.answers.push(answerRecord);
+        if (nextQuestionId != null) {
+          session.current_question = nextQuestionId;
+        }
+        if (studyTime !== undefined) {
+          session.study_time = studyTime;
+        }
+
+        localStorage.setItem(key, JSON.stringify(session));
+      } catch (error) {
+        console.error("Failed to persist guest progress:", error);
+      }
+
+      return answerRecord;
     }
     const response = await this.post<AnswerRecord>(
       `/quizzes/${quizId}/answer/`,

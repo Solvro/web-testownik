@@ -65,7 +65,9 @@ export function useQuizLogic({
   const selectedAnswersRef = useRef<string[]>([]);
 
   // refs for continuity
-  const checkAnswerRef = useRef<(remote?: boolean) => void>(() => {
+  const checkAnswerRef = useRef<
+    (remote?: boolean, nextQuestion?: Question | null) => void
+  >(() => {
     /* noop until assigned */
   });
 
@@ -100,8 +102,8 @@ export function useQuizLogic({
       dispatch({ type: "SET_CURRENT_QUESTION", payload: { question: q } });
       dispatch({ type: "SET_SELECTED_ANSWERS", payload: selected });
     },
-    onAnswerChecked: () => {
-      checkAnswerRef.current(true);
+    onAnswerChecked: (nextQuestion) => {
+      checkAnswerRef.current(true, nextQuestion);
     },
   });
 
@@ -136,7 +138,7 @@ export function useQuizLogic({
   }
 
   const checkAnswer = useCallback(
-    (remote = false) => {
+    (remote = false, nextQuestionOverride?: Question | null) => {
       if (questionChecked || currentQuestionRef.current == null) {
         return;
       }
@@ -151,12 +153,14 @@ export function useQuizLogic({
         isCorrect,
       );
       const updatedAnswers = [...runtime.answers, newAnswer];
-      const nextQuestion_ = pickNextQuestion(
-        runtime.questions,
-        updatedAnswers,
-        runtime.settings,
-        currentQuestionRef.current.id,
-      );
+      const nextQuestion_ =
+        nextQuestionOverride ??
+        pickNextQuestion(
+          runtime.questions,
+          updatedAnswers,
+          runtime.settings,
+          currentQuestionRef.current.id,
+        );
 
       dispatch({
         type: "RECORD_ANSWER",
@@ -174,7 +178,7 @@ export function useQuizLogic({
       }
 
       if (!remote) {
-        continuity.sendAnswerChecked();
+        continuity.sendAnswerChecked(nextQuestion_);
       }
     },
     [
@@ -200,10 +204,10 @@ export function useQuizLogic({
       return;
     }
     dispatch({ type: "ADVANCE_QUESTION" });
-    if (runtime.currentQuestion !== null) {
-      continuity.sendQuestionUpdate(runtime.currentQuestion, []);
+    if (runtime.nextQuestion !== null) {
+      continuity.sendQuestionUpdate(runtime.nextQuestion, []);
     }
-  }, [continuity, quiz, runtime.currentQuestion]);
+  }, [continuity, quiz, runtime.nextQuestion]);
 
   const nextAction = useCallback(() => {
     if (questionChecked) {
@@ -251,8 +255,11 @@ export function useQuizLogic({
       );
     }
 
-    continuity.sendAnswerChecked();
-    nextQuestion();
+    continuity.sendAnswerChecked(nextQuestion_);
+    if (nextQuestion_ !== null) {
+      continuity.sendQuestionUpdate(nextQuestion_, []);
+    }
+    dispatch({ type: "ADVANCE_QUESTION" });
   }, [
     appContext.isGuest,
     appContext.services.quiz,

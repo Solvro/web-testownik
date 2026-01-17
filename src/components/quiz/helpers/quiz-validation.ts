@@ -78,6 +78,14 @@ export const validateQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
     }
 
+    if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "multiple" (wielokrotny wybór).`;
+    }
+
+    if (q.order !== undefined && typeof q.order !== "number") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłową kolejność (order).`;
+    }
+
     if (!Array.isArray(q.answers) || q.answers.length === 0) {
       return `Pytanie nr ${String(
         questionIndex + 1,
@@ -115,6 +123,18 @@ export const validateQuiz = (input: unknown): string | null => {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
         )} musi mieć treść.`;
+      }
+
+      if (typeof a.is_correct !== "boolean") {
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} musi mieć pole "is_correct" (poprawność).`;
+      }
+
+      if (a.order !== undefined && typeof a.order !== "number") {
+        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+          questionIndex + 1,
+        )} musi mieć prawidłową kolejność (order).`;
       }
     }
   }

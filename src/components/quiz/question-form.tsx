@@ -117,21 +117,29 @@ export function QuestionForm({
               return;
             }
 
-            const newAnswers: Answer[] = [];
-            let orderCounter = question.answers.length;
-            for (const answerText of pastedAnswers) {
-              orderCounter++;
-              newAnswers.push({
-                id: crypto.randomUUID(),
-                order: orderCounter,
-                text: answerText,
-                is_correct: false,
-                image: "",
-              });
-            }
+            const newAnswers: Answer[] = pastedAnswers.map((text) => ({
+              id: crypto.randomUUID(),
+              order: 0, // Placeholder, will be recalculated
+              text,
+              is_correct: false,
+              image: "",
+            }));
+
             const updatedAnswers: Answer[] = [...question.answers];
-            updatedAnswers.splice(start, 1, ...newAnswers);
-            onUpdate({ ...question, answers: updatedAnswers });
+
+            const currentAnswer = question.answers[start];
+            const shouldReplace = !currentAnswer.text.trim();
+            const insertionIndex = shouldReplace ? start : start + 1;
+            const deleteCount = shouldReplace ? 1 : 0;
+
+            updatedAnswers.splice(insertionIndex, deleteCount, ...newAnswers);
+
+            const reorderedAnswers = updatedAnswers.map((a, index) => ({
+              ...a,
+              order: index + 1,
+            }));
+
+            onUpdate({ ...question, answers: reorderedAnswers });
           }
         } catch (error) {
           console.error("Failed to read clipboard:", error);
