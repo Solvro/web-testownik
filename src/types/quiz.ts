@@ -41,7 +41,7 @@ export interface Quiz extends QuizMetadata {
 
 export interface AnswerRecord {
   id: string;
-  question_id: string;
+  question: string;
   answered_at: string;
   selected_answers: string[];
   was_correct: boolean;

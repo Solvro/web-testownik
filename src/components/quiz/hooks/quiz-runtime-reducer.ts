@@ -87,7 +87,7 @@ export function createAnswerRecord(
 ): AnswerRecord {
   return {
     id: crypto.randomUUID(),
-    question_id: questionId,
+    question: questionId,
     answered_at: new Date().toISOString(),
     selected_answers: selectedAnswers,
     was_correct: wasCorrect,

@@ -24,7 +24,7 @@ export function getRemainingAttempts(
 ): number {
   // Filter answers for this question, sorted by time
   const questionAnswers = answers
-    .filter((a) => a.question_id === questionId)
+    .filter((a) => a.question === questionId)
     .toSorted(
       (a, b) =>
         new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime(),
@@ -41,26 +41,6 @@ export function getRemainingAttempts(
   }
 
   return remaining;
-}
-
-/**
- * Get all remaining attempts as a map of question ID to remaining count.
- */
-export function getAllRemainingAttempts(
-  questions: Question[],
-  answers: AnswerRecord[],
-  settings: ProgressSettings,
-): Map<string, number> {
-  const result = new Map<string, number>();
-
-  for (const question of questions) {
-    result.set(
-      question.id,
-      getRemainingAttempts(question.id, answers, settings),
-    );
-  }
-
-  return result;
 }
 
 /**

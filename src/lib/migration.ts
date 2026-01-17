@@ -151,7 +151,7 @@ function migrateQuizProgress(
         if (r.reoccurrences === 0) {
           syntheticAnswers.push({
             id: crypto.randomUUID(),
-            question_id: questionId,
+            question: questionId,
             answered_at: new Date().toISOString(),
             selected_answers: [], // Historical data unavailable during migration
             was_correct: true,

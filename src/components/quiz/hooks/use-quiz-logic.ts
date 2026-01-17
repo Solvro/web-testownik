@@ -169,7 +169,7 @@ export function useQuizLogic({
           currentQuestionRef.current.id,
           selectedAnswers,
           studyTime,
-          nextQuestion_?.id,
+          nextQuestion_?.id ?? null,
         );
       }
 
@@ -247,7 +247,7 @@ export function useQuizLogic({
         currentQuestionRef.current.id,
         [],
         studyTime,
-        nextQuestion_?.id,
+        nextQuestion_?.id ?? null,
       );
     }
 

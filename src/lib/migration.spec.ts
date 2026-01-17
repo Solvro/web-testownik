@@ -439,7 +439,7 @@ describe("Migration", () => {
         answers: [
           {
             id: "answer-1",
-            question_id: "q1",
+            question: "q1",
             answered_at: new Date().toISOString(),
             selected_answers: ["a1"],
             was_correct: true,

@@ -312,12 +312,12 @@ export class QuizService extends BaseApiService {
     questionId: string,
     selectedAnswers: string[],
     studyTime?: number,
-    nextQuestionId?: string,
+    nextQuestionId?: string | null,
   ): Promise<AnswerRecord> {
     if (this.isGuestMode()) {
       return {
         id: crypto.randomUUID(),
-        question_id: questionId,
+        question: questionId,
         answered_at: new Date().toISOString(),
         selected_answers: selectedAnswers,
         was_correct: false, // Will be calculated by reducer anyway
