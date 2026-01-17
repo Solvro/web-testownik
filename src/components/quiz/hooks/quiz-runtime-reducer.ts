@@ -157,6 +157,7 @@ export function runtimeReducer(
         selectedAnswers: [],
         questionChecked: false,
         isQuizFinished: isFinished,
+        nextQuestion: null,
       };
     }
 

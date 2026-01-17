@@ -57,6 +57,7 @@ export const validateQuiz = (input: unknown): string | null => {
   }
 
   const questionIds = new Set<string>();
+  const answerIds = new Set<string>();
 
   for (const [questionIndex, question] of quiz.questions.entries()) {
     if (typeof question !== "object" || question === null) {
@@ -100,8 +101,6 @@ export const validateQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
     }
     questionIds.add(q.id);
-
-    const answerIds = new Set<string>();
 
     for (const [answerIndex, answer] of q.answers.entries()) {
       if (typeof answer !== "object" || answer === null) {
