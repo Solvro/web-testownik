@@ -310,8 +310,8 @@ export class QuizService extends BaseApiService {
   async recordAnswer(
     quizId: string,
     answer: AnswerRecord,
-    studyTime?: number,
-    nextQuestionId?: string | null,
+    studyTime: number,
+    nextQuestionId: string | null,
   ): Promise<AnswerRecord> {
     if (this.isGuestMode()) {
       try {
@@ -325,7 +325,7 @@ export class QuizService extends BaseApiService {
             started_at: new Date().toISOString(),
             ended_at: null,
             is_active: true,
-            study_time: studyTime ?? 0,
+            study_time: 0,
             current_question: null,
             answers: [],
           };
@@ -341,7 +341,7 @@ export class QuizService extends BaseApiService {
               started_at: new Date().toISOString(),
               ended_at: null,
               is_active: true,
-              study_time: studyTime ?? 0,
+              study_time: 0,
               current_question: null,
               answers: [],
             };
@@ -349,12 +349,10 @@ export class QuizService extends BaseApiService {
         }
 
         session.answers.push(answer);
-        if (nextQuestionId != null) {
-          session.current_question = nextQuestionId;
-        }
-        if (studyTime !== undefined) {
-          session.study_time = studyTime;
-        }
+
+        session.current_question = nextQuestionId;
+
+        session.study_time = studyTime;
 
         localStorage.setItem(key, JSON.stringify(session));
       } catch (error) {
