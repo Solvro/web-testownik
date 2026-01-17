@@ -102,12 +102,10 @@ export function ConnectGuestAccount() {
       ) {
         try {
           setMigratingText(`Przenoszenie quizu ${quiz.title}...`);
-          const newQuiz = await appContext.services.quiz.createQuiz(quiz);
-          const newQuizId = newQuiz.id;
+          await appContext.services.quiz.createQuiz(quiz);
 
-          // Replace the quiz ID in the local storage with the new ID
+          // Remove old progress, new one will be created on the backend
           localStorage.removeItem(`${quiz.id}_progress`);
-          localStorage.setItem(`${newQuizId}_progress`, "{}");
         } catch (error_) {
           console.error("Error uploading quiz", quiz.id, error_);
           throw error_;
