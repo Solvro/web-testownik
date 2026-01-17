@@ -56,7 +56,7 @@ export const validateQuiz = (input: unknown): string | null => {
     return "Dodaj przynajmniej jedno pytanie.";
   }
 
-  const questionIds = new Set<string | number>();
+  const questionIds = new Set<string>();
 
   for (const [questionIndex, question] of quiz.questions.entries()) {
     if (typeof question !== "object" || question === null) {
@@ -84,12 +84,12 @@ export const validateQuiz = (input: unknown): string | null => {
       )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
-    if (typeof q.id !== "string" && typeof q.id !== "number") {
+    if (typeof q.id !== "string") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe ID.`;
     }
 
     if (questionIds.has(q.id)) {
-      return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${String(q.id)}.`;
+      return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
     }
     questionIds.add(q.id);
 

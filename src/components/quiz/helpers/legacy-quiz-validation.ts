@@ -51,7 +51,7 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
     return "Dodaj przynajmniej jedno pytanie.";
   }
 
-  const questionIds = new Set<string | number>();
+  const questionIds = new Set<number>();
 
   for (const [questionIndex, question] of quiz.questions.entries()) {
     if (typeof question !== "object" || question === null) {
@@ -79,12 +79,8 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
       )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
-    if (
-      q.id !== undefined &&
-      typeof q.id !== "string" &&
-      typeof q.id !== "number"
-    ) {
-      // ID is optional but if present must be string or number
+    if (q.id !== undefined && typeof q.id !== "number") {
+      // ID is optional but if present must be number
       return `Pytanie nr ${String(questionIndex + 1)} ma nieprawidłowe ID.`;
     }
 
