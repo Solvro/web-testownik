@@ -1,6 +1,6 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
-import { RotateCcwIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -8,6 +8,7 @@ import remarkMath from "remark-math";
 
 import { ImageLoad } from "@/components/image-load.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import type { QuestionHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,25 +18,38 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz.ts";
 
 interface QuestionCardProps {
   question: Question | null;
+  history: QuestionHistory[];
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
+  openHistoryQuestion: (historyQuestion?: QuestionHistory) => void;
+  canGoBack: boolean;
+  isHistoryQuestion: boolean;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
 }
 
 export function QuestionCard({
   question,
+  history,
   selectedAnswers,
   setSelectedAnswers,
   questionChecked,
   nextAction,
+  openHistoryQuestion,
+  canGoBack,
+  isHistoryQuestion,
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
@@ -199,11 +213,40 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end">
-          {questionChecked ? (
-            <Button onClick={nextAction}>Następne pytanie</Button>
+        <div className="mt-2 flex justify-end gap-2">
+          {isHistoryQuestion ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                openHistoryQuestion();
+              }}
+            >
+              Powrót do pytań
+            </Button>
           ) : (
-            <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+            <>
+              {canGoBack && !questionChecked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        openHistoryQuestion(history[1]);
+                      }}
+                    >
+                      <Undo2 />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Poprzednie pytanie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {questionChecked ? (
+                <Button onClick={nextAction}>Następne pytanie</Button>
+              ) : (
+                <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+              )}
+            </>
           )}
         </div>
         {question.explanation != null && questionChecked ? (
