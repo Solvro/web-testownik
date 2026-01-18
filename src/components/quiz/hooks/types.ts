@@ -1,6 +1,7 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
+import type { QuizHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
 import type { AnswerRecord, Question, Quiz } from "@/types/quiz.ts";
 import type { UserSettings } from "@/types/user.ts";
 
@@ -39,5 +40,21 @@ export interface UseQuizLogicResult {
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
     toggleBrainrot: () => void;
+  };
+}
+
+export interface UseHistoryLogicParameters {
+  quizId: string;
+}
+
+export interface UseHistoryLogicResult {
+  history: QuizHistory[];
+  state: {
+    canGoBack: boolean;
+  };
+  actions: {
+    addHistoryEntry: (question: Question, answers: string[]) => void;
+    updateHistoryEntry: (answers: string[]) => void;
+    clearHistory: () => void;
   };
 }
