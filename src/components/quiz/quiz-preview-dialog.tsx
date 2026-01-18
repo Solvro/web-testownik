@@ -76,15 +76,15 @@ export function QuizPreviewDialog({
                           {qi + 1}
                         </span>
                         <p className="text-sm leading-snug font-medium">
-                          {question.question}
+                          {question.text}
                         </p>
                       </div>
                       <ul className="grid gap-1.5 sm:grid-cols-2">
                         {question.answers.map((answer) => {
-                          const correct = answer.correct;
+                          const correct = answer.is_correct;
                           return (
                             <li
-                              key={answer.answer}
+                              key={answer.text}
                               className={`group relative flex items-start gap-2 rounded border px-2 py-1.5 text-xs ${
                                 correct
                                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -113,7 +113,7 @@ export function QuizPreviewDialog({
                                 )}
                               </span>
                               <span className="flex-1 leading-snug">
-                                {answer.answer}
+                                {answer.text}
                               </span>
                             </li>
                           );

@@ -114,7 +114,7 @@ export function AboutCard({
                 Array.from({ length: 10 }).map((_, index) => (
                   <TableRow
                     key={`loading-contributor-${index.toString()}`}
-                    className="hover:bg-transparent"
+                    className="transition-none hover:bg-transparent"
                   >
                     <TableCell className="py-2">
                       <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export function AboutCard({
                 contributors.map((contributor) => (
                   <TableRow
                     key={contributor.id}
-                    className="hover:bg-transparent"
+                    className="transition-none hover:bg-transparent"
                   >
                     <TableCell className="flex items-center gap-2 py-2">
                       <a
@@ -157,7 +157,7 @@ export function AboutCard({
                   </TableRow>
                 ))
               ) : (
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="transition-none hover:bg-transparent">
                   <TableCell className="text-muted-foreground text-xs">
                     Nie udało się pobrać informacji o autorach
                   </TableCell>

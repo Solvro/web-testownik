@@ -30,7 +30,7 @@ export function QuestionQuizCard({
   const [questionData, setQuestionData] = useState<QuestionWithQuizInfo | null>(
     null,
   );
-  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [enableEdit, setEnableEdit] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -54,14 +54,14 @@ export function QuestionQuizCard({
     void fetchQuestion();
   }, [fetchQuestion]);
 
-  const toggleAnswer = (index: number) => {
+  const toggleAnswer = (answerId: string) => {
     if (!enableEdit) {
       return;
     }
     setSelectedAnswers((previous) =>
-      previous.includes(index)
-        ? previous.filter((index_) => index_ !== index)
-        : [...previous, index],
+      previous.includes(answerId)
+        ? previous.filter((id) => id !== answerId)
+        : [...previous, answerId],
     );
   };
 
@@ -72,9 +72,12 @@ export function QuestionQuizCard({
 
     let isCorrect = true;
 
-    for (const [index, answer] of questionData.answers.entries()) {
-      const isSelected = selectedAnswers.includes(index);
-      if ((isSelected && !answer.correct) || (!isSelected && answer.correct)) {
+    for (const answer of questionData.answers) {
+      const isSelected = selectedAnswers.includes(answer.id);
+      if (
+        (isSelected && !answer.is_correct) ||
+        (!isSelected && answer.is_correct)
+      ) {
         isCorrect = false;
       }
     }
@@ -151,7 +154,7 @@ export function QuestionQuizCard({
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
                 >
-                  {questionData.question}
+                  {questionData.text}
                 </Markdown>
               </CardTitle>
               <ScrollBar orientation="horizontal" />
@@ -167,23 +170,23 @@ export function QuestionQuizCard({
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              {questionData.answers.map((answer, index) => (
+              {questionData.answers.map((answer) => (
                 <button
-                  key={answer.answer}
+                  key={answer.id}
                   onClick={() => {
-                    toggleAnswer(index);
+                    toggleAnswer(answer.id);
                   }}
                   disabled={!enableEdit}
                   className={cn(
                     "w-full justify-start rounded-md border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed",
                     computeAnswerVariant(
-                      selectedAnswers.includes(index),
+                      selectedAnswers.includes(answer.id),
                       Boolean(result),
-                      answer.correct,
+                      answer.is_correct,
                     ),
                   )}
                 >
-                  {answer.answer}
+                  {answer.text}
                 </button>
               ))}
             </div>

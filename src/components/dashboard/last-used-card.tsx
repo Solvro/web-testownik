@@ -51,7 +51,10 @@ export function LastUsedCard({
               {lastUsedQuizzes.length > 0 ? (
                 <>
                   {lastUsedQuizzes.map((quiz) => (
-                    <TableRow key={quiz.id} className="hover:bg-transparent">
+                    <TableRow
+                      key={quiz.id}
+                      className="transition-none hover:bg-transparent"
+                    >
                       <TableCell>
                         <Link
                           to={`/quiz/${quiz.id}`}
@@ -67,7 +70,7 @@ export function LastUsedCard({
                   {!fetchedAll &&
                     lastUsedQuizzes.length >= 10 &&
                     lastUsedQuizzes.length < 20 && (
-                      <TableRow className="hover:bg-transparent">
+                      <TableRow className="transition-none hover:bg-transparent">
                         <TableCell className="text-center">
                           <Button
                             variant="link"
@@ -89,7 +92,7 @@ export function LastUsedCard({
                   return (
                     <TableRow
                       key={`loading-last-used-${index.toString()}`}
-                      className="hover:bg-transparent"
+                      className="transition-none hover:bg-transparent"
                     >
                       <TableCell>
                         <Skeleton className={cn("h-5", randomWidth)} />
@@ -98,7 +101,7 @@ export function LastUsedCard({
                   );
                 })
               ) : (
-                <TableRow>
+                <TableRow className="transition-none hover:bg-transparent">
                   <TableCell className="text-muted-foreground text-xs">
                     Brak ostatnio używanych quizów.
                   </TableCell>

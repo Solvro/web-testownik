@@ -2,10 +2,10 @@ import { useCallback, useEffect } from "react";
 
 interface Options {
   nextAction: () => void;
-  nextQuestion: () => void;
+  skipQuestion: () => void;
 }
 
-export function useKeyShortcuts({ nextAction, nextQuestion }: Options) {
+export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -24,7 +24,7 @@ export function useKeyShortcuts({ nextAction, nextQuestion }: Options) {
           break;
         }
         case "s": {
-          nextQuestion();
+          skipQuestion();
           break;
         }
         default: {
@@ -32,7 +32,7 @@ export function useKeyShortcuts({ nextAction, nextQuestion }: Options) {
         }
       }
     },
-    [nextAction, nextQuestion],
+    [nextAction, skipQuestion],
   );
 
   useEffect(() => {

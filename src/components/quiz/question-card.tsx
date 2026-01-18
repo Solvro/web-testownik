@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
 import { cn } from "@/lib/utils";
-import type { Answer, Question } from "@/types/quiz.ts";
+import type { Question } from "@/types/quiz.ts";
 
 interface QuestionCardProps {
   question: Question | null;
-  selectedAnswers: number[];
-  setSelectedAnswers: (selectedAnswers: number[]) => void;
+  selectedAnswers: string[];
+  setSelectedAnswers: (selectedAnswers: string[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
   isQuizFinished: boolean;
@@ -40,16 +40,16 @@ export function QuestionCard({
   restartQuiz,
 }: QuestionCardProps) {
   const handleAnswerClick = useCallback(
-    (index: number) => {
+    (answerId: string) => {
       if (questionChecked) {
         return;
       }
       const newSelectedAnswers = [...selectedAnswers];
-      const answerIndex = newSelectedAnswers.indexOf(index);
+      const answerIndex = newSelectedAnswers.indexOf(answerId);
 
       if (question?.multiple === true) {
         if (answerIndex === -1) {
-          newSelectedAnswers.push(index); // Add answer if not already selected
+          newSelectedAnswers.push(answerId); // Add answer if not already selected
         } else {
           newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
         }
@@ -59,7 +59,7 @@ export function QuestionCard({
           newSelectedAnswers.splice(answerIndex, 1);
         }
         if (answerIndex === -1) {
-          newSelectedAnswers.splice(0, newSelectedAnswers.length, index);
+          newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
         }
       }
 
@@ -74,7 +74,7 @@ export function QuestionCard({
       if (event.key >= "1" && event.key <= "9") {
         const answerIndex = Number.parseInt(event.key, 10) - 1;
         if (question !== null && answerIndex < question.answers.length) {
-          handleAnswerClick(answerIndex);
+          handleAnswerClick(question.answers[answerIndex].id);
         }
       }
     };
@@ -122,8 +122,8 @@ export function QuestionCard({
   const isQuestionAnsweredCorrectly = () => {
     return (
       questionChecked &&
-      question.answers.filter((answer, index) => {
-        return answer.correct !== selectedAnswers.includes(index);
+      question.answers.filter((answer) => {
+        return answer.is_correct !== selectedAnswers.includes(answer.id);
       }).length === 0
     );
   };
@@ -137,52 +137,52 @@ export function QuestionCard({
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
             >
-              {`${question.id.toString()}\\. ${question.question}`}
+              {`${String(question.order)}\\. ${question.text}`}
             </Markdown>
           </CardTitle>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         <CardDescription>
           <ImageLoad
-            key={`question-image-${question.id.toString()}`}
+            key={`question-image-${question.id}`}
             url={question.image}
-            alt={question.question}
+            alt={question.text}
             className="mx-auto mt-4 max-h-80 rounded border object-contain"
           />
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
-          {question.answers.map((answer: Answer, index: number) => {
+          {question.answers.map((answer) => {
             return (
               <button
-                key={`answer-${index.toString()}`}
-                id={`answer-${index.toString()}`}
+                key={`answer-${answer.id}`}
+                id={`answer-${answer.id}`}
                 onClick={() => {
-                  handleAnswerClick(index);
+                  handleAnswerClick(answer.id);
                 }}
                 disabled={questionChecked}
                 className={cn(
                   "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium whitespace-pre-wrap transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
-                    selectedAnswers.includes(index),
+                    selectedAnswers.includes(answer.id),
                     questionChecked,
-                    answer.correct,
+                    answer.is_correct,
                   ),
                 )}
               >
-                <span className="w-full">{answer.answer}</span>
+                <span className="w-full">{answer.text}</span>
                 <ImageLoad
-                  key={`answer-image-${question.id.toString()}-${index.toString()}`}
+                  key={`answer-image-${question.id}-${answer.id}`}
                   url={answer.image}
-                  alt={answer.answer}
+                  alt={answer.text}
                   className="max-h-40 w-full rounded object-contain"
                 />
               </button>
             );
           })}
         </div>
-        <div className="mt-4 min-h-[1.25rem] text-sm">
+        <div className="mt-4 min-h-5 text-sm">
           {questionChecked && isQuestionAnsweredCorrectly() ? (
             <p className="font-medium text-green-600 dark:text-green-400">
               Poprawna odpowiedź!

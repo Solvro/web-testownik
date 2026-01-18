@@ -1,4 +1,4 @@
-import type { Question } from "@/types/quiz.ts";
+import type { AnswerRecord, Question, QuizSession } from "@/types/quiz.ts";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -6,7 +6,6 @@ import type {
   QuestionWithQuizInfo,
   Quiz,
   QuizMetadata,
-  QuizProgress,
   SharedQuiz,
   User,
 } from "./types";
@@ -265,49 +264,16 @@ export class QuizService extends BaseApiService {
   }
 
   /**
-   * Import quiz from link
-   */
-  async importQuizFromLink(link: string): Promise<Quiz> {
-    if (this.isGuestMode()) {
-      throw new Error("Cannot import quizzes in guest mode");
-    }
-    const response = await this.post<Quiz>("/import-from-link/", { link });
-    return response.data;
-  }
-
-  /**
-   * Set quiz progress
-   */
-  async setQuizProgress(
-    quizId: string,
-    progress: QuizProgress,
-    applyRemote = true,
-  ): Promise<QuizProgress> {
-    localStorage.setItem(
-      STORAGE_KEYS.QUIZ_PROGRESS(quizId),
-      JSON.stringify(progress),
-    );
-    if (this.isGuestMode() || !applyRemote) {
-      return progress;
-    }
-    const response = await this.post<QuizProgress>(
-      `/quiz/${quizId}/progress/`,
-      progress,
-    );
-    return response.data;
-  }
-
-  /**
    * Get quiz progress
    */
   async getQuizProgress(
     quizId: string,
     applyRemote = true,
-  ): Promise<QuizProgress | null> {
+  ): Promise<QuizSession | null> {
     if (!this.isGuestMode() && applyRemote) {
       try {
-        const response = await this.get<QuizProgress>(
-          `/quiz/${quizId}/progress/`,
+        const response = await this.get<QuizSession>(
+          `/quizzes/${quizId}/progress/`,
         );
         return response.data;
       } catch {
@@ -319,7 +285,7 @@ export class QuizService extends BaseApiService {
     );
     if (localProgress !== null) {
       try {
-        return JSON.parse(localProgress) as QuizProgress;
+        return JSON.parse(localProgress) as QuizSession;
       } catch (error) {
         console.error("Error parsing local quiz progress:", error);
         localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
@@ -334,8 +300,77 @@ export class QuizService extends BaseApiService {
   async deleteQuizProgress(quizId: string, applyRemote = true): Promise<void> {
     localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
     if (!this.isGuestMode() && applyRemote) {
-      await this.delete(`/quiz/${quizId}/progress/`);
+      await this.delete(`/quizzes/${quizId}/progress/`);
     }
+  }
+
+  /**
+   * Record an answer
+   */
+  async recordAnswer(
+    quizId: string,
+    answer: AnswerRecord,
+    studyTime: number,
+    nextQuestionId: string | null,
+  ): Promise<AnswerRecord> {
+    if (this.isGuestMode()) {
+      try {
+        const key = STORAGE_KEYS.QUIZ_PROGRESS(quizId);
+        const existing = localStorage.getItem(key);
+        let session: QuizSession;
+
+        if (existing === null) {
+          session = {
+            id: crypto.randomUUID(),
+            started_at: new Date().toISOString(),
+            ended_at: null,
+            is_active: true,
+            study_time: 0,
+            current_question: null,
+            answers: [],
+          };
+        } else {
+          try {
+            session = JSON.parse(existing) as QuizSession;
+            if (!Array.isArray(session.answers)) {
+              session.answers = [];
+            }
+          } catch {
+            session = {
+              id: crypto.randomUUID(),
+              started_at: new Date().toISOString(),
+              ended_at: null,
+              is_active: true,
+              study_time: 0,
+              current_question: null,
+              answers: [],
+            };
+          }
+        }
+
+        session.answers.push(answer);
+
+        session.current_question = nextQuestionId;
+
+        session.study_time = studyTime;
+
+        localStorage.setItem(key, JSON.stringify(session));
+      } catch (error) {
+        console.error("Failed to persist guest progress:", error);
+      }
+
+      return answer;
+    }
+    const response = await this.post<AnswerRecord>(
+      `/quizzes/${quizId}/answer/`,
+      {
+        question_id: answer.question,
+        selected_answers: answer.selected_answers,
+        study_time: studyTime,
+        next_question: nextQuestionId,
+      },
+    );
+    return response.data;
   }
 
   /**
