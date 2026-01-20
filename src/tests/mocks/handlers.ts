@@ -31,4 +31,7 @@ export const handlers = [
   http.post("*/import-quiz-from-link/", () =>
     HttpResponse.json(mockQuiz, { status: 201 }),
   ),
+  http.post("*/auth/refresh", () => {
+    return new HttpResponse(null, { status: 401 });
+  }),
 ];

@@ -4,6 +4,8 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "./mocks/server";
 
+process.env.NEXT_PUBLIC_API_URL = "http://test.local";
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
