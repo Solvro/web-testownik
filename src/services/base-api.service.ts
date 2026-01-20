@@ -136,7 +136,7 @@ export class BaseApiService {
     try {
       let response = await fetch(fullURL, requestOptions);
 
-      if (response.status === 401 && this.canAttemptRefresh()) {
+      if (response.status === 401) {
         const refreshed = await this.queueTokenRefresh();
         if (refreshed) {
           headers = this.getAuthHeaders();
@@ -165,14 +165,6 @@ export class BaseApiService {
       const apiError = this.handleError(error);
       throw new Error(apiError.message);
     }
-  }
-
-  /**
-   * Check if we can attempt a token refresh (have refresh token in cookie)
-   */
-  private canAttemptRefresh(): boolean {
-    const refreshToken = getCookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN);
-    return refreshToken !== null && refreshToken.trim() !== "";
   }
 
   private async queueTokenRefresh(): Promise<boolean> {
@@ -232,15 +224,8 @@ export class BaseApiService {
   }
 
   private async ensureFreshToken(): Promise<void> {
-    if (!this.canAttemptRefresh()) {
-      return;
-    }
     const token = this.getAccessToken();
-    if (token === null) {
-      await this.queueTokenRefresh();
-      return;
-    }
-    if (isTokenExpired(token)) {
+    if (token === null || isTokenExpired(token)) {
       await this.queueTokenRefresh();
     }
   }

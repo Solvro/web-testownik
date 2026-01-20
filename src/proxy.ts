@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import {
-  AUTH_COOKIES,
-  refreshTokens,
-  setAuthCookies,
-  verifyAccessToken,
-} from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { AUTH_COOKIES, verifyAccessToken } from "@/lib/auth";
 
 // Routes that require authentication
 const PROTECTED_ROUTES = [
@@ -20,6 +16,44 @@ const PROTECTED_ROUTES = [
 
 function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+/**
+ * Forward Set-Cookie headers from backend response to Next.js response.
+ */
+function forwardAuthCookies(
+  backendResponse: Response,
+  nextResponse: NextResponse,
+): void {
+  const setCookieHeaders = backendResponse.headers.getSetCookie();
+  for (const cookie of setCookieHeaders) {
+    nextResponse.headers.append("Set-Cookie", cookie);
+  }
+}
+
+/**
+ * Try to refresh tokens using the backend and forward cookies.
+ */
+async function tryRefreshTokens(
+  refreshToken: string,
+  response: NextResponse,
+): Promise<boolean> {
+  try {
+    const backendResponse = await fetch(`${API_URL}/token/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (!backendResponse.ok) {
+      return false;
+    }
+
+    forwardAuthCookies(backendResponse, response);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function proxy(request: NextRequest) {
@@ -37,9 +71,8 @@ export async function proxy(request: NextRequest) {
 
   // Try to refresh the token if we have a refresh token
   if (refreshToken !== undefined && refreshToken !== "") {
-    const tokens = await refreshTokens(refreshToken);
-    if (tokens !== null) {
-      setAuthCookies(response, tokens);
+    const refreshed = await tryRefreshTokens(refreshToken, response);
+    if (refreshed) {
       return response;
     }
   }

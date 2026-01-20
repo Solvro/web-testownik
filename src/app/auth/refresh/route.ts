@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { AUTH_COOKIES, refreshTokens, setAuthCookies } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { AUTH_COOKIES } from "@/lib/auth";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -12,14 +13,22 @@ export async function POST() {
   }
 
   try {
-    const tokens = await refreshTokens(refreshToken);
+    const backendResponse = await fetch(`${API_URL}/token/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh: refreshToken }),
+      credentials: "include",
+    });
 
-    if (tokens === null) {
+    if (!backendResponse.ok) {
       return NextResponse.json({ error: "Refresh failed" }, { status: 401 });
     }
 
     const result = NextResponse.json({ success: true });
-    setAuthCookies(result, tokens);
+    const setCookieHeaders = backendResponse.headers.getSetCookie();
+    for (const cookie of setCookieHeaders) {
+      result.headers.append("Set-Cookie", cookie);
+    }
 
     return result;
   } catch {
