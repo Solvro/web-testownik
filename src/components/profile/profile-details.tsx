@@ -57,9 +57,12 @@ export function ProfileDetails({
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
       })
-      .then(() => {
+      .then(async () => {
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
+          // Refresh token to get updated user data (avatar) in the token payload
+          await appContext.services.user.refreshToken();
+          appContext.setAuthenticated(true);
         }
       })
       .catch((error: unknown) => {

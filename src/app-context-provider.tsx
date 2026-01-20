@@ -33,7 +33,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const hasToken = accessToken !== null && accessToken.trim() !== "";
 
       const isGuestFromCookie = getCookie(GUEST_COOKIE_NAME) === "true";
-      // localStorage is a legacy way of storing guest mode state, sbould be removed in the future
+      // localStorage is a legacy way of storing guest mode state, should be removed in the future
       const isGuestFromStorage = localStorage.getItem("is_guest") === "true";
       const isGuestMode = isGuestFromCookie || isGuestFromStorage;
 

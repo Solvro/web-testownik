@@ -245,6 +245,13 @@ export class BaseApiService {
   }
 
   /**
+   * Refreshes the access token using the refresh token
+   */
+  async refreshToken(): Promise<boolean> {
+    return this.queueTokenRefresh();
+  }
+
+  /**
    * Generic GET request
    */
   protected async get<T>(
