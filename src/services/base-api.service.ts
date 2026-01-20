@@ -52,7 +52,10 @@ export class BaseApiService {
    * Build URL with query parameters
    */
   private buildURL(url: string, parameters?: Record<string, unknown>): string {
-    const fullURL = new URL(url, this.baseURL);
+    const fullURL = new URL(
+      url,
+      this.baseURL.endsWith("/") ? this.baseURL : `${this.baseURL}/`,
+    );
 
     if (parameters !== undefined) {
       for (const [key, value] of Object.entries(parameters)) {
