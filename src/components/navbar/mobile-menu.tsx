@@ -26,7 +26,7 @@ export function MobileMenu({
           profilePicture={profilePicture}
           loginUrl={loginUrl}
         />
-        <NavbarActions isAuthenticated={isAuthenticated} />
+        <NavbarActions isAuthenticated={isAuthenticated} isGuest={isGuest} />
       </div>
     </div>
   );

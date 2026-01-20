@@ -29,10 +29,12 @@ async function copyJWTAccessToken() {
 
 interface CopyJWTAccessTokenButtonProps {
   isAuthenticated: boolean;
+  isGuest: boolean;
 }
 
 export function CopyJWTAccessTokenButton({
   isAuthenticated,
+  isGuest,
 }: CopyJWTAccessTokenButtonProps) {
   if (process.env.NODE_ENV !== "development") {
     return null;
@@ -45,16 +47,18 @@ export function CopyJWTAccessTokenButton({
           onClick={copyJWTAccessToken}
           size="icon"
           variant="outline"
-          disabled={!isAuthenticated}
+          disabled={!isAuthenticated || isGuest}
           className="pointer-events-auto!"
         >
           <KeyRoundIcon />
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {isAuthenticated
+        {isAuthenticated && !isGuest
           ? "Skopiuj token JWT"
-          : "Zaloguj się żeby skopiować token JWT"}
+          : isGuest
+            ? "Kopiowanie tokenu nie jest dostępne w trybie gościa"
+            : "Zaloguj się żeby skopiować token JWT"}
       </TooltipContent>
     </Tooltip>
   );

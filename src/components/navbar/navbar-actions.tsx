@@ -3,12 +3,19 @@ import { ModeToggle } from "@/components/mode-toggle";
 
 interface NavbarActionsProps {
   isAuthenticated: boolean;
+  isGuest: boolean;
 }
 
-export function NavbarActions({ isAuthenticated }: NavbarActionsProps) {
+export function NavbarActions({
+  isAuthenticated,
+  isGuest,
+}: NavbarActionsProps) {
   return (
     <>
-      <CopyJWTAccessTokenButton isAuthenticated={isAuthenticated} />
+      <CopyJWTAccessTokenButton
+        isAuthenticated={isAuthenticated}
+        isGuest={isGuest}
+      />
       <ModeToggle />
     </>
   );

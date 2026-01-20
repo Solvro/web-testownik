@@ -56,7 +56,10 @@ export function NavbarClient({
           <NavLinks isStaff={isStaff} variant="desktop" />
         </div>
         <div className="hidden items-center gap-2 sm:flex">
-          <NavbarActions isAuthenticated={isAuthenticated} />
+          <NavbarActions
+            isAuthenticated={isAuthenticated}
+            isGuest={isGuestMode}
+          />
           <AuthButtons
             isAuthenticated={initialUser !== null}
             isGuest={isGuestMode}

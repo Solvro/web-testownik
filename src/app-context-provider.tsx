@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -19,6 +20,7 @@ import { getServices, initializeServices } from "./services";
 initializeServices(API_URL);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isGuest, setIsGuest] = useState<boolean>(false);
 
@@ -53,6 +55,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("is_guest");
     }
     setIsGuest(isGuestParameter);
+    router.refresh();
   };
 
   const setAuthenticated = (value: boolean) => {

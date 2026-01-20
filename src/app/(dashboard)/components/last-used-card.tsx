@@ -81,7 +81,10 @@ export function LastUsedCard({
                 Array.from({ length: 10 }).map((_, index) => {
                   const widths = ["w-1/3", "w-3/4", "w-2/3"];
                   const randomWidth =
-                    widths[Math.floor(Math.random() * widths.length)];
+                    widths[
+                      Math.floor(Math.asinh(index) ** 1.37 * widths.length) %
+                        widths.length
+                    ];
                   return (
                     <TableRow
                       key={`loading-last-used-${index.toString()}`}

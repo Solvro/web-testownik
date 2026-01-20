@@ -17,7 +17,6 @@ export async function POST() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh: refreshToken }),
-      credentials: "include",
     });
 
     if (!backendResponse.ok) {

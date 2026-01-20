@@ -33,6 +33,7 @@ export function useRandomQuestion(isGuest: boolean) {
       return appContext.services.quiz.getRandomQuestion();
     },
     refetchOnWindowFocus: false,
+    retry: isGuest ? 0 : 1,
   });
 }
 
@@ -84,5 +85,6 @@ export function useContributors() {
     staleTime: 1000 * 60 * 60, // 1 hour
     // Only refetch if SSR data failed or was empty
     refetchOnWindowFocus: false,
+    retry: 1,
   });
 }

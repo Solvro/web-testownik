@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES, verifyAccessToken } from "@/lib/auth";
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 
 // Routes that require authentication
 const PROTECTED_ROUTES = [
@@ -59,8 +60,13 @@ async function tryRefreshTokens(
 export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
+  const isGuest = request.cookies.get(GUEST_COOKIE_NAME)?.value === "true";
 
   const response = NextResponse.next();
+
+  if (isGuest) {
+    return response;
+  }
 
   if (accessToken !== undefined && accessToken !== "") {
     const payload = await verifyAccessToken(accessToken);
