@@ -14,7 +14,7 @@ export class UserService extends BaseApiService {
    * Fetch current user data
    */
   async getUserData(): Promise<UserData> {
-    const response = await this.get<UserData>("/user/");
+    const response = await this.get<UserData>("user/");
     return response.data;
   }
 
@@ -25,7 +25,7 @@ export class UserService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot update profile in guest mode");
     }
-    const response = await this.patch<UserData>("/user/", userData);
+    const response = await this.patch<UserData>("user/", userData);
     return response.data;
   }
 
@@ -40,7 +40,7 @@ export class UserService extends BaseApiService {
       }
       return { ...DEFAULT_USER_SETTINGS };
     }
-    const response = await this.get<UserSettings>("/settings/");
+    const response = await this.get<UserSettings>("settings/");
     const settings = response.data;
     this.storeSettings(settings);
     return settings;
@@ -61,12 +61,18 @@ export class UserService extends BaseApiService {
       });
       return { ...DEFAULT_USER_SETTINGS, ...storedSettings, ...settings };
     }
-    const response = await this.patch<UserSettings>("/settings/", settings);
+    const response = await this.patch<UserSettings>("settings/", settings);
     const updatedSettings = response.data;
-    localStorage.setItem(
-      STORAGE_KEYS.SETTINGS,
-      JSON.stringify(updatedSettings),
-    );
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          STORAGE_KEYS.SETTINGS,
+          JSON.stringify(updatedSettings),
+        );
+      } catch (error) {
+        console.error("Error updating local settings:", error);
+      }
+    }
     return updatedSettings;
   }
 
@@ -74,7 +80,7 @@ export class UserService extends BaseApiService {
    * Get user grades
    */
   async getGrades(): Promise<GradesData> {
-    const response = await this.get<GradesData>("/grades/");
+    const response = await this.get<GradesData>("grades/");
     return response.data;
   }
 
@@ -82,7 +88,7 @@ export class UserService extends BaseApiService {
    * Generate OTP for login
    */
   async generateOTP(email: string): Promise<{ message: string }> {
-    const response = await this.post<{ message: string }>("/generate-otp/", {
+    const response = await this.post<{ message: string }>("generate-otp/", {
       email,
     });
     return response.data;
@@ -96,7 +102,7 @@ export class UserService extends BaseApiService {
     otp: string,
   ): Promise<{ access: string; refresh: string }> {
     const response = await this.post<{ access: string; refresh: string }>(
-      "/login-otp/",
+      "login-otp/",
       {
         email,
         otp,
@@ -112,7 +118,7 @@ export class UserService extends BaseApiService {
     token: string,
   ): Promise<{ access: string; refresh: string }> {
     const response = await this.post<{ access: string; refresh: string }>(
-      "/login-link/",
+      "login-link/",
       {
         token,
       },
@@ -124,7 +130,7 @@ export class UserService extends BaseApiService {
    * Get alerts
    */
   async getAlerts(): Promise<AlertData[]> {
-    const response = await this.get<AlertData[]>("/alerts/");
+    const response = await this.get<AlertData[]>("alerts/");
     return response.data;
   }
 
@@ -132,7 +138,7 @@ export class UserService extends BaseApiService {
    * Send feedback/bug report
    */
   async sendFeedback(feedbackData: Record<string, unknown>): Promise<object> {
-    const response = await this.post<object>("/feedback/send", feedbackData);
+    const response = await this.post<object>("feedback/send", feedbackData);
     return response.data;
   }
 
@@ -140,6 +146,9 @@ export class UserService extends BaseApiService {
    * Get stored settings
    */
   getStoredSettings(): UserSettings | null {
+    if (typeof window === "undefined") {
+      return null;
+    }
     try {
       const stored = localStorage.getItem("settings");
       if (stored !== null && stored.trim() !== "") {
@@ -156,6 +165,9 @@ export class UserService extends BaseApiService {
    * Store settings in localStorage
    */
   storeSettings(settings: UserSettings): void {
+    if (typeof window === "undefined") {
+      return;
+    }
     try {
       localStorage.setItem("settings", JSON.stringify(settings));
     } catch (error) {
@@ -167,6 +179,9 @@ export class UserService extends BaseApiService {
    * Check if user is in guest mode
    */
   isGuestMode(): boolean {
+    if (typeof window === "undefined") {
+      return false;
+    }
     // Check cookie first, then localStorage for legacy support
     const fromCookie = getCookie(GUEST_COOKIE_NAME) === "true";
     const fromStorage = localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";

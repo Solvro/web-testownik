@@ -37,7 +37,7 @@ export class QuizService extends BaseApiService {
         can_edit: quiz.can_edit,
       }));
     }
-    const response = await this.get<QuizMetadata[]>("/quizzes/");
+    const response = await this.get<QuizMetadata[]>("quizzes/");
     return response.data;
   }
 
@@ -53,7 +53,7 @@ export class QuizService extends BaseApiService {
       }
       return quiz;
     }
-    const response = await this.get<Quiz>(`/quizzes/${quizId}/`);
+    const response = await this.get<Quiz>(`quizzes/${quizId}/`);
     return response.data;
   }
 
@@ -82,7 +82,7 @@ export class QuizService extends BaseApiService {
       this.saveGuestQuizzes(guestQuizzes);
       return newQuiz;
     }
-    const response = await this.post<Quiz>("/quizzes/", quizData);
+    const response = await this.post<Quiz>("quizzes/", quizData);
     return response.data;
   }
 
@@ -104,7 +104,7 @@ export class QuizService extends BaseApiService {
       this.saveGuestQuizzes(guestQuizzes);
       return updatedQuiz;
     }
-    const response = await this.patch<Quiz>(`/quizzes/${quizId}/`, quizData);
+    const response = await this.patch<Quiz>(`quizzes/${quizId}/`, quizData);
     return response.data;
   }
 
@@ -121,7 +121,7 @@ export class QuizService extends BaseApiService {
       this.saveGuestQuizzes(filteredQuizzes);
       return;
     }
-    await this.delete(`/quizzes/${quizId}/`);
+    await this.delete(`quizzes/${quizId}/`);
   }
 
   /**
@@ -131,7 +131,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       return [];
     }
-    const response = await this.get<SharedQuiz[]>("/shared-quizzes/");
+    const response = await this.get<SharedQuiz[]>("shared-quizzes/");
     return response.data;
   }
 
@@ -143,7 +143,7 @@ export class QuizService extends BaseApiService {
       return [];
     }
     const response = await this.get<SharedQuiz[]>(
-      `/shared-quizzes/?quiz=${quizId}`,
+      `shared-quizzes/?quiz=${quizId}`,
     );
     return response.data;
   }
@@ -159,7 +159,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot share quizzes in guest mode");
     }
-    const response = await this.post<SharedQuiz>("/shared-quizzes/", {
+    const response = await this.post<SharedQuiz>("shared-quizzes/", {
       quiz_id: quizId,
       user_id: userId,
       allow_edit: allowEdit,
@@ -178,7 +178,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot share quizzes in guest mode");
     }
-    const response = await this.post<SharedQuiz>("/shared-quizzes/", {
+    const response = await this.post<SharedQuiz>("shared-quizzes/", {
       quiz_id: quizId,
       study_group_id: groupId,
       allow_edit: allowEdit,
@@ -197,7 +197,7 @@ export class QuizService extends BaseApiService {
       throw new Error("Cannot update shared quizzes in guest mode");
     }
     const response = await this.patch<SharedQuiz>(
-      `/shared-quizzes/${sharedQuizId}/`,
+      `shared-quizzes/${sharedQuizId}/`,
       {
         allow_edit: allowEdit,
       },
@@ -212,7 +212,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot delete shared quizzes in guest mode");
     }
-    await this.delete(`/shared-quizzes/${sharedQuizId}/`);
+    await this.delete(`shared-quizzes/${sharedQuizId}/`);
   }
 
   /**
@@ -236,7 +236,7 @@ export class QuizService extends BaseApiService {
         quiz_id: randomQuiz.id,
       };
     }
-    const response = await this.get<QuestionWithQuizInfo>("/random-question/");
+    const response = await this.get<QuestionWithQuizInfo>("random-question/");
     return response.data;
   }
 
@@ -252,7 +252,7 @@ export class QuizService extends BaseApiService {
       return { guest: filteredQuizzes };
     }
     const response = await this.get<Record<string, unknown>>(
-      `/search-quizzes/?query=${encodeURIComponent(query)}`,
+      `search-quizzes/?query=${encodeURIComponent(query)}`,
     );
     return response.data;
   }
@@ -264,7 +264,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       return [];
     }
-    const response = await this.get<User[]>("/users/", { search: query });
+    const response = await this.get<User[]>("users/", { search: query });
     return response.data;
   }
 
@@ -278,22 +278,24 @@ export class QuizService extends BaseApiService {
     if (!this.isGuestMode() && applyRemote) {
       try {
         const response = await this.get<QuizSession>(
-          `/quizzes/${quizId}/progress/`,
+          `quizzes/${quizId}/progress/`,
         );
         return response.data;
       } catch {
         // If remote fetch fails, return local progress if available
       }
     }
-    const localProgress = localStorage.getItem(
-      STORAGE_KEYS.QUIZ_PROGRESS(quizId),
-    );
-    if (localProgress !== null) {
-      try {
-        return JSON.parse(localProgress) as QuizSession;
-      } catch (error) {
-        console.error("Error parsing local quiz progress:", error);
-        localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
+    if (typeof window !== "undefined") {
+      const localProgress = localStorage.getItem(
+        STORAGE_KEYS.QUIZ_PROGRESS(quizId),
+      );
+      if (localProgress !== null) {
+        try {
+          return JSON.parse(localProgress) as QuizSession;
+        } catch (error) {
+          console.error("Error parsing local quiz progress:", error);
+          localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
+        }
       }
     }
     return null;
@@ -305,7 +307,7 @@ export class QuizService extends BaseApiService {
   async deleteQuizProgress(quizId: string, applyRemote = true): Promise<void> {
     localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
     if (!this.isGuestMode() && applyRemote) {
-      await this.delete(`/quizzes/${quizId}/progress/`);
+      await this.delete(`quizzes/${quizId}/progress/`);
     }
   }
 
@@ -367,7 +369,7 @@ export class QuizService extends BaseApiService {
       return answer;
     }
     const response = await this.post<AnswerRecord>(
-      `/quizzes/${quizId}/answer/`,
+      `quizzes/${quizId}/answer/`,
       {
         question_id: answer.question,
         selected_answers: answer.selected_answers,
@@ -389,7 +391,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot report question issues in guest mode");
     }
-    const response = await this.post<object>("/report-question-issue/", {
+    const response = await this.post<object>("report-question-issue/", {
       quiz_id: quizId,
       question_id: questionId,
       issue,
@@ -404,7 +406,7 @@ export class QuizService extends BaseApiService {
     if (this.isGuestMode()) {
       return [];
     }
-    const response = await this.get<Group[]>("/study-groups/");
+    const response = await this.get<Group[]>("study-groups/");
     return response.data;
   }
 
@@ -412,6 +414,9 @@ export class QuizService extends BaseApiService {
    * Get guest quizzes from localStorage
    */
   getGuestQuizzes(): Quiz[] {
+    if (typeof window === "undefined") {
+      return [];
+    }
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.GUEST_QUIZZES);
       if (stored !== null && stored.trim() !== "") {
@@ -428,6 +433,9 @@ export class QuizService extends BaseApiService {
    * Save guest quizzes to localStorage
    */
   saveGuestQuizzes(quizzes: Quiz[]): void {
+    if (typeof window === "undefined") {
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEYS.GUEST_QUIZZES, JSON.stringify(quizzes));
     } catch (error) {
@@ -475,7 +483,7 @@ export class QuizService extends BaseApiService {
     }
 
     const response = await this.get<ApiPaginatedResponse<QuizMetadata>>(
-      "/last-used-quizzes/",
+      "last-used-quizzes/",
       parameters,
     );
     return response.data;
