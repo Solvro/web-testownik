@@ -1,3 +1,6 @@
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { getCookie } from "@/lib/cookies";
+import type { ApiPaginatedResponse } from "@/types/common";
 import type { Question } from "@/types/quiz";
 
 import { BaseApiService } from "./base-api.service";
@@ -436,19 +439,42 @@ export class QuizService extends BaseApiService {
    * Check if user is in guest mode
    */
   isGuestMode(): boolean {
-    return localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    if (typeof window === "undefined") {
+      return false;
+    }
+    // Check cookie first, then localStorage for legacy support
+    const fromCookie = getCookie(GUEST_COOKIE_NAME) === "true";
+    const fromStorage = localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    return fromCookie || fromStorage;
   }
 
   /**
    * Get last used quizzes
    */
-  async getLastUsedQuizzes(limit?: number): Promise<QuizMetadata[]> {
+  async getLastUsedQuizzes(
+    limit?: number,
+    offset?: number,
+  ): Promise<ApiPaginatedResponse<QuizMetadata>> {
     if (this.isGuestMode()) {
-      return this.getGuestQuizzes().slice(0, limit ?? 10);
+      const all = this.getGuestQuizzes();
+      const start = offset ?? 0;
+      const end = start + (limit ?? 10);
+      return {
+        results: all.slice(start, end),
+        count: all.length,
+        next: end < all.length ? "next" : null,
+        previous: start > 0 ? "previous" : null,
+      };
     }
-    const parameters =
-      limit === undefined ? undefined : { limit: String(limit) };
-    const response = await this.get<QuizMetadata[]>(
+    const parameters: Record<string, string> = {};
+    if (limit !== undefined) {
+      parameters.limit = String(limit);
+    }
+    if (offset !== undefined) {
+      parameters.offset = String(offset);
+    }
+
+    const response = await this.get<ApiPaginatedResponse<QuizMetadata>>(
       "/last-used-quizzes/",
       parameters,
     );

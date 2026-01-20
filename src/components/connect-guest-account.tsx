@@ -29,7 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { SERVER_URL } from "@/config";
+import { API_URL } from "@/lib/api";
 import { createGuestDataBackup } from "@/lib/migration";
 import type { Quiz } from "@/types/quiz";
 import type { UserSettings } from "@/types/user";
@@ -461,15 +461,13 @@ export function ConnectGuestAccount() {
             <div className="grid gap-2">
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}
+                  href={`${API_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}
                 >
                   Zaloguj się z USOS
                 </a>
               </Button>
               <Button asChild>
-                <a
-                  href={`${SERVER_URL}/login?jwt=true&redirect=${redirectUrl}`}
-                >
+                <a href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}>
                   Zaloguj się z Solvro Auth
                 </a>
               </Button>

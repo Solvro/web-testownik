@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useCallback, useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { CourseTypeBadge } from "@/components/course-type-badge";
 import { Loader } from "@/components/loader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -352,9 +351,5 @@ function GradesContent() {
 }
 
 export function GradesPageClient() {
-  return (
-    <AuthGuard>
-      <GradesContent />
-    </AuthGuard>
-  );
+  return <GradesContent />;
 }

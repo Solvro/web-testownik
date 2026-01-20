@@ -6,7 +6,6 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -262,9 +261,5 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
 export function SearchInQuizPageClient({
   quizId,
 }: SearchInQuizPageClientProps) {
-  return (
-    <AuthGuard>
-      <SearchInQuizPageContent quizId={quizId} />
-    </AuthGuard>
-  );
+  return <SearchInQuizPageContent quizId={quizId} />;
 }

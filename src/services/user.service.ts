@@ -1,3 +1,5 @@
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { getCookie } from "@/lib/cookies";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import { BaseApiService } from "./base-api.service";
@@ -187,6 +189,9 @@ export class UserService extends BaseApiService {
    * Check if user is in guest mode
    */
   isGuestMode(): boolean {
-    return localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    // Check cookie first, then localStorage for legacy support
+    const fromCookie = getCookie(GUEST_COOKIE_NAME) === "true";
+    const fromStorage = localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    return fromCookie || fromStorage;
   }
 }

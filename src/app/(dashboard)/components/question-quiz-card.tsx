@@ -1,13 +1,13 @@
+"use client";
+
 import "katex/dist/katex.min.css";
 import { LoaderCircleIcon } from "lucide-react";
 import Link from "next/link";
-import type { ComponentProps } from "react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { AppContext } from "@/app-context";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,40 +20,36 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRandomQuestion } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
-import type { QuestionWithQuizInfo } from "@/services/types";
+
+interface QuestionQuizCardProps extends React.ComponentProps<typeof Card> {
+  isGuest: boolean;
+}
 
 export function QuestionQuizCard({
   className,
+  isGuest,
   ...props
-}: ComponentProps<typeof Card>) {
-  const appContext = useContext(AppContext);
-  const [questionData, setQuestionData] = useState<QuestionWithQuizInfo | null>(
-    null,
-  );
+}: QuestionQuizCardProps): React.JSX.Element {
+  const {
+    data: questionData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useRandomQuestion(isGuest);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
-  const [enableEdit, setEnableEdit] = useState<boolean>(false);
+  const [enableEdit, setEnableEdit] = useState<boolean>(true);
   const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchQuestion = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await appContext.services.quiz.getRandomQuestion();
-      setQuestionData(data);
+  // Initialize state when new question loads
+  useEffect(() => {
+    if (questionData !== undefined) {
       setSelectedAnswers([]);
       setEnableEdit(true);
       setResult(null);
-    } catch {
-      setQuestionData(null);
-    } finally {
-      setLoading(false);
     }
-  }, [appContext]);
-
-  useEffect(() => {
-    void fetchQuestion();
-  }, [fetchQuestion]);
+  }, [questionData]);
 
   const toggleAnswer = (answerId: string) => {
     if (!enableEdit) {
@@ -67,7 +63,7 @@ export function QuestionQuizCard({
   };
 
   const checkAnswers = () => {
-    if (questionData === null) {
+    if (questionData === undefined) {
       return;
     }
 
@@ -87,8 +83,8 @@ export function QuestionQuizCard({
     setEnableEdit(false);
   };
 
-  if (questionData === null) {
-    if (loading) {
+  if (questionData === undefined) {
+    if (isLoading) {
       return (
         <Card
           className={cn("max-h-[80vh] md:max-h-none", className)}
@@ -195,7 +191,7 @@ export function QuestionQuizCard({
         </div>
       </ScrollArea>
       <CardFooter className="flex flex-col items-start gap-2">
-        {result !== null && result !== "" ? (
+        {result === null ? null : (
           <p
             className={cn(
               "mt-3 text-sm font-medium",
@@ -206,9 +202,9 @@ export function QuestionQuizCard({
           >
             {result}
           </p>
-        ) : null}
+        )}
         <div className="flex w-full justify-end">
-          {loading ? (
+          {isFetching ? (
             <Button size="sm" variant="outline" disabled>
               <LoaderCircleIcon className="animate-spin" />
               Ładowanie...
@@ -218,7 +214,13 @@ export function QuestionQuizCard({
               Sprawdź odpowiedź
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={fetchQuestion}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                void refetch();
+              }}
+            >
               Następne pytanie
             </Button>
           )}

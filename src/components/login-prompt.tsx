@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SERVER_URL } from "@/config";
+import { API_URL } from "@/lib/api";
 
 export function LoginPrompt(): React.JSX.Element {
   const [redirectUrl, setRedirectUrl] = useState("");
@@ -25,7 +25,7 @@ export function LoginPrompt(): React.JSX.Element {
           </p>
         </div>
         <Button asChild>
-          <a href={`${SERVER_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}>
+          <a href={`${API_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}>
             <LogInIcon className="mr-2 size-4" />
             Zaloguj się
           </a>

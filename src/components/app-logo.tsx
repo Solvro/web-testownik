@@ -20,7 +20,6 @@ export function AppLogo({
       width={width}
       height={height ?? width * 0.8}
       className={cn("invert dark:invert-0", className)}
-      unoptimized
     />
   );
 }

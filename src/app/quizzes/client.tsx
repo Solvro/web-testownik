@@ -6,7 +6,6 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { Loader } from "@/components/loader";
 import { QuizCard } from "@/components/quiz/quiz-card";
 import { QuizSort } from "@/components/quiz/quiz-sort";
@@ -365,9 +364,5 @@ function QuizzesPageContent() {
 }
 
 export function QuizzesPageClient() {
-  return (
-    <AuthGuard>
-      <QuizzesPageContent />
-    </AuthGuard>
-  );
+  return <QuizzesPageContent />;
 }

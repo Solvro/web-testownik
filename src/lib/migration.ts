@@ -1,3 +1,4 @@
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import type {
   Answer,
   AnswerRecord,
@@ -24,7 +25,7 @@ export function runMigrations(): void {
       // Migration successful
     } catch (error) {
       console.error("[Migration] Failed to migrate to v2:", error);
-      if (localStorage.getItem("is_guest") !== "true") {
+      if (localStorage.getItem(GUEST_COOKIE_NAME) !== "true") {
         // Preserve auth tokens so user stays logged in
         const accessToken = localStorage.getItem("access_token");
         const refreshToken = localStorage.getItem("refresh_token");

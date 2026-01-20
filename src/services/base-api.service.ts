@@ -1,13 +1,14 @@
-import type { ApiError, ApiResponse } from "./types";
-import { STORAGE_KEYS } from "./types";
+import { isTokenExpired } from "@/lib/auth/jwt-utils";
+import { AUTH_COOKIE_NAMES, deleteCookie, getCookie } from "@/lib/cookies";
 
-// Refresh 5 minutes before the access token actually expires
-const ACCESS_TOKEN_EARLY_REFRESH_MS = 5 * 60 * 1000; // 5 min
+import type { ApiError, ApiResponse } from "./types";
+
 // Abort refresh attempts if they exceed this duration
-const REFRESH_TOKEN_TIMEOUT_MS = 10 * 1000; // 10s
+const REFRESH_TOKEN_TIMEOUT_MS = 10_000; // 10s
 
 /**
- * Base API service class that provides common functionality for API calls
+ * Base API service class that provides common functionality for API calls.
+ * Uses cookies for token storage to support SSR.
  */
 export class BaseApiService {
   // Single shared refresh promise across all service instances
@@ -16,6 +17,7 @@ export class BaseApiService {
   constructor(
     protected baseURL: string,
     protected defaultHeaders: Record<string, string> = {},
+    protected accessToken?: string,
   ) {}
 
   /**
@@ -66,7 +68,7 @@ export class BaseApiService {
   }
 
   /**
-   * Get authorization headers
+   * Get authorization headers from cookie
    */
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = { ...this.defaultHeaders };
@@ -76,6 +78,38 @@ export class BaseApiService {
     }
 
     return headers;
+  }
+
+  /**
+   * Get access token from cookie
+   */
+  private getAccessToken(): string | null {
+    if (this.accessToken !== undefined) {
+      return this.accessToken;
+    }
+    const token = getCookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN);
+    if (token === null) {
+      return null;
+    }
+    if (token.trim() === "") {
+      return null;
+    }
+    return token;
+  }
+
+  /**
+   * Get a valid access token or null
+   */
+  private getValidAccessToken(): string | null {
+    const token = this.getAccessToken();
+    if (token === null) {
+      return null;
+    }
+
+    if (isTokenExpired(token)) {
+      return null;
+    }
+    return token;
   }
 
   /**
@@ -134,60 +168,24 @@ export class BaseApiService {
   }
 
   /**
-   * Get a still-valid access token or null (does not trigger refresh here).
+   * Check if we can attempt a token refresh (have refresh token in cookie)
    */
-  private getValidAccessToken(): string | null {
-    try {
-      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      if (token == null || token.trim() === "") {
-        return null;
-      }
-      const expiresAtRaw = localStorage.getItem(
-        STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT,
-      );
-      if (expiresAtRaw == null) {
-        return token; // no info, assume valid
-      }
-      const expiresAt = Number(expiresAtRaw);
-      if (Number.isNaN(expiresAt)) {
-        return token;
-      }
-      const now = Date.now();
-      if (now >= expiresAt) {
-        return null; // expired
-      }
-      return token; // still valid
-    } catch {
-      return null;
-    }
-  }
-
   private canAttemptRefresh(): boolean {
-    return (
-      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== null &&
-      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== ""
-    );
+    const refreshToken = getCookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN);
+    return refreshToken !== null && refreshToken.trim() !== "";
   }
 
   private async queueTokenRefresh(): Promise<boolean> {
-    if (!this.canAttemptRefresh()) {
-      return false;
-    }
     if (BaseApiService.refreshPromise !== null) {
       return BaseApiService.refreshPromise;
-    }
-    const refresh = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    if (refresh === null || refresh.trim() === "") {
-      return false;
     }
     BaseApiService.refreshPromise = (async () => {
       try {
         const response = await this.fetchWithTimeout(
-          new URL("/token/refresh/", this.baseURL).toString(),
+          "/auth/refresh",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refresh }),
+            credentials: "include",
           },
           REFRESH_TOKEN_TIMEOUT_MS,
         );
@@ -196,22 +194,6 @@ export class BaseApiService {
             this.clearAuthTokens();
           }
           return false;
-        }
-        const data = (await response.json()) as {
-          access: string;
-          refresh?: string;
-          expires_in?: number; // seconds (optional)
-        };
-        if (data.access) {
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access);
-          const expiresInMs = (data.expires_in ?? 3600) * 1000; // default 1h
-          localStorage.setItem(
-            STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT,
-            (Date.now() + expiresInMs).toString(),
-          );
-        }
-        if (data.refresh !== undefined && data.refresh.trim() !== "") {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh);
         }
         return true;
       } catch {
@@ -239,7 +221,6 @@ export class BaseApiService {
       });
     } catch (error) {
       if ((error as DOMException).name === "AbortError") {
-        // Treat timeout as failure
         throw new Error("Refresh request timed out");
       }
       throw error;
@@ -252,32 +233,19 @@ export class BaseApiService {
     if (!this.canAttemptRefresh()) {
       return;
     }
-    const expiresAtRaw = localStorage.getItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT,
-    );
-    if (expiresAtRaw == null) {
-      return; // no expiry info
-    }
-    const expiresAt = Number(expiresAtRaw);
-    if (Number.isNaN(expiresAt)) {
-      return;
-    }
-    const now = Date.now();
-    if (now >= expiresAt) {
-      // Already expired: block until refreshed
+    const token = this.getAccessToken();
+    if (token === null) {
       await this.queueTokenRefresh();
       return;
     }
-    if (expiresAt - now <= ACCESS_TOKEN_EARLY_REFRESH_MS) {
-      // Early refresh window: ensure only one refresh; wait for it so request uses new token
+    if (isTokenExpired(token)) {
       await this.queueTokenRefresh();
     }
   }
 
-  protected clearAuthTokens(): void {
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  clearAuthTokens(): void {
+    deleteCookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN);
+    deleteCookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN);
   }
 
   /**

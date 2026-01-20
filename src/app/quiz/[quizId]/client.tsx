@@ -8,7 +8,6 @@ import ReactPlayer from "react-player";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { Loader } from "@/components/loader";
 import { LoginPrompt } from "@/components/login-prompt";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
@@ -157,7 +156,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
 
   return (
     <>
-      <div className="mt-4 grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-12">
         <div
           className={cn(
             "order-1",
@@ -244,9 +243,5 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
 }
 
 export function QuizPageClient({ quizId }: QuizPageClientProps) {
-  return (
-    <AuthGuard>
-      <QuizPageContent quizId={quizId} />
-    </AuthGuard>
-  );
+  return <QuizPageContent quizId={quizId} />;
 }

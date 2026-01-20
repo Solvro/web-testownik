@@ -1,45 +1,38 @@
-import Link from "next/link";
-import { useCallback, useContext, useEffect, useState } from "react";
+"use client";
 
-import { AppContext } from "@/app-context";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useEffect } from "react";
+import { useInView } from "react-intersection-observer";
+
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { useLastUsedQuizzes } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
-import type { QuizMetadata } from "@/types/quiz";
+
+interface LastUsedCardProps extends React.ComponentProps<typeof Card> {
+  isGuest: boolean;
+}
 
 export function LastUsedCard({
   className,
+  isGuest,
   ...props
-}: React.ComponentProps<typeof Card>): React.JSX.Element {
-  const appContext = useContext(AppContext);
-  const [lastUsedQuizzes, setLastUsedQuizzes] = useState<QuizMetadata[]>([]);
-  const [fetchedAll, setFetchedAll] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+}: LastUsedCardProps): React.JSX.Element {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useLastUsedQuizzes(isGuest);
 
-  const fetchLastUsedQuizzes = useCallback(
-    async (limit: number) => {
-      setLoading(true);
-      try {
-        const data = await appContext.services.quiz.getLastUsedQuizzes(limit);
-        if (data.length < limit) {
-          setFetchedAll(true);
-        }
-        setLastUsedQuizzes(data);
-      } catch {
-        setLastUsedQuizzes([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [appContext],
-  );
+  const quizzes = data?.pages.flatMap((page) => page.results) ?? [];
+  const { ref, inView } = useInView({
+    rootMargin: "200%",
+  });
 
   useEffect(() => {
-    void fetchLastUsedQuizzes(10);
-  }, [fetchLastUsedQuizzes]);
+    if (inView && hasNextPage) {
+      void fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage]);
 
   return (
     <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
@@ -48,9 +41,9 @@ export function LastUsedCard({
         <ScrollArea className="min-h-0 flex-1">
           <Table className="table-fixed">
             <TableBody>
-              {lastUsedQuizzes.length > 0 ? (
+              {quizzes.length > 0 ? (
                 <>
-                  {lastUsedQuizzes.map((quiz) => (
+                  {quizzes.map((quiz) => (
                     <TableRow
                       key={quiz.id}
                       className="transition-none hover:bg-transparent"
@@ -67,24 +60,24 @@ export function LastUsedCard({
                       </TableCell>
                     </TableRow>
                   ))}
-                  {!fetchedAll &&
-                    lastUsedQuizzes.length >= 10 &&
-                    lastUsedQuizzes.length < 20 && (
-                      <TableRow className="transition-none hover:bg-transparent">
-                        <TableCell className="text-center">
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="text-muted-foreground h-6 text-xs"
-                            onClick={async () => fetchLastUsedQuizzes(20)}
-                          >
-                            Pokaż więcej
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )}
+                  {hasNextPage ? (
+                    <TableRow
+                      ref={ref}
+                      className="transition-none hover:bg-transparent"
+                    >
+                      <TableCell className="text-center">
+                        {isFetchingNextPage ? (
+                          <span className="text-muted-foreground text-xs">
+                            Ładowanie...
+                          </span>
+                        ) : (
+                          <span className="sr-only">Wczytaj więcej</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
                 </>
-              ) : loading ? (
+              ) : isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => {
                   const widths = ["w-1/3", "w-3/4", "w-2/3"];
                   const randomWidth =

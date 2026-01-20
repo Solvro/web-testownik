@@ -5,7 +5,6 @@ import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
@@ -79,53 +78,48 @@ export function ProfilePageClient(): React.JSX.Element {
   };
 
   return (
-    <AuthGuard>
-      <div className="mt-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabSelect}
-          className="grid items-start gap-6 md:grid-cols-[220px_1fr]"
-        >
-          <TabsList className="flex md:h-auto md:w-full md:flex-col">
-            <TabsTrigger value="account" className="md:w-full md:justify-start">
-              Konto
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="md:w-full md:justify-start"
-            >
-              Ustawienia
-            </TabsTrigger>
-            <TabsTrigger
-              value="notifications"
-              className="md:w-full md:justify-start"
-            >
-              Powiadomienia
-            </TabsTrigger>
-          </TabsList>
-          <div className="space-y-6">
-            <TabsContent value="account" className="space-y-6 md:mt-0">
-              <ProfileDetails
-                userData={userData}
-                loading={userData == null}
-                setUserData={setUserData}
-              />
-            </TabsContent>
-            <TabsContent value="settings" className="space-y-6 md:mt-0">
-              <SettingsForm
-                settings={settings}
-                onSettingChange={handleSettingChange}
-              />
-            </TabsContent>
-            <TabsContent value="notifications" className="space-y-6 md:mt-0">
-              <NotificationsForm
-                settings={settings}
-                onSettingChange={handleSettingChange}
-              />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
-    </AuthGuard>
+    <div className="mt-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabSelect}
+        className="grid items-start gap-6 md:grid-cols-[220px_1fr]"
+      >
+        <TabsList className="flex md:h-auto md:w-full md:flex-col">
+          <TabsTrigger value="account" className="md:w-full md:justify-start">
+            Konto
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="md:w-full md:justify-start">
+            Ustawienia
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="md:w-full md:justify-start"
+          >
+            Powiadomienia
+          </TabsTrigger>
+        </TabsList>
+        <div className="space-y-6">
+          <TabsContent value="account" className="space-y-6 md:mt-0">
+            <ProfileDetails
+              userData={userData}
+              loading={userData == null}
+              setUserData={setUserData}
+            />
+          </TabsContent>
+          <TabsContent value="settings" className="space-y-6 md:mt-0">
+            <SettingsForm
+              settings={settings}
+              onSettingChange={handleSettingChange}
+            />
+          </TabsContent>
+          <TabsContent value="notifications" className="space-y-6 md:mt-0">
+            <NotificationsForm
+              settings={settings}
+              onSettingChange={handleSettingChange}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
   );
 }

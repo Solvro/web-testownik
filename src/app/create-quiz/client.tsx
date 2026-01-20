@@ -5,7 +5,6 @@ import { useContext, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
@@ -34,7 +33,7 @@ export function CreateQuizPageClient() {
   };
 
   return (
-    <AuthGuard>
+    <>
       <QuizEditor mode="create" onSave={handleSave} />
       <QuizPreviewDialog
         open={quiz !== null}
@@ -46,6 +45,6 @@ export function CreateQuizPageClient() {
         quiz={quiz}
         type="created"
       />
-    </AuthGuard>
+    </>
   );
 }

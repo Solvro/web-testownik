@@ -1,3 +1,7 @@
+"use client";
+
+import { useDebouncedValue } from "@tanstack/react-pacer";
+import { useQuery } from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useContext, useState } from "react";
@@ -24,32 +28,34 @@ export function SearchCard({
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isSearchedEmpty, setIsSearchedEmpty] = useState<boolean>(true);
+  const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
-  const handleSearch = async () => {
-    if (!searchQuery) {
-      setIsSearchedEmpty(true);
-      setSearchResults([]);
-      return;
-    }
-    setIsSearchedEmpty(false);
-
-    try {
-      setLoading(true);
+  const {
+    data: searchResults = [],
+    isLoading,
+    isFetched,
+  } = useQuery({
+    queryKey: ["search-quizzes", debouncedQuery],
+    queryFn: async () => {
+      if (!debouncedQuery) {
+        return [];
+      }
       const data = Object.values(
-        await appContext.services.quiz.searchQuizzes(searchQuery),
+        await appContext.services.quiz.searchQuizzes(debouncedQuery),
       ).flat() as SearchResult[];
+
       const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>
         data.find((item) => item.id === id),
       ) as SearchResult[];
-      setSearchResults(uniqueData);
-    } catch {
-      setSearchResults([]);
-    }
-    setLoading(false);
-  };
+
+      return uniqueData;
+    },
+    enabled: debouncedQuery.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const showEmptyState =
+    isFetched && searchResults.length === 0 && debouncedQuery.length > 0;
 
   return (
     <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
@@ -61,23 +67,18 @@ export function SearchCard({
             onChange={(event) => {
               setSearchQuery(event.target.value);
             }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                void handleSearch();
-              }
-            }}
           />
           <Button
             variant="outline"
             size="icon"
-            onClick={handleSearch}
             className="shrink-0"
+            disabled={isLoading}
           >
             <SearchIcon className="size-4" />
           </Button>
         </div>
         <ScrollArea className="min-h-0 flex-1">
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center pt-3">
               <Loader size={10} />
             </div>
@@ -106,16 +107,16 @@ export function SearchCard({
                       </TableCell>
                     </TableRow>
                   ))
-                ) : isSearchedEmpty ? (
+                ) : showEmptyState ? (
                   <TableRow>
                     <TableCell className="text-muted-foreground text-center text-xs">
-                      Tu pojawią się wyniki wyszukiwania.
+                      Brak wyników wyszukiwania.
                     </TableCell>
                   </TableRow>
                 ) : (
                   <TableRow>
                     <TableCell className="text-muted-foreground text-center text-xs">
-                      Brak wyników wyszukiwania.
+                      Tu pojawią się wyniki wyszukiwania.
                     </TableCell>
                   </TableRow>
                 )}

@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { AuthGuard } from "@/components/auth-guard";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -473,9 +472,5 @@ function ImportQuizPageContent(): React.JSX.Element {
 }
 
 export function ImportQuizPageClient() {
-  return (
-    <AuthGuard>
-      <ImportQuizPageContent />
-    </AuthGuard>
-  );
+  return <ImportQuizPageContent />;
 }

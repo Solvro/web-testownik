@@ -235,7 +235,7 @@ export function ProfileDetails({
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Wybierz zdjęcie profilowe</DialogTitle>
           </DialogHeader>
@@ -278,7 +278,7 @@ export function ProfileDetails({
                 <Image
                   src={selectedPhoto}
                   alt="Wybrane zdjęcie"
-                  className="size-full object-cover"
+                  className="size-20 rounded-full object-cover"
                   unoptimized
                   width={96}
                   height={96}

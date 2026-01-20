@@ -5,7 +5,6 @@ import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
-import { AuthGuard } from "@/components/auth-guard";
 import { Loader } from "@/components/loader";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
@@ -139,9 +138,5 @@ function EditQuizPageContent({
 }
 
 export function EditQuizPageClient({ quizId }: EditQuizPageClientProps) {
-  return (
-    <AuthGuard>
-      <EditQuizPageContent quizId={quizId} />
-    </AuthGuard>
-  );
+  return <EditQuizPageContent quizId={quizId} />;
 }
