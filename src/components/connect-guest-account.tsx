@@ -187,6 +187,12 @@ export function ConnectGuestAccount() {
     }
   };
 
+  const handleSkip = () => {
+    setIsDataLoaded(false);
+    router.push("/");
+    appContext.setGuest(false);
+  };
+
   // Handler for category checkbox changes.
   const handleCategoryToggle = (field: "quizzes" | "settings") => {
     setCategories((previous) => {
@@ -202,6 +208,23 @@ export function ConnectGuestAccount() {
         : [...previous, quizId],
     );
   };
+
+  useEffect(() => {
+    if (
+      isDataLoaded &&
+      appContext.isAuthenticated &&
+      appContext.isGuest &&
+      guestQuizzes.length === 0
+    ) {
+      handleSkip();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isDataLoaded,
+    appContext.isAuthenticated,
+    appContext.isGuest,
+    guestQuizzes.length,
+  ]);
 
   if (migrated) {
     return (
@@ -422,6 +445,11 @@ export function ConnectGuestAccount() {
               </Dialog>
               <Button variant="outline" onClick={handleLogout}>
                 Wyloguj
+              </Button>
+            </div>
+            <div className="mt-4 flex justify-center">
+              <Button variant="ghost" onClick={handleSkip}>
+                Pomiń i zaloguj
               </Button>
             </div>
           </CardContent>
