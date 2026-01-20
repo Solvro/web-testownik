@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { API_URL } from "@/lib/api";
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { setCookie } from "@/lib/cookies";
 import { createGuestDataBackup } from "@/lib/migration";
 import type { Quiz } from "@/types/quiz";
 import type { UserSettings } from "@/types/user";
@@ -86,12 +88,13 @@ export function ConnectGuestAccount() {
     setRedirectUrl(window.location.href);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("access_token_expires_at");
-    appContext.services.user.clearStoredUserData();
+  const handleLogout = async () => {
+    await fetch("/auth/logout", { method: "POST" });
+    setIsDataLoaded(false);
     appContext.setAuthenticated(false);
+    setCookie(GUEST_COOKIE_NAME, "true", {
+      maxAge: 12 * 30 * 24 * 60 * 60,
+    });
     router.push("/");
   };
 
@@ -191,6 +194,7 @@ export function ConnectGuestAccount() {
     setIsDataLoaded(false);
     router.push("/");
     appContext.setGuest(false);
+    localStorage.removeItem("guest_migrated");
   };
 
   // Handler for category checkbox changes.

@@ -150,15 +150,6 @@ export class UserService extends BaseApiService {
   }
 
   /**
-   * Clear stored user data
-   */
-  clearStoredUserData(): void {
-    localStorage.removeItem("profile_picture");
-    localStorage.removeItem("is_staff");
-    localStorage.removeItem("user_id");
-  }
-
-  /**
    * Get stored settings
    */
   getStoredSettings(): UserSettings | null {
