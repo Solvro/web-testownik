@@ -6,6 +6,7 @@ import { useContext, useLayoutEffect, useState } from "react";
 import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
 import { API_URL } from "@/lib/api";
+import type { JWTPayload } from "@/lib/auth/types";
 
 import { AuthButtons } from "./auth-buttons";
 import { MobileMenu } from "./mobile-menu";
@@ -13,15 +14,8 @@ import { MobileMenuButton } from "./mobile-menu-button";
 import { NavLinks } from "./nav-links";
 import { NavbarActions } from "./navbar-actions";
 
-export interface NavbarUser {
-  isStaff: boolean;
-  isSuperuser: boolean;
-  photo: string | null;
-  fullName: string | null;
-}
-
 interface NavbarClientProps {
-  initialUser: NavbarUser | null;
+  initialUser: JWTPayload | null;
   initialIsGuest: boolean;
 }
 
@@ -29,16 +23,18 @@ export function NavbarClient({
   initialUser,
   initialIsGuest,
 }: NavbarClientProps) {
-  const { isGuest } = useContext(AppContext);
+  const { isGuest, user } = useContext(AppContext);
 
   const [expanded, setExpanded] = useState(false);
   const [loginUrl, setLoginUrl] = useState(`${API_URL}/login/usos?jwt=true`);
 
   // Use SSR initial values, with client-side context as fallback after hydration
   const isGuestMode = isGuest || initialIsGuest;
-  const isAuthenticated = initialUser !== null || isGuestMode;
-  const isStaff = initialUser?.isStaff ?? false;
-  const profilePicture = initialUser?.photo ?? null;
+
+  const activeUser = user ?? initialUser;
+  const isAuthenticated = activeUser !== null || isGuestMode;
+  const isStaff = activeUser?.is_staff ?? false;
+  const profilePicture = activeUser?.photo ?? null;
 
   useLayoutEffect(() => {
     setLoginUrl(

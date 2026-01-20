@@ -104,7 +104,8 @@ export function useQuizContinuity({
   onInitialSync,
   onQuestionUpdate,
   onAnswerChecked,
-}: UseQuizContinuityOptions) {
+  userId,
+}: UseQuizContinuityOptions & { userId: string | null | undefined }) {
   const [peerConnections, setPeerConnections] = useState<DataConnection[]>([]);
   const [isHost, setIsHost] = useState(false);
   const peerRef = useRef<Peer | null>(null);
@@ -265,7 +266,6 @@ export function useQuizContinuity({
 
   function init() {
     gracefulClose();
-    const userId = localStorage.getItem("user_id");
     if (userId == null) {
       return;
     }
@@ -365,8 +365,7 @@ export function useQuizContinuity({
     if (!enabled) {
       return;
     }
-    const idUser = localStorage.getItem("user_id");
-    if (idUser == null) {
+    if (userId == null) {
       return;
     }
     // Initialize ref with current state on (re)enable

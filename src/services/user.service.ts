@@ -137,19 +137,6 @@ export class UserService extends BaseApiService {
   }
 
   /**
-   * Store user data in localStorage
-   */
-  storeUserData(userData: UserData): void {
-    try {
-      localStorage.setItem("profile_picture", userData.photo);
-      localStorage.setItem("is_staff", userData.is_staff.toString());
-      localStorage.setItem("user_id", userData.id);
-    } catch (error) {
-      console.error("Error storing user data:", error);
-    }
-  }
-
-  /**
    * Get stored settings
    */
   getStoredSettings(): UserSettings | null {

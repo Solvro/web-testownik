@@ -1,4 +1,3 @@
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import type {
   Answer,
   AnswerRecord,
@@ -25,20 +24,16 @@ export function runMigrations(): void {
       // Migration successful
     } catch (error) {
       console.error("[Migration] Failed to migrate to v2:", error);
-      if (localStorage.getItem(GUEST_COOKIE_NAME) !== "true") {
+      if (localStorage.getItem("is_guest") !== "true") {
         // Preserve auth tokens so user stays logged in
         const accessToken = localStorage.getItem("access_token");
         const refreshToken = localStorage.getItem("refresh_token");
-        const profilePicture = localStorage.getItem("profile_picture");
         localStorage.clear();
         if (accessToken !== null) {
           localStorage.setItem("access_token", accessToken);
         }
         if (refreshToken !== null) {
           localStorage.setItem("refresh_token", refreshToken);
-        }
-        if (profilePicture !== null) {
-          localStorage.setItem("profile_picture", profilePicture);
         }
         localStorage.setItem(DATA_VERSION_KEY, "2");
         return; // All data is already on the server so we can just ignore this

@@ -92,7 +92,7 @@ function QuizzesPageContent() {
         const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
           (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
             index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-            sq.quiz.maintainer?.id !== localStorage.getItem("user_id"),
+            sq.quiz.maintainer?.id !== appContext.user?.user_id,
         );
         setSharedQuizzes(uniqueSharedQuizzes);
       } catch {
@@ -103,7 +103,7 @@ function QuizzesPageContent() {
     };
 
     void fetchQuizzes();
-  }, [appContext.services.quiz, appContext.isGuest]);
+  }, [appContext.services.quiz, appContext.isGuest, appContext.user?.user_id]);
 
   const handleShareQuiz = (quiz: QuizMetadata) => {
     setCurrentDialog({ type: "share", quiz });

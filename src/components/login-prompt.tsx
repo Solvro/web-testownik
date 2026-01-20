@@ -28,8 +28,6 @@ export function LoginPrompt(): React.JSX.Element {
   const [currentUrl, setCurrentUrl] = useState("");
 
   const searchParameters = useSearchParams();
-  const accessToken = searchParameters.get("access_token");
-  const refreshToken = searchParameters.get("refresh_token");
   const error = searchParameters.get("error");
 
   useEffect(() => {
@@ -58,7 +56,7 @@ export function LoginPrompt(): React.JSX.Element {
   return (
     <div className="flex justify-center">
       <Card className="w-full max-w-xl min-w-1/2 pb-2">
-        {accessToken !== null && refreshToken !== null ? (
+        {appContext.isAuthenticated ? (
           <CardContent className="flex flex-col items-center py-10">
             <p className="mb-2 text-xl font-semibold text-green-600 dark:text-green-400">
               Zalogowano pomyślnie!

@@ -62,18 +62,7 @@ export function LoginOTPPageClient() {
       }
       setSubmitting(true);
       try {
-        const data = await appContext.services.user.verifyOTP(
-          email.trim(),
-          otp,
-        );
-        localStorage.setItem("access_token", data.access);
-        localStorage.setItem("refresh_token", data.refresh);
-        localStorage.setItem(
-          "access_token_expires_at",
-          (Date.now() + 3600 * 1000).toString(),
-        );
-        const user = await appContext.services.user.getUserData();
-        appContext.services.user.storeUserData(user);
+        await appContext.services.user.verifyOTP(email.trim(), otp);
         appContext.setAuthenticated(true);
         appContext.setGuest(false);
         router.push("/");

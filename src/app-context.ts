@@ -14,5 +14,6 @@ export const AppContext = createContext<AppContextType>({
   setGuest: () => {
     // no-op
   },
+  user: null,
   services: null as unknown as ServiceRegistry, // This will be set in the provider
 });

@@ -6,7 +6,7 @@ import {
   SkullIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
@@ -36,14 +36,9 @@ export function QuizActionButtons({
   const appContext = useContext(AppContext);
   const router = useRouter();
 
-  const [isMaintainer, setIsMaintainer] = useState(false);
-
-  useEffect(() => {
-    setIsMaintainer(
-      (quiz.can_edit ?? false) ||
-        quiz.maintainer?.id === localStorage.getItem("user_id"),
-    );
-  }, [quiz.can_edit, quiz.maintainer?.id]);
+  const isMaintainer =
+    (quiz.can_edit ?? false) ||
+    quiz.maintainer?.id === appContext.user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 

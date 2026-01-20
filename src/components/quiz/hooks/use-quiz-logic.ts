@@ -100,6 +100,7 @@ export function useQuizLogic({
     onAnswerChecked: (nextQuestion) => {
       checkAnswerRef.current(true, nextQuestion);
     },
+    userId: appContext.user?.user_id,
   });
 
   // effects to keep refs updated

@@ -58,10 +58,6 @@ export function ProfileDetails({
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
       })
       .then(() => {
-        localStorage.setItem("profile_picture", selectedPhoto);
-        for (const element of document.querySelectorAll(".user-avatar")) {
-          (element as HTMLImageElement).src = selectedPhoto;
-        }
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
         }

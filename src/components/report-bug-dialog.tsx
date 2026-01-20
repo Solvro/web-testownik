@@ -109,10 +109,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
         location: window.location.href,
         localStorage: {
-          user_id: localStorage.getItem("user_id"),
-          is_guest: localStorage.getItem("is_guest"),
-          is_authenticated:
-            localStorage.getItem("access_token") == null ? "false" : "true",
+          user_id: appContext.user?.user_id ?? localStorage.getItem("user_id"), // localStorage user_id is deprecated, should be removed in the future
+          is_guest: appContext.isGuest,
+          is_authenticated: appContext.isAuthenticated,
           quiz_progress:
             quizId == null ? null : localStorage.getItem(`${quizId}_progress`),
         },
