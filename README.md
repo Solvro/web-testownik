@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+![Next.js](https://img.shields.io/badge/next.js-000000.svg?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
 **Twoje narzędzie do nauki na Politechnice Wrocławskiej**
@@ -49,7 +49,7 @@
    npm run dev
    ```
 
-4. **Otwórz przeglądarkę** i przejdź do `http://localhost:5173`
+4. **Otwórz przeglądarkę** i przejdź do `http://localhost:3000`
 
 ---
 
@@ -59,7 +59,7 @@
 | ---------------------- | ----------------------------------- |
 | `npm run dev`          | Uruchamia serwer deweloperski z HMR |
 | `npm run build`        | Buduje aplikację do produkcji       |
-| `npm run preview`      | Podgląd zbudowanej aplikacji        |
+| `npm run start`        | Uruchamia serwer produkcyjny        |
 | `npm run lint`         | Sprawdza kod za pomocą ESLint       |
 | `npm run format`       | Formatuje kod za pomocą Prettier    |
 | `npm run format:check` | Sprawdza formatowanie kodu          |
@@ -69,11 +69,11 @@
 
 ## 🛠️ Stack technologiczny
 
-- **Framework:** [React](https://react.dev/) z [TypeScript](https://www.typescriptlang.org/)
-- **Bundler:** [Vite](https://vitejs.dev/)
+- **Framework:** [Next.js](https://nextjs.org/)
 - **Stylowanie:** [Tailwind CSS](https://tailwindcss.com/)
 - **Komponenty UI:** [shadcn/ui](https://ui.shadcn.com/)
-- **Routing:** [React Router](https://reactrouter.com/)
+- **Data Fetching:** [TanStack Query](https://tanstack.com/query/latest)
+- **Testy:** [Vitest](https://vitest.dev/)
 - **Ikony:** [Lucide React](https://lucide.dev/)
 - **P2P:** [PeerJS](https://peerjs.com/) dla synchronizacji w czasie rzeczywistym między urządzeniami
 
