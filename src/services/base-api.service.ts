@@ -181,6 +181,8 @@ export class BaseApiService {
     }
     BaseApiService.refreshPromise = (async () => {
       try {
+        // refresh token is stored in httpOnly cookie so to refresh
+        // we need to make a request to Next.js API route
         const response = await this.fetchWithTimeout(
           "/auth/refresh",
           {
@@ -243,7 +245,7 @@ export class BaseApiService {
     }
   }
 
-  clearAuthTokens(): void {
+  protected clearAuthTokens(): void {
     deleteCookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN);
     deleteCookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN);
   }
