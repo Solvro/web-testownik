@@ -13,6 +13,7 @@ import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
+import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog.tsx";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
@@ -22,16 +23,20 @@ import { cn } from "@/lib/utils";
 export function QuizPage(): React.JSX.Element {
   const { quizId } = useParams<{ quizId: string }>();
   const appContext = useContext(AppContext);
-  const { loading, quiz, state, stats, continuity, actions } = useQuizLogic({
-    quizId: quizId ?? "",
-    appContext,
-  });
+  const { loading, history, quiz, state, stats, continuity, actions } =
+    useQuizLogic({
+      quizId: quizId ?? "",
+      appContext,
+    });
   const {
     currentQuestion,
     selectedAnswers,
     questionChecked,
     isQuizFinished,
     showBrainrot,
+    canGoBack,
+    isHistoryQuestion,
+    showHistory,
   } = state;
   const {
     correctAnswersCount,
@@ -46,6 +51,8 @@ export function QuizPage(): React.JSX.Element {
     skipQuestion,
     resetProgress,
     setSelectedAnswers,
+    openHistoryQuestion,
+    toggleHistory,
     toggleBrainrot,
   } = actions;
 
@@ -153,6 +160,7 @@ export function QuizPage(): React.JSX.Element {
         >
           <QuestionCard
             question={currentQuestion}
+            history={history}
             selectedAnswers={selectedAnswers}
             setSelectedAnswers={(newSelected) => {
               // If question is not multiple, unselect everything except the new
@@ -171,6 +179,9 @@ export function QuizPage(): React.JSX.Element {
             questionChecked={questionChecked}
             nextAction={nextAction}
             isQuizFinished={isQuizFinished}
+            openHistoryQuestion={openHistoryQuestion}
+            canGoBack={canGoBack}
+            isHistoryQuestion={isHistoryQuestion}
             restartQuiz={resetProgress}
           />
         </div>
@@ -192,6 +203,7 @@ export function QuizPage(): React.JSX.Element {
           <QuizActionButtons
             quiz={quiz}
             question={currentQuestion}
+            onToggleHistory={toggleHistory}
             onToggleBrainrot={toggleBrainrot}
             disabled={isQuizFinished || currentQuestion == null}
           />
@@ -220,6 +232,13 @@ export function QuizPage(): React.JSX.Element {
           </div>
         ) : null}
       </div>
+
+      <QuizHistoryDialog
+        history={history}
+        showHistory={showHistory}
+        toggleHistory={toggleHistory}
+        openHistoryQuestion={openHistoryQuestion}
+      />
 
       {/* Continuity */}
       <ContinuityDialog

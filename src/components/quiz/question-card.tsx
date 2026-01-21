@@ -8,7 +8,10 @@ import remarkMath from "remark-math";
 
 import { ImageLoad } from "@/components/image-load.tsx";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
-import type { QuestionHistory } from "@/components/quiz/hooks/use-quiz-history.ts";
+import type {
+  HistoryEntry,
+  QuizHistory,
+} from "@/components/quiz/hooks/use-quiz-history.ts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,12 +31,12 @@ import type { Question } from "@/types/quiz.ts";
 
 interface QuestionCardProps {
   question: Question | null;
-  history: QuestionHistory[];
+  history: QuizHistory;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
   questionChecked: boolean;
   nextAction: () => void;
-  openHistoryQuestion: (historyQuestion?: QuestionHistory) => void;
+  openHistoryQuestion: (historyQuestion?: HistoryEntry) => void;
   canGoBack: boolean;
   isHistoryQuestion: boolean;
   isQuizFinished: boolean;
@@ -232,7 +235,7 @@ export function QuestionCard({
                       variant="outline"
                       size="icon"
                       onClick={() => {
-                        openHistoryQuestion(history[1]);
+                        openHistoryQuestion(history.entries[0]);
                       }}
                     >
                       <Undo2 />
