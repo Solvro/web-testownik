@@ -24,8 +24,10 @@ export interface RuntimeState {
   settings: ProgressSettings;
   answers: AnswerRecord[];
   isQuizFinished: boolean;
+  isHistoryQuestion: boolean;
 
   // UI state
+  showHistory: boolean;
   showBrainrot: boolean;
 }
 
@@ -33,6 +35,7 @@ export type Action =
   | { type: "SET_SELECTED_ANSWERS"; payload: string[] }
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
   | { type: "MARK_FINISHED" }
+  | { type: "SET_IS_HISTORY_QUESTION"; payload: boolean }
   | {
       type: "INIT_SESSION";
       payload: {
@@ -63,6 +66,7 @@ export type Action =
   | {
       type: "RESET_PROGRESS";
     }
+  | { type: "TOGGLE_HISTORY" }
   | { type: "TOGGLE_BRAINROT" };
 
 export const initialRuntime: RuntimeState = {
@@ -74,6 +78,8 @@ export const initialRuntime: RuntimeState = {
   questions: [],
   settings: { initialReoccurrences: 1, wrongAnswerReoccurrences: 1 },
   isQuizFinished: false,
+  isHistoryQuestion: false,
+  showHistory: false,
   showBrainrot: false,
 };
 
@@ -119,6 +125,10 @@ export function runtimeReducer(
 
     case "MARK_FINISHED": {
       return { ...state, isQuizFinished: true, currentQuestion: null };
+    }
+
+    case "SET_IS_HISTORY_QUESTION": {
+      return { ...state, isHistoryQuestion: action.payload };
     }
 
     case "INIT_SESSION": {
@@ -217,8 +227,14 @@ export function runtimeReducer(
         questionChecked: false,
         isQuizFinished: false,
         nextQuestion: null,
+        isHistoryQuestion: false,
       };
     }
+
+    case "TOGGLE_HISTORY": {
+      return { ...state, showHistory: !state.showHistory };
+    }
+
     case "TOGGLE_BRAINROT": {
       return { ...state, showBrainrot: !state.showBrainrot };
     }

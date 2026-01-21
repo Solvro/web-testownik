@@ -10,27 +10,40 @@ import type {
 } from "@/components/quiz/hooks/types.ts";
 import type { Question } from "@/types/quiz.ts";
 
-export interface QuizHistory {
+export interface HistoryEntry {
+  entryId: string;
   question: Question;
-  answers: string[];
+  selectedAnswers: string[];
 }
 
-export type QuizHistoryStorage = Record<string, QuizHistory[]>;
+export interface QuizHistory {
+  id: string;
+  currentQuestion: Question | null;
+  entries: HistoryEntry[];
+}
+
+export type QuizHistoryStorage = Record<string, QuizHistory>;
 
 export function useQuizHistory({
   quizId,
 }: UseHistoryLogicParameters): UseHistoryLogicResult {
-  const readStorage = useCallback((): QuizHistory[] => {
+  const readStorage = useCallback((): QuizHistory => {
     try {
       const raw = sessionStorage.getItem("quiz_history");
       if (raw == null) {
-        return [];
+        return { id: quizId, currentQuestion: null, entries: [] };
       }
 
       const parsed = JSON.parse(raw) as QuizHistoryStorage;
-      return parsed[quizId] ?? [];
+      const parsedHistory = parsed[quizId];
+
+      return {
+        id: quizId,
+        currentQuestion: null,
+        entries: parsedHistory.entries,
+      };
     } catch {
-      return [];
+      return { id: quizId, currentQuestion: null, entries: [] };
     }
   }, [quizId]);
 
@@ -38,7 +51,7 @@ export function useQuizHistory({
     runtimeReducer,
     initialRuntime,
     () => ({
-      currentQuestion: null,
+      id: quizId,
       history: readStorage(),
       canGoBack: false,
     }),
@@ -51,7 +64,10 @@ export function useQuizHistory({
       const parsed: QuizHistoryStorage =
         raw == null ? {} : (JSON.parse(raw) as QuizHistoryStorage);
 
-      parsed[quizId satisfies string] = history.slice(1);
+      // TODO fix - jak się odswierzy na poprzednim pytaniu to zostaje
+      // TODO fix - na poprzednim pytaniu restart psuje quiz
+
+      parsed[quizId satisfies string] = history;
       sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
     } catch {}
   }, [history, quizId]);
@@ -60,32 +76,35 @@ export function useQuizHistory({
     writeStorage();
     dispatch({
       type: "SET_CAN_GO_BACK",
-      payload: history.length >= 2,
+      payload: { state: history.entries.length > 0 },
     });
   }, [history, writeStorage]);
 
   const addHistoryEntry = useCallback(
-    (question: Question, answers: string[]) => {
+    (question: Question, selectedAnswers: string[]) => {
       dispatch({
         type: "ADD_ENTRY",
-        payload: { question, answers },
+        payload: { question, selectedAnswers },
       });
     },
     [],
   );
 
-  const updateHistoryEntry = useCallback((answers: string[]) => {
+  const setCurrentHistoryQuestion = useCallback((question: Question) => {
     dispatch({
-      type: "UPDATE_ENTRY",
-      payload: { answers },
+      type: "SET_CURRENT_QUESTION",
+      payload: { question },
     });
   }, []);
 
   const clearHistory = useCallback(() => {
     dispatch({
       type: "RESET",
+      payload: {
+        id: quizId,
+      },
     });
-  }, []);
+  }, [quizId]);
 
   return {
     history,
@@ -94,7 +113,7 @@ export function useQuizHistory({
     },
     actions: {
       addHistoryEntry,
-      updateHistoryEntry,
+      setCurrentHistoryQuestion,
       clearHistory,
     },
   };

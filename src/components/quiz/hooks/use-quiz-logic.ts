@@ -23,6 +23,8 @@ import {
 } from "./quiz-runtime-reducer";
 import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
 import { useQuizContinuity } from "./use-quiz-continuity";
+import type { HistoryEntry } from "./use-quiz-history";
+import { useQuizHistory } from "./use-quiz-history";
 import { useStudyTimer } from "./use-study-timer";
 
 export function useQuizLogic({
@@ -47,6 +49,8 @@ export function useQuizLogic({
     selectedAnswers,
     questionChecked,
     isQuizFinished,
+    isHistoryQuestion,
+    showHistory,
     showBrainrot,
     answers,
     questions,
@@ -59,10 +63,16 @@ export function useQuizLogic({
     startTimeRef,
   } = useStudyTimer(isQuizFinished, 0);
 
+  // Quiz history
+  const { history, state, actions } = useQuizHistory({ quizId });
+  const { canGoBack } = state;
+  const { addHistoryEntry, setCurrentHistoryQuestion, clearHistory } = actions;
+
   // refs for continuity
   const currentQuestionRef = useRef<Question | null>(null);
   const answersRef = useRef<AnswerRecord[]>([]);
   const selectedAnswersRef = useRef<string[]>([]);
+  const isHistoryQuestionRef = useRef<boolean>(false);
 
   // refs for continuity
   const checkAnswerRef = useRef<
@@ -112,7 +122,11 @@ export function useQuizLogic({
     currentQuestionRef.current = currentQuestion;
     answersRef.current = answers;
     selectedAnswersRef.current = selectedAnswers;
-  }, [currentQuestion, answers, selectedAnswers]);
+
+    if (currentQuestionRef.current != null && !isHistoryQuestionRef.current) {
+      setCurrentHistoryQuestion(currentQuestionRef.current);
+    }
+  }, [currentQuestion, answers, selectedAnswers, setCurrentHistoryQuestion]);
 
   // fetch logic
   async function fetchQuiz(): Promise<Quiz | null> {
@@ -138,8 +152,18 @@ export function useQuizLogic({
   }
 
   const checkAnswer = useCallback(
-    (remote = false, nextQuestionOverride?: Question | null) => {
-      if (questionChecked || currentQuestionRef.current == null) {
+    (
+      remote = false,
+      nextQuestionOverride?: Question | null,
+      force?: boolean,
+    ) => {
+      /**
+       * Sometimes we want to force checking answer - used in viewing history question
+       */
+      if (currentQuestionRef.current == null) {
+        return;
+      }
+      if (force === false && questionChecked) {
         return;
       }
 
@@ -193,6 +217,70 @@ export function useQuizLogic({
     ],
   );
 
+  /**
+   * Open history question
+   * Back to current question if args not provided
+   */
+  const openHistoryQuestion = useCallback(
+    (historyQuestion?: HistoryEntry) => {
+      // Back to normal quiz
+      if (historyQuestion == null) {
+        isHistoryQuestionRef.current = false;
+        dispatch({
+          type: "SET_IS_HISTORY_QUESTION",
+          payload: false,
+        });
+        dispatch({
+          type: "SET_CURRENT_QUESTION",
+          payload: { question: history.currentQuestion },
+        });
+        return;
+      }
+
+      if (!canGoBack) {
+        return;
+      }
+
+      isHistoryQuestionRef.current = true;
+      dispatch({
+        type: "SET_IS_HISTORY_QUESTION",
+        payload: true,
+      });
+      dispatch({
+        type: "SET_CURRENT_QUESTION",
+        payload: { question: historyQuestion.question },
+      });
+      dispatch({
+        type: "SET_SELECTED_ANSWERS",
+        payload: historyQuestion.selectedAnswers,
+      });
+      checkAnswer(false, null, true);
+
+      // const currentHistory = historyQuestion ?? history.entries[0];
+      //
+      // dispatch({
+      //   type: "SET_CURRENT_QUESTION",
+      //   payload: { question: currentHistory.question },
+      // });
+      // if (historyQuestion == null) {
+      //   isHistoryQuestionRef.current = false;
+      // } else {
+      //   dispatch({
+      //     type: "SET_SELECTED_ANSWERS",
+      //     payload: currentHistory.selectedAnswers,
+      //   });
+      //   checkAnswer(false, null, true);
+      //   isHistoryQuestionRef.current = true;
+      // }
+      //
+      // dispatch({
+      //   type: "SET_IS_HISTORY_QUESTION",
+      //   payload: isHistoryQuestionRef.current,
+      // });
+    },
+    [canGoBack, checkAnswer, history],
+  );
+
   useEffect(() => {
     checkAnswerRef.current = checkAnswer;
   }, [checkAnswer]);
@@ -201,11 +289,16 @@ export function useQuizLogic({
     if (quiz === null) {
       return;
     }
+
+    if (currentQuestionRef.current != null) {
+      addHistoryEntry(currentQuestionRef.current, selectedAnswersRef.current);
+    }
+
     dispatch({ type: "ADVANCE_QUESTION" });
     if (runtime.nextQuestion !== null) {
       continuity.sendQuestionUpdate(runtime.nextQuestion, []);
     }
-  }, [continuity, quiz, runtime.nextQuestion]);
+  }, [addHistoryEntry, continuity, quiz, runtime.nextQuestion]);
 
   const nextAction = useCallback(() => {
     if (questionChecked) {
@@ -250,12 +343,15 @@ export function useQuizLogic({
       nextQuestion_?.id ?? null,
     );
 
+    addHistoryEntry(currentQuestionRef.current, []);
+
     continuity.sendAnswerChecked(nextQuestion_);
     if (nextQuestion_ !== null) {
       continuity.sendQuestionUpdate(nextQuestion_, []);
     }
     dispatch({ type: "ADVANCE_QUESTION" });
   }, [
+    addHistoryEntry,
     appContext.services.quiz,
     continuity,
     nextQuestion,
@@ -276,13 +372,15 @@ export function useQuizLogic({
       dispatch({
         type: "RESET_PROGRESS",
       });
+      clearHistory();
       setTimer(0, Date.now());
     }
   }, [
     appContext.services.quiz,
-    quiz,
     quizId,
     userSettings.sync_progress,
+    quiz,
+    clearHistory,
     setTimer,
   ]);
 
@@ -340,12 +438,16 @@ export function useQuizLogic({
     loading,
     quiz,
     userSettings,
+    history,
     state: {
       currentQuestion,
       selectedAnswers,
       questionChecked,
       isQuizFinished,
       showBrainrot,
+      canGoBack,
+      isHistoryQuestion,
+      showHistory,
     },
     stats: {
       correctAnswersCount: answerCounts.correct,
@@ -372,6 +474,10 @@ export function useQuizLogic({
       },
       toggleBrainrot: () => {
         dispatch({ type: "TOGGLE_BRAINROT" });
+      },
+      openHistoryQuestion,
+      toggleHistory: () => {
+        dispatch({ type: "TOGGLE_HISTORY" });
       },
     },
   } as const;
