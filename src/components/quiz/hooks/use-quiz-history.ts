@@ -64,9 +64,6 @@ export function useQuizHistory({
       const parsed: QuizHistoryStorage =
         raw == null ? {} : (JSON.parse(raw) as QuizHistoryStorage);
 
-      // TODO fix - jak się odswierzy na poprzednim pytaniu to zostaje
-      // TODO fix - na poprzednim pytaniu restart psuje quiz
-
       parsed[quizId satisfies string] = history;
       sessionStorage.setItem("quiz_history", JSON.stringify(parsed));
     } catch {}

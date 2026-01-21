@@ -255,28 +255,6 @@ export function useQuizLogic({
         payload: historyQuestion.selectedAnswers,
       });
       checkAnswer(false, null, true);
-
-      // const currentHistory = historyQuestion ?? history.entries[0];
-      //
-      // dispatch({
-      //   type: "SET_CURRENT_QUESTION",
-      //   payload: { question: currentHistory.question },
-      // });
-      // if (historyQuestion == null) {
-      //   isHistoryQuestionRef.current = false;
-      // } else {
-      //   dispatch({
-      //     type: "SET_SELECTED_ANSWERS",
-      //     payload: currentHistory.selectedAnswers,
-      //   });
-      //   checkAnswer(false, null, true);
-      //   isHistoryQuestionRef.current = true;
-      // }
-      //
-      // dispatch({
-      //   type: "SET_IS_HISTORY_QUESTION",
-      //   payload: isHistoryQuestionRef.current,
-      // });
     },
     [canGoBack, checkAnswer, history],
   );
