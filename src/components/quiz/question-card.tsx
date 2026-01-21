@@ -1,7 +1,7 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
 import { RotateCcwIcon } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { ViewTransition, useCallback, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
 interface QuestionCardProps {
+  quizId: string;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
@@ -31,6 +32,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
+  quizId,
   question,
   selectedAnswers,
   setSelectedAnswers,
@@ -200,11 +202,13 @@ export function QuestionCard({
           )}
         </div>
         <div className="mt-2 flex justify-end">
-          {questionChecked ? (
-            <Button onClick={nextAction}>Następne pytanie</Button>
-          ) : (
-            <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
-          )}
+          <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+            {questionChecked ? (
+              <Button onClick={nextAction}>Następne pytanie</Button>
+            ) : (
+              <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+            )}
+          </ViewTransition>
         </div>
         {question.explanation != null && questionChecked ? (
           <div

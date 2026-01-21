@@ -6,6 +6,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -55,99 +56,103 @@ export function QuizCard({
   ...props
 }: QuizCardProps) {
   return (
-    <Card className={cn("flex h-full flex-col", className)} {...props}>
-      <CardHeader>
-        <CardTitle>{quiz.title}</CardTitle>
-        {quiz.description ? (
-          <CardDescription>{quiz.description}</CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardFooter className="mt-auto flex items-center justify-between">
-        <Button size="sm" asChild>
-          <Link href={onOpenPath(quiz)}>Otwórz</Link>
-        </Button>
-        <div className="flex gap-1 opacity-80">
-          {Boolean(showEdit) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  asChild
-                >
-                  <Link href={onEditPath(quiz)}>
-                    <PencilIcon />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edytuj quiz</TooltipContent>
-            </Tooltip>
-          )}
-          {Boolean(showShare) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => onShare?.(quiz)}
-                >
-                  <ShareIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Udostępnij quiz</TooltipContent>
-            </Tooltip>
-          )}
-          {showDownload ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => onDownload?.(quiz)}
-                >
-                  <DownloadIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Pobierz quiz</TooltipContent>
-            </Tooltip>
+    <ViewTransition name={`quiz-open-${quiz.id}`}>
+      <Card className={cn("flex h-full flex-col", className)} {...props}>
+        <CardHeader>
+          <CardTitle>{quiz.title}</CardTitle>
+          {quiz.description ? (
+            <CardDescription>{quiz.description}</CardDescription>
           ) : null}
-          {Boolean(showSearch) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  asChild
-                >
-                  <Link href={onSearchPath(quiz)}>
-                    <SearchIcon />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Szukaj w quizie</TooltipContent>
-            </Tooltip>
-          )}
-          {Boolean(showDelete) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => onDelete?.(quiz)}
-                >
-                  <TrashIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Usuń quiz</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </CardFooter>
-    </Card>
+        </CardHeader>
+        <CardFooter className="mt-auto flex items-center justify-between">
+          <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">
+            <Button size="sm" asChild>
+              <Link href={onOpenPath(quiz)}>Otwórz</Link>
+            </Button>
+          </ViewTransition>
+          <div className="flex gap-1 opacity-80">
+            {Boolean(showEdit) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    asChild
+                  >
+                    <Link href={onEditPath(quiz)}>
+                      <PencilIcon />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edytuj quiz</TooltipContent>
+              </Tooltip>
+            )}
+            {Boolean(showShare) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => onShare?.(quiz)}
+                  >
+                    <ShareIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Udostępnij quiz</TooltipContent>
+              </Tooltip>
+            )}
+            {showDownload ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => onDownload?.(quiz)}
+                  >
+                    <DownloadIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Pobierz quiz</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {Boolean(showSearch) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    asChild
+                  >
+                    <Link href={onSearchPath(quiz)}>
+                      <SearchIcon />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Szukaj w quizie</TooltipContent>
+              </Tooltip>
+            )}
+            {Boolean(showDelete) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => onDelete?.(quiz)}
+                  >
+                    <TrashIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Usuń quiz</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </ViewTransition>
   );
 }

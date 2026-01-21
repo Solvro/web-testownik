@@ -126,3 +126,11 @@
     cursor: pointer;
   }
 }
+
+::view-transition-old(.h-full) {
+  height: 100%;
+}
+
+::view-transition-new(.h-full) {
+  height: 100%;
+}

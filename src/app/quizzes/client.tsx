@@ -2,7 +2,14 @@
 
 import { AlertCircleIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { useContext, useEffect, useMemo, useState } from "react";
+import {
+  ViewTransition,
+  startTransition,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 
 import { AppContext } from "@/app-context";
@@ -171,20 +178,26 @@ function QuizzesPageContent() {
       b: QuizMetadata | SharedQuiz,
     ) => number,
   ) => {
-    setQuizComparator(() => comparator);
+    startTransition(() => {
+      setQuizComparator(() => comparator);
+    });
   };
 
   const handleFilterQuizzes = (value: string) => {
     value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-    setQuizRegex(value ? new RegExp(value, "i") : /.*/);
+    startTransition(() => {
+      setQuizRegex(value ? new RegExp(value, "i") : /.*/);
+    });
   };
 
   const [resetFiltersTrigger, setResetFiltersTrigger] = useState(0);
 
   const handleResetFilters = () => {
-    setQuizComparator(() => emptyComparator);
-    setQuizRegex(/.*/);
-    setResetFiltersTrigger((n) => n + 1);
+    startTransition(() => {
+      setQuizComparator(() => emptyComparator);
+      setQuizRegex(/.*/);
+      setResetFiltersTrigger((n) => n + 1);
+    });
   };
 
   if (loading) {
@@ -222,81 +235,94 @@ function QuizzesPageContent() {
       </div>
       {filteredUserQuizes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredUserQuizes.map((quiz) => (
-            <QuizCard
-              key={quiz.id}
-              quiz={quiz}
-              showEdit
-              showShare
-              showDownload
-              showSearch={!appContext.isGuest}
-              showDelete
-              onShare={handleShareQuiz}
-              onDelete={handleDeleteQuiz}
-              onDownload={handleDownloadQuiz}
-            />
-          ))}
-          <Card className="flex h-full flex-col" key="create-quiz">
-            <CardHeader>
-              <CardTitle className="text-muted-foreground text-base">
-                Dodaj nowy quiz
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1" />
-            <CardFooter className="flex items-center justify-between">
-              <Link href="/create-quiz">
-                <Button size="sm">
-                  Stwórz
-                  <PlusIcon />
-                </Button>
-              </Link>
-              <div className="flex gap-1">
+          <ViewTransition>
+            {filteredUserQuizes.map((quiz) => (
+              <QuizCard
+                key={quiz.id}
+                quiz={quiz}
+                showEdit
+                showShare
+                showDownload
+                showSearch={!appContext.isGuest}
+                showDelete
+                onShare={handleShareQuiz}
+                onDelete={handleDeleteQuiz}
+                onDownload={handleDownloadQuiz}
+              />
+            ))}
+            <Card className="flex h-full flex-col" key="create-quiz">
+              <CardHeader>
+                <CardTitle className="text-muted-foreground text-base">
+                  Dodaj nowy quiz
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="mt-auto flex items-center justify-between">
+                <ViewTransition name="create-quiz">
+                  <Link href="/create-quiz">
+                    <Button size="sm">
+                      Stwórz
+                      <PlusIcon />
+                    </Button>
+                  </Link>
+                </ViewTransition>
+                <div className="flex gap-1">
+                  <ViewTransition name="import-quiz">
+                    <Link href="/import-quiz">
+                      <Button size="sm">
+                        Importuj
+                        <UploadIcon />
+                      </Button>
+                    </Link>
+                  </ViewTransition>
+                </div>
+              </CardFooter>
+            </Card>
+          </ViewTransition>
+        </div>
+      ) : userQuizzes.length > 0 ? (
+        <ViewTransition>
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Nie znaleźliśmy quizu, którego szukasz</EmptyTitle>
+              <EmptyDescription>
+                Usuń albo zmień wybrane filtry, aby znaleźć inne quizy.
+                <br />
+                Albo utwórz lub importuj nowy quiz.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="flex flex-row">
+              <Button onClick={handleResetFilters} variant="outline">
+                Wyczyść Filtry <XIcon />
+              </Button>
+              <ViewTransition name="create-quiz">
+                <Link href="/create-quiz">
+                  <Button>
+                    Stwórz quiz <PlusIcon />
+                  </Button>
+                </Link>
+              </ViewTransition>
+              <ViewTransition name="import-quiz">
                 <Link href="/import-quiz">
-                  <Button size="sm">
+                  <Button>
                     Importuj
                     <UploadIcon />
                   </Button>
                 </Link>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-      ) : userQuizzes.length > 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>Nie znaleźliśmy quizu, którego szukasz</EmptyTitle>
-            <EmptyDescription>
-              Usuń albo zmień wybrane filtry, aby znaleźć inne quizy.
-              <br />
-              Albo utwórz lub importuj nowy quiz.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="flex flex-row">
-            <Button onClick={handleResetFilters} variant="outline">
-              Wyczyść Filtry <XIcon />
-            </Button>
-            <Link href="/create-quiz">
-              <Button>
-                Stwórz quiz <PlusIcon />
-              </Button>
-            </Link>
-            <Link href="/import-quiz">
-              <Button>
-                Importuj
-                <UploadIcon />
-              </Button>
-            </Link>
-          </EmptyContent>
-        </Empty>
+              </ViewTransition>
+            </EmptyContent>
+          </Empty>
+        </ViewTransition>
       ) : (
-        <div className="space-y-3 text-center">
-          <p className="text-muted-foreground text-sm">
-            Nie masz jeszcze żadnych quizów.
-          </p>
-          <Link href="/create-quiz">
-            <Button>Stwórz quiz</Button>
-          </Link>
-        </div>
+        <ViewTransition>
+          <div className="space-y-3 text-center">
+            <p className="text-muted-foreground text-sm">
+              Nie masz jeszcze żadnych quizów.
+            </p>
+            <Link href="/create-quiz">
+              <Button>Stwórz quiz</Button>
+            </Link>
+          </div>
+        </ViewTransition>
       )}
 
       {filteredSharedQuizes.length > 0 && (
@@ -305,18 +331,20 @@ function QuizzesPageContent() {
             Udostępnione quizy
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredSharedQuizes.map((sq) => (
-              <QuizCard
-                key={sq.id}
-                quiz={sq.quiz}
-                showEdit={Boolean(sq.quiz.can_edit)}
-                showShare={false}
-                showDownload
-                showSearch
-                showDelete={false}
-                onDownload={handleDownloadQuiz}
-              />
-            ))}
+            <ViewTransition>
+              {filteredSharedQuizes.map((sq) => (
+                <QuizCard
+                  key={sq.id}
+                  quiz={sq.quiz}
+                  showEdit={Boolean(sq.quiz.can_edit)}
+                  showShare={false}
+                  showDownload
+                  showSearch
+                  showDelete={false}
+                  onDownload={handleDownloadQuiz}
+                />
+              ))}
+            </ViewTransition>
           </div>
         </>
       )}

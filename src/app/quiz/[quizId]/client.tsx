@@ -3,7 +3,7 @@
 import { Icon } from "@iconify/react";
 import { LogInIcon, RotateCcwIcon } from "lucide-react";
 import Link from "next/link";
-import { useContext, useEffect } from "react";
+import { ViewTransition, startTransition, useContext, useEffect } from "react";
 import ReactPlayer from "react-player";
 import { toast } from "react-toastify";
 
@@ -53,6 +53,12 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setSelectedAnswers,
     toggleBrainrot,
   } = actions;
+
+  const handleToggleBrainrot = () => {
+    startTransition(() => {
+      toggleBrainrot();
+    });
+  };
 
   useKeyShortcuts({
     nextAction,
@@ -156,60 +162,60 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
 
   return (
     <>
-      <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div
           className={cn(
-            "order-1",
-            showBrainrot ? "lg:col-span-6" : "lg:col-span-8",
-          )}
-        >
-          <QuestionCard
-            question={currentQuestion}
-            selectedAnswers={selectedAnswers}
-            setSelectedAnswers={(newSelected) => {
-              // If question is not multiple, unselect everything except the new
-              if (currentQuestion !== null && !currentQuestion.multiple) {
-                setSelectedAnswers(
-                  newSelected.length > 0 ? [newSelected[0]] : [],
-                );
-                // Also broadcast to peers
-                // broadcast handled inside logic hook if needed
-              } else {
-                setSelectedAnswers(newSelected);
-                // If multiple, broadcast each toggle
-                // broadcast handled inside logic hook
-              }
-            }}
-            questionChecked={questionChecked}
-            nextAction={nextAction}
-            isQuizFinished={isQuizFinished}
-            restartQuiz={resetProgress}
-          />
-        </div>
-        <div
-          className={cn(
-            "order-2 flex flex-col gap-4",
+            "grid gap-4 lg:grid-cols-3",
             showBrainrot ? "lg:col-span-3" : "lg:col-span-4",
           )}
         >
-          <QuizInfoCard
-            quiz={quiz}
-            correctAnswersCount={correctAnswersCount}
-            wrongAnswersCount={wrongAnswersCount}
-            masteredCount={masteredCount}
-            totalQuestions={totalQuestions}
-            studyTime={studyTime}
-            resetProgress={resetProgress}
-          />
-          <QuizActionButtons
-            quiz={quiz}
-            question={currentQuestion}
-            onToggleBrainrot={toggleBrainrot}
-            disabled={isQuizFinished || currentQuestion == null}
-          />
+          <div className="lg:col-span-2">
+            <ViewTransition name={`quiz-open-${quiz.id}`} default="h-full">
+              <QuestionCard
+                quizId={quiz.id}
+                question={currentQuestion}
+                selectedAnswers={selectedAnswers}
+                setSelectedAnswers={(newSelected) => {
+                  // If question is not multiple, unselect everything except the new
+                  if (currentQuestion !== null && !currentQuestion.multiple) {
+                    setSelectedAnswers(
+                      newSelected.length > 0 ? [newSelected[0]] : [],
+                    );
+                  } else {
+                    setSelectedAnswers(newSelected);
+                  }
+                }}
+                questionChecked={questionChecked}
+                nextAction={nextAction}
+                isQuizFinished={isQuizFinished}
+                restartQuiz={resetProgress}
+              />
+            </ViewTransition>
+          </div>
+          <div className={cn("flex flex-col gap-4", "lg:col-span-1")}>
+            <ViewTransition name={`quiz-info-${quiz.id}`} default="h-full">
+              <QuizInfoCard
+                quiz={quiz}
+                correctAnswersCount={correctAnswersCount}
+                wrongAnswersCount={wrongAnswersCount}
+                masteredCount={masteredCount}
+                totalQuestions={totalQuestions}
+                studyTime={studyTime}
+                resetProgress={resetProgress}
+              />
+            </ViewTransition>
+            <ViewTransition name={`quiz-actions-${quiz.id}`} default="h-full">
+              <QuizActionButtons
+                quiz={quiz}
+                question={currentQuestion}
+                onToggleBrainrot={handleToggleBrainrot}
+                disabled={isQuizFinished || currentQuestion == null}
+              />
+            </ViewTransition>
+          </div>
         </div>
         {showBrainrot ? (
-          <div className="order-3 lg:col-span-3">
+          <div className="animate-in fade-in slide-in-from-right duration-300">
             <Card>
               <CardContent>
                 <AspectRatio

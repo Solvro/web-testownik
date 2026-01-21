@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -42,11 +42,6 @@ export const metadata: Metadata = {
       { url: "/favicon/180x180.png", sizes: "180x180", type: "image/png" },
     ],
   },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
 };
 
 export default function RootLayout({
