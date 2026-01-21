@@ -2,6 +2,8 @@ import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import { getCookie } from "@/lib/cookies";
 import type { ApiPaginatedResponse } from "@/types/common";
 import type { Question } from "@/types/quiz";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
+import type { UserSettings } from "@/types/user";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -11,6 +13,7 @@ import type {
   Quiz,
   QuizMetadata,
   QuizSession,
+  QuizWithUserProgress,
   SharedQuiz,
   User,
 } from "./types";
@@ -44,16 +47,54 @@ export class QuizService extends BaseApiService {
   /**
    * Fetch a specific quiz by ID
    */
-  async getQuiz(quizId: string): Promise<Quiz> {
+  async getQuiz(
+    quizId: string,
+    options?: { include?: string[] },
+  ): Promise<QuizWithUserProgress> {
     if (this.isGuestMode()) {
       const guestQuizzes = this.getGuestQuizzes();
       const quiz = guestQuizzes.find((q) => q.id === quizId);
       if (quiz === undefined) {
         throw new Error("Quiz not found");
       }
-      return quiz;
+
+      const result: QuizWithUserProgress = { ...quiz };
+
+      if (options?.include?.includes("current_session") ?? false) {
+        const progress = await this.getQuizProgress(quizId);
+        if (progress !== null) {
+          result.current_session = progress;
+        }
+      }
+
+      if (options?.include?.includes("user_settings") ?? false) {
+        let settings = { ...DEFAULT_USER_SETTINGS };
+        if (typeof window !== "undefined") {
+          try {
+            const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+            if (stored !== null) {
+              const parsed = JSON.parse(stored) as Partial<UserSettings>;
+              settings = { ...settings, ...parsed };
+            }
+          } catch (error) {
+            console.error("Failed to load guest settings", error);
+          }
+        }
+        result.user_settings = settings;
+      }
+
+      return result;
     }
-    const response = await this.get<Quiz>(`quizzes/${quizId}/`);
+
+    const parameters: Record<string, unknown> = {};
+    if (options?.include !== undefined) {
+      parameters.include = options.include.join(",");
+    }
+
+    const response = await this.get<QuizWithUserProgress>(
+      `quizzes/${quizId}/`,
+      parameters,
+    );
     return response.data;
   }
 

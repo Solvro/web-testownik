@@ -1,4 +1,11 @@
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+
+import { API_URL } from "@/lib/api";
+import { AUTH_COOKIE_NAMES } from "@/lib/cookies";
+import { getQueryClient } from "@/lib/query-client";
+import { ServiceRegistry } from "@/services";
 
 import { QuizPageClient } from "./client";
 
@@ -12,5 +19,27 @@ interface PageProps {
 
 export default async function QuizPage({ params }: PageProps) {
   const { quizId } = await params;
-  return <QuizPageClient quizId={quizId} />;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value;
+
+  const queryClient = getQueryClient();
+
+  const services = new ServiceRegistry(API_URL, {}, accessToken);
+
+  const include = ["user_settings", "current_session"];
+
+  await queryClient.prefetchQuery({
+    queryKey: ["quiz", quizId, "details", { include }],
+    queryFn: async () => {
+      return await services.quiz.getQuiz(quizId, {
+        include,
+      });
+    },
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <QuizPageClient quizId={quizId} />
+    </HydrationBoundary>
+  );
 }

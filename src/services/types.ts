@@ -6,6 +6,7 @@ export type {
   QuestionWithQuizInfo,
   AnswerRecord,
   QuizSession,
+  QuizWithUserProgress,
 } from "@/types/quiz";
 export type {
   User,
