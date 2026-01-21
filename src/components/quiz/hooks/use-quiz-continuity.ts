@@ -1,7 +1,6 @@
 import { Peer } from "peerjs";
 import type { DataConnection } from "peerjs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
 
 import type { AnswerRecord, Question } from "@/types/quiz";
 
@@ -110,6 +109,8 @@ export function useQuizContinuity({
   const [isHost, setIsHost] = useState(false);
   const peerRef = useRef<Peer | null>(null);
   const peerConnectionsRef = useRef<DataConnection[]>([]);
+  const isInitializingRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const gracefulClose = useCallback(() => {
     if (peerRef.current != null && !peerRef.current.destroyed) {
@@ -265,16 +266,27 @@ export function useQuizContinuity({
   );
 
   function init() {
+    if (isInitializingRef.current || !isMountedRef.current) {
+      return;
+    }
+    isInitializingRef.current = true;
     gracefulClose();
+
     if (userId == null) {
+      isInitializingRef.current = false;
       return;
     }
     const baseId = `${quizId}_${userId}`.replaceAll("/", "");
     try {
       const hostPeer = new Peer(baseId, { config: RTC_CONFIG });
       hostPeer.on("open", () => {
+        if (!isMountedRef.current) {
+          hostPeer.destroy();
+          return;
+        }
         peerRef.current = hostPeer;
         setIsHost(true);
+        isInitializingRef.current = false;
       });
       hostPeer.on("connection", handleHostConnection);
       hostPeer.on("error", (error: unknown) => {
@@ -282,26 +294,38 @@ export function useQuizContinuity({
         if (peerError.type === "unavailable-id") {
           const clientPeer = new Peer({ config: RTC_CONFIG });
           clientPeer.on("open", () => {
+            if (!isMountedRef.current) {
+              clientPeer.destroy();
+              return;
+            }
             peerRef.current = clientPeer;
             setIsHost(false);
             connectToPeer(clientPeer, baseId)
               .then((conn) => {
-                toast.info("🖥️ Połączono z hostem!");
+                if (!isMountedRef.current) {
+                  conn.close();
+                  return;
+                }
                 conn.on("data", (d) => {
                   handleClientData(d as PeerMessage);
                 });
+                isInitializingRef.current = false;
               })
-              .catch(() => toast.error("Nie udało się połączyć z hostem."));
+              .catch(() => {
+                isInitializingRef.current = false;
+              });
           });
           clientPeer.on("connection", (c) =>
             c.on("data", (d) => {
               handleClientData(d as PeerMessage);
             }),
           );
+        } else {
+          isInitializingRef.current = false;
         }
       });
     } catch {
-      /* ignore */
+      isInitializingRef.current = false;
     }
   }
 
@@ -311,7 +335,6 @@ export function useQuizContinuity({
       peerConnectionsRef.current = next;
       return next;
     });
-    toast.info("🖥️ Klient rozłączony.");
     if (!isHost && peerRef.current != null && !peerRef.current.destroyed) {
       connectToPeer(peerRef.current, conn.peer)
         .then((c) => {
@@ -370,9 +393,13 @@ export function useQuizContinuity({
     }
     // Initialize ref with current state on (re)enable
     peerConnectionsRef.current = peerConnections;
+    isMountedRef.current = true;
+
     init();
+
     const interval = setInterval(pingPeers, PING_INTERVAL);
     return () => {
+      isMountedRef.current = false;
       clearInterval(interval);
       gracefulClose();
     };
