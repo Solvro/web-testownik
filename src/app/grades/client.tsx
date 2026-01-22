@@ -1,8 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import Link from "next/link";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { CourseTypeBadge } from "@/components/course-type-badge";
@@ -41,56 +42,43 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Course, Term } from "@/types/user";
+import type { Course } from "@/types/user";
 
 function GradesContent() {
   const appContext = useContext(AppContext);
 
-  const [loading, setLoading] = useState(true);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [terms, setTerms] = useState<Term[]>([]);
+  const {
+    data: gradesData,
+    isPending: loading,
+    error,
+  } = useQuery({
+    queryKey: ["grades"],
+    queryFn: async () => appContext.services.user.getGrades(),
+    enabled: !appContext.isGuest,
+  });
+
+  const terms = gradesData?.terms ?? [];
+  const courses = gradesData?.courses ?? [];
+
   const [selectedTerm, setSelectedTerm] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [editedGrades, setEditedGrades] = useState<
     Record<string, number | string>
   >({});
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await appContext.services.user.getGrades();
-        setTerms(data.terms);
-        setCourses(data.courses);
-        setSelectedTerm(
-          data.terms.find(
-            (term) =>
-              new Date() >= new Date(term.start_date) &&
-              new Date() <= new Date(term.finish_date),
-          )?.id ??
-            data.terms.toSorted(
-              (a, b) =>
-                new Date(b.start_date).getTime() -
-                new Date(a.start_date).getTime(),
-            )[0].id,
-        );
-        setError(null);
-      } catch (fetchError) {
-        console.error("Error fetching grades:", fetchError);
-
-        if (fetchError instanceof Error) {
-          setError(fetchError.message);
-        } else {
-          setError("Wystąpił błąd podczas pobierania ocen.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (!appContext.isGuest) {
-      void fetchData();
-    }
-  }, [appContext.services.user, appContext.isGuest]);
+  if (selectedTerm === "" && terms.length > 0) {
+    const currentTermId =
+      terms.find(
+        (term) =>
+          new Date() >= new Date(term.start_date) &&
+          new Date() <= new Date(term.finish_date),
+      )?.id ??
+      terms.toSorted(
+        (a, b) =>
+          new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
+      )[0].id;
+    setSelectedTerm(currentTermId);
+  }
 
   const calculateAverage = (filteredCourses: Course[]) => {
     const sum = filteredCourses.reduce((accumulator, course) => {
@@ -164,7 +152,7 @@ function GradesContent() {
         <AlertCircleIcon />
         <AlertTitle>Wystąpił błąd podczas pobierania ocen.</AlertTitle>
         <AlertDescription>
-          {error}
+          {error.message}
           <Button
             variant="outline"
             size="sm"

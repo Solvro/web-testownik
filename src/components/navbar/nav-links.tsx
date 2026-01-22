@@ -1,9 +1,11 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
+import { AppContext } from "@/app-context";
 import { ReportBugDialog } from "@/components/report-bug-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +24,19 @@ interface NavLinksProps {
 export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
   const pathname = usePathname();
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const appContext = useContext(AppContext);
+  const queryClient = useQueryClient();
+
+  const prefetchGrades = () => {
+    if (!appContext.isAuthenticated) {
+      return;
+    }
+    void queryClient.prefetchQuery({
+      queryKey: ["grades"],
+      queryFn: async () => appContext.services.user.getGrades(),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+  };
 
   const isActive = (path: string) => pathname === path;
 
@@ -40,6 +55,7 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
         </Link>
         <Link
           href="/grades"
+          onMouseEnter={prefetchGrades}
           className={
             isActive("/grades")
               ? "text-foreground text-left font-medium"
@@ -86,7 +102,9 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink active={isActive("/grades")} asChild>
-              <Link href="/grades">Oceny</Link>
+              <Link href="/grades" onMouseEnter={prefetchGrades}>
+                Oceny
+              </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
