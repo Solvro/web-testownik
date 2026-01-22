@@ -33,7 +33,6 @@ export function useQuizLogic({
   const userSettings = initialData.user_settings ?? {
     ...DEFAULT_USER_SETTINGS,
   };
-  const loading = false;
 
   const [runtime, dispatch] = useReducer(
     runtimeReducer,
@@ -252,7 +251,6 @@ export function useQuizLogic({
   };
 
   return {
-    loading,
     quiz,
     userSettings,
     state: {

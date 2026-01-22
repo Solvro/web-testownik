@@ -71,9 +71,7 @@ export default function RootLayout({
             className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
             id="container"
           >
-            <Suspense>
-              <Navbar />
-            </Suspense>
+            <Navbar />
             <Suspense>
               <Alerts />
             </Suspense>

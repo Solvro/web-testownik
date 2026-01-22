@@ -1,7 +1,10 @@
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 
+import { Loader } from "@/components/loader";
+import { Card, CardContent } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIE_NAMES } from "@/lib/cookies";
 import { getQueryClient } from "@/lib/query-client";
@@ -39,7 +42,20 @@ export default async function QuizPage({ params }: PageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <QuizPageClient quizId={quizId} />
+      <Suspense
+        fallback={
+          <Card>
+            <CardContent>
+              <div className="space-y-2 pb-8 text-center">
+                <p>Ładowanie quizu...</p>
+                <Loader size={15} />
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <QuizPageClient quizId={quizId} />
+      </Suspense>
     </HydrationBoundary>
   );
 }

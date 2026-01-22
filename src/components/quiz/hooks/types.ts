@@ -13,7 +13,6 @@ export interface UseQuizLogicParameters {
 }
 
 export interface UseQuizLogicResult {
-  loading: boolean;
   quiz: Quiz | null;
   userSettings: UserSettings;
   state: {

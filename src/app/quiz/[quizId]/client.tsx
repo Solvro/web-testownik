@@ -8,7 +8,6 @@ import ReactPlayer from "react-player";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
-import { Loader } from "@/components/loader";
 import { LoginPrompt } from "@/components/login-prompt";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
@@ -27,7 +26,7 @@ interface QuizPageClientProps {
 
 function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   const appContext = useContext(AppContext);
-  const { loading, quiz, state, stats, continuity, actions } = useQuizLogic({
+  const { quiz, state, stats, continuity, actions } = useQuizLogic({
     quizId,
     appContext,
   });
@@ -66,7 +65,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   });
 
   useEffect(() => {
-    if (loading || quiz === null) {
+    if (quiz === null) {
       return;
     }
 
@@ -92,20 +91,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       });
       localStorage.setItem("shown_reoccurrences_info", "true");
     }
-  }, [loading, quiz]);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent>
-          <div className="space-y-2 pb-8 text-center">
-            <p>Ładowanie quizu...</p>
-            <Loader size={15} />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  }, [quiz]);
 
   if (quiz === null) {
     if (!appContext.isAuthenticated && !appContext.isGuest) {
