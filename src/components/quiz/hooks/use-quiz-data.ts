@@ -19,5 +19,9 @@ export function useQuizData(quizId: string) {
         include: ["user_settings", "current_session"],
       });
     },
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 }
