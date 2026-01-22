@@ -1,7 +1,7 @@
 import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";

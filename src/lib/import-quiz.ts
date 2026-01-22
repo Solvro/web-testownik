@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import React, { useContext, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";

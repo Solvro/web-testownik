@@ -1,7 +1,7 @@
 import { MessageSquareWarningIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -131,9 +131,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         toast.success("Dziękujemy za zgłoszenie!");
       })
       .catch((error: unknown) => {
-        toast.error("Wystąpił błąd podczas wysyłania zgłoszenia!", {
-          position: "top-center",
-        });
+        toast.error("Wystąpił błąd podczas wysyłania zgłoszenia!");
         console.error(error);
       })
       .finally(() => {

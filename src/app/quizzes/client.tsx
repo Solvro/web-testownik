@@ -10,7 +10,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
@@ -68,13 +68,11 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
   } = useSharedQuizzes(isGuest);
 
   // Filter shared quizzes to get unique ones
-  const sharedQuizzes = useMemo(() => {
-    return allSharedQuizzes.filter(
-      (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
-        index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-        sq.quiz.maintainer?.id !== userId,
-    );
-  }, [allSharedQuizzes, userId]);
+  const sharedQuizzes = allSharedQuizzes.filter(
+    (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
+      index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
+      sq.quiz.maintainer?.id !== userId,
+  );
 
   const loading = isLoadingUserQuizzes || isLoadingSharedQuizzes;
   const error = userQuizzesError ?? sharedQuizzesError;
@@ -93,17 +91,15 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
     (a: QuizMetadata | SharedQuiz, b: QuizMetadata | SharedQuiz) => number
   >(() => emptyComparator);
 
-  const sortedUserQuizzes: QuizMetadata[] = useMemo(() => {
-    return userQuizzes.toSorted(quizComparator);
-  }, [userQuizzes, quizComparator]);
+  const sortedUserQuizzes: QuizMetadata[] =
+    userQuizzes.toSorted(quizComparator);
 
   const filteredUserQuizes: QuizMetadata[] = sortedUserQuizzes.filter((quiz) =>
     quizRegex.test(quiz.title),
   );
 
-  const sortedSharedQuizzes: SharedQuiz[] = useMemo(() => {
-    return sharedQuizzes.toSorted(quizComparator);
-  }, [sharedQuizzes, quizComparator]);
+  const sortedSharedQuizzes: SharedQuiz[] =
+    sharedQuizzes.toSorted(quizComparator);
 
   const filteredSharedQuizes: SharedQuiz[] = sortedSharedQuizzes.filter(
     (quiz) => quizRegex.test(quiz.quiz.title),

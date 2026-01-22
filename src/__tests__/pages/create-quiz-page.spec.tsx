@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import assert from "node:assert";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CreateQuizPageClient as CreateQuizPage } from "@/app/create-quiz/client";
@@ -10,7 +10,7 @@ import { server } from "@/tests/mocks/server";
 import { Providers } from "@/tests/providers";
 import type { Quiz } from "@/types/quiz";
 
-vi.mock("react-toastify", () => ({
+vi.mock("sonner", () => ({
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
 }));
 

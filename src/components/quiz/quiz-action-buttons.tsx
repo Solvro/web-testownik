@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";

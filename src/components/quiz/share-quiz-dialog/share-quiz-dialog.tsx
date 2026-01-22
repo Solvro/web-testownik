@@ -2,7 +2,7 @@ import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import type { QuizEditorResult } from "@/components/quiz/quiz-editor";

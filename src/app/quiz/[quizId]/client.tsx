@@ -5,7 +5,7 @@ import { LogInIcon, RotateCcwIcon } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, startTransition, useContext, useEffect } from "react";
 import ReactPlayer from "react-player";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
@@ -71,19 +71,25 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     }
 
     if (localStorage.getItem("shown_reoccurrences_info") === null) {
-      toast.info(
-        <div>
-          <p>
-            Domyślnie pytania mają 1 powtórzenie i dodatkowe powtórzenia po
-            błędnej odpowiedzi.
-          </p>
-          <p>
-            Możesz zmienić to w{" "}
-            <Link href="/profile#settings">ustawieniach</Link>.
-          </p>
-        </div>,
-        { icon: () => <Icon icon="mdi:settings" />, autoClose: 10_000 },
-      );
+      toast.info("Informacja o powtórzeniach", {
+        description: (
+          <div className="space-y-1">
+            <p>
+              Domyślnie pytania mają 1 powtórzenie i dodatkowe powtórzenia po
+              błędnej odpowiedzi.
+            </p>
+            <p>
+              Możesz zmienić to w{" "}
+              <Link href="/profile#settings" className="underline">
+                ustawieniach
+              </Link>
+              .
+            </p>
+          </div>
+        ),
+        icon: <Icon icon="mdi:settings" />,
+        duration: 10_000,
+      });
       localStorage.setItem("shown_reoccurrences_info", "true");
     }
   }, [loading, quiz]);

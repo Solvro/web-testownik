@@ -2,7 +2,7 @@ import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

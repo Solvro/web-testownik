@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Alerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
 import { Navbar } from "@/components/navbar";
-import { ToastContainer } from "@/components/toast-container";
+import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -79,7 +79,7 @@ export default function RootLayout({
             </Suspense>
             {children}
           </div>
-          <ToastContainer />
+          <Toaster richColors />
           <AppFooter />
         </Providers>
         <Script
