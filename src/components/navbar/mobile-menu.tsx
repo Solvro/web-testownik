@@ -14,7 +14,6 @@ export function MobileMenu({
   isGuest,
   isStaff,
   profilePicture,
-  loginUrl,
 }: MobileMenuProps) {
   return (
     <div className="flex flex-col gap-4 border-t pt-2 sm:hidden">
@@ -24,7 +23,6 @@ export function MobileMenu({
           isAuthenticated={isAuthenticated}
           isGuest={isGuest}
           profilePicture={profilePicture}
-          loginUrl={loginUrl}
         />
         <NavbarActions isAuthenticated={isAuthenticated} isGuest={isGuest} />
       </div>

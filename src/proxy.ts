@@ -88,7 +88,6 @@ export async function proxy(request: NextRequest) {
   // No valid auth - redirect if protected route
   if (isProtectedRoute(request.nextUrl.pathname)) {
     const loginUrl = new URL("/", request.url);
-    loginUrl.searchParams.set("auth_required", "true");
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }

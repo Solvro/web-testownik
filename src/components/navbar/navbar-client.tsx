@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useContext, useLayoutEffect, useState } from "react";
+import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
-import { API_URL } from "@/lib/api";
 import type { JWTPayload } from "@/lib/auth/types";
 
 import { AuthButtons } from "./auth-buttons";
@@ -26,7 +25,6 @@ export function NavbarClient({
   const { isGuest, user } = useContext(AppContext);
 
   const [expanded, setExpanded] = useState(false);
-  const [loginUrl, setLoginUrl] = useState(`${API_URL}/login/usos?jwt=true`);
 
   // Use SSR initial values, with client-side context as fallback after hydration
   const isGuestMode = isGuest || initialIsGuest;
@@ -35,12 +33,6 @@ export function NavbarClient({
   const isAuthenticated = activeUser !== null;
   const isStaff = activeUser?.is_staff ?? false;
   const profilePicture = activeUser?.photo ?? null;
-
-  useLayoutEffect(() => {
-    setLoginUrl(
-      `${API_URL}/login/usos?jwt=true&redirect=${window.location.href}`,
-    );
-  }, []);
 
   return (
     <nav className="flex flex-col gap-2 py-4">
@@ -60,7 +52,6 @@ export function NavbarClient({
             isAuthenticated={isAuthenticated}
             isGuest={isGuestMode}
             profilePicture={profilePicture}
-            loginUrl={loginUrl}
           />
         </div>
         <MobileMenuButton
@@ -76,7 +67,6 @@ export function NavbarClient({
           isGuest={isGuestMode}
           isStaff={isStaff}
           profilePicture={profilePicture}
-          loginUrl={loginUrl}
         />
       ) : null}
     </nav>

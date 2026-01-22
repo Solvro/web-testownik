@@ -7,9 +7,12 @@ import {
   LogInIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { API_URL } from "@/lib/api";
 
 import { LogoutButton } from "./logout-button";
 
@@ -17,15 +20,23 @@ export interface AuthButtonsProps {
   isAuthenticated: boolean;
   isGuest: boolean;
   profilePicture: string | null;
-  loginUrl: string;
 }
 
 export function AuthButtons({
   isAuthenticated,
   isGuest,
   profilePicture,
-  loginUrl,
 }: AuthButtonsProps) {
+  const [currentUrl, setCurrentUrl] = useState("");
+  const searchParameters = useSearchParams();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const redirect = searchParameters.get("redirect");
+    const url = new URL(redirect ?? "", window.location.origin);
+    setCurrentUrl(url.toString());
+  }, [pathname, searchParameters]);
+
   if (isGuest) {
     return (
       <>
@@ -69,7 +80,11 @@ export function AuthButtons({
 
   return (
     <Button asChild>
-      <a href={loginUrl}>
+      <a
+        href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+          currentUrl,
+        )}`}
+      >
         <LogInIcon />
         Zaloguj się
       </a>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
@@ -28,12 +28,14 @@ export function LoginPrompt(): React.JSX.Element {
   const [currentUrl, setCurrentUrl] = useState("");
 
   const searchParameters = useSearchParams();
+  const pathname = usePathname();
   const error = searchParameters.get("error");
 
   useEffect(() => {
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
-    setCurrentUrl(window.location.href);
-  }, []);
+    const redirect = searchParameters.get("redirect");
+    const url = new URL(redirect ?? "", window.location.origin);
+    setCurrentUrl(url.toString());
+  }, [pathname, searchParameters]);
 
   const signInAsGuest = () => {
     appContext.setGuest(true);
