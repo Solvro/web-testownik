@@ -1,7 +1,6 @@
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { cookies } from "next/headers";
 
-import { LoginPrompt } from "@/components/login-prompt";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES, GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import { getContributorsSSR } from "@/lib/dashboard-ssr";
@@ -18,13 +17,6 @@ export default async function DashboardPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const isGuest = cookieStore.get(GUEST_COOKIE_NAME)?.value === "true";
-
-  const isAuthenticated =
-    (accessToken !== undefined && accessToken !== "") || isGuest;
-
-  if (!isAuthenticated) {
-    return <LoginPrompt />;
-  }
 
   const queryClient = getQueryClient();
 

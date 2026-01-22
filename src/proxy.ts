@@ -33,12 +33,13 @@ function forwardAuthCookies(
 }
 
 /**
- * Try to refresh tokens using the backend and forward cookies.
+ * Try to refresh tokens using the backend and return a redirect response with cookies.
+ * Returns null if refresh failed.
  */
 async function tryRefreshTokens(
   refreshToken: string,
-  response: NextResponse,
-): Promise<boolean> {
+  redirectUrl: string,
+): Promise<NextResponse | null> {
   try {
     const backendResponse = await fetch(`${API_URL}/token/refresh/`, {
       method: "POST",
@@ -47,13 +48,14 @@ async function tryRefreshTokens(
     });
 
     if (!backendResponse.ok) {
-      return false;
+      return null;
     }
 
+    const response = NextResponse.redirect(redirectUrl);
     forwardAuthCookies(backendResponse, response);
-    return true;
+    return response;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -77,9 +79,9 @@ export async function proxy(request: NextRequest) {
 
   // Try to refresh the token if we have a refresh token
   if (refreshToken !== undefined && refreshToken !== "") {
-    const refreshed = await tryRefreshTokens(refreshToken, response);
-    if (refreshed) {
-      return response;
+    const refreshResponse = await tryRefreshTokens(refreshToken, request.url);
+    if (refreshResponse !== null) {
+      return refreshResponse;
     }
   }
 
