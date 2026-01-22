@@ -7,6 +7,6 @@ export interface AppContextType {
   setAuthenticated: (isAuthenticated: boolean) => void;
   isGuest: boolean;
   setGuest: (isGuest: boolean) => void;
-  user: JWTPayload | null;
+  user: JWTPayload | null | undefined; // undefined means loading
   services: ServiceRegistry;
 }

@@ -31,8 +31,8 @@ export function NavbarClient({
   // Use SSR initial values, with client-side context as fallback after hydration
   const isGuestMode = isGuest || initialIsGuest;
 
-  const activeUser = user ?? initialUser;
-  const isAuthenticated = activeUser !== null || isGuestMode;
+  const activeUser = user ?? (user === undefined ? initialUser : null);
+  const isAuthenticated = activeUser !== null;
   const isStaff = activeUser?.is_staff ?? false;
   const profilePicture = activeUser?.photo ?? null;
 
@@ -57,7 +57,7 @@ export function NavbarClient({
             isGuest={isGuestMode}
           />
           <AuthButtons
-            isAuthenticated={initialUser !== null}
+            isAuthenticated={isAuthenticated}
             isGuest={isGuestMode}
             profilePicture={profilePicture}
             loginUrl={loginUrl}
@@ -72,7 +72,7 @@ export function NavbarClient({
       </div>
       {expanded ? (
         <MobileMenu
-          isAuthenticated={initialUser !== null}
+          isAuthenticated={isAuthenticated}
           isGuest={isGuestMode}
           isStaff={isStaff}
           profilePicture={profilePicture}

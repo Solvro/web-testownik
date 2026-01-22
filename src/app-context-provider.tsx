@@ -25,7 +25,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isGuest, setIsGuest] = useState<boolean>(false);
-  const [user, setUser] = useState<JWTPayload | null>(null);
+  const [user, setUser] = useState<JWTPayload | null | undefined>();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
