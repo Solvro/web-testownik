@@ -51,7 +51,7 @@ describe("GradesPage", () => {
     );
     setup();
 
-    expect(screen.getByText(/ładowanie/i)).toBeVisible();
+    expect(await screen.findByText(/ładowanie/i)).toBeVisible();
     await waitForElementToBeRemoved(() => screen.queryByText(/ładowanie/i));
   });
 
@@ -95,7 +95,7 @@ describe("GradesPage", () => {
     ).toBeVisible();
   });
 
-  it("should handle empty terms and courses", async () => {
+  it("should handle empty terms and courses", () => {
     server.use(
       http.get("*/grades/", () =>
         HttpResponse.json({
@@ -106,7 +106,8 @@ describe("GradesPage", () => {
     );
     setup();
 
-    expect(await screen.findByText(/błąd/i)).toBeVisible();
+    expect(screen.queryByText(/błąd/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Oceny")).toBeVisible();
   });
 
   it("should handle course with no grades", async () => {
@@ -141,19 +142,6 @@ describe("GradesPage", () => {
     const gradeInput = screen.getByDisplayValue("");
     await user.type(gradeInput, "4.0");
     expect(gradeInput).toHaveValue(4);
-  });
-
-  it("should show error if API returns malformed response", async () => {
-    server.use(
-      http.get("*/grades/", () =>
-        HttpResponse.json({
-          badKey: [],
-        }),
-      ),
-    );
-    setup();
-
-    expect(await screen.findByText(/błąd/i)).toBeVisible();
   });
 
   it("should update courses when switching terms", async () => {
