@@ -170,7 +170,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           )}
         >
           <div className="lg:col-span-2">
-            <ViewTransition name={`quiz-open-${quiz.id}`} default="h-full">
+            <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
               <QuestionCard
                 quizId={quiz.id}
                 question={currentQuestion}
@@ -192,8 +192,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               />
             </ViewTransition>
           </div>
-          <div className={cn("flex flex-col gap-4", "lg:col-span-1")}>
-            <ViewTransition name={`quiz-info-${quiz.id}`} default="h-full">
+          <ViewTransition name="quiz-info">
+            <div className="flex flex-col gap-4 lg:col-span-1">
               <QuizInfoCard
                 quiz={quiz}
                 correctAnswersCount={correctAnswersCount}
@@ -203,16 +203,14 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 studyTime={studyTime}
                 resetProgress={resetProgress}
               />
-            </ViewTransition>
-            <ViewTransition name={`quiz-actions-${quiz.id}`} default="h-full">
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
                 onToggleBrainrot={handleToggleBrainrot}
                 disabled={isQuizFinished || currentQuestion == null}
               />
-            </ViewTransition>
-          </div>
+            </div>
+          </ViewTransition>
         </div>
         {showBrainrot ? (
           <div className="animate-in fade-in slide-in-from-right duration-300">

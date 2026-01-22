@@ -5,7 +5,7 @@ import {
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { ViewTransition, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -100,65 +100,69 @@ export function QuizSort({
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={"outline"}
-            className={cn("size-9", !isFiltered && "hidden")}
-            onClick={() => {
-              onResetFilters();
-              handleClearFilters();
-            }}
-          >
-            <XIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Wyczyść filtry</TooltipContent>
-      </Tooltip>
-      <InputGroup className="w-full sm:w-xs">
-        <InputGroupInput
-          placeholder="Wyszukaj quiz"
-          value={searchValue}
-          onChange={(event) => {
-            setSearchValue(event.target.value);
-            onNameFilterChange(event.target.value);
-          }}
-        />
-        <InputGroupAddon>
-          <SearchIcon />
-        </InputGroupAddon>
-      </InputGroup>
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                {selectedOption === null ? (
-                  <ArrowDownUp />
-                ) : (
-                  selectedOption.icon
-                )}
+      <ViewTransition name="quiz-info">
+        <div className="flex flex-row items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn("size-9", !isFiltered && "hidden")}
+                onClick={() => {
+                  onResetFilters();
+                  handleClearFilters();
+                }}
+              >
+                <XIcon />
               </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Sortuj</TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="end">
-          {options.map((o) => (
-            <DropdownMenuItem
-              key={o.label}
-              onClick={() => {
-                setSelectedOption(o);
-                onSortChange(o.comparator);
+            </TooltipTrigger>
+            <TooltipContent>Wyczyść filtry</TooltipContent>
+          </Tooltip>
+          <InputGroup className="w-full sm:w-xs">
+            <InputGroupInput
+              placeholder="Wyszukaj quiz"
+              value={searchValue}
+              onChange={(event) => {
+                setSearchValue(event.target.value);
+                onNameFilterChange(event.target.value);
               }}
-              className="flex w-auto justify-between"
-            >
-              {o.label}
-              {o.icon}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            />
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+          </InputGroup>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    {selectedOption === null ? (
+                      <ArrowDownUp />
+                    ) : (
+                      selectedOption.icon
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Sortuj</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              {options.map((o) => (
+                <DropdownMenuItem
+                  key={o.label}
+                  onClick={() => {
+                    setSelectedOption(o);
+                    onSortChange(o.comparator);
+                  }}
+                  className="flex w-auto justify-between"
+                >
+                  {o.label}
+                  {o.icon}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ViewTransition>
     </div>
   );
 }
