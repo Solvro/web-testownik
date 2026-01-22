@@ -67,7 +67,7 @@ export function AboutCard({
                         rel="noreferrer"
                       >
                         <Avatar className="size-6">
-                          <AvatarImage src={contributor.avatar_url} />
+                          <AvatarImage src={`${contributor.avatar_url}&s=48`} />
                           <AvatarFallback delayMs={600}>
                             {getInitials(contributor.login)}
                           </AvatarFallback>
