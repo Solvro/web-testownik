@@ -42,6 +42,9 @@ export default function QuizError({
           Nie udało się załadować quizu. Może nie istnieć lub wystąpił problem z
           połączeniem.
         </EmptyDescription>
+        <EmptyDescription>
+          Upewnij się, że quiz istnieje i masz do niego dostęp.
+        </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Accordion type="single" collapsible className="w-full">
