@@ -1,12 +1,12 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircleIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import {
   ViewTransition,
   startTransition,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -43,20 +43,47 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
-function QuizzesPageContent() {
+interface QuizzesPageContentProps {
+  userId?: string;
+  isGuest: boolean;
+}
+
+function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
   const appContext = useContext(AppContext);
+  const queryClient = useQueryClient();
+
+  const {
+    data: userQuizzes = [],
+    isLoading: isLoadingUserQuizzes,
+    error: userQuizzesError,
+  } = useUserQuizzes(isGuest);
+
+  const {
+    data: allSharedQuizzes = [],
+    isLoading: isLoadingSharedQuizzes,
+    error: sharedQuizzesError,
+  } = useSharedQuizzes(isGuest);
+
+  // Filter shared quizzes to get unique ones
+  const sharedQuizzes = useMemo(() => {
+    return allSharedQuizzes.filter(
+      (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
+        index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
+        sq.quiz.maintainer?.id !== userId,
+    );
+  }, [allSharedQuizzes, userId]);
+
+  const loading = isLoadingUserQuizzes || isLoadingSharedQuizzes;
+  const error = userQuizzesError ?? sharedQuizzesError;
 
   const emptyComparator = (
     _a: QuizMetadata | SharedQuiz,
     _b: QuizMetadata | SharedQuiz,
   ) => 0;
 
-  const [userQuizzes, setUserQuizzes] = useState<QuizMetadata[]>([]);
-  const [sharedQuizzes, setSharedQuizzes] = useState<SharedQuiz[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentDialog, setCurrentDialog] = useState<{
     type: "share" | "delete" | null;
     quiz: QuizMetadata | null;
@@ -86,32 +113,6 @@ function QuizzesPageContent() {
     document.title = "Twoje quizy - Testownik Solvro";
   }
 
-  useEffect(() => {
-    const fetchQuizzes = async () => {
-      try {
-        const [fetchedUserQuizzes, fetchedSharedQuizzes] = await Promise.all([
-          appContext.services.quiz.getQuizzes(),
-          appContext.services.quiz.getSharedQuizzes(),
-        ]);
-
-        setUserQuizzes(fetchedUserQuizzes);
-
-        const uniqueSharedQuizzes = fetchedSharedQuizzes.filter(
-          (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
-            index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-            sq.quiz.maintainer?.id !== appContext.user?.user_id,
-        );
-        setSharedQuizzes(uniqueSharedQuizzes);
-      } catch {
-        setError("Nie udało się załadować quizów.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchQuizzes();
-  }, [appContext.services.quiz, appContext.isGuest, appContext.user?.user_id]);
-
   const handleShareQuiz = (quiz: QuizMetadata) => {
     setCurrentDialog({ type: "share", quiz });
   };
@@ -129,7 +130,9 @@ function QuizzesPageContent() {
 
     try {
       await appContext.services.quiz.deleteQuiz(quiz.id);
-      setUserQuizzes((previous) => previous.filter((q) => q.id !== quiz.id));
+      void queryClient.invalidateQueries({
+        queryKey: ["user-quizzes"],
+      });
       toast.success(`Quiz "${quiz.title}" został usunięty.`);
     } catch {
       toast.error("Nie udało się usunąć quizu.");
@@ -167,8 +170,13 @@ function QuizzesPageContent() {
   };
 
   const updateQuiz = (quiz: QuizMetadata) => {
-    setUserQuizzes((previous) =>
-      previous.map((q) => (q.id === quiz.id ? quiz : q)),
+    queryClient.setQueryData(
+      ["user-quizzes", isGuest],
+      (old: QuizMetadata[] | undefined) => {
+        return old === undefined
+          ? []
+          : old.map((q) => (q.id === quiz.id ? quiz : q));
+      },
     );
   };
 
@@ -217,7 +225,7 @@ function QuizzesPageContent() {
     return (
       <Alert variant="destructive">
         <AlertCircleIcon />
-        <AlertTitle>{error}</AlertTitle>
+        <AlertTitle>{error.message}</AlertTitle>
       </Alert>
     );
   }
@@ -391,6 +399,9 @@ function QuizzesPageContent() {
   );
 }
 
-export function QuizzesPageClient() {
-  return <QuizzesPageContent />;
+export function QuizzesPageClient({
+  userId,
+  isGuest,
+}: QuizzesPageContentProps) {
+  return <QuizzesPageContent userId={userId} isGuest={isGuest} />;
 }
