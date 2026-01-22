@@ -68,13 +68,15 @@ export function useQuizLogic({
   } = runtime;
 
   const {
-    studyTime,
+    store: timerStore,
     setFromLoaded: setTimer,
-    startTimeRef,
+    getStartTime,
   } = useStudyTimer(
     isQuizFinished,
     initialData.current_session?.study_time ?? 0,
   );
+
+  const getCurrentStudyTime = () => timerStore.getSnapshot();
 
   // refs for continuity
   const currentQuestionRef = useRef<Question | null>(null);
@@ -97,13 +99,13 @@ export function useQuizLogic({
     getCurrentState: () => ({
       question: currentQuestionRef.current,
       answers: answersRef.current,
-      startTime: startTimeRef.current,
+      startTime: getStartTime(),
       wrongAnswers: answerCounts.wrong,
       correctAnswers: answerCounts.correct,
       selectedAnswers: selectedAnswersRef.current,
     }),
     onInitialSync: (d) => {
-      startTimeRef.current = d.startTime;
+      timerStore.setStartTime(d.startTime);
       dispatch({
         type: "APPLY_LOADED_PROGRESS",
         payload: {
@@ -167,7 +169,7 @@ export function useQuizLogic({
       void appContext.services.quiz.recordAnswer(
         quizId,
         newAnswer,
-        studyTime,
+        getCurrentStudyTime(),
         nextQuestion_?.id ?? null,
       );
     }
@@ -227,7 +229,7 @@ export function useQuizLogic({
     void appContext.services.quiz.recordAnswer(
       quizId,
       newAnswer,
-      studyTime,
+      getCurrentStudyTime(),
       nextQuestion_?.id ?? null,
     );
 
@@ -265,7 +267,7 @@ export function useQuizLogic({
       wrongAnswersCount: answerCounts.wrong,
       masteredCount: mastered,
       totalQuestions: questions.length,
-      studyTime,
+      timerStore,
       answers,
     },
     continuity: {

@@ -4,6 +4,8 @@ import type { AppContextType } from "@/app-context-type";
 import type { AnswerRecord, Question, Quiz } from "@/types/quiz";
 import type { UserSettings } from "@/types/user";
 
+import type { TimerStore } from "./use-study-timer";
+
 export interface UseQuizLogicParameters {
   quizId: string;
   appContext: AppContextType;
@@ -26,7 +28,7 @@ export interface UseQuizLogicResult {
     wrongAnswersCount: number;
     masteredCount: number;
     totalQuestions: number;
-    studyTime: number;
+    timerStore: TimerStore;
     answers: AnswerRecord[];
   };
   continuity: {

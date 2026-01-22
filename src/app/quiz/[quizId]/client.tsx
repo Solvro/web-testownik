@@ -43,7 +43,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     wrongAnswersCount,
     masteredCount,
     totalQuestions,
-    studyTime,
+    timerStore,
   } = stats;
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
@@ -206,7 +206,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 wrongAnswersCount={wrongAnswersCount}
                 masteredCount={masteredCount}
                 totalQuestions={totalQuestions}
-                studyTime={studyTime}
+                timerStore={timerStore}
                 resetProgress={resetProgress}
               />
               <QuizActionButtons

@@ -20,13 +20,16 @@ import {
 } from "@/components/ui/tooltip";
 import type { Quiz } from "@/types/quiz";
 
+import type { TimerStore } from "./hooks/use-study-timer";
+import { useStudyTimeValue } from "./hooks/use-study-timer";
+
 interface QuizInfoCardProps {
   quiz: Quiz | null;
   correctAnswersCount: number;
   wrongAnswersCount: number;
   masteredCount: number;
   totalQuestions: number;
-  studyTime: number; // in seconds
+  timerStore: TimerStore;
   resetProgress: () => void;
 }
 
@@ -60,13 +63,22 @@ const getProgressColor = (percentage: number): string => {
   return "rgb(25, 135, 84)";
 };
 
+function StudyTimeDisplay({ timerStore }: { timerStore: TimerStore }) {
+  const studyTime = useStudyTimeValue(timerStore);
+  return (
+    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+      {new Date(studyTime * 1000).toISOString().slice(11, 19)}
+    </span>
+  );
+}
+
 export function QuizInfoCard({
   quiz,
   correctAnswersCount,
   wrongAnswersCount,
   masteredCount,
   totalQuestions,
-  studyTime,
+  timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const appContext = useContext(AppContext);
@@ -109,9 +121,7 @@ export function QuizInfoCard({
           </div>
           <div className="flex justify-between">
             <span>Czas nauki</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              {new Date(studyTime * 1000).toISOString().slice(11, 19)}
-            </span>
+            <StudyTimeDisplay timerStore={timerStore} />
           </div>
         </div>
         <Progress
