@@ -4,9 +4,9 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { ImportQuizPageClient as ImportQuizPage } from "@/app/import-quiz/client";
-import { mockLegacyQuiz, mockQuiz } from "@/tests/mocks/quiz-mock";
-import { server } from "@/tests/mocks/server";
-import { Providers } from "@/tests/providers";
+import { mockLegacyQuiz, mockQuiz } from "@/test-utils/mocks/quiz-mock";
+import { server } from "@/test-utils/mocks/server";
+import { Providers } from "@/test-utils/providers";
 
 const setup = ({ asGuest = false } = {}) => {
   const user = userEvent.setup();

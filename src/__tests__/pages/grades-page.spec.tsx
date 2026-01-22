@@ -8,10 +8,14 @@ import { HttpResponse, delay, http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { GradesPageClient as GradesPage } from "@/app/grades/client";
-import { emptyCourse, mockCourses, mockTerms } from "@/tests/mocks/grade-mock";
-import { calculateAverageGrade } from "@/tests/mocks/helpers";
-import { server } from "@/tests/mocks/server";
-import { Providers } from "@/tests/providers";
+import {
+  emptyCourse,
+  mockCourses,
+  mockTerms,
+} from "@/test-utils/mocks/grade-mock";
+import { calculateAverageGrade } from "@/test-utils/mocks/helpers";
+import { server } from "@/test-utils/mocks/server";
+import { Providers } from "@/test-utils/providers";
 
 const setup = ({ asGuest: guest = false } = {}) => {
   const user = userEvent.setup();

@@ -1,5 +1,4 @@
 import type { PropsWithChildren } from "react";
-import { MemoryRouter } from "react-router";
 
 import { AppContextProvider } from "@/app-context-provider";
 import { AUTH_COOKIES, GUEST_COOKIE_NAME } from "@/lib/auth/constants";
@@ -23,9 +22,5 @@ export function Providers({ children, guest = false }: ProvidersProps) {
     deleteCookie(GUEST_COOKIE_NAME);
   }
 
-  return (
-    <MemoryRouter>
-      <AppContextProvider>{children}</AppContextProvider>
-    </MemoryRouter>
-  );
+  return <AppContextProvider>{children}</AppContextProvider>;
 }

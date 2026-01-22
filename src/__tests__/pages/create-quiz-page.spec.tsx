@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CreateQuizPageClient as CreateQuizPage } from "@/app/create-quiz/client";
-import { server } from "@/tests/mocks/server";
-import { Providers } from "@/tests/providers";
+import { server } from "@/test-utils/mocks/server";
+import { Providers } from "@/test-utils/providers";
 import type { Quiz } from "@/types/quiz";
 
 vi.mock("sonner", () => ({
