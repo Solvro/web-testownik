@@ -28,7 +28,10 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
   const queryClient = useQueryClient();
 
   const prefetchGrades = () => {
-    if (!appContext.isAuthenticated) {
+    if (
+      !appContext.isAuthenticated ||
+      !(appContext.user?.student_number ?? "")
+    ) {
       return;
     }
     void queryClient.prefetchQuery({

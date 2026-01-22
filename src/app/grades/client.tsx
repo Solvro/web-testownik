@@ -54,7 +54,7 @@ function GradesContent() {
   } = useQuery({
     queryKey: ["grades"],
     queryFn: async () => appContext.services.user.getGrades(),
-    enabled: !appContext.isGuest,
+    enabled: !appContext.isGuest && Boolean(appContext.user?.student_number),
   });
 
   const terms = gradesData?.terms ?? [];
@@ -191,6 +191,22 @@ function GradesContent() {
     );
   }
 
+  if (!(appContext.user?.student_number ?? "")) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>Oceny</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center text-sm">
+          <p>
+            Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
+            dla kont Solvro Auth.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -244,7 +260,7 @@ function GradesContent() {
                 const passState = course.passing_status;
                 return (
                   <TableRow key={course.course_id} className="h-12">
-                    <TableCell className="space-x-2 font-medium break-words whitespace-normal">
+                    <TableCell className="space-x-2 font-medium wrap-break-word whitespace-normal">
                       <span>{course.course_name}</span>
                       <CourseTypeBadge courseId={course.course_id} />
                     </TableCell>
