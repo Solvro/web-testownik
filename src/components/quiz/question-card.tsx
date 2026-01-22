@@ -1,7 +1,7 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
 import { RotateCcwIcon } from "lucide-react";
-import { ViewTransition, useCallback, useEffect } from "react";
+import { ViewTransition, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -41,34 +41,32 @@ export function QuestionCard({
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
-  const handleAnswerClick = useCallback(
-    (answerId: string) => {
-      if (questionChecked) {
-        return;
-      }
-      const newSelectedAnswers = [...selectedAnswers];
-      const answerIndex = newSelectedAnswers.indexOf(answerId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAnswerClick = (answerId: string) => {
+    if (questionChecked) {
+      return;
+    }
+    const newSelectedAnswers = [...selectedAnswers];
+    const answerIndex = newSelectedAnswers.indexOf(answerId);
 
-      if (question?.multiple === true) {
-        if (answerIndex === -1) {
-          newSelectedAnswers.push(answerId); // Add answer if not already selected
-        } else {
-          newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
-        }
+    if (question?.multiple === true) {
+      if (answerIndex === -1) {
+        newSelectedAnswers.push(answerId); // Add answer if not already selected
       } else {
-        // If the answer is already selected, remove it
-        if (answerIndex !== -1) {
-          newSelectedAnswers.splice(answerIndex, 1);
-        }
-        if (answerIndex === -1) {
-          newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
-        }
+        newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
       }
+    } else {
+      // If the answer is already selected, remove it
+      if (answerIndex !== -1) {
+        newSelectedAnswers.splice(answerIndex, 1);
+      }
+      if (answerIndex === -1) {
+        newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
+      }
+    }
 
-      setSelectedAnswers(newSelectedAnswers);
-    },
-    [questionChecked, selectedAnswers, setSelectedAnswers, question],
-  );
+    setSelectedAnswers(newSelectedAnswers);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

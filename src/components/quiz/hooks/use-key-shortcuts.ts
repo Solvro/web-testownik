@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 
 interface Options {
   nextAction: () => void;
@@ -6,8 +6,8 @@ interface Options {
 }
 
 export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
-  const handleKeyPress = useCallback(
-    (event: KeyboardEvent) => {
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (
         target.tagName.toLowerCase() === "input" &&
@@ -31,14 +31,11 @@ export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
           break;
         }
       }
-    },
-    [nextAction, skipQuestion],
-  );
+    };
 
-  useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [handleKeyPress]);
+  }, [nextAction, skipQuestion]);
 }

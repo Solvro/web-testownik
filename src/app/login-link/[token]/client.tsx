@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
@@ -18,24 +18,23 @@ export function LoginLinkPageClient({ token }: LoginLinkPageClientProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = useCallback(async () => {
-    if (!token || token.trim() === "") {
-      setError("Brak tokenu logowania.");
-      return;
-    }
-    try {
-      await appContext.services.user.loginWithLink(token);
-      appContext.setAuthenticated(true);
-      appContext.setGuest(false);
-      router.push("/");
-    } catch {
-      setError("Niezidentyfikowany błąd.");
-    }
-  }, [token, appContext, router]);
-
   useEffect(() => {
+    const handleLogin = async () => {
+      if (!token || token.trim() === "") {
+        setError("Brak tokenu logowania.");
+        return;
+      }
+      try {
+        await appContext.services.user.loginWithLink(token);
+        appContext.setAuthenticated(true);
+        appContext.setGuest(false);
+        router.push("/");
+      } catch {
+        setError("Niezidentyfikowany błąd.");
+      }
+    };
     void handleLogin();
-  }, [handleLogin]);
+  }, [token, appContext, router]);
 
   return (
     <div className="flex justify-center">

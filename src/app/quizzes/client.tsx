@@ -3,13 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircleIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import Link from "next/link";
-import {
-  ViewTransition,
-  startTransition,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { ViewTransition, startTransition, useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";

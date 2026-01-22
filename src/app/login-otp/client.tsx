@@ -2,7 +2,7 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
-import { useCallback, useContext, useState } from "react";
+import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -54,26 +54,23 @@ export function LoginOTPPageClient() {
     }
   };
 
-  const handleOTPSubmit = useCallback(
-    async (event_: React.FormEvent<HTMLFormElement>) => {
-      event_.preventDefault();
-      if (submitting) {
-        return;
-      }
-      setSubmitting(true);
-      try {
-        await appContext.services.user.verifyOTP(email.trim(), otp);
-        appContext.setAuthenticated(true);
-        appContext.setGuest(false);
-        router.push("/");
-      } catch {
-        setError("Niezidentyfikowany błąd.");
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [email, otp, appContext, router, submitting],
-  );
+  const handleOTPSubmit = async (event_: React.FormEvent<HTMLFormElement>) => {
+    event_.preventDefault();
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await appContext.services.user.verifyOTP(email.trim(), otp);
+      appContext.setAuthenticated(true);
+      appContext.setGuest(false);
+      router.push("/");
+    } catch {
+      setError("Niezidentyfikowany błąd.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (submitted) {
     return (

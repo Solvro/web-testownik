@@ -1,5 +1,5 @@
 import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
 import { QuestionForm } from "@/components/quiz/question-form";
@@ -113,7 +113,7 @@ export function QuizEditor({
     () => questions.reduce((max, q) => Math.max(q.order, max), 0),
   );
 
-  const allQuestionsMultiple: boolean | null = useMemo(() => {
+  const allQuestionsMultiple: boolean | null = (() => {
     if (questions.length === 0) {
       return null;
     }
@@ -126,7 +126,7 @@ export function QuizEditor({
       return false;
     }
     return null;
-  }, [questions]);
+  })();
 
   const setAllQuestionsMultiple = (multiple: boolean) => {
     setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));

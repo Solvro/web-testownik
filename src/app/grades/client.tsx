@@ -2,7 +2,7 @@
 
 import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { CourseTypeBadge } from "@/components/course-type-badge";
@@ -92,51 +92,48 @@ function GradesContent() {
     }
   }, [appContext.services.user, appContext.isGuest]);
 
-  const calculateAverage = useCallback(
-    (filteredCourses: Course[]) => {
-      const sum = filteredCourses.reduce((accumulator, course) => {
-        const courseSum =
-          course.grades.reduce((courseAccumulator, grade) => {
-            const gradeValue = editedGrades[course.course_id] ?? grade.value;
-            if (typeof gradeValue === "string") {
-              return courseAccumulator;
-            }
-            return (
-              courseAccumulator +
-              (grade.counts_into_average ? gradeValue * course.ects : 0)
-            );
-          }, 0) +
-          (editing &&
-          typeof editedGrades[course.course_id] === "number" &&
-          course.grades.length === 0
-            ? (editedGrades[course.course_id] as number) * course.ects
-            : 0);
-        return accumulator + courseSum;
-      }, 0);
+  const calculateAverage = (filteredCourses: Course[]) => {
+    const sum = filteredCourses.reduce((accumulator, course) => {
+      const courseSum =
+        course.grades.reduce((courseAccumulator, grade) => {
+          const gradeValue = editedGrades[course.course_id] ?? grade.value;
+          if (typeof gradeValue === "string") {
+            return courseAccumulator;
+          }
+          return (
+            courseAccumulator +
+            (grade.counts_into_average ? gradeValue * course.ects : 0)
+          );
+        }, 0) +
+        (editing &&
+        typeof editedGrades[course.course_id] === "number" &&
+        course.grades.length === 0
+          ? (editedGrades[course.course_id] as number) * course.ects
+          : 0);
+      return accumulator + courseSum;
+    }, 0);
 
-      const totalWeight = filteredCourses.reduce((accumulator, course) => {
-        const courseWeight =
-          course.grades.reduce(
-            (courseAccumulator, grade) =>
-              courseAccumulator + (grade.counts_into_average ? course.ects : 0),
-            0,
-          ) +
-          (editing &&
-          typeof editedGrades[course.course_id] === "number" &&
-          course.grades.length === 0
-            ? course.ects
-            : 0);
-        return accumulator + courseWeight;
-      }, 0);
+    const totalWeight = filteredCourses.reduce((accumulator, course) => {
+      const courseWeight =
+        course.grades.reduce(
+          (courseAccumulator, grade) =>
+            courseAccumulator + (grade.counts_into_average ? course.ects : 0),
+          0,
+        ) +
+        (editing &&
+        typeof editedGrades[course.course_id] === "number" &&
+        course.grades.length === 0
+          ? course.ects
+          : 0);
+      return accumulator + courseWeight;
+    }, 0);
 
-      if (totalWeight === 0) {
-        return "-";
-      }
+    if (totalWeight === 0) {
+      return "-";
+    }
 
-      return (sum / totalWeight).toFixed(2);
-    },
-    [editedGrades, editing],
-  );
+    return (sum / totalWeight).toFixed(2);
+  };
 
   const filteredCourses = selectedTerm
     ? courses.filter((course) => course.term_id === selectedTerm)

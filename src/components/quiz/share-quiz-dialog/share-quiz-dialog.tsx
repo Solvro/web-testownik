@@ -1,7 +1,7 @@
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
@@ -68,7 +68,7 @@ export function ShareQuizDialog({
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-  const fetchAccess = useCallback(async () => {
+  const fetchAccess = async () => {
     if (appContext.isGuest) {
       setUsersWithAccess([]);
       setInitialUsersWithAccess([]);
@@ -114,9 +114,9 @@ export function ShareQuizDialog({
       setGroupsWithAccess([]);
       setInitialGroupsWithAccess([]);
     }
-  }, [appContext.services.quiz, appContext.isGuest, quiz.id]);
+  };
 
-  const fetchUserGroups = useCallback(async () => {
+  const fetchUserGroups = async () => {
     try {
       const groups = await appContext.services.quiz.getStudyGroups();
       const data = groups.map((group: Group) => ({
@@ -129,9 +129,10 @@ export function ShareQuizDialog({
     } catch {
       setUserGroups([]);
     }
-  }, [appContext.services.quiz]);
+  };
 
-  const fetchData = useCallback(async () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchData = async () => {
     if (appContext.isGuest) {
       return;
     }
@@ -143,7 +144,7 @@ export function ShareQuizDialog({
     } finally {
       setLoading(false);
     }
-  }, [appContext.isGuest, fetchUserGroups, fetchAccess]);
+  };
 
   useEffect(() => {
     void fetchData();
@@ -153,75 +154,72 @@ export function ShareQuizDialog({
     setSearchQuery(event_.target.value);
   };
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      setSearchResultsLoading(true);
-      try {
-        // Fetch users
-        const users = await appContext.services.quiz.searchUsers(query);
-        let data: (User | Group)[] = [...users];
+  const handleSearch = async (query: string) => {
+    setSearchResultsLoading(true);
+    try {
+      // Fetch users
+      const users = await appContext.services.quiz.searchUsers(query);
+      let data: (User | Group)[] = [...users];
 
-        // Filter groups by the query
-        const matchedGroups = userGroups.filter((g) =>
-          g.name.toLowerCase().includes(query.toLowerCase()),
-        );
-        data = [...data, ...matchedGroups];
+      // Filter groups by the query
+      const matchedGroups = userGroups.filter((g) =>
+        g.name.toLowerCase().includes(query.toLowerCase()),
+      );
+      data = [...data, ...matchedGroups];
 
-        // If query is exactly 6 digits, prioritize matching student_number
-        let userByIndex: User | undefined;
-        if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
-          userByIndex = data.find(
-            (object) =>
-              "student_number" in object && object.student_number === query,
-          ) as User | undefined;
-          if (userByIndex != null) {
-            data = data.filter((item) => item !== userByIndex);
-          }
-        }
-
-        // Sort results by "distance" to the query
-        data.sort((a, b) => {
-          const aIsGroup = "name" in a;
-          const bIsGroup = "name" in b;
-
-          if (aIsGroup && bIsGroup) {
-            // Both groups
-            const aGroup = a;
-            const bGroup = b;
-            if (aGroup.term.is_current && !bGroup.term.is_current) {
-              return -1;
-            }
-            if (!aGroup.term.is_current && bGroup.term.is_current) {
-              return 1;
-            }
-            return distance(aGroup.name, query) - distance(bGroup.name, query);
-          } else if (aIsGroup) {
-            // a is Group, b is User
-            return (
-              distance(a.name, query) - distance((b as User).full_name, query)
-            );
-          } else if (bIsGroup) {
-            // a is User, b is Group
-            return distance(a.full_name, query) - distance(b.name, query);
-          } else {
-            // both users
-            return distance(a.full_name, query) - distance(b.full_name, query);
-          }
-        });
-
+      // If query is exactly 6 digits, prioritize matching student_number
+      let userByIndex: User | undefined;
+      if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
+        userByIndex = data.find(
+          (object) =>
+            "student_number" in object && object.student_number === query,
+        ) as User | undefined;
         if (userByIndex != null) {
-          data.unshift(userByIndex);
+          data = data.filter((item) => item !== userByIndex);
         }
-
-        setSearchResults(data);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchResultsLoading(false);
       }
-    },
-    [userGroups, appContext.services.quiz],
-  );
+
+      // Sort results by "distance" to the query
+      data.sort((a, b) => {
+        const aIsGroup = "name" in a;
+        const bIsGroup = "name" in b;
+
+        if (aIsGroup && bIsGroup) {
+          // Both groups
+          const aGroup = a;
+          const bGroup = b;
+          if (aGroup.term.is_current && !bGroup.term.is_current) {
+            return -1;
+          }
+          if (!aGroup.term.is_current && bGroup.term.is_current) {
+            return 1;
+          }
+          return distance(aGroup.name, query) - distance(bGroup.name, query);
+        } else if (aIsGroup) {
+          // a is Group, b is User
+          return (
+            distance(a.name, query) - distance((b as User).full_name, query)
+          );
+        } else if (bIsGroup) {
+          // a is User, b is Group
+          return distance(a.full_name, query) - distance(b.name, query);
+        } else {
+          // both users
+          return distance(a.full_name, query) - distance(b.full_name, query);
+        }
+      });
+
+      if (userByIndex != null) {
+        data.unshift(userByIndex);
+      }
+
+      setSearchResults(data);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearchResultsLoading(false);
+    }
+  };
 
   const handleAddEntity = (entity: User | Group) => {
     // If it's a user

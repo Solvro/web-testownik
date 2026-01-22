@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
 import {
   checkAnswerCorrectness,
@@ -130,82 +130,73 @@ export function useQuizLogic({
     selectedAnswersRef.current = selectedAnswers;
   }, [currentQuestion, answers, selectedAnswers]);
 
-  const checkAnswer = useCallback(
-    (remote = false, nextQuestionOverride?: Question | null) => {
-      if (questionChecked || currentQuestionRef.current == null) {
-        return;
-      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const checkAnswer = (
+    remote = false,
+    nextQuestionOverride?: Question | null,
+  ) => {
+    if (questionChecked || currentQuestionRef.current == null) {
+      return;
+    }
 
-      const isCorrect = checkAnswerCorrectness(
-        currentQuestionRef.current,
-        selectedAnswers,
-      );
-      const newAnswer = createAnswerRecord(
-        currentQuestionRef.current.id,
-        selectedAnswers,
-        isCorrect,
-      );
-      const updatedAnswers = [...runtime.answers, newAnswer];
-      const nextQuestion_ =
-        nextQuestionOverride ??
-        pickNextQuestion(
-          runtime.questions,
-          updatedAnswers,
-          runtime.settings,
-          currentQuestionRef.current.id,
-        );
-
-      dispatch({
-        type: "RECORD_ANSWER",
-        payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
-      });
-
-      if (!remote) {
-        void appContext.services.quiz.recordAnswer(
-          quizId,
-          newAnswer,
-          studyTime,
-          nextQuestion_?.id ?? null,
-        );
-      }
-
-      if (!remote) {
-        continuity.sendAnswerChecked(nextQuestion_);
-      }
-    },
-    [
-      appContext.services.quiz,
-      continuity,
-      questionChecked,
-      quizId,
-      runtime.answers,
-      runtime.questions,
-      runtime.settings,
+    const isCorrect = checkAnswerCorrectness(
+      currentQuestionRef.current,
       selectedAnswers,
-      studyTime,
-    ],
-  );
+    );
+    const newAnswer = createAnswerRecord(
+      currentQuestionRef.current.id,
+      selectedAnswers,
+      isCorrect,
+    );
+    const updatedAnswers = [...runtime.answers, newAnswer];
+    const nextQuestion_ =
+      nextQuestionOverride ??
+      pickNextQuestion(
+        runtime.questions,
+        updatedAnswers,
+        runtime.settings,
+        currentQuestionRef.current.id,
+      );
+
+    dispatch({
+      type: "RECORD_ANSWER",
+      payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
+    });
+
+    if (!remote) {
+      void appContext.services.quiz.recordAnswer(
+        quizId,
+        newAnswer,
+        studyTime,
+        nextQuestion_?.id ?? null,
+      );
+    }
+
+    if (!remote) {
+      continuity.sendAnswerChecked(nextQuestion_);
+    }
+  };
 
   useEffect(() => {
     checkAnswerRef.current = checkAnswer;
   }, [checkAnswer]);
 
-  const nextQuestion = useCallback(() => {
+  const nextQuestion = () => {
     dispatch({ type: "ADVANCE_QUESTION" });
     if (runtime.nextQuestion !== null) {
       continuity.sendQuestionUpdate(runtime.nextQuestion, []);
     }
-  }, [continuity, runtime.nextQuestion]);
+  };
 
-  const nextAction = useCallback(() => {
+  const nextAction = () => {
     if (questionChecked) {
       nextQuestion();
     } else {
       checkAnswer();
     }
-  }, [checkAnswer, nextQuestion, questionChecked]);
+  };
 
-  const skipQuestion = useCallback(() => {
+  const skipQuestion = () => {
     if (questionChecked) {
       nextQuestion();
       return;
@@ -245,19 +236,9 @@ export function useQuizLogic({
       continuity.sendQuestionUpdate(nextQuestion_, []);
     }
     dispatch({ type: "ADVANCE_QUESTION" });
-  }, [
-    appContext.services.quiz,
-    continuity,
-    nextQuestion,
-    questionChecked,
-    quizId,
-    runtime.answers,
-    runtime.questions,
-    runtime.settings,
-    studyTime,
-  ]);
+  };
 
-  const resetProgress = useCallback(async () => {
+  const resetProgress = async () => {
     await appContext.services.quiz.deleteQuizProgress(
       quizId,
       userSettings.sync_progress,
@@ -266,7 +247,7 @@ export function useQuizLogic({
       type: "RESET_PROGRESS",
     });
     setTimer(0, Date.now());
-  }, [appContext.services.quiz, quizId, userSettings.sync_progress, setTimer]);
+  };
 
   return {
     loading,

@@ -1,6 +1,6 @@
 import { Peer } from "peerjs";
 import type { DataConnection } from "peerjs";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { AnswerRecord, Question } from "@/types/quiz";
 
@@ -112,66 +112,57 @@ export function useQuizContinuity({
   const isInitializingRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  const gracefulClose = useCallback(() => {
+  const gracefulClose = () => {
     if (peerRef.current != null && !peerRef.current.destroyed) {
       peerRef.current.destroy();
     }
-  }, []);
+  };
 
   // util
-  const send = useCallback((conn: DataConnection, data: PeerMessage) => {
+  const send = (conn: DataConnection, data: PeerMessage) => {
     if (conn.open) {
       void conn.send(data);
     }
-  }, []);
+  };
 
-  const broadcast = useCallback(
-    (data: PeerMessage) => {
-      for (const c of peerConnectionsRef.current) {
+  const broadcast = (data: PeerMessage) => {
+    for (const c of peerConnectionsRef.current) {
+      send(c, data);
+    }
+  };
+
+  const broadcastExcept = (except: DataConnection, data: PeerMessage) => {
+    for (const c of peerConnectionsRef.current) {
+      if (c !== except) {
         send(c, data);
       }
-    },
-    [send],
-  );
+    }
+  };
 
-  const broadcastExcept = useCallback(
-    (except: DataConnection, data: PeerMessage) => {
-      for (const c of peerConnectionsRef.current) {
-        if (c !== except) {
-          send(c, data);
-        }
-      }
-    },
-    [send],
-  );
+  const initialSync = (conn: DataConnection) => {
+    const {
+      question,
+      answers,
+      startTime,
+      wrongAnswers,
+      correctAnswers,
+      selectedAnswers,
+    } = getCurrentState();
+    if (question === null) {
+      return;
+    }
+    send(conn, {
+      type: "initial_sync",
+      startTime,
+      correctAnswersCount: correctAnswers,
+      wrongAnswersCount: wrongAnswers,
+      answers,
+      studyTime: 0,
+    });
+    send(conn, { type: "question_update", question, selectedAnswers });
+  };
 
-  const initialSync = useCallback(
-    (conn: DataConnection) => {
-      const {
-        question,
-        answers,
-        startTime,
-        wrongAnswers,
-        correctAnswers,
-        selectedAnswers,
-      } = getCurrentState();
-      if (question === null) {
-        return;
-      }
-      send(conn, {
-        type: "initial_sync",
-        startTime,
-        correctAnswersCount: correctAnswers,
-        wrongAnswersCount: wrongAnswers,
-        answers,
-        studyTime: 0,
-      });
-      send(conn, { type: "question_update", question, selectedAnswers });
-    },
-    [getCurrentState, send],
-  );
-
-  const connectToPeer = useCallback(async (peer: Peer, peerId: string) => {
+  const connectToPeer = async (peer: Peer, peerId: string) => {
     return new Promise<DataConnection>((resolve, reject) => {
       function doConnect() {
         const conn = peer.connect(peerId, {
@@ -194,76 +185,70 @@ export function useQuizContinuity({
         peer.once("error", reject);
       }
     });
-  }, []);
+  };
 
-  const handleClientData = useCallback(
-    (data: PeerMessage) => {
-      switch (data.type) {
-        case "initial_sync": {
-          onInitialSync({
-            startTime: data.startTime,
-            correctAnswersCount: data.correctAnswersCount,
-            wrongAnswersCount: data.wrongAnswersCount,
-            answers: data.answers,
-            studyTime: data.studyTime,
-          });
-          break;
-        }
-        case "question_update": {
-          onQuestionUpdate(data.question, data.selectedAnswers);
-          break;
-        }
-        case "answer_checked": {
-          onAnswerChecked(data.nextQuestion);
-          break;
-        }
-        case "ping": {
-          if (peerConnectionsRef.current.length > 0) {
-            send(peerConnectionsRef.current[0], { type: "pong" });
-          }
-          break;
-        }
-        case "pong": {
-          // ignore
-          break;
-        }
-        default: {
-          break;
-        }
+  const handleClientData = (data: PeerMessage) => {
+    switch (data.type) {
+      case "initial_sync": {
+        onInitialSync({
+          startTime: data.startTime,
+          correctAnswersCount: data.correctAnswersCount,
+          wrongAnswersCount: data.wrongAnswersCount,
+          answers: data.answers,
+          studyTime: data.studyTime,
+        });
+        break;
       }
-    },
-    [onInitialSync, onQuestionUpdate, onAnswerChecked, send],
-  );
+      case "question_update": {
+        onQuestionUpdate(data.question, data.selectedAnswers);
+        break;
+      }
+      case "answer_checked": {
+        onAnswerChecked(data.nextQuestion);
+        break;
+      }
+      case "ping": {
+        if (peerConnectionsRef.current.length > 0) {
+          send(peerConnectionsRef.current[0], { type: "pong" });
+        }
+        break;
+      }
+      case "pong": {
+        // ignore
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
 
-  const handleHostData = useCallback(
-    (conn: DataConnection, data: PeerMessage) => {
-      switch (data.type) {
-        case "question_update": {
-          onQuestionUpdate(data.question, data.selectedAnswers);
-          broadcastExcept(conn, data);
-          break;
-        }
-        case "answer_checked": {
-          onAnswerChecked(data.nextQuestion);
-          broadcastExcept(conn, data);
-          break;
-        }
-        case "ping": {
-          send(conn, { type: "pong" });
-          break;
-        }
-        case "initial_sync":
-        case "pong": {
-          // ignore
-          break;
-        }
-        default: {
-          break;
-        }
+  const handleHostData = (conn: DataConnection, data: PeerMessage) => {
+    switch (data.type) {
+      case "question_update": {
+        onQuestionUpdate(data.question, data.selectedAnswers);
+        broadcastExcept(conn, data);
+        break;
       }
-    },
-    [onQuestionUpdate, onAnswerChecked, broadcastExcept, send],
-  );
+      case "answer_checked": {
+        onAnswerChecked(data.nextQuestion);
+        broadcastExcept(conn, data);
+        break;
+      }
+      case "ping": {
+        send(conn, { type: "pong" });
+        break;
+      }
+      case "initial_sync":
+      case "pong": {
+        // ignore
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
 
   function init() {
     if (isInitializingRef.current || !isMountedRef.current) {
@@ -367,7 +352,7 @@ export function useQuizContinuity({
     });
   }
 
-  const pingPeers = useCallback(() => {
+  const pingPeers = () => {
     for (const conn of peerConnectionsRef.current) {
       if (!conn.open) {
         continue;
@@ -382,7 +367,7 @@ export function useQuizContinuity({
         }
       });
     }
-  }, [send]);
+  };
 
   useEffect(() => {
     if (!enabled) {

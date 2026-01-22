@@ -1,5 +1,5 @@
 import { Trash2, TrashIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -95,62 +95,61 @@ export function QuestionForm({
 
   const [focusedAnswer, setFocusedAnswer] = useState<number | null>(null);
 
-  const handlePasteMultipleAnswers = useCallback(
-    async (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === "v"
-      ) {
-        event.preventDefault();
+  const handlePasteMultipleAnswers = async (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "v"
+    ) {
+      event.preventDefault();
 
-        try {
-          const clipboardData = await navigator.clipboard.readText();
-          const pastedAnswers = clipboardData
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line.length > 0);
+      try {
+        const clipboardData = await navigator.clipboard.readText();
+        const pastedAnswers = clipboardData
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
 
-          if (pastedAnswers.length > 0) {
-            const start: number | null = focusedAnswer;
-            if (start === null) {
-              return;
-            }
-
-            const newAnswers: Answer[] = pastedAnswers.map((text, index) => ({
-              id: crypto.randomUUID(),
-              order: index + 1,
-              text,
-              is_correct: false,
-              image: "",
-            }));
-
-            const updatedAnswers: Answer[] = [...question.answers];
-
-            const currentAnswer = question.answers[start];
-            const shouldReplace = !currentAnswer.text.trim();
-            const insertionIndex = shouldReplace ? start : start + 1;
-            const deleteCount = shouldReplace ? 1 : 0;
-
-            updatedAnswers.splice(insertionIndex, deleteCount, ...newAnswers);
-
-            const reorderedAnswers = updatedAnswers.map((a, index) => ({
-              ...a,
-              order: index + 1,
-            }));
-
-            onUpdate({ ...question, answers: reorderedAnswers });
+        if (pastedAnswers.length > 0) {
+          const start: number | null = focusedAnswer;
+          if (start === null) {
+            return;
           }
-        } catch (error) {
-          console.error("Failed to read clipboard:", error);
-          toast.error(
-            "Aby wkleić odpowiedzi, musisz włączyć dostęp do schowka w przeglądarce.",
-          );
+
+          const newAnswers: Answer[] = pastedAnswers.map((text, index) => ({
+            id: crypto.randomUUID(),
+            order: index + 1,
+            text,
+            is_correct: false,
+            image: "",
+          }));
+
+          const updatedAnswers: Answer[] = [...question.answers];
+
+          const currentAnswer = question.answers[start];
+          const shouldReplace = !currentAnswer.text.trim();
+          const insertionIndex = shouldReplace ? start : start + 1;
+          const deleteCount = shouldReplace ? 1 : 0;
+
+          updatedAnswers.splice(insertionIndex, deleteCount, ...newAnswers);
+
+          const reorderedAnswers = updatedAnswers.map((a, index) => ({
+            ...a,
+            order: index + 1,
+          }));
+
+          onUpdate({ ...question, answers: reorderedAnswers });
         }
+      } catch (error) {
+        console.error("Failed to read clipboard:", error);
+        toast.error(
+          "Aby wkleić odpowiedzi, musisz włączyć dostęp do schowka w przeglądarce.",
+        );
       }
-    },
-    [focusedAnswer, question, onUpdate],
-  );
+    }
+  };
 
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions

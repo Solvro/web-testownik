@@ -2,7 +2,7 @@
 
 import { distance } from "fastest-levenshtein";
 import { AlertCircleIcon } from "lucide-react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AppContext } from "@/app-context";
@@ -76,7 +76,7 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
     void fetchQuiz();
   }, [quizId, appContext.services.quiz]);
 
-  const filteredQuestions = useMemo(() => {
+  const filteredQuestions = (() => {
     if (quiz == null || !query.trim()) {
       return quiz?.questions ?? [];
     }
@@ -171,7 +171,7 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
               question.wordMatchCount >= 3)), // Or at least 2 words match
       )
       .toSorted((a, b) => a.relevance - b.relevance);
-  }, [query, quiz]);
+  })();
 
   if (loading) {
     return <div className="text-center">Ładowanie...</div>;
