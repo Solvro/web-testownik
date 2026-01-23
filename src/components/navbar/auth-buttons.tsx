@@ -33,7 +33,7 @@ export function AuthButtons({
 
   useEffect(() => {
     const redirect = searchParameters.get("redirect");
-    const url = new URL(redirect ?? "", window.location.origin);
+    const url = new URL(redirect ?? pathname, window.location.origin);
     setCurrentUrl(url.toString());
   }, [pathname, searchParameters]);
 
