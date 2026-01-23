@@ -2,6 +2,7 @@ import { Peer } from "peerjs";
 import type { DataConnection } from "peerjs";
 import { useEffect, useRef, useState } from "react";
 
+import { env } from "@/env";
 import type { AnswerRecord, Question } from "@/types/quiz";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
@@ -9,8 +10,8 @@ import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
 
-const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME;
-const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+const TURN_USERNAME = env.NEXT_PUBLIC_TURN_USERNAME;
+const TURN_CREDENTIAL = env.NEXT_PUBLIC_TURN_CREDENTIAL;
 
 const RTC_CONFIG = {
   iceServers: [

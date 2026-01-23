@@ -1,7 +1,3 @@
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { env } from "@/env";
 
-if (typeof apiUrl !== "string") {
-  throw new TypeError("NEXT_PUBLIC_API_URL is not defined");
-}
-
-export const API_URL = apiUrl;
+export const API_URL = env.NEXT_PUBLIC_API_URL;

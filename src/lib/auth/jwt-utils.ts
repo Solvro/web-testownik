@@ -1,5 +1,7 @@
 import { decodeJwt, jwtVerify } from "jose";
 
+import { env } from "@/env";
+
 import type { JWTPayload } from "./types";
 
 /**
@@ -35,7 +37,8 @@ export function isTokenExpired(token: string): boolean {
 export async function verifyAccessToken(
   token: string,
 ): Promise<JWTPayload | null> {
-  const secret = process.env.JWT_SECRET;
+  const secret = env.JWT_SECRET;
+
   if (secret === undefined || secret === "") {
     console.error("JWT_SECRET environment variable is not set");
     return null;
