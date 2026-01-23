@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -44,7 +45,6 @@ export function ShareQuizDialog({
   const router = useRouter();
 
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
-  const [loading, setLoading] = useState(false);
 
   const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<
     (User & { shared_quiz_id?: string; allow_edit: boolean })[]
@@ -66,21 +66,35 @@ export function ShareQuizDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
-  const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-  const fetchAccess = async () => {
-    if (appContext.isGuest) {
-      setUsersWithAccess([]);
-      setInitialUsersWithAccess([]);
-      setGroupsWithAccess([]);
-      setInitialGroupsWithAccess([]);
-      return;
-    }
-    try {
-      const sharedData = await appContext.services.quiz.getSharedQuizzesForQuiz(
-        quiz.id,
-      );
-      const foundUsers = sharedData.flatMap((sq) =>
+  const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
+    queryKey: ["study-groups"],
+    queryFn: async () => {
+      const groups = await appContext.services.quiz.getStudyGroups();
+      return groups.map((group) => ({
+        ...group,
+        photo: `https://ui-avatars.com/api/?background=random&name=${
+          group.name.split(" ")[0]
+        }+${group.name.split(" ")[1] || ""}&size=128`,
+      }));
+    },
+    enabled: open && !appContext.isGuest,
+    initialData: [],
+  });
+
+  const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
+    queryKey: ["shared-quiz", quiz.id],
+    queryFn: async () =>
+      await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
+    enabled: open && !appContext.isGuest,
+    staleTime: 0,
+  });
+
+  const loading = isSharedDataLoading || isUserGroupsLoading;
+
+  useEffect(() => {
+    if (sharedData != null) {
+      const foundUsers = sharedData.flatMap((sq: SharedQuiz) =>
         sq.user == null
           ? []
           : [
@@ -97,7 +111,9 @@ export function ShareQuizDialog({
           : [
               {
                 ...sq.group,
-                photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
+                photo: `https://ui-avatars.com/api/?background=random&name=${
+                  sq.group.name.split(" ")[0]
+                }+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
               },
@@ -108,47 +124,8 @@ export function ShareQuizDialog({
       setInitialUsersWithAccess(foundUsers);
       setGroupsWithAccess(foundGroups);
       setInitialGroupsWithAccess(foundGroups);
-    } catch {
-      setUsersWithAccess([]);
-      setInitialUsersWithAccess([]);
-      setGroupsWithAccess([]);
-      setInitialGroupsWithAccess([]);
     }
-  };
-
-  const fetchUserGroups = async () => {
-    try {
-      const groups = await appContext.services.quiz.getStudyGroups();
-      const data = groups.map((group: Group) => ({
-        ...group,
-        photo: `https://ui-avatars.com/api/?background=random&name=${
-          group.name.split(" ")[0]
-        }+${group.name.split(" ")[1] || ""}&size=128`,
-      }));
-      setUserGroups(data);
-    } catch {
-      setUserGroups([]);
-    }
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchData = async () => {
-    if (appContext.isGuest) {
-      return;
-    }
-    setLoading(true);
-    try {
-      await Promise.all([fetchUserGroups(), fetchAccess()]);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  }, [sharedData]);
 
   const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event_.target.value);
