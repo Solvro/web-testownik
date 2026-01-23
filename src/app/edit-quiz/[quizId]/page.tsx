@@ -6,11 +6,9 @@ export const metadata: Metadata = {
   title: "Edytuj quiz",
 };
 
-interface PageProps {
-  params: Promise<{ quizId: string }>;
-}
-
-export default async function EditQuizPage({ params }: PageProps) {
+export default async function EditQuizPage({
+  params,
+}: PageProps<"/edit-quiz/[quizId]">) {
   const { quizId } = await params;
   return <EditQuizPageClient quizId={quizId} />;
 }

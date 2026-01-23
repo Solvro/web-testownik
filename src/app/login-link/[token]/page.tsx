@@ -6,11 +6,9 @@ export const metadata: Metadata = {
   title: "Logowanie",
 };
 
-interface PageProps {
-  params: Promise<{ token: string }>;
-}
-
-export default async function LoginLinkPage({ params }: PageProps) {
+export default async function LoginLinkPage({
+  params,
+}: PageProps<"/login-link/[token]">) {
   const { token } = await params;
   return <LoginLinkPageClient token={token} />;
 }

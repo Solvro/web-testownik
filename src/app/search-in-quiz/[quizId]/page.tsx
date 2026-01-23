@@ -6,11 +6,9 @@ export const metadata: Metadata = {
   title: "Wyszukaj w quizie",
 };
 
-interface PageProps {
-  params: Promise<{ quizId: string }>;
-}
-
-export default async function SearchInQuizPage({ params }: PageProps) {
+export default async function SearchInQuizPage({
+  params,
+}: PageProps<"/search-in-quiz/[quizId]">) {
   const { quizId } = await params;
   return <SearchInQuizPageClient quizId={quizId} />;
 }

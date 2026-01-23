@@ -16,11 +16,9 @@ export const metadata: Metadata = {
   title: "Quiz",
 };
 
-interface PageProps {
-  params: Promise<{ quizId: string }>;
-}
-
-export default async function QuizPage({ params }: PageProps) {
+export default async function QuizPage({
+  params,
+}: PageProps<"/quiz/[quizId]">) {
   const { quizId } = await params;
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value;
