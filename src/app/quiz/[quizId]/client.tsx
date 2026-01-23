@@ -185,7 +185,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </ViewTransition>
           </div>
           <ViewTransition name="quiz-info" update="h-full">
-            <div className="flex flex-col gap-4 lg:col-span-1">
+            <div className="flex h-fit flex-col gap-4 lg:col-span-1">
               <QuizInfoCard
                 quiz={quiz}
                 correctAnswersCount={correctAnswersCount}
