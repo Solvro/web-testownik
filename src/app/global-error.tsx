@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // eslint-disable-next-line import/no-default-export
 export default function GlobalError({
@@ -11,10 +11,6 @@ export default function GlobalError({
   reset: () => void;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
-
-  useEffect(() => {
-    console.error("Global error boundary caught:", error);
-  }, [error]);
 
   // Check for dark mode preference
   const prefersDark =

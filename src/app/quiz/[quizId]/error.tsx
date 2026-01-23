@@ -2,7 +2,6 @@
 
 import { AlertCircleIcon, HomeIcon, RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
 
 import {
   Accordion,
@@ -27,10 +26,6 @@ export default function QuizError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Quiz error boundary caught:", error);
-  }, [error]);
-
   return (
     <Empty className="border">
       <EmptyHeader>

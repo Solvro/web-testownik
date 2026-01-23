@@ -1,7 +1,6 @@
 "use client";
 
 import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
-import { useEffect } from "react";
 
 import {
   Accordion,
@@ -26,10 +25,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Error boundary caught:", error);
-  }, [error]);
-
   return (
     <Empty className="border">
       <EmptyHeader>
