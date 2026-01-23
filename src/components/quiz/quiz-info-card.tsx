@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
@@ -65,9 +66,12 @@ const getProgressColor = (percentage: number): string => {
 
 function StudyTimeDisplay({ timerStore }: { timerStore: TimerStore }) {
   const studyTime = useStudyTimeValue(timerStore);
+  const date = new Date(0);
+  date.setHours(0, 0, studyTime);
+
   return (
     <span className="font-medium text-emerald-600 dark:text-emerald-400">
-      {new Date(studyTime * 1000).toISOString().slice(11, 19)}
+      {format(date, "HH:mm:ss")}
     </span>
   );
 }
