@@ -16,12 +16,17 @@ import {
 import { calculateAverageGrade } from "@/test-utils/mocks/helpers";
 import { server } from "@/test-utils/mocks/server";
 import { Providers } from "@/test-utils/providers";
+import { generateTestToken } from "@/test-utils/token-factory";
 
-const setup = ({ asGuest: guest = false } = {}) => {
+const setup = async ({
+  asGuest: guest = false,
+  accessToken,
+}: { asGuest?: boolean; accessToken?: string } = {}) => {
   const user = userEvent.setup();
+  const token = accessToken ?? (await generateTestToken());
 
   render(
-    <Providers guest={guest}>
+    <Providers guest={guest} accessToken={token}>
       <GradesPage />
     </Providers>,
   );
@@ -30,8 +35,8 @@ const setup = ({ asGuest: guest = false } = {}) => {
 };
 
 describe("GradesPage", () => {
-  it("should have restricted gui for guest users", () => {
-    setup({ asGuest: true });
+  it("should have restricted gui for guest users", async () => {
+    await setup({ asGuest: true });
 
     expect(screen.getByText(/oceny/i)).toBeVisible();
     expect(
@@ -42,6 +47,19 @@ describe("GradesPage", () => {
     expect(connectButton).toBeVisible();
   });
 
+  it("should have restricted gui for authenticated users without student number", async () => {
+    const tokenWithoutStudentNumber = await generateTestToken({
+      student_number: "",
+    });
+
+    await setup({ accessToken: tokenWithoutStudentNumber });
+
+    expect(screen.getByText(/oceny/i)).toBeVisible();
+    expect(
+      screen.getByText(/nie jest dostępna dla kont Solvro Auth/i),
+    ).toBeVisible();
+  });
+
   it("should show loading spinner", async () => {
     server.use(
       http.get("*/grades/", async () => {
@@ -49,14 +67,14 @@ describe("GradesPage", () => {
         return HttpResponse.json({});
       }),
     );
-    setup();
+    await setup();
 
     expect(await screen.findByText(/ładowanie/i)).toBeVisible();
     await waitForElementToBeRemoved(() => screen.queryByText(/ładowanie/i));
   });
 
   it("should display fetched terms and courses", async () => {
-    setup();
+    await setup();
 
     expect(await screen.findByRole("combobox")).toBeVisible();
 
@@ -69,7 +87,7 @@ describe("GradesPage", () => {
 
   it("should show error if api request fails", async () => {
     server.use(http.get("*/grades/", () => HttpResponse.error()));
-    setup();
+    await setup();
 
     expect(await screen.findByText(/błąd/i)).toBeVisible();
   });
@@ -83,7 +101,7 @@ describe("GradesPage", () => {
         }),
       ),
     );
-    setup();
+    await setup();
 
     expect(await screen.findByText("Matematyka")).toBeVisible();
     expect(await screen.findByText("Informatyka")).toBeVisible();
@@ -95,7 +113,7 @@ describe("GradesPage", () => {
     ).toBeVisible();
   });
 
-  it("should handle empty terms and courses", () => {
+  it("should handle empty terms and courses", async () => {
     server.use(
       http.get("*/grades/", () =>
         HttpResponse.json({
@@ -104,7 +122,7 @@ describe("GradesPage", () => {
         }),
       ),
     );
-    setup();
+    await setup();
 
     expect(screen.queryByText(/błąd/i)).not.toBeInTheDocument();
     expect(screen.getByText("Oceny")).toBeVisible();
@@ -119,7 +137,7 @@ describe("GradesPage", () => {
         }),
       ),
     );
-    setup();
+    await setup();
 
     expect(await screen.findByText(emptyCourse.course_name)).toBeVisible();
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
@@ -134,7 +152,7 @@ describe("GradesPage", () => {
         }),
       ),
     );
-    const { user } = setup();
+    const { user } = await setup();
 
     expect(await screen.findByText(emptyCourse.course_name)).toBeVisible();
 
@@ -153,7 +171,7 @@ describe("GradesPage", () => {
         }),
       ),
     );
-    const { user } = setup();
+    const { user } = await setup();
 
     expect(await screen.findByText(mockCourses[2].course_name)).toBeVisible();
 

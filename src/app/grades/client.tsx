@@ -146,6 +146,22 @@ function GradesContent() {
     );
   }
 
+  if (!(appContext.user?.student_number ?? "")) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>Oceny</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center text-sm">
+          <p>
+            Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
+            dla kont Solvro Auth.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (error != null) {
     return (
       <Alert variant="destructive">
@@ -186,22 +202,6 @@ function GradesContent() {
             <p>Ładowanie ocen...</p>
             <Loader size={15} />
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!(appContext.user?.student_number ?? "")) {
-    return (
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>Oceny</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-center text-sm">
-          <p>
-            Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
-            dla kont Solvro Auth.
-          </p>
         </CardContent>
       </Card>
     );

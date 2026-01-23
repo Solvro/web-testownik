@@ -7,12 +7,14 @@ import { ImportQuizPageClient as ImportQuizPage } from "@/app/import-quiz/client
 import { mockLegacyQuiz, mockQuiz } from "@/test-utils/mocks/quiz-mock";
 import { server } from "@/test-utils/mocks/server";
 import { Providers } from "@/test-utils/providers";
+import { generateTestToken } from "@/test-utils/token-factory";
 
-const setup = ({ asGuest = false } = {}) => {
+const setup = async ({ asGuest = false } = {}) => {
   const user = userEvent.setup();
+  const token = await generateTestToken();
 
   render(
-    <Providers guest={asGuest}>
+    <Providers guest={asGuest} accessToken={token}>
       <ImportQuizPage />
     </Providers>,
   );
@@ -55,7 +57,7 @@ const setup = ({ asGuest = false } = {}) => {
 describe("ImportQuizPage", () => {
   describe("json import", () => {
     it("should show error if invalid json", async () => {
-      const { clickImport, inputJson, switchToJson } = setup();
+      const { clickImport, inputJson, switchToJson } = await setup();
 
       await switchToJson();
       inputJson("{ invalid json");
@@ -67,7 +69,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should submit valid JSON", async () => {
-      const { clickImport, inputJson, switchToJson } = setup();
+      const { clickImport, inputJson, switchToJson } = await setup();
 
       await switchToJson();
       inputJson(JSON.stringify(mockQuiz));
@@ -84,7 +86,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should show error if text input is empty", async () => {
-      const { clickImport, switchToJson } = setup();
+      const { clickImport, switchToJson } = await setup();
 
       await switchToJson();
       await clickImport();
@@ -93,7 +95,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should submit valid legacy JSON", async () => {
-      const { clickImport, inputJson, switchToJson } = setup();
+      const { clickImport, inputJson, switchToJson } = await setup();
 
       await switchToJson();
       inputJson(JSON.stringify(mockLegacyQuiz));
@@ -112,7 +114,7 @@ describe("ImportQuizPage", () => {
 
   describe("file import", () => {
     it("should show error if no file is selected", async () => {
-      const { switchToFile, clickImport } = setup();
+      const { switchToFile, clickImport } = await setup();
 
       await switchToFile();
       await clickImport();
@@ -121,7 +123,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should show error when uploading file with invalid json", async () => {
-      const { switchToFile, clickImport, uploadJsonFile } = setup();
+      const { switchToFile, clickImport, uploadJsonFile } = await setup();
 
       await switchToFile();
       await uploadJsonFile("{ invalid json", "invalid.json");
@@ -133,7 +135,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should accept valid file", async () => {
-      const { switchToFile, clickImport, uploadJsonFile } = setup();
+      const { switchToFile, clickImport, uploadJsonFile } = await setup();
 
       await switchToFile();
       await uploadJsonFile(JSON.stringify(mockQuiz), "valid.json");
@@ -150,7 +152,7 @@ describe("ImportQuizPage", () => {
     });
 
     it("should accept valid legacy file", async () => {
-      const { switchToFile, clickImport, uploadJsonFile } = setup();
+      const { switchToFile, clickImport, uploadJsonFile } = await setup();
 
       await switchToFile();
       await uploadJsonFile(JSON.stringify(mockLegacyQuiz), "legacy.json");
@@ -169,7 +171,7 @@ describe("ImportQuizPage", () => {
 
   it("should show error on API error", async () => {
     server.use(http.post("*/quizzes/", () => HttpResponse.error()));
-    const { clickImport, inputJson, switchToJson } = setup();
+    const { clickImport, inputJson, switchToJson } = await setup();
 
     await switchToJson();
     inputJson(JSON.stringify(mockQuiz));
