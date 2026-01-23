@@ -1,54 +1,33 @@
 import "server-only";
 
-/**
- * GitHub contributor type
- */
-export interface GitHubContributor {
-  login: string;
-  id: number;
-  avatar_url: string;
-  html_url: string;
-  type: string;
-  contributions: number;
-}
+import { GITHUB_REPOS, parseContributors } from "@/lib/contributors";
+import type { GitHubContributor } from "@/lib/contributors";
 
 /**
  * Get GitHub contributors (server-side with caching)
  */
 export async function getContributorsSSR(): Promise<GitHubContributor[]> {
   try {
-    const [coreResponse, frontendResponse] = await Promise.all([
-      fetch(
-        "https://api.github.com/repos/Solvro/backend-testownik/contributors?anon=1",
-        { next: { revalidate: 3600 } },
+    const responses = await Promise.all(
+      GITHUB_REPOS.map(async (repo) =>
+        fetch(`https://api.github.com/repos/${repo}/contributors?anon=1`, {
+          next: { revalidate: 3600 },
+        }),
       ),
-      fetch(
-        "https://api.github.com/repos/Solvro/web-testownik/contributors?anon=1",
-        { next: { revalidate: 3600 } },
-      ),
-    ]);
+    );
 
-    if (!coreResponse.ok || !frontendResponse.ok) {
+    if (responses.some((response) => !response.ok)) {
       console.error("Failed to fetch contributors from GitHub");
       return [];
     }
 
-    const coreData = (await coreResponse.json()) as GitHubContributor[];
-    const frontendData = (await frontendResponse.json()) as GitHubContributor[];
+    const data = await Promise.all(
+      responses.map(
+        async (response) => response.json() as Promise<GitHubContributor[]>,
+      ),
+    );
 
-    const merged = [...coreData, ...frontendData]
-      .filter((contributor) => contributor.type === "User")
-      .reduce((accumulator: GitHubContributor[], contributor) => {
-        const existing = accumulator.find((x) => x.login === contributor.login);
-        if (existing === undefined) {
-          accumulator.push({ ...contributor });
-        } else {
-          existing.contributions += contributor.contributions;
-        }
-        return accumulator;
-      }, []);
-
-    return merged.toSorted((a, b) => b.contributions - a.contributions);
+    return parseContributors(data);
   } catch (error) {
     console.error("Error fetching contributors:", error);
     return [];
