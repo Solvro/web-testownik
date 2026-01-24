@@ -1,8 +1,8 @@
 import { CheckIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
-import { Link } from "react-router";
 
-import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog.tsx";
+import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
-import type { Quiz } from "@/types/quiz.ts";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Quiz } from "@/types/quiz";
 
 interface QuizPreviewDialogProps {
   open: boolean;
@@ -52,9 +52,9 @@ export function QuizPreviewDialog({
                 ? `Quiz "${title}" został utworzony`
                 : `Quiz "${title}" został zaimportowany`}
             </DialogTitle>
-            {description ? (
-              <DialogDescription>{description}</DialogDescription>
-            ) : null}
+            <DialogDescription className={description ? "" : "sr-only"}>
+              {description || "Podgląd quizu"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <h5 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
@@ -133,15 +133,13 @@ export function QuizPreviewDialog({
               <Button variant="outline" onClick={handleShare}>
                 Udostępnij
               </Button>
-              <Link to={`/edit-quiz/${id}`}>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  Edytuj
-                </Button>
-              </Link>
+              <Button variant="outline" className="w-full sm:w-auto" asChild>
+                <Link href={`/edit-quiz/${id}`}>Edytuj</Link>
+              </Button>
             </div>
-            <Link to={`/quiz/${id}`}>
-              <Button className="w-full sm:w-auto">Otwórz</Button>
-            </Link>
+            <Button className="w-full sm:w-auto" asChild>
+              <Link href={`/quiz/${id}`}>Otwórz</Link>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

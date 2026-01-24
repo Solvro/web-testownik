@@ -1,10 +1,13 @@
-import React, { useContext, useState } from "react";
-import { Link, useLocation } from "react-router";
+"use client";
 
-import { AppContext } from "@/app-context.ts";
-import { AppLogo } from "@/components/app-logo.tsx";
-import { Loader } from "@/components/loader.tsx";
-import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import React, { useContext, useEffect, useState } from "react";
+
+import { AppContext } from "@/app-context";
+import { AppLogo } from "@/components/app-logo";
+import { Loader } from "@/components/loader";
+import { PrivacyDialog } from "@/components/privacy-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,18 +18,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SERVER_URL } from "@/config.ts";
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import { API_URL } from "@/lib/api";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showGuestDialog, setShowGuestDialog] = useState(false);
-  const location = useLocation();
-  const queryParameters = new URLSearchParams(location.search);
-  const accessToken = queryParameters.get("access_token");
-  const refreshToken = queryParameters.get("refresh_token");
-  const error = queryParameters.get("error");
+  const [currentUrl, setCurrentUrl] = useState("");
+
+  const searchParameters = useSearchParams();
+  const pathname = usePathname();
+  const error = searchParameters.get("error");
+
+  useEffect(() => {
+    const redirect = searchParameters.get("redirect");
+    const url = new URL(redirect ?? pathname, window.location.origin);
+    setCurrentUrl(url.toString());
+  }, [pathname, searchParameters]);
 
   const signInAsGuest = () => {
     appContext.setGuest(true);
@@ -49,7 +58,7 @@ export function LoginPrompt(): React.JSX.Element {
   return (
     <div className="flex justify-center">
       <Card className="w-full max-w-xl min-w-1/2 pb-2">
-        {accessToken !== null && refreshToken !== null ? (
+        {appContext.isAuthenticated ? (
           <CardContent className="flex flex-col items-center py-10">
             <p className="mb-2 text-xl font-semibold text-green-600 dark:text-green-400">
               Zalogowano pomyślnie!
@@ -87,6 +96,15 @@ export function LoginPrompt(): React.JSX.Element {
                     <AlertDescription>
                       Token logowania jest nieprawidłowy lub wygasł. Spróbuj
                       ponownie się zalogować.
+                    </AlertDescription>
+                  ) : error === "missing_token" ? (
+                    <AlertDescription>
+                      Brak tokenu logowania. Upewnij się, że kliknąłeś link z
+                      e-maila.
+                    </AlertDescription>
+                  ) : error === "server_error" ? (
+                    <AlertDescription>
+                      Wystąpił błąd serwera. Spróbuj ponownie się zalogować.
                     </AlertDescription>
                   ) : error === "usos_unavailable" ? (
                     <AlertDescription>
@@ -132,7 +150,7 @@ export function LoginPrompt(): React.JSX.Element {
               <p className="text-sm font-medium">
                 Klikając przyciski poniżej, potwierdzasz, że zapoznałeś się z
                 naszym{" "}
-                <Link to={"/terms"} className="underline">
+                <Link href={"/terms"} className="underline">
                   regulaminem
                 </Link>{" "}
                 oraz że go akceptujesz.
@@ -141,14 +159,14 @@ export function LoginPrompt(): React.JSX.Element {
               <div className="mb-0 grid gap-2">
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
+                    href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                   >
                     Zaloguj się z USOS
                   </a>
                 </Button>
                 <Button asChild className="w-full">
                   <a
-                    href={`${SERVER_URL}/login?jwt=true&redirect=${encodeURIComponent(window.location.href)}`}
+                    href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                   >
                     Zaloguj się z Solvro Auth
                   </a>

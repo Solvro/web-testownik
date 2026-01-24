@@ -8,9 +8,13 @@ export class ServiceRegistry {
   private quizService: QuizService;
   private userService: UserService;
 
-  constructor(baseURL: string, defaultHeaders: Record<string, string> = {}) {
-    this.quizService = new QuizService(baseURL, defaultHeaders);
-    this.userService = new UserService(baseURL, defaultHeaders);
+  constructor(
+    baseURL: string,
+    defaultHeaders: Record<string, string> = {},
+    accessToken?: string,
+  ) {
+    this.quizService = new QuizService(baseURL, defaultHeaders, accessToken);
+    this.userService = new UserService(baseURL, defaultHeaders, accessToken);
   }
 
   /**
@@ -37,8 +41,9 @@ let serviceRegistry: ServiceRegistry | null = null;
 export function initializeServices(
   baseURL: string,
   defaultHeaders: Record<string, string> = {},
+  accessToken?: string,
 ): void {
-  serviceRegistry = new ServiceRegistry(baseURL, defaultHeaders);
+  serviceRegistry = new ServiceRegistry(baseURL, defaultHeaders, accessToken);
 }
 
 /**

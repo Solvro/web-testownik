@@ -1,13 +1,13 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
 import { RotateCcwIcon } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { ViewTransition, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { ImageLoad } from "@/components/image-load.tsx";
-import { computeAnswerVariant } from "@/components/quiz/helpers/question-card.ts";
+import { ImageLoad } from "@/components/image-load";
+import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,11 +16,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area.tsx";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { Question } from "@/types/quiz.ts";
+import type { Question } from "@/types/quiz";
 
 interface QuestionCardProps {
+  quizId: string;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
@@ -31,6 +32,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
+  quizId,
   question,
   selectedAnswers,
   setSelectedAnswers,
@@ -39,34 +41,32 @@ export function QuestionCard({
   isQuizFinished,
   restartQuiz,
 }: QuestionCardProps) {
-  const handleAnswerClick = useCallback(
-    (answerId: string) => {
-      if (questionChecked) {
-        return;
-      }
-      const newSelectedAnswers = [...selectedAnswers];
-      const answerIndex = newSelectedAnswers.indexOf(answerId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAnswerClick = (answerId: string) => {
+    if (questionChecked) {
+      return;
+    }
+    const newSelectedAnswers = [...selectedAnswers];
+    const answerIndex = newSelectedAnswers.indexOf(answerId);
 
-      if (question?.multiple === true) {
-        if (answerIndex === -1) {
-          newSelectedAnswers.push(answerId); // Add answer if not already selected
-        } else {
-          newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
-        }
+    if (question?.multiple === true) {
+      if (answerIndex === -1) {
+        newSelectedAnswers.push(answerId); // Add answer if not already selected
       } else {
-        // If the answer is already selected, remove it
-        if (answerIndex !== -1) {
-          newSelectedAnswers.splice(answerIndex, 1);
-        }
-        if (answerIndex === -1) {
-          newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
-        }
+        newSelectedAnswers.splice(answerIndex, 1); // Remove answer if already selected
       }
+    } else {
+      // If the answer is already selected, remove it
+      if (answerIndex !== -1) {
+        newSelectedAnswers.splice(answerIndex, 1);
+      }
+      if (answerIndex === -1) {
+        newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
+      }
+    }
 
-      setSelectedAnswers(newSelectedAnswers);
-    },
-    [questionChecked, selectedAnswers, setSelectedAnswers, question],
-  );
+    setSelectedAnswers(newSelectedAnswers);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -200,11 +200,13 @@ export function QuestionCard({
           )}
         </div>
         <div className="mt-2 flex justify-end">
-          {questionChecked ? (
-            <Button onClick={nextAction}>Następne pytanie</Button>
-          ) : (
-            <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
-          )}
+          <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+            {questionChecked ? (
+              <Button onClick={nextAction}>Następne pytanie</Button>
+            ) : (
+              <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+            )}
+          </ViewTransition>
         </div>
         {question.explanation != null && questionChecked ? (
           <div

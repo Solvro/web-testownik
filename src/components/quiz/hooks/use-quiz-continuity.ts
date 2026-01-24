@@ -1,19 +1,17 @@
 import { Peer } from "peerjs";
 import type { DataConnection } from "peerjs";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { useEffect, useRef, useState } from "react";
 
-import type { AnswerRecord, Question } from "@/types/quiz.ts";
+import { env } from "@/env";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
 
-const TURN_USERNAME = import.meta.env.VITE_TURN_USERNAME as string | undefined;
-const TURN_CREDENTIAL = import.meta.env.VITE_TURN_CREDENTIAL as
-  | string
-  | undefined;
+const TURN_USERNAME = env.NEXT_PUBLIC_TURN_USERNAME;
+const TURN_CREDENTIAL = env.NEXT_PUBLIC_TURN_CREDENTIAL;
 
 const RTC_CONFIG = {
   iceServers: [
@@ -106,72 +104,66 @@ export function useQuizContinuity({
   onInitialSync,
   onQuestionUpdate,
   onAnswerChecked,
-}: UseQuizContinuityOptions) {
+  userId,
+}: UseQuizContinuityOptions & { userId: string | null | undefined }) {
   const [peerConnections, setPeerConnections] = useState<DataConnection[]>([]);
   const [isHost, setIsHost] = useState(false);
   const peerRef = useRef<Peer | null>(null);
   const peerConnectionsRef = useRef<DataConnection[]>([]);
+  const isInitializingRef = useRef(false);
+  const isMountedRef = useRef(true);
 
-  const gracefulClose = useCallback(() => {
+  const gracefulClose = () => {
     if (peerRef.current != null && !peerRef.current.destroyed) {
       peerRef.current.destroy();
     }
-  }, []);
+  };
 
   // util
-  const send = useCallback((conn: DataConnection, data: PeerMessage) => {
+  const send = (conn: DataConnection, data: PeerMessage) => {
     if (conn.open) {
       void conn.send(data);
     }
-  }, []);
+  };
 
-  const broadcast = useCallback(
-    (data: PeerMessage) => {
-      for (const c of peerConnectionsRef.current) {
+  const broadcast = (data: PeerMessage) => {
+    for (const c of peerConnectionsRef.current) {
+      send(c, data);
+    }
+  };
+
+  const broadcastExcept = (except: DataConnection, data: PeerMessage) => {
+    for (const c of peerConnectionsRef.current) {
+      if (c !== except) {
         send(c, data);
       }
-    },
-    [send],
-  );
+    }
+  };
 
-  const broadcastExcept = useCallback(
-    (except: DataConnection, data: PeerMessage) => {
-      for (const c of peerConnectionsRef.current) {
-        if (c !== except) {
-          send(c, data);
-        }
-      }
-    },
-    [send],
-  );
+  const initialSync = (conn: DataConnection) => {
+    const {
+      question,
+      answers,
+      startTime,
+      wrongAnswers,
+      correctAnswers,
+      selectedAnswers,
+    } = getCurrentState();
+    if (question === null) {
+      return;
+    }
+    send(conn, {
+      type: "initial_sync",
+      startTime,
+      correctAnswersCount: correctAnswers,
+      wrongAnswersCount: wrongAnswers,
+      answers,
+      studyTime: 0,
+    });
+    send(conn, { type: "question_update", question, selectedAnswers });
+  };
 
-  const initialSync = useCallback(
-    (conn: DataConnection) => {
-      const {
-        question,
-        answers,
-        startTime,
-        wrongAnswers,
-        correctAnswers,
-        selectedAnswers,
-      } = getCurrentState();
-      if (question === null) {
-        return;
-      }
-      send(conn, {
-        type: "initial_sync",
-        startTime,
-        correctAnswersCount: correctAnswers,
-        wrongAnswersCount: wrongAnswers,
-        answers,
-        studyTime: 0,
-      });
-      send(conn, { type: "question_update", question, selectedAnswers });
-    },
-    [getCurrentState, send],
-  );
-
-  const connectToPeer = useCallback(async (peer: Peer, peerId: string) => {
+  const connectToPeer = async (peer: Peer, peerId: string) => {
     return new Promise<DataConnection>((resolve, reject) => {
       function doConnect() {
         const conn = peer.connect(peerId, {
@@ -194,89 +186,93 @@ export function useQuizContinuity({
         peer.once("error", reject);
       }
     });
-  }, []);
+  };
 
-  const handleClientData = useCallback(
-    (data: PeerMessage) => {
-      switch (data.type) {
-        case "initial_sync": {
-          onInitialSync({
-            startTime: data.startTime,
-            correctAnswersCount: data.correctAnswersCount,
-            wrongAnswersCount: data.wrongAnswersCount,
-            answers: data.answers,
-            studyTime: data.studyTime,
-          });
-          break;
-        }
-        case "question_update": {
-          onQuestionUpdate(data.question, data.selectedAnswers);
-          break;
-        }
-        case "answer_checked": {
-          onAnswerChecked(data.nextQuestion);
-          break;
-        }
-        case "ping": {
-          if (peerConnectionsRef.current.length > 0) {
-            send(peerConnectionsRef.current[0], { type: "pong" });
-          }
-          break;
-        }
-        case "pong": {
-          // ignore
-          break;
-        }
-        default: {
-          break;
-        }
+  const handleClientData = (data: PeerMessage) => {
+    switch (data.type) {
+      case "initial_sync": {
+        onInitialSync({
+          startTime: data.startTime,
+          correctAnswersCount: data.correctAnswersCount,
+          wrongAnswersCount: data.wrongAnswersCount,
+          answers: data.answers,
+          studyTime: data.studyTime,
+        });
+        break;
       }
-    },
-    [onInitialSync, onQuestionUpdate, onAnswerChecked, send],
-  );
+      case "question_update": {
+        onQuestionUpdate(data.question, data.selectedAnswers);
+        break;
+      }
+      case "answer_checked": {
+        onAnswerChecked(data.nextQuestion);
+        break;
+      }
+      case "ping": {
+        if (peerConnectionsRef.current.length > 0) {
+          send(peerConnectionsRef.current[0], { type: "pong" });
+        }
+        break;
+      }
+      case "pong": {
+        // ignore
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
 
-  const handleHostData = useCallback(
-    (conn: DataConnection, data: PeerMessage) => {
-      switch (data.type) {
-        case "question_update": {
-          onQuestionUpdate(data.question, data.selectedAnswers);
-          broadcastExcept(conn, data);
-          break;
-        }
-        case "answer_checked": {
-          onAnswerChecked(data.nextQuestion);
-          broadcastExcept(conn, data);
-          break;
-        }
-        case "ping": {
-          send(conn, { type: "pong" });
-          break;
-        }
-        case "initial_sync":
-        case "pong": {
-          // ignore
-          break;
-        }
-        default: {
-          break;
-        }
+  const handleHostData = (conn: DataConnection, data: PeerMessage) => {
+    switch (data.type) {
+      case "question_update": {
+        onQuestionUpdate(data.question, data.selectedAnswers);
+        broadcastExcept(conn, data);
+        break;
       }
-    },
-    [onQuestionUpdate, onAnswerChecked, broadcastExcept, send],
-  );
+      case "answer_checked": {
+        onAnswerChecked(data.nextQuestion);
+        broadcastExcept(conn, data);
+        break;
+      }
+      case "ping": {
+        send(conn, { type: "pong" });
+        break;
+      }
+      case "initial_sync":
+      case "pong": {
+        // ignore
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
 
   function init() {
+    if (isInitializingRef.current || !isMountedRef.current) {
+      return;
+    }
+    isInitializingRef.current = true;
     gracefulClose();
-    const userId = localStorage.getItem("user_id");
+
     if (userId == null) {
+      isInitializingRef.current = false;
       return;
     }
     const baseId = `${quizId}_${userId}`.replaceAll("/", "");
     try {
       const hostPeer = new Peer(baseId, { config: RTC_CONFIG });
       hostPeer.on("open", () => {
+        if (!isMountedRef.current) {
+          hostPeer.destroy();
+          return;
+        }
         peerRef.current = hostPeer;
         setIsHost(true);
+        isInitializingRef.current = false;
       });
       hostPeer.on("connection", handleHostConnection);
       hostPeer.on("error", (error: unknown) => {
@@ -284,26 +280,38 @@ export function useQuizContinuity({
         if (peerError.type === "unavailable-id") {
           const clientPeer = new Peer({ config: RTC_CONFIG });
           clientPeer.on("open", () => {
+            if (!isMountedRef.current) {
+              clientPeer.destroy();
+              return;
+            }
             peerRef.current = clientPeer;
             setIsHost(false);
             connectToPeer(clientPeer, baseId)
               .then((conn) => {
-                toast.info("🖥️ Połączono z hostem!");
+                if (!isMountedRef.current) {
+                  conn.close();
+                  return;
+                }
                 conn.on("data", (d) => {
                   handleClientData(d as PeerMessage);
                 });
+                isInitializingRef.current = false;
               })
-              .catch(() => toast.error("Nie udało się połączyć z hostem."));
+              .catch(() => {
+                isInitializingRef.current = false;
+              });
           });
           clientPeer.on("connection", (c) =>
             c.on("data", (d) => {
               handleClientData(d as PeerMessage);
             }),
           );
+        } else {
+          isInitializingRef.current = false;
         }
       });
     } catch {
-      /* ignore */
+      isInitializingRef.current = false;
     }
   }
 
@@ -313,7 +321,6 @@ export function useQuizContinuity({
       peerConnectionsRef.current = next;
       return next;
     });
-    toast.info("🖥️ Klient rozłączony.");
     if (!isHost && peerRef.current != null && !peerRef.current.destroyed) {
       connectToPeer(peerRef.current, conn.peer)
         .then((c) => {
@@ -346,7 +353,7 @@ export function useQuizContinuity({
     });
   }
 
-  const pingPeers = useCallback(() => {
+  const pingPeers = () => {
     for (const conn of peerConnectionsRef.current) {
       if (!conn.open) {
         continue;
@@ -361,21 +368,24 @@ export function useQuizContinuity({
         }
       });
     }
-  }, [send]);
+  };
 
   useEffect(() => {
     if (!enabled) {
       return;
     }
-    const idUser = localStorage.getItem("user_id");
-    if (idUser == null) {
+    if (userId == null) {
       return;
     }
     // Initialize ref with current state on (re)enable
     peerConnectionsRef.current = peerConnections;
+    isMountedRef.current = true;
+
     init();
+
     const interval = setInterval(pingPeers, PING_INTERVAL);
     return () => {
+      isMountedRef.current = false;
       clearInterval(interval);
       gracefulClose();
     };

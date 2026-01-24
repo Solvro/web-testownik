@@ -1,4 +1,4 @@
-import type { Group, User } from "./user.ts";
+import type { Group, User, UserSettings } from "./user";
 
 export interface QuizMetadata {
   id: string;
@@ -37,6 +37,11 @@ export interface QuestionWithQuizInfo extends Question {
 
 export interface Quiz extends QuizMetadata {
   questions: Question[];
+}
+
+export interface QuizWithUserProgress extends Quiz {
+  user_settings?: UserSettings;
+  current_session?: QuizSession | null;
 }
 
 export interface AnswerRecord {

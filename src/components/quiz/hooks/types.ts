@@ -1,8 +1,10 @@
 import type { DataConnection } from "peerjs";
 
 import type { AppContextType } from "@/app-context-type";
-import type { AnswerRecord, Question, Quiz } from "@/types/quiz.ts";
-import type { UserSettings } from "@/types/user.ts";
+import type { AnswerRecord, Question, Quiz } from "@/types/quiz";
+import type { UserSettings } from "@/types/user";
+
+import type { TimerStore } from "./use-study-timer";
 
 export interface UseQuizLogicParameters {
   quizId: string;
@@ -11,8 +13,7 @@ export interface UseQuizLogicParameters {
 }
 
 export interface UseQuizLogicResult {
-  loading: boolean;
-  quiz: Quiz | null;
+  quiz: Quiz;
   userSettings: UserSettings;
   state: {
     currentQuestion: Question | null;
@@ -26,7 +27,7 @@ export interface UseQuizLogicResult {
     wrongAnswersCount: number;
     masteredCount: number;
     totalQuestions: number;
-    studyTime: number;
+    timerStore: TimerStore;
     answers: AnswerRecord[];
   };
   continuity: {

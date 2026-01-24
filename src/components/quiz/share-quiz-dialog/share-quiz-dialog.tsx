@@ -1,16 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
 import { distance } from "fastest-levenshtein";
 import { Link2Icon } from "lucide-react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import { useContext, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { AppContext } from "@/app-context.ts";
-import { Loader } from "@/components/loader.tsx";
-import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector.tsx";
-import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list.tsx";
-import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover.tsx";
+import { AppContext } from "@/app-context";
+import { Loader } from "@/components/loader";
+import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector";
+import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list";
+import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -20,12 +21,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz.ts";
-import { AccessLevel } from "@/types/quiz.ts";
-import type { Group, User } from "@/types/user.ts";
+import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import type { Group, User } from "@/types/user";
 
 interface ShareQuizDialogProps {
   open: boolean;
@@ -41,10 +42,9 @@ export function ShareQuizDialog({
   setQuiz,
 }: ShareQuizDialogProps) {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
-  const [loading, setLoading] = useState(false);
 
   const [initialUsersWithAccess, setInitialUsersWithAccess] = useState<
     (User & { shared_quiz_id?: string; allow_edit: boolean })[]
@@ -66,21 +66,35 @@ export function ShareQuizDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
-  const [userGroups, setUserGroups] = useState<Group[]>([]);
 
-  const fetchAccess = useCallback(async () => {
-    if (appContext.isGuest) {
-      setUsersWithAccess([]);
-      setInitialUsersWithAccess([]);
-      setGroupsWithAccess([]);
-      setInitialGroupsWithAccess([]);
-      return;
-    }
-    try {
-      const sharedData = await appContext.services.quiz.getSharedQuizzesForQuiz(
-        quiz.id,
-      );
-      const foundUsers = sharedData.flatMap((sq) =>
+  const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
+    queryKey: ["study-groups"],
+    queryFn: async () => {
+      const groups = await appContext.services.quiz.getStudyGroups();
+      return groups.map((group) => ({
+        ...group,
+        photo: `https://ui-avatars.com/api/?background=random&name=${
+          group.name.split(" ")[0]
+        }+${group.name.split(" ")[1] || ""}&size=128`,
+      }));
+    },
+    enabled: open && !appContext.isGuest,
+    initialData: [],
+  });
+
+  const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
+    queryKey: ["shared-quiz", quiz.id],
+    queryFn: async () =>
+      await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
+    enabled: open && !appContext.isGuest,
+    staleTime: 0,
+  });
+
+  const loading = isSharedDataLoading || isUserGroupsLoading;
+
+  useEffect(() => {
+    if (sharedData != null) {
+      const foundUsers = sharedData.flatMap((sq: SharedQuiz) =>
         sq.user == null
           ? []
           : [
@@ -97,7 +111,9 @@ export function ShareQuizDialog({
           : [
               {
                 ...sq.group,
-                photo: `https://ui-avatars.com/api/?background=random&name=${sq.group.name.split(" ")[0]}+${sq.group.name.split(" ")[1] || ""}&size=128`,
+                photo: `https://ui-avatars.com/api/?background=random&name=${
+                  sq.group.name.split(" ")[0]
+                }+${sq.group.name.split(" ")[1] || ""}&size=128`,
                 shared_quiz_id: sq.id,
                 allow_edit: sq.allow_edit,
               },
@@ -108,120 +124,79 @@ export function ShareQuizDialog({
       setInitialUsersWithAccess(foundUsers);
       setGroupsWithAccess(foundGroups);
       setInitialGroupsWithAccess(foundGroups);
-    } catch {
-      setUsersWithAccess([]);
-      setInitialUsersWithAccess([]);
-      setGroupsWithAccess([]);
-      setInitialGroupsWithAccess([]);
     }
-  }, [appContext.services.quiz, appContext.isGuest, quiz.id]);
-
-  const fetchUserGroups = useCallback(async () => {
-    try {
-      const groups = await appContext.services.quiz.getStudyGroups();
-      const data = groups.map((group: Group) => ({
-        ...group,
-        photo: `https://ui-avatars.com/api/?background=random&name=${
-          group.name.split(" ")[0]
-        }+${group.name.split(" ")[1] || ""}&size=128`,
-      }));
-      setUserGroups(data);
-    } catch {
-      setUserGroups([]);
-    }
-  }, [appContext.services.quiz]);
-
-  const fetchData = useCallback(async () => {
-    if (appContext.isGuest) {
-      return;
-    }
-    setLoading(true);
-    try {
-      await Promise.all([fetchUserGroups(), fetchAccess()]);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [appContext.isGuest, fetchUserGroups, fetchAccess]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  }, [sharedData]);
 
   const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event_.target.value);
   };
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      setSearchResultsLoading(true);
-      try {
-        // Fetch users
-        const users = await appContext.services.quiz.searchUsers(query);
-        let data: (User | Group)[] = [...users];
+  const handleSearch = async (query: string) => {
+    setSearchResultsLoading(true);
+    try {
+      // Fetch users
+      const users = await appContext.services.quiz.searchUsers(query);
+      let data: (User | Group)[] = [...users];
 
-        // Filter groups by the query
-        const matchedGroups = userGroups.filter((g) =>
-          g.name.toLowerCase().includes(query.toLowerCase()),
-        );
-        data = [...data, ...matchedGroups];
+      // Filter groups by the query
+      const matchedGroups = userGroups.filter((g) =>
+        g.name.toLowerCase().includes(query.toLowerCase()),
+      );
+      data = [...data, ...matchedGroups];
 
-        // If query is exactly 6 digits, prioritize matching student_number
-        let userByIndex: User | undefined;
-        if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
-          userByIndex = data.find(
-            (object) =>
-              "student_number" in object && object.student_number === query,
-          ) as User | undefined;
-          if (userByIndex != null) {
-            data = data.filter((item) => item !== userByIndex);
-          }
-        }
-
-        // Sort results by "distance" to the query
-        data.sort((a, b) => {
-          const aIsGroup = "name" in a;
-          const bIsGroup = "name" in b;
-
-          if (aIsGroup && bIsGroup) {
-            // Both groups
-            const aGroup = a;
-            const bGroup = b;
-            if (aGroup.term.is_current && !bGroup.term.is_current) {
-              return -1;
-            }
-            if (!aGroup.term.is_current && bGroup.term.is_current) {
-              return 1;
-            }
-            return distance(aGroup.name, query) - distance(bGroup.name, query);
-          } else if (aIsGroup) {
-            // a is Group, b is User
-            return (
-              distance(a.name, query) - distance((b as User).full_name, query)
-            );
-          } else if (bIsGroup) {
-            // a is User, b is Group
-            return distance(a.full_name, query) - distance(b.name, query);
-          } else {
-            // both users
-            return distance(a.full_name, query) - distance(b.full_name, query);
-          }
-        });
-
+      // If query is exactly 6 digits, prioritize matching student_number
+      let userByIndex: User | undefined;
+      if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
+        userByIndex = data.find(
+          (object) =>
+            "student_number" in object && object.student_number === query,
+        ) as User | undefined;
         if (userByIndex != null) {
-          data.unshift(userByIndex);
+          data = data.filter((item) => item !== userByIndex);
         }
-
-        setSearchResults(data);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchResultsLoading(false);
       }
-    },
-    [userGroups, appContext.services.quiz],
-  );
+
+      // Sort results by "distance" to the query
+      data.sort((a, b) => {
+        const aIsGroup = "name" in a;
+        const bIsGroup = "name" in b;
+
+        if (aIsGroup && bIsGroup) {
+          // Both groups
+          const aGroup = a;
+          const bGroup = b;
+          if (aGroup.term.is_current && !bGroup.term.is_current) {
+            return -1;
+          }
+          if (!aGroup.term.is_current && bGroup.term.is_current) {
+            return 1;
+          }
+          return distance(aGroup.name, query) - distance(bGroup.name, query);
+        } else if (aIsGroup) {
+          // a is Group, b is User
+          return (
+            distance(a.name, query) - distance((b as User).full_name, query)
+          );
+        } else if (bIsGroup) {
+          // a is User, b is Group
+          return distance(a.full_name, query) - distance(b.name, query);
+        } else {
+          // both users
+          return distance(a.full_name, query) - distance(b.full_name, query);
+        }
+      });
+
+      if (userByIndex != null) {
+        data.unshift(userByIndex);
+      }
+
+      setSearchResults(data);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearchResultsLoading(false);
+    }
+  };
 
   const handleAddEntity = (entity: User | Group) => {
     // If it's a user
@@ -391,7 +366,9 @@ export function ShareQuizDialog({
             </p>
             <Button
               variant="outline"
-              onClick={async () => navigate("/connect-account")}
+              onClick={() => {
+                router.push("/connect-account");
+              }}
             >
               Połącz konto
             </Button>

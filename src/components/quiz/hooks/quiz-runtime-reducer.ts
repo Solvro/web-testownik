@@ -2,8 +2,8 @@ import {
   getAnswerCounts,
   isQuizComplete,
   pickNextQuestion,
-} from "@/lib/session-utils.ts";
-import type { AnswerRecord, Question } from "@/types/quiz.ts";
+} from "@/lib/session-utils";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 export interface ProgressSettings {
   initialReoccurrences: number;
@@ -40,6 +40,7 @@ export type Action =
         settings: ProgressSettings;
         answers?: AnswerRecord[];
         currentQuestionId?: string | null;
+        precomputedCurrentQuestion?: Question | null;
       };
     }
   | {
@@ -122,11 +123,20 @@ export function runtimeReducer(
     }
 
     case "INIT_SESSION": {
-      const { questions, settings, answers, currentQuestionId } =
-        action.payload;
+      const {
+        questions,
+        settings,
+        answers,
+        currentQuestionId,
+        precomputedCurrentQuestion,
+      } = action.payload;
 
-      let firstQuestion: Question | null = null;
-      if (currentQuestionId !== undefined && currentQuestionId !== null) {
+      let firstQuestion: Question | null = precomputedCurrentQuestion ?? null;
+      if (
+        firstQuestion === null &&
+        currentQuestionId !== undefined &&
+        currentQuestionId !== null
+      ) {
         const savedQuestion = questions.find((q) => q.id === currentQuestionId);
         if (savedQuestion !== undefined) {
           firstQuestion = {

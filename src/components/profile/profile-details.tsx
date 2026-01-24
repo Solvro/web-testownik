@@ -1,15 +1,12 @@
 import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
-import { AppContext } from "@/app-context.ts";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
+import { AppContext } from "@/app-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -19,10 +16,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label.tsx";
-import { Switch } from "@/components/ui/switch.tsx";
-import { cn, getInitials } from "@/lib/utils.ts";
-import type { UserData } from "@/types/user.ts";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { cn, getInitials } from "@/lib/utils";
+import type { UserData } from "@/types/user";
 
 interface ProfileDetailsProps {
   userData: UserData | null;
@@ -36,7 +33,7 @@ export function ProfileDetails({
   setUserData,
 }: ProfileDetailsProps) {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
 
@@ -60,13 +57,12 @@ export function ProfileDetails({
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
       })
-      .then(() => {
-        localStorage.setItem("profile_picture", selectedPhoto);
-        for (const element of document.querySelectorAll(".user-avatar")) {
-          (element as HTMLImageElement).src = selectedPhoto;
-        }
+      .then(async () => {
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
+          // Refresh token to get updated user data (avatar) in the token payload
+          await appContext.services.user.refreshToken();
+          appContext.setAuthenticated(true);
         }
       })
       .catch((error: unknown) => {
@@ -128,7 +124,9 @@ export function ProfileDetails({
           </Badge>
           <Button
             className="mt-4"
-            onClick={async () => navigate("/connect-account")}
+            onClick={() => {
+              router.push("/connect-account");
+            }}
           >
             Połącz konto
           </Button>
@@ -236,7 +234,7 @@ export function ProfileDetails({
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Wybierz zdjęcie profilowe</DialogTitle>
           </DialogHeader>
@@ -255,11 +253,14 @@ export function ProfileDetails({
                   setSelectedPhoto(url);
                 }}
               >
-                <img
+                <Image
                   key={`avatar-option-${index.toString()}`}
                   src={url}
                   alt={`Avatar ${index.toString()}`}
                   className="size-20 rounded-full object-cover"
+                  unoptimized
+                  width={80}
+                  height={80}
                 />
               </Button>
             ))}
@@ -273,10 +274,13 @@ export function ProfileDetails({
                   )
                 }
               >
-                <img
+                <Image
                   src={selectedPhoto}
-                  alt="Avatar"
-                  className="ring-primary h-20 w-20 cursor-pointer rounded-full object-cover shadow-lg ring-2"
+                  alt="Wybrane zdjęcie"
+                  className="size-20 rounded-full object-cover"
+                  unoptimized
+                  width={96}
+                  height={96}
                 />
               </Button>
             ) : null}

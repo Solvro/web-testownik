@@ -1,12 +1,12 @@
-import type { LegacyQuiz, QuizProgress } from "@/types/quiz-legacy.ts";
 import type {
   Answer,
   AnswerRecord,
   Question,
   Quiz,
   QuizSession,
-} from "@/types/quiz.ts";
-import { AccessLevel } from "@/types/quiz.ts";
+} from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import type { LegacyQuiz, QuizProgress } from "@/types/quiz-legacy";
 
 const DATA_VERSION_KEY = "DATA_VERSION";
 
@@ -28,16 +28,12 @@ export function runMigrations(): void {
         // Preserve auth tokens so user stays logged in
         const accessToken = localStorage.getItem("access_token");
         const refreshToken = localStorage.getItem("refresh_token");
-        const profilePicture = localStorage.getItem("profile_picture");
         localStorage.clear();
         if (accessToken !== null) {
           localStorage.setItem("access_token", accessToken);
         }
         if (refreshToken !== null) {
           localStorage.setItem("refresh_token", refreshToken);
-        }
-        if (profilePicture !== null) {
-          localStorage.setItem("profile_picture", profilePicture);
         }
         localStorage.setItem(DATA_VERSION_KEY, "2");
         return; // All data is already on the server so we can just ignore this

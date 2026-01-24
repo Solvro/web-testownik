@@ -1,11 +1,12 @@
 import { MessageSquareWarningIcon } from "lucide-react";
-import React, { useContext, useState } from "react";
-import { toast } from "react-toastify";
+import { usePathname } from "next/navigation";
+import { useContext, useState } from "react";
+import { toast } from "sonner";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -16,14 +17,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select.tsx";
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ReportBugDialogProps {
@@ -43,13 +44,12 @@ const DEFAULT_FORM_STATE = {
 
 export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const appContext = useContext(AppContext);
+  const pathname = usePathname();
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
 
-  const quizId = location.pathname.includes("quiz/")
-    ? location.pathname.split("/").pop()
-    : null;
+  const quizId = pathname.includes("quiz/") ? pathname.split("/").pop() : null;
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -109,10 +109,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
         location: window.location.href,
         localStorage: {
-          user_id: localStorage.getItem("user_id"),
-          is_guest: localStorage.getItem("is_guest"),
-          is_authenticated:
-            localStorage.getItem("access_token") == null ? "false" : "true",
+          user_id: appContext.user?.user_id ?? localStorage.getItem("user_id"), // localStorage user_id is deprecated, should be removed in the future
+          is_guest: appContext.isGuest,
+          is_authenticated: appContext.isAuthenticated,
           quiz_progress:
             quizId == null ? null : localStorage.getItem(`${quizId}_progress`),
         },
@@ -132,9 +131,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         toast.success("Dziękujemy za zgłoszenie!");
       })
       .catch((error: unknown) => {
-        toast.error("Wystąpił błąd podczas wysyłania zgłoszenia!", {
-          position: "top-center",
-        });
+        toast.error("Wystąpił błąd podczas wysyłania zgłoszenia!");
         console.error(error);
       })
       .finally(() => {

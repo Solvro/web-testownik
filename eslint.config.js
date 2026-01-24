@@ -2,11 +2,10 @@ import { solvro } from "@solvro/config/eslint";
 
 export default await solvro({
   rules: {
-    "jsx-a11y/anchor-is-valid": [
-      "error",
+    "react-refresh/only-export-components": [
+      "warn",
       {
-        components: ["Link"],
-        specialLink: ["to"],
+        allowExportNames: ["metadata", "viewport"],
       },
     ],
   },

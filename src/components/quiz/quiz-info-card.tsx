@@ -1,9 +1,10 @@
+import { format } from "date-fns";
 import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,13 +13,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress.tsx";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Quiz } from "@/types/quiz.ts";
+import type { Quiz } from "@/types/quiz";
+
+import type { TimerStore } from "./hooks/use-study-timer";
+import { useStudyTimeValue } from "./hooks/use-study-timer";
 
 interface QuizInfoCardProps {
   quiz: Quiz | null;
@@ -26,7 +30,7 @@ interface QuizInfoCardProps {
   wrongAnswersCount: number;
   masteredCount: number;
   totalQuestions: number;
-  studyTime: number; // in seconds
+  timerStore: TimerStore;
   resetProgress: () => void;
 }
 
@@ -60,22 +64,36 @@ const getProgressColor = (percentage: number): string => {
   return "rgb(25, 135, 84)";
 };
 
+function StudyTimeDisplay({ timerStore }: { timerStore: TimerStore }) {
+  const studyTime = useStudyTimeValue(timerStore);
+  const date = new Date(0);
+  date.setHours(0, 0, studyTime);
+
+  return (
+    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+      {format(date, "HH:mm:ss")}
+    </span>
+  );
+}
+
 export function QuizInfoCard({
   quiz,
   correctAnswersCount,
   wrongAnswersCount,
   masteredCount,
   totalQuestions,
-  studyTime,
+  timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
   if (quiz === null) {
     return null;
   }
 
-  const openSearchInQuiz = async () => navigate(`/search-in-quiz/${quiz.id}`);
+  const openSearchInQuiz = () => {
+    router.push(`/search-in-quiz/${quiz.id}`);
+  };
   const progressPercentage =
     totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 
@@ -107,9 +125,7 @@ export function QuizInfoCard({
           </div>
           <div className="flex justify-between">
             <span>Czas nauki</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              {new Date(studyTime * 1000).toISOString().slice(11, 19)}
-            </span>
+            <StudyTimeDisplay timerStore={timerStore} />
           </div>
         </div>
         <Progress

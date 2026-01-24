@@ -1,11 +1,14 @@
-import { AlertCircleIcon } from "lucide-react";
-import { useContext, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+"use client";
 
-import { AppContext } from "@/app-context.ts";
-import { Loader } from "@/components/loader.tsx";
-import { PrivacyDialog } from "@/components/privacy-dialog.tsx";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
+import { AlertCircleIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useContext, useEffect, useState } from "react";
+
+import { AppContext } from "@/app-context";
+import { Loader } from "@/components/loader";
+import { PrivacyDialog } from "@/components/privacy-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -25,29 +28,51 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label.tsx";
-import { SERVER_URL } from "@/config.ts";
-import { createGuestDataBackup } from "@/lib/migration.ts";
-import type { Quiz } from "@/types/quiz.ts";
-import type { UserSettings } from "@/types/user.ts";
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import { Label } from "@/components/ui/label";
+import { API_URL } from "@/lib/api";
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { setCookie } from "@/lib/cookies";
+import { createGuestDataBackup } from "@/lib/migration";
+import type { Quiz } from "@/types/quiz";
+import type { UserSettings } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 export function ConnectGuestAccount() {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const queryParameters = new URLSearchParams(location.search);
-  const error = queryParameters.get("error");
+  const router = useRouter();
+  const searchParameters = useSearchParams();
+  const error = searchParameters.get("error");
 
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
 
   const [migrating, setMigrating] = useState(false);
   const [migratingText, setMigratingText] = useState("");
-  const [migrated, setMigrated] = useState(
-    localStorage.getItem("guest_migrated") === "true",
-  );
+  const [migrated, setMigrated] = useState(false);
   const [migrationError, setMigrationError] = useState<string | null>(null);
   const [backupData, setBackupData] = useState<string | null>(null);
+  const [guestQuizzes, setGuestQuizzes] = useState<Quiz[]>([]);
+  const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
+    setMigrated(localStorage.getItem("guest_migrated") === "true");
+
+    const quizzesString = localStorage.getItem("guest_quizzes");
+    if (quizzesString !== null) {
+      try {
+        const quizzes = JSON.parse(quizzesString) as Quiz[];
+        // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
+        setGuestQuizzes(quizzes);
+        // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
+        setSelectedQuizIds(quizzes.map((quiz) => quiz.id));
+      } catch (parseError) {
+        console.error("Error parsing guest_quizzes", parseError);
+      }
+    }
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
+    setIsDataLoaded(true);
+  }, []);
 
   // Category migration checkboxes:
   // – By default, "Quizy" is enabled, "Ustawienia" is off.
@@ -56,41 +81,21 @@ export function ConnectGuestAccount() {
     settings: false,
   });
 
-  // Guest quizzes state
-  const guestQuizzes: Quiz[] = (() => {
-    const quizzesString = localStorage.getItem("guest_quizzes");
-    if (quizzesString !== null) {
-      try {
-        return JSON.parse(quizzesString) as Quiz[];
-      } catch (error_) {
-        console.error("Error parsing guest_quizzes", error_);
-        return [];
-      }
-    }
-    return [];
-  })();
+  const [redirectUrl, setRedirectUrl] = useState("");
 
-  const [selectedQuizIds, setSelectedQuizIds] = useState<string[]>(() => {
-    const quizzesString = localStorage.getItem("guest_quizzes");
-    if (quizzesString !== null) {
-      try {
-        const quizzes = JSON.parse(quizzesString) as Quiz[];
-        return quizzes.map((quiz) => quiz.id);
-      } catch (error_) {
-        console.error("Error parsing guest_quizzes", error_);
-        return [];
-      }
-    }
-    return [];
-  });
+  useEffect(() => {
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
+    setRedirectUrl(window.location.href);
+  }, []);
 
   const handleLogout = async () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("access_token_expires_at");
-    appContext.services.user.clearStoredUserData();
+    await fetch("/auth/logout", { method: "POST" });
+    setIsDataLoaded(false);
     appContext.setAuthenticated(false);
-    await navigate("/");
+    setCookie(GUEST_COOKIE_NAME, "true", {
+      maxAge: 12 * 30 * 24 * 60 * 60,
+    });
+    router.push("/");
   };
 
   const uploadQuizzes = async (quizIds?: string[]) => {
@@ -185,6 +190,13 @@ export function ConnectGuestAccount() {
     }
   };
 
+  const handleSkip = () => {
+    setIsDataLoaded(false);
+    router.push("/");
+    appContext.setGuest(false);
+    localStorage.removeItem("guest_migrated");
+  };
+
   // Handler for category checkbox changes.
   const handleCategoryToggle = (field: "quizzes" | "settings") => {
     setCategories((previous) => {
@@ -193,7 +205,6 @@ export function ConnectGuestAccount() {
     });
   };
 
-  // Handler for toggling individual quiz selection.
   const handleQuizToggle = (quizId: string) => {
     setSelectedQuizIds((previous) =>
       previous.includes(quizId)
@@ -201,6 +212,23 @@ export function ConnectGuestAccount() {
         : [...previous, quizId],
     );
   };
+
+  useEffect(() => {
+    if (
+      isDataLoaded &&
+      appContext.isAuthenticated &&
+      appContext.isGuest &&
+      guestQuizzes.length === 0
+    ) {
+      handleSkip();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isDataLoaded,
+    appContext.isAuthenticated,
+    appContext.isGuest,
+    guestQuizzes.length,
+  ]);
 
   if (migrated) {
     return (
@@ -226,18 +254,18 @@ export function ConnectGuestAccount() {
             <div className="flex gap-2">
               <Button
                 variant="destructive"
-                onClick={async () => {
+                onClick={() => {
                   localStorage.removeItem("guest_quizzes");
                   localStorage.removeItem("guest_migrated");
-                  await navigate("/");
+                  router.push("/");
                 }}
               >
                 Usuń dane gościa
               </Button>
               <Button
                 variant="outline"
-                onClick={async () => {
-                  await navigate("/");
+                onClick={() => {
+                  router.push("/");
                 }}
               >
                 Pozostaw
@@ -295,6 +323,14 @@ export function ConnectGuestAccount() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!isDataLoaded) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader size={15} loading={true} />
       </div>
     );
   }
@@ -415,6 +451,11 @@ export function ConnectGuestAccount() {
                 Wyloguj
               </Button>
             </div>
+            <div className="mt-4 flex justify-center">
+              <Button variant="ghost" onClick={handleSkip}>
+                Pomiń i zaloguj
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : appContext.isGuest ? (
@@ -452,20 +493,18 @@ export function ConnectGuestAccount() {
             <div className="grid gap-2">
               <Button asChild>
                 <a
-                  href={`${SERVER_URL}/login/usos?jwt=true&redirect=${document.location.href}`}
+                  href={`${API_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}
                 >
                   Zaloguj się z USOS
                 </a>
               </Button>
               <Button asChild>
-                <a
-                  href={`${SERVER_URL}/login?jwt=true&redirect=${document.location.href}`}
-                >
+                <a href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}>
                   Zaloguj się z Solvro Auth
                 </a>
               </Button>
               <Button variant="outline" asChild>
-                <Link to="/">Anuluj i kontynuuj jako gość</Link>
+                <Link href="/">Anuluj i kontynuuj jako gość</Link>
               </Button>
             </div>
             <div className="text-center">
@@ -490,7 +529,7 @@ export function ConnectGuestAccount() {
             jako gość.
             <div className="mt-2">
               <Button variant="outline" asChild>
-                <Link to="/">Strona główna</Link>
+                <Link href="/">Strona główna</Link>
               </Button>
             </div>
           </AlertDescription>

@@ -1,5 +1,8 @@
 import { AlertCircleIcon } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface ImageLoadProps {
   url: string | null | undefined;
@@ -29,13 +32,18 @@ export function ImageLoad({ url, alt, className }: ImageLoadProps) {
   }
 
   return (
-    <img
-      src={url}
-      alt={alt}
-      className={className}
-      onError={() => {
-        setHasError(true);
-      }}
-    />
+    <Suspense
+      fallback={<Skeleton className={cn("min-h-40 w-1/2", className)} />}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={alt}
+        className={className}
+        onError={() => {
+          setHasError(true);
+        }}
+      />
+    </Suspense>
   );
 }

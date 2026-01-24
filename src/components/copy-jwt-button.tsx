@@ -1,17 +1,18 @@
-import { KeyRoundIcon } from "lucide-react";
-import { useContext } from "react";
-import { toast } from "react-toastify";
+"use client";
 
-import { AppContext } from "@/app-context.ts";
+import { KeyRoundIcon } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
+} from "@/components/ui/tooltip";
+import { AUTH_COOKIE_NAMES, getCookie } from "@/lib/cookies";
 
 async function copyJWTAccessToken() {
-  const accessToken = localStorage.getItem("access_token");
+  const accessToken = getCookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN);
 
   if (accessToken == null) {
     toast.error("Nie znaleziono zapisanego tokenu");
@@ -26,11 +27,17 @@ async function copyJWTAccessToken() {
   }
 }
 
-export function CopyJWTAccessTokenButton() {
-  const appContext = useContext(AppContext);
+interface CopyJWTAccessTokenButtonProps {
+  isAuthenticated: boolean;
+  isGuest: boolean;
+}
 
+export function CopyJWTAccessTokenButton({
+  isAuthenticated,
+  isGuest,
+}: CopyJWTAccessTokenButtonProps) {
   if (process.env.NODE_ENV !== "development") {
-    return;
+    return null;
   }
 
   return (
@@ -40,16 +47,18 @@ export function CopyJWTAccessTokenButton() {
           onClick={copyJWTAccessToken}
           size="icon"
           variant="outline"
-          disabled={!appContext.isAuthenticated}
+          disabled={!isAuthenticated || isGuest}
           className="pointer-events-auto!"
         >
           <KeyRoundIcon />
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {appContext.isAuthenticated
+        {isAuthenticated && !isGuest
           ? "Skopiuj token JWT"
-          : "Zaloguj się żeby skopiować token JWT"}
+          : isGuest
+            ? "Kopiowanie tokenu nie jest dostępne w trybie gościa"
+            : "Zaloguj się żeby skopiować token JWT"}
       </TooltipContent>
     </Tooltip>
   );

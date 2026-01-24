@@ -1,12 +1,12 @@
 import { AlertCircleIcon } from "lucide-react";
 import { useContext } from "react";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { SettingsFormProps } from "@/types/user.ts";
+import type { SettingsFormProps } from "@/types/user";
 
 export function NotificationsForm({
   settings,

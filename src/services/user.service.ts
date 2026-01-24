@@ -1,4 +1,6 @@
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { getCookie } from "@/lib/cookies";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import { BaseApiService } from "./base-api.service";
 import type { AlertData, GradesData, UserData, UserSettings } from "./types";
@@ -12,7 +14,7 @@ export class UserService extends BaseApiService {
    * Fetch current user data
    */
   async getUserData(): Promise<UserData> {
-    const response = await this.get<UserData>("/user/");
+    const response = await this.get<UserData>("user/");
     return response.data;
   }
 
@@ -23,7 +25,7 @@ export class UserService extends BaseApiService {
     if (this.isGuestMode()) {
       throw new Error("Cannot update profile in guest mode");
     }
-    const response = await this.patch<UserData>("/user/", userData);
+    const response = await this.patch<UserData>("user/", userData);
     return response.data;
   }
 
@@ -38,7 +40,7 @@ export class UserService extends BaseApiService {
       }
       return { ...DEFAULT_USER_SETTINGS };
     }
-    const response = await this.get<UserSettings>("/settings/");
+    const response = await this.get<UserSettings>("settings/");
     const settings = response.data;
     this.storeSettings(settings);
     return settings;
@@ -59,12 +61,18 @@ export class UserService extends BaseApiService {
       });
       return { ...DEFAULT_USER_SETTINGS, ...storedSettings, ...settings };
     }
-    const response = await this.patch<UserSettings>("/settings/", settings);
+    const response = await this.patch<UserSettings>("settings/", settings);
     const updatedSettings = response.data;
-    localStorage.setItem(
-      STORAGE_KEYS.SETTINGS,
-      JSON.stringify(updatedSettings),
-    );
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          STORAGE_KEYS.SETTINGS,
+          JSON.stringify(updatedSettings),
+        );
+      } catch (error) {
+        console.error("Error updating local settings:", error);
+      }
+    }
     return updatedSettings;
   }
 
@@ -72,7 +80,7 @@ export class UserService extends BaseApiService {
    * Get user grades
    */
   async getGrades(): Promise<GradesData> {
-    const response = await this.get<GradesData>("/grades/");
+    const response = await this.get<GradesData>("grades/");
     return response.data;
   }
 
@@ -80,41 +88,9 @@ export class UserService extends BaseApiService {
    * Generate OTP for login
    */
   async generateOTP(email: string): Promise<{ message: string }> {
-    const response = await this.post<{ message: string }>("/generate-otp/", {
+    const response = await this.post<{ message: string }>("generate-otp/", {
       email,
     });
-    return response.data;
-  }
-
-  /**
-   * Verify OTP for login
-   */
-  async verifyOTP(
-    email: string,
-    otp: string,
-  ): Promise<{ access: string; refresh: string }> {
-    const response = await this.post<{ access: string; refresh: string }>(
-      "/login-otp/",
-      {
-        email,
-        otp,
-      },
-    );
-    return response.data;
-  }
-
-  /**
-   * Login with link token
-   */
-  async loginWithLink(
-    token: string,
-  ): Promise<{ access: string; refresh: string }> {
-    const response = await this.post<{ access: string; refresh: string }>(
-      "/login-link/",
-      {
-        token,
-      },
-    );
     return response.data;
   }
 
@@ -122,7 +98,7 @@ export class UserService extends BaseApiService {
    * Get alerts
    */
   async getAlerts(): Promise<AlertData[]> {
-    const response = await this.get<AlertData[]>("/alerts/");
+    const response = await this.get<AlertData[]>("alerts/");
     return response.data;
   }
 
@@ -130,36 +106,17 @@ export class UserService extends BaseApiService {
    * Send feedback/bug report
    */
   async sendFeedback(feedbackData: Record<string, unknown>): Promise<object> {
-    const response = await this.post<object>("/feedback/send", feedbackData);
+    const response = await this.post<object>("feedback/send", feedbackData);
     return response.data;
-  }
-
-  /**
-   * Store user data in localStorage
-   */
-  storeUserData(userData: UserData): void {
-    try {
-      localStorage.setItem("profile_picture", userData.photo);
-      localStorage.setItem("is_staff", userData.is_staff.toString());
-      localStorage.setItem("user_id", userData.id);
-    } catch (error) {
-      console.error("Error storing user data:", error);
-    }
-  }
-
-  /**
-   * Clear stored user data
-   */
-  clearStoredUserData(): void {
-    localStorage.removeItem("profile_picture");
-    localStorage.removeItem("is_staff");
-    localStorage.removeItem("user_id");
   }
 
   /**
    * Get stored settings
    */
   getStoredSettings(): UserSettings | null {
+    if (typeof window === "undefined") {
+      return null;
+    }
     try {
       const stored = localStorage.getItem("settings");
       if (stored !== null && stored.trim() !== "") {
@@ -176,6 +133,9 @@ export class UserService extends BaseApiService {
    * Store settings in localStorage
    */
   storeSettings(settings: UserSettings): void {
+    if (typeof window === "undefined") {
+      return;
+    }
     try {
       localStorage.setItem("settings", JSON.stringify(settings));
     } catch (error) {
@@ -187,6 +147,12 @@ export class UserService extends BaseApiService {
    * Check if user is in guest mode
    */
   isGuestMode(): boolean {
-    return localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    if (typeof window === "undefined") {
+      return false;
+    }
+    // Check cookie first, then localStorage for legacy support
+    const fromCookie = getCookie(GUEST_COOKIE_NAME) === "true";
+    const fromStorage = localStorage.getItem(STORAGE_KEYS.IS_GUEST) === "true";
+    return fromCookie || fromStorage;
   }
 }

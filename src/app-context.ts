@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext } from "react";
 
 import type { AppContextType } from "./app-context-type";
@@ -12,5 +14,6 @@ export const AppContext = createContext<AppContextType>({
   setGuest: () => {
     // no-op
   },
+  user: undefined,
   services: null as unknown as ServiceRegistry, // This will be set in the provider
 });

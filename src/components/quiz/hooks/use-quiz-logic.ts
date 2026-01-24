@@ -1,19 +1,17 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
-import { invariant } from "@/lib/invariant";
 import {
   checkAnswerCorrectness,
   getMasteredCount,
   pickNextQuestion,
 } from "@/lib/session-utils";
+import { getDeterministicShuffle } from "@/lib/shuffle-utils";
 import type {
   AnswerRecord,
   Question,
-  Quiz,
-  QuizSession,
-} from "@/types/quiz.ts";
-import type { UserSettings } from "@/types/user.ts";
-import { DEFAULT_USER_SETTINGS } from "@/types/user.ts";
+  QuizWithUserProgress,
+} from "@/types/quiz";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import {
   createAnswerRecord,
@@ -23,24 +21,39 @@ import {
 } from "./quiz-runtime-reducer";
 import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
 import { useQuizContinuity } from "./use-quiz-continuity";
+import { useQuizData } from "./use-quiz-data";
 import { useStudyTimer } from "./use-study-timer";
 
 export function useQuizLogic({
   quizId,
   appContext,
 }: UseQuizLogicParameters): UseQuizLogicResult {
-  const [meta, setMeta] = useState<{
-    quiz: Quiz | null;
-    loading: boolean;
-    userSettings: UserSettings;
-  }>({
-    quiz: null,
-    loading: true,
-    userSettings: { ...DEFAULT_USER_SETTINGS },
-  });
-  const { quiz, loading, userSettings } = meta;
+  const { data: initialData } = useQuizData(quizId);
+  const quiz = initialData;
+  const userSettings = initialData.user_settings ?? {
+    ...DEFAULT_USER_SETTINGS,
+  };
 
-  const [runtime, dispatch] = useReducer(runtimeReducer, initialRuntime);
+  const [runtime, dispatch] = useReducer(
+    runtimeReducer,
+    initialData,
+    (data) => {
+      const payload = getInitialSessionPayload(data);
+      return runtimeReducer(initialRuntime, {
+        type: "INIT_SESSION",
+        payload,
+      });
+    },
+  );
+
+  useEffect(() => {
+    const payload = getInitialSessionPayload(initialData);
+
+    dispatch({
+      type: "INIT_SESSION",
+      payload,
+    });
+  }, [initialData]);
 
   const {
     currentQuestion,
@@ -54,17 +67,20 @@ export function useQuizLogic({
   } = runtime;
 
   const {
-    studyTime,
+    store: timerStore,
     setFromLoaded: setTimer,
-    startTimeRef,
-  } = useStudyTimer(isQuizFinished, 0);
+    getStartTime,
+  } = useStudyTimer(
+    isQuizFinished,
+    initialData.current_session?.study_time ?? 0,
+  );
+
+  const getCurrentStudyTime = () => timerStore.getSnapshot();
 
   // refs for continuity
   const currentQuestionRef = useRef<Question | null>(null);
   const answersRef = useRef<AnswerRecord[]>([]);
   const selectedAnswersRef = useRef<string[]>([]);
-
-  // refs for continuity
   const checkAnswerRef = useRef<
     (remote?: boolean, nextQuestion?: Question | null) => void
   >(() => {
@@ -82,13 +98,13 @@ export function useQuizLogic({
     getCurrentState: () => ({
       question: currentQuestionRef.current,
       answers: answersRef.current,
-      startTime: startTimeRef.current,
+      startTime: getStartTime(),
       wrongAnswers: answerCounts.wrong,
       correctAnswers: answerCounts.correct,
       selectedAnswers: selectedAnswersRef.current,
     }),
     onInitialSync: (d) => {
-      startTimeRef.current = d.startTime;
+      timerStore.setStartTime(d.startTime);
       dispatch({
         type: "APPLY_LOADED_PROGRESS",
         payload: {
@@ -105,6 +121,7 @@ export function useQuizLogic({
     onAnswerChecked: (nextQuestion) => {
       checkAnswerRef.current(true, nextQuestion);
     },
+    userId: appContext.user?.user_id,
   });
 
   // effects to keep refs updated
@@ -114,108 +131,73 @@ export function useQuizLogic({
     selectedAnswersRef.current = selectedAnswers;
   }, [currentQuestion, answers, selectedAnswers]);
 
-  // fetch logic
-  async function fetchQuiz(): Promise<Quiz | null> {
-    try {
-      invariant(quizId, "Quiz ID must be defined");
-      return await appContext.services.quiz.getQuiz(quizId);
-    } catch {
-      return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const checkAnswer = (
+    remote = false,
+    nextQuestionOverride?: Question | null,
+  ) => {
+    if (questionChecked || currentQuestionRef.current == null) {
+      return;
     }
-  }
 
-  async function fetchSettings(): Promise<UserSettings> {
-    try {
-      return await appContext.services.user.getUserSettings();
-    } catch {
-      /* ignore */
-    }
-    return { ...DEFAULT_USER_SETTINGS };
-  }
-
-  async function loadProgress(sync: boolean): Promise<QuizSession | null> {
-    return await appContext.services.quiz.getQuizProgress(quizId, sync);
-  }
-
-  const checkAnswer = useCallback(
-    (remote = false, nextQuestionOverride?: Question | null) => {
-      if (questionChecked || currentQuestionRef.current == null) {
-        return;
-      }
-
-      const isCorrect = checkAnswerCorrectness(
-        currentQuestionRef.current,
-        selectedAnswers,
-      );
-      const newAnswer = createAnswerRecord(
-        currentQuestionRef.current.id,
-        selectedAnswers,
-        isCorrect,
-      );
-      const updatedAnswers = [...runtime.answers, newAnswer];
-      const nextQuestion_ =
-        nextQuestionOverride ??
-        pickNextQuestion(
-          runtime.questions,
-          updatedAnswers,
-          runtime.settings,
-          currentQuestionRef.current.id,
-        );
-
-      dispatch({
-        type: "RECORD_ANSWER",
-        payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
-      });
-
-      if (!remote) {
-        void appContext.services.quiz.recordAnswer(
-          quizId,
-          newAnswer,
-          studyTime,
-          nextQuestion_?.id ?? null,
-        );
-      }
-
-      if (!remote) {
-        continuity.sendAnswerChecked(nextQuestion_);
-      }
-    },
-    [
-      appContext.services.quiz,
-      continuity,
-      questionChecked,
-      quizId,
-      runtime.answers,
-      runtime.questions,
-      runtime.settings,
+    const isCorrect = checkAnswerCorrectness(
+      currentQuestionRef.current,
       selectedAnswers,
-      studyTime,
-    ],
-  );
+    );
+    const newAnswer = createAnswerRecord(
+      currentQuestionRef.current.id,
+      selectedAnswers,
+      isCorrect,
+    );
+    const updatedAnswers = [...runtime.answers, newAnswer];
+    const nextQuestion_ =
+      nextQuestionOverride ??
+      pickNextQuestion(
+        runtime.questions,
+        updatedAnswers,
+        runtime.settings,
+        currentQuestionRef.current.id,
+      );
+
+    dispatch({
+      type: "RECORD_ANSWER",
+      payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
+    });
+
+    if (!remote) {
+      void appContext.services.quiz.recordAnswer(
+        quizId,
+        newAnswer,
+        getCurrentStudyTime(),
+        nextQuestion_?.id ?? null,
+      );
+    }
+
+    if (!remote) {
+      continuity.sendAnswerChecked(nextQuestion_);
+    }
+  };
 
   useEffect(() => {
     checkAnswerRef.current = checkAnswer;
   }, [checkAnswer]);
 
-  const nextQuestion = useCallback(() => {
-    if (quiz === null) {
-      return;
-    }
+  const nextQuestion = () => {
     dispatch({ type: "ADVANCE_QUESTION" });
     if (runtime.nextQuestion !== null) {
       continuity.sendQuestionUpdate(runtime.nextQuestion, []);
     }
-  }, [continuity, quiz, runtime.nextQuestion]);
+  };
 
-  const nextAction = useCallback(() => {
+  const nextAction = () => {
     if (questionChecked) {
       nextQuestion();
     } else {
       checkAnswer();
     }
-  }, [checkAnswer, nextQuestion, questionChecked]);
+  };
 
-  const skipQuestion = useCallback(() => {
+  const skipQuestion = () => {
     if (questionChecked) {
       nextQuestion();
       return;
@@ -246,7 +228,7 @@ export function useQuizLogic({
     void appContext.services.quiz.recordAnswer(
       quizId,
       newAnswer,
-      studyTime,
+      getCurrentStudyTime(),
       nextQuestion_?.id ?? null,
     );
 
@@ -255,89 +237,20 @@ export function useQuizLogic({
       continuity.sendQuestionUpdate(nextQuestion_, []);
     }
     dispatch({ type: "ADVANCE_QUESTION" });
-  }, [
-    appContext.services.quiz,
-    continuity,
-    nextQuestion,
-    questionChecked,
-    quizId,
-    runtime.answers,
-    runtime.questions,
-    runtime.settings,
-    studyTime,
-  ]);
+  };
 
-  const resetProgress = useCallback(async () => {
+  const resetProgress = async () => {
     await appContext.services.quiz.deleteQuizProgress(
       quizId,
       userSettings.sync_progress,
     );
-    if (quiz !== null) {
-      dispatch({
-        type: "RESET_PROGRESS",
-      });
-      setTimer(0, Date.now());
-    }
-  }, [
-    appContext.services.quiz,
-    quiz,
-    quizId,
-    userSettings.sync_progress,
-    setTimer,
-  ]);
-
-  // initial load
-  useEffect(() => {
-    void (async () => {
-      const _quiz = await fetchQuiz();
-      let nextMetaQuiz: Quiz | null = null;
-      let nextSettings = meta.userSettings;
-
-      if (_quiz != null) {
-        document.title = `${_quiz.title} - Testownik Solvro`;
-        nextSettings = await fetchSettings();
-
-        const progressSettings = {
-          initialReoccurrences: nextSettings.initial_reoccurrences,
-          wrongAnswerReoccurrences: nextSettings.wrong_answer_reoccurrences,
-        };
-
-        const saved = await loadProgress(nextSettings.sync_progress);
-
-        if (saved === null) {
-          dispatch({
-            type: "INIT_SESSION",
-            payload: {
-              questions: _quiz.questions,
-              settings: progressSettings,
-            },
-          });
-        } else {
-          dispatch({
-            type: "INIT_SESSION",
-            payload: {
-              questions: _quiz.questions,
-              settings: progressSettings,
-              answers: saved.answers,
-              currentQuestionId: saved.current_question,
-            },
-          });
-          setTimer(saved.study_time, Date.now() - saved.study_time * 1000);
-        }
-        nextMetaQuiz = _quiz;
-      }
-      setMeta({
-        quiz: nextMetaQuiz,
-        loading: false,
-        userSettings: nextSettings,
-      });
-    })();
-    // we only want to run this once on mount or when auth state changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appContext.isAuthenticated]);
+    dispatch({
+      type: "RESET_PROGRESS",
+    });
+    setTimer(0, Date.now());
+  };
 
   return {
-    loading,
     quiz,
     userSettings,
     state: {
@@ -352,7 +265,7 @@ export function useQuizLogic({
       wrongAnswersCount: answerCounts.wrong,
       masteredCount: mastered,
       totalQuestions: questions.length,
-      studyTime,
+      timerStore,
       answers,
     },
     continuity: {
@@ -375,4 +288,38 @@ export function useQuizLogic({
       },
     },
   } as const;
+}
+
+function getInitialSessionPayload(initialData: QuizWithUserProgress) {
+  const progressSettings = {
+    initialReoccurrences:
+      initialData.user_settings?.initial_reoccurrences ??
+      DEFAULT_USER_SETTINGS.initial_reoccurrences,
+    wrongAnswerReoccurrences:
+      initialData.user_settings?.wrong_answer_reoccurrences ??
+      DEFAULT_USER_SETTINGS.wrong_answer_reoccurrences,
+  };
+
+  const session = initialData.current_session;
+  let precomputedCurrentQuestion: Question | null = null;
+  if (session?.current_question != null) {
+    const savedQuestion = initialData.questions.find(
+      (q) => q.id === session.current_question,
+    );
+    if (savedQuestion !== undefined) {
+      const seed = `${session.id}-${String(session.study_time)}`;
+      precomputedCurrentQuestion = {
+        ...savedQuestion,
+        answers: getDeterministicShuffle(savedQuestion.answers, seed),
+      };
+    }
+  }
+
+  return {
+    questions: initialData.questions,
+    settings: progressSettings,
+    answers: session?.answers,
+    currentQuestionId: session?.current_question,
+    precomputedCurrentQuestion,
+  };
 }

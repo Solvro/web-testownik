@@ -1,14 +1,14 @@
 import { AlertCircleIcon } from "lucide-react";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import type { SettingsFormProps } from "@/types/user.ts";
+import type { SettingsFormProps } from "@/types/user";
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const appContext = useContext(AppContext);
@@ -27,20 +27,17 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const debouncedSave = useCallback(
-    (
-      key: "initial_reoccurrences" | "wrong_answer_reoccurrences",
-      value: number,
-    ) => {
-      if (timeoutRef.current !== undefined) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        onSettingChange(key, value);
-      }, 500);
-    },
-    [onSettingChange],
-  );
+  const debouncedSave = (
+    key: "initial_reoccurrences" | "wrong_answer_reoccurrences",
+    value: number,
+  ) => {
+    if (timeoutRef.current !== undefined) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      onSettingChange(key, value);
+    }, 500);
+  };
 
   useEffect(() => {
     return () => {
@@ -50,25 +47,19 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     };
   }, []);
 
-  const handleInitialReoccurrencesCommit = useCallback(
-    (sliderValue: number) => {
-      const transformedValue = Math.max(1, Math.round(sliderValue / 10));
-      setLocalInitialReoccurrences(transformedValue.toString());
-      setSliderInitialValue(transformedValue * 10);
-      onSettingChange("initial_reoccurrences", transformedValue);
-    },
-    [onSettingChange],
-  );
+  const handleInitialReoccurrencesCommit = (sliderValue: number) => {
+    const transformedValue = Math.max(1, Math.round(sliderValue / 10));
+    setLocalInitialReoccurrences(transformedValue.toString());
+    setSliderInitialValue(transformedValue * 10);
+    onSettingChange("initial_reoccurrences", transformedValue);
+  };
 
-  const handleWrongAnswerReoccurrencesCommit = useCallback(
-    (sliderValue: number) => {
-      const transformedValue = Math.round(sliderValue / 10);
-      setLocalWrongAnswerReoccurrences(transformedValue.toString());
-      setSliderWrongAnswerValue(transformedValue * 10);
-      onSettingChange("wrong_answer_reoccurrences", transformedValue);
-    },
-    [onSettingChange],
-  );
+  const handleWrongAnswerReoccurrencesCommit = (sliderValue: number) => {
+    const transformedValue = Math.round(sliderValue / 10);
+    setLocalWrongAnswerReoccurrences(transformedValue.toString());
+    setSliderWrongAnswerValue(transformedValue * 10);
+    onSettingChange("wrong_answer_reoccurrences", transformedValue);
+  };
 
   return (
     <>

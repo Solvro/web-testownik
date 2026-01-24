@@ -5,11 +5,11 @@ import {
   PencilLineIcon,
   SkullIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
-import { AppContext } from "@/app-context.ts";
+import { AppContext } from "@/app-context";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Question, Quiz } from "@/types/quiz.ts";
+import type { Question, Quiz } from "@/types/quiz";
 
 interface QuizActionButtonsProps {
   quiz: Quiz;
@@ -34,11 +34,12 @@ export function QuizActionButtons({
   disabled = false,
 }: QuizActionButtonsProps) {
   const appContext = useContext(AppContext);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const isMaintainer =
     (quiz.can_edit ?? false) ||
-    quiz.maintainer?.id === localStorage.getItem("user_id");
+    quiz.maintainer?.id === appContext.user?.user_id;
+
   const canUseQuestion = !disabled && question != null;
 
   const handleCopy = () => {
@@ -76,12 +77,12 @@ export function QuizActionButtons({
     );
   };
 
-  const handleEdit = async () => {
+  const handleEdit = () => {
     if (question == null) {
       toast.error("Nie można edytować pytania: brak pytania");
       return;
     }
-    await navigate(`/edit-quiz/${quiz.id}#question-${question.id}`);
+    router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
   };
 
   return (

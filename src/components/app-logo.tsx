@@ -1,20 +1,25 @@
-import React from "react";
+import Image from "next/image";
 
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
+
+interface AppLogoProps {
+  width?: number;
+  height?: number;
+  className?: string;
+}
 
 export function AppLogo({
+  width = 40,
+  height,
   className,
-  ...props
-}: React.ImgHTMLAttributes<HTMLImageElement> & {
-  className?: string;
-}) {
+}: AppLogoProps): React.JSX.Element {
   return (
-    <img
+    <Image
       src="/solvro_mono.svg"
-      alt="logo solvro"
-      width={40}
+      alt="Logo"
+      width={width}
+      height={height ?? width * 0.8}
       className={cn("invert dark:invert-0", className)}
-      {...props}
     />
   );
 }
