@@ -19,6 +19,13 @@ import type {
 } from "./types";
 import { STORAGE_KEYS } from "./types";
 
+export class GuestQuizNotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GuestQuizNotFoundError";
+  }
+}
+
 /**
  * Service for handling quiz-related API operations
  */
@@ -55,7 +62,7 @@ export class QuizService extends BaseApiService {
       const guestQuizzes = this.getGuestQuizzes();
       const quiz = guestQuizzes.find((q) => q.id === quizId);
       if (quiz === undefined) {
-        throw new Error("Quiz not found");
+        throw new GuestQuizNotFoundError("Quiz not found");
       }
 
       const result: QuizWithUserProgress = { ...quiz };
@@ -135,7 +142,7 @@ export class QuizService extends BaseApiService {
       const guestQuizzes = this.getGuestQuizzes();
       const quizIndex = guestQuizzes.findIndex((q) => q.id === quizId);
       if (quizIndex === -1) {
-        throw new Error("Quiz not found");
+        throw new GuestQuizNotFoundError("Quiz not found");
       }
       const updatedQuiz: Quiz = {
         ...guestQuizzes[quizIndex],
@@ -157,7 +164,7 @@ export class QuizService extends BaseApiService {
       const guestQuizzes = this.getGuestQuizzes();
       const filteredQuizzes = guestQuizzes.filter((q) => q.id !== quizId);
       if (filteredQuizzes.length === guestQuizzes.length) {
-        throw new Error("Quiz not found");
+        throw new GuestQuizNotFoundError("Quiz not found");
       }
       this.saveGuestQuizzes(filteredQuizzes);
       return;

@@ -19,6 +19,7 @@ export function useQuizData(quizId: string) {
         include: ["user_settings", "current_session"],
       });
     },
+    retry: 1,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

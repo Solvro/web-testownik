@@ -1,8 +1,16 @@
 "use client";
 
-import { AlertCircleIcon, HomeIcon, RefreshCwIcon } from "lucide-react";
+import {
+  AlertCircleIcon,
+  HomeIcon,
+  LogInIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 import Link from "next/link";
+import { useContext } from "react";
 
+import { AppContext } from "@/app-context";
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -18,6 +27,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { GuestQuizNotFoundError } from "@/services/quiz.service";
 
 export default function QuizError({
   error,
@@ -26,6 +36,40 @@ export default function QuizError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const appContext = useContext(AppContext);
+
+  if (error instanceof GuestQuizNotFoundError) {
+    return (
+      <Card>
+        <CardContent>
+          <div className="space-y-3 text-center">
+            <p>Quiz nie został znaleziony lub nie jest dostępny dla gości.</p>
+            <p>
+              Możesz spróbować się zalogować, aby uzyskać dostęp do tego quizu,
+              lub skontaktować się z jego twórcą aby ustawić dostępność.
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button
+                onClick={() => {
+                  window.location.reload();
+                }}
+                variant="outline"
+              >
+                <RotateCcwIcon /> Spróbuj ponownie
+              </Button>
+              <Link href="/connect-account">
+                <Button>
+                  <LogInIcon />
+                  Zaloguj się
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Empty className="border">
       <EmptyHeader>
@@ -37,9 +81,16 @@ export default function QuizError({
           Nie udało się załadować quizu. Może nie istnieć lub wystąpił problem z
           połączeniem.
         </EmptyDescription>
-        <EmptyDescription>
-          Upewnij się, że quiz istnieje i masz do niego dostęp.
-        </EmptyDescription>
+        {appContext.isAuthenticated ? (
+          <EmptyDescription>
+            Upewnij się, że quiz istnieje i masz do niego dostęp.
+          </EmptyDescription>
+        ) : (
+          <EmptyDescription>
+            Upewnij się, że quiz istnieje i został udostępniony także dla osób
+            bez konta.
+          </EmptyDescription>
+        )}
       </EmptyHeader>
       <EmptyContent>
         <Accordion type="single" collapsible className="w-full">
@@ -64,12 +115,21 @@ export default function QuizError({
             <RefreshCwIcon />
             Spróbuj ponownie
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/">
-              <HomeIcon />
-              Strona główna
-            </Link>
-          </Button>
+          {appContext.isAuthenticated ? (
+            <Button asChild variant="outline">
+              <Link href="/">
+                <HomeIcon />
+                Strona główna
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link href="/connect-account">
+                <LogInIcon />
+                Zaloguj się
+              </Link>
+            </Button>
+          )}
         </div>
         <EmptyDescription>
           Jeśli problem się powtarza, możesz utworzyć zgłoszenie na{" "}

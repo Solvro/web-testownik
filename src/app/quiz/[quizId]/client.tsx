@@ -1,14 +1,12 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { LogInIcon, RotateCcwIcon } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, startTransition, useContext, useEffect } from "react";
 import ReactPlayer from "react-player";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
-import { LoginPrompt } from "@/components/login-prompt";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
@@ -16,7 +14,6 @@ import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -65,10 +62,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   });
 
   useEffect(() => {
-    if (quiz === null) {
-      return;
-    }
-
     if (localStorage.getItem("shown_reoccurrences_info") === null) {
       toast.info("Informacja o powtórzeniach", {
         description: (
@@ -92,65 +85,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       localStorage.setItem("shown_reoccurrences_info", "true");
     }
   }, [quiz]);
-
-  if (quiz === null) {
-    if (!appContext.isAuthenticated && !appContext.isGuest) {
-      return <LoginPrompt />;
-    }
-    if (appContext.isGuest) {
-      return (
-        <Card>
-          <CardContent>
-            <div className="space-y-3 text-center">
-              <p>Quiz nie został znaleziony lub nie jest dostępny dla gości.</p>
-              <p>
-                Możesz spróbować się zalogować, aby uzyskać dostęp do tego
-                quizu, lub skontaktować się z jego twórcą aby ustawić
-                dostępność.
-              </p>
-              <div className="flex justify-center gap-2">
-                <Button
-                  onClick={() => {
-                    window.location.reload();
-                  }}
-                  variant="outline"
-                >
-                  <RotateCcwIcon /> Spróbuj ponownie
-                </Button>
-                <Link href="/connect-account">
-                  <Button>
-                    <LogInIcon />
-                    Zaloguj się
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <Card>
-        <CardContent>
-          <div className="space-y-3 text-center">
-            <p>
-              Nie udało się załadować quizu, upewnij się że jest on dla Ciebie
-              dostępny lub spróbuj ponownie później.
-            </p>
-            <Button
-              onClick={() => {
-                window.location.reload();
-              }}
-              variant="outline"
-            >
-              <RotateCcwIcon /> Spróbuj ponownie
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <>
