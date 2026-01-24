@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { LoginOTPPageClient } from "./client";
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function LoginOTPPage() {
-  return <LoginOTPPageClient />;
+  return (
+    <Suspense>
+      <LoginOTPPageClient />
+    </Suspense>
+  );
 }
