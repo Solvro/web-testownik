@@ -107,6 +107,7 @@ export class UserService extends BaseApiService {
         email,
         otp,
       },
+      { includeCredentials: true },
     );
     return response.data;
   }
@@ -122,6 +123,7 @@ export class UserService extends BaseApiService {
       {
         token,
       },
+      { includeCredentials: true },
     );
     return response.data;
   }

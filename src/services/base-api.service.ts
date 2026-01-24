@@ -271,11 +271,13 @@ export class BaseApiService {
   protected async post<T>(
     url: string,
     data?: unknown,
+    options: { includeCredentials?: boolean } = {},
   ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(url, {
       method: "POST",
       body:
         data !== undefined && data !== null ? JSON.stringify(data) : undefined,
+      credentials: options.includeCredentials === true ? "include" : undefined,
     });
   }
 

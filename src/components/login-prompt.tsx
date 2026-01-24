@@ -97,6 +97,15 @@ export function LoginPrompt(): React.JSX.Element {
                       Token logowania jest nieprawidłowy lub wygasł. Spróbuj
                       ponownie się zalogować.
                     </AlertDescription>
+                  ) : error === "missing_token" ? (
+                    <AlertDescription>
+                      Brak tokenu logowania. Upewnij się, że kliknąłeś link z
+                      e-maila.
+                    </AlertDescription>
+                  ) : error === "server_error" ? (
+                    <AlertDescription>
+                      Wystąpił błąd serwera. Spróbuj ponownie się zalogować.
+                    </AlertDescription>
                   ) : error === "usos_unavailable" ? (
                     <AlertDescription>
                       System USOS jest obecnie niedostępny. Spróbuj ponownie

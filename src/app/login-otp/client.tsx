@@ -1,7 +1,6 @@
 "use client";
 
-import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
@@ -15,22 +14,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+
+function getUrlErrorMessage(errorCode: string | null): string | null {
+  switch (errorCode) {
+    case "missing_email": {
+      return "Brak adresu e-mail. Wprowadź swój adres e-mail.";
+    }
+    case null:
+    default: {
+      return null;
+    }
+  }
+}
 
 export function LoginOTPPageClient() {
   const appContext = useContext(AppContext);
   const router = useRouter();
-  const [submitted, setSubmitted] = useState(false);
+  const urlSearchParameters = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
-  const [otp, setOtp] = useState<string>("");
+
+  const urlError = urlSearchParameters.get("error");
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -40,8 +46,9 @@ export function LoginOTPPageClient() {
     setSubmitting(true);
     try {
       await appContext.services.user.generateOTP(email);
-      setSubmitted(true);
       setError(null);
+      // Redirect to code entry page
+      router.push(`/login-otp/code?email=${encodeURIComponent(email.trim())}`);
     } catch (error_) {
       const apiError = error_ as Error;
       if (apiError.message.includes("404")) {
@@ -49,103 +56,11 @@ export function LoginOTPPageClient() {
       } else {
         setError("Niezidentyfikowany błąd.");
       }
-    } finally {
       setSubmitting(false);
     }
   };
 
-  const handleOTPSubmit = async (event_: React.FormEvent<HTMLFormElement>) => {
-    event_.preventDefault();
-    if (submitting) {
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await appContext.services.user.verifyOTP(email.trim(), otp);
-      appContext.setAuthenticated(true);
-      appContext.setGuest(false);
-      router.push("/");
-    } catch {
-      setError("Niezidentyfikowany błąd.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (submitted) {
-    return (
-      <div className="flex justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Kod jednorazowy został wysłany</CardTitle>
-            <CardDescription>
-              Sprawdź swoją skrzynkę i wprowadź kod poniżej
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={handleOTPSubmit}
-              className="flex flex-col items-center"
-            >
-              <Label className="mb-2 text-sm font-medium" htmlFor="otp">
-                Wprowadź kod jednorazowy
-              </Label>
-              <InputOTP
-                id="otp"
-                maxLength={6}
-                value={otp}
-                onChange={(value) => {
-                  setOtp(value);
-                }}
-                pattern={REGEXP_ONLY_DIGITS}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-              <Button
-                type="submit"
-                disabled={submitting || otp.length < 6}
-                className="mt-6 w-full"
-              >
-                {submitting ? "Logowanie..." : "Zaloguj się"}
-              </Button>
-            </form>
-            {error != null && (
-              <Alert variant="destructive" className="mt-4 space-y-2">
-                <AlertDescription>
-                  <p>
-                    Wystąpił błąd podczas logowania za pomocą kodu
-                    jednorazowego.
-                  </p>
-                  <p>{error}</p>
-                  <Button
-                    variant="link"
-                    className="h-auto p-0"
-                    onClick={() => {
-                      setSubmitted(false);
-                      setError(null);
-                      setOtp("");
-                    }}
-                  >
-                    Wyślij ponownie kod
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const urlErrorMessage = getUrlErrorMessage(urlError);
 
   return (
     <div className="flex justify-center">
@@ -177,11 +92,11 @@ export function LoginOTPPageClient() {
               {submitting ? "Wysyłanie..." : "Wyślij kod"}
             </Button>
           </form>
-          {error != null && (
+          {(error != null || urlErrorMessage != null) && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>
                 <p>Wystąpił błąd podczas wysyłania kodu.</p>
-                <p>{error}</p>
+                <p>{error ?? urlErrorMessage}</p>
               </AlertDescription>
             </Alert>
           )}
