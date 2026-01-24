@@ -8,7 +8,8 @@ import {
   RotateCcwIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useContext } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import {
@@ -27,6 +28,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { API_URL } from "@/lib/api";
 import { GuestQuizNotFoundError } from "@/services/quiz.service";
 
 export default function QuizError({
@@ -37,6 +39,15 @@ export default function QuizError({
   reset: () => void;
 }) {
   const appContext = useContext(AppContext);
+  const [currentUrl, setCurrentUrl] = useState("");
+  const searchParameters = useSearchParams();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const redirect = searchParameters.get("redirect");
+    const url = new URL(redirect ?? pathname, window.location.origin);
+    setCurrentUrl(url.toString());
+  }, [pathname, searchParameters]);
 
   if (error instanceof GuestQuizNotFoundError) {
     return (
@@ -124,10 +135,14 @@ export default function QuizError({
             </Button>
           ) : (
             <Button asChild variant="outline">
-              <Link href="/connect-account">
+              <a
+                href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+                  currentUrl,
+                )}`}
+              >
                 <LogInIcon />
                 Zaloguj się
-              </Link>
+              </a>
             </Button>
           )}
         </div>
