@@ -493,7 +493,9 @@ export function ConnectGuestAccount() {
             <div className="grid gap-2">
               <Button asChild>
                 <a
-                  href={`${API_URL}/login/usos?jwt=true&redirect=${redirectUrl}`}
+                  href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+                    redirectUrl,
+                  )}`}
                 >
                   Zaloguj się z USOS
                 </a>
