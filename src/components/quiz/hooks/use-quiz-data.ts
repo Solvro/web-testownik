@@ -22,7 +22,7 @@ export function useQuizData(quizId: string) {
     retry: 1,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: appContext.isGuest ? "always" : false,
     refetchOnReconnect: false,
   });
 }

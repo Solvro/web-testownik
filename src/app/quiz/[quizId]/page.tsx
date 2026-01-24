@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { Loader } from "@/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
-import { AUTH_COOKIE_NAMES } from "@/lib/cookies";
+import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { getQueryClient } from "@/lib/query-client";
 import { ServiceRegistry } from "@/services";
 
@@ -21,7 +21,7 @@ export default async function QuizPage({
 }: PageProps<"/quiz/[quizId]">) {
   const { quizId } = await params;
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get(AUTH_COOKIE_NAMES.ACCESS_TOKEN)?.value;
+  const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
 
   const queryClient = getQueryClient();
 
