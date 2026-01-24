@@ -95,40 +95,6 @@ export class UserService extends BaseApiService {
   }
 
   /**
-   * Verify OTP for login
-   */
-  async verifyOTP(
-    email: string,
-    otp: string,
-  ): Promise<{ access: string; refresh: string }> {
-    const response = await this.post<{ access: string; refresh: string }>(
-      "login-otp/",
-      {
-        email,
-        otp,
-      },
-      { includeCredentials: true },
-    );
-    return response.data;
-  }
-
-  /**
-   * Login with link token
-   */
-  async loginWithLink(
-    token: string,
-  ): Promise<{ access: string; refresh: string }> {
-    const response = await this.post<{ access: string; refresh: string }>(
-      "login-link/",
-      {
-        token,
-      },
-      { includeCredentials: true },
-    );
-    return response.data;
-  }
-
-  /**
    * Get alerts
    */
   async getAlerts(): Promise<AlertData[]> {
