@@ -132,7 +132,7 @@ export function QuestionCard({
     <Card>
       <CardHeader>
         <ScrollArea className="w-full min-w-0">
-          <CardTitle className="text-md mb-1 font-medium">
+          <CardTitle className="mb-1 leading-6 font-medium">
             <Markdown
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
