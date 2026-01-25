@@ -499,7 +499,30 @@ export const useImportQuiz = () => {
   const processAndSubmitImport = async (data: unknown) => {
     const validationError = validateQuiz(data);
     if (validationError === null) {
-      await submitImport(data as Quiz);
+      type RawAnswer = Omit<Answer, "id" | "order"> & {
+        order?: number;
+      };
+      type RawQuestion = Omit<Question, "id" | "order" | "answers"> & {
+        order?: number;
+        answers: RawAnswer[];
+      };
+      type RawQuiz = Omit<Quiz, "questions"> & { questions: RawQuestion[] };
+
+      const quizData = data as RawQuiz;
+
+      const normalizedQuiz: Quiz = {
+        ...quizData,
+        questions: quizData.questions.map((q, qIndex) => ({
+          ...q,
+          order: q.order ?? qIndex + 1,
+          answers: q.answers.map((a, aIndex) => ({
+            ...a,
+            order: a.order ?? aIndex + 1,
+          })),
+        })),
+      } as Quiz;
+
+      await submitImport(normalizedQuiz);
       return;
     }
     const legacyError = validateLegacyQuiz(data);
