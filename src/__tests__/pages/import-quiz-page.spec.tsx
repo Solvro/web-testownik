@@ -111,11 +111,21 @@ describe("ImportQuizPage", () => {
       ).toBeVisible();
     });
     it("should correctly handle image_url and image fields preservation", async () => {
-      let capturedBody: { questions: { image_url?: string }[] } | undefined;
+      let capturedBody:
+        | {
+            questions: {
+              image_url?: string;
+              answers: { image_url?: string }[];
+            }[];
+          }
+        | undefined;
       server.use(
         http.post("*/quizzes/", async ({ request }) => {
           const body = (await request.json()) as {
-            questions: { image_url?: string }[];
+            questions: {
+              image_url?: string;
+              answers: { image_url?: string }[];
+            }[];
           };
           capturedBody = body;
           return HttpResponse.json({
@@ -135,7 +145,15 @@ describe("ImportQuizPage", () => {
             id: "q1",
             text: "Legacy Image",
             image: "legacy.png",
-            answers: [{ id: "a1", text: "A", is_correct: true, order: 1 }],
+            answers: [
+              {
+                id: "a1",
+                text: "A",
+                is_correct: true,
+                order: 1,
+                image: "legacy_ans.png",
+              },
+            ],
             order: 1,
             multiple: false,
           },
@@ -171,6 +189,9 @@ describe("ImportQuizPage", () => {
 
       expect(capturedBody).toBeDefined();
       expect(capturedBody?.questions[0].image_url).toBe("legacy.png");
+      expect(capturedBody?.questions[0].answers[0].image_url).toBe(
+        "legacy_ans.png",
+      );
       expect(capturedBody?.questions[1].image_url).toBe("new.png");
       expect(capturedBody?.questions[2].image_url).toBe("correct_url.png");
     });
