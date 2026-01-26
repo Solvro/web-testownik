@@ -435,18 +435,18 @@ function ImportQuizPageContent(): React.JSX.Element {
         {
             "order": 3,
             "text": "Pytanie ze zdjęciem",
-            "image": "https://example.com/image.jpg", // Opcjonalny
+            "image_url": "https://example.com/image.jpg", // Opcjonalny
             "answers": [
                 {
                     "order": 1,
                     "text": "Odpowiedź 1",
-                    "image": "https://example.com/image2.jpg", // Opcjonalny
+                    "image_url": "https://example.com/image2.jpg", // Opcjonalny
                     "is_correct": true
                 },
                 {
                     "order": 2,
                     "text": "Odpowiedź 2",
-                    "image": "https://example.com/image3.jpg", // Opcjonalny
+                    "image_url": "https://example.com/image3.jpg", // Opcjonalny
                     "is_correct": false
                 }
             ],

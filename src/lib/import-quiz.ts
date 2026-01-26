@@ -512,14 +512,22 @@ export const useImportQuiz = () => {
 
       const normalizedQuiz: Quiz = {
         ...quizData,
-        questions: quizData.questions.map((q, qIndex) => ({
-          ...q,
-          order: q.order ?? qIndex + 1,
-          answers: q.answers.map((a, aIndex) => ({
-            ...a,
-            order: a.order ?? aIndex + 1,
-          })),
-        })),
+        questions: quizData.questions.map((q, qIndex) => {
+          const { image: qImage, ...qRest } = q;
+          return {
+            ...qRest,
+            image_url: q.image_url ?? qImage,
+            order: q.order ?? qIndex + 1,
+            answers: q.answers.map((a, aIndex) => {
+              const { image: aImage, ...aRest } = a;
+              return {
+                ...aRest,
+                image_url: a.image_url ?? aImage,
+                order: a.order ?? aIndex + 1,
+              };
+            }),
+          };
+        }),
       } as Quiz;
 
       await submitImport(normalizedQuiz);

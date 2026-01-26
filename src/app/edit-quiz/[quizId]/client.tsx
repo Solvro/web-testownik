@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ function EditQuizPageContent({
 }: {
   quizId: string;
 }): React.JSX.Element {
+  const queryClient = useQueryClient();
   const appContext = useContext(AppContext);
   const router = useRouter();
   const searchParameters = useSearchParams();
@@ -96,6 +98,7 @@ function EditQuizPageContent({
   ): Promise<boolean> => {
     const ok = await handleSave(data);
     if (ok) {
+      await queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
       const navigation = window.navigation as Navigation | null;
 
       if (navigation?.canGoBack === true) {

@@ -17,7 +17,8 @@ export interface Answer {
   order: number;
   text: string;
   is_correct: boolean;
-  image?: string; // URL to image
+  image?: string; // Read-only (Display)
+  image_url?: string | null; // Write-only (Input for external URLs)
 }
 
 export interface Question {
@@ -26,7 +27,8 @@ export interface Question {
   text: string;
   explanation?: string;
   multiple: boolean; // Single or multiple choice
-  image?: string; // URL to image
+  image?: string; // Read-only (Display)
+  image_url?: string | null; // Write-only (Input for external URLs)
   answers: Answer[];
 }
 
