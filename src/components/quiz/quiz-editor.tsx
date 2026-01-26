@@ -183,7 +183,15 @@ export function QuizEditor({
     );
   };
   const removeQuestion = (id: string) => {
-    setQuestions((previous) => previous.filter((q) => q.id !== id));
+    setQuestions((previous) => {
+      const filtered = previous.filter((q) => q.id !== id);
+      setPreviousQuestionOrder(filtered.length);
+
+      return filtered.map((q, index) => ({
+        ...q,
+        order: index + 1,
+      }));
+    });
   };
 
   const triggerSave = async (closeAfter?: boolean) => {
