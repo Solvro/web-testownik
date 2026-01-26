@@ -93,14 +93,16 @@ export const validateQuiz = (input: unknown): string | null => {
       )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
-    if (typeof q.id !== "string") {
+    if (q.id !== undefined && typeof q.id !== "string") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe ID.`;
     }
 
-    if (questionIds.has(q.id)) {
-      return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
+    if (typeof q.id === "string") {
+      if (questionIds.has(q.id)) {
+        return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
+      }
+      questionIds.add(q.id);
     }
-    questionIds.add(q.id);
 
     for (const [answerIndex, answer] of q.answers.entries()) {
       if (typeof answer !== "object" || answer === null) {
@@ -110,18 +112,20 @@ export const validateQuiz = (input: unknown): string | null => {
       }
       const a = answer as Record<string, unknown>;
 
-      if (typeof a.id !== "string") {
+      if (a.id !== undefined && typeof a.id !== "string") {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
         )} musi mieć prawidłowe ID.`;
       }
 
-      if (answerIds.has(a.id)) {
-        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
-          questionIndex + 1,
-        )} ma zduplikowane ID w całym quizie: ${a.id}.`;
+      if (typeof a.id === "string") {
+        if (answerIds.has(a.id)) {
+          return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+            questionIndex + 1,
+          )} ma zduplikowane ID w całym quizie: ${a.id}.`;
+        }
+        answerIds.add(a.id);
       }
-      answerIds.add(a.id);
 
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(a, ALLOWED_ANSWER_KEYS)) {
