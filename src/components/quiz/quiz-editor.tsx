@@ -39,7 +39,7 @@ type QuestionWithAdvanced = Question & { advanced?: boolean };
 const sanitizeQuestions = (questions: QuestionWithAdvanced[]) =>
   questions.map((q) => {
     const isAdvanced = Boolean(q.advanced);
-    const { advanced, image_url, ...rest } = q;
+    const { advanced, image, image_url, ...rest } = q;
     return {
       ...rest,
       image_url: isAdvanced ? image_url : undefined,

@@ -110,6 +110,70 @@ describe("ImportQuizPage", () => {
         }),
       ).toBeVisible();
     });
+    it("should correctly handle image_url and image fields preservation", async () => {
+      let capturedBody: { questions: { image_url?: string }[] } | undefined;
+      server.use(
+        http.post("*/quizzes/", async ({ request }) => {
+          const body = (await request.json()) as {
+            questions: { image_url?: string }[];
+          };
+          capturedBody = body;
+          return HttpResponse.json({
+            id: "new-id",
+            ...body,
+          });
+        }),
+      );
+
+      const { clickImport, inputJson, switchToJson } = await setup();
+
+      const mixedQuiz = {
+        title: "Mixed Image Quiz",
+        description: "Testing image fields",
+        questions: [
+          {
+            id: "q1",
+            text: "Legacy Image",
+            image: "legacy.png",
+            answers: [{ id: "a1", text: "A", is_correct: true, order: 1 }],
+            order: 1,
+            multiple: false,
+          },
+          {
+            id: "q2",
+            text: "New Image URL",
+            image_url: "new.png",
+            answers: [{ id: "a2", text: "A", is_correct: true, order: 1 }],
+            order: 2,
+            multiple: false,
+          },
+          {
+            id: "q3",
+            text: "Both Fields",
+            image: "legacy_clobber.png",
+            image_url: "correct_url.png",
+            answers: [{ id: "a3", text: "A", is_correct: true, order: 1 }],
+            order: 3,
+            multiple: false,
+          },
+        ],
+      };
+
+      await switchToJson();
+      inputJson(JSON.stringify(mixedQuiz));
+      await clickImport();
+
+      expect(
+        await screen.findByRole("heading", {
+          name: /quiz "Mixed Image Quiz" został zaimportowany/i,
+        }),
+      ).toBeVisible();
+
+      expect(capturedBody).toBeDefined();
+      expect(capturedBody?.questions[0].image_url).toBe("legacy.png");
+      expect(capturedBody?.questions[1].image_url).toBe("new.png");
+      expect(capturedBody?.questions[2].image_url).toBe("correct_url.png");
+    });
   });
 
   describe("file import", () => {

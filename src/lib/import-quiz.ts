@@ -514,11 +514,11 @@ export const useImportQuiz = () => {
         ...quizData,
         questions: quizData.questions.map((q, qIndex) => ({
           ...q,
-          image_url: q.image,
+          image_url: q.image_url ?? q.image,
           order: q.order ?? qIndex + 1,
           answers: q.answers.map((a, aIndex) => ({
             ...a,
-            image_url: a.image,
+            image_url: a.image_url ?? a.image,
             order: a.order ?? aIndex + 1,
           })),
         })),
