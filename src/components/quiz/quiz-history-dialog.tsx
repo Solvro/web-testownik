@@ -40,7 +40,7 @@ export function QuizHistoryDialog({
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="min-h-0 flex-1 overflow-y-scroll">
-          <div className="grid max-h-80 w-full flex-col gap-2">
+          <div className="grid max-h-80 w-full gap-2">
             {answers.length === 0 ? (
               <p className="flex justify-center p-4 text-sm">
                 Nie znaleziono historii w tej sesji quizu.
