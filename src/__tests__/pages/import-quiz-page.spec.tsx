@@ -115,7 +115,8 @@ describe("ImportQuizPage", () => {
         | {
             questions: {
               image_url?: string;
-              answers: { image_url?: string }[];
+              image?: string;
+              answers: { image_url?: string; image?: string }[];
             }[];
           }
         | undefined;
@@ -124,7 +125,8 @@ describe("ImportQuizPage", () => {
           const body = (await request.json()) as {
             questions: {
               image_url?: string;
-              answers: { image_url?: string }[];
+              image?: string;
+              answers: { image_url?: string; image?: string }[];
             }[];
           };
           capturedBody = body;
@@ -189,9 +191,11 @@ describe("ImportQuizPage", () => {
 
       expect(capturedBody).toBeDefined();
       expect(capturedBody?.questions[0].image_url).toBe("legacy.png");
+      expect(capturedBody?.questions[0].image).toBeUndefined();
       expect(capturedBody?.questions[0].answers[0].image_url).toBe(
         "legacy_ans.png",
       );
+      expect(capturedBody?.questions[0].answers[0].image).toBeUndefined();
       expect(capturedBody?.questions[1].image_url).toBe("new.png");
       expect(capturedBody?.questions[2].image_url).toBe("correct_url.png");
     });
