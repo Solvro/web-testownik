@@ -334,58 +334,61 @@ function ImportQuizPageContent(): React.JSX.Element {
         quiz={quiz}
         type="imported"
       />
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            variant="link"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            Jak powinien wyglądać quiz w formacie JSON?
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="flex h-[80dvh] flex-col md:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Format JSON quizu</DialogTitle>
-            <DialogDescription>
-              Struktura wymagana przy imporcie z pliku lub tekstu
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="min-h-0 flex-1">
-            <div
-              className="grid h-full w-full max-w-full grid-cols-1 flex-col space-y-4 text-sm"
-              ref={textRef}
+      {uploadType === "json" || uploadType === "file" ? (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
             >
-              <div className="space-y-4 pr-3">
-                <p>
-                  Quiz w formacie JSON powinien składać się z dwóch głównych
-                  kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
-                  <TypographyInlineCode>questions</TypographyInlineCode>.
-                </p>
-                <p>
-                  Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
-                  powinien zawierać tytuł quizu w formie tekstu.
-                </p>
-                <p>
-                  Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
-                  powinien zawierać tablicę obiektów reprezentujących pytania.
-                  Każde pytanie powinno zawierać klucze{" "}
-                  <TypographyInlineCode>id</TypographyInlineCode>,{" "}
-                  <TypographyInlineCode>text</TypographyInlineCode> i{" "}
-                  <TypographyInlineCode>answers</TypographyInlineCode> oraz
-                  opcjonalnie <TypographyInlineCode>order</TypographyInlineCode>
-                  , <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
-                  (domyślnie <TypographyInlineCode>false</TypographyInlineCode>)
-                  i <TypographyInlineCode>explanation</TypographyInlineCode>.
-                  Jeśli nie podano{" "}
-                  <TypographyInlineCode>order</TypographyInlineCode>, zostanie
-                  on nadany automatycznie od 1.
-                </p>
-                <p>Przykładowy quiz w formacie JSON:</p>
-              </div>
-              <ScrollArea className="bg-muted static! min-h-40 w-full flex-1 rounded-md text-xs">
-                <pre className="bg-muted w-full rounded-md p-3 text-xs">
-                  {`{
+              Jak powinien wyglądać quiz w formacie JSON?
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="flex h-[80dvh] flex-col md:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Format JSON quizu</DialogTitle>
+              <DialogDescription>
+                Struktura wymagana przy imporcie z pliku lub tekstu
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="min-h-0 flex-1">
+              <div
+                className="grid h-full w-full max-w-full grid-cols-1 flex-col space-y-4 text-sm"
+                ref={textRef}
+              >
+                <div className="space-y-4 pr-3">
+                  <p>
+                    Quiz w formacie JSON powinien składać się z dwóch głównych
+                    kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
+                    <TypographyInlineCode>questions</TypographyInlineCode>.
+                  </p>
+                  <p>
+                    Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
+                    powinien zawierać tytuł quizu w formie tekstu.
+                  </p>
+                  <p>
+                    Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
+                    powinien zawierać tablicę obiektów reprezentujących pytania.
+                    Każde pytanie powinno zawierać klucze{" "}
+                    <TypographyInlineCode>id</TypographyInlineCode>,{" "}
+                    <TypographyInlineCode>text</TypographyInlineCode> i{" "}
+                    <TypographyInlineCode>answers</TypographyInlineCode> oraz
+                    opcjonalnie{" "}
+                    <TypographyInlineCode>order</TypographyInlineCode>,{" "}
+                    <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
+                    (domyślnie{" "}
+                    <TypographyInlineCode>false</TypographyInlineCode>) i{" "}
+                    <TypographyInlineCode>explanation</TypographyInlineCode>.
+                    Jeśli nie podano{" "}
+                    <TypographyInlineCode>order</TypographyInlineCode>, zostanie
+                    on nadany automatycznie od 1.
+                  </p>
+                  <p>Przykładowy quiz w formacie JSON:</p>
+                </div>
+                <ScrollArea className="bg-muted static! min-h-40 w-full flex-1 rounded-md text-xs">
+                  <pre className="bg-muted w-full rounded-md p-3 text-xs">
+                    {`{
     "title": "Przykładowy quiz",
     "description": "Opis quizu", // Opcjonalny
     "questions": [
@@ -451,22 +454,23 @@ function ImportQuizPageContent(): React.JSX.Element {
         }
     ]
 }`}
-                </pre>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleTextCopy}>
-              {checkIcon ? <CheckIcon /> : <CopyIcon />}
-              Kopiuj instrukcję
-            </Button>
-            <DialogClose asChild>
-              <Button variant="outline">Zamknij</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  </pre>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleTextCopy}>
+                {checkIcon ? <CheckIcon /> : <CopyIcon />}
+                Kopiuj instrukcję
+              </Button>
+              <DialogClose asChild>
+                <Button variant="outline">Zamknij</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </>
   );
 }
