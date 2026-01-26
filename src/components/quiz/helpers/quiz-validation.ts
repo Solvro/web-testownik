@@ -16,11 +16,19 @@ const ALLOWED_QUESTION_KEYS = [
   "text",
   "explanation",
   "multiple",
-  "image",
+  "image", // Also allowed for backward compatibility
+  "image_url",
   "answers",
 ];
 
-const ALLOWED_ANSWER_KEYS = ["id", "order", "text", "is_correct", "image"];
+const ALLOWED_ANSWER_KEYS = [
+  "id",
+  "order",
+  "text",
+  "is_correct",
+  "image", // Also allowed for backward compatibility
+  "image_url",
+];
 
 const containsOnlyAllowedKeys = (
   object: object,

@@ -249,7 +249,7 @@ export function migrateLegacyQuiz(
         order: answerIndex + 1,
         text: answer.answer ?? "",
         is_correct: answer.correct ?? false,
-        image: answer.image,
+        image_url: answer.image,
       }));
 
       return {
@@ -258,7 +258,7 @@ export function migrateLegacyQuiz(
         text: question.question ?? "",
         explanation: question.explanation,
         multiple: question.multiple,
-        image: question.image,
+        image_url: question.image,
         answers,
       } as Question;
     },

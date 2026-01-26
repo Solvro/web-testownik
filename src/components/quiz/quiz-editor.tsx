@@ -39,15 +39,18 @@ type QuestionWithAdvanced = Question & { advanced?: boolean };
 const sanitizeQuestions = (questions: QuestionWithAdvanced[]) =>
   questions.map((q) => {
     const isAdvanced = Boolean(q.advanced);
-    const { advanced, ...rest } = q;
+    const { advanced, image_url, ...rest } = q;
     return {
       ...rest,
-      image: isAdvanced ? q.image : undefined,
+      image_url: isAdvanced ? image_url : undefined,
       explanation: isAdvanced ? q.explanation : undefined,
-      answers: q.answers.map((a) => ({
-        ...a,
-        image: isAdvanced ? a.image : undefined,
-      })),
+      answers: q.answers.map((a) => {
+        const { image_url: answerImage, ...answerRest } = a;
+        return {
+          ...answerRest,
+          image_url: isAdvanced ? answerImage : undefined,
+        };
+      }),
     };
   });
 
@@ -69,9 +72,9 @@ export function QuizEditor({
   const initialAdvancedDefault =
     initialQuiz?.questions?.some(
       (q) =>
-        Boolean(q.image) ||
+        Boolean(q.image_url) ||
         Boolean(q.explanation) ||
-        q.answers.some((a) => Boolean(a.image)),
+        q.answers.some((a) => Boolean(a.image_url)),
     ) ?? false;
 
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
@@ -84,9 +87,9 @@ export function QuizEditor({
       return initialQuiz.questions.map((q) => ({
         ...q,
         advanced:
-          Boolean(q.image) ||
+          Boolean(q.image_url) ||
           Boolean(q.explanation) ||
-          q.answers.some((a) => Boolean(a.image)),
+          q.answers.some((a) => Boolean(a.image_url)),
       }));
     }
     return [
@@ -96,10 +99,22 @@ export function QuizEditor({
         text: "",
         multiple: true,
         answers: [
-          { id: crypto.randomUUID(), order: 1, text: "", is_correct: false },
-          { id: crypto.randomUUID(), order: 2, text: "", is_correct: false },
+          {
+            id: crypto.randomUUID(),
+            order: 1,
+            text: "",
+            is_correct: false,
+            image_url: "",
+          },
+          {
+            id: crypto.randomUUID(),
+            order: 2,
+            text: "",
+            is_correct: false,
+            image_url: "",
+          },
         ],
-        image: "",
+        image_url: "",
         explanation: "",
         advanced: initialAdvancedDefault,
       },
@@ -143,10 +158,22 @@ export function QuizEditor({
         text: "",
         multiple: true,
         answers: [
-          { id: crypto.randomUUID(), order: 1, text: "", is_correct: false },
-          { id: crypto.randomUUID(), order: 2, text: "", is_correct: false },
+          {
+            id: crypto.randomUUID(),
+            order: 1,
+            text: "",
+            is_correct: false,
+            image_url: "",
+          },
+          {
+            id: crypto.randomUUID(),
+            order: 2,
+            text: "",
+            is_correct: false,
+            image_url: "",
+          },
         ],
-        image: "",
+        image_url: "",
         explanation: "",
         advanced: advancedMode,
       },

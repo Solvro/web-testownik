@@ -33,8 +33,8 @@ export function QuestionForm({
     onUpdate({ ...question, explanation });
   };
 
-  const handleImageUrlChange = (image: string) => {
-    onUpdate({ ...question, image });
+  const handleImageUrlChange = (image_url: string) => {
+    onUpdate({ ...question, image_url });
   };
 
   const handleMultipleChange = (multiple: boolean) => {
@@ -63,7 +63,7 @@ export function QuestionForm({
       order: newOrder,
       text: "",
       is_correct: false,
-      image: "",
+      image_url: "",
     };
     onUpdate({ ...question, answers: [...question.answers, newAnswer] });
   };
@@ -123,7 +123,7 @@ export function QuestionForm({
             order: index + 1,
             text,
             is_correct: false,
-            image: "",
+            image_url: "",
           }));
 
           const updatedAnswers: Answer[] = [...question.answers];
@@ -205,13 +205,13 @@ export function QuestionForm({
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor={`question-image-${question.id}`}>
+              <Label htmlFor={`question-image-url-${question.id}`}>
                 URL zdjęcia dla pytania
               </Label>
               <Input
-                id={`question-image-${question.id}`}
+                id={`question-image-url-${question.id}`}
                 placeholder="Podaj URL zdjęcia"
-                value={question.image ?? ""}
+                value={question.image_url ?? ""}
                 onChange={(event_) => {
                   handleImageUrlChange(event_.target.value);
                 }}
@@ -284,11 +284,11 @@ export function QuestionForm({
                 {isAdvanced ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
-                    value={answer.image ?? ""}
+                    value={answer.image_url ?? ""}
                     onChange={(event_) => {
                       updateAnswer(index, {
                         ...answer,
-                        image: event_.target.value,
+                        image_url: event_.target.value,
                       });
                     }}
                   />
@@ -364,11 +364,11 @@ export function QuestionForm({
                 {isAdvanced ? (
                   <Input
                     placeholder="URL zdjęcia dla odpowiedzi"
-                    value={answer.image ?? ""}
+                    value={answer.image_url ?? ""}
                     onChange={(event_) => {
                       updateAnswer(index, {
                         ...answer,
-                        image: event_.target.value,
+                        image_url: event_.target.value,
                       });
                     }}
                   />
