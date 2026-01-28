@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,6 +83,9 @@ function ImportQuizPageContent(): React.JSX.Element {
     setQuizTitle,
     setQuizDescription,
     handleImport,
+    handleSkipImages,
+    uploadProgress,
+    isUploading,
     textInputRef,
   } = useImportQuiz();
 
@@ -321,6 +325,33 @@ function ImportQuizPageContent(): React.JSX.Element {
                 "Importuj"
               )}
             </Button>
+            {isUploading && uploadProgress != null ? (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>
+                    Przesyłanie zdjęć ({uploadProgress.current} /{" "}
+                    {uploadProgress.total})
+                  </span>
+                  <span className="text-muted-foreground">
+                    {Math.round(
+                      (uploadProgress.current / uploadProgress.total) * 100,
+                    )}
+                    %
+                  </span>
+                </div>
+                <Progress
+                  value={(uploadProgress.current / uploadProgress.total) * 100}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSkipImages}
+                  className="mt-2 w-full"
+                >
+                  Pomiń przesyłanie zdjęć (może to zepsuć pytania)
+                </Button>
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
