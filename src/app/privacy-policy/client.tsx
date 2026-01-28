@@ -10,135 +10,163 @@ export function PrivacyPolicyPageClient() {
           Polityka Prywatności
         </h1>
 
-        <h2 id="postanowienia">1. Postanowienia ogólne</h2>
-        <p>
-          1. Niniejsza Polityka Prywatności określa zasady przetwarzania danych
-          osobowych przez serwis Testownik (dalej &quot;Serwis&quot;), dostępny
-          pod adresem{" "}
-          <a href="https://testownik.solvro.pl">testownik.solvro.pl</a>.
-        </p>
-        <p>
-          2. Administratorem danych osobowych jest właściciel Serwisu (dalej
-          &quot;Administrator&quot;).
-        </p>
-        <p>
-          3. Serwis przetwarza dane osobowe zgodnie z obowiązującymi przepisami
-          prawa, w szczególności z Rozporządzeniem Parlamentu Europejskiego i
-          Rady (UE) 2016/679 (RODO).
+        <p className="text-muted-foreground mb-8 text-sm italic">
+          Polityka prywatności określa zasady przetwarzania i ochrony danych
+          osobowych przekazywanych przez Użytkowników w związku z korzystaniem z
+          serwisu Testownik.
         </p>
 
-        <h2 id="jakie-dane">2. Jakie dane przetwarzamy?</h2>
-        <p>1. Dane zbierane od użytkowników:</p>
+        <h2 id="postanowienia-ogolne">I. Postanowienia ogólne</h2>
+        <p>
+          1. Niniejsza Polityka ochrony prywatności określa sposób zbierania,
+          przetwarzania i przechowywania danych osobowych koniecznych do
+          świadczenia usług drogą elektroniczną za pośrednictwem serwisu
+          internetowego dostępnego pod adresem{" "}
+          <a href="https://testownik.solvro.pl">testownik.solvro.pl</a> (dalej:
+          &quot;Serwis&quot;).
+        </p>
+        <p>
+          2. Administratorem danych osobowych Użytkowników jest{" "}
+          <strong>Antoni Czaplicki</strong> (dalej: &quot;Administrator&quot;).
+        </p>
+        <p>
+          3. Dane osobowe przetwarzane są zgodnie z Rozporządzeniem Parlamentu
+          Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w
+          sprawie ochrony osób fizycznych w związku z przetwarzaniem danych
+          osobowych i w sprawie swobodnego przepływu takich danych oraz
+          uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych)
+          (dalej: &quot;RODO&quot;).
+        </p>
+
+        <h2 id="rodzaj-danych">II. Rodzaj i źródło przetwarzanych danych</h2>
+        <p>
+          1. Administrator przetwarza dane przekazane bezpośrednio przez
+          Użytkownika oraz dane uzyskane automatycznie podczas korzystania z
+          Serwisu.
+        </p>
+        <p>2. Zakres przetwarzanych danych obejmuje:</p>
         <ul>
-          <li>Imię i nazwisko</li>
-          <li>Adres e-mail</li>
-          <li>Płeć</li>
-          <li>Informacje o twoich studiach (np. numer indeksu, kierunek)</li>
-          <li>Informacje związane z logowaniem do konta USOS</li>
+          <li>Imię i nazwisko;</li>
+          <li>Adres e-mail;</li>
+          <li>Płeć;</li>
           <li>
-            Adres IP oraz dane techniczne dotyczące urządzenia użytkownika (np.
-            przeglądarka, system operacyjny)
+            Informacje o toku studiów (np. numer indeksu, kierunek) – pobierane
+            za pośrednictwem integracji z systemem USOS;
+          </li>
+          <li>
+            Informacje o postępach w nauce (wyniki quizów, statystyki
+            rozwiązań);
+          </li>
+          <li>
+            Adres IP oraz dane techniczne urządzenia (typ przeglądarki, system
+            operacyjny, logi serwera).
           </li>
         </ul>
-        <p>
-          2. Dane przetwarzane są dla potrzeb korzystania z Serwisu, w tym do
-          logowania, tworzenia quizów, przeglądania wyników oraz kontaktowania
-          się z Administratorem. Twoje dane mogą być również wyświetlane innym
-          użytkownikom Serwisu w zależności od ustawień prywatności.
-        </p>
 
-        <h2 id="cel">3. Cel przetwarzania danych</h2>
-        <p>Dane osobowe przetwarzane są w celu:</p>
+        <h2 id="cel-i-podstawy">
+          III. Cel i podstawy prawne przetwarzania danych
+        </h2>
+        <p>Administrator przetwarza dane osobowe w następujących celach:</p>
         <ul>
-          <li>Świadczenia usług dostępnych w Serwisie;</li>
-          <li>Umożliwienia logowania i korzystania z kont użytkowników;</li>
-          <li>Utrzymania bezpieczeństwa Serwisu i zapobiegania nadużyciom;</li>
           <li>
-            Kontaktowania się z użytkownikami w sprawach związanych z
-            funkcjonowaniem Serwisu;
+            <strong>Świadczenie usług i obsługa konta:</strong> w celu
+            weryfikacji tożsamości (logowanie USOS), umożliwienia tworzenia i
+            rozwiązywania quizów oraz zapisywania wyników (podstawa prawna:{" "}
+            <strong>art. 6 ust. 1 lit. b RODO</strong> – niezbędność do
+            wykonania umowy);
           </li>
-          <li>Spełnienia obowiązków prawnych Administratora.</li>
           <li>
-            Umożliwienia kontaktu z użytkownikami w celu przeprowadzenia badań i
-            analizy jakości świadczonych usług.
+            <strong>Newsletter i informacje:</strong> w celu wysyłania
+            informacji o nowościach w Serwisie, aktualizacjach oraz treści
+            edukacyjnych, o ile Użytkownik wyraził na to zgodę (podstawa prawna:{" "}
+            <strong>art. 6 ust. 1 lit. a RODO</strong> – zgoda Użytkownika);
+          </li>
+          <li>
+            <strong>Kontakt i wsparcie:</strong> w celu udzielania odpowiedzi na
+            zgłoszenia i komunikacji z Użytkownikiem (podstawa prawna:{" "}
+            <strong>art. 6 ust. 1 lit. f RODO</strong> – prawnie uzasadniony
+            interes Administratora);
+          </li>
+          <li>
+            <strong>Analityka i statystyka:</strong> w celu analizy ruchu na
+            stronie (Umami Analytics) i ulepszania funkcjonalności Serwisu
+            (podstawa prawna: <strong>art. 6 ust. 1 lit. f RODO</strong>);
+          </li>
+          <li>
+            <strong>Bezpieczeństwo:</strong> w celu zapewnienia bezpieczeństwa
+            sesji, wykrywania nadużyć oraz tworzenia kopii zapasowych (podstawa
+            prawna: <strong>art. 6 ust. 1 lit. f RODO</strong>).
           </li>
         </ul>
 
-        <h2 id="udostepnianie">4. Udostępnianie danych</h2>
+        <h2 id="okres-przechowywania">IV. Okres przetwarzania danych</h2>
         <p>
-          1. Dane osobowe użytkowników nie są udostępniane osobom trzecim, z
-          wyjątkiem sytuacji, gdy:
+          1. Dane związane z prowadzeniem konta przetwarzane są przez czas jego
+          posiadania przez Użytkownika.
         </p>
+        <p>
+          2. Dane przetwarzane na potrzeby newslettera przechowywane są do
+          momentu wycofania zgody przez Użytkownika.
+        </p>
+        <p>
+          3. Logi systemowe oraz dane analityczne przechowywane są przez okres
+          ograniczony, niezbędny do celów technicznych i statystycznych.
+        </p>
+
+        <h2 id="odbiorcy-danych">V. Odbiorcy danych</h2>
+        <p>
+          1. Dane mogą być udostępniane podmiotom wspierającym działanie Serwisu
+          (dostawcy hostingu, usługi analityczne typu Umami, dostawcy systemów
+          mailingowych).
+        </p>
+        <p>
+          2. Serwis korzysta z zewnętrznego uwierzytelniania (USOS), co wiąże
+          się z wymianą niezbędnych tokenów autoryzacyjnych z systemem
+          uczelnianym.
+        </p>
+
+        <h2 id="pliki-cookies">VI. Pliki Cookies i Logi Serwera</h2>
+        <p>1. Serwis wykorzystuje pliki cookies (ciasteczka) w celu:</p>
         <ul>
-          <li>
-            Administrator jest zobowiązany do ich przekazania na mocy przepisów
-            prawa;
-          </li>
-          <li>
-            Jest to konieczne do świadczenia usług (np. dostawcy usług
-            hostingowych).
-          </li>
+          <li>Utrzymania sesji użytkownika po zalogowaniu;</li>
+          <li>Zapamiętania preferencji (np. motyw jasny/ciemny);</li>
+          <li>Zbierania anonimowych statystyk (Umami Analytics).</li>
         </ul>
         <p>
-          2. W takich przypadkach dane są przetwarzane wyłącznie w zakresie
-          niezbędnym do realizacji określonych celów.
+          2. Użytkownik może w każdej chwili zmienić ustawienia dotyczące plików
+          cookies w swojej przeglądarce internetowej.
         </p>
 
-        <h2 id="czas-przechowywania">5. Czas przechowywania danych</h2>
-        <p>
-          1. Dane osobowe są przechowywane przez okres niezbędny do świadczenia
-          usług lub zgodnie z obowiązującymi przepisami prawa.
-        </p>
-        <p>
-          2. Po zakończeniu korzystania z usług Serwisu dane mogą być
-          przechowywane przez okres wymagany dla celów podatkowych, księgowych
-          lub prawnych.
-        </p>
-
-        <h2 id="prawa">6. Prawa użytkowników</h2>
-        <p>Użytkownicy mają prawo do:</p>
+        <h2 id="prawa-uzytkownikow">VII. Prawa Użytkownika</h2>
+        <p>Użytkownikowi przysługuje prawo do:</p>
         <ul>
-          <li>Dostępu do swoich danych osobowych;</li>
-          <li>Sprostowania lub usunięcia danych;</li>
+          <li>Dostępu do swoich danych oraz otrzymania ich kopii;</li>
+          <li>Sprostowania (poprawiania) danych;</li>
+          <li>Usunięcia danych;</li>
           <li>Ograniczenia przetwarzania;</li>
-          <li>Wniesienia sprzeciwu wobec przetwarzania danych;</li>
+          <li>Wniesienia sprzeciwu wobec przetwarzania;</li>
           <li>Przenoszenia danych;</li>
           <li>
-            Złożenia skargi do organu nadzorczego (np. Prezesa Urzędu Ochrony
-            Danych Osobowych).
+            Cofnięcia zgody na newsletter w dowolnym momencie (bez wpływu na
+            zgodność z prawem przetwarzania przed jej cofnięciem);
           </li>
+          <li>Wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</li>
         </ul>
 
-        <h2 id="zabezpieczenia">7. Zabezpieczenia danych</h2>
+        <h2 id="kontakt">VIII. Kontakt</h2>
         <p>
-          1. Administrator wdraża odpowiednie środki techniczne i organizacyjne
-          w celu ochrony danych osobowych przed nieuprawnionym dostępem, utratą
-          lub zniszczeniem.
-        </p>
-        <p>
-          2. Dostęp do danych osobowych mają wyłącznie upoważnione osoby, które
-          zobowiązane są do zachowania poufności.
-        </p>
-
-        <h2 id="analytics">8. Wykorzystywanie Analytics</h2>
-        <p>
-          1. Serwis korzysta z Umami Analytics w celu analizy ruchu na stronie
-          oraz poprawy jakości świadczonych usług.
-        </p>
-        <p>
-          2. Analytics może zbierać informacje, takie jak adres IP użytkownika,
-          rodzaj przeglądarki, system operacyjny i inne dane dotyczące
-          interakcji z Serwisem.
+          Wszelkie pytania oraz żądania dotyczące danych osobowych można
+          kierować na adres e-mail:{" "}
+          <a
+            href="mailto:testownik@solvro.pl"
+            className="text-primary font-medium hover:underline"
+          >
+            testownik@solvro.pl
+          </a>
+          .
         </p>
 
-        <h2 id="kontakt">9. Kontakt</h2>
-        <p>
-          Wszelkie pytania, uwagi lub żądania dotyczące przetwarzania danych
-          osobowych można kierować na adres e-mail:{" "}
-          <a href="mailto:testownik@solvro.pl">testownik@solvro.pl</a>.
-        </p>
-
-        <h2 id="zmiany">10. Zmiany w Polityce Prywatności</h2>
+        <h2 id="zmiany">IX. Zmiany Polityki Prywatności</h2>
         <p>
           1. Administrator zastrzega sobie prawo do zmiany Polityki Prywatności.
           Wszelkie zmiany będą publikowane na stronie Serwisu.

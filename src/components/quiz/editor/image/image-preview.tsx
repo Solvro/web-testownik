@@ -11,6 +11,7 @@ import { ImageDialog } from "./image-dialog";
 import type { ImageState } from "./image-dialog";
 
 export interface ImagePreviewProps {
+  image: string | null | undefined;
   imageUrl: string | null | undefined;
   imageUploadId: string | null | undefined;
   imageWidth?: number | null;
@@ -30,6 +31,7 @@ const RENDERED_HEIGHTS = {
 };
 
 export function ImagePreview({
+  image,
   imageUrl,
   imageUploadId,
   imageWidth,
@@ -49,7 +51,7 @@ export function ImagePreview({
     onFileDrop?.(file);
   }, disabled || isUploading);
 
-  if (imageUrl === null || imageUrl === undefined || imageUrl === "") {
+  if (image == null || image === "") {
     return null;
   }
 
@@ -122,7 +124,7 @@ export function ImagePreview({
           </div>
         ) : canUseNextImage ? (
           <Image
-            src={imageUrl}
+            src={image}
             alt="Podgląd zdjęcia"
             width={targetWidth}
             height={targetHeight}
@@ -133,7 +135,7 @@ export function ImagePreview({
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={imageUrl}
+            src={image}
             alt="Podgląd zdjęcia"
             className="bg-muted/10 h-full w-auto object-contain"
             draggable={false}
@@ -167,6 +169,7 @@ export function ImagePreview({
       <ImageDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        image={image}
         imageUrl={imageUrl}
         imageUploadId={imageUploadId}
         imageWidth={imageWidth}

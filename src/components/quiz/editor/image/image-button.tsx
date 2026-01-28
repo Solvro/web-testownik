@@ -10,6 +10,7 @@ import { ImageDialog } from "./image-dialog";
 import type { ImageState } from "./image-dialog";
 
 export interface ImageButtonProps {
+  image: string | null | undefined;
   imageUrl: string | null | undefined;
   imageUploadId: string | null | undefined;
   imageWidth?: number | null;
@@ -22,6 +23,7 @@ export interface ImageButtonProps {
 }
 
 export function ImageButton({
+  image,
   imageUrl,
   imageUploadId,
   imageWidth,
@@ -35,7 +37,7 @@ export function ImageButton({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const hasImage =
-    (imageUrl !== null && imageUrl !== undefined && imageUrl !== "") ||
+    (image !== null && image !== undefined && image !== "") ||
     (imageUploadId !== null && imageUploadId !== undefined);
 
   return (
@@ -63,6 +65,7 @@ export function ImageButton({
       <ImageDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        image={image}
         imageUrl={imageUrl}
         imageUploadId={imageUploadId}
         imageWidth={imageWidth}

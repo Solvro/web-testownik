@@ -147,6 +147,8 @@ export function QuestionCard({
             key={`question-image-${question.id}`}
             url={question.image}
             alt={question.text}
+            width={question.image_width}
+            height={question.image_height}
             className="mx-auto mt-4 max-h-80 rounded border object-contain"
           />
         </CardDescription>
@@ -176,7 +178,9 @@ export function QuestionCard({
                   key={`answer-image-${question.id}-${answer.id}`}
                   url={answer.image}
                   alt={answer.text}
-                  className="max-h-40 w-full rounded object-contain"
+                  width={answer.image_width}
+                  height={answer.image_height}
+                  className="mx-auto max-h-40 rounded object-contain"
                 />
               </button>
             );

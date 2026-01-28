@@ -14,6 +14,17 @@ import { useRef, useState } from "react";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -28,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,6 +94,9 @@ function ImportQuizPageContent(): React.JSX.Element {
     setQuizTitle,
     setQuizDescription,
     handleImport,
+    handleSkipImages,
+    uploadProgress,
+    isUploading,
     textInputRef,
   } = useImportQuiz();
 
@@ -321,6 +336,49 @@ function ImportQuizPageContent(): React.JSX.Element {
                 "Importuj"
               )}
             </Button>
+            {isUploading && uploadProgress != null ? (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>
+                    Przesyłanie zdjęć ({uploadProgress.current} /{" "}
+                    {uploadProgress.total})
+                  </span>
+                  <span className="text-muted-foreground">
+                    {Math.round(
+                      (uploadProgress.current / uploadProgress.total) * 100,
+                    )}
+                    %
+                  </span>
+                </div>
+                <Progress
+                  value={(uploadProgress.current / uploadProgress.total) * 100}
+                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="mt-2 w-full">
+                      Kontynuuj bez zdjęć
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Kontynuować bez przesyłania zdjęć?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Pominięcie przesyłania zdjęć może zmniejszyć dokładność
+                        niektórych pytań, zwłaszcza tych opartych na obrazach.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSkipImages}>
+                        Kontynuuj
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>

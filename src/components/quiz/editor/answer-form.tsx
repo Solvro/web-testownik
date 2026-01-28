@@ -38,7 +38,8 @@ export function AnswerForm({
 }: AnswerFormProps) {
   function handleImageChange(state: ImageState) {
     onUpdate({
-      image_url: state.url,
+      image: state.image,
+      image_url: state.imageUrl,
       image_upload: state.uploadId,
       image_width: state.width ?? null,
       image_height: state.height ?? null,
@@ -57,8 +58,9 @@ export function AnswerForm({
       file,
       (url, id, width, height) => {
         handleImageChange({
-          url,
+          image: url,
           uploadId: id,
+          imageUrl: null,
           width: width ?? null,
           height: height ?? null,
         });
@@ -66,8 +68,9 @@ export function AnswerForm({
       },
       () => {
         handleImageChange({
-          url: null,
+          image: null,
           uploadId: null,
+          imageUrl: null,
         });
         onUploadEnd?.();
       },
@@ -80,6 +83,7 @@ export function AnswerForm({
 
   return (
     <ImageDropZone
+      id={`answer-${answer.id}`}
       onFileDrop={handleFileDrop}
       label="Upuść zdjęcie"
       className="rounded-md"
@@ -118,6 +122,7 @@ export function AnswerForm({
           />
 
           <ImageButton
+            image={answer.image}
             imageUrl={answer.image_url}
             imageUploadId={answer.image_upload}
             imageWidth={answer.image_width}
@@ -142,7 +147,8 @@ export function AnswerForm({
 
         <div className="pl-7">
           <ImagePreview
-            imageUrl={answer.image_url ?? null}
+            image={answer.image}
+            imageUrl={answer.image_url}
             imageUploadId={answer.image_upload}
             imageWidth={answer.image_width}
             imageHeight={answer.image_height}

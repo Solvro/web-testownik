@@ -1,5 +1,6 @@
 import JSZip from "jszip";
-import React, { useContext, useState } from "react";
+import type React from "react";
+import { useContext, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
@@ -194,6 +195,65 @@ const parseQuestion = (
   };
 };
 
+/**
+ * Get MIME type from file extension
+ */
+const getMimeTypeFromExtension = (extension: string | undefined): string => {
+  switch (extension) {
+    case "png": {
+      return "image/png";
+    }
+    case "gif": {
+      return "image/gif";
+    }
+    case "webp": {
+      return "image/webp";
+    }
+    case "avif": {
+      return "image/avif";
+    }
+    case undefined:
+    case "jpg":
+    case "jpeg":
+    default: {
+      return "image/jpeg";
+    }
+  }
+};
+
+export const extractImagesToUpload = (
+  questions: Question[],
+): { type: "question" | "answer"; id: string; filename: string }[] => {
+  const imagesToUpload: {
+    type: "question" | "answer";
+    id: string;
+    filename: string;
+  }[] = [];
+
+  for (const q of questions) {
+    const qImageMatches = q.text.matchAll(/\[img\](.*?)\[\/img\]/g);
+    for (const match of qImageMatches) {
+      imagesToUpload.push({
+        type: "question",
+        id: q.id,
+        filename: match[1],
+      });
+    }
+
+    for (const a of q.answers) {
+      const aImageMatches = a.text.matchAll(/\[img\](.*?)\[\/img\]/g);
+      for (const match of aImageMatches) {
+        imagesToUpload.push({
+          type: "answer",
+          id: a.id,
+          filename: match[1],
+        });
+      }
+    }
+  }
+  return imagesToUpload;
+};
+
 export const useImportQuiz = () => {
   const appContext = useContext(AppContext);
   const [uploadType, setUploadType] = useState<UploadType>("legacy");
@@ -205,11 +265,18 @@ export const useImportQuiz = () => {
   const [quizDescription, setQuizDescription] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const fileOldRef = React.useRef<HTMLInputElement>(null);
-  const directoryInputRef = React.useRef<HTMLInputElement>(null);
-  const textInputRef = React.useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileOldRef = useRef<HTMLInputElement>(null);
+  const directoryInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const stopUploadRef = useRef(false);
 
   const handleDirectorySelect = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -410,9 +477,13 @@ export const useImportQuiz = () => {
     }
   };
 
-  const processDirectory = async (files: File[]): Promise<Question[]> => {
+  const processDirectory = async (
+    files: File[],
+  ): Promise<{ questions: Question[]; images: Map<string, File> }> => {
     const questions: Question[] = [];
+    const images = new Map<string, File>();
     let index = 1;
+
     for (const file of files) {
       if (file.name.endsWith(".txt")) {
         let content;
@@ -429,15 +500,27 @@ export const useImportQuiz = () => {
         if (question !== null) {
           questions.push(question);
         }
+      } else {
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        const mimeType = getMimeTypeFromExtension(extension);
+        const normalizedFile =
+          mimeType === file.type
+            ? file
+            : new File([file], file.name, { type: mimeType });
+        images.set(file.name, normalizedFile);
       }
     }
-    return questions;
+    return { questions, images };
   };
 
-  const processZip = async (file: File): Promise<Question[]> => {
+  const processZip = async (
+    file: File,
+  ): Promise<{ questions: Question[]; images: Map<string, File> }> => {
     const questions: Question[] = [];
+    const images = new Map<string, File>();
     const zip = await JSZip.loadAsync(file);
     let index = 1;
+
     for (const filename of Object.keys(zip.files)) {
       if (filename.endsWith(".txt")) {
         const fileData = zip.file(filename);
@@ -463,21 +546,31 @@ export const useImportQuiz = () => {
         if (question !== null) {
           questions.push(question);
         }
+      } else {
+        const fileData = zip.file(filename);
+        if (fileData !== null) {
+          const blob = await fileData.async("blob");
+          const extension = filename.split(".").pop()?.toLowerCase();
+          const type = getMimeTypeFromExtension(extension);
+          const simpleFilename = filename.split("/").pop() ?? filename;
+          const imageFile = new File([blob], simpleFilename, { type });
+          images.set(simpleFilename, imageFile);
+        }
       }
     }
-    return questions;
+    return { questions, images };
   };
 
-  const processFiles = async (): Promise<Question[]> => {
+  const processFiles = async (): Promise<{
+    questions: Question[];
+    images: Map<string, File>;
+  }> => {
     if (directoryFiles.length > 0) {
       return processDirectory(directoryFiles);
-    } else if (
-      fileOldRef.current?.files != null &&
-      fileOldRef.current.files.length > 0
-    ) {
-      return processZip(fileOldRef.current.files[0]);
-    } else {
+    } else if (fileOldRef.current?.files?.[0] === undefined) {
       throw new Error("Nie wybrano pliku ani folderu.");
+    } else {
+      return processZip(fileOldRef.current.files[0]);
     }
   };
 
@@ -485,6 +578,7 @@ export const useImportQuiz = () => {
     setError(message);
     toast.error(message);
     setLoading(false);
+    setIsUploading(false);
   };
 
   const submitImport = async (data: Quiz) => {
@@ -551,6 +645,10 @@ export const useImportQuiz = () => {
     setErrorAndNotify(`Nieprawidłowy format quizu. ${validationError}`);
   };
 
+  const handleSkipImages = () => {
+    stopUploadRef.current = true;
+  };
+
   const handleImport = async () => {
     setError(null);
     setLoading(true);
@@ -614,12 +712,95 @@ export const useImportQuiz = () => {
         }
 
         try {
-          const questions = await processFiles();
+          const { questions, images } = await processFiles();
 
           if (questions.length === 0) {
             setError("Nie znaleziono pytań w wybranych plikach.");
             setLoading(false);
             return;
+          }
+
+          const imagesToUpload = extractImagesToUpload(questions);
+
+          if (imagesToUpload.length > 0) {
+            setIsUploading(true);
+            stopUploadRef.current = false;
+
+            const uniqueFilenames = new Set(
+              imagesToUpload.map((item) => item.filename),
+            );
+            setUploadProgress({ current: 0, total: uniqueFilenames.size });
+            const filenameToUploadId = new Map<string, string>();
+
+            let processedCount = 0;
+            for (const filename of uniqueFilenames) {
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+              if (stopUploadRef.current) {
+                break;
+              }
+
+              const simpleFilename = filename.split("/").pop() ?? filename;
+              const imageFile = images.get(simpleFilename);
+
+              if (imageFile == null) {
+                console.warn(`Image file not found for ${filename}`);
+                toast.warning(`Nie znaleziono pliku: ${simpleFilename}`);
+              } else {
+                try {
+                  const uploadResult =
+                    await appContext.services.image.upload(imageFile);
+                  filenameToUploadId.set(filename, uploadResult.data.id);
+                } catch (error_) {
+                  console.error(`Failed to upload image ${filename}:`, error_);
+                  toast.error(
+                    `Nie udało się przesłać zdjęcia: ${simpleFilename}`,
+                  );
+                }
+              }
+
+              processedCount++;
+              setUploadProgress({
+                current: processedCount,
+                total: uniqueFilenames.size,
+              });
+            }
+
+            for (const item of imagesToUpload) {
+              const uploadId = filenameToUploadId.get(item.filename);
+              if (uploadId == null) {
+                continue;
+              }
+
+              const question = questions.find((q) => {
+                if (item.type === "question") {
+                  return q.id === item.id;
+                }
+                return q.answers.some((a) => a.id === item.id);
+              });
+
+              if (question != null) {
+                if (item.type === "question") {
+                  question.image_upload = uploadId;
+                  question.text = question.text.replaceAll(
+                    `[img]${item.filename}[/img]`,
+                    "",
+                  );
+                  question.text = question.text.trim();
+                } else {
+                  const answer = question.answers.find((a) => a.id === item.id);
+                  if (answer != null) {
+                    answer.image_upload = uploadId;
+                    answer.text = answer.text.replaceAll(
+                      `[img]${item.filename}[/img]`,
+                      "",
+                    );
+                    answer.text = answer.text.trim();
+                  }
+                }
+              }
+            }
+
+            setIsUploading(false);
           }
 
           const quizData = {
@@ -673,6 +854,8 @@ export const useImportQuiz = () => {
     quizTitle,
     quizDescription,
     quiz,
+    uploadProgress,
+    isUploading,
 
     // Functions
     handleFileDrop,
@@ -684,6 +867,7 @@ export const useImportQuiz = () => {
     setQuizTitle,
     setQuizDescription,
     handleImport,
+    handleSkipImages,
     textInputRef,
   };
 };

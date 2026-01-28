@@ -17,9 +17,11 @@ export interface Answer {
   order: number;
   text: string;
   is_correct: boolean;
-  image?: string; // Read-only (Display)
+  image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
+  image_width?: number | null; // Read-only (Display)
+  image_height?: number | null; // Read-only (Display)
 }
 
 export interface Question {
@@ -28,9 +30,11 @@ export interface Question {
   text: string;
   explanation: string;
   multiple: boolean; // Single or multiple choice
-  image?: string; // Read-only (Display)
+  image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
+  image_width?: number | null; // Read-only (Display)
+  image_height?: number | null; // Read-only (Display)
   answers: Answer[];
 }
 
