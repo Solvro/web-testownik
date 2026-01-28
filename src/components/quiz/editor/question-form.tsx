@@ -45,6 +45,8 @@ function createNewAnswer(order: number): AnswerFormData {
     image: null,
     image_url: null,
     image_upload: null,
+    image_width: null,
+    image_height: null,
   };
 }
 

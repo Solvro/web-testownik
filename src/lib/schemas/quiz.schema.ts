@@ -22,7 +22,7 @@ export const answerFormSchema = z
         (data.image_url !== null &&
           data.image_url !== undefined &&
           data.image_url !== "") ||
-        (data.image_upload !== null && data.image_upload !== undefined);
+        (data.image_upload != null && data.image_upload !== "");
       return hasText || hasImage;
     },
     {
@@ -56,7 +56,7 @@ export const questionFormSchema = z
         (data.image_url !== null &&
           data.image_url !== undefined &&
           data.image_url !== "") ||
-        (data.image_upload !== null && data.image_upload !== undefined);
+        (data.image_upload != null && data.image_upload !== "");
       return hasText || hasImage;
     },
     {

@@ -205,22 +205,22 @@ export const extractImagesToUpload = (
   }[] = [];
 
   for (const q of questions) {
-    const qImageMatch = /\[img\](.*?)\[\/img\]/.exec(q.text);
-    if (qImageMatch !== null) {
+    const qImageMatches = q.text.matchAll(/\[img\](.*?)\[\/img\]/g);
+    for (const match of qImageMatches) {
       imagesToUpload.push({
         type: "question",
         id: q.id,
-        filename: qImageMatch[1],
+        filename: match[1],
       });
     }
 
     for (const a of q.answers) {
-      const aImageMatch = /\[img](.*?)\[\/img]/.exec(a.text);
-      if (aImageMatch !== null) {
+      const aImageMatches = a.text.matchAll(/\[img\](.*?)\[\/img\]/g);
+      for (const match of aImageMatches) {
         imagesToUpload.push({
           type: "answer",
           id: a.id,
-          filename: aImageMatch[1],
+          filename: match[1],
         });
       }
     }
@@ -538,6 +538,7 @@ export const useImportQuiz = () => {
             }
             case undefined: {
               type = "image/jpeg";
+              break;
             }
           }
           const simpleFilename = filename.split("/").pop() ?? filename;
@@ -712,13 +713,12 @@ export const useImportQuiz = () => {
 
           if (imagesToUpload.length > 0) {
             setIsUploading(true);
-            setUploadProgress({ current: 0, total: imagesToUpload.length });
             stopUploadRef.current = false;
 
-            // correct: Dedup filenames to upload each unique image only once
             const uniqueFilenames = new Set(
-              imagesToUpload.map((index) => index.filename),
+              imagesToUpload.map((item) => item.filename),
             );
+            setUploadProgress({ current: 0, total: uniqueFilenames.size });
             const filenameToUploadId = new Map<string, string>();
 
             let processedCount = 0;
@@ -786,13 +786,6 @@ export const useImportQuiz = () => {
             }
 
             setIsUploading(false);
-          }
-
-          for (const q of questions) {
-            q.text = q.text.replaceAll(/\[img].*?\[\/img]/g, "").trim();
-            for (const a of q.answers) {
-              a.text = a.text.replaceAll(/\[img].*?\[\/img]/g, "").trim();
-            }
           }
 
           const quizData = {
