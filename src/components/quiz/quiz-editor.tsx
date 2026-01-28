@@ -391,13 +391,12 @@ export function QuizEditor(props: QuizEditorProps) {
         </div>
 
         <div className="bg-background fixed right-0 bottom-0 left-0 z-10 border-t p-4 sm:pointer-events-none sm:sticky sm:bottom-10 sm:flex sm:justify-center sm:border-t-0 sm:bg-transparent sm:p-0">
-          <div className="sm:bg-background/60 pointer-events-auto flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:rounded-md sm:px-6 sm:py-3 sm:shadow-sm sm:backdrop-blur">
+          <div className="sm:bg-background/60 pointer-events-auto flex flex-row flex-wrap justify-center gap-3 sm:items-center sm:rounded-md sm:px-6 sm:py-3 sm:shadow-sm sm:backdrop-blur">
             {props.mode === "edit" && props.onSaveAndClose !== undefined && (
               <Button
                 type="button"
                 disabled={!canSubmit}
                 onClick={handleSaveAndClose}
-                className="w-full sm:w-auto"
               >
                 {savingState === "savingAndClosing" ? (
                   <>
@@ -409,11 +408,7 @@ export function QuizEditor(props: QuizEditorProps) {
                 )}
               </Button>
             )}
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full sm:w-auto"
-            >
+            <Button type="submit" disabled={!canSubmit}>
               {savingState === "saving" ? (
                 <>
                   <Loader2 className="animate-spin" />
@@ -425,7 +420,12 @@ export function QuizEditor(props: QuizEditorProps) {
                 "Zapisz"
               )}
             </Button>
-            <Button variant="ghost" size="sm" onClick={addQuestion}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={addQuestion}
+              type="button"
+            >
               <PlusIcon />
               Pytanie
             </Button>

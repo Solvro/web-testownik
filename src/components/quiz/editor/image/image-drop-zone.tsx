@@ -25,7 +25,7 @@ export function ImageDropZone({
     <div
       ref={elementRef}
       className={cn(
-        "relative rounded-lg ring-2 ring-transparent ring-offset-3 transition-all duration-200",
+        "relative rounded-lg ring-2 ring-transparent ring-offset-3 ring-offset-transparent transition-all duration-200",
         isDragOver && "ring-primary/30 ring-2",
         className,
       )}

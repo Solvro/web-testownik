@@ -98,7 +98,7 @@ export function ImagePreview({
           setIsHovered(false);
         }}
         className={cn(
-          "focus-visible:ring-ring relative inline-flex w-auto cursor-pointer overflow-hidden rounded-lg border transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+          "focus-visible:ring-ring relative inline-flex w-auto cursor-pointer overflow-hidden rounded-lg border transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none",
           heightClass,
           isDragOver
             ? "border-primary bg-primary/10 ring-primary/50 ring-2"
