@@ -1,3 +1,4 @@
+import { ImageService } from "./image.service";
 import { QuizService } from "./quiz.service";
 import { UserService } from "./user.service";
 
@@ -7,6 +8,7 @@ import { UserService } from "./user.service";
 export class ServiceRegistry {
   private quizService: QuizService;
   private userService: UserService;
+  private imageService: ImageService;
 
   constructor(
     baseURL: string,
@@ -15,6 +17,7 @@ export class ServiceRegistry {
   ) {
     this.quizService = new QuizService(baseURL, defaultHeaders, accessToken);
     this.userService = new UserService(baseURL, defaultHeaders, accessToken);
+    this.imageService = new ImageService(baseURL, defaultHeaders, accessToken);
   }
 
   /**
@@ -29,6 +32,13 @@ export class ServiceRegistry {
    */
   get user(): UserService {
     return this.userService;
+  }
+
+  /**
+   * Get the image service
+   */
+  get image(): ImageService {
+    return this.imageService;
   }
 }
 
@@ -71,4 +81,11 @@ export function getQuizService(): QuizService {
  */
 export function getUserService(): UserService {
   return getServices().user;
+}
+
+/**
+ * Get image service directly
+ */
+export function getImageService(): ImageService {
+  return getServices().image;
 }

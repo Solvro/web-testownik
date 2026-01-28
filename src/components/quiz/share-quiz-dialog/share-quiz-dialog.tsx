@@ -79,6 +79,8 @@ export function ShareQuizDialog({
       }));
     },
     enabled: open && !appContext.isGuest,
+    refetchOnMount: true,
+    staleTime: 0,
     initialData: [],
   });
 
