@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 
@@ -146,14 +145,6 @@ export function LoginPrompt(): React.JSX.Element {
                 >
                   <AppLogo width={24} /> KN Solvro
                 </a>
-              </p>
-              <p className="text-sm font-medium">
-                Klikając przyciski poniżej, potwierdzasz, że zapoznałeś się z
-                naszym{" "}
-                <Link href={"/terms"} className="underline">
-                  regulaminem
-                </Link>{" "}
-                oraz że go akceptujesz.
               </p>
 
               <div className="mb-0 grid gap-2">
