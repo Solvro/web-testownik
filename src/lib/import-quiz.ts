@@ -95,6 +95,7 @@ const parseQTemplate = (
     text: questionText,
     answers,
     multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
+    explanation: "",
   };
 };
 
@@ -189,6 +190,7 @@ const parseQuestion = (
     text: question,
     answers,
     multiple: !isTrueFalse,
+    explanation: "",
   };
 };
 

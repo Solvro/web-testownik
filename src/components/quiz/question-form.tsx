@@ -224,7 +224,7 @@ export function QuestionForm({
               <Textarea
                 id={`question-expl-${question.id}`}
                 placeholder="Podaj wyjaśnienie pytania"
-                value={question.explanation ?? ""}
+                value={question.explanation}
                 onChange={(event_) => {
                   handleExplanationChange(event_.target.value);
                 }}

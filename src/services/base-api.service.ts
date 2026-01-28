@@ -128,10 +128,14 @@ export class BaseApiService {
     // Ensure token is fresh (or refreshed early) before building headers
     await this.ensureFreshToken();
     let headers = this.getAuthHeaders();
+
+    // Check if body is FormData to avoid setting Content-Type
+    const isFormData = (options.body as unknown) instanceof FormData;
+
     const requestOptions: RequestInit = {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...headers,
         ...(options.headers as Record<string, string>),
       },
@@ -311,5 +315,22 @@ export class BaseApiService {
    */
   protected async delete<T = void>(url: string): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(url, { method: "DELETE" });
+  }
+
+  /**
+   * Generic Upload request (POST with FormData)
+   */
+  protected async uploadFile<T>(
+    url: string,
+    file: File,
+    fieldName = "file",
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    return this.makeRequest<T>(url, {
+      method: "POST",
+      body: formData,
+    });
   }
 }

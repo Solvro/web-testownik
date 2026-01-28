@@ -33,19 +33,36 @@ const setup = async ({ asGuest = false } = {}) => {
   );
 
   const fillFields = async () => {
-    await user.type(screen.getByPlaceholderText(/tytuł/i), testQuiz.title);
-    await user.type(screen.getByPlaceholderText(/opis/i), testQuiz.description);
     await user.type(
-      screen.getByPlaceholderText(/treść pytania/i),
-      testQuiz.questions[0],
+      screen.getByPlaceholderText(/podaj tytuł quizu/i),
+      testQuiz.title,
+    );
+    await user.type(
+      screen.getByPlaceholderText(/podaj opis quizu/i),
+      testQuiz.description,
     );
 
-    const answers = screen.getAllByPlaceholderText(/treść odpowiedzi/i);
+    // Questions are always visible in the restored design
+    const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
+    await user.type(questionTextareas[0], testQuiz.questions[0]);
+
+    const answers = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
     await user.type(answers[0], testQuiz.answers[0]);
     await user.type(answers[1], testQuiz.answers[1]);
 
-    const checkboxes = screen.getAllByRole("checkbox");
-    await user.click(checkboxes[0]);
+    // Mark first answer as correct
+    const checkboxes = screen.getAllByRole("checkbox", {
+      name: /oznacz jako poprawną|wielokrotny wybór/i,
+    });
+    // Skip the "all questions multiple" checkbox and click first answer checkbox
+    const answerCheckbox = checkboxes.find(
+      (checkbox) =>
+        checkbox.getAttribute("id")?.includes("all-multiple") !== true &&
+        checkbox.getAttribute("id")?.includes("multiple-choice") !== true,
+    );
+    if (answerCheckbox != null) {
+      await user.click(answerCheckbox);
+    }
   };
 
   const submit = async () => {
@@ -53,13 +70,18 @@ const setup = async ({ asGuest = false } = {}) => {
   };
 
   const addQuestion = async () => {
-    await user.click(screen.getByRole("button", { name: /dodaj pytanie/i }));
+    // Use the "Dodaj pytanie" button in the header
+    const addButtons = screen.getAllByRole("button", {
+      name: /dodaj pytanie/i,
+    });
+    await user.click(addButtons[0]);
   };
 
   const removeQuestion = async () => {
-    await user.click(
-      screen.getAllByRole("button", { name: /usuń pytanie/i })[0],
-    );
+    const removeButtons = screen.getAllByRole("button", {
+      name: /usuń pytanie/i,
+    });
+    await user.click(removeButtons[0]);
   };
 
   return { user, fillFields, submit, addQuestion, removeQuestion };
@@ -99,39 +121,50 @@ describe("CreateQuizPage", () => {
 
     await submit();
 
-    expect(toast.error).not.toHaveBeenCalled();
-    expect(await screen.findByText(/podaj tytuł quizu\./i)).toBeVisible();
+    // Toast shows validation error when form is invalid
+    expect(toast.error).toHaveBeenCalledWith("Tytuł quizu jest wymagany");
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("should show validation error if question field is empty", async () => {
     const { user, submit } = await setup();
     await user.type(
-      screen.getByPlaceholderText(/podaj tytuł/i),
+      screen.getByPlaceholderText(/podaj tytuł quizu/i),
       testQuiz.title,
     );
+
+    // Fill answers to satisfy answer validation
+    const answers = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
+    await user.type(answers[0], testQuiz.answers[0]);
+    await user.type(answers[1], testQuiz.answers[1]);
+
     await submit();
 
-    expect(toast.error).not.toHaveBeenCalled();
-    expect(await screen.findByText(/pytanie.*treść/i)).toBeVisible();
+    // Toast shows validation error - answers are validated first since they're nested
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining("Pytanie 1: Tekst pytania nie może być pusty"),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("should show validation error if one of the answer fields is empty", async () => {
     const { user, submit } = await setup();
 
     await user.type(
-      screen.getByPlaceholderText(/podaj tytuł/i),
+      screen.getByPlaceholderText(/podaj tytuł quizu/i),
       testQuiz.title,
     );
-    await user.type(
-      screen.getByPlaceholderText(/treść pytania/i),
-      testQuiz.questions[0],
-    );
+    const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
+    await user.type(questionTextareas[0], testQuiz.questions[0]);
     await submit();
 
-    expect(toast.error).not.toHaveBeenCalled();
-    expect(
-      await screen.findByText(/odpowiedź.*musi mieć treść\./i),
-    ).toBeVisible();
+    // Toast shows validation error when answers are empty
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Pytanie 1, Odpowiedź 1: Tekst odpowiedzi nie może być pusty",
+      ),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("should be possible to add question", async () => {
@@ -147,21 +180,18 @@ describe("CreateQuizPage", () => {
 
     await fillFields();
     await addQuestion();
-    await user.type(
-      screen.getAllByPlaceholderText(/treść pytania/i)[1],
-      testQuiz.questions[1],
-    );
-    await user.type(
-      screen.getAllByPlaceholderText(/treść odpowiedzi/i)[2],
-      testQuiz.answers[2],
-    );
-    await user.type(
-      screen.getAllByPlaceholderText(/treść odpowiedzi/i)[3],
-      testQuiz.answers[3],
-    );
-    await submit();
 
-    expect(screen.getByText(/pytanie 2/i)).toBeVisible();
+    // Wait for the second question's content to be visible
+    const questionTextareas =
+      await screen.findAllByPlaceholderText(/treść pytania/i);
+    expect(questionTextareas).toHaveLength(2);
+    await user.type(questionTextareas[1], testQuiz.questions[1]);
+
+    const answerFields = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
+    await user.type(answerFields[2], testQuiz.answers[2]);
+    await user.type(answerFields[3], testQuiz.answers[3]);
+
+    await submit();
 
     assert.ok(apiRequest != null, "API request should be defined");
     expect(apiRequest.questions).toHaveLength(2);
@@ -172,10 +202,21 @@ describe("CreateQuizPage", () => {
   it("should be possible to remove question", async () => {
     const { removeQuestion, addQuestion } = await setup();
     await addQuestion();
-    expect(screen.getAllByText(/pytanie \d/i)).toHaveLength(2);
+
+    // Verify we have 2 questions by checking for "Pytanie 2" label
+    const labels = screen.getAllByText(/pytanie \d/i);
+    const questionLabels = labels.filter((label) =>
+      /^pytanie \d$/i.test(label.textContent),
+    );
+    expect(questionLabels).toHaveLength(2);
 
     await removeQuestion();
 
-    expect(screen.getAllByText(/pytanie \d/i)).toHaveLength(1);
+    // Should now have only 1 question
+    const labelsAfter = screen.getAllByText(/pytanie \d/i);
+    const questionLabelsAfter = labelsAfter.filter((label) =>
+      /^pytanie \d$/i.test(label.textContent),
+    );
+    expect(questionLabelsAfter).toHaveLength(1);
   });
 });

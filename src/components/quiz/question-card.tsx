@@ -208,7 +208,7 @@ export function QuestionCard({
             )}
           </ViewTransition>
         </div>
-        {question.explanation != null && questionChecked ? (
+        {question.explanation && questionChecked ? (
           <div
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"

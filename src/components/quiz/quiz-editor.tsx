@@ -1,8 +1,10 @@
-import { ArrowDownToLineIcon, PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+"use client";
 
-import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
-import { QuestionForm } from "@/components/quiz/question-form";
+import { ArrowDownToLineIcon, Loader2, PlusIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { QuestionForm } from "@/components/quiz/editor/question-form";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,48 +17,66 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useGlobalFileDragMonitor } from "@/hooks/use-image-drag";
+import { validateQuizForm } from "@/lib/schemas/quiz.schema";
+import type {
+  AnswerFormData,
+  QuestionFormData,
+  QuizFormData,
+} from "@/lib/schemas/quiz.schema";
 import { cn } from "@/lib/utils";
-import type { Question, Quiz } from "@/types/quiz";
+import type { Quiz } from "@/types/quiz";
 
-export interface QuizEditorResult {
-  title: string;
-  description: string;
-  questions: Question[];
+export type QuizEditorResult = QuizFormData;
+
+interface QuizEditorCreateProps {
+  mode: "create";
+  onSave: (data: QuizEditorResult) => Promise<boolean>;
 }
 
-interface QuizEditorProps {
-  mode: "create" | "edit";
-  initialQuiz?: Partial<Quiz> & { questions?: Question[] };
-  onSave: (quiz: QuizEditorResult) => Promise<boolean> | boolean;
-  onSaveAndClose?: (quiz: QuizEditorResult) => Promise<boolean> | boolean; // only for edit
-  saving?: boolean;
+interface QuizEditorEditProps {
+  mode: "edit";
+  initialQuiz?: Quiz;
+  onSave: (data: QuizEditorResult) => Promise<boolean>;
+  onSaveAndClose?: (data: QuizEditorResult) => Promise<boolean>;
 }
 
-type QuestionWithAdvanced = Question & { advanced?: boolean };
+export type QuizEditorProps = QuizEditorCreateProps | QuizEditorEditProps;
 
-const sanitizeQuestions = (questions: QuestionWithAdvanced[]) =>
-  questions.map((q) => {
-    const isAdvanced = Boolean(q.advanced);
-    const { advanced, image: _legacyImage, image_url, ...rest } = q;
-    return {
-      ...rest,
-      image_url: isAdvanced ? image_url : undefined,
-      explanation: isAdvanced ? q.explanation : undefined,
-      answers: q.answers.map((a) => {
-        const {
-          image_url: answerImage,
-          image: _answerLegacyImage,
-          ...answerRest
-        } = a;
-        return {
-          ...answerRest,
-          image_url: isAdvanced ? answerImage : undefined,
-        };
-      }),
-    };
-  });
+type SavingState = "idle" | "saving" | "savingAndClosing";
+
+function createNewAnswer(order: number): AnswerFormData {
+  return {
+    id: crypto.randomUUID(),
+    order,
+    text: "",
+    is_correct: false,
+    image_url: null,
+    image_upload: null,
+  };
+}
+
+function createNewQuestion(order: number): QuestionFormData {
+  return {
+    id: crypto.randomUUID(),
+    order,
+    text: "",
+    multiple: false,
+    answers: [createNewAnswer(1), createNewAnswer(2)],
+    image_url: null,
+    image_upload: null,
+    explanation: "",
+  };
+}
+
+function getDefaultFormData(): QuizFormData {
+  return {
+    title: "",
+    description: "",
+    questions: [createNewQuestion(1)],
+  };
+}
 
 const scrollToBottom = () => {
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -66,188 +86,35 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-export function QuizEditor({
-  mode,
-  initialQuiz,
-  onSave,
-  onSaveAndClose,
-  saving = false,
-}: QuizEditorProps) {
-  const initialAdvancedDefault =
-    initialQuiz?.questions?.some(
-      (q) =>
-        Boolean(q.image_url) ||
-        Boolean(q.explanation) ||
-        q.answers.some((a) => Boolean(a.image_url)),
-    ) ?? false;
+export function QuizEditor(props: QuizEditorProps) {
+  // Form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [questions, setQuestions] = useState<QuestionFormData[]>([]);
 
-  const [title, setTitle] = useState(initialQuiz?.title ?? "");
-  const [description, setDescription] = useState(
-    initialQuiz?.description ?? "",
-  );
-
-  const [questions, setQuestions] = useState<QuestionWithAdvanced[]>(() => {
-    if (initialQuiz?.questions != null && initialQuiz.questions.length > 0) {
-      return initialQuiz.questions.map((q) => ({
-        ...q,
-        advanced:
-          Boolean(q.image_url) ||
-          Boolean(q.explanation) ||
-          q.answers.some((a) => Boolean(a.image_url)),
-      }));
-    }
-    return [
-      {
-        id: crypto.randomUUID(),
-        order: 1,
-        text: "",
-        multiple: true,
-        answers: [
-          {
-            id: crypto.randomUUID(),
-            order: 1,
-            text: "",
-            is_correct: false,
-            image_url: "",
-          },
-          {
-            id: crypto.randomUUID(),
-            order: 2,
-            text: "",
-            is_correct: false,
-            image_url: "",
-          },
-        ],
-        image_url: "",
-        explanation: "",
-        advanced: initialAdvancedDefault,
-      },
-    ];
-  });
-
-  const [error, setError] = useState<string | null>(null);
-  const [advancedMode, setAdvancedMode] = useState(initialAdvancedDefault);
-
-  const [previousQuestionOrder, setPreviousQuestionOrder] = useState<number>(
-    () => questions.reduce((max, q) => Math.max(q.order, max), 0),
-  );
-
-  const allQuestionsMultiple: boolean | null = (() => {
-    if (questions.length === 0) {
-      return null;
-    }
-    const allTrue = questions.every((q) => q.multiple);
-    const allFalse = questions.every((q) => !q.multiple);
-    if (allTrue) {
-      return true;
-    }
-    if (allFalse) {
-      return false;
-    }
-    return null;
-  })();
-
-  const setAllQuestionsMultiple = (multiple: boolean) => {
-    setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
-  };
-
-  const addQuestion = () => {
-    const newOrder = previousQuestionOrder + 1;
-    const newId = crypto.randomUUID();
-    setQuestions((previous) => [
-      ...previous,
-      {
-        id: newId,
-        order: newOrder,
-        text: "",
-        multiple: true,
-        answers: [
-          {
-            id: crypto.randomUUID(),
-            order: 1,
-            text: "",
-            is_correct: false,
-            image_url: "",
-          },
-          {
-            id: crypto.randomUUID(),
-            order: 2,
-            text: "",
-            is_correct: false,
-            image_url: "",
-          },
-        ],
-        image_url: "",
-        explanation: "",
-        advanced: advancedMode,
-      },
-    ]);
-    setPreviousQuestionOrder(newOrder);
-    // Scroll after render
-    requestAnimationFrame(() => {
-      const element = document.querySelector(`#question-${newId}`);
-      if (element == null) {
-        // fallback slight delay
-        setTimeout(() => {
-          const element2 = document.querySelector(`#question-${newId}`);
-          if (element2 != null) {
-            element2.scrollIntoView({ behavior: "smooth" });
-            const textarea2 = element2.querySelector("textarea");
-            if (textarea2 != null) {
-              textarea2.focus({ preventScroll: true });
-            }
-          }
-        }, 50);
-      } else {
-        element.scrollIntoView({ behavior: "smooth" });
-        const textarea = element.querySelector("textarea");
-        if (textarea != null) {
-          textarea.focus({ preventScroll: true });
-        }
-      }
-    });
-  };
-
-  const updateQuestion = (updated: QuestionWithAdvanced) => {
-    setQuestions((previous) =>
-      previous.map((q) => (q.id === updated.id ? updated : q)),
-    );
-  };
-  const removeQuestion = (id: string) => {
-    setQuestions((previous) => {
-      const filtered = previous.filter((q) => q.id !== id);
-      setPreviousQuestionOrder(filtered.length);
-
-      return filtered.map((q, index) => ({
-        ...q,
-        order: index + 1,
-      }));
-    });
-  };
-
-  const triggerSave = async (closeAfter?: boolean) => {
-    const draft = {
-      title,
-      description,
-      questions: sanitizeQuestions(questions),
-    };
-
-    draft.title = draft.title.trim();
-
-    const validationError = validateQuiz(draft as unknown as Quiz);
-    if (validationError !== null) {
-      setError(validationError);
-      return;
-    }
-    setError(null);
-    await (closeAfter === true && onSaveAndClose !== undefined
-      ? onSaveAndClose(draft)
-      : onSave(draft));
-  };
-
+  // UI state
+  const [savingState, setSavingState] = useState<SavingState>("idle");
+  const [error, setError] = useState<Error | null>(null);
+  const [uploadCount, setUploadCount] = useState(0);
+  const activeUploadsRef = useRef(0);
   const [atBottom, setAtBottom] = useState(false);
   const [atTop, setAtTop] = useState(true);
 
+  // Initialize form data
+  const initialQuiz = props.mode === "edit" ? props.initialQuiz : undefined;
+  useEffect(() => {
+    let initialData = getDefaultFormData();
+
+    if (initialQuiz !== undefined) {
+      initialData = initialQuiz;
+    }
+
+    setTitle(initialData.title);
+    setDescription(initialData.description);
+    setQuestions(initialData.questions);
+  }, [props.mode, initialQuiz]);
+
+  // Scroll position tracking
   useEffect(() => {
     const THRESHOLD = 200;
     const handleScroll = () => {
@@ -265,111 +132,298 @@ export function QuizEditor({
     };
   }, []);
 
+  // To prevent dropped files from opening them in the browser if not handled
+  useGlobalFileDragMonitor();
+
+  function handleUploadStart() {
+    activeUploadsRef.current += 1;
+    setUploadCount(activeUploadsRef.current);
+  }
+
+  function handleUploadEnd() {
+    activeUploadsRef.current = Math.max(0, activeUploadsRef.current - 1);
+    setUploadCount(activeUploadsRef.current);
+  }
+
+  function addQuestion() {
+    const newOrder = questions.length + 1;
+    const newQuestion = createNewQuestion(newOrder);
+
+    setQuestions((previous) => [...previous, newQuestion]);
+
+    requestAnimationFrame(() => {
+      const element = document.querySelector(`#question-${newQuestion.id}`);
+      if (element === null) {
+        setTimeout(() => {
+          const element2 = document.querySelector(
+            `#question-${newQuestion.id}`,
+          );
+          if (element2 !== null) {
+            element2.scrollIntoView({ behavior: "smooth" });
+            const textarea = element2.querySelector("textarea");
+            textarea?.focus({ preventScroll: true });
+          }
+        }, 50);
+      } else {
+        element.scrollIntoView({ behavior: "smooth" });
+        const textarea = element.querySelector("textarea");
+        textarea?.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  function updateQuestion(
+    questionId: string,
+    updates: Partial<QuestionFormData>,
+  ) {
+    setQuestions((previous) =>
+      previous.map((q) => (q.id === questionId ? { ...q, ...updates } : q)),
+    );
+  }
+
+  function removeQuestion(questionId: string) {
+    if (questions.length <= 1) {
+      toast.error("Quiz musi mieć przynajmniej jedno pytanie.");
+      return;
+    }
+
+    setQuestions((previous) => {
+      const filtered = previous.filter((q) => q.id !== questionId);
+      return filtered.map((q, index) => ({ ...q, order: index + 1 }));
+    });
+  }
+
+  const allQuestionsMultiple: boolean | null = (() => {
+    if (questions.length === 0) {
+      return null;
+    }
+    const allTrue = questions.every((q) => q.multiple);
+    const allFalse = questions.every((q) => !q.multiple);
+    if (allTrue) {
+      return true;
+    }
+    if (allFalse) {
+      return false;
+    }
+    return null;
+  })();
+
+  function setAllQuestionsMultiple(multiple: boolean) {
+    setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const formData: QuizFormData = {
+      title,
+      description,
+      questions,
+    };
+
+    const validation = validateQuizForm(formData);
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setSavingState("saving");
+    setError(null);
+
+    try {
+      const success = await props.onSave(validation.data);
+      if (!success) {
+        setError(new Error("Nie udało się zapisać quizu."));
+      }
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError
+          : new Error("Wystąpił nieoczekiwany błąd."),
+      );
+    } finally {
+      setSavingState("idle");
+    }
+  }
+
+  async function handleSaveAndClose() {
+    if (props.mode !== "edit" || props.onSaveAndClose === undefined) {
+      return;
+    }
+
+    const formData: QuizFormData = {
+      title,
+      description,
+      questions,
+    };
+
+    const validation = validateQuizForm(formData);
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setSavingState("savingAndClosing");
+    setError(null);
+
+    try {
+      const success = await props.onSaveAndClose(validation.data);
+      if (!success) {
+        setError(new Error("Nie udało się zapisać quizu."));
+      }
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError
+          : new Error("Wystąpił nieoczekiwany błąd."),
+      );
+    } finally {
+      setSavingState("idle");
+    }
+  }
+
+  const hasActiveUploads = uploadCount > 0;
+  const canSubmit = savingState === "idle" && !hasActiveUploads;
+
   return (
-    <Card className="relative">
-      <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <CardTitle>
-              {mode === "create" ? "Stwórz nowy quiz" : "Edytuj quiz"}
-            </CardTitle>
-            <CardDescription>
-              {mode === "create"
-                ? "Uzupełnij podstawowe informacje i pytania, a następnie zapisz."
-                : "Wprowadź zmiany w quizie i zapisz."}
-            </CardDescription>
-          </div>
-          <div className="bg-muted/40 flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-            <Label htmlFor="advanced-mode" className="cursor-pointer">
-              Tryb zaawansowany (domyślny dla nowych pytań)
-            </Label>
-            <Switch
-              id="advanced-mode"
-              checked={advancedMode}
-              onCheckedChange={(value) => {
-                setAdvancedMode(value);
-              }}
-            />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {error == null ? null : (
-          <Alert variant="destructive">
-            <AlertTitle>{error}</AlertTitle>
-          </Alert>
-        )}
-        <div className="grid gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="quiz-title">Tytuł</Label>
-            <Input
-              id="quiz-title"
-              placeholder="Podaj tytuł quizu"
-              value={title}
-              onChange={(event_) => {
-                setTitle(event_.target.value);
-              }}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quiz-description">Opis</Label>
-            <Textarea
-              id="quiz-description"
-              rows={3}
-              placeholder="Podaj opis quizu"
-              value={description}
-              onChange={(event_) => {
-                setDescription(event_.target.value);
-              }}
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="all-multiple"
-                checked={allQuestionsMultiple ?? "indeterminate"}
-                onCheckedChange={(checked) => {
-                  setAllQuestionsMultiple(Boolean(checked));
-                }}
-              />
-              <Label htmlFor="all-multiple" className="cursor-pointer">
-                Wielokrotny wybór (dla wszystkich pytań)
-              </Label>
+    <form onSubmit={handleSubmit}>
+      <div className="space-y-8">
+        <Card className="relative">
+          <CardHeader>
+            <div className="space-y-1">
+              <CardTitle>
+                {props.mode === "create" ? "Stwórz nowy quiz" : "Edytuj quiz"}
+              </CardTitle>
+              <CardDescription>
+                {props.mode === "create"
+                  ? "Uzupełnij podstawowe informacje i pytania, a następnie zapisz."
+                  : "Wprowadź zmiany w quizie i zapisz."}
+              </CardDescription>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Pytania</h2>
-              <Button variant="outline" size="sm" onClick={addQuestion}>
-                Dodaj pytanie
-              </Button>
-            </div>
-            <div className="space-y-8">
-              {questions.map((q) => (
-                <QuestionForm
-                  key={q.id}
-                  question={q}
-                  onUpdate={updateQuestion}
-                  onRemove={removeQuestion}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error !== null && (
+              <Alert variant="destructive">
+                <AlertTitle>{error.message}</AlertTitle>
+              </Alert>
+            )}
+
+            <div className="grid gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="quiz-title">Tytuł</Label>
+                <Input
+                  id="quiz-title"
+                  placeholder="Podaj tytuł quizu"
+                  value={title}
+                  onChange={(event) => {
+                    setTitle(event.target.value);
+                  }}
                 />
-              ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quiz-description">Opis</Label>
+                <Textarea
+                  id="quiz-description"
+                  rows={3}
+                  placeholder="Podaj opis quizu"
+                  value={description}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="all-multiple"
+                    checked={allQuestionsMultiple ?? "indeterminate"}
+                    onCheckedChange={(checked) => {
+                      setAllQuestionsMultiple(Boolean(checked));
+                    }}
+                  />
+                  <Label htmlFor="all-multiple" className="cursor-pointer">
+                    Wielokrotny wybór (dla wszystkich pytań)
+                  </Label>
+                </div>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Pytania</h2>
+            <Button type="button" onClick={addQuestion}>
+              <PlusIcon className="mr-2 size-4" />
+              Dodaj pytanie
+            </Button>
           </div>
+
+          <div className="space-y-6">
+            {questions.map((question) => (
+              <QuestionForm
+                key={question.id}
+                question={question}
+                onUpdate={(updates) => {
+                  updateQuestion(question.id, updates);
+                }}
+                onRemove={() => {
+                  removeQuestion(question.id);
+                }}
+                onUploadStart={handleUploadStart}
+                onUploadEnd={handleUploadEnd}
+              />
+            ))}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-dashed py-8"
+            onClick={addQuestion}
+          >
+            <PlusIcon className="mr-2 size-4" />
+            Dodaj kolejne pytanie
+          </Button>
         </div>
 
-        <div className="pointer-events-none sticky bottom-4 z-10 mt-6 flex justify-center sm:bottom-10">
-          <div className="bg-background/60 pointer-events-auto -mx-16 flex flex-wrap items-center justify-center gap-3 rounded-md px-6 py-3 shadow-sm backdrop-blur sm:mx-0">
-            {onSaveAndClose != null && (
-              <Button disabled={saving} onClick={async () => triggerSave(true)}>
-                Zapisz i wróć
+        <div className="bg-background fixed right-0 bottom-0 left-0 z-10 border-t p-4 sm:pointer-events-none sm:sticky sm:bottom-10 sm:flex sm:justify-center sm:border-t-0 sm:bg-transparent sm:p-0">
+          <div className="sm:bg-background/60 pointer-events-auto flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:rounded-md sm:px-6 sm:py-3 sm:shadow-sm sm:backdrop-blur">
+            {props.mode === "edit" && props.onSaveAndClose !== undefined && (
+              <Button
+                type="button"
+                disabled={!canSubmit}
+                onClick={handleSaveAndClose}
+                className="w-full sm:w-auto"
+              >
+                {savingState === "savingAndClosing" ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Zapisywanie...
+                  </>
+                ) : (
+                  "Zapisz i wróć"
+                )}
               </Button>
             )}
             <Button
-              variant="outline"
-              disabled={saving}
-              onClick={async () => triggerSave(false)}
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full sm:w-auto"
             >
-              {mode === "create" ? "Utwórz" : "Zapisz"}
+              {savingState === "saving" ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Zapisywanie...
+                </>
+              ) : props.mode === "create" ? (
+                "Utwórz"
+              ) : (
+                "Zapisz"
+              )}
             </Button>
             <Button variant="ghost" size="sm" onClick={addQuestion}>
               <PlusIcon />
@@ -377,9 +431,11 @@ export function QuizEditor({
             </Button>
           </div>
         </div>
-      </CardContent>
+      </div>
+
       <div className="fixed right-4 bottom-10 z-20 hidden flex-col items-end gap-3 sm:flex">
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={scrollToTop}
@@ -394,6 +450,7 @@ export function QuizEditor({
           <ArrowDownToLineIcon className="size-6 rotate-180" />
         </Button>
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={scrollToBottom}
@@ -408,6 +465,6 @@ export function QuizEditor({
           <ArrowDownToLineIcon className="size-6" />
         </Button>
       </div>
-    </Card>
+    </form>
   );
 }
