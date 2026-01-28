@@ -11,6 +11,7 @@ export interface ImageDropZoneProps {
   className?: string;
   children: React.ReactNode | ((isDragOver: boolean) => React.ReactNode);
   label?: string;
+  id?: string;
 }
 
 export function ImageDropZone({
@@ -18,11 +19,13 @@ export function ImageDropZone({
   className,
   children,
   label = "Upuść zdjęcie tutaj",
+  id,
 }: ImageDropZoneProps) {
   const { isDragOver, elementRef } = useImageDropTarget(onFileDrop);
 
   return (
     <div
+      id={id}
       ref={elementRef}
       className={cn(
         "relative rounded-lg ring-2 ring-transparent ring-offset-3 ring-offset-transparent transition-all duration-200",

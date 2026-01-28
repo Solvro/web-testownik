@@ -8,6 +8,7 @@ import { AppContext } from "@/app-context";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import type { QuizFormData } from "@/lib/schemas/quiz.schema";
+import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Quiz } from "@/types/quiz";
 
 export function CreateQuizPageClient() {
@@ -18,11 +19,8 @@ export function CreateQuizPageClient() {
 
   async function handleSave(data: QuizFormData): Promise<boolean> {
     try {
-      const result = await appContext.services.quiz.createQuiz({
-        title: data.title,
-        description: data.description,
-        questions: data.questions,
-      });
+      const payload = prepareQuizForSubmission(data);
+      const result = await appContext.services.quiz.createQuiz(payload);
       setQuiz(result);
       toast.success("Quiz został utworzony.");
       return true;

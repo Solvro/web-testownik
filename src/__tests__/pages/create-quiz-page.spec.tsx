@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -122,7 +123,12 @@ describe("CreateQuizPage", () => {
     await submit();
 
     // Toast shows validation error when form is invalid
-    expect(toast.error).toHaveBeenCalledWith("Tytuł quizu jest wymagany");
+    expect(toast.error).toHaveBeenCalledWith(
+      "Tytuł quizu jest wymagany",
+      expect.objectContaining({
+        actionButtonStyle: expect.objectContaining({}),
+      }),
+    );
     expect(toast.success).not.toHaveBeenCalled();
   });
 
@@ -140,9 +146,14 @@ describe("CreateQuizPage", () => {
 
     await submit();
 
-    // Toast shows validation error - answers are validated first since they're nested
+    // Toast shows validation error - question must contain text or image
     expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining("Pytanie 1: Tekst pytania nie może być pusty"),
+      expect.stringContaining(
+        "Pytanie 1: Pytanie musi zawierać tekst lub zdjęcie",
+      ),
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Pokaż" }),
+      }),
     );
     expect(toast.success).not.toHaveBeenCalled();
   });
@@ -158,11 +169,14 @@ describe("CreateQuizPage", () => {
     await user.type(questionTextareas[0], testQuiz.questions[0]);
     await submit();
 
-    // Toast shows validation error when answers are empty
+    // Toast shows validation error when answers are empty (text or image required)
     expect(toast.error).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Pytanie 1, Odpowiedź 1: Tekst odpowiedzi nie może być pusty",
+        "Pytanie 1, Odpowiedź 1: Odpowiedź musi zawierać tekst lub zdjęcie",
       ),
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Pokaż" }),
+      }),
     );
     expect(toast.success).not.toHaveBeenCalled();
   });
