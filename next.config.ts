@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     viewTransition: true,
   },
   images: {
-    dangerouslyAllowLocalIP: true,
+    dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
     remotePatterns: [
       ...(process.env.NODE_ENV === "development"
         ? [

@@ -195,7 +195,7 @@ function ImageDialogBody({
               )}
             >
               {hasImage && hasUpload ? (
-                <div className="relative h-full w-full overflow-hidden rounded-xl border">
+                <div className="group relative h-full w-full overflow-hidden rounded-xl border">
                   {canUseNextImage ? (
                     <Image
                       src={imageUrl}

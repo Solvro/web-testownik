@@ -1,10 +1,8 @@
 "use client";
 
 import { Info, MessageSquareText, Trash2 } from "lucide-react";
-import { useContext, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
-import { AppContext } from "@/app-context";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ExplanationDialog } from "@/components/quiz/editor/explanation-dialog";
 import {
@@ -56,7 +54,6 @@ export function QuestionForm({
   onUploadStart,
   onUploadEnd,
 }: QuestionFormProps) {
-  const { services } = useContext(AppContext);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [explanationOpen, setExplanationOpen] = useState(false);
 
@@ -141,23 +138,7 @@ export function QuestionForm({
   }
 
   async function handleFileDrop(file: File) {
-    setIsImageUploading(true);
-    onUploadStart?.();
-
-    try {
-      const result = await services.image.upload(file);
-      handleImageChange({
-        url: result.data.url,
-        uploadId: result.data.id,
-        width: result.data.width,
-        height: result.data.height,
-      });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setIsImageUploading(false);
-      onUploadEnd?.();
-    }
+    await handleUpload(file);
   }
 
   // Explanation handling

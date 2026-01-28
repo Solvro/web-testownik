@@ -23,18 +23,18 @@ export const questionFormSchema = z.object({
   image_height: z.number().optional().nullable().readonly(),
   answers: z
     .array(answerFormSchema)
-    .min(1, { error: "Pytanie musi mieć przynajmniej jedną odpowiedź" }),
+    .min(1, { message: "Pytanie musi mieć przynajmniej jedną odpowiedź" }),
 });
 
 export const quizFormSchema = z.object({
   title: z
     .string()
-    .min(1, { error: "Tytuł quizu jest wymagany" })
-    .max(200, { error: "Tytuł quizu nie może przekraczać 200 znaków" }),
+    .min(1, { message: "Tytuł quizu jest wymagany" })
+    .max(200, { message: "Tytuł quizu nie może przekraczać 200 znaków" }),
   description: z.string(),
   questions: z
     .array(questionFormSchema)
-    .min(1, { error: "Quiz musi zawierać przynajmniej jedno pytanie" }),
+    .min(1, { message: "Quiz musi zawierać przynajmniej jedno pytanie" }),
 });
 
 export type AnswerFormData = z.infer<typeof answerFormSchema>;
