@@ -84,7 +84,7 @@ export function QuizPreviewDialog({
                           const correct = answer.is_correct;
                           return (
                             <li
-                              key={answer.text}
+                              key={answer.id}
                               className={`group relative flex items-start gap-2 rounded border px-2 py-1.5 text-xs ${
                                 correct
                                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"

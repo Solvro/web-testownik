@@ -20,6 +20,8 @@ export interface Answer {
   image?: string; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
+  image_width?: number | null; // Read-only (Display)
+  image_height?: number | null; // Read-only (Display)
 }
 
 export interface Question {
@@ -31,6 +33,8 @@ export interface Question {
   image?: string; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
+  image_width?: number | null; // Read-only (Display)
+  image_height?: number | null; // Read-only (Display)
   answers: Answer[];
 }
 

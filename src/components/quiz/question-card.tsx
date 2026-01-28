@@ -176,7 +176,7 @@ export function QuestionCard({
                   key={`answer-image-${question.id}-${answer.id}`}
                   url={answer.image}
                   alt={answer.text}
-                  className="max-h-40 w-full rounded object-contain"
+                  className="mx-auto max-h-40 rounded object-contain"
                 />
               </button>
             );
