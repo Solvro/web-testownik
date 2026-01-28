@@ -24,14 +24,18 @@ export interface RuntimeState {
   settings: ProgressSettings;
   answers: AnswerRecord[];
   isQuizFinished: boolean;
+  canGoBack: boolean;
+  isHistoryQuestion: boolean;
 
   // UI state
+  showHistory: boolean;
   showBrainrot: boolean;
 }
 
 export type Action =
   | { type: "SET_SELECTED_ANSWERS"; payload: string[] }
   | { type: "SET_CURRENT_QUESTION"; payload: { question: Question | null } }
+  | { type: "SET_IS_HISTORY_QUESTION"; payload: boolean }
   | { type: "MARK_FINISHED" }
   | {
       type: "INIT_SESSION";
@@ -64,6 +68,7 @@ export type Action =
   | {
       type: "RESET_PROGRESS";
     }
+  | { type: "TOGGLE_HISTORY" }
   | { type: "TOGGLE_BRAINROT" };
 
 export const initialRuntime: RuntimeState = {
@@ -75,7 +80,10 @@ export const initialRuntime: RuntimeState = {
   questions: [],
   settings: { initialReoccurrences: 1, wrongAnswerReoccurrences: 1 },
   isQuizFinished: false,
+  showHistory: false,
   showBrainrot: false,
+  canGoBack: false,
+  isHistoryQuestion: false,
 };
 
 /**
@@ -115,6 +123,13 @@ export function runtimeReducer(
         selectedAnswers: [],
         questionChecked: false,
         isQuizFinished: isFinished,
+      };
+    }
+
+    case "SET_IS_HISTORY_QUESTION": {
+      return {
+        ...state,
+        isHistoryQuestion: action.payload,
       };
     }
 
@@ -168,6 +183,7 @@ export function runtimeReducer(
         questionChecked: false,
         isQuizFinished: isFinished,
         nextQuestion: null,
+        canGoBack: answers === undefined ? false : answers.length > 0,
       };
     }
 
@@ -178,6 +194,7 @@ export function runtimeReducer(
         currentQuestion: action.payload.question,
         questionChecked: false,
         isQuizFinished: action.payload.finished,
+        canGoBack: action.payload.answers.length > 0,
       };
     }
 
@@ -187,13 +204,16 @@ export function runtimeReducer(
       }
 
       const { answer, nextQuestion } = action.payload;
-      const updatedAnswers = [...state.answers, answer];
+      const updatedAnswers = state.isHistoryQuestion
+        ? [...state.answers]
+        : [...state.answers, answer];
 
       return {
         ...state,
         questionChecked: true,
         answers: updatedAnswers,
         nextQuestion,
+        canGoBack: updatedAnswers.length > 0,
       };
     }
 
@@ -227,8 +247,15 @@ export function runtimeReducer(
         questionChecked: false,
         isQuizFinished: false,
         nextQuestion: null,
+        canGoBack: false,
+        isHistoryQuestion: false,
       };
     }
+
+    case "TOGGLE_HISTORY": {
+      return { ...state, showHistory: !state.showHistory };
+    }
+
     case "TOGGLE_BRAINROT": {
       return { ...state, showBrainrot: !state.showBrainrot };
     }
