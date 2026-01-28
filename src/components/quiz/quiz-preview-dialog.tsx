@@ -2,6 +2,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ImageLoad } from "@/components/image-load";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,13 +72,22 @@ export function QuizPreviewDialog({
                       key={question.id}
                       className="border-border/60 bg-card/40 hover:bg-card/55 rounded-md border p-3 shadow-sm transition"
                     >
-                      <div className="mb-2 flex items-start gap-2">
-                        <span className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                          {qi + 1}
-                        </span>
-                        <p className="text-sm leading-snug font-medium">
-                          {question.text}
-                        </p>
+                      <div className="mb-2 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <span className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                            {qi + 1}
+                          </span>
+                          <p className="text-sm leading-snug font-medium">
+                            {question.text}
+                          </p>
+                        </div>
+                        <ImageLoad
+                          url={question.image}
+                          alt={question.text}
+                          width={question.image_width}
+                          height={question.image_height}
+                          className="max-h-40 rounded border object-contain"
+                        />
                       </div>
                       <ul className="grid gap-1.5 sm:grid-cols-2">
                         {question.answers.map((answer) => {
@@ -112,9 +122,18 @@ export function QuizPreviewDialog({
                                   <XIcon className="size-3" strokeWidth={3} />
                                 )}
                               </span>
-                              <span className="flex-1 leading-snug">
-                                {answer.text}
-                              </span>
+                              <div className="flex flex-1 flex-col gap-1">
+                                <span className="leading-snug">
+                                  {answer.text}
+                                </span>
+                                <ImageLoad
+                                  url={answer.image}
+                                  alt={answer.text}
+                                  width={answer.image_width}
+                                  height={answer.image_height}
+                                  className="max-h-20 rounded border object-contain"
+                                />
+                              </div>
                             </li>
                           );
                         })}
