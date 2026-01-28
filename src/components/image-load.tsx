@@ -1,4 +1,5 @@
 import { AlertCircleIcon } from "lucide-react";
+import Image from "next/image";
 import { Suspense, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,10 +8,18 @@ import { cn } from "@/lib/utils";
 interface ImageLoadProps {
   url: string | null | undefined;
   alt: string;
+  width?: number | null;
+  height?: number | null;
   className?: string;
 }
 
-export function ImageLoad({ url, alt, className }: ImageLoadProps) {
+export function ImageLoad({
+  url,
+  alt,
+  width,
+  height,
+  className,
+}: ImageLoadProps) {
   const [hasError, setHasError] = useState<boolean>(false);
 
   if (url == null || url === "") {
@@ -31,19 +40,35 @@ export function ImageLoad({ url, alt, className }: ImageLoadProps) {
     );
   }
 
+  const canUseNextImage =
+    typeof width === "number" && typeof height === "number";
+
   return (
     <Suspense
       fallback={<Skeleton className={cn("min-h-40 w-1/2", className)} />}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt={alt}
-        className={className}
-        onError={() => {
-          setHasError(true);
-        }}
-      />
+      {canUseNextImage ? (
+        <Image
+          src={url}
+          alt={alt}
+          width={width}
+          height={height}
+          className={className}
+          onError={() => {
+            setHasError(true);
+          }}
+        />
+      ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={url}
+          alt={alt}
+          className={className}
+          onError={() => {
+            setHasError(true);
+          }}
+        />
+      )}
     </Suspense>
   );
 }

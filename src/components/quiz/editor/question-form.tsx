@@ -42,8 +42,11 @@ function createNewAnswer(order: number): AnswerFormData {
     order,
     text: "",
     is_correct: false,
+    image: null,
     image_url: null,
     image_upload: null,
+    image_width: null,
+    image_height: null,
   };
 }
 
@@ -104,7 +107,8 @@ export function QuestionForm({
 
   function handleImageChange(state: ImageState) {
     onUpdate({
-      image_url: state.url,
+      image: state.image,
+      image_url: state.imageUrl,
       image_upload: state.uploadId,
       image_width: state.width ?? null,
       image_height: state.height ?? null,
@@ -118,8 +122,9 @@ export function QuestionForm({
       file,
       (url, id, width, height) => {
         handleImageChange({
-          url,
+          image: url,
           uploadId: id,
+          imageUrl: null,
           width: width ?? null,
           height: height ?? null,
         });
@@ -128,8 +133,9 @@ export function QuestionForm({
       },
       () => {
         handleImageChange({
-          url: null,
+          image: null,
           uploadId: null,
+          imageUrl: null,
         });
         onUploadEnd?.();
         setIsImageUploading(false);
@@ -157,6 +163,7 @@ export function QuestionForm({
 
         <div className="ml-auto flex items-center gap-1">
           <ImageButton
+            image={question.image}
             imageUrl={question.image_url}
             imageUploadId={question.image_upload}
             imageWidth={question.image_width}
@@ -245,7 +252,8 @@ export function QuestionForm({
               className="resize-none"
             />
             <ImagePreview
-              imageUrl={question.image_url ?? null}
+              image={question.image}
+              imageUrl={question.image_url}
               imageUploadId={question.image_upload}
               imageWidth={question.image_width}
               imageHeight={question.image_height}

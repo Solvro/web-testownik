@@ -1,3 +1,6 @@
+import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { getCookie } from "@/lib/cookies";
+
 import { BaseApiService } from "./base-api.service";
 import type { ApiResponse } from "./types";
 
@@ -20,6 +23,7 @@ export const UPLOAD_ERROR_MESSAGES = {
     "Błąd połączenia. Sprawdź połączenie internetowe i spróbuj ponownie.",
   UNAUTHORIZED: "Sesja wygasła. Zaloguj się ponownie.",
   SERVER_ERROR: "Błąd serwera. Spróbuj ponownie później.",
+  GUEST_ERROR: "Nie możesz załadować zdjęcia w trybie gościa.",
   UNKNOWN_ERROR: "Wystąpił nieznany błąd. Spróbuj ponownie.",
   CORRUPTED_IMAGE: "Plik obrazu jest uszkodzony lub nieprawidłowy.",
 } as const;
@@ -53,6 +57,10 @@ export function validateFile(
 
 export class ImageService extends BaseApiService {
   async upload(file: File): Promise<ApiResponse<ImageUploadResponse>> {
+    const isGuest = getCookie(GUEST_COOKIE_NAME) === "true";
+    if (isGuest) {
+      throw new Error(UPLOAD_ERROR_MESSAGES.GUEST_ERROR);
+    }
     const validation = validateFile(file);
     if (!validation.valid) {
       throw new Error(validation.error);

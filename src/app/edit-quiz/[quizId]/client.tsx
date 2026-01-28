@@ -11,6 +11,7 @@ import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import type { QuizFormData } from "@/lib/schemas/quiz.schema";
+import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Quiz } from "@/types/quiz";
 
 interface EditQuizPageClientProps {
@@ -78,11 +79,7 @@ function EditQuizPageContent({
       toast.error("Nieprawidłowy identyfikator quizu.");
       return false;
     }
-    const payload = {
-      title: data.title,
-      description: data.description,
-      questions: data.questions,
-    };
+    const payload = prepareQuizForSubmission(data);
     try {
       await appContext.services.quiz.updateQuiz(quizId, payload);
       toast.success("Quiz został zaktualizowany.");

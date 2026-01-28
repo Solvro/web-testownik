@@ -25,7 +25,8 @@ function formatFileSize(bytes: number): string {
 }
 
 export interface ImageState {
-  url: string | null;
+  image: string | null;
+  imageUrl: string | null;
   uploadId: string | null;
   width?: number | null;
   height?: number | null;
@@ -34,7 +35,7 @@ export interface ImageState {
 export interface ImageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-
+  image: string | null | undefined;
   imageUrl: string | null | undefined;
   imageUploadId: string | null | undefined;
   imageWidth?: number | null;
@@ -71,6 +72,7 @@ interface ImageDialogBodyProps extends Omit<
 }
 
 function ImageDialogBody({
+  image,
   imageUrl,
   imageUploadId,
   imageWidth,
@@ -82,17 +84,15 @@ function ImageDialogBody({
 }: ImageDialogBodyProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const hasImage =
-    imageUrl !== null && imageUrl !== undefined && imageUrl !== "";
+  const hasImage = image != null && image !== "";
   const hasUpload =
     imageUploadId !== null &&
     imageUploadId !== undefined &&
     imageUploadId !== "";
 
   const [urlInput, setUrlInput] = useState(() => {
-    if (hasImage && !hasUpload) {
-      // We know imageUrl is a string if hasImage is true and it's not a blob/upload (actually uploadId check is for upload vs url source)
-      // Logic: hasImage is true -> imageUrl is not null/undefined/"".
+    // Initialize with imageUrl if it's an external URL (not from upload)
+    if (imageUrl != null && imageUrl !== "" && !hasUpload) {
       return imageUrl;
     }
     return "";
@@ -136,7 +136,8 @@ function ImageDialogBody({
 
   function handleRemove() {
     onImageChange({
-      url: null,
+      image: null,
+      imageUrl: null,
       uploadId: null,
     });
     setUrlInput("");
@@ -147,8 +148,9 @@ function ImageDialogBody({
     const trimmedUrl = urlInput.trim();
     if (trimmedUrl !== "") {
       onImageChange({
-        url: trimmedUrl,
-        uploadId: null, // Custom URL, so no upload ID
+        image: trimmedUrl,
+        imageUrl: trimmedUrl,
+        uploadId: null,
       });
       closeDialog();
     }
@@ -198,7 +200,7 @@ function ImageDialogBody({
                 <div className="group relative h-full w-full overflow-hidden rounded-xl border">
                   {canUseNextImage ? (
                     <Image
-                      src={imageUrl}
+                      src={image}
                       alt="Podgląd"
                       width={targetWidth}
                       height={targetHeight}
@@ -209,7 +211,7 @@ function ImageDialogBody({
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={imageUrl}
+                      src={image}
                       alt="Podgląd"
                       className="h-full w-full object-cover"
                       draggable={false}
@@ -285,7 +287,7 @@ function ImageDialogBody({
                 <>
                   {canUseNextImage ? (
                     <Image
-                      src={imageUrl}
+                      src={image}
                       alt="Podgląd"
                       width={targetWidth}
                       height={targetHeight}
@@ -296,7 +298,7 @@ function ImageDialogBody({
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={imageUrl}
+                      src={image}
                       alt="Podgląd"
                       className="h-full w-full object-cover"
                       draggable={false}
