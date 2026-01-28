@@ -195,6 +195,32 @@ const parseQuestion = (
   };
 };
 
+/**
+ * Get MIME type from file extension
+ */
+const getMimeTypeFromExtension = (extension: string | undefined): string => {
+  switch (extension) {
+    case "png": {
+      return "image/png";
+    }
+    case "gif": {
+      return "image/gif";
+    }
+    case "webp": {
+      return "image/webp";
+    }
+    case "avif": {
+      return "image/avif";
+    }
+    case undefined:
+    case "jpg":
+    case "jpeg":
+    default: {
+      return "image/jpeg";
+    }
+  }
+};
+
 export const extractImagesToUpload = (
   questions: Question[],
 ): { type: "question" | "answer"; id: string; filename: string }[] => {
@@ -475,7 +501,13 @@ export const useImportQuiz = () => {
           questions.push(question);
         }
       } else {
-        images.set(file.name, file);
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        const mimeType = getMimeTypeFromExtension(extension);
+        const normalizedFile =
+          mimeType === file.type
+            ? file
+            : new File([file], file.name, { type: mimeType });
+        images.set(file.name, normalizedFile);
       }
     }
     return { questions, images };
@@ -519,28 +551,7 @@ export const useImportQuiz = () => {
         if (fileData !== null) {
           const blob = await fileData.async("blob");
           const extension = filename.split(".").pop()?.toLowerCase();
-          let type = "image/jpeg";
-          switch (extension) {
-            case "png": {
-              type = "image/png";
-
-              break;
-            }
-            case "gif": {
-              type = "image/gif";
-
-              break;
-            }
-            case "webp": {
-              type = "image/webp";
-
-              break;
-            }
-            case undefined: {
-              type = "image/jpeg";
-              break;
-            }
-          }
+          const type = getMimeTypeFromExtension(extension);
           const simpleFilename = filename.split("/").pop() ?? filename;
           const imageFile = new File([blob], simpleFilename, { type });
           images.set(simpleFilename, imageFile);
@@ -733,6 +744,7 @@ export const useImportQuiz = () => {
 
               if (imageFile == null) {
                 console.warn(`Image file not found for ${filename}`);
+                toast.warning(`Nie znaleziono pliku: ${simpleFilename}`);
               } else {
                 try {
                   const uploadResult =
@@ -740,6 +752,9 @@ export const useImportQuiz = () => {
                   filenameToUploadId.set(filename, uploadResult.data.id);
                 } catch (error_) {
                   console.error(`Failed to upload image ${filename}:`, error_);
+                  toast.error(
+                    `Nie udało się przesłać zdjęcia: ${simpleFilename}`,
+                  );
                 }
               }
 

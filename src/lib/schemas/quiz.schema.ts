@@ -127,10 +127,10 @@ export function validateQuizForm(data: unknown): ValidationResult {
 
 /**
  * Prepare answer data for submission to the backend.
- * Removes the read-only `image` field and ensures mutual exclusivity of `image_url` and `image_upload`.
+ * Removes the read-only fields (image, image_width, image_height) and ensures mutual exclusivity of `image_url` and `image_upload`.
  */
 function prepareAnswerForSubmission(answer: AnswerFormData) {
-  const { image, ...rest } = answer;
+  const { image, image_width, image_height, ...rest } = answer;
 
   if (
     rest.image_upload !== null &&
@@ -159,10 +159,10 @@ function prepareAnswerForSubmission(answer: AnswerFormData) {
 
 /**
  * Prepare question data for submission to the backend.
- * Removes the read-only `image` field and ensures mutual exclusivity of `image_url` and `image_upload`.
+ * Removes the read-only fields (image, image_width, image_height) and ensures mutual exclusivity of `image_url` and `image_upload`.
  */
 function prepareQuestionForSubmission(question: QuestionFormData) {
-  const { image, answers, ...rest } = question;
+  const { image, image_width, image_height, answers, ...rest } = question;
 
   const preparedQuestion = {
     ...rest,
@@ -196,7 +196,7 @@ function prepareQuestionForSubmission(question: QuestionFormData) {
 
 /**
  * Prepare quiz form data for submission to the backend.
- * - Removes read-only fields (image)
+ * - Removes read-only fields (image, image_width, image_height)
  * - Ensures mutual exclusivity of image_url and image_upload
  */
 export function prepareQuizForSubmission(data: QuizFormData) {

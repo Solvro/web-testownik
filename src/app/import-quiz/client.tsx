@@ -14,6 +14,17 @@ import { useRef, useState } from "react";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -342,14 +353,30 @@ function ImportQuizPageContent(): React.JSX.Element {
                 <Progress
                   value={(uploadProgress.current / uploadProgress.total) * 100}
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSkipImages}
-                  className="mt-2 w-full"
-                >
-                  Pomiń przesyłanie zdjęć (może to zepsuć pytania)
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="mt-2 w-full">
+                      Kontynuuj bez zdjęć
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Kontynuować bez przesyłania zdjęć?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Pominięcie przesyłania zdjęć może zmniejszyć dokładność
+                        niektórych pytań, zwłaszcza tych opartych na obrazach.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSkipImages}>
+                        Kontynuuj
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ) : null}
           </div>
