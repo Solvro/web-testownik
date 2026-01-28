@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@formbricks/js": "^4.3.0",
     "@iconify/react": "^6.0.2",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@lottiefiles/dotlottie-react": "^0.17.13",
