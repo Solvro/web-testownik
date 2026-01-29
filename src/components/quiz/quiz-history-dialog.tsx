@@ -100,7 +100,7 @@ export function QuizHistoryDialog({
               )}
             </Accordion>
           </div>
-          <ScrollBar orientation="vertical"></ScrollBar>
+          <ScrollBar orientation="vertical" />
         </ScrollArea>
         <DialogFooter>
           <DialogClose asChild>
