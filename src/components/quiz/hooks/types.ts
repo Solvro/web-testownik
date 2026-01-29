@@ -20,6 +20,9 @@ export interface UseQuizLogicResult {
     selectedAnswers: string[];
     questionChecked: boolean;
     isQuizFinished: boolean;
+    showHistory: boolean;
+    isHistoryQuestion: boolean;
+    canGoBack: boolean;
     showBrainrot: boolean;
   };
   stats: {
@@ -39,6 +42,8 @@ export interface UseQuizLogicResult {
     skipQuestion: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
+    toggleHistory: () => void;
     toggleBrainrot: () => void;
+    goToPreviousQuestion: () => void;
   };
 }
