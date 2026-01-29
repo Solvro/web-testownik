@@ -1,5 +1,6 @@
 import React from "react";
 
+import { ImageLoad } from "@/components/image-load";
 import { computeAnswerVariantText } from "@/components/quiz/helpers/question-card";
 import {
   Accordion,
@@ -19,10 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { AnswerRecord, QuizWithUserProgress } from "@/types/quiz";
+import type { AnswerRecord, Quiz } from "@/types/quiz";
 
 interface QuizHistoryDialogProps {
-  quiz: QuizWithUserProgress;
+  quiz: Quiz;
   answers: AnswerRecord[];
   showHistory: boolean;
   toggleHistory: () => void;
@@ -78,23 +79,47 @@ export function QuizHistoryDialog({
                           ),
                         )}
                       >
-                        <p className="line-clamp-2">
-                          {question.order}. {question.text}
+                        <p className="line-clamp-2 text-left">
+                          {question.order}.{" "}
+                          {question.text || (
+                            <span className="font-light italic">
+                              Brak treści pytania
+                            </span>
+                          )}
                         </p>
                       </AccordionTrigger>
                       <AccordionContent className="px-4">
+                        <ImageLoad
+                          key={`question-history-image-${question.id}`}
+                          url={question.image}
+                          alt={question.text}
+                          width={question.image_width}
+                          height={question.image_height}
+                          className="mb-4 max-h-40 w-fit max-w-full rounded object-contain"
+                        />
                         {question.answers.map((ans) => {
                           return (
-                            <p
-                              className={computeAnswerVariantText(
-                                answer.selected_answers.includes(ans.id),
-                                true,
-                                ans.is_correct,
-                              )}
+                            <div
                               key={ans.id}
+                              className={cn(
+                                "mb-2 flex flex-col gap-1",
+                                computeAnswerVariantText(
+                                  answer.selected_answers.includes(ans.id),
+                                  true,
+                                  ans.is_correct,
+                                ),
+                              )}
                             >
-                              {ans.text}
-                            </p>
+                              <p>{ans.text}</p>
+                              <ImageLoad
+                                key={`answer-history-image-${question.id}-${ans.id}`}
+                                url={ans.image}
+                                alt={ans.text}
+                                width={ans.image_width}
+                                height={ans.image_height}
+                                className="max-h-20 w-fit max-w-full rounded object-contain"
+                              />
+                            </div>
                           );
                         })}
                       </AccordionContent>
