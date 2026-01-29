@@ -61,12 +61,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     openHistoryQuestion,
   } = actions;
 
-  const handleToggleHistory = () => {
-    startTransition(() => {
-      toggleHistory();
-    });
-  };
-
   const handleToggleBrainrot = () => {
     startTransition(() => {
       toggleBrainrot();
@@ -229,7 +223,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
-                onToggleHistory={handleToggleHistory}
+                onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
                 disabled={isQuizFinished || currentQuestion == null}
               />
