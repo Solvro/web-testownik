@@ -1,7 +1,9 @@
 "use client";
 
-import { Info, MessageSquareText, Trash2 } from "lucide-react";
+import { CircleHelp, Info, MessageSquareText, Trash2 } from "lucide-react";
+import type { KeyboardEvent } from "react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ExplanationDialog } from "@/components/quiz/editor/explanation-dialog";
@@ -14,6 +16,12 @@ import type { ImageState } from "@/components/quiz/editor/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { KbdShortcut } from "@/components/ui/kbd-shortcut";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -147,6 +155,81 @@ export function QuestionForm({
     await handleUpload(file);
   }
 
+  async function handleAnswerKeyDown(
+    answerId: string,
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "v"
+    ) {
+      event.preventDefault();
+
+      try {
+        const text = await navigator.clipboard.readText();
+        const lines = text
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        if (lines.length === 0) {
+          return;
+        }
+
+        const currentAnswerIndex = question.answers.findIndex(
+          (a) => a.id === answerId,
+        );
+        if (currentAnswerIndex === -1) {
+          return;
+        }
+
+        const currentAnswer = question.answers[currentAnswerIndex];
+        const shouldReplace = !currentAnswer.text.trim();
+
+        if (shouldReplace) {
+          updateAnswer(answerId, { text: lines[0] });
+
+          const remainingLines = lines.slice(1);
+          if (remainingLines.length > 0) {
+            const newAnswers = remainingLines.map((line) => ({
+              ...createNewAnswer(0),
+              text: line,
+            }));
+
+            const updatedAnswers = [...question.answers];
+            updatedAnswers.splice(currentAnswerIndex + 1, 0, ...newAnswers);
+
+            const reordered = updatedAnswers.map((a, index) => ({
+              ...a,
+              order: index + 1,
+            }));
+            onUpdate({ answers: reordered });
+          }
+        } else {
+          const newAnswers = lines.map((line) => ({
+            ...createNewAnswer(0),
+            text: line,
+          }));
+
+          const updatedAnswers = [...question.answers];
+          updatedAnswers.splice(currentAnswerIndex + 1, 0, ...newAnswers);
+
+          const reordered = updatedAnswers.map((a, index) => ({
+            ...a,
+            order: index + 1,
+          }));
+          onUpdate({ answers: reordered });
+        }
+      } catch (error) {
+        console.error("Failed to read clipboard:", error);
+        toast.error(
+          "Aby wkleić odpowiedzi, musisz włączyć dostęp do schowka w przeglądarce.",
+        );
+      }
+    }
+  }
+
   // Explanation handling
   function handleExplanationChange(explanation: string) {
     onUpdate({ explanation });
@@ -160,33 +243,65 @@ export function QuestionForm({
         <span className="text-muted-foreground text-sm font-medium">
           Pytanie {question.order}
         </span>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-6"
+            >
+              <CircleHelp className="text-muted-foreground size-4" />
+              <span className="sr-only">Pomoc</span>
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-80 space-y-2" align="start">
+            <h4 className="text-sm font-semibold">Wskazówki</h4>
+            <p className="text-sm">
+              Aby szybko wstawić zdjęcie, przeciągnij je na pole pytania lub
+              wklej z schowka - <KbdShortcut suffix="+ V" />
+            </p>
+          </HoverCardContent>
+        </HoverCard>
 
         <div className="ml-auto flex items-center gap-1">
-          <ImageButton
-            image={question.image}
-            imageUrl={question.image_url}
-            imageUploadId={question.image_upload}
-            imageWidth={question.image_width}
-            imageHeight={question.image_height}
-            onImageChange={handleImageChange}
-            onUpload={handleUpload}
-            isUploading={isImageUploading}
-          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <ImageButton
+                image={question.image}
+                imageUrl={question.image_url}
+                imageUploadId={question.image_upload}
+                imageWidth={question.image_width}
+                imageHeight={question.image_height}
+                onImageChange={handleImageChange}
+                onUpload={handleUpload}
+                isUploading={isImageUploading}
+              />
+            </TooltipTrigger>
+            <TooltipContent>Zarządzaj zdjęciem pytania</TooltipContent>
+          </Tooltip>
 
-          <Button
-            type="button"
-            variant={hasExplanation ? "secondary" : "ghost"}
-            size="icon"
-            className="size-8"
-            onClick={() => {
-              setExplanationOpen(true);
-            }}
-            aria-label={
-              hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"
-            }
-          >
-            <MessageSquareText className="size-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={hasExplanation ? "secondary" : "ghost"}
+                size="icon"
+                className="size-8"
+                onClick={() => {
+                  setExplanationOpen(true);
+                }}
+                aria-label={
+                  hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"
+                }
+              >
+                <MessageSquareText className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"}
+            </TooltipContent>
+          </Tooltip>
 
           <ExplanationDialog
             open={explanationOpen}
@@ -277,9 +392,37 @@ export function QuestionForm({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-xs font-medium">
-              Odpowiedzi
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs font-medium">
+                Odpowiedzi
+              </span>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                  >
+                    <CircleHelp className="text-muted-foreground size-4" />
+                    <span className="sr-only">Pomoc</span>
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80 space-y-2" align="start">
+                  <h4 className="text-sm font-semibold">Wskazówki</h4>
+                  <p className="text-sm">
+                    Użyj <KbdShortcut suffix="+ Shift + V" /> podczas wklejania
+                    listy odpowiedzi, aby automatycznie rozdzielić je na osobne
+                    pola
+                  </p>
+                  <p className="text-sm">
+                    Aby szybko wstawić zdjęcie, przeciągnij je na pole
+                    odpowiedzi lub wklej z schowka -{" "}
+                    <KbdShortcut suffix="+ V" />
+                  </p>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -309,6 +452,9 @@ export function QuestionForm({
                 onUploadStart={onUploadStart}
                 onUploadEnd={onUploadEnd}
                 canDelete={question.answers.length > 1}
+                onKeyDown={(event) => {
+                  void handleAnswerKeyDown(answer.id, event);
+                }}
               />
             ))}
           </div>
