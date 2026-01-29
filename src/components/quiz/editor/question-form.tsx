@@ -243,7 +243,7 @@ export function QuestionForm({
         <span className="text-muted-foreground text-sm font-medium">
           Pytanie {question.order}
         </span>
-        <HoverCard>
+        <HoverCard openDelay={100} closeDelay={200}>
           <HoverCardTrigger asChild>
             <Button
               type="button"
@@ -396,7 +396,7 @@ export function QuestionForm({
               <span className="text-muted-foreground text-xs font-medium">
                 Odpowiedzi
               </span>
-              <HoverCard>
+              <HoverCard openDelay={100} closeDelay={200}>
                 <HoverCardTrigger asChild>
                   <Button
                     type="button"
