@@ -1,6 +1,6 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import "katex/dist/katex.min.css";
-import { RotateCcwIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { ViewTransition, useEffect } from "react";
 import Markdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -17,6 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
@@ -29,6 +34,9 @@ interface QuestionCardProps {
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
+  goToPreviousQuestion: () => void;
+  canGoBack: boolean;
+  isHistoryQuestion: boolean;
 }
 
 export function QuestionCard({
@@ -40,6 +48,9 @@ export function QuestionCard({
   nextAction,
   isQuizFinished,
   restartQuiz,
+  goToPreviousQuestion,
+  canGoBack,
+  isHistoryQuestion,
 }: QuestionCardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAnswerClick = (answerId: string) => {
@@ -203,12 +214,34 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex justify-end gap-2">
           <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-            {questionChecked ? (
-              <Button onClick={nextAction}>Następne pytanie</Button>
+            {isHistoryQuestion ? (
+              <Button variant="outline" onClick={goToPreviousQuestion}>
+                Powrót do pytań
+              </Button>
             ) : (
-              <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+              <>
+                {canGoBack && !questionChecked ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToPreviousQuestion}
+                      >
+                        <Undo2 />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Poprzednie pytanie</TooltipContent>
+                  </Tooltip>
+                ) : null}
+                {questionChecked ? (
+                  <Button onClick={nextAction}>Następne pytanie</Button>
+                ) : (
+                  <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+                )}
+              </>
             )}
           </ViewTransition>
         </div>

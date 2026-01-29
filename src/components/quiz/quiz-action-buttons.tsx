@@ -1,6 +1,7 @@
 import { SiOpenai } from "@icons-pack/react-simple-icons";
 import {
   ClipboardCopyIcon,
+  HistoryIcon,
   MessageSquareWarningIcon,
   PencilLineIcon,
   SkullIcon,
@@ -23,6 +24,7 @@ import type { Question, Quiz } from "@/types/quiz";
 interface QuizActionButtonsProps {
   quiz: Quiz;
   question: Question | null;
+  onToggleHistory: () => void;
   onToggleBrainrot: () => void;
   disabled?: boolean;
 }
@@ -30,6 +32,7 @@ interface QuizActionButtonsProps {
 export function QuizActionButtons({
   quiz,
   question,
+  onToggleHistory,
   onToggleBrainrot,
   disabled = false,
 }: QuizActionButtonsProps) {
@@ -148,6 +151,19 @@ export function QuizActionButtons({
             <TooltipContent>Edytuj pytanie</TooltipContent>
           </Tooltip>
         ) : null}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onToggleHistory}
+              disabled={!canUseQuestion}
+            >
+              <HistoryIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Historia pytań</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="outline" size="icon" onClick={onToggleBrainrot}>

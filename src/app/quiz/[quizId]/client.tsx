@@ -12,6 +12,7 @@ import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
+import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     selectedAnswers,
     questionChecked,
     isQuizFinished,
+    isHistoryQuestion,
+    canGoBack,
+    showHistory,
     showBrainrot,
   } = state;
   const {
@@ -40,6 +44,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     masteredCount,
     totalQuestions,
     timerStore,
+    answers,
   } = stats;
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
@@ -47,7 +52,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     skipQuestion,
     resetProgress,
     setSelectedAnswers,
+    toggleHistory,
     toggleBrainrot,
+    goToPreviousQuestion,
   } = actions;
 
   const handleToggleBrainrot = () => {
@@ -115,6 +122,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 nextAction={nextAction}
                 isQuizFinished={isQuizFinished}
                 restartQuiz={resetProgress}
+                goToPreviousQuestion={goToPreviousQuestion}
+                isHistoryQuestion={isHistoryQuestion}
+                canGoBack={canGoBack}
               />
             </ViewTransition>
           </div>
@@ -132,6 +142,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
+                onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
                 disabled={isQuizFinished || currentQuestion == null}
               />
@@ -162,6 +173,13 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           </div>
         ) : null}
       </div>
+
+      <QuizHistoryDialog
+        quiz={quiz}
+        answers={answers}
+        showHistory={showHistory}
+        toggleHistory={toggleHistory}
+      />
 
       {/* Continuity */}
       <ContinuityDialog
