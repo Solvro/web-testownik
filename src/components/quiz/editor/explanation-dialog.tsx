@@ -90,8 +90,7 @@ export function ExplanationButton({
     <Button
       type="button"
       variant={hasExplanation ? "secondary" : "ghost"}
-      size="icon"
-      className="size-8"
+      size="icon-sm"
       onClick={onClick}
       aria-label={hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"}
     >

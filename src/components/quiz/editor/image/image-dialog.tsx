@@ -239,8 +239,8 @@ function ImageDialogBody({
                     <Button
                       type="button"
                       variant="destructive"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-sm"
+                      size="icon-sm"
+                      className="rounded-full shadow-sm"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleRemove();
@@ -324,8 +324,8 @@ function ImageDialogBody({
                     <Button
                       type="button"
                       variant="destructive"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-sm"
+                      size="icon-sm"
+                      className="rounded-full shadow-sm"
                       onClick={handleRemove}
                       disabled={disabled}
                       title="Usuń zdjęcie"

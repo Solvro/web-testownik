@@ -245,12 +245,7 @@ export function QuestionForm({
         </span>
         <HoverCard openDelay={100} closeDelay={200}>
           <HoverCardTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-6"
-            >
+            <Button type="button" variant="ghost" size="icon-sm">
               <CircleHelp className="text-muted-foreground size-4" />
               <span className="sr-only">Pomoc</span>
             </Button>
@@ -286,8 +281,7 @@ export function QuestionForm({
               <Button
                 type="button"
                 variant={hasExplanation ? "secondary" : "ghost"}
-                size="icon"
-                className="size-8"
+                size="icon-sm"
                 onClick={() => {
                   setExplanationOpen(true);
                 }}
@@ -336,8 +330,8 @@ export function QuestionForm({
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="text-destructive hover:text-destructive size-8"
+            size="icon-sm"
+            className="text-destructive hover:text-destructive"
             onClick={onRemove}
             aria-label="Usuń pytanie"
           >

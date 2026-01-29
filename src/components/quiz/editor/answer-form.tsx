@@ -164,8 +164,8 @@ export function AnswerForm({
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="text-destructive hover:text-destructive mt-0.5 size-8"
+            size="icon-sm"
+            className="text-destructive hover:text-destructive mt-0.5"
             onClick={onRemove}
             disabled={!canDelete}
             aria-label="Usuń odpowiedź"
