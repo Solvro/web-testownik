@@ -385,6 +385,11 @@ export function QuizEditor(props: QuizEditorProps) {
                   onChange={(event) => {
                     setTitle(event.target.value);
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
