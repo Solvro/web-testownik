@@ -8,6 +8,7 @@ const ALLOWED_QUIZ_KEYS = [
   "version",
   "questions",
   "maintainer",
+  "comment",
 ];
 
 const ALLOWED_QUESTION_KEYS = [
@@ -83,8 +84,12 @@ export const validateQuiz = (input: unknown): string | null => {
       )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
     }
 
-    if (typeof q.text !== "string" || !q.text.trim()) {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
+    if (
+      (typeof q.text !== "string" || !q.text.trim()) &&
+      (typeof q.image_url !== "string" || !q.image_url.trim()) &&
+      (typeof q.image !== "string" || !q.image.trim())
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść albo zdjęcie.`;
     }
 
     if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
@@ -145,10 +150,14 @@ export const validateQuiz = (input: unknown): string | null => {
         )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
       }
 
-      if (typeof a.text !== "string" || !a.text.trim()) {
+      if (
+        (typeof a.text !== "string" || !a.text.trim()) &&
+        (typeof a.image_url !== "string" || !a.image_url.trim()) &&
+        (typeof a.image !== "string" || !a.image.trim())
+      ) {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
-        )} musi mieć treść.`;
+        )} musi mieć treść albo zdjęcie.`;
       }
 
       if (typeof a.is_correct !== "boolean") {

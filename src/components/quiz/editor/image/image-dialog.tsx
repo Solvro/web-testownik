@@ -19,6 +19,18 @@ import { MAX_FILE_SIZE, SUPPORTED_IMAGE_TYPES } from "@/services/image.service";
 
 import { ImageDropZone } from "./image-drop-zone";
 
+function isSafeImageUrl(value: string): boolean {
+  if (value === "") {
+    return false;
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function formatFileSize(bytes: number): string {
   const mb = bytes / (1024 * 1024);
   return `${mb.toFixed(0)} MB`;
@@ -83,6 +95,7 @@ function ImageDialogBody({
   closeDialog,
 }: ImageDialogBodyProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [hasImageError, setHasImageError] = useState(false);
 
   const hasImage = image != null && image !== "";
   const hasUpload =
@@ -97,6 +110,8 @@ function ImageDialogBody({
     }
     return "";
   });
+
+  const safeUrl = isSafeImageUrl(urlInput) ? urlInput : null;
 
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (hasImage && !hasUpload) {
@@ -179,7 +194,11 @@ function ImageDialogBody({
         disabled={disabled}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full overflow-hidden"
+      >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">
             {hasImage ? "Zmień zdjęcie" : "Prześlij plik"}
@@ -238,8 +257,8 @@ function ImageDialogBody({
                     <Button
                       type="button"
                       variant="destructive"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-sm"
+                      size="icon-sm"
+                      className="rounded-full shadow-sm"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleRemove();
@@ -295,21 +314,36 @@ function ImageDialogBody({
                       draggable={false}
                       unoptimized={false}
                     />
+                  ) : urlInput === "" ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <p className="text-muted-foreground text-sm">
+                        Podaj URL, aby zobaczyć podgląd
+                      </p>
+                    </div>
+                  ) : hasImageError || safeUrl === null ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <p className="text-muted-foreground text-sm">
+                        Podaj poprawny URL
+                      </p>
+                    </div>
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={image}
+                      src={safeUrl}
                       alt="Podgląd"
                       className="h-full w-full object-cover"
                       draggable={false}
+                      onError={() => {
+                        setHasImageError(true);
+                      }}
                     />
                   )}
                   <div className="absolute top-2 right-2">
                     <Button
                       type="button"
                       variant="destructive"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-sm"
+                      size="icon-sm"
+                      className="rounded-full shadow-sm"
                       onClick={handleRemove}
                       disabled={disabled}
                       title="Usuń zdjęcie"
@@ -338,6 +372,7 @@ function ImageDialogBody({
                   value={urlInput}
                   onChange={(event) => {
                     setUrlInput(event.target.value);
+                    setHasImageError(false);
                   }}
                   disabled={disabled}
                 />

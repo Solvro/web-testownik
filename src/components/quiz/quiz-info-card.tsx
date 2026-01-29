@@ -140,9 +140,8 @@ export function QuizInfoCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="outline"
-                  className="size-8"
                   onClick={openSearchInQuiz}
                   disabled={!appContext.isAuthenticated}
                 >
@@ -158,9 +157,8 @@ export function QuizInfoCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="outline"
-                  className="size-8"
                   onClick={() => {
                     void navigator.clipboard
                       .writeText(window.location.href)

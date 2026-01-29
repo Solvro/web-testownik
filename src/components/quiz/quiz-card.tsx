@@ -74,12 +74,7 @@ export function QuizCard({
             {Boolean(showEdit) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="size-8"
-                    asChild
-                  >
+                  <Button variant="outline" size="icon-sm" asChild>
                     <Link href={onEditPath(quiz)}>
                       <PencilIcon />
                     </Link>
@@ -93,8 +88,7 @@ export function QuizCard({
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="size-8"
+                    size="icon-sm"
                     onClick={() => onShare?.(quiz)}
                   >
                     <ShareIcon />
@@ -108,8 +102,7 @@ export function QuizCard({
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="size-8"
+                    size="icon-sm"
                     onClick={() => onDownload?.(quiz)}
                   >
                     <DownloadIcon />
@@ -121,12 +114,7 @@ export function QuizCard({
             {Boolean(showSearch) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="size-8"
-                    asChild
-                  >
+                  <Button variant="outline" size="icon-sm" asChild>
                     <Link href={onSearchPath(quiz)}>
                       <SearchIcon />
                     </Link>
@@ -140,8 +128,7 @@ export function QuizCard({
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="size-8"
+                    size="icon-sm"
                     onClick={() => onDelete?.(quiz)}
                   >
                     <TrashIcon />
