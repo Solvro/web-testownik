@@ -206,7 +206,7 @@ export function runtimeReducer(
       const { answer, nextQuestion } = action.payload;
       const updatedAnswers = state.isHistoryQuestion
         ? [...state.answers]
-        : [...state.answers, answer];
+        : [answer, ...state.answers];
 
       return {
         ...state,
