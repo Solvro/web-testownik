@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { AnswerRecord, Question } from "@/types/quiz";
+import type { Question } from "@/types/quiz";
 
 interface QuestionCardProps {
   quizId: string;
@@ -34,8 +34,7 @@ interface QuestionCardProps {
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
-  answers: AnswerRecord[];
-  openHistoryQuestion: (answer?: AnswerRecord) => void;
+  goToPreviousQuestion: () => void;
   canGoBack: boolean;
   isHistoryQuestion: boolean;
 }
@@ -49,8 +48,7 @@ export function QuestionCard({
   nextAction,
   isQuizFinished,
   restartQuiz,
-  answers,
-  openHistoryQuestion,
+  goToPreviousQuestion,
   canGoBack,
   isHistoryQuestion,
 }: QuestionCardProps) {
@@ -215,12 +213,7 @@ export function QuestionCard({
         <div className="mt-2 flex justify-end gap-2">
           <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
             {isHistoryQuestion ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  openHistoryQuestion();
-                }}
-              >
+              <Button variant="outline" onClick={goToPreviousQuestion}>
                 Powrót do pytań
               </Button>
             ) : (
@@ -231,9 +224,7 @@ export function QuestionCard({
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => {
-                          openHistoryQuestion(answers.at(-1));
-                        }}
+                        onClick={goToPreviousQuestion}
                       >
                         <Undo2 />
                       </Button>

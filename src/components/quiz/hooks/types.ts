@@ -45,6 +45,6 @@ export interface UseQuizLogicResult {
     setSelectedAnswers: (a: string[]) => void;
     toggleHistory: () => void;
     toggleBrainrot: () => void;
-    openHistoryQuestion: (answer?: AnswerRecord) => void;
+    goToPreviousQuestion: () => void;
   };
 }

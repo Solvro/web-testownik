@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
 import {
   checkAnswerCorrectness,
@@ -251,55 +251,48 @@ export function useQuizLogic({
     dispatch({ type: "ADVANCE_QUESTION" });
   };
 
-  const openHistoryQuestion = useCallback(
-    (answer?: AnswerRecord) => {
-      // Back to normal quiz
-      if (answer == null) {
-        dispatch({
-          type: "SET_IS_HISTORY_QUESTION",
-          payload: false,
-        });
-        dispatch({
-          type: "SET_CURRENT_QUESTION",
-          payload: { question: historyQuestionRef.current },
-        });
-        historyQuestionRef.current = null;
-        return;
-      }
-
-      if (!canGoBack) {
-        return;
-      }
-
-      const historyQuestion = quiz.questions.find(
-        (q) => q.id === answer.question,
-      );
-      if (historyQuestion == null || quiz.current_session == null) {
-        return;
-      }
-
-      const questionAnswers = answersRef.current.find(
-        (a) => a.question === historyQuestion.id,
-      );
-
-      historyQuestionRef.current ??= currentQuestionRef.current;
+  const goToPreviousQuestion = () => {
+    if (isHistoryQuestion && historyQuestionRef.current != null) {
       dispatch({
         type: "SET_IS_HISTORY_QUESTION",
-        payload: true,
+        payload: false,
       });
       dispatch({
         type: "SET_CURRENT_QUESTION",
-        payload: { question: historyQuestion },
+        payload: { question: historyQuestionRef.current },
       });
-      dispatch({
-        type: "SET_SELECTED_ANSWERS",
-        payload:
-          questionAnswers === undefined ? [] : questionAnswers.selected_answers,
-      });
-      checkAnswer(true, null, true);
-    },
-    [canGoBack, checkAnswer, quiz.current_session, quiz.questions],
-  );
+      historyQuestionRef.current = null;
+      return;
+    }
+
+    if (answersRef.current.length === 0 || !canGoBack) {
+      return;
+    }
+
+    const lastAnswer = answersRef.current[0];
+    const previousQuestion = quiz.questions.find(
+      (q) => q.id === lastAnswer.question,
+    );
+
+    if (previousQuestion == null) {
+      return;
+    }
+
+    historyQuestionRef.current = currentQuestionRef.current;
+    dispatch({
+      type: "SET_IS_HISTORY_QUESTION",
+      payload: true,
+    });
+    dispatch({
+      type: "SET_CURRENT_QUESTION",
+      payload: { question: previousQuestion },
+    });
+    dispatch({
+      type: "SET_SELECTED_ANSWERS",
+      payload: lastAnswer.selected_answers,
+    });
+    checkAnswer(true, null, true);
+  };
 
   const resetProgress = async () => {
     await appContext.services.quiz.deleteQuizProgress(
@@ -355,7 +348,7 @@ export function useQuizLogic({
       toggleBrainrot: () => {
         dispatch({ type: "TOGGLE_BRAINROT" });
       },
-      openHistoryQuestion,
+      goToPreviousQuestion,
     },
   } as const;
 }

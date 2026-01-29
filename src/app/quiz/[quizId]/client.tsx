@@ -58,7 +58,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setSelectedAnswers,
     toggleHistory,
     toggleBrainrot,
-    openHistoryQuestion,
+    goToPreviousQuestion,
   } = actions;
 
   const handleToggleBrainrot = () => {
@@ -202,8 +202,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 nextAction={nextAction}
                 isQuizFinished={isQuizFinished}
                 restartQuiz={resetProgress}
-                answers={answers}
-                openHistoryQuestion={openHistoryQuestion}
+                goToPreviousQuestion={goToPreviousQuestion}
                 isHistoryQuestion={isHistoryQuestion}
                 canGoBack={canGoBack}
               />
