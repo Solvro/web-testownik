@@ -180,7 +180,11 @@ function ImageDialogBody({
         disabled={disabled}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full overflow-hidden"
+      >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">
             {hasImage ? "Zmień zdjęcie" : "Prześlij plik"}

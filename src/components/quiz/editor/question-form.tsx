@@ -245,7 +245,7 @@ export function QuestionForm({
         </span>
         <HoverCard openDelay={100} closeDelay={200}>
           <HoverCardTrigger asChild>
-            <Button type="button" variant="ghost" size="icon-sm">
+            <Button type="button" variant="ghost" size="icon-xs">
               <CircleHelp className="text-muted-foreground size-4" />
               <span className="sr-only">Pomoc</span>
             </Button>
@@ -392,12 +392,7 @@ export function QuestionForm({
               </span>
               <HoverCard openDelay={100} closeDelay={200}>
                 <HoverCardTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-6"
-                  >
+                  <Button type="button" variant="ghost" size="icon-xs">
                     <CircleHelp className="text-muted-foreground size-4" />
                     <span className="sr-only">Pomoc</span>
                   </Button>

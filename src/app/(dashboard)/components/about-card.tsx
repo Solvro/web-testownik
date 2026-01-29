@@ -24,11 +24,11 @@ export function AboutCard({
           <span>Twórcy</span>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             onClick={() =>
               window.open("https://github.com/solvro/web-testownik")
             }
-            className="size-6 rounded-full"
+            className="rounded-full"
           >
             <SiGithub className="size-5" />
           </Button>
