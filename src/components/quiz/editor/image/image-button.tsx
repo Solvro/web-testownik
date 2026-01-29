@@ -45,8 +45,8 @@ export function ImageButton({
       <Button
         type="button"
         variant={hasImage ? "secondary" : "ghost"}
-        size="icon"
-        className={cn("size-8 shrink-0", className)}
+        size="icon-sm"
+        className={cn("shrink-0", className)}
         onClick={() => {
           if (!isUploading) {
             setDialogOpen(true);

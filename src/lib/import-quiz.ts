@@ -602,9 +602,19 @@ export const useImportQuiz = () => {
         order?: number;
         answers: RawAnswer[];
       };
-      type RawQuiz = Omit<Quiz, "questions"> & { questions: RawQuestion[] };
+      type RawQuiz = Omit<Quiz, "questions"> & {
+        questions: RawQuestion[];
+        comment?: string;
+      };
 
-      const quizData = data as RawQuiz;
+      const { comment, ...quizData } = data as RawQuiz;
+
+      if (comment != null && comment !== "") {
+        toast.info("Komentarz do quizu", {
+          description: comment,
+          duration: 10_000,
+        });
+      }
 
       const normalizedQuiz: Quiz = {
         ...quizData,
