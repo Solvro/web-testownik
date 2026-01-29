@@ -56,6 +56,10 @@ export function QuizHistoryDialog({
                     (q) => q.id === answer.question,
                   );
 
+                  if (question == null) {
+                    return null;
+                  }
+
                   return (
                     <AccordionItem
                       key={`history-question-${answer.id}`}
@@ -75,11 +79,11 @@ export function QuizHistoryDialog({
                         )}
                       >
                         <p className="line-clamp-2">
-                          {question?.order}. {question?.text}
+                          {question.order}. {question.text}
                         </p>
                       </AccordionTrigger>
                       <AccordionContent className="px-4">
-                        {question?.answers.map((ans) => {
+                        {question.answers.map((ans) => {
                           return (
                             <p
                               className={computeAnswerVariantText(

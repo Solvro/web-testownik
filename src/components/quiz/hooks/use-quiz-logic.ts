@@ -160,7 +160,7 @@ export function useQuizLogic({
       selectedAnswers,
       isCorrect,
     );
-    const updatedAnswers = [...runtime.answers, newAnswer];
+    const updatedAnswers = [newAnswer, ...runtime.answers];
     const nextQuestion_ =
       nextQuestionOverride ??
       pickNextQuestion(

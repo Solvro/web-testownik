@@ -403,7 +403,7 @@ export class QuizService extends BaseApiService {
           }
         }
 
-        session.answers.push(answer);
+        session.answers.unshift(answer);
 
         session.current_question = nextQuestionId;
 
