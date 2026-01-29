@@ -1,7 +1,7 @@
 import { SiOpenai } from "@icons-pack/react-simple-icons";
 import {
   ClipboardCopyIcon,
-  History,
+  HistoryIcon,
   MessageSquareWarningIcon,
   PencilLineIcon,
   SkullIcon,
@@ -159,7 +159,7 @@ export function QuizActionButtons({
               onClick={onToggleHistory}
               disabled={!canUseQuestion}
             >
-              <History />
+              <HistoryIcon />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Historia pytań</TooltipContent>
