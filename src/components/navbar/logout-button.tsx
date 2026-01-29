@@ -28,9 +28,7 @@ export function LogoutButton() {
     appContext.setAuthenticated(false);
     appContext.setGuest(false);
 
-    // Full page reload to ensure server components re-render
     router.push("/");
-    router.refresh();
   };
 
   return (
