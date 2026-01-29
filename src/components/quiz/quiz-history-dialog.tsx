@@ -29,7 +29,7 @@ interface QuizHistoryDialogProps {
 }
 
 export function QuizHistoryDialog({
-  quiz, // Answers from quiz are not updated
+  quiz, // Used for question metadata; use the answers prop for up-to-date answer history
   answers,
   showHistory,
   toggleHistory,
