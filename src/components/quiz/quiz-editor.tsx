@@ -60,12 +60,12 @@ function createNewAnswer(order: number): AnswerFormData {
   };
 }
 
-function createNewQuestion(order: number): QuestionFormData {
+function createNewQuestion(order: number, multiple: boolean): QuestionFormData {
   return {
     id: crypto.randomUUID(),
     order,
     text: "",
-    multiple: false,
+    multiple,
     answers: [createNewAnswer(1), createNewAnswer(2)],
     image: null,
     image_url: null,
@@ -78,7 +78,7 @@ function getDefaultFormData(): QuizFormData {
   return {
     title: "",
     description: "",
-    questions: [createNewQuestion(1)],
+    questions: [createNewQuestion(1, false)],
   };
 }
 
@@ -151,7 +151,10 @@ export function QuizEditor(props: QuizEditorProps) {
 
   function addQuestion() {
     const newOrder = questions.length + 1;
-    const newQuestion = createNewQuestion(newOrder);
+    const newQuestion = createNewQuestion(
+      newOrder,
+      questions.at(-1)?.multiple ?? false,
+    );
 
     setQuestions((previous) => [...previous, newQuestion]);
 
