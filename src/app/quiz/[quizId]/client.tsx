@@ -266,7 +266,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         answers={answers}
         showHistory={showHistory}
         toggleHistory={toggleHistory}
-        openHistoryQuestion={openHistoryQuestion}
       />
 
       {/* Continuity */}

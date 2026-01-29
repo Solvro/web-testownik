@@ -1,6 +1,12 @@
 import React from "react";
 
-import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
+import { computeAnswerVariantText } from "@/components/quiz/helpers/question-card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,7 +26,6 @@ interface QuizHistoryDialogProps {
   answers: AnswerRecord[];
   showHistory: boolean;
   toggleHistory: () => void;
-  openHistoryQuestion: (answer?: AnswerRecord) => void;
 }
 
 export function QuizHistoryDialog({
@@ -28,7 +33,6 @@ export function QuizHistoryDialog({
   answers,
   showHistory,
   toggleHistory,
-  openHistoryQuestion,
 }: QuizHistoryDialogProps): React.JSX.Element {
   return (
     <Dialog open={showHistory} onOpenChange={toggleHistory}>
@@ -41,42 +45,60 @@ export function QuizHistoryDialog({
         </DialogHeader>
         <ScrollArea className="min-h-0 flex-1 overflow-y-scroll">
           <div className="grid max-h-80 w-full flex-col gap-2">
-            {answers.length === 0 ? (
-              <p className="flex justify-center p-4 text-sm">
-                Nie znaleziono historii w tej sesji quizu.
-              </p>
-            ) : (
-              answers.toReversed().map((answer) => {
-                const question = quiz.questions.find(
-                  (q) => q.id === answer.question,
-                );
+            <Accordion type="single" collapsible className="max-w-lg">
+              {answers.length === 0 ? (
+                <p className="flex justify-center p-4 text-sm">
+                  Nie znaleziono historii w tej sesji quizu.
+                </p>
+              ) : (
+                answers.map((answer) => {
+                  const question = quiz.questions.find(
+                    (q) => q.id === answer.question,
+                  );
 
-                return (
-                  <button
-                    key={`history-question-${answer.id}`}
-                    id={`history-question-${answer.id}`}
-                    onClick={() => {
-                      openHistoryQuestion(answer);
-                      toggleHistory();
-                    }}
-                    className={cn(
-                      "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors",
-                      computeAnswerVariant(
-                        answer.selected_answers.length > 0,
-                        true,
-                        answer.selected_answers.length > 0
-                          ? answer.was_correct
-                          : true,
-                      ),
-                    )}
-                  >
-                    <span className="w-full">
-                      {question?.order}. {question?.text}
-                    </span>
-                  </button>
-                );
-              })
-            )}
+                  return (
+                    <AccordionItem
+                      key={`history-question-${answer.id}`}
+                      id={`history-question-${answer.id}`}
+                      value={`history-question-${answer.id}`}
+                    >
+                      <AccordionTrigger
+                        className={cn(
+                          "w-full rounded-md px-4 py-3 text-left text-sm font-medium transition-colors",
+                          computeAnswerVariantText(
+                            answer.selected_answers.length > 0,
+                            true,
+                            answer.selected_answers.length > 0
+                              ? answer.was_correct
+                              : true,
+                          ),
+                        )}
+                      >
+                        <p className="line-clamp-2">
+                          {question?.order}. {question?.text}
+                        </p>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4">
+                        {question?.answers.map((ans) => {
+                          return (
+                            <p
+                              className={computeAnswerVariantText(
+                                answer.selected_answers.includes(ans.id),
+                                true,
+                                ans.is_correct,
+                              )}
+                              key={ans.id}
+                            >
+                              {ans.text}
+                            </p>
+                          );
+                        })}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })
+              )}
+            </Accordion>
           </div>
           <ScrollBar orientation="vertical"></ScrollBar>
         </ScrollArea>
