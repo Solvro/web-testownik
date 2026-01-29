@@ -19,6 +19,18 @@ import { MAX_FILE_SIZE, SUPPORTED_IMAGE_TYPES } from "@/services/image.service";
 
 import { ImageDropZone } from "./image-drop-zone";
 
+function isSafeImageUrl(value: string): boolean {
+  if (value === "") {
+    return false;
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function formatFileSize(bytes: number): string {
   const mb = bytes / (1024 * 1024);
   return `${mb.toFixed(0)} MB`;
@@ -98,6 +110,8 @@ function ImageDialogBody({
     }
     return "";
   });
+
+  const safeUrl = isSafeImageUrl(urlInput) ? urlInput : null;
 
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (hasImage && !hasUpload) {
@@ -306,7 +320,7 @@ function ImageDialogBody({
                         Podaj URL, aby zobaczyć podgląd
                       </p>
                     </div>
-                  ) : hasImageError ? (
+                  ) : hasImageError || safeUrl === null ? (
                     <div className="flex h-full w-full items-center justify-center">
                       <p className="text-muted-foreground text-sm">
                         Podaj poprawny URL
@@ -315,7 +329,7 @@ function ImageDialogBody({
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={urlInput}
+                      src={safeUrl}
                       alt="Podgląd"
                       className="h-full w-full object-cover"
                       draggable={false}
