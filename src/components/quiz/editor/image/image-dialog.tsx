@@ -83,6 +83,7 @@ function ImageDialogBody({
   closeDialog,
 }: ImageDialogBodyProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [hasImageError, setHasImageError] = useState(false);
 
   const hasImage = image != null && image !== "";
   const hasUpload =
@@ -295,13 +296,28 @@ function ImageDialogBody({
                       draggable={false}
                       unoptimized={false}
                     />
+                  ) : urlInput === "" ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <p className="text-muted-foreground text-sm">
+                        Podaj URL, aby zobaczyć podgląd
+                      </p>
+                    </div>
+                  ) : hasImageError ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <p className="text-muted-foreground text-sm">
+                        Podaj poprawny URL
+                      </p>
+                    </div>
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={image}
+                      src={urlInput}
                       alt="Podgląd"
                       className="h-full w-full object-cover"
                       draggable={false}
+                      onError={() => {
+                        setHasImageError(true);
+                      }}
                     />
                   )}
                   <div className="absolute top-2 right-2">
@@ -338,6 +354,7 @@ function ImageDialogBody({
                   value={urlInput}
                   onChange={(event) => {
                     setUrlInput(event.target.value);
+                    setHasImageError(false);
                   }}
                   disabled={disabled}
                 />
