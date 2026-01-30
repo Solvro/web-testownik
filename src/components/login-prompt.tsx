@@ -4,9 +4,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { AppLogo } from "@/components/app-logo";
 import { Loader } from "@/components/loader";
 import { PrivacyDialog } from "@/components/privacy-dialog";
+import { SolvroLogo } from "@/components/solvro-logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,7 +143,7 @@ export function LoginPrompt(): React.JSX.Element {
                   className="inline-flex items-center gap-1 underline"
                   href="https://solvro.pwr.edu.pl/"
                 >
-                  <AppLogo width={24} /> KN Solvro
+                  <SolvroLogo width={24} /> KN Solvro
                 </a>
               </p>
 

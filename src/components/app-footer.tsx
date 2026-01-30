@@ -1,6 +1,6 @@
 "use client";
 
-import { AppLogo } from "@/components/app-logo";
+import { SolvroLogo } from "@/components/solvro-logo";
 
 export function AppFooter() {
   return (
@@ -21,7 +21,7 @@ export function AppFooter() {
           className="inline-flex items-center gap-1 underline underline-offset-2"
           href="https://solvro.pwr.edu.pl/"
         >
-          <AppLogo width={24} />
+          <SolvroLogo width={24} />
           KN Solvro
         </a>
       </div>

@@ -1,25 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Image from "next/image";
 
-import { cn } from "@/lib/utils";
+import LogoDark from "@/assets/logo-dark.svg";
+import Logo from "@/assets/logo.svg";
 
-interface AppLogoProps {
-  width?: number;
-  height?: number;
-  className?: string;
-}
-
-export function AppLogo({
-  width = 40,
-  height,
-  className,
-}: AppLogoProps): React.JSX.Element {
+export function AppLogo(): React.JSX.Element {
   return (
-    <Image
-      src="/solvro_mono.svg"
-      alt="Logo"
-      width={width}
-      height={height ?? width * 0.8}
-      className={cn("invert dark:invert-0", className)}
-    />
+    <>
+      <Image src={Logo} alt="Logo" className="h-9 w-full dark:hidden" />
+      <Image
+        src={LogoDark}
+        alt="Logo"
+        className="hidden h-9 w-full dark:block"
+      />
+    </>
   );
 }
