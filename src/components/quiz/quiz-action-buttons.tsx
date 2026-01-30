@@ -162,7 +162,7 @@ export function QuizActionButtons({
               <HistoryIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Historia pytań</TooltipContent>
+          <TooltipContent>Historia odpowiedzi</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>

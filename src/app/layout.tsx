@@ -30,16 +30,22 @@ export const metadata: Metadata = {
     images: "https://testownik.solvro.pl/favicon/180x180.png",
     locale: "pl_PL",
   },
-  manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/favicon/16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon/32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon/48x48.png", sizes: "48x48", type: "image/png" },
-      { url: "/favicon/192x192.png", sizes: "192x192", type: "image/png" },
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/favicon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
     apple: [
-      { url: "/favicon/180x180.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
 };

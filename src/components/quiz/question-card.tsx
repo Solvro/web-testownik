@@ -1,12 +1,9 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import "katex/dist/katex.min.css";
 import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { ViewTransition, useEffect } from "react";
-import Markdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 
 import { ImageLoad } from "@/components/image-load";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,13 +140,10 @@ export function QuestionCard({
     <Card>
       <CardHeader>
         <ScrollArea className="w-full min-w-0">
-          <CardTitle className="mb-1 leading-6 font-medium">
-            <Markdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
+          <CardTitle className="mb-1 font-medium">
+            <MarkdownRenderer>
               {`${String(question.order)}\\. ${question.text}`}
-            </Markdown>
+            </MarkdownRenderer>
           </CardTitle>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -176,7 +170,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium whitespace-pre-wrap transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(answer.id),
                     questionChecked,
@@ -184,7 +178,9 @@ export function QuestionCard({
                   ),
                 )}
               >
-                <span className="w-full">{answer.text}</span>
+                <MarkdownRenderer className="pointer-events-none w-full text-sm">
+                  {answer.text}
+                </MarkdownRenderer>
                 <ImageLoad
                   key={`answer-image-${question.id}-${answer.id}`}
                   url={answer.image}
@@ -250,12 +246,7 @@ export function QuestionCard({
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"
           >
-            <Markdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
-              {question.explanation}
-            </Markdown>
+            <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
           </div>
         ) : null}
       </CardContent>

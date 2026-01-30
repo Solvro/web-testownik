@@ -39,7 +39,7 @@ export function QuizHistoryDialog({
     <Dialog open={showHistory} onOpenChange={toggleHistory}>
       <DialogContent className="flex flex-col md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Historia pytań</DialogTitle>
+          <DialogTitle>Historia odpowiedzi</DialogTitle>
           <DialogDescription>
             Wybierz pytanie poniżej aby zobaczyć jego podgląd
           </DialogDescription>
