@@ -1,10 +1,11 @@
 "use client";
 
-import { CircleHelp, Info, MessageSquareText, Trash2 } from "lucide-react";
+import { CircleHelp, InfoIcon, MessageSquareText, Trash2 } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ExplanationDialog } from "@/components/quiz/editor/explanation-dialog";
 import {
@@ -13,6 +14,7 @@ import {
   ImagePreview,
 } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -374,12 +376,12 @@ export function QuestionForm({
             />
 
             {hasExplanation ? (
-              <div className="bg-muted/50 flex items-center gap-2 rounded-md px-3 py-2 text-sm">
-                <Info className="text-muted-foreground size-4 shrink-0" />
-                <span className="text-muted-foreground line-clamp-1">
-                  {question.explanation}
-                </span>
-              </div>
+              <Alert>
+                <InfoIcon />
+                <AlertDescription className="prose line-clamp-5">
+                  <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
+                </AlertDescription>
+              </Alert>
             ) : null}
           </div>
         </ImageDropZone>

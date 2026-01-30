@@ -52,14 +52,14 @@ export function ExplanationDialog({
         <DialogHeader>
           <DialogTitle>Wyjaśnienie pytania</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="w-full min-w-0 space-y-4">
           <Textarea
             placeholder="Podaj wyjaśnienie, które wyświetli się po udzieleniu odpowiedzi..."
             value={localValue}
             onChange={(event) => {
               setLocalValue(event.target.value);
             }}
-            className="min-h-38"
+            className="max-h-96 min-h-38"
           />
           <div className="flex justify-end gap-2">
             {localValue.trim() !== "" && (
