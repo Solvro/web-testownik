@@ -281,7 +281,7 @@ export function QuizEditor(props: QuizEditorProps) {
     });
   };
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
 

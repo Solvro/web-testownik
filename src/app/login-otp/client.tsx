@@ -38,7 +38,9 @@ export function LoginOTPPageClient() {
 
   const urlError = urlSearchParameters.get("error");
 
-  const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailSubmit = async (
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (submitting) {
       return;

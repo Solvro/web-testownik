@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     images: "https://testownik.solvro.pl/favicon/180x180.png",
     locale: "pl_PL",
   },
-  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon/16x16.png", sizes: "16x16", type: "image/png" },
