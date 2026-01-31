@@ -1,15 +1,27 @@
 "use client";
 
+import {
+  AlertCircleIcon,
+  CheckCircle2Icon,
+  IdCardLanyardIcon,
+  LogInIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { Loader } from "@/components/loader";
+import { AppLogo } from "@/components/app-logo";
 import { PrivacyDialog } from "@/components/privacy-dialog";
 import { SolvroLogo } from "@/components/solvro-logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +32,42 @@ import {
 import { API_URL } from "@/lib/api";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
+const getErrorMessage = (errorCode: string): React.ReactNode => {
+  switch (errorCode) {
+    case "not_student": {
+      return (
+        <span>
+          Niestety, nie udało nam się zidentyfikować Cię jako studenta PWr.
+          Upewnij się, że logujesz się na swoje konto studenta. Jeśli problem
+          będzie się powtarzał,{" "}
+          <a className="inline underline" href="mailto:testownik@solvro.pl">
+            skontaktuj się z nami
+          </a>
+          .
+        </span>
+      );
+    }
+    case "invalid_token": {
+      return "Token logowania jest nieprawidłowy lub wygasł. Spróbuj ponownie się zalogować.";
+    }
+    case "missing_token": {
+      return "Brak tokenu logowania. Upewnij się, że kliknąłeś link z e-maila.";
+    }
+    case "server_error": {
+      return "Wystąpił błąd serwera. Spróbuj ponownie się zalogować.";
+    }
+    case "usos_unavailable": {
+      return "System USOS jest obecnie niedostępny. Spróbuj ponownie później.";
+    }
+    case "authorization_failed": {
+      return "Nie udało się autoryzować Twojego konta. Spróbuj ponownie się zalogować.";
+    }
+    default: {
+      return errorCode;
+    }
+  }
+};
+
 export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -28,13 +76,56 @@ export function LoginPrompt(): React.JSX.Element {
 
   const searchParameters = useSearchParams();
   const pathname = usePathname();
+
   const error = searchParameters.get("error");
+
+  const retryCount = Number.parseInt(searchParameters.get("retry") ?? "0", 10);
+  const [maxRetriesReached, setMaxRetriesReached] = useState(false);
 
   useEffect(() => {
     const redirect = searchParameters.get("redirect");
     const url = new URL(redirect ?? pathname, window.location.origin);
     setCurrentUrl(url.toString());
   }, [pathname, searchParameters]);
+
+  useEffect(() => {
+    if (!appContext.isAuthenticated) {
+      return;
+    }
+
+    if (retryCount >= 3) {
+      setMaxRetriesReached(true);
+      return;
+    }
+
+    let delay = -1;
+
+    switch (retryCount) {
+      case 0: {
+        delay = 1000;
+        break;
+      }
+      case 1: {
+        delay = 2000;
+        break;
+      }
+      case 2: {
+        delay = 5000;
+        break;
+      }
+    }
+
+    if (delay !== -1) {
+      const timer = setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("retry", (retryCount + 1).toString());
+        window.location.href = url.toString();
+      }, delay);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [appContext.isAuthenticated, retryCount]);
 
   const signInAsGuest = () => {
     appContext.setGuest(true);
@@ -56,119 +147,100 @@ export function LoginPrompt(): React.JSX.Element {
 
   return (
     <div className="flex justify-center">
-      <Card className="w-full max-w-xl min-w-1/2 pb-2">
+      <Card className="w-full max-w-lg pb-0">
         {appContext.isAuthenticated ? (
-          <CardContent className="flex flex-col items-center py-10">
-            <p className="mb-2 text-xl font-semibold text-green-600 dark:text-green-400">
-              Zalogowano pomyślnie!
-            </p>
-            <Loader size={15} />
-            <p className="text-muted-foreground mt-4 text-sm">
-              Pobieranie twoich danych...
-            </p>
+          <CardContent className="flex flex-col items-center py-8 text-center">
+            <div className="bg-primary/10 mb-6 flex h-16 w-16 items-center justify-center rounded-full">
+              <CheckCircle2Icon className="text-primary h-8 w-8" />
+            </div>
+            <h2 className="mb-2 text-2xl font-bold">Pomyślnie zalogowano</h2>
+
+            {maxRetriesReached ? (
+              <div className="text-destructive mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                <p className="font-medium">
+                  Nie udało się automatycznie załadować danych.
+                </p>
+                <p className="text-sm opacity-80">
+                  Odśwież stronę, aby spróbować ponownie.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-muted-foreground animate-pulse text-sm">
+                  Ładowanie Twojego konta...
+                </p>
+              </div>
+            )}
+
+            <div className="mt-8 w-full">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
+                <RefreshCwIcon />
+                Odśwież stronę
+              </Button>
+            </div>
           </CardContent>
         ) : (
           <>
-            <CardHeader>
-              <CardTitle>Witaj w Testowniku Solvro!</CardTitle>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex justify-center">
+                <AppLogo />
+              </div>
+              <CardDescription>Twoje narzędzie do nauki</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {error == null ? null : (
-                <Alert variant="destructive" className="text-sm">
-                  <AlertTitle className="font-medium">
-                    Wystąpił błąd podczas logowania.
-                  </AlertTitle>
-                  {error === "not_student" ? (
-                    <AlertDescription>
-                      Niestety, nie udało nam się zidentyfikować Cię jako
-                      studenta PWr. Upewnij się, że logujesz się na swoje konto
-                      studenta. Jeśli problem będzie się powtarzał,{" "}
-                      <a
-                        className="underline"
-                        href="mailto:testownik@solvro.pl"
-                      >
-                        skontaktuj się z nami
-                      </a>
-                      .
-                    </AlertDescription>
-                  ) : error === "invalid_token" ? (
-                    <AlertDescription>
-                      Token logowania jest nieprawidłowy lub wygasł. Spróbuj
-                      ponownie się zalogować.
-                    </AlertDescription>
-                  ) : error === "missing_token" ? (
-                    <AlertDescription>
-                      Brak tokenu logowania. Upewnij się, że kliknąłeś link z
-                      e-maila.
-                    </AlertDescription>
-                  ) : error === "server_error" ? (
-                    <AlertDescription>
-                      Wystąpił błąd serwera. Spróbuj ponownie się zalogować.
-                    </AlertDescription>
-                  ) : error === "usos_unavailable" ? (
-                    <AlertDescription>
-                      System USOS jest obecnie niedostępny. Spróbuj ponownie
-                      później.
-                    </AlertDescription>
-                  ) : error === "authorization_failed" ? (
-                    <AlertDescription>
-                      Nie udało się autoryzować Twojego konta. Spróbuj ponownie
-                      się zalogować.
-                    </AlertDescription>
-                  ) : (
-                    <AlertDescription>{error}</AlertDescription>
-                  )}
+            <CardContent className="space-y-6">
+              {error !== null && error !== "" ? (
+                <Alert variant="destructive">
+                  <AlertCircleIcon className="h-4 w-4" />
+                  <AlertTitle>Błąd logowania</AlertTitle>
+                  <AlertDescription>{getErrorMessage(error)}</AlertDescription>
                 </Alert>
-              )}
-              <p className="text-sm leading-relaxed">
-                Testownik by{" "}
-                <a
-                  className="underline"
-                  href="https://github.com/Antoni-Czaplicki"
-                >
-                  Antoni Czaplicki
-                </a>
-                , stworzony wraz ze wsparciem{" "}
-                <a
-                  className="underline"
-                  href="https://www.facebook.com/KNKredek/"
-                >
-                  KN Kredek
-                </a>
-                .
-              </p>
-              <p className="flex items-center gap-1 text-sm leading-relaxed">
-                Powered by{" "}
-                <a
-                  className="inline-flex items-center gap-1 underline"
-                  href="https://solvro.pwr.edu.pl/"
-                >
-                  <SolvroLogo width={24} /> KN Solvro
-                </a>
-              </p>
+              ) : null}
 
               <div className="mb-0 grid gap-2">
-                <Button asChild className="w-full">
+                <Button asChild size="lg" className="w-full">
                   <a
                     href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                   >
-                    Zaloguj się z USOS
+                    <LogInIcon />
+                    Zaloguj przez USOS
                   </a>
                 </Button>
-                <Button asChild className="w-full">
+
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card text-muted-foreground px-2">
+                      lub
+                    </span>
+                  </div>
+                </div>
+
+                <Button asChild variant="outline" size="lg" className="w-full">
                   <a
                     href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                   >
-                    Zaloguj się z Solvro Auth
+                    <SolvroLogo width={20} />
+                    Zaloguj z Solvro Auth
                   </a>
                 </Button>
+
                 <Button
                   variant="outline"
+                  size="lg"
                   className="w-full"
                   onClick={() => {
                     setShowGuestDialog(true);
                   }}
                 >
+                  <IdCardLanyardIcon />
                   Kontynuuj jako gość
                 </Button>
               </div>
@@ -176,7 +248,7 @@ export function LoginPrompt(): React.JSX.Element {
               <div className="text-center">
                 <Button
                   variant="link"
-                  className="text-muted-foreground text-xs hover:underline"
+                  className="text-muted-foreground text-xs"
                   onClick={() => {
                     setShowPrivacyDialog(true);
                   }}
@@ -185,6 +257,26 @@ export function LoginPrompt(): React.JSX.Element {
                 </Button>
               </div>
             </CardContent>
+            <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-1 border-t p-4 text-center text-xs">
+              <span>Powered by</span>
+              <a
+                className="inline-flex items-center gap-1"
+                href="https://solvro.pwr.edu.pl/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <SolvroLogo width={16} /> Solvro
+              </a>
+              <span className="font-semibold">&</span>
+              <span>created by</span>
+              <a
+                href="https://github.com/Antoni-Czaplicki"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Antoni Czaplicki
+              </a>
+            </div>
           </>
         )}
       </Card>
@@ -203,21 +295,25 @@ export function LoginPrompt(): React.JSX.Element {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Kontynuuj jako gość</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <IdCardLanyardIcon />
+              Tryb gościa
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-sm">
+          <div className="space-y-4 text-sm">
+            <Alert>
+              <AlertCircleIcon />
+              <AlertTitle>
+                Dane będą zapisywane tylko lokalnie w przeglądarce.
+              </AlertTitle>
+            </Alert>
             <p>
-              Jeśli nie chcesz logować się za pomocą USOS, możesz kontynuować
-              jako gość. W takim przypadku będziesz mógł korzystać z
-              podstawowych funkcji Testownika. Wszystkie quizy oraz wyniki będą
-              zapisywane lokalnie na Twoim urządzeniu (w{" "}
-              <code>localStorage</code>).
+              Kontynuując jako gość, tracisz możliwość synchronizacji postępów
+              między urządzeniami oraz tworzenia kopii zapasowej wyników.
             </p>
             <p>
-              Jeśli zdecydujesz się na zalogowanie za pomocą USOS w przyszłości,
-              będziesz mógł przenieść swoje quizy oraz wyniki do swojego konta i
-              w pełni korzystać z funkcji Testownika - m.in. synchronizacji,
-              udostępniania quizów oraz przeglądania swoich ocen.
+              Możesz zalogować się później, aby przenieść swoje lokalne postępy
+              na konto.
             </p>
           </div>
           <DialogFooter>
@@ -229,7 +325,7 @@ export function LoginPrompt(): React.JSX.Element {
             >
               Anuluj
             </Button>
-            <Button onClick={signInAsGuest}>Kontynuuj jako gość</Button>
+            <Button onClick={signInAsGuest}>Rozumiem, wchodzę</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
