@@ -59,9 +59,13 @@ export function QuizCard({
     <ViewTransition name={`quiz-open-${quiz.id}`}>
       <Card className={cn("flex h-full flex-col", className)} {...props}>
         <CardHeader>
-          <CardTitle>{quiz.title}</CardTitle>
+          <CardTitle className="overflow-hidden text-wrap wrap-break-word">
+            {quiz.title}
+          </CardTitle>
           {quiz.description ? (
-            <CardDescription>{quiz.description}</CardDescription>
+            <CardDescription className="overflow-hidden text-wrap wrap-break-word">
+              {quiz.description}
+            </CardDescription>
           ) : null}
         </CardHeader>
         <CardFooter className="mt-auto flex items-center justify-between">
