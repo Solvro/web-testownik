@@ -26,7 +26,6 @@ export const metadata: Metadata = {
     description:
       "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
     type: "website",
-    url: "https://testownik.solvro.pl",
     images: "https://testownik.solvro.pl/favicon/180x180.png",
     locale: "pl_PL",
   },
