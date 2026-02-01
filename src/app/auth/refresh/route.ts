@@ -20,6 +20,22 @@ export async function POST() {
     });
 
     if (!backendResponse.ok) {
+      const data = (await backendResponse.json()) as {
+        code?: string;
+        ban_reason?: string;
+      };
+
+      if (data.code === "user_banned") {
+        return NextResponse.json(
+          {
+            error: "User banned",
+            code: data.code,
+            ban_reason: data.ban_reason,
+          },
+          { status: 401 },
+        );
+      }
+
       return NextResponse.json({ error: "Refresh failed" }, { status: 401 });
     }
 

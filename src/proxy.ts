@@ -48,6 +48,23 @@ async function tryRefreshTokens(
     });
 
     if (!backendResponse.ok) {
+      const data = (await backendResponse.json()) as {
+        code?: string;
+        ban_reason?: string;
+      };
+
+      if (data.code === "user_banned") {
+        const url = new URL("/", redirectUrl);
+        url.searchParams.set("error", "user_banned");
+        url.searchParams.set("ban_reason", data.ban_reason ?? "Unknown reason");
+
+        const response = NextResponse.redirect(url);
+        response.cookies.delete(AUTH_COOKIES.ACCESS_TOKEN);
+        response.cookies.delete(AUTH_COOKIES.REFRESH_TOKEN);
+
+        return response;
+      }
+
       return null;
     }
 
