@@ -12,6 +12,7 @@ import React, { useContext, useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
+import { BannedScreen } from "@/components/banned-screen";
 import { PrivacyDialog } from "@/components/privacy-dialog";
 import { SolvroLogo } from "@/components/solvro-logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -78,6 +79,8 @@ export function LoginPrompt(): React.JSX.Element {
   const pathname = usePathname();
 
   const error = searchParameters.get("error");
+  const banReason =
+    searchParameters.get("ban_reason") ?? searchParameters.get("reason");
 
   const retryCount = Number.parseInt(searchParameters.get("retry") ?? "0", 10);
   const [maxRetriesReached, setMaxRetriesReached] = useState(false);
@@ -144,6 +147,10 @@ export function LoginPrompt(): React.JSX.Element {
       }),
     );
   };
+
+  if (error === "user_banned") {
+    return <BannedScreen reason={banReason ?? undefined} />;
+  }
 
   return (
     <div className="flex justify-center">
