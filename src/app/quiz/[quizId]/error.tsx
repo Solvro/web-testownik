@@ -39,7 +39,7 @@ export default function QuizError({
   reset: () => void;
 }) {
   const appContext = useContext(AppContext);
-  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentUrl, setCurrentUrl] = useState("/");
   const searchParameters = useSearchParams();
   const pathname = usePathname();
 

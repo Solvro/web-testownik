@@ -73,7 +73,7 @@ export function LoginPrompt(): React.JSX.Element {
   const appContext = useContext(AppContext);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showGuestDialog, setShowGuestDialog] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentUrl, setCurrentUrl] = useState("/");
 
   const searchParameters = useSearchParams();
   const pathname = usePathname();
