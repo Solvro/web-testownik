@@ -10,7 +10,7 @@ import {
   FolderOpenIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -101,6 +101,7 @@ function ImportQuizPageContent(): React.JSX.Element {
     fileNameInput,
     fileNameOld,
     error,
+    errorDetail,
     loading,
     fileInputRef,
     fileOldRef,
@@ -134,6 +135,39 @@ function ImportQuizPageContent(): React.JSX.Element {
 
   const textRef = useRef<HTMLDivElement | null>(null);
   const [checkIcon, setCheckIcon] = useState<boolean>(false);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const formattedErrorDetail = useMemo(() => {
+    if (errorDetail == null) {
+      return null;
+    }
+
+    const tryFormat = (value: string): string | null => {
+      try {
+        return JSON.stringify(JSON.parse(value), null, 2);
+      } catch {
+        return null;
+      }
+    };
+
+    const direct = tryFormat(errorDetail);
+    if (direct !== null) {
+      return direct;
+    }
+
+    const braceIndex = errorDetail.indexOf("{");
+    const bracketIndex = errorDetail.indexOf("[");
+    const indices = [braceIndex, bracketIndex].filter((index) => index >= 0);
+    if (indices.length > 0) {
+      const sliceIndex = Math.min(...indices);
+      const parsed = tryFormat(errorDetail.slice(sliceIndex));
+      if (parsed !== null) {
+        const prefix = errorDetail.slice(0, sliceIndex).trim();
+        return prefix.length > 0 ? `${prefix}\n${parsed}` : parsed;
+      }
+    }
+
+    return errorDetail;
+  }, [errorDetail]);
   const handleTextCopy = async () => {
     const copyTextElement = textRef.current;
     if (copyTextElement == null) {
@@ -173,8 +207,47 @@ function ImportQuizPageContent(): React.JSX.Element {
         </CardHeader>
         <CardContent className="space-y-6">
           {error != null && (
-            <Alert variant="destructive">
-              <AlertTitle>{error}</AlertTitle>
+            <Alert
+              variant="destructive"
+              className="flex items-center justify-start gap-4"
+            >
+              <div>
+                <AlertTitle>{error}</AlertTitle>
+              </div>
+              {errorDetail === null ? null : (
+                <Dialog
+                  open={isErrorDialogOpen}
+                  onOpenChange={setIsErrorDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Pokaż szczegóły
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Szczegóły błędu</DialogTitle>
+                      <DialogDescription>
+                        Pełna treść komunikatu błędu.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-muted max-h-[50vh] overflow-auto rounded p-3 text-sm">
+                      <pre className="text-xs leading-relaxed wrap-break-word whitespace-pre-wrap">
+                        {formattedErrorDetail ?? errorDetail}
+                      </pre>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={() => {
+                          setIsErrorDialogOpen(false);
+                        }}
+                      >
+                        Zamknij
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </Alert>
           )}
 

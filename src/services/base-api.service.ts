@@ -161,9 +161,40 @@ export class BaseApiService {
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP ${String(response.status)}: ${response.statusText}`,
-        );
+        let errorDetail = "";
+        try {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            const body = (await response.json()) as unknown;
+            if (body && typeof body === "object") {
+              const maybeDetail = (body as { detail?: unknown }).detail;
+              const maybeMessage = (body as { message?: unknown }).message;
+              const fromArray =
+                Array.isArray(body) && body.length > 0 && body[0];
+
+              const candidate = [maybeDetail, maybeMessage, fromArray].find(
+                (value) => typeof value === "string" && value.trim().length > 0,
+              ) as string | undefined;
+              if (candidate !== undefined) {
+                errorDetail = candidate.trim();
+              } else {
+                errorDetail = JSON.stringify(body);
+              }
+            }
+          } else {
+            const text = (await response.text()).trim();
+            if (text.length > 0) {
+              errorDetail = text;
+            }
+          }
+        } catch {
+          // Ignore parsing errors and fall back to status text
+        }
+
+        const message = errorDetail.length
+          ? errorDetail
+          : response.statusText || "Request failed";
+        throw new Error(message);
       }
 
       if (response.status === 204) {
