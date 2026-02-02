@@ -242,7 +242,7 @@ export function QuestionForm({
     onUpdate({ explanation });
   }
 
-  const hasExplanation = Boolean(question.explanation.trim());
+  const hasExplanation = Boolean(question.explanation?.trim());
 
   return (
     <Card id={`question-${question.id}`} className="transition-shadow">
@@ -307,7 +307,7 @@ export function QuestionForm({
           <ExplanationDialog
             open={explanationOpen}
             onOpenChange={setExplanationOpen}
-            value={question.explanation}
+            value={question.explanation ?? ""}
             onChange={handleExplanationChange}
           />
 
