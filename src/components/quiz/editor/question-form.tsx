@@ -190,7 +190,12 @@ export function QuestionForm({
         const shouldReplace = !currentAnswer.text.trim();
 
         if (shouldReplace) {
-          updateAnswer(answerId, { text: lines[0] });
+          const updatedAnswers = [...question.answers];
+
+          updatedAnswers[currentAnswerIndex] = {
+            ...updatedAnswers[currentAnswerIndex],
+            text: lines[0],
+          };
 
           const remainingLines = lines.slice(1);
           if (remainingLines.length > 0) {
@@ -199,15 +204,15 @@ export function QuestionForm({
               text: line,
             }));
 
-            const updatedAnswers = [...question.answers];
             updatedAnswers.splice(currentAnswerIndex + 1, 0, ...newAnswers);
-
-            const reordered = updatedAnswers.map((a, index) => ({
-              ...a,
-              order: index + 1,
-            }));
-            onUpdate({ answers: reordered });
           }
+
+          const reordered = updatedAnswers.map((a, index) => ({
+            ...a,
+            order: index + 1,
+          }));
+
+          onUpdate({ answers: reordered });
         } else {
           const newAnswers = lines.map((line) => ({
             ...createNewAnswer(0),
