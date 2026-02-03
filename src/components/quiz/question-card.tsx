@@ -109,10 +109,12 @@ export function QuestionCard({
             autoplay
           />
           <div className="flex justify-center">
-            <Button variant="outline" onClick={restartQuiz}>
-              <RotateCcwIcon />
-              Uruchom ponownie quiz
-            </Button>
+            <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+              <Button variant="outline" onClick={restartQuiz}>
+                <RotateCcwIcon />
+                Uruchom ponownie quiz
+              </Button>
+            </ViewTransition>
           </div>
           <p className="text-muted-foreground mt-3 text-center text-xs">
             Lub idź się napić piwka, no i odpocznij - zasłużyłeś!
@@ -211,37 +213,39 @@ export function QuestionCard({
           )}
         </div>
         <div className="mt-2 flex justify-end gap-2">
-          <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-            {isHistoryQuestion ? (
-              <Button variant="outline" onClick={goToPreviousQuestion}>
-                Powrót do pytań
-              </Button>
-            ) : (
-              <>
-                {canGoBack && !questionChecked ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={goToPreviousQuestion}
-                      >
-                        <Undo2 />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Poprzednie pytanie</TooltipContent>
-                  </Tooltip>
-                ) : null}
+          {isHistoryQuestion ? (
+            <Button variant="outline" onClick={goToPreviousQuestion}>
+              Powrót do pytań
+            </Button>
+          ) : (
+            <>
+              {canGoBack && !questionChecked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousQuestion}
+                    >
+                      <Undo2 />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Poprzednie pytanie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
                 {questionChecked ? (
                   <Button onClick={nextAction}>Następne pytanie</Button>
                 ) : (
                   <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
                 )}
-              </>
-            )}
-          </ViewTransition>
+              </ViewTransition>
+            </>
+          )}
         </div>
-        {question.explanation && questionChecked ? (
+        {question.explanation != null &&
+        question.explanation.trim() !== "" &&
+        questionChecked ? (
           <div
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"
