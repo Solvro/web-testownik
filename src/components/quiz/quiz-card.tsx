@@ -1,3 +1,5 @@
+"use client";
+
 import {
   DownloadIcon,
   PencilIcon,
@@ -6,7 +8,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition } from "react";
+import { ViewTransition, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +57,8 @@ export function QuizCard({
   className,
   ...props
 }: QuizCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   return (
     <ViewTransition name={`quiz-open-${quiz.id}`}>
       <Card className={cn("flex h-full flex-col", className)} {...props}>
@@ -70,9 +74,25 @@ export function QuizCard({
         </CardHeader>
         <CardFooter className="mt-auto flex items-center justify-between">
           <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">
-            <Button size="sm" asChild>
-              <Link href={onOpenPath(quiz)}>Otwórz</Link>
-            </Button>
+            {isLoading ? (
+              <div className="relative -m-1 inline-flex h-10 overflow-hidden rounded-md p-1">
+                <span className="absolute inset-[-100%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_55%,var(--card)_60%)]" />
+                <span className="bg-primary text-primary-foreground inline-flex h-full w-full items-center justify-center rounded-md p-3 text-sm font-medium backdrop-blur-3xl">
+                  Otwórz
+                </span>
+              </div>
+            ) : (
+              <Button size="sm" asChild disabled={isLoading}>
+                <Link
+                  href={onOpenPath(quiz)}
+                  onClick={() => {
+                    setIsLoading(true);
+                  }}
+                >
+                  Otwórz
+                </Link>
+              </Button>
+            )}
           </ViewTransition>
           <div className="flex gap-1 opacity-80">
             {Boolean(showEdit) && (
