@@ -17,8 +17,6 @@ export const metadata: Metadata = {
   },
   description:
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
-  keywords:
-    "Testownik, Solvro, KN Solvro, nauka do egzaminu, quizy, aplikacja edukacyjna, interaktywna nauka, przygotowanie do sesji, politechnika, studia, uczelnia, testy online, aplikacja mobilna, nauka online, edukacja, pwr, testownik, testownik solvro, testownik pwr, testownik politechnika, testownik studia, testownik uczelnia, testownik aplikacja, testownik edukacja, testownik nauka, testownik quizy, testownik przygotowanie do sesji",
   authors: [{ name: "KN Solvro" }],
   robots: "index, follow",
   openGraph: {
