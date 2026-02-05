@@ -98,6 +98,7 @@ export function QuizActionButtons({
               size="icon"
               onClick={handleCopy}
               disabled={!canUseQuestion}
+              aria-label="Kopiuj pytanie i odpowiedzi"
             >
               <ClipboardCopyIcon />
             </Button>
@@ -111,6 +112,7 @@ export function QuizActionButtons({
               size="icon"
               onClick={handleOpenChatGPT}
               disabled={!canUseQuestion}
+              aria-label="Otwórz w ChatGPT"
             >
               <SiOpenai />
             </Button>
@@ -128,6 +130,7 @@ export function QuizActionButtons({
                   variant="outline"
                   size="icon"
                   disabled={!canUseQuestion}
+                  aria-label="Zgłoś problem z pytaniem"
                 >
                   <MessageSquareWarningIcon />
                 </Button>
@@ -144,6 +147,7 @@ export function QuizActionButtons({
                 size="icon"
                 onClick={handleEdit}
                 disabled={!canUseQuestion}
+                aria-label="Edytuj pytanie"
               >
                 <PencilLineIcon />
               </Button>
@@ -158,6 +162,7 @@ export function QuizActionButtons({
               size="icon"
               onClick={onToggleHistory}
               disabled={!canUseQuestion}
+              aria-label="Historia odpowiedzi"
             >
               <HistoryIcon />
             </Button>
@@ -166,7 +171,12 @@ export function QuizActionButtons({
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onToggleBrainrot}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onToggleBrainrot}
+              aria-label="Brainrot mode"
+            >
               <SkullIcon />
             </Button>
           </TooltipTrigger>
