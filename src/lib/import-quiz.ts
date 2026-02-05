@@ -264,6 +264,7 @@ export const useImportQuiz = () => {
   const [quizTitle, setQuizTitle] = useState<string>("");
   const [quizDescription, setQuizDescription] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileOldRef = useRef<HTMLInputElement>(null);
@@ -574,8 +575,9 @@ export const useImportQuiz = () => {
     }
   };
 
-  const setErrorAndNotify = (message: string) => {
+  const setErrorAndNotify = (message: string, detail?: string | null) => {
     setError(message);
+    setErrorDetail(detail ?? null);
     toast.error(message);
     setLoading(false);
     setIsUploading(false);
@@ -587,8 +589,16 @@ export const useImportQuiz = () => {
       const result = await appContext.services.quiz.createQuiz(rest);
 
       setQuiz(result);
-    } catch {
+      setErrorDetail(null);
+    } catch (importError) {
+      console.error("Błąd importowania quizu:", importError);
+      const detail =
+        importError instanceof Error && importError.message
+          ? importError.message
+          : String(importError);
+
       setError("Wystąpił błąd podczas importowania quizu.");
+      setErrorDetail(detail.length ? detail : null);
     }
   };
 
@@ -661,6 +671,7 @@ export const useImportQuiz = () => {
 
   const handleImport = async () => {
     setError(null);
+    setErrorDetail(null);
     setLoading(true);
     switch (uploadType) {
       case "file": {
@@ -674,11 +685,11 @@ export const useImportQuiz = () => {
           await processAndSubmitImport(JSON.parse(text));
         } catch (fileError) {
           if (fileError instanceof Error) {
-            setError(
+            setErrorAndNotify(
               `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
             );
           } else {
-            setError("Wystąpił błąd podczas wczytywania pliku.");
+            setErrorAndNotify("Wystąpił błąd podczas wczytywania pliku.");
           }
           console.error("Błąd podczas wczytywania pliku:", fileError);
         }
@@ -688,7 +699,7 @@ export const useImportQuiz = () => {
       case "json": {
         const textInput = textInputRef.current?.value;
         if (textInput == null || textInput.trim() === "") {
-          setError("Wklej quiz w formie tekstu.");
+          setErrorAndNotify("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
@@ -696,11 +707,11 @@ export const useImportQuiz = () => {
           await processAndSubmitImport(JSON.parse(textInput));
         } catch (parseError) {
           if (parseError instanceof Error) {
-            setError(
+            setErrorAndNotify(
               `Wystąpił błąd podczas parsowania JSON: ${parseError.message}`,
             );
           } else {
-            setError(
+            setErrorAndNotify(
               `Wystąpił błąd podczas parsowania JSON: ${String(parseError)}`,
             );
           }
@@ -711,12 +722,12 @@ export const useImportQuiz = () => {
       }
       case "legacy": {
         if (fileNameOld == null && directoryName == null) {
-          setError("Nie wybrano pliku ani folderu.");
+          setErrorAndNotify("Nie wybrano pliku ani folderu.");
           setLoading(false);
           return;
         }
         if (!quizTitle.trim()) {
-          setError("Nie podano nazwy quizu.");
+          setErrorAndNotify("Nie podano nazwy quizu.");
           setLoading(false);
           return;
         }
@@ -823,8 +834,9 @@ export const useImportQuiz = () => {
             await appContext.services.quiz.createQuiz(quizData);
           setQuiz(importedQuiz);
         } catch (error_) {
-          setError(
-            `Wystąpił błąd podczas przetwarzania plików: ${error_ instanceof Error ? error_.message : String(error_)}`,
+          setErrorAndNotify(
+            "Wystąpił błąd podczas przetwarzania plików.",
+            error_ instanceof Error ? error_.message : String(error_),
           );
         }
         break;
@@ -864,6 +876,7 @@ export const useImportQuiz = () => {
     quizTitle,
     quizDescription,
     quiz,
+    errorDetail,
     uploadProgress,
     isUploading,
 

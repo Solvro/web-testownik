@@ -10,7 +10,7 @@ import {
   FolderOpenIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -54,6 +54,32 @@ function TypographyInlineCode({ children }: { children: React.ReactNode }) {
   );
 }
 
+const extractOwnText = (element: Element): string => {
+  let buffer = "";
+  for (const node of element.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      if (typeof text === "string") {
+        buffer += text;
+      }
+      continue;
+    }
+    if (
+      node instanceof HTMLElement &&
+      node.tagName !== "UL" &&
+      node.tagName !== "OL" &&
+      node.tagName !== "LI" &&
+      node.tagName !== "P"
+    ) {
+      const text = node.textContent;
+      if (typeof text === "string") {
+        buffer += text;
+      }
+    }
+  }
+  return buffer.trim();
+};
+
 const handleDragOverDirectory = (event: React.DragEvent<HTMLDivElement>) => {
   event.preventDefault();
   event.stopPropagation();
@@ -75,6 +101,7 @@ function ImportQuizPageContent(): React.JSX.Element {
     fileNameInput,
     fileNameOld,
     error,
+    errorDetail,
     loading,
     fileInputRef,
     fileOldRef,
@@ -108,23 +135,60 @@ function ImportQuizPageContent(): React.JSX.Element {
 
   const textRef = useRef<HTMLDivElement | null>(null);
   const [checkIcon, setCheckIcon] = useState<boolean>(false);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const formattedErrorDetail = useMemo(() => {
+    if (errorDetail == null) {
+      return null;
+    }
+
+    const tryFormat = (value: string): string | null => {
+      try {
+        return JSON.stringify(JSON.parse(value), null, 2);
+      } catch {
+        return null;
+      }
+    };
+
+    const direct = tryFormat(errorDetail);
+    if (direct !== null) {
+      return direct;
+    }
+
+    const braceIndex = errorDetail.indexOf("{");
+    const bracketIndex = errorDetail.indexOf("[");
+    const indices = [braceIndex, bracketIndex].filter((index) => index >= 0);
+    if (indices.length > 0) {
+      const sliceIndex = Math.min(...indices);
+      const parsed = tryFormat(errorDetail.slice(sliceIndex));
+      if (parsed !== null) {
+        const prefix = errorDetail.slice(0, sliceIndex).trim();
+        return prefix.length > 0 ? `${prefix}\n${parsed}` : parsed;
+      }
+    }
+
+    return errorDetail;
+  }, [errorDetail]);
   const handleTextCopy = async () => {
     const copyTextElement = textRef.current;
     if (copyTextElement == null) {
       return;
     }
 
-    let copyText = "";
+    const pre = copyTextElement.querySelector("pre");
+    const preText = pre?.textContent ?? "";
 
-    for (const child of copyTextElement.children) {
-      if (child.nodeName === "DIV") {
-        const pre = child.querySelector("pre");
-        if (pre?.textContent != null) {
-          copyText += `${pre.textContent}\n\n`;
-        }
-        continue;
-      }
-      copyText += `${child.textContent}\n\n`;
+    const items = [...copyTextElement.querySelectorAll("p, li")];
+    const parts = [
+      ...items
+        .map((element) => extractOwnText(element))
+        .filter((text) => text.length > 0),
+      preText,
+    ]
+      .map((text) => text.trim())
+      .filter((text) => text.length > 0);
+    const copyText = parts.join("\n");
+    if (copyText.length === 0) {
+      return;
     }
 
     setCheckIcon(true);
@@ -143,8 +207,47 @@ function ImportQuizPageContent(): React.JSX.Element {
         </CardHeader>
         <CardContent className="space-y-6">
           {error != null && (
-            <Alert variant="destructive">
-              <AlertTitle>{error}</AlertTitle>
+            <Alert
+              variant="destructive"
+              className="flex items-center justify-start gap-4"
+            >
+              <div>
+                <AlertTitle>{error}</AlertTitle>
+              </div>
+              {errorDetail === null ? null : (
+                <Dialog
+                  open={isErrorDialogOpen}
+                  onOpenChange={setIsErrorDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Pokaż szczegóły
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Szczegóły błędu</DialogTitle>
+                      <DialogDescription>
+                        Pełna treść komunikatu błędu.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-muted max-h-[50vh] overflow-auto rounded p-3 text-sm">
+                      <pre className="text-xs leading-relaxed wrap-break-word whitespace-pre-wrap">
+                        {formattedErrorDetail ?? errorDetail}
+                      </pre>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={() => {
+                          setIsErrorDialogOpen(false);
+                        }}
+                      >
+                        Zamknij
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </Alert>
           )}
 
@@ -403,7 +506,7 @@ function ImportQuizPageContent(): React.JSX.Element {
               Jak powinien wyglądać quiz w formacie JSON?
             </Button>
           </DialogTrigger>
-          <DialogContent className="flex h-[80dvh] flex-col md:max-w-xl">
+          <DialogContent className="flex h-[90dvh] flex-col sm:max-w-[90dvw] md:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Format JSON quizu</DialogTitle>
               <DialogDescription>
@@ -416,32 +519,85 @@ function ImportQuizPageContent(): React.JSX.Element {
                 ref={textRef}
               >
                 <div className="space-y-4 pr-3">
-                  <p>
-                    Quiz w formacie JSON powinien składać się z dwóch głównych
-                    kluczy: <TypographyInlineCode>title</TypographyInlineCode> i{" "}
-                    <TypographyInlineCode>questions</TypographyInlineCode>.
-                  </p>
-                  <p>
-                    Klucz <TypographyInlineCode>title</TypographyInlineCode>{" "}
-                    powinien zawierać tytuł quizu w formie tekstu.
-                  </p>
-                  <p>
-                    Klucz <TypographyInlineCode>questions</TypographyInlineCode>{" "}
-                    powinien zawierać tablicę obiektów reprezentujących pytania.
-                    Każde pytanie powinno zawierać klucze{" "}
-                    <TypographyInlineCode>id</TypographyInlineCode>,{" "}
-                    <TypographyInlineCode>text</TypographyInlineCode> i{" "}
-                    <TypographyInlineCode>answers</TypographyInlineCode> oraz
-                    opcjonalnie{" "}
-                    <TypographyInlineCode>order</TypographyInlineCode>,{" "}
-                    <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
-                    (domyślnie{" "}
-                    <TypographyInlineCode>false</TypographyInlineCode>) i{" "}
-                    <TypographyInlineCode>explanation</TypographyInlineCode>.
-                    Jeśli nie podano{" "}
-                    <TypographyInlineCode>order</TypographyInlineCode>, zostanie
-                    on nadany automatycznie od 1.
-                  </p>
+                  <p>Struktura wymagana przy imporcie:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <TypographyInlineCode>title</TypographyInlineCode> – tytuł
+                      quizu w formie tekstu.
+                    </li>
+                    <li>
+                      <TypographyInlineCode>description</TypographyInlineCode> –
+                      opcjonalny opis quizu.
+                    </li>
+                    <li>
+                      <TypographyInlineCode>questions</TypographyInlineCode> –
+                      tablica obiektów z pytaniami.
+                      <p className="mt-1 ml-6">
+                        Każde pytanie w tablicy{" "}
+                        <TypographyInlineCode>questions</TypographyInlineCode>{" "}
+                        zawiera:
+                      </p>
+                      <ul className="mt-1 mb-2 list-disc space-y-1 pl-6">
+                        <li>
+                          <TypographyInlineCode>text</TypographyInlineCode> –
+                          treść pytania (wymagane).
+                        </li>
+                        <li>
+                          <TypographyInlineCode>order</TypographyInlineCode> –
+                          kolejność pytania; jeśli brak, zostanie nadana
+                          automatycznie od 1 (opcjonalne).
+                        </li>
+                        <li>
+                          <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
+                          – czy jest wiele poprawnych odpowiedzi; domyślnie{" "}
+                          <TypographyInlineCode>false</TypographyInlineCode>{" "}
+                          (opcjonalne).
+                        </li>
+                        <li>
+                          <TypographyInlineCode>
+                            explanation
+                          </TypographyInlineCode>{" "}
+                          – wyjaśnienie po udzieleniu odpowiedzi (opcjonalne).
+                        </li>
+                        <li>
+                          <TypographyInlineCode>image_url</TypographyInlineCode>{" "}
+                          – adres obrazka pytania (opcjonalne).
+                        </li>
+                        <li>
+                          <TypographyInlineCode>answers</TypographyInlineCode> –
+                          lista odpowiedzi (wymagane).
+                          <p className="mt-1 ml-6">
+                            Każda odpowiedź w tablicy{" "}
+                            <TypographyInlineCode>answers</TypographyInlineCode>{" "}
+                            zawiera:
+                          </p>
+                          <ul className="mt-1 mb-2 list-disc space-y-1 pl-6">
+                            <li>
+                              <TypographyInlineCode>text</TypographyInlineCode>{" "}
+                              – treść odpowiedzi (wymagane).
+                            </li>
+                            <li>
+                              <TypographyInlineCode>
+                                is_correct
+                              </TypographyInlineCode>{" "}
+                              – czy odpowiedź jest poprawna (wymagane).
+                            </li>
+                            <li>
+                              <TypographyInlineCode>order</TypographyInlineCode>{" "}
+                              – kolejność odpowiedzi; jeśli brak, zostanie
+                              nadana automatycznie od 1 (opcjonalne).
+                            </li>
+                            <li>
+                              <TypographyInlineCode>
+                                image_url
+                              </TypographyInlineCode>{" "}
+                              – adres obrazka odpowiedzi (opcjonalne).
+                            </li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
                   <p>Przykładowy quiz w formacie JSON:</p>
                 </div>
                 <ScrollArea className="bg-muted static! min-h-40 w-full flex-1 rounded-md text-xs">
@@ -451,39 +607,39 @@ function ImportQuizPageContent(): React.JSX.Element {
     "description": "Opis quizu", // Opcjonalny
     "questions": [
         {
-            "order": 1, // Opcjonalny
+            "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
             "text": "Jaki jest sens sesji?",
             "answers": [
                 {
-                    "order": 1, // Opcjonalny
+                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Nie ma sensu",
                     "is_correct": false
                 },
                 {
-                    "order": 2,
+                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Żeby zjeść obiad",
                     "is_correct": true
                 },
                 {
-                    "order": 3,
+                    "order": 3, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Żeby się wykończyć",
                     "is_correct": false
                 }
             ],
             "multiple": false, // Opcjonalny, domyślnie false
-            "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny, domyślnie null
+            "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny
         },
         {
-            "order": 2,
+            "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
             "text": "Kto jest najlepszy?",
             "answers": [
                 {
-                    "order": 1,
+                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Ja",
                     "is_correct": true
                 },
                 {
-                    "order": 2,
+                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Ty",
                     "is_correct": false
                 }
@@ -491,24 +647,24 @@ function ImportQuizPageContent(): React.JSX.Element {
             "multiple": false
         },
         {
-            "order": 3,
+            "order": 3, // Opcjonalny, jeśli brak to automatycznie od 1
             "text": "Pytanie ze zdjęciem",
             "image_url": "https://example.com/image.jpg", // Opcjonalny
             "answers": [
                 {
-                    "order": 1,
+                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Odpowiedź 1",
                     "image_url": "https://example.com/image2.jpg", // Opcjonalny
                     "is_correct": true
                 },
                 {
-                    "order": 2,
+                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
                     "text": "Odpowiedź 2",
                     "image_url": "https://example.com/image3.jpg", // Opcjonalny
                     "is_correct": false
                 }
             ],
-            "multiple": true
+            "multiple": true // Opcjonalny, domyślnie false
         }
     ]
 }`}
