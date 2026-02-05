@@ -166,23 +166,25 @@ export class BaseApiService {
           const contentType = response.headers.get("content-type") ?? "";
           if (contentType.includes("application/json")) {
             const body = (await response.json()) as unknown;
-            if (body && typeof body === "object") {
+            if (body !== null && typeof body === "object") {
               const maybeDetail = (body as { detail?: unknown }).detail;
               const maybeMessage = (body as { message?: unknown }).message;
               const fromArray =
-                Array.isArray(body) && body.length > 0 && body[0];
+                Array.isArray(body) && body.length > 0
+                  ? (body[0] as unknown)
+                  : undefined;
 
               const candidate = [maybeDetail, maybeMessage, fromArray].find(
                 (value) => typeof value === "string" && value.trim().length > 0,
               ) as string | undefined;
-              if (candidate !== undefined) {
-                errorDetail = candidate.trim();
-              } else {
-                errorDetail = JSON.stringify(body);
-              }
+              errorDetail =
+                candidate === undefined
+                  ? JSON.stringify(body)
+                  : candidate.trim();
             }
           } else {
-            const text = (await response.text()).trim();
+            const rawText = await response.text();
+            const text = rawText.trim();
             if (text.length > 0) {
               errorDetail = text;
             }
@@ -191,9 +193,10 @@ export class BaseApiService {
           // Ignore parsing errors and fall back to status text
         }
 
-        const message = errorDetail.length
-          ? errorDetail
-          : response.statusText || "Request failed";
+        const message =
+          errorDetail.length > 0
+            ? errorDetail
+            : response.statusText || "Request failed";
         throw new Error(message);
       }
 
