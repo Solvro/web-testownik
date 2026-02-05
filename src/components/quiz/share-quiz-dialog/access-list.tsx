@@ -6,6 +6,7 @@ import {
   TrashIcon,
   UserIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 
@@ -42,6 +43,54 @@ interface AccessListProps {
   ) => void;
 }
 
+function PersistentTooltip({
+  pressed,
+  onPressedChange,
+  tooltipContentPressed,
+  tooltipContentUnpressed,
+  IconPressed,
+  IconUnpressed,
+  classNamePressed,
+  classNameUnpressed,
+}: {
+  pressed: boolean;
+  onPressedChange: (value: boolean) => void;
+  tooltipContentPressed: React.ReactNode;
+  tooltipContentUnpressed: React.ReactNode;
+  IconPressed: LucideIcon;
+  IconUnpressed: LucideIcon;
+  classNamePressed: string;
+  classNameUnpressed: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip open={open} onOpenChange={setOpen}>
+        <TooltipTrigger asChild>
+          <Toggle
+            pressed={pressed}
+            onPressedChange={(value) => {
+              setOpen(true);
+              onPressedChange(value);
+            }}
+            size="sm"
+            className={cn(
+              "size-8 rounded-full p-0 transition-colors",
+              pressed ? classNamePressed : classNameUnpressed,
+            )}
+          >
+            {pressed ? <IconPressed /> : <IconUnpressed />}
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="center">
+          {pressed ? tooltipContentPressed : tooltipContentUnpressed}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function AccessList({
   quizMetadata,
   usersWithAccess,
@@ -53,51 +102,8 @@ export function AccessList({
   handleToggleUserEdit,
   handleToggleGroupEdit,
 }: AccessListProps) {
-  const [hoverTooltipGroupId, setHoverTooltipGroupId] = useState<string | null>(
-    null,
-  );
-  const [hoverTooltipOwner, setHoverTooltipOwner] = useState<boolean>(false);
-
-  function UserTooltip(
-    user: User & { shared_quiz_id?: string; allow_edit: boolean },
-  ) {
-    const [open, setOpen] = useState(false);
-    const [allowEdit, setAllowEdit] = useState(user.allow_edit);
-
-    return (
-      <TooltipProvider delayDuration={0}>
-        <Tooltip open={open} onOpenChange={setOpen}>
-          <TooltipTrigger asChild>
-            <Toggle
-              pressed={user.allow_edit}
-              onPressedChange={() => {
-                setOpen(true);
-                setAllowEdit(!allowEdit);
-                handleToggleUserEdit(user);
-              }}
-              size="sm"
-              className={cn(
-                "size-8 rounded-full p-0 transition-colors",
-                "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
-              )}
-            >
-              {allowEdit ? (
-                <PencilIcon className="size-5 text-green-600" />
-              ) : (
-                <EyeIcon className="text-muted-foreground size-5" />
-              )}
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent side="top" align="center">
-            {allowEdit ? "Wyłącz edycję" : "Zezwól na edycję"}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
   return (
-    <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
+    <ScrollArea className="w-full **:data-[slot=scroll-area-viewport]:max-h-64">
       <div className="flex flex-col gap-2">
         {quizMetadata.maintainer != null && (
           <div
@@ -120,42 +126,17 @@ export function AccessList({
                   {quizMetadata.maintainer.full_name}
                 </p>
               </div>
-              <div
-                className="flex items-center gap-2"
-                onMouseEnter={() => {
-                  setHoverTooltipOwner(true);
-                }}
-                onMouseLeave={() => {
-                  setHoverTooltipOwner(false);
-                }}
-              >
-                <Tooltip open={hoverTooltipOwner}>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      pressed={isMaintainerAnonymous}
-                      onPressedChange={setIsMaintainerAnonymous}
-                      size="sm"
-                      className={cn(
-                        "size-8 rounded-full p-0 transition-colors",
-                        "data-[state=off]:bg-sky-500/15 data-[state=on]:bg-red-500/15",
-                      )}
-                    >
-                      {isMaintainerAnonymous ? (
-                        <HatGlassesIcon className="size-5 text-red-500" />
-                      ) : (
-                        <UserIcon className="size-5 text-sky-500" />
-                      )}
-                    </Toggle>
-                  </TooltipTrigger>
-
-                  <TooltipContent>
-                    <p>
-                      {isMaintainerAnonymous
-                        ? "Ujawnij właściciela"
-                        : "Ukryj właściciela"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+              <div className="flex items-center gap-2">
+                <PersistentTooltip
+                  pressed={isMaintainerAnonymous}
+                  onPressedChange={setIsMaintainerAnonymous}
+                  tooltipContentPressed="Ujawnij właściciela"
+                  tooltipContentUnpressed="Ukryj właściciela"
+                  IconPressed={HatGlassesIcon}
+                  IconUnpressed={UserIcon}
+                  classNamePressed="bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 hover:text-sky-600"
+                  classNameUnpressed="bg-red-500/15 text-red-500 hover:bg-red-500/20 hover:text-red-600"
+                />
               </div>
             </div>
             <Button
@@ -182,51 +163,18 @@ export function AccessList({
                 <p className="m-0 text-sm font-medium">{user.full_name}</p>
               </div>
 
-              <UserTooltip
-                id={user.id}
-                full_name={user.full_name}
-                photo={user.photo}
-                student_number={user.student_number}
-                allow_edit={user.allow_edit}
+              <PersistentTooltip
+                pressed={user.allow_edit}
+                onPressedChange={() => {
+                  handleToggleUserEdit(user);
+                }}
+                tooltipContentPressed="Wyłącz edycję"
+                tooltipContentUnpressed="Zezwól na edycję"
+                IconPressed={PencilIcon}
+                IconUnpressed={EyeIcon}
+                classNamePressed="bg-green-500/15 text-green-500 hover:bg-green-500/20 hover:text-green-600"
+                classNameUnpressed="bg-muted hover:bg-muted/20 hover:text-muted-foreground"
               />
-
-              {/*<div*/}
-              {/*  className="flex items-center gap-2"*/}
-              {/*  onMouseEnter={() => {*/}
-              {/*    setHoverTooltipUserId(user.id);*/}
-              {/*  }}*/}
-              {/*  onMouseLeave={() => {*/}
-              {/*    setHoverTooltipUserId(null);*/}
-              {/*  }}*/}
-              {/*>*/}
-              {/*  <Tooltip open={hoverTooltipUserId === user.id}>*/}
-              {/*    <TooltipTrigger asChild>*/}
-              {/*      <Toggle*/}
-              {/*        pressed={user.allow_edit}*/}
-              {/*        onPressedChange={() => {*/}
-              {/*          handleToggleUserEdit(user);*/}
-              {/*        }}*/}
-              {/*        size="sm"*/}
-              {/*        className={cn(*/}
-              {/*          "size-8 rounded-full p-0 transition-colors",*/}
-              {/*          "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",*/}
-              {/*        )}*/}
-              {/*      >*/}
-              {/*        {user.allow_edit ? (*/}
-              {/*          <PencilIcon className="size-5 text-green-600" />*/}
-              {/*        ) : (*/}
-              {/*          <EyeIcon className="text-muted-foreground size-5" />*/}
-              {/*        )}*/}
-              {/*      </Toggle>*/}
-              {/*    </TooltipTrigger>*/}
-
-              {/*    <TooltipContent>*/}
-              {/*      <p>*/}
-              {/*        {user.allow_edit ? "Wyłącz edycję" : "Zezwól na edycję"}*/}
-              {/*      </p>*/}
-              {/*    </TooltipContent>*/}
-              {/*  </Tooltip>*/}
-              {/*</div>*/}
             </div>
             <Button
               variant="ghost"
@@ -253,42 +201,19 @@ export function AccessList({
                 </Avatar>
                 <p className="m-0 text-sm font-medium">{group.name}</p>
               </div>
-              <div
-                className="flex items-center gap-2"
-                onMouseEnter={() => {
-                  setHoverTooltipGroupId(group.id);
-                }}
-                onMouseLeave={() => {
-                  setHoverTooltipGroupId(null);
-                }}
-              >
-                <Tooltip open={hoverTooltipGroupId === group.id}>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      pressed={group.allow_edit}
-                      onPressedChange={() => {
-                        handleToggleGroupEdit(group);
-                      }}
-                      size="sm"
-                      className={cn(
-                        "size-8 rounded-full p-0 transition-colors",
-                        "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
-                      )}
-                    >
-                      {group.allow_edit ? (
-                        <PencilIcon className="size-5 text-green-600" />
-                      ) : (
-                        <EyeIcon className="text-muted-foreground size-5" />
-                      )}
-                    </Toggle>
-                  </TooltipTrigger>
-
-                  <TooltipContent>
-                    <p>
-                      {group.allow_edit ? "Wyłącz edycję" : "Zezwól na edycję"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+              <div className="flex items-center gap-2">
+                <PersistentTooltip
+                  pressed={group.allow_edit}
+                  onPressedChange={() => {
+                    handleToggleGroupEdit(group);
+                  }}
+                  tooltipContentPressed="Wyłącz edycję"
+                  tooltipContentUnpressed="Zezwól na edycję"
+                  IconPressed={PencilIcon}
+                  IconUnpressed={EyeIcon}
+                  classNamePressed="bg-green-500/15 text-green-500 hover:bg-green-500/20 hover:text-green-600"
+                  classNameUnpressed="bg-muted hover:bg-muted/20 hover:text-muted-foreground"
+                />
               </div>
             </div>
             <Button
