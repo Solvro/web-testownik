@@ -6,7 +6,7 @@ import remarkMath from "remark-math";
 import { cn } from "@/lib/utils";
 
 interface MarkdownRendererProps {
-  children: string;
+  children?: string;
   className?: string;
 }
 
@@ -19,7 +19,7 @@ export function MarkdownRenderer({
       className={cn("prose dark:prose-invert max-w-none leading-6", className)}
     >
       <Markdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {children.replaceAll("\n", "  \n")}
+        {children?.replaceAll("\n", "  \n")}
       </Markdown>
     </div>
   );

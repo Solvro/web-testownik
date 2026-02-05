@@ -27,7 +27,7 @@ export function AuthButtons({
   isGuest,
   profilePicture,
 }: AuthButtonsProps) {
-  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentUrl, setCurrentUrl] = useState("/");
   const searchParameters = useSearchParams();
   const pathname = usePathname();
 

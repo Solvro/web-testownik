@@ -69,7 +69,11 @@ export function ReportQuestionIssueDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        onKeyDown={(event_) => {
+          event_.stopPropagation();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Zgłoś problem z pytaniem</DialogTitle>
         </DialogHeader>

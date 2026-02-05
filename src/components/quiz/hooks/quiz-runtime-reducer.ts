@@ -1,3 +1,5 @@
+import formbricks from "@formbricks/js";
+
 import {
   getAnswerCounts,
   isQuizComplete,
@@ -221,6 +223,10 @@ export function runtimeReducer(
       const isFinished =
         state.nextQuestion === null &&
         isQuizComplete(state.questions, state.answers, state.settings);
+
+      if (isFinished) {
+        void formbricks.track("quiz_finished");
+      }
 
       return {
         ...state,

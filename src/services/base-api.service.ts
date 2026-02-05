@@ -227,6 +227,30 @@ export class BaseApiService {
         );
         if (!response.ok) {
           if (response.status === 401) {
+            try {
+              const data = (await response.clone().json()) as {
+                code?: string;
+                ban_reason?: string | null;
+              };
+
+              if (data.code === "user_banned") {
+                this.clearAuthTokens();
+                if (typeof window !== "undefined") {
+                  const searchParameters = new URLSearchParams();
+                  searchParameters.set("error", "user_banned");
+                  if (
+                    data.ban_reason !== undefined &&
+                    data.ban_reason !== null
+                  ) {
+                    searchParameters.set("ban_reason", data.ban_reason);
+                  }
+                  window.location.href = `/?${searchParameters.toString()}`;
+                }
+                return false;
+              }
+            } catch (error) {
+              console.error(error);
+            }
             this.clearAuthTokens();
           }
           return false;
