@@ -38,6 +38,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
+import { prepareQuizForDownload } from "@/lib/quiz-download";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
@@ -135,14 +136,7 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
     try {
       const fullQuiz = await appContext.services.quiz.getQuiz(quiz.id);
       // Create a downloadable version
-      const downloadableQuiz = {
-        title: fullQuiz.title,
-        description: fullQuiz.description,
-        maintainer: fullQuiz.maintainer?.full_name ?? null,
-        version: fullQuiz.version,
-        questions: fullQuiz.questions,
-        is_anonymous: fullQuiz.is_anonymous,
-      };
+      const downloadableQuiz = prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
@@ -316,9 +310,19 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
             <p className="text-muted-foreground text-sm">
               Nie masz jeszcze żadnych quizów.
             </p>
-            <Link href="/create-quiz">
-              <Button>Stwórz quiz</Button>
-            </Link>
+            <div className="flex flex-row justify-center gap-2">
+              <Link href="/create-quiz">
+                <Button>
+                  Stwórz quiz <PlusIcon />
+                </Button>
+              </Link>
+              <Link href="/import-quiz">
+                <Button>
+                  Importuj
+                  <UploadIcon />
+                </Button>
+              </Link>
+            </div>
           </div>
         </ViewTransition>
       )}

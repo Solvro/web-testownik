@@ -403,7 +403,7 @@ export class QuizService extends BaseApiService {
           }
         }
 
-        session.answers.push(answer);
+        session.answers.unshift(answer);
 
         session.current_question = nextQuestionId;
 
@@ -468,7 +468,18 @@ export class QuizService extends BaseApiService {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.GUEST_QUIZZES);
       if (stored !== null && stored.trim() !== "") {
-        return JSON.parse(stored) as Quiz[];
+        const quizzes = JSON.parse(stored) as Quiz[];
+        return quizzes.map((quiz) => ({
+          ...quiz,
+          questions: quiz.questions.map((q) => ({
+            ...q,
+            image: q.image ?? q.image_url ?? undefined,
+            answers: q.answers.map((a) => ({
+              ...a,
+              image: a.image ?? a.image_url ?? undefined,
+            })),
+          })),
+        }));
       }
       return [];
     } catch (error) {

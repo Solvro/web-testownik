@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
@@ -66,6 +67,7 @@ export function ShareQuizDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
   const [searchResultsLoading, setSearchResultsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
     queryKey: ["study-groups"],
@@ -79,6 +81,8 @@ export function ShareQuizDialog({
       }));
     },
     enabled: open && !appContext.isGuest,
+    refetchOnMount: true,
+    staleTime: 0,
     initialData: [],
   });
 
@@ -256,7 +260,11 @@ export function ShareQuizDialog({
 
   // -------------- Save Handler -------------- //
   const handleSave = async () => {
+    if (isSaving) {
+      return;
+    }
     try {
+      setIsSaving(true);
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
       const quizResponse = await appContext.services.quiz.updateQuiz(quiz.id, {
         visibility: accessLevel,
@@ -350,6 +358,8 @@ export function ShareQuizDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save quiz settings:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -480,12 +490,20 @@ export function ShareQuizDialog({
           </Button>
           <div className="flex flex-wrap-reverse gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                disabled={isSaving}
+              >
                 Anuluj
               </Button>
             </DialogClose>
-            <Button className="w-full sm:w-auto" onClick={handleSave}>
-              Zapisz
+            <Button
+              className="w-full sm:w-auto"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? <Spinner /> : "Zapisz"}
             </Button>
           </div>
           <Button

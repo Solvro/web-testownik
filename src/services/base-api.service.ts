@@ -128,10 +128,14 @@ export class BaseApiService {
     // Ensure token is fresh (or refreshed early) before building headers
     await this.ensureFreshToken();
     let headers = this.getAuthHeaders();
+
+    // Check if body is FormData to avoid setting Content-Type
+    const isFormData = (options.body as unknown) instanceof FormData;
+
     const requestOptions: RequestInit = {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...headers,
         ...(options.headers as Record<string, string>),
       },
@@ -157,9 +161,40 @@ export class BaseApiService {
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP ${String(response.status)}: ${response.statusText}`,
-        );
+        let errorDetail = "";
+        try {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            const body = (await response.json()) as unknown;
+            if (body && typeof body === "object") {
+              const maybeDetail = (body as { detail?: unknown }).detail;
+              const maybeMessage = (body as { message?: unknown }).message;
+              const fromArray =
+                Array.isArray(body) && body.length > 0 && body[0];
+
+              const candidate = [maybeDetail, maybeMessage, fromArray].find(
+                (value) => typeof value === "string" && value.trim().length > 0,
+              ) as string | undefined;
+              if (candidate !== undefined) {
+                errorDetail = candidate.trim();
+              } else {
+                errorDetail = JSON.stringify(body);
+              }
+            }
+          } else {
+            const text = (await response.text()).trim();
+            if (text.length > 0) {
+              errorDetail = text;
+            }
+          }
+        } catch {
+          // Ignore parsing errors and fall back to status text
+        }
+
+        const message = errorDetail.length
+          ? errorDetail
+          : response.statusText || "Request failed";
+        throw new Error(message);
       }
 
       if (response.status === 204) {
@@ -192,6 +227,30 @@ export class BaseApiService {
         );
         if (!response.ok) {
           if (response.status === 401) {
+            try {
+              const data = (await response.clone().json()) as {
+                code?: string;
+                ban_reason?: string | null;
+              };
+
+              if (data.code === "user_banned") {
+                this.clearAuthTokens();
+                if (typeof window !== "undefined") {
+                  const searchParameters = new URLSearchParams();
+                  searchParameters.set("error", "user_banned");
+                  if (
+                    data.ban_reason !== undefined &&
+                    data.ban_reason !== null
+                  ) {
+                    searchParameters.set("ban_reason", data.ban_reason);
+                  }
+                  window.location.href = `/?${searchParameters.toString()}`;
+                }
+                return false;
+              }
+            } catch (error) {
+              console.error(error);
+            }
             this.clearAuthTokens();
           }
           return false;
@@ -311,5 +370,22 @@ export class BaseApiService {
    */
   protected async delete<T = void>(url: string): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(url, { method: "DELETE" });
+  }
+
+  /**
+   * Generic Upload request (POST with FormData)
+   */
+  protected async uploadFile<T>(
+    url: string,
+    file: File,
+    fieldName = "file",
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    return this.makeRequest<T>(url, {
+      method: "POST",
+      body: formData,
+    });
   }
 }

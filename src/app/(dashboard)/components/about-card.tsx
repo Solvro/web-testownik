@@ -18,17 +18,20 @@ export function AboutCard({
   const { data: contributors = [], isLoading } = useContributors();
 
   return (
-    <Card className={cn("max-h-80 md:max-h-none", className)} {...props}>
+    <Card
+      className={cn("max-h-80 overflow-hidden md:max-h-none", className)}
+      {...props}
+    >
       <CardContent className="flex h-full flex-col space-y-3">
         <CardTitle className="flex items-center justify-between">
           <span>Twórcy</span>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             onClick={() =>
               window.open("https://github.com/solvro/web-testownik")
             }
-            className="size-6 rounded-full"
+            className="rounded-full"
           >
             <SiGithub className="size-5" />
           </Button>

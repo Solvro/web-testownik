@@ -1,4 +1,4 @@
-# <img src="https://github.com/Solvro/web-testownik/blob/main/public/favicon/192x192.png?raw=true" width="24"> Testownik Solvro - Frontend
+# <img src="https://github.com/Solvro/web-testownik/blob/main/public/favicon/180x180.png?raw=true" width="24"> Testownik Solvro - Frontend
 
 <div align="center">
 

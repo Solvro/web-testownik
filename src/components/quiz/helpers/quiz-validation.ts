@@ -8,6 +8,7 @@ const ALLOWED_QUIZ_KEYS = [
   "version",
   "questions",
   "maintainer",
+  "comment",
 ];
 
 const ALLOWED_QUESTION_KEYS = [
@@ -16,11 +17,19 @@ const ALLOWED_QUESTION_KEYS = [
   "text",
   "explanation",
   "multiple",
-  "image",
+  "image", // Also allowed for backward compatibility
+  "image_url",
   "answers",
 ];
 
-const ALLOWED_ANSWER_KEYS = ["id", "order", "text", "is_correct", "image"];
+const ALLOWED_ANSWER_KEYS = [
+  "id",
+  "order",
+  "text",
+  "is_correct",
+  "image", // Also allowed for backward compatibility
+  "image_url",
+];
 
 const containsOnlyAllowedKeys = (
   object: object,
@@ -75,8 +84,12 @@ export const validateQuiz = (input: unknown): string | null => {
       )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
     }
 
-    if (typeof q.text !== "string" || !q.text.trim()) {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
+    if (
+      (typeof q.text !== "string" || !q.text.trim()) &&
+      (typeof q.image_url !== "string" || !q.image_url.trim()) &&
+      (typeof q.image !== "string" || !q.image.trim())
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść albo zdjęcie.`;
     }
 
     if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
@@ -93,14 +106,16 @@ export const validateQuiz = (input: unknown): string | null => {
       )} musi mieć przynajmniej jedną odpowiedź.`;
     }
 
-    if (typeof q.id !== "string") {
+    if (q.id !== undefined && typeof q.id !== "string") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe ID.`;
     }
 
-    if (questionIds.has(q.id)) {
-      return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
+    if (typeof q.id === "string") {
+      if (questionIds.has(q.id)) {
+        return `Pytanie nr ${String(questionIndex + 1)} ma zduplikowane ID: ${q.id}.`;
+      }
+      questionIds.add(q.id);
     }
-    questionIds.add(q.id);
 
     for (const [answerIndex, answer] of q.answers.entries()) {
       if (typeof answer !== "object" || answer === null) {
@@ -110,18 +125,20 @@ export const validateQuiz = (input: unknown): string | null => {
       }
       const a = answer as Record<string, unknown>;
 
-      if (typeof a.id !== "string") {
+      if (a.id !== undefined && typeof a.id !== "string") {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
         )} musi mieć prawidłowe ID.`;
       }
 
-      if (answerIds.has(a.id)) {
-        return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
-          questionIndex + 1,
-        )} ma zduplikowane ID w całym quizie: ${a.id}.`;
+      if (typeof a.id === "string") {
+        if (answerIds.has(a.id)) {
+          return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
+            questionIndex + 1,
+          )} ma zduplikowane ID w całym quizie: ${a.id}.`;
+        }
+        answerIds.add(a.id);
       }
-      answerIds.add(a.id);
 
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(a, ALLOWED_ANSWER_KEYS)) {
@@ -133,10 +150,14 @@ export const validateQuiz = (input: unknown): string | null => {
         )} zawiera nieprawidłowe właściwości: ${invalidKeys.join(", ")}`;
       }
 
-      if (typeof a.text !== "string" || !a.text.trim()) {
+      if (
+        (typeof a.text !== "string" || !a.text.trim()) &&
+        (typeof a.image_url !== "string" || !a.image_url.trim()) &&
+        (typeof a.image !== "string" || !a.image.trim())
+      ) {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(
           questionIndex + 1,
-        )} musi mieć treść.`;
+        )} musi mieć treść albo zdjęcie.`;
       }
 
       if (typeof a.is_correct !== "boolean") {

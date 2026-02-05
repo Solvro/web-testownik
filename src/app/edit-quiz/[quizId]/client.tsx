@@ -1,15 +1,17 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
-import type { QuizEditorResult } from "@/components/quiz/quiz-editor";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import type { QuizFormData } from "@/lib/schemas/quiz.schema";
+import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Quiz } from "@/types/quiz";
 
 interface EditQuizPageClientProps {
@@ -21,6 +23,7 @@ function EditQuizPageContent({
 }: {
   quizId: string;
 }): React.JSX.Element {
+  const queryClient = useQueryClient();
   const appContext = useContext(AppContext);
   const router = useRouter();
   const searchParameters = useSearchParams();
@@ -34,7 +37,7 @@ function EditQuizPageContent({
   }
 
   useEffect(() => {
-    const fetchQuiz = async () => {
+    async function fetchQuiz() {
       if (quizId.trim() === "") {
         setError("Nieprawidłowy identyfikator quizu.");
         setLoading(false);
@@ -47,7 +50,7 @@ function EditQuizPageContent({
           const scrollTo = searchParameters.get("scroll_to");
           const hashId = window.location.hash.slice(1);
           const id = scrollTo ?? hashId;
-          if (id) {
+          if (id !== "") {
             const element = document.querySelector(`#${id}`);
             if (element !== null) {
               element.scrollIntoView({ behavior: "smooth" });
@@ -66,21 +69,17 @@ function EditQuizPageContent({
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     void fetchQuiz();
   }, [quizId, appContext.services.quiz, appContext.isGuest, searchParameters]);
 
-  const handleSave = async (data: QuizEditorResult) => {
+  async function handleSave(data: QuizFormData): Promise<boolean> {
     if (quizId.trim() === "") {
       toast.error("Nieprawidłowy identyfikator quizu.");
       return false;
     }
-    const payload = {
-      title: data.title,
-      description: data.description,
-      questions: data.questions,
-    };
+    const payload = prepareQuizForSubmission(data);
     try {
       await appContext.services.quiz.updateQuiz(quizId, payload);
       toast.success("Quiz został zaktualizowany.");
@@ -89,13 +88,12 @@ function EditQuizPageContent({
       toast.error("Wystąpił błąd podczas aktualizacji quizu.");
       return false;
     }
-  };
+  }
 
-  const handleSaveAndClose = async (
-    data: QuizEditorResult,
-  ): Promise<boolean> => {
+  async function handleSaveAndClose(data: QuizFormData): Promise<boolean> {
     const ok = await handleSave(data);
     if (ok) {
+      await queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
       const navigation = window.navigation as Navigation | null;
 
       if (navigation?.canGoBack === true) {
@@ -105,7 +103,7 @@ function EditQuizPageContent({
       }
     }
     return ok;
-  };
+  }
 
   if (loading) {
     return (

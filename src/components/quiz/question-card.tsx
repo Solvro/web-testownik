@@ -1,12 +1,9 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import "katex/dist/katex.min.css";
-import { RotateCcwIcon } from "lucide-react";
+import { RotateCcwIcon, Undo2 } from "lucide-react";
 import { ViewTransition, useEffect } from "react";
-import Markdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 
 import { ImageLoad } from "@/components/image-load";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
@@ -29,6 +31,9 @@ interface QuestionCardProps {
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
+  goToPreviousQuestion: () => void;
+  canGoBack: boolean;
+  isHistoryQuestion: boolean;
 }
 
 export function QuestionCard({
@@ -40,6 +45,9 @@ export function QuestionCard({
   nextAction,
   isQuizFinished,
   restartQuiz,
+  goToPreviousQuestion,
+  canGoBack,
+  isHistoryQuestion,
 }: QuestionCardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAnswerClick = (answerId: string) => {
@@ -101,10 +109,12 @@ export function QuestionCard({
             autoplay
           />
           <div className="flex justify-center">
-            <Button variant="outline" onClick={restartQuiz}>
-              <RotateCcwIcon />
-              Uruchom ponownie quiz
-            </Button>
+            <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+              <Button variant="outline" onClick={restartQuiz}>
+                <RotateCcwIcon />
+                Uruchom ponownie quiz
+              </Button>
+            </ViewTransition>
           </div>
           <p className="text-muted-foreground mt-3 text-center text-xs">
             Lub idź się napić piwka, no i odpocznij - zasłużyłeś!
@@ -132,13 +142,10 @@ export function QuestionCard({
     <Card>
       <CardHeader>
         <ScrollArea className="w-full min-w-0">
-          <CardTitle className="mb-1 space-y-2 font-medium">
-            <Markdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
+          <CardTitle className="mb-1 font-medium">
+            <MarkdownRenderer>
               {`${String(question.order)}\\. ${question.text}`}
-            </Markdown>
+            </MarkdownRenderer>
           </CardTitle>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -147,6 +154,8 @@ export function QuestionCard({
             key={`question-image-${question.id}`}
             url={question.image}
             alt={question.text}
+            width={question.image_width}
+            height={question.image_height}
             className="mx-auto mt-4 max-h-80 rounded border object-contain"
           />
         </CardDescription>
@@ -163,7 +172,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left text-sm font-medium whitespace-pre-wrap transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(answer.id),
                     questionChecked,
@@ -171,12 +180,16 @@ export function QuestionCard({
                   ),
                 )}
               >
-                <span className="w-full">{answer.text}</span>
+                <MarkdownRenderer className="pointer-events-none w-full text-sm">
+                  {answer.text}
+                </MarkdownRenderer>
                 <ImageLoad
                   key={`answer-image-${question.id}-${answer.id}`}
                   url={answer.image}
                   alt={answer.text}
-                  className="max-h-40 w-full rounded object-contain"
+                  width={answer.image_width}
+                  height={answer.image_height}
+                  className="mx-auto max-h-40 rounded object-contain"
                 />
               </button>
             );
@@ -199,26 +212,45 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end">
-          <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-            {questionChecked ? (
-              <Button onClick={nextAction}>Następne pytanie</Button>
-            ) : (
-              <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
-            )}
-          </ViewTransition>
+        <div className="mt-2 flex justify-end gap-2">
+          {isHistoryQuestion ? (
+            <Button variant="outline" onClick={goToPreviousQuestion}>
+              Powrót do pytań
+            </Button>
+          ) : (
+            <>
+              {canGoBack && !questionChecked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPreviousQuestion}
+                    >
+                      <Undo2 />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Poprzednie pytanie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+                {questionChecked ? (
+                  <Button onClick={nextAction}>Następne pytanie</Button>
+                ) : (
+                  <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+                )}
+              </ViewTransition>
+            </>
+          )}
         </div>
-        {question.explanation != null && questionChecked ? (
+        {question.explanation != null &&
+        question.explanation.trim() !== "" &&
+        questionChecked ? (
           <div
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"
           >
-            <Markdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
-              {question.explanation}
-            </Markdown>
+            <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
           </div>
         ) : null}
       </CardContent>

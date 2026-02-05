@@ -81,7 +81,7 @@ export function ConnectGuestAccount() {
     settings: false,
   });
 
-  const [redirectUrl, setRedirectUrl] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState("/");
 
   useEffect(() => {
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state

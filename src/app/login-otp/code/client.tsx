@@ -49,7 +49,7 @@ export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
   const [otp, setOtp] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting || otp.length < 6) {
       return;
