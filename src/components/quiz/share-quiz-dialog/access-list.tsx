@@ -16,6 +16,7 @@ import { Toggle } from "@/components/ui/toggle";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn, getInitials } from "@/lib/utils";
@@ -52,13 +53,48 @@ export function AccessList({
   handleToggleUserEdit,
   handleToggleGroupEdit,
 }: AccessListProps) {
-  const [hoverTooltipUserId, setHoverTooltipUserId] = useState<string | null>(
-    null,
-  );
   const [hoverTooltipGroupId, setHoverTooltipGroupId] = useState<string | null>(
     null,
   );
   const [hoverTooltipOwner, setHoverTooltipOwner] = useState<boolean>(false);
+
+  function UserTooltip(
+    user: User & { shared_quiz_id?: string; allow_edit: boolean },
+  ) {
+    const [open, setOpen] = useState(false);
+    const [allowEdit, setAllowEdit] = useState(user.allow_edit);
+
+    return (
+      <TooltipProvider delayDuration={0}>
+        <Tooltip open={open} onOpenChange={setOpen}>
+          <TooltipTrigger asChild>
+            <Toggle
+              pressed={user.allow_edit}
+              onPressedChange={() => {
+                setOpen(true);
+                setAllowEdit(!allowEdit);
+                handleToggleUserEdit(user);
+              }}
+              size="sm"
+              className={cn(
+                "size-8 rounded-full p-0 transition-colors",
+                "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
+              )}
+            >
+              {allowEdit ? (
+                <PencilIcon className="size-5 text-green-600" />
+              ) : (
+                <EyeIcon className="text-muted-foreground size-5" />
+              )}
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent side="top" align="center">
+            {allowEdit ? "Wyłącz edycję" : "Zezwól na edycję"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
@@ -145,43 +181,52 @@ export function AccessList({
                 </Avatar>
                 <p className="m-0 text-sm font-medium">{user.full_name}</p>
               </div>
-              <div
-                className="flex items-center gap-2"
-                onMouseEnter={() => {
-                  setHoverTooltipUserId(user.id);
-                }}
-                onMouseLeave={() => {
-                  setHoverTooltipUserId(null);
-                }}
-              >
-                <Tooltip open={hoverTooltipUserId === user.id}>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      pressed={user.allow_edit}
-                      onPressedChange={() => {
-                        handleToggleUserEdit(user);
-                      }}
-                      size="sm"
-                      className={cn(
-                        "size-8 rounded-full p-0 transition-colors",
-                        "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
-                      )}
-                    >
-                      {user.allow_edit ? (
-                        <PencilIcon className="size-5 text-green-600" />
-                      ) : (
-                        <EyeIcon className="text-muted-foreground size-5" />
-                      )}
-                    </Toggle>
-                  </TooltipTrigger>
 
-                  <TooltipContent>
-                    <p>
-                      {user.allow_edit ? "Wyłącz edycję" : "Zezwól na edycję"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+              <UserTooltip
+                id={user.id}
+                full_name={user.full_name}
+                photo={user.photo}
+                student_number={user.student_number}
+                allow_edit={user.allow_edit}
+              />
+
+              {/*<div*/}
+              {/*  className="flex items-center gap-2"*/}
+              {/*  onMouseEnter={() => {*/}
+              {/*    setHoverTooltipUserId(user.id);*/}
+              {/*  }}*/}
+              {/*  onMouseLeave={() => {*/}
+              {/*    setHoverTooltipUserId(null);*/}
+              {/*  }}*/}
+              {/*>*/}
+              {/*  <Tooltip open={hoverTooltipUserId === user.id}>*/}
+              {/*    <TooltipTrigger asChild>*/}
+              {/*      <Toggle*/}
+              {/*        pressed={user.allow_edit}*/}
+              {/*        onPressedChange={() => {*/}
+              {/*          handleToggleUserEdit(user);*/}
+              {/*        }}*/}
+              {/*        size="sm"*/}
+              {/*        className={cn(*/}
+              {/*          "size-8 rounded-full p-0 transition-colors",*/}
+              {/*          "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",*/}
+              {/*        )}*/}
+              {/*      >*/}
+              {/*        {user.allow_edit ? (*/}
+              {/*          <PencilIcon className="size-5 text-green-600" />*/}
+              {/*        ) : (*/}
+              {/*          <EyeIcon className="text-muted-foreground size-5" />*/}
+              {/*        )}*/}
+              {/*      </Toggle>*/}
+              {/*    </TooltipTrigger>*/}
+
+              {/*    <TooltipContent>*/}
+              {/*      <p>*/}
+              {/*        {user.allow_edit ? "Wyłącz edycję" : "Zezwól na edycję"}*/}
+              {/*      </p>*/}
+              {/*    </TooltipContent>*/}
+              {/*  </Tooltip>*/}
+              {/*</div>*/}
             </div>
             <Button
               variant="ghost"
