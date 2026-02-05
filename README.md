@@ -86,14 +86,14 @@ Chcesz pomóc w rozwoju Testownika? Let's go!
 1. Sforkuj repozytorium (tylko jeśli jeszcze nie jesteś w teamie testownika)
 2. Stwórz branch dla swojej funkcji (`git checkout -b feat/amazing-feature`)
 3. Commituj zmiany (`git commit -m 'feat: add amazing feature'`)
-4. Wypchnij branch (`git push origin feature/amazing-feature`)
+4. Wypchnij branch (`git push origin feat/amazing-feature`)
 5. Otwórz Pull Request
 
 Aby było nam wszystkim łatwiej stosuj się do tych zasad przy tworzeniu branchy oraz commitów.
 
 ### 🪾 Nazewnictwo branchy
 
-Każdy branch powinien zawierać **prefiks określający typ zmiany** oraz **numer GitHub Issue**.
+Każdy branch powinien zawierać **prefiks określający typ zmiany** oraz **numer GitHub Issue** (jeżeli dotyczy).
 
 **Format**
 
