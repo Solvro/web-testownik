@@ -111,6 +111,7 @@ export function QuizSort({
                   onResetFilters();
                   handleClearFilters();
                 }}
+                aria-label="Wyczyść filtry"
               >
                 <XIcon />
               </Button>
@@ -134,7 +135,11 @@ export function QuizSort({
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Sortuj quizy"
+                  >
                     {selectedOption === null ? (
                       <ArrowDownUp />
                     ) : (

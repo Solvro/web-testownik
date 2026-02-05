@@ -78,7 +78,12 @@ export function QuizCard({
             {Boolean(showEdit) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon-sm" asChild>
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    asChild
+                    aria-label="Edytuj quiz"
+                  >
                     <Link href={onEditPath(quiz)}>
                       <PencilIcon />
                     </Link>
@@ -94,6 +99,7 @@ export function QuizCard({
                     variant="outline"
                     size="icon-sm"
                     onClick={() => onShare?.(quiz)}
+                    aria-label="Udostępnij quiz"
                   >
                     <ShareIcon />
                   </Button>
@@ -108,6 +114,7 @@ export function QuizCard({
                     variant="outline"
                     size="icon-sm"
                     onClick={() => onDownload?.(quiz)}
+                    aria-label="Pobierz quiz"
                   >
                     <DownloadIcon />
                   </Button>
@@ -118,7 +125,12 @@ export function QuizCard({
             {Boolean(showSearch) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon-sm" asChild>
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    asChild
+                    aria-label="Szukaj w quizie"
+                  >
                     <Link href={onSearchPath(quiz)}>
                       <SearchIcon />
                     </Link>
@@ -134,6 +146,7 @@ export function QuizCard({
                     variant="outline"
                     size="icon-sm"
                     onClick={() => onDelete?.(quiz)}
+                    aria-label="Usuń quiz"
                   >
                     <TrashIcon />
                   </Button>
