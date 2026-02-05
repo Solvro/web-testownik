@@ -61,7 +61,10 @@ export function AccessList({
             >
               <div className="flex items-center gap-2">
                 <Avatar>
-                  <AvatarImage src={quizMetadata.maintainer.photo} />
+                  <AvatarImage
+                    src={quizMetadata.maintainer.photo}
+                    alt={`Zdjęcie profilowe użytkownika ${quizMetadata.maintainer.full_name}`}
+                  />
                   <AvatarFallback delayMs={600}>
                     {getInitials(quizMetadata.maintainer.full_name)}
                   </AvatarFallback>
@@ -102,7 +105,10 @@ export function AccessList({
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
                 <Avatar>
-                  <AvatarImage src={user.photo} />
+                  <AvatarImage
+                    src={user.photo}
+                    alt={`Zdjęcie profilowe użytkownika ${user.full_name}`}
+                  />
                   <AvatarFallback delayMs={600}>
                     {getInitials(user.full_name)}
                   </AvatarFallback>
@@ -147,7 +153,10 @@ export function AccessList({
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
                 <Avatar>
-                  <AvatarImage src={group.photo} />
+                  <AvatarImage
+                    src={group.photo}
+                    alt={`Zdjęcie profilowe grupy ${group.name}`}
+                  />
                   <AvatarFallback delayMs={600}>
                     {getInitials(group.name)}
                   </AvatarFallback>
