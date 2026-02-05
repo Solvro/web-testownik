@@ -14,22 +14,31 @@ import { QuizPageClient } from "./client";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/quiz/[quizId]">): Promise<Metadata | undefined> {
+}: PageProps<"/quiz/[quizId]">): Promise<Metadata> {
   const { quizId } = await params;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
 
-  const quiz = await fetch(
-    `${API_URL}/quizzes/${quizId}?include=user_settings,current_session`,
-    {
-      headers: accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : undefined,
-    },
-  ).then((res) => res.json());
+  let quiz: any = null;
 
-  console.log(quiz);
+  try {
+    const res = await fetch(
+      `${API_URL}/quizzes/${quizId}?include=user_settings,current_session`,
+      {
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : undefined,
+        cache: "no-store",
+      },
+    );
+
+    if (res.ok) {
+      quiz = await res.json();
+    }
+  } catch (error) {
+    console.error("Error fetching quiz metadata:", error);
+  }
 
   return {
     title: quiz?.title ?? "Quiz",
