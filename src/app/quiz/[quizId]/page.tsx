@@ -12,9 +12,37 @@ import { ServiceRegistry } from "@/services";
 
 import { QuizPageClient } from "./client";
 
-export const metadata: Metadata = {
-  title: "Quiz",
-};
+export async function generateMetadata({
+  params,
+}: PageProps<"/quiz/[quizId]">): Promise<Metadata | undefined> {
+  const { quizId } = await params;
+
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
+
+  const quiz = await fetch(
+    `${API_URL}/quizzes/${quizId}?include=user_settings,current_session`,
+    {
+      headers: accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : undefined,
+    },
+  ).then((res) => res.json());
+
+  console.log(quiz);
+
+  return {
+    title: quiz?.title ?? "Quiz",
+    description: quiz?.description ?? "",
+    alternates: {
+      canonical: `https://testownik.solvro.pl/quiz/${quizId}`,
+    },
+    authors: [
+      { name: "KN Solvro" },
+      { name: quiz?.creator?.name ?? "Nieznany autor" },
+    ],
+  };
+}
 
 export default async function QuizPage({
   params,
