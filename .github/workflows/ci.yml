@@ -47,3 +47,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
         if: always()
+
+      - name: Lint
+        run: npm run lint
+        if: always()
