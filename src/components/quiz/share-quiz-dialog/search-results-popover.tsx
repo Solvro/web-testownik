@@ -50,7 +50,10 @@ export function SearchResultsPopover({
                 }}
               >
                 <Avatar>
-                  <AvatarImage src={result.photo} />
+                  <AvatarImage
+                    src={result.photo}
+                    alt={`Zdjęcie profilowe ${"full_name" in result ? `użytkownika ${result.full_name}` : `grupy ${result.name}`}`}
+                  />
                   <AvatarFallback delayMs={600}>
                     {getInitials(
                       "full_name" in result ? result.full_name : result.name,

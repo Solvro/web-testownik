@@ -43,9 +43,6 @@ export async function generateMetadata({
   return {
     title: quiz?.title ?? "Quiz",
     description: quiz?.description ?? "",
-    alternates: {
-      canonical: `https://testownik.solvro.pl/quiz/${quizId}`,
-    },
     authors: [
       { name: "KN Solvro" },
       { name: quiz?.creator?.name ?? "Nieznany autor" },
