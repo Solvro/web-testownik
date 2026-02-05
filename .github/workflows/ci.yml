@@ -42,12 +42,12 @@ jobs:
         run: npm run format:check
         if: always()
 
-      - name: Lint
-        run: npm run lint
-        if: always()
-
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
+        if: always()
+
+      - name: Lint
+        run: npm run lint
         if: always()
