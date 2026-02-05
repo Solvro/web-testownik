@@ -126,18 +126,16 @@ export function AccessList({
                   {quizMetadata.maintainer.full_name}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <PersistentTooltip
-                  pressed={isMaintainerAnonymous}
-                  onPressedChange={setIsMaintainerAnonymous}
-                  tooltipContentPressed="Ujawnij właściciela"
-                  tooltipContentUnpressed="Ukryj właściciela"
-                  IconPressed={HatGlassesIcon}
-                  IconUnpressed={UserIcon}
-                  classNamePressed="bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 hover:text-sky-600"
-                  classNameUnpressed="bg-red-500/15 text-red-500 hover:bg-red-500/20 hover:text-red-600"
-                />
-              </div>
+              <PersistentTooltip
+                pressed={isMaintainerAnonymous}
+                onPressedChange={setIsMaintainerAnonymous}
+                tooltipContentPressed="Ujawnij właściciela"
+                tooltipContentUnpressed="Ukryj właściciela"
+                IconPressed={HatGlassesIcon}
+                IconUnpressed={UserIcon}
+                classNamePressed="bg-red-500/15 text-red-500 hover:bg-red-500/20 hover:text-red-600"
+                classNameUnpressed="bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 hover:text-sky-600"
+              />
             </div>
             <Button
               variant="ghost"
