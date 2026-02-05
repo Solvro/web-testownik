@@ -37,12 +37,22 @@ export async function generateMetadata({
       quiz = await res.json();
     }
   } catch (error) {
-    console.error("Error fetching quiz metadata:", error);
+    return {
+      title: "Quiz",
+      description: "",
+      alternates: {
+        canonical: `https://www.testownik.solvro.pl/quiz/${quizId}`,
+      },
+      authors: [{ name: "KN Solvro" }],
+    };
   }
 
   return {
     title: quiz?.title ?? "Quiz",
     description: quiz?.description ?? "",
+    alternates: {
+      canonical: `https://www.testownik.solvro.pl/quiz/${quizId}`,
+    },
     authors: [
       { name: "KN Solvro" },
       { name: quiz?.creator?.name ?? "Nieznany autor" },
