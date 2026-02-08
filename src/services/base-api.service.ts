@@ -197,7 +197,7 @@ export class BaseApiService {
           errorDetail.length > 0
             ? errorDetail
             : response.statusText || "Request failed";
-        throw new Error(message);
+        throw new Error(`${message} (${response.status.toString()})`);
       }
 
       if (response.status === 204) {
