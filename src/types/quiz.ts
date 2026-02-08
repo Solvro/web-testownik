@@ -10,6 +10,8 @@ export interface QuizMetadata {
   is_anonymous: boolean;
   version: number;
   can_edit?: boolean;
+  preview_question?: Question;
+  question_count?: number;
 }
 
 export interface Answer {

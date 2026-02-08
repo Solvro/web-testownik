@@ -1,10 +1,12 @@
 /* eslint-disable react/no-unknown-property */
 import { ImageResponse } from "next/og";
+import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { env } from "@/env";
 import { API_URL } from "@/lib/api";
-import { ServiceRegistry } from "@/services";
+import type { QuizMetadata } from "@/types/quiz";
 
 export const size = {
   width: 1200,
@@ -12,6 +14,59 @@ export const size = {
 };
 
 export const contentType = "image/png";
+
+const fontPath = path.join(process.cwd(), "src", "assets", "og-image", "fonts");
+
+let fontsCache:
+  | {
+      name: string;
+      data: Buffer;
+      weight: 400 | 500 | 600 | 700;
+      style: "normal" | "italic";
+    }[]
+  | null = null;
+
+async function getFonts() {
+  if (fontsCache != null) {
+    return fontsCache;
+  }
+
+  const [regular, medium, semiBold, bold] = await Promise.all([
+    readFile(path.join(fontPath, "HankenGrotesk-Regular.ttf")),
+    readFile(path.join(fontPath, "HankenGrotesk-Medium.ttf")),
+    readFile(path.join(fontPath, "HankenGrotesk-SemiBold.ttf")),
+    readFile(path.join(fontPath, "HankenGrotesk-Bold.ttf")),
+  ]);
+
+  fontsCache = [
+    {
+      name: "Hanken Grotesk",
+      data: regular,
+      weight: 400,
+      style: "normal",
+    },
+    {
+      name: "Hanken Grotesk",
+      data: medium,
+      weight: 500,
+      style: "normal",
+    },
+    {
+      name: "Hanken Grotesk",
+      data: semiBold,
+      weight: 600,
+      style: "normal",
+    },
+    {
+      name: "Hanken Grotesk",
+      data: bold,
+      weight: 700,
+      style: "normal",
+    },
+  ];
+
+  return fontsCache;
+}
 
 function Badge({
   icon,
@@ -42,7 +97,8 @@ function Badge({
         <img
           src={avatarUrl}
           alt=""
-          tw="w-10 h-10 rounded-full mr-2 object-cover"
+          tw="w-10 h-10 rounded-full mr-2"
+          style={{ objectFit: "cover" }}
         />
       )}
 
@@ -63,7 +119,7 @@ function AnswerOption({
 }) {
   return (
     <div
-      tw={`text-slate-200 text-[14px] items-center h-[34px] flex font-medium w-full ${isFirst ? "mt-0" : "mt-[10px]"}`}
+      tw={`text-slate-200 text-[14px] items-center h-[34px] flex w-full ${isFirst ? "mt-0" : "mt-[10px]"}`}
       style={{
         display: "block",
         lineClamp: 1,
@@ -82,62 +138,80 @@ export default async function Image({
 }) {
   const { quizId } = await params;
 
-  // TODO: just use simple fetch instead of service here
-  const services = new ServiceRegistry(API_URL, {});
-
-  let bgImageData: Buffer | null = null;
-  try {
-    bgImageData = await readFile(
-      path.join(process.cwd(), "public", "og-background.png"),
-    );
-  } catch (error) {
+  const fontsPromise = getFonts();
+  const bgImagePromise = readFile(
+    path.join(process.cwd(), "src", "assets", "og-image", "background.png"),
+  ).catch((error: unknown) => {
     console.error("Failed to load og-background.png", error);
-  }
+    return null;
+  });
+
+  const quizPromise = fetch(
+    `${API_URL}/quizzes/${quizId}/metadata?include=preview_question`,
+    {
+      method: "GET",
+      headers: {
+        "Api-Key": env.INTERNAL_API_KEY ?? "",
+      },
+      next: { revalidate: 60 },
+    },
+  )
+    .then(async (response) => {
+      if (!response.ok) {
+        return null;
+      }
+      return response.json() as Promise<QuizMetadata>;
+    })
+    .catch((error: unknown) => {
+      console.error("Failed to fetch quiz:", error);
+      return null;
+    });
+
+  const [fonts, bgImageData, quiz] = await Promise.all([
+    fontsPromise,
+    bgImagePromise,
+    quizPromise,
+  ]);
 
   const bgImageSource =
     bgImageData == null
       ? undefined
       : `data:image/png;base64,${bgImageData.toString("base64")}`;
 
-  let quiz;
-  try {
-    // TODO: use metadata instead of fetching the whole quiz
-    quiz = await services.quiz.getQuiz(quizId);
-  } catch (error) {
-    console.error("Failed to fetch quiz:", error);
-  }
-
   if (quiz == null) {
-    // TODO: return default opengraph (or maybe custom private quiz) image
-    return new ImageResponse(
-      <div tw="w-full h-full bg-black text-white flex items-center justify-center text-4xl font-bold">
-        Testownik Solvro
-      </div>,
-      { ...size },
+    // TODO: Replace with a proper fallback image
+    const fallbackImageBuffer = await readFile(
+      path.join(process.cwd(), "public", "favicon", "180x180.png"),
     );
+    return new NextResponse(fallbackImageBuffer, {
+      headers: {
+        "Content-Type": "image/png",
+      },
+    });
   }
 
-  // TODO: in quiz medatata first question will be returned differently
-  const firstQuestion = quiz.questions.length > 0 ? quiz.questions[0] : null;
-
-  const questionTitle =
-    firstQuestion == null ? "Brak pytań w tym quizie." : firstQuestion.text;
+  const questionTitle = quiz.preview_question?.text ?? "Ile to jest 2+2?";
 
   const answers =
-    firstQuestion == null ? [] : firstQuestion.answers.slice(0, 3);
+    quiz.preview_question == null
+      ? []
+      : quiz.preview_question.answers.slice(0, 3);
 
   const renderAnswers = [0, 1, 2].map((index) => {
-    return answers[index]?.text ?? "";
+    return answers[index]?.text ?? ((index + 9) % 5).toString();
   });
 
   const shouldShowAuthor = !quiz.is_anonymous && quiz.maintainer != null;
 
   return new ImageResponse(
-    <div tw="w-full h-full relative bg-[#0D1320] flex font-sans overflow-hidden">
+    <div
+      tw="w-full h-full relative bg-[#0D1320] flex overflow-hidden"
+      style={{ fontFamily: '"Hanken Grotesk"' }}
+    >
       {bgImageSource == null ? null : (
         <img
           src={bgImageSource}
-          tw="absolute inset-0 w-full h-full object-cover"
+          tw="absolute inset-0 w-full h-full"
           style={{ objectFit: "cover" }}
           alt="Background"
         />
@@ -147,10 +221,8 @@ export default async function Image({
       <div tw="flex flex-col absolute left-[60px] top-[70px] w-[750px]">
         {/* Quiz Title */}
         <div
-          tw="text-[#F3F5F8] text-[84px] leading-[1.1] font-semibold mb-6 text-shadow-xl"
+          tw="text-[#F3F5F8] text-[84px] leading-[1.1] font-semibold mb-6 "
           style={{
-            // Keeps display: block (default) logic for lineClamp,
-            // ensuring it has exactly 1 text child.
             display: "block",
             lineClamp: 2,
           }}
@@ -202,7 +274,7 @@ export default async function Image({
                 />
               </svg>
             }
-            text={`${quiz.questions.length.toString()} pytań`}
+            text={`${(quiz.question_count ?? 0).toString()} pytań`}
           />
         </div>
       </div>
@@ -223,9 +295,9 @@ export default async function Image({
           </div>
 
           {/* Inner Phone Stats */}
-          <div tw="mt-[8px] flex">
+          <div tw="mt-[9px] flex justify-between">
             {/* Stat 1 */}
-            <div tw="text-slate-200 text-[14px] h-[30px] items-center justify-center mr-[11px] flex font-medium w-[114px] overflow-hidden">
+            <div tw="text-slate-200 text-[14px] h-[30px] items-center justify-center  flex font-medium w-[114px] overflow-hidden">
               <svg
                 width="19"
                 height="19"
@@ -262,7 +334,10 @@ export default async function Image({
                   </clipPath>
                 </defs>
               </svg>
-              <span tw="ml-1">1/{quiz.questions.length || 1}</span>
+              <span tw="ml-1">
+                {Math.floor((quiz.question_count ?? 25) / 9)}/
+                {quiz.question_count ?? 25}
+              </span>
             </div>
 
             {/* Stat 2 */}
@@ -312,7 +387,7 @@ export default async function Image({
         <div tw="flex flex-col">
           {/* Question Text */}
           <div
-            tw="mt-[44px] text-slate-200 text-[14px] leading-[1.3] items-center h-[60px] flex font-medium w-full text-wrap"
+            tw="mt-[43px] text-slate-200 text-[14px] leading-[1.3] items-center h-[60px] flex font-medium w-full"
             style={{
               display: "block",
               lineClamp: 2,
@@ -335,6 +410,7 @@ export default async function Image({
     </div>,
     {
       ...size,
+      fonts,
     },
   );
 }
