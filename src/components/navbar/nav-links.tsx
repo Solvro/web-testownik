@@ -97,7 +97,7 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
   return (
     <>
       <NavigationMenu className="hidden sm:flex" viewport={false}>
-        <NavigationMenuList className="gap-1">
+        <NavigationMenuList className="gap-2.5">
           <NavigationMenuItem>
             <NavigationMenuLink active={isActive("/quizzes")} asChild>
               <Link href="/quizzes">Twoje quizy</Link>
@@ -117,7 +117,7 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
               }}
               asChild
             >
-              <Button variant="ghost" className="font-normal">
+              <Button variant="outline" className="font-normal">
                 Zgłoś błąd
               </Button>
             </NavigationMenuLink>

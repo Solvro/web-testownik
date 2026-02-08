@@ -33,7 +33,7 @@ export function AboutCard({
             }
             className="rounded-full"
           >
-            <SiGithub className="size-5" />
+            <SiGithub className="size-6" />
           </Button>
         </CardTitle>
         <ScrollArea className="min-h-0 flex-1">

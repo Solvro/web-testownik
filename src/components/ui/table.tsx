@@ -1,18 +1,40 @@
 "use client";
 
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+const tableVariants = cva(
+  "relative w-full overflow-x-auto caption-bottom text-sm",
+  {
+    variants: {
+      variant: {
+        default: "",
+        gradient:
+          "border border-ring rounded-[10px] bg-linear-to-r from-(--background-gradient-left)/50 to-(--background-gradient-right)",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+function Table({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"table"> &
+  VariantProps<typeof tableVariants> & {
+    asChild?: boolean;
+  }) {
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <div data-slot="table-container">
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(tableVariants({ variant, className }))}
         {...props}
       />
     </div>

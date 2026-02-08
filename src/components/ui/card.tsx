@@ -11,7 +11,7 @@ const cardVariants = cva(
       variant: {
         default: "",
         gradient:
-          "bg-linear-to-r from-(--card-gradient-left)/50 to-(--card-gradient-right)",
+          "bg-linear-to-r from-(--background-gradient-left)/50 to-(--background-gradient-right)",
       },
     },
     defaultVariants: {

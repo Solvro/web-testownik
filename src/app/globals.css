@@ -83,8 +83,8 @@
   --sidebar-ring: oklch(0.708 0 0);
   --cta-gradient-left: oklch(0.6515 0.1869 258.72);
   --cta-gradient-right: oklch(0.4879 0.1614 259.14);
-  --card-gradient-left: oklch(0.2782 0.0521 262.02);
-  --card-gradient-right: oklch(0.1775 0.0248 262.11);
+  --background-gradient-left: oklch(0.2782 0.0521 262.02);
+  --background-gradient-right: oklch(0.1775 0.0248 262.11);
 }
 
 .dark {
@@ -122,8 +122,8 @@
   --sidebar-ring: oklch(0.556 0 0);
   --cta-gradient-left: oklch(0.6515 0.1869 258.72);
   --cta-gradient-right: oklch(0.4879 0.1614 259.14);
-  --card-gradient-left: oklch(0.2782 0.0521 262.02);
-  --card-gradient-right: oklch(0.1775 0.0248 262.11);
+  --background-gradient-left: oklch(0.2782 0.0521 262.02);
+  --background-gradient-right: oklch(0.1775 0.0248 262.11);
 }
 
 @layer base {
