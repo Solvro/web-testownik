@@ -12,6 +12,11 @@ import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { API_URL } from "@/lib/api";
 
 import { LogoutButton } from "./logout-button";
@@ -27,7 +32,7 @@ export function AuthButtons({
   isGuest,
   profilePicture,
 }: AuthButtonsProps) {
-  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentUrl, setCurrentUrl] = useState("/");
   const searchParameters = useSearchParams();
   const pathname = usePathname();
 
@@ -46,11 +51,19 @@ export function AuthButtons({
             <span>Gość</span>
           </Link>
         </Button>
-        <Button variant="outline" size="icon" className="p-2" asChild>
-          <Link href="/connect-account">
-            <CloudUploadIcon />
-          </Link>
-        </Button>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" className="p-2" asChild>
+              <Link href="/connect-account">
+                <CloudUploadIcon />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Połącz konto</p>
+          </TooltipContent>
+        </Tooltip>
       </>
     );
   }

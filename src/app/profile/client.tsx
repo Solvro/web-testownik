@@ -1,5 +1,7 @@
 "use client";
 
+import { SquareArrowOutUpRightIcon } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +31,9 @@ export function ProfilePageClient(): React.JSX.Element {
   });
 
   const handleTabSelect = (tabKey: string) => {
+    if (tabKey === "privacy-policy") {
+      return;
+    }
     setActiveTab(tabKey);
   };
 
@@ -78,11 +83,11 @@ export function ProfilePageClient(): React.JSX.Element {
   };
 
   return (
-    <div className="mt-6">
+    <div>
       <Tabs
         value={activeTab}
         onValueChange={handleTabSelect}
-        className="grid items-start gap-6 md:grid-cols-[220px_1fr]"
+        className="grid items-start gap-2 md:grid-cols-[220px_1fr] md:gap-6"
       >
         <TabsList className="flex md:h-auto md:w-full md:flex-col">
           <TabsTrigger value="account" className="md:w-full md:justify-start">
@@ -96,6 +101,16 @@ export function ProfilePageClient(): React.JSX.Element {
             className="md:w-full md:justify-start"
           >
             Powiadomienia
+          </TabsTrigger>
+          <TabsTrigger
+            value="privacy-policy"
+            className="hidden md:inline-flex md:w-full md:justify-start"
+            asChild
+          >
+            <Link href="/privacy-policy" target="_blank">
+              Polityka prywatności
+              <SquareArrowOutUpRightIcon />
+            </Link>
           </TabsTrigger>
         </TabsList>
         <div className="space-y-6">

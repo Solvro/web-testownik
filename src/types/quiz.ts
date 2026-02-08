@@ -28,7 +28,7 @@ export interface Question {
   id: string;
   order: number;
   text: string;
-  explanation: string;
+  explanation?: string;
   multiple: boolean; // Single or multiple choice
   image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)

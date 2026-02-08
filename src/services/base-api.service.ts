@@ -161,9 +161,43 @@ export class BaseApiService {
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP ${String(response.status)}: ${response.statusText}`,
-        );
+        let errorDetail = "";
+        try {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            const body = (await response.json()) as unknown;
+            if (body !== null && typeof body === "object") {
+              const maybeDetail = (body as { detail?: unknown }).detail;
+              const maybeMessage = (body as { message?: unknown }).message;
+              const fromArray =
+                Array.isArray(body) && body.length > 0
+                  ? (body[0] as unknown)
+                  : undefined;
+
+              const candidate = [maybeDetail, maybeMessage, fromArray].find(
+                (value) => typeof value === "string" && value.trim().length > 0,
+              ) as string | undefined;
+              errorDetail =
+                candidate === undefined
+                  ? JSON.stringify(body)
+                  : candidate.trim();
+            }
+          } else {
+            const rawText = await response.text();
+            const text = rawText.trim();
+            if (text.length > 0) {
+              errorDetail = text;
+            }
+          }
+        } catch {
+          // Ignore parsing errors and fall back to status text
+        }
+
+        const message =
+          errorDetail.length > 0
+            ? errorDetail
+            : response.statusText || "Request failed";
+        throw new Error(message);
       }
 
       if (response.status === 204) {
@@ -196,6 +230,30 @@ export class BaseApiService {
         );
         if (!response.ok) {
           if (response.status === 401) {
+            try {
+              const data = (await response.clone().json()) as {
+                code?: string;
+                ban_reason?: string | null;
+              };
+
+              if (data.code === "user_banned") {
+                this.clearAuthTokens();
+                if (typeof window !== "undefined") {
+                  const searchParameters = new URLSearchParams();
+                  searchParameters.set("error", "user_banned");
+                  if (
+                    data.ban_reason !== undefined &&
+                    data.ban_reason !== null
+                  ) {
+                    searchParameters.set("ban_reason", data.ban_reason);
+                  }
+                  window.location.href = `/?${searchParameters.toString()}`;
+                }
+                return false;
+              }
+            } catch (error) {
+              console.error(error);
+            }
             this.clearAuthTokens();
           }
           return false;

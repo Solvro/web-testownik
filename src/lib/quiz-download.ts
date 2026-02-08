@@ -12,7 +12,7 @@ const pickQuestionFields = (question: Question) => ({
   id: question.id,
   order: question.order,
   text: question.text,
-  explanation: question.explanation || undefined,
+  explanation: question.explanation ?? undefined,
   multiple: question.multiple,
   image_url: question.image ?? undefined,
   answers: question.answers.map((a) => pickAnswerFields(a)),

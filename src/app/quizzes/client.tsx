@@ -310,9 +310,19 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
             <p className="text-muted-foreground text-sm">
               Nie masz jeszcze żadnych quizów.
             </p>
-            <Link href="/create-quiz">
-              <Button>Stwórz quiz</Button>
-            </Link>
+            <div className="flex flex-row justify-center gap-2">
+              <Link href="/create-quiz">
+                <Button>
+                  Stwórz quiz <PlusIcon />
+                </Button>
+              </Link>
+              <Link href="/import-quiz">
+                <Button>
+                  Importuj
+                  <UploadIcon />
+                </Button>
+              </Link>
+            </div>
           </div>
         </ViewTransition>
       )}
