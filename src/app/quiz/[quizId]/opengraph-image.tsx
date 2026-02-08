@@ -157,6 +157,7 @@ export default async function Image({
   )
     .then(async (response) => {
       if (!response.ok) {
+        console.error("Failed to fetch quiz:", response);
         return null;
       }
       return response.json() as Promise<QuizMetadata>;
