@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -9,6 +10,12 @@ import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 import { Providers } from "./providers";
+
+const hankenGrotesk = Hanken_Grotesk({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -55,7 +62,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl" suppressHydrationWarning>
+    <html
+      lang="pl"
+      suppressHydrationWarning
+      className={hankenGrotesk.className}
+    >
       <head>
         <script
           type="application/ld+json"

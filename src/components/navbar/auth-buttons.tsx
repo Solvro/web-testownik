@@ -71,7 +71,7 @@ export function AuthButtons({
   if (isAuthenticated) {
     return (
       <>
-        <Button asChild>
+        <Button asChild variant="cta">
           <Link href="/profile">
             {profilePicture === null ? (
               <CircleUserRoundIcon className="size-6" />

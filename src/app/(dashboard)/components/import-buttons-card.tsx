@@ -1,3 +1,4 @@
+import { Import, LayersPlus } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,13 @@ export function ImportButtonsCard({
 }: React.ComponentProps<typeof Card>): React.JSX.Element {
   return (
     <Card {...props}>
-      <CardContent className="flex h-full flex-wrap content-center justify-center gap-3">
-        <Button variant="outline" asChild>
+      <CardContent className="flex h-full flex-col flex-wrap content-center justify-center gap-3">
+        <Button>
+          <LayersPlus className="size-6" />
           <Link href="/create-quiz">Dodaj nowy quiz</Link>
         </Button>
-        <Button variant="outline" asChild>
+        <Button>
+          <Import className="size-6" />
           <Link href="/import-quiz">Importuj quiz</Link>
         </Button>
       </CardContent>
