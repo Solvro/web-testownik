@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { ImageResponse } from "next/og";
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
@@ -119,7 +118,7 @@ function AnswerOption({
 }) {
   return (
     <div
-      tw={`text-slate-200 text-[14px] items-center h-[34px] flex w-full ${isFirst ? "mt-0" : "mt-[10px]"}`}
+      tw={`text-slate-200 text-[14px] items-center h-[34px] w-full ${isFirst ? "mt-0" : "mt-[10px]"}`}
       style={{
         display: "block",
         lineClamp: 1,
@@ -349,27 +348,27 @@ export default async function Image({
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <g clip-path="url(#clip0_785_1255)">
+                <g clipPath="url(#clip0_785_1255)">
                   <path
                     d="M7.604 1.52075H10.6455"
                     stroke="#E2E7EE"
-                    stroke-width="1.52076"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="1.52076"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                   <path
                     d="M9.12451 10.6454L11.4057 8.36426"
                     stroke="#E2E7EE"
-                    stroke-width="1.52076"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="1.52076"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                   <path
                     d="M9.12454 16.7283C12.4841 16.7283 15.2076 14.0049 15.2076 10.6453C15.2076 7.28572 12.4841 4.56226 9.12454 4.56226C5.76497 4.56226 3.0415 7.28572 3.0415 10.6453C3.0415 14.0049 5.76497 16.7283 9.12454 16.7283Z"
                     stroke="#E2E7EE"
-                    stroke-width="1.52076"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="1.52076"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </g>
                 <defs>

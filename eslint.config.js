@@ -8,5 +8,6 @@ export default await solvro({
         allowExportNames: ["metadata", "viewport", "size", "contentType"],
       },
     ],
+    "react/no-unknown-property": ["error", { ignore: ["tw"] }],
   },
 });
