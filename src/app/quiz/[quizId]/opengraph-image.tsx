@@ -146,7 +146,7 @@ export default async function Image({
   });
 
   const quizPromise = fetch(
-    `${API_URL}/quizzes/${quizId}/metadata?include=preview_question`,
+    `${API_URL}/quizzes/${quizId}/metadata/?include=preview_question`,
     {
       method: "GET",
       headers: {
