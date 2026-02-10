@@ -339,7 +339,7 @@ export default async function Image({
                 </defs>
               </svg>
               <span tw="ml-1">
-                {Math.floor((quiz.question_count ?? 25) / 9)}/
+                {Math.max(Math.floor((quiz.question_count ?? 25) / 9), 1)}/
                 {quiz.question_count ?? 25}
               </span>
             </div>
