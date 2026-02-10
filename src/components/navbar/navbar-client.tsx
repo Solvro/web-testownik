@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
+import { LogoutButton } from "@/components/navbar/logout-button";
 import type { JWTPayload } from "@/lib/auth/types";
 
 import { AuthButtons } from "./auth-buttons";
@@ -44,15 +45,16 @@ export function NavbarClient({
           <NavLinks isStaff={isStaff} variant="desktop" />
         </div>
         <div className="hidden items-center gap-2 sm:flex">
-          <NavbarActions
-            isAuthenticated={isAuthenticated}
-            isGuest={isGuestMode}
-          />
           <AuthButtons
             isAuthenticated={isAuthenticated}
             isGuest={isGuestMode}
             profilePicture={profilePicture}
           />
+          <NavbarActions
+            isAuthenticated={isAuthenticated}
+            isGuest={isGuestMode}
+          />
+          {isAuthenticated ? <LogoutButton /> : null}
         </div>
         <MobileMenuButton
           expanded={expanded}

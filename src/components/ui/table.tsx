@@ -13,7 +13,7 @@ const tableVariants = cva(
       variant: {
         default: "",
         gradient:
-          "border border-ring rounded-[10px] bg-linear-to-r from-(--background-gradient-left)/50 to-(--background-gradient-right)",
+          "border border-ring rounded-[10px] bg-linear-to-r from-(--background-gradient-from)/50 to-(--background-gradient-to)",
       },
     },
     defaultVariants: {

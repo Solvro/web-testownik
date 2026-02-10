@@ -11,7 +11,7 @@ const caveat = Caveat({
 
 export function AppFooter() {
   return (
-    <footer className="bg-background/60 text-muted-foreground fixed bottom-0 left-0 hidden w-full border-t py-3 text-sm backdrop-blur sm:block">
+    <footer className="to-background dark:bg-background text-muted-foreground fixed bottom-0 left-0 hidden w-full border-t bg-linear-to-b from-(--background-gradient-from)/30 to-80% py-3 text-sm backdrop-blur sm:block dark:bg-linear-0 dark:from-0% dark:to-0%">
       <div className="flex items-center justify-around gap-1">
         <div className="text-primary flex items-center justify-center gap-2">
           <span className={caveat.className}>Powered by</span>

@@ -494,12 +494,7 @@ export function QuizEditor(props: QuizEditorProps) {
                 "Zapisz"
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={addQuestion}
-              type="button"
-            >
+            <Button variant="ghost" onClick={addQuestion} type="button">
               <PlusIcon />
               Pytanie
             </Button>

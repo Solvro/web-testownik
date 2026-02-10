@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/tooltip";
 import { API_URL } from "@/lib/api";
 
-import { LogoutButton } from "./logout-button";
-
 export interface AuthButtonsProps {
   isAuthenticated: boolean;
   isGuest: boolean;
@@ -86,7 +84,6 @@ export function AuthButtons({
             <span>Profil</span>
           </Link>
         </Button>
-        <LogoutButton />
       </>
     );
   }
