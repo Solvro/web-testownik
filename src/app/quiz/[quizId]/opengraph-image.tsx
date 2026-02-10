@@ -94,7 +94,7 @@ function Badge({
         )
       ) : (
         <img
-          src={avatarUrl}
+          src={avatarUrl.replace("/svg?", "/png?size=40&")} // use png instead of svg for dicebear avatars
           alt=""
           tw="w-10 h-10 rounded-full mr-2"
           style={{ objectFit: "cover" }}
@@ -127,6 +127,18 @@ function AnswerOption({
       {text}
     </div>
   );
+}
+
+async function renderFallbackImage() {
+  // TODO: Replace with a proper fallback image
+  const fallbackImageBuffer = await readFile(
+    path.join(process.cwd(), "public", "favicon", "180x180.png"),
+  );
+  return new NextResponse(fallbackImageBuffer, {
+    headers: {
+      "Content-Type": "image/png",
+    },
+  });
 }
 
 // eslint-disable-next-line import/no-default-export
@@ -179,15 +191,7 @@ export default async function Image({
       : `data:image/png;base64,${bgImageData.toString("base64")}`;
 
   if (quiz == null) {
-    // TODO: Replace with a proper fallback image
-    const fallbackImageBuffer = await readFile(
-      path.join(process.cwd(), "public", "favicon", "180x180.png"),
-    );
-    return new NextResponse(fallbackImageBuffer, {
-      headers: {
-        "Content-Type": "image/png",
-      },
-    });
+    return await renderFallbackImage();
   }
 
   const questionTitle = quiz.preview_question?.text ?? "Ile to jest 2+2?";
