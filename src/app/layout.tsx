@@ -12,7 +12,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 const hankenGrotesk = Hanken_Grotesk({
-  weight: "400",
+  weight: ["100", "300", "400"],
   subsets: ["latin"],
   display: "swap",
 });

@@ -126,6 +126,8 @@
   --sidebar-ring: oklch(0.556 0 0);
   --cta-gradient-from: oklch(0.6515 0.1869 258.72);
   --cta-gradient-to: oklch(0.4879 0.1614 259.14);
+  --table-gradient-from: oklch(0.2782 0.0521 262.02);
+  --table-gradient-to: oklch(0.1775 0.0248 262.11);
 }
 
 @layer base {

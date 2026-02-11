@@ -37,7 +37,7 @@ export function AboutCard({
           </Button>
         </CardTitle>
         <ScrollArea className="min-h-0 flex-1">
-          <Table>
+          <Table variant="border">
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
@@ -45,13 +45,13 @@ export function AboutCard({
                     key={`loading-contributor-${index.toString()}`}
                     className="transition-none hover:bg-transparent"
                   >
-                    <TableCell className="py-2">
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <Skeleton className="size-6 rounded-full" />
                         <Skeleton className="h-4 w-32" />
                       </div>
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell>
                       <Skeleton className="h-3 w-16" />
                     </TableCell>
                   </TableRow>
@@ -62,25 +62,23 @@ export function AboutCard({
                     key={contributor.id}
                     className="transition-none hover:bg-transparent"
                   >
-                    <TableCell className="flex items-center gap-2 py-2">
+                    <TableCell className="flex items-center gap-2">
                       <a
                         href={contributor.html_url}
                         target="_blank"
                         className="flex items-center gap-2 hover:underline"
                         rel="noreferrer"
                       >
-                        <Avatar className="size-6">
+                        <Avatar className="border-ring border">
                           <AvatarImage src={`${contributor.avatar_url}&s=48`} />
                           <AvatarFallback delayMs={600}>
                             {getInitials(contributor.login)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-muted-foreground text-sm">
-                          {contributor.login}
-                        </span>
+                        <span>{contributor.login}</span>
                       </a>
                     </TableCell>
-                    <TableCell className="text-muted-foreground py-2 text-xs">
+                    <TableCell className="text-right">
                       {contributor.contributions} commits
                     </TableCell>
                   </TableRow>
