@@ -4,6 +4,7 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     JWT_SECRET: z.string().min(1).optional(),
+    INTERNAL_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

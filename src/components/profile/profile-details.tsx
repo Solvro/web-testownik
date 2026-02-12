@@ -1,5 +1,6 @@
 import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -136,97 +137,103 @@ export function ProfileDetails({
   }
 
   return (
-    <Card>
-      {loading ? (
-        <CardContent className="flex flex-col items-center gap-6 py-10">
-          <div className="flex justify-center">
-            <span className="border-border size-10 animate-spin rounded-full border-4 border-t-transparent" />
-          </div>
-          <div className="bg-muted h-6 w-40 animate-pulse rounded" />
-          <div className="bg-muted h-5 w-32 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-16 animate-pulse rounded" />
-          <div className="bg-border h-px w-full" />
-          <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-28 animate-pulse rounded" />
-        </CardContent>
-      ) : (
-        <CardContent className="flex flex-col items-center space-y-4 text-center">
-          <div className="relative">
-            <Avatar className="size-24">
-              <AvatarImage
-                src={userData?.photo}
-                alt={`Zdjęcie profilowe użytkownika ${userData?.full_name}`}
-              />
-              <AvatarFallback className="text-3xl" delayMs={600}>
-                {getInitials(userData?.full_name ?? "")}
-              </AvatarFallback>
-            </Avatar>
-            <button
-              onClick={handleOpenDialog}
-              className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
-            >
-              <PencilIcon className="size-4" />
-            </button>
-          </div>
-          <h1 className="text-xl leading-tight font-semibold">
-            {userData?.full_name}
-          </h1>
-          <h2 className="text-muted-foreground text-sm">
-            {userData?.student_number}
-          </h2>
-          <div className="flex flex-wrap justify-center gap-2">
-            {userData?.is_superuser === true ? (
-              <Badge className="bg-destructive/15 text-destructive">
-                Administrator
-              </Badge>
-            ) : null}
-            {userData?.is_staff === true ? (
-              <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                Obsługa
-              </Badge>
-            ) : null}
-            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              Student
-            </Badge>
-          </div>
-          <div className="bg-border h-px w-full" />
-          <div className="w-full space-y-2 text-sm">
-            <h5 className="text-muted-foreground font-medium">
-              Prywatne dane:
-            </h5>
-            <ul className="space-y-1">
-              <li>Id: {userData?.id}</li>
-              <li>Email: {userData?.email}</li>
-            </ul>
-          </div>
-          <div className="bg-border h-px w-full" />
-          <div className="flex w-full items-center gap-4">
-            <div>
-              <Label className="text-sm font-medium" htmlFor="hide-profile">
-                Ukryj profil
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Nie będzie cię można znaleźć w wyszukiwarce po imieniu i
-                nazwisku, nie będziesz wyświetlany w rankingach.
-              </p>
+    <div className="space-y-2">
+      <Card>
+        {loading ? (
+          <CardContent className="flex flex-col items-center gap-6 py-10">
+            <div className="flex justify-center">
+              <span className="border-border size-10 animate-spin rounded-full border-4 border-t-transparent" />
             </div>
-            <Switch
-              id="hide-profile"
-              checked={userData?.hide_profile ?? false}
-              onCheckedChange={handleHideProfile}
-              className="ml-auto"
-            />
-          </div>
-          <div className="bg-border h-px w-full" />
-          <p className="text-muted-foreground max-w-prose text-xs">
-            Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami pod
-            adresem:{" "}
-            <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
-              kn.solvro@pwr.edu.pl
-            </a>
-          </p>
-        </CardContent>
-      )}
+            <div className="bg-muted h-6 w-40 animate-pulse rounded" />
+            <div className="bg-muted h-5 w-32 animate-pulse rounded" />
+            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+            <div className="bg-border h-px w-full" />
+            <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+            <div className="bg-muted h-3 w-28 animate-pulse rounded" />
+          </CardContent>
+        ) : (
+          <CardContent className="flex flex-col items-center space-y-4 text-center">
+            <div className="relative">
+              <Avatar className="size-24">
+                <AvatarImage src={userData?.photo} 
+                  alt={`Zdjęcie profilowe użytkownika ${userData?.full_name}`}
+                 />
+                <AvatarFallback className="text-3xl" delayMs={600}>
+                  {getInitials(userData?.full_name ?? "")}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={handleOpenDialog}
+                className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
+              >
+                <PencilIcon className="size-4" />
+              </button>
+            </div>
+            <h1 className="text-xl leading-tight font-semibold">
+              {userData?.full_name}
+            </h1>
+            <h2 className="text-muted-foreground text-sm">
+              {userData?.student_number}
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2">
+              {userData?.is_superuser === true ? (
+                <Badge className="bg-destructive/15 text-destructive">
+                  Administrator
+                </Badge>
+              ) : null}
+              {userData?.is_staff === true ? (
+                <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  Obsługa
+                </Badge>
+              ) : null}
+              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                Student
+              </Badge>
+            </div>
+            <div className="bg-border h-px w-full" />
+            <div className="w-full space-y-2 text-sm">
+              <h5 className="text-muted-foreground font-medium">
+                Prywatne dane:
+              </h5>
+              <ul className="space-y-1">
+                <li>Id: {userData?.id}</li>
+                <li>Email: {userData?.email}</li>
+              </ul>
+            </div>
+            <div className="bg-border h-px w-full" />
+            <div className="flex w-full items-center gap-4">
+              <div>
+                <Label className="text-sm font-medium" htmlFor="hide-profile">
+                  Ukryj profil
+                </Label>
+                <p className="text-muted-foreground text-left text-xs">
+                  Nie będzie cię można znaleźć w wyszukiwarce po imieniu i
+                  nazwisku, nie będziesz wyświetlany w rankingach.
+                </p>
+              </div>
+              <Switch
+                id="hide-profile"
+                checked={userData?.hide_profile ?? false}
+                onCheckedChange={handleHideProfile}
+                className="ml-auto"
+              />
+            </div>
+            <div className="bg-border h-px w-full" />
+            <p className="text-muted-foreground max-w-prose text-xs">
+              Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami
+              pod adresem:{" "}
+              <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
+                kn.solvro@pwr.edu.pl
+              </a>
+            </p>
+          </CardContent>
+        )}
+      </Card>
+      <div className="w-full text-center md:hidden">
+        <Link href="/privacy-policy" className="text-sm underline">
+          Polityka prywatności
+        </Link>
+      </div>
       <Dialog
         open={showDialog}
         onOpenChange={(open) => {
@@ -296,6 +303,6 @@ export function ProfileDetails({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }

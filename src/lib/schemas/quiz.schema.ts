@@ -35,7 +35,7 @@ export const questionFormSchema = z
     id: z.string(),
     order: z.number(),
     text: z.string(),
-    explanation: z.string(),
+    explanation: z.string().optional(),
     multiple: z.boolean(),
     image: z.string().optional().nullable().readonly(), // Read-only (Display URL from backend)
     image_url: z.string().optional().nullable(), // Write-only (Input for external URLs)

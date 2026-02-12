@@ -22,13 +22,16 @@ export const metadata: Metadata = {
     canonical: "https://testownik.solvro.pl",
   },
   robots: "index, follow",
+  ...(process.env.COOLIFY_URL != null &&
+    process.env.COOLIFY_URL !== "" && {
+      metadataBase: new URL(process.env.COOLIFY_URL),
+    }),
   openGraph: {
     title: "Testownik Solvro - Twoje narzędzie do nauki",
     description:
       "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
     type: "website",
-    images: "https://testownik.solvro.pl/favicon/180x180.png",
-    url: "https://testownik.solvro.pl",
+    images: "/favicon/180x180.png",
     locale: "pl_PL",
   },
   icons: {
