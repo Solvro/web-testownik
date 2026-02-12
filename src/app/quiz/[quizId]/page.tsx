@@ -17,10 +17,20 @@ export async function generateMetadata({
   params,
 }: PageProps<"/quiz/[quizId]">): Promise<Metadata> {
   const { quizId } = await params;
+
+  const cookieStore = await cookies();
+  const isGuest: boolean = cookieStore.get("is_guest")?.value === "true";
+
+  if (isGuest) {
+    return {
+      title: "Quiz",
+    };
+  }
+
   const metadata = await getQuizMetadata(quizId);
 
   return {
-    title: metadata.title || "Quiz",
+    title: metadata.title,
     description: metadata.description,
     authors: [{ name: metadata.maintainer?.full_name ?? "" }],
     other: {
