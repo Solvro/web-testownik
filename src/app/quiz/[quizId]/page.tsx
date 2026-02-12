@@ -21,18 +21,18 @@ export async function generateMetadata({
 
   return {
     title: metadata.title || "Quiz",
-    description: metadata.description || "",
-    authors: [{ name: metadata.maintainer?.full_name || "" }],
+    description: metadata.description,
+    authors: [{ name: metadata.maintainer?.full_name ?? "" }],
     other: {
       "application/ld+json": JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Quiz",
         name: metadata.title,
         description: metadata.description,
-        numberOfQuestions: metadata.question_count || 0,
+        numberOfQuestions: metadata.question_count,
         author: {
           "@type": "Person",
-          name: metadata.maintainer?.full_name || "",
+          name: metadata.maintainer?.full_name,
         },
       }),
     },

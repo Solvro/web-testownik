@@ -133,7 +133,7 @@ export function QuizInfoCard({
           style={{
             ["--bar-color" as never]: getProgressColor(progressPercentage),
           }}
-          aria-label={`Postęp: ${Math.round(progressPercentage)}% opanowanych pytań`}
+          aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
           className="[&_[data-slot=progress-indicator]]:bg-[var(--bar-color)]"
         />
         <div className="flex items-center justify-between pt-2">
