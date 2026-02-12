@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   description:
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
-  authors: [{ name: "KN Solvro" }],
+  creator: "KN Solvro",
   alternates: {
     canonical: "https://testownik.solvro.pl",
   },
@@ -51,6 +51,14 @@ export const metadata: Metadata = {
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
+  },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Testownik Solvro",
+      url: "https://testownik.solvro.pl",
+    }),
   },
 };
 

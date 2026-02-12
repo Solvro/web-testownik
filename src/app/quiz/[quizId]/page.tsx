@@ -7,6 +7,7 @@ import { Loader } from "@/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
+import { getQuizMetadata } from "@/lib/metadata";
 import { getQueryClient } from "@/lib/query-client";
 import { ServiceRegistry } from "@/services";
 
@@ -16,47 +17,25 @@ export async function generateMetadata({
   params,
 }: PageProps<"/quiz/[quizId]">): Promise<Metadata> {
   const { quizId } = await params;
-
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
-
-  let quiz: any = null;
-
-  try {
-    const res = await fetch(
-      `${API_URL}/quizzes/${quizId}?include=user_settings,current_session`,
-      {
-        headers: accessToken
-          ? { Authorization: `Bearer ${accessToken}` }
-          : undefined,
-        cache: "no-store",
-      },
-    );
-
-    if (res.ok) {
-      quiz = await res.json();
-    }
-  } catch (error) {
-    return {
-      title: "Quiz",
-      description: "",
-      alternates: {
-        canonical: `https://www.testownik.solvro.pl/quiz/${quizId}`,
-      },
-      authors: [{ name: "KN Solvro" }],
-    };
-  }
+  const metadata = await getQuizMetadata(quizId);
 
   return {
-    title: quiz?.title ?? "Quiz",
-    description: quiz?.description ?? "",
-    alternates: {
-      canonical: `https://www.testownik.solvro.pl/quiz/${quizId}`,
+    title: metadata.title || "Quiz",
+    description: metadata.description || "",
+    authors: [{ name: metadata.maintainer?.full_name || "" }],
+    other: {
+      "application/ld+json": JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Quiz",
+        name: metadata.title,
+        description: metadata.description,
+        numberOfQuestions: metadata.question_count || 0,
+        author: {
+          "@type": "Person",
+          name: metadata.maintainer?.full_name || "",
+        },
+      }),
     },
-    authors: [
-      { name: "KN Solvro" },
-      { name: quiz?.creator?.name ?? "Nieznany autor" },
-    ],
   };
 }
 
