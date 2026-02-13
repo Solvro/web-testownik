@@ -159,11 +159,11 @@ export function QuestionCard({
                 variant="outline"
                 className="relative right-0 ml-2 h-6 select-none"
               >
-                {
-                  answers.filter((answer) => {
-                    return answer.question === question.id;
-                  }).length
-                }
+                {answers.reduce(
+                  (count, answer) =>
+                    count + (answer.question === question.id ? 1 : 0),
+                  0,
+                )}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
