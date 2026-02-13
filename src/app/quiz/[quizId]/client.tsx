@@ -118,6 +118,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                     setSelectedAnswers(newSelected);
                   }
                 }}
+                answers={answers}
                 questionChecked={questionChecked}
                 nextAction={nextAction}
                 isQuizFinished={isQuizFinished}

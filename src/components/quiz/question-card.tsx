@@ -5,6 +5,7 @@ import { ViewTransition, useEffect } from "react";
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,13 +21,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Question } from "@/types/quiz";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 interface QuestionCardProps {
   quizId: string;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
+  answers: AnswerRecord[];
   questionChecked: boolean;
   nextAction: () => void;
   isQuizFinished: boolean;
@@ -41,6 +43,7 @@ export function QuestionCard({
   question,
   selectedAnswers,
   setSelectedAnswers,
+  answers,
   questionChecked,
   nextAction,
   isQuizFinished,
@@ -141,14 +144,33 @@ export function QuestionCard({
   return (
     <Card>
       <CardHeader>
-        <ScrollArea className="w-full min-w-0">
-          <CardTitle className="mb-1 font-medium">
-            <MarkdownRenderer>
-              {`${String(question.order)}\\. ${question.text}`}
-            </MarkdownRenderer>
-          </CardTitle>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        <div className="flex justify-between overflow-hidden">
+          <ScrollArea className="w-full min-w-0">
+            <CardTitle className="mb-1 font-medium">
+              <MarkdownRenderer>
+                {`${String(question.order)}\\. ${question.text}`}
+              </MarkdownRenderer>
+            </CardTitle>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className="relative right-0 ml-2 h-6 select-none"
+              >
+                {
+                  answers.filter((answer) => {
+                    return answer.question === question.id;
+                  }).length
+                }
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Liczba powtórzeń tego pytania</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <CardDescription>
           <ImageLoad
             key={`question-image-${question.id}`}
