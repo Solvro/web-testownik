@@ -167,7 +167,7 @@ export function QuestionQuizCard({
                   }}
                   disabled={!enableEdit}
                   className={cn(
-                    "w-full justify-start rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
+                    "bg-input dark:bg-background w-full justify-start rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
                     computeAnswerVariant(
                       selectedAnswers.includes(answer.id),
                       Boolean(result),
