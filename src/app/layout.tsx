@@ -28,12 +28,16 @@ export const metadata: Metadata = {
     "Testownik, Solvro, KN Solvro, nauka do egzaminu, quizy, aplikacja edukacyjna, interaktywna nauka, przygotowanie do sesji, politechnika, studia, uczelnia, testy online, aplikacja mobilna, nauka online, edukacja, pwr, testownik, testownik solvro, testownik pwr, testownik politechnika, testownik studia, testownik uczelnia, testownik aplikacja, testownik edukacja, testownik nauka, testownik quizy, testownik przygotowanie do sesji",
   authors: [{ name: "KN Solvro" }],
   robots: "index, follow",
+  ...(process.env.COOLIFY_URL != null &&
+    process.env.COOLIFY_URL !== "" && {
+      metadataBase: new URL(process.env.COOLIFY_URL),
+    }),
   openGraph: {
     title: "Testownik Solvro - Twoje narzędzie do nauki",
     description:
       "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
     type: "website",
-    images: "https://testownik.solvro.pl/favicon/180x180.png",
+    images: "/favicon/180x180.png",
     locale: "pl_PL",
   },
   icons: {
