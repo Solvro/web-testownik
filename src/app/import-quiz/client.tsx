@@ -258,7 +258,7 @@ function ImportQuizPageContent(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="dark:bg-background mx-auto grid grid-cols-3 dark:border">
+            <TabsList className="dark:bg-background mx-auto grid h-auto grid-cols-3 py-0.75 dark:border">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="legacy">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
