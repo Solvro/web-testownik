@@ -13,7 +13,7 @@ const tableVariants = cva(
       variant: {
         default: "[&_tbody>tr]:py-2 [&_tbody>tr>td:last-child]:font-normal",
         border:
-          "dark:bg-linear-to-r dark:from-(--card-gradient-from)/30 to-(--card-gradient-to) [&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
+          "dark:bg-linear-to-r dark:from-(--card-gradient-from) to-(--card-gradient-to) [&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
       },
     },
     defaultVariants: {
