@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/tooltip";
 import { API_URL } from "@/lib/api";
 
-import { LogoutButton } from "./logout-button";
-
 export interface AuthButtonsProps {
   isAuthenticated: boolean;
   isGuest: boolean;
@@ -70,24 +68,21 @@ export function AuthButtons({
 
   if (isAuthenticated) {
     return (
-      <>
-        <Button asChild>
-          <Link href="/profile">
-            {profilePicture === null ? (
-              <CircleUserRoundIcon className="size-6" />
-            ) : (
-              <Avatar className="size-6">
-                <AvatarImage src={profilePicture} className="user-avatar" />
-                <AvatarFallback delayMs={600} className="bg-transparent">
-                  <CircleUserRoundIcon className="size-6" />
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <span>Profil</span>
-          </Link>
-        </Button>
-        <LogoutButton />
-      </>
+      <Button asChild variant="cta">
+        <Link href="/profile">
+          {profilePicture === null ? (
+            <CircleUserRoundIcon className="size-6" />
+          ) : (
+            <Avatar className="size-6">
+              <AvatarImage src={profilePicture} className="user-avatar" />
+              <AvatarFallback delayMs={600} className="bg-transparent">
+                <CircleUserRoundIcon className="size-6" />
+              </AvatarFallback>
+            </Avatar>
+          )}
+          <span>Profil</span>
+        </Link>
+      </Button>
     );
   }
 

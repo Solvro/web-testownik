@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon } from "lucide-react";
+import { DoorOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
 
@@ -33,7 +33,7 @@ export function LogoutButton() {
 
   return (
     <Button
-      variant="destructive"
+      variant="outline"
       size="icon"
       onClick={() => {
         void handleLogout();
@@ -41,7 +41,7 @@ export function LogoutButton() {
       className="p-2"
       aria-label="Wyloguj się"
     >
-      <LogOutIcon />
+      <DoorOpen />
     </Button>
   );
 }

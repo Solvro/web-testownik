@@ -74,7 +74,7 @@ export function SearchCard({
             className="shrink-0"
             disabled={isLoading}
           >
-            <SearchIcon className="size-4" />
+            <SearchIcon />
           </Button>
         </div>
         <ScrollArea className="min-h-0 flex-1">
