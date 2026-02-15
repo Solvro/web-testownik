@@ -207,7 +207,7 @@ function ImageDialogBody({
         </TabsList>
 
         <TabsContent value="upload" className="space-y-4">
-          <div className="h-[330px]">
+          <div className="h-82.5">
             <ImageDropZone
               onFileDrop={(file) => void handleUpload(file)}
               className={cn(
@@ -300,7 +300,7 @@ function ImageDialogBody({
         </TabsContent>
 
         <TabsContent value="url" className="space-y-4">
-          <div className="flex h-[330px] flex-col gap-4">
+          <div className="flex h-82.5 flex-col gap-4">
             <div className="bg-muted/10 relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border">
               {hasImage && !hasUpload ? (
                 <>
@@ -362,7 +362,7 @@ function ImageDialogBody({
 
             <div className="flex-none space-y-3">
               <Label htmlFor="image-url" className="sr-only">
-                URL obrazka
+                URL zdjęcia
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -385,7 +385,7 @@ function ImageDialogBody({
                 </Button>
               </div>
               <p className="text-muted-foreground text-center text-xs">
-                Podaj bezpośredni link do obrazka
+                Podaj bezpośredni link do zdjęcia
               </p>
             </div>
           </div>

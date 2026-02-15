@@ -12,6 +12,7 @@ export interface QuizMetadata {
   can_edit?: boolean;
   preview_question?: Question;
   question_count?: number;
+  has_external_images?: boolean;
 }
 
 export interface Answer {

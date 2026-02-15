@@ -8,6 +8,9 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
+import { ExternalImageContext } from "@/components/quiz/external-image-context";
+import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
+import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
@@ -57,6 +60,14 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     goToPreviousQuestion,
   } = actions;
 
+  const {
+    isApproved: externalImagesApproved,
+    isInitialized,
+    domains: externalDomains,
+    approve: approveExternalImages,
+    hasExternalImages,
+  } = useExternalImageApproval(quiz);
+
   const handleToggleBrainrot = () => {
     startTransition(() => {
       toggleBrainrot();
@@ -94,7 +105,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   }, [quiz]);
 
   return (
-    <>
+    <ExternalImageContext.Provider
+      value={{ externalImagesApproved, isInitialized }}
+    >
+      {isInitialized && hasExternalImages && !externalImagesApproved ? (
+        <ExternalImageWarning
+          domains={externalDomains}
+          onApprove={approveExternalImages}
+        />
+      ) : null}
+
       <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div
           className={cn(
@@ -186,7 +206,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
       />
-    </>
+    </ExternalImageContext.Provider>
   );
 }
 
