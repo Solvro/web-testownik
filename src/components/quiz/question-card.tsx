@@ -141,36 +141,41 @@ export function QuestionCard({
     );
   };
 
+  const answersCount = () => {
+    const amount = answers.reduce(
+      (count, answer) => count + (answer.question === question.id ? 1 : 0),
+      1,
+    );
+
+    return questionChecked && amount > 1 ? amount - 1 : amount;
+  };
+
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between overflow-hidden">
-          <ScrollArea className="w-full min-w-0">
-            <CardTitle className="mb-1 font-medium">
-              <MarkdownRenderer>
-                {`${String(question.order)}\\. ${question.text}`}
-              </MarkdownRenderer>
-            </CardTitle>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="relative right-0 ml-2 h-6 select-none"
-              >
-                {answers.reduce(
-                  (count, answer) =>
-                    count + (answer.question === question.id ? 1 : 0),
-                  0,
-                )}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Liczba powtórzeń tego pytania</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <ScrollArea className="w-full min-w-0">
+          <CardTitle className="mb-1 font-medium">
+            <div className="inline-flex items-start gap-2">
+              <span className="inline-block leading-tight">
+                <MarkdownRenderer className="inline-block">
+                  {`${String(question.order)}\\. ${question.text}`}
+                </MarkdownRenderer>
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="h-6 shrink-0 select-none">
+                    {answersCount().toString()}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Liczba powtórzeń tego pytania</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </CardTitle>
+
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
         <CardDescription>
           <ImageLoad
             key={`question-image-${question.id}`}
