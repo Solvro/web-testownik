@@ -5,6 +5,7 @@ import { ViewTransition, useEffect } from "react";
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,13 +21,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Question } from "@/types/quiz";
+import type { AnswerRecord, Question } from "@/types/quiz";
 
 interface QuestionCardProps {
   quizId: string;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
+  answers: AnswerRecord[];
   questionChecked: boolean;
   nextAction: () => void;
   isQuizFinished: boolean;
@@ -41,6 +43,7 @@ export function QuestionCard({
   question,
   selectedAnswers,
   setSelectedAnswers,
+  answers,
   questionChecked,
   nextAction,
   isQuizFinished,
@@ -128,25 +131,47 @@ export function QuestionCard({
     return null;
   }
 
-  // Check if the question was answered correctly with all required answers
-  const isQuestionAnsweredCorrectly = () => {
-    return (
-      questionChecked &&
-      question.answers.filter((answer) => {
-        return answer.is_correct !== selectedAnswers.includes(answer.id);
-      }).length === 0
-    );
-  };
+  const isQuestionAnsweredCorrectly =
+    questionChecked &&
+    question.answers.every((answer) => {
+      return answer.is_correct === selectedAnswers.includes(answer.id);
+    });
+
+  const answersCount = answers.reduce(
+    (count, answer) => (answer.question === question.id ? count + 1 : count),
+    questionChecked ? 0 : 1,
+  );
 
   return (
     <Card>
       <CardHeader>
         <ScrollArea className="w-full min-w-0">
           <CardTitle className="mb-1 font-medium">
-            <MarkdownRenderer>
-              {`${String(question.order)}\\. ${question.text}`}
-            </MarkdownRenderer>
+            <div className="inline-flex items-start gap-2">
+              <span className="inline-block leading-tight">
+                <MarkdownRenderer className="inline-block">
+                  {`${String(question.order)}\\. ${question.text}`}
+                </MarkdownRenderer>
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="secondary"
+                    className="my-px shrink-0 select-none"
+                  >
+                    {answersCount}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  To pytanie pojawiło się{" "}
+                  {answersCount === 1
+                    ? "pierwszy raz"
+                    : `już ${answersCount.toString()} razy`}
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </CardTitle>
+
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         <CardDescription>
@@ -172,7 +197,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium wrap-break-word transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(answer.id),
                     questionChecked,
@@ -196,7 +221,7 @@ export function QuestionCard({
           })}
         </div>
         <div className="mt-4 min-h-5 text-sm">
-          {questionChecked && isQuestionAnsweredCorrectly() ? (
+          {questionChecked && isQuestionAnsweredCorrectly ? (
             <p className="font-medium text-green-600 dark:text-green-400">
               Poprawna odpowiedź!
             </p>

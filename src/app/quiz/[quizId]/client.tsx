@@ -122,7 +122,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             showBrainrot ? "lg:col-span-3" : "lg:col-span-4",
           )}
         >
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
               <QuestionCard
                 quizId={quiz.id}
@@ -138,6 +138,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                     setSelectedAnswers(newSelected);
                   }
                 }}
+                answers={answers}
                 questionChecked={questionChecked}
                 nextAction={nextAction}
                 isQuizFinished={isQuizFinished}
@@ -170,7 +171,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           </ViewTransition>
         </div>
         {showBrainrot ? (
-          <div className="animate-in fade-in slide-in-from-right duration-300">
+          <div className="animate-in fade-in lg:slide-in-from-right duration-300">
             <Card>
               <CardContent>
                 <AspectRatio
