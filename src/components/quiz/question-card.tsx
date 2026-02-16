@@ -131,24 +131,16 @@ export function QuestionCard({
     return null;
   }
 
-  // Check if the question was answered correctly with all required answers
-  const isQuestionAnsweredCorrectly = () => {
-    return (
-      questionChecked &&
-      question.answers.filter((answer) => {
-        return answer.is_correct !== selectedAnswers.includes(answer.id);
-      }).length === 0
-    );
-  };
+  const isQuestionAnsweredCorrectly =
+    questionChecked &&
+    question.answers.every((answer) => {
+      return answer.is_correct === selectedAnswers.includes(answer.id);
+    });
 
-  const answersCount = () => {
-    const amount = answers.reduce(
-      (count, answer) => count + (answer.question === question.id ? 1 : 0),
-      1,
-    );
-
-    return questionChecked && amount > 1 ? amount - 1 : amount;
-  };
+  const answersCount = answers.reduce(
+    (count, answer) => (answer.question === question.id ? count + 1 : count),
+    questionChecked ? 0 : 1,
+  );
 
   return (
     <Card>
@@ -163,12 +155,18 @@ export function QuestionCard({
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="outline" className="h-6 shrink-0 select-none">
-                    {answersCount().toString()}
+                  <Badge
+                    variant="secondary"
+                    className="my-px shrink-0 select-none"
+                  >
+                    {answersCount}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Liczba powtórzeń tego pytania</p>
+                  To pytanie pojawiło się{" "}
+                  {answersCount === 1
+                    ? "pierwszy raz"
+                    : `już ${answersCount.toString()} razy`}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -199,7 +197,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium wrap-break-word transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(answer.id),
                     questionChecked,
@@ -223,7 +221,7 @@ export function QuestionCard({
           })}
         </div>
         <div className="mt-4 min-h-5 text-sm">
-          {questionChecked && isQuestionAnsweredCorrectly() ? (
+          {questionChecked && isQuestionAnsweredCorrectly ? (
             <p className="font-medium text-green-600 dark:text-green-400">
               Poprawna odpowiedź!
             </p>
