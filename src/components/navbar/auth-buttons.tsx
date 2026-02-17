@@ -77,7 +77,11 @@ export function AuthButtons({
               <CircleUserRoundIcon className="size-6" />
             ) : (
               <Avatar className="size-6">
-                <AvatarImage src={profilePicture} className="user-avatar" />
+                <AvatarImage
+                  src={profilePicture}
+                  className="user-avatar"
+                  alt="Zdjęcie profilowe użytkownika"
+                />
                 <AvatarFallback delayMs={600} className="bg-transparent">
                   <CircleUserRoundIcon className="size-6" />
                 </AvatarFallback>

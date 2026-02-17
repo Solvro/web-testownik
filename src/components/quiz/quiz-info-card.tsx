@@ -133,6 +133,7 @@ export function QuizInfoCard({
           style={{
             ["--bar-color" as never]: getProgressColor(progressPercentage),
           }}
+          aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
           className="[&_[data-slot=progress-indicator]]:bg-[var(--bar-color)]"
         />
         <div className="flex items-center justify-between pt-2">
@@ -144,6 +145,7 @@ export function QuizInfoCard({
                   variant="outline"
                   onClick={openSearchInQuiz}
                   disabled={!appContext.isAuthenticated}
+                  aria-label="Wyszukaj w quizie"
                 >
                   <SearchIcon className="size-5" />
                 </Button>
@@ -166,6 +168,7 @@ export function QuizInfoCard({
                         toast.success("Skopiowano link do quizu");
                       });
                   }}
+                  aria-label="Kopiuj link do quizu"
                 >
                   <Link2Icon className="size-5" />
                 </Button>
@@ -175,7 +178,12 @@ export function QuizInfoCard({
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="destructive" size="sm" onClick={resetProgress}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={resetProgress}
+                aria-label="Resetuj postęp"
+              >
                 <RotateCcwIcon className="size-4" /> Reset
               </Button>
             </TooltipTrigger>

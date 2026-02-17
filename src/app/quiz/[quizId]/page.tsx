@@ -7,14 +7,47 @@ import { Loader } from "@/components/loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
+import { getQuizMetadata } from "@/lib/metadata";
 import { getQueryClient } from "@/lib/query-client";
 import { ServiceRegistry } from "@/services";
 
 import { QuizPageClient } from "./client";
 
-export const metadata: Metadata = {
-  title: "Quiz",
-};
+export async function generateMetadata({
+  params,
+}: PageProps<"/quiz/[quizId]">): Promise<Metadata> {
+  const { quizId } = await params;
+
+  const cookieStore = await cookies();
+  const isGuest: boolean = cookieStore.get("is_guest")?.value === "true";
+
+  if (isGuest) {
+    return {
+      title: "Quiz",
+    };
+  }
+
+  const metadata = await getQuizMetadata(quizId);
+
+  return {
+    title: metadata.title,
+    description: metadata.description,
+    authors: [{ name: metadata.maintainer?.full_name ?? "" }],
+    other: {
+      "application/ld+json": JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Quiz",
+        name: metadata.title,
+        description: metadata.description,
+        numberOfQuestions: metadata.question_count,
+        author: {
+          "@type": "Person",
+          name: metadata.maintainer?.full_name,
+        },
+      }),
+    },
+  };
+}
 
 export default async function QuizPage({
   params,

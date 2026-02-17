@@ -73,6 +73,7 @@ export function SearchCard({
             size="icon"
             className="shrink-0"
             disabled={isLoading}
+            aria-label="Wyszukaj quizy"
           >
             <SearchIcon className="size-4" />
           </Button>
