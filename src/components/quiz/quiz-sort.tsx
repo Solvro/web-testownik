@@ -2,6 +2,8 @@ import {
   ArrowDownAZ,
   ArrowDownUp,
   ArrowDownZA,
+  CalendarArrowDownIcon,
+  CalendarArrowUpIcon,
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
@@ -58,9 +60,19 @@ const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
   return "quiz" in quiz ? quiz.quiz.title : quiz.title;
 };
 
+const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateStr = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
+  return new Date(dateStr);
+};
+
+const getUpdateDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateStr = "quiz" in quiz ? quiz.quiz.updated_at : quiz.updated_at;
+  return new Date(dateStr);
+};
+
 const options: Option[] = [
   {
-    label: "A - Z",
+    label: "Alfabetycznie (A - Z)",
     icon: <ArrowDownAZ />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
@@ -70,13 +82,33 @@ const options: Option[] = [
     },
   },
   {
-    label: "Z - A",
+    label: "Alfabetycznie (Z - A)",
     icon: <ArrowDownZA />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
     ): number => {
       return getTitle(b).localeCompare(getTitle(a));
+    },
+  },
+  {
+    label: "Od najnowszego",
+    icon: <CalendarArrowDownIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(b).getTime() - getCreationDate(a).getTime();
+    },
+  },
+  {
+    label: "Od najstarszego",
+    icon: <CalendarArrowUpIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(a).getTime() - getCreationDate(b).getTime();
     },
   },
 ];
