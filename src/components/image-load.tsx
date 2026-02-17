@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Suspense, useContext, useState } from "react";
 
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
-import { isExternalUrl } from "@/components/quiz/hooks/use-external-image-approval";
+import { isUntrustedImageUrl } from "@/components/quiz/hooks/use-external-image-approval";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -30,13 +30,13 @@ export function ImageLoad({
     return null;
   }
 
-  const isExternal = isExternalUrl(url);
+  const isUntrusted = isUntrustedImageUrl(url);
 
-  if (isExternal && !isInitialized) {
+  if (isUntrusted && !isInitialized) {
     return <Skeleton className={cn("min-h-40 w-1/2", className)} />;
   }
 
-  if (isExternal && !externalImagesApproved) {
+  if (isUntrusted && !externalImagesApproved) {
     return (
       <div className="text-muted-foreground flex w-fit items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
         <ImageOffIcon className="size-4" />
