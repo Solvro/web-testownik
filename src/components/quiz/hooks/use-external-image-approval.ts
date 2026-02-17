@@ -30,9 +30,26 @@ function getHostname(url: string): string | null {
   }
 }
 
-function isExternalUrl(url: string): boolean {
+const ALLOWED_DOMAINS = new Set([
+  "github.com",
+  "githubusercontent.com",
+  "raw.githubusercontent.com",
+  "cdn.discordapp.com",
+  "upload.wikimedia.org",
+  "images.unsplash.com",
+  "i.imgur.com",
+  "lh3.googleusercontent.com",
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+]);
+
+function isUntrustedImageUrl(url: string): boolean {
   const hostname = getHostname(url);
   if (hostname === null) {
+    return false;
+  }
+
+  if (ALLOWED_DOMAINS.has(hostname)) {
     return false;
   }
 
@@ -53,14 +70,14 @@ function extractExternalDomains(quiz: Quiz): string[] {
   const domains = new Set<string>();
 
   for (const question of quiz.questions) {
-    if (question.image != null && isExternalUrl(question.image)) {
+    if (question.image != null && isUntrustedImageUrl(question.image)) {
       const host = getHostname(question.image);
       if (host !== null) {
         domains.add(host);
       }
     }
     for (const answer of question.answers) {
-      if (answer.image != null && isExternalUrl(answer.image)) {
+      if (answer.image != null && isUntrustedImageUrl(answer.image)) {
         const host = getHostname(answer.image);
         if (host !== null) {
           domains.add(host);
@@ -153,4 +170,4 @@ export function useExternalImageApproval(
   };
 }
 
-export { isExternalUrl };
+export { isUntrustedImageUrl };
