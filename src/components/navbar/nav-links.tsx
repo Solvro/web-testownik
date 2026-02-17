@@ -96,7 +96,7 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
 
   return (
     <>
-      <NavigationMenu className="hidden sm:flex" viewport={false}>
+      <NavigationMenu className="hidden md:flex" viewport={false}>
         <NavigationMenuList className="gap-2.5">
           <NavigationMenuItem>
             <NavigationMenuLink
