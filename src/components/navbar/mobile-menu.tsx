@@ -16,7 +16,7 @@ export function MobileMenu({
   profilePicture,
 }: MobileMenuProps) {
   return (
-    <div className="flex flex-col gap-4 border-t pt-2 sm:hidden">
+    <div className="flex flex-col gap-2 border-t pt-2 md:hidden">
       <NavLinks isStaff={isStaff} variant="mobile" />
       <div className="flex flex-wrap gap-2 pt-2">
         <AuthButtons

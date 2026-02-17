@@ -43,7 +43,7 @@ export function NavbarClient({
           </Link>
           <NavLinks isStaff={isStaff} variant="desktop" />
         </div>
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-2 md:flex">
           <NavbarActions
             isAuthenticated={isAuthenticated}
             isGuest={isGuestMode}
