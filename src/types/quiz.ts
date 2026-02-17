@@ -8,6 +8,8 @@ export interface QuizMetadata {
   visibility: AccessLevel;
   allow_anonymous: boolean;
   is_anonymous: boolean;
+  created_at: string;
+  updated_at: string;
   version: number;
   can_edit?: boolean;
   preview_question?: Question;
