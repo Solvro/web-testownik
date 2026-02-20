@@ -30,7 +30,7 @@ export function useKeyShortcuts({
         }
         case "s": {
           if (
-            document.querySelectorAll("div[role=dialog]").length > 0 ||
+            document.querySelector('[role="dialog"]') !== null ||
             isHistoryQuestion
           ) {
             break;
