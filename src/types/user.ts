@@ -21,6 +21,7 @@ export interface UserSettings {
   notify_quiz_shared: boolean;
   notify_bug_reported: boolean;
   notify_marketing: boolean;
+  max_question_reoccurrences: number;
 }
 
 export interface SettingsFormProps {
@@ -35,6 +36,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,
+  max_question_reoccurrences: 3,
 });
 
 export interface Term {

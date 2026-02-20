@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import type { SettingsFormProps } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const appContext = useContext(AppContext);
@@ -17,6 +18,12 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   );
   const [localWrongAnswerReoccurrences, setLocalWrongAnswerReoccurrences] =
     useState(settings.wrong_answer_reoccurrences.toString());
+  const [localMaxQuestionReoccurrences, setLocalMaxQuestionReoccurrences] =
+    useState(
+      settings.max_question_reoccurrences
+        ? settings.max_question_reoccurrences.toString()
+        : DEFAULT_USER_SETTINGS.max_question_reoccurrences,
+    );
 
   const [sliderInitialValue, setSliderInitialValue] = useState(
     settings.initial_reoccurrences * 10,
@@ -24,11 +31,19 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [sliderWrongAnswerValue, setSliderWrongAnswerValue] = useState(
     settings.wrong_answer_reoccurrences * 10,
   );
+  const [sliderMaxQuestionValue, setSliderMaxQuestionValue] = useState(
+    settings.max_question_reoccurrences
+      ? settings.max_question_reoccurrences * 10
+      : DEFAULT_USER_SETTINGS.max_question_reoccurrences * 10,
+  );
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const debouncedSave = (
-    key: "initial_reoccurrences" | "wrong_answer_reoccurrences",
+    key:
+      | "initial_reoccurrences"
+      | "wrong_answer_reoccurrences"
+      | "max_question_reoccurrences",
     value: number,
   ) => {
     if (timeoutRef.current !== undefined) {
@@ -59,6 +74,13 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     setLocalWrongAnswerReoccurrences(transformedValue.toString());
     setSliderWrongAnswerValue(transformedValue * 10);
     onSettingChange("wrong_answer_reoccurrences", transformedValue);
+  };
+
+  const handleMaxQuestionReoccurrencesCommit = (sliderValue: number) => {
+    const transformedValue = Math.max(1, Math.round(sliderValue / 10));
+    setLocalMaxQuestionReoccurrences(transformedValue.toString());
+    setSliderMaxQuestionValue(transformedValue * 10);
+    onSettingChange("max_question_reoccurrences", transformedValue);
   };
 
   return (
@@ -184,6 +206,53 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               }}
               onValueCommit={(values) => {
                 handleWrongAnswerReoccurrencesCommit(values[0]);
+              }}
+            />
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="initial-reoccurrences"
+              >
+                Maksymalna liczba powtórzeń pytania
+              </Label>
+              <Input
+                type="number"
+                min={10}
+                value={localMaxQuestionReoccurrences}
+                onChange={(event_) => {
+                  const value = event_.target.value;
+                  setLocalMaxQuestionReoccurrences(value);
+                  const numberValue = Number(value);
+                  if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                    setSliderMaxQuestionValue(numberValue * 10);
+                    debouncedSave("max_question_reoccurrences", numberValue);
+                  }
+                }}
+                aria-invalid={(() => {
+                  const numberValue = Number(localMaxQuestionReoccurrences);
+                  return Number.isNaN(numberValue) || numberValue < 1;
+                })()}
+                className="h-8 w-16 text-center font-semibold"
+              />
+            </div>
+            <Slider
+              id="max-question-reoccurrences"
+              min={10}
+              max={100}
+              step={1}
+              value={[sliderMaxQuestionValue]}
+              onValueChange={(values) => {
+                setSliderMaxQuestionValue(values[0]);
+                const transformedValue = Math.max(
+                  1,
+                  Math.round(values[0] / 10),
+                );
+                setLocalMaxQuestionReoccurrences(transformedValue.toString());
+              }}
+              onValueCommit={(values) => {
+                handleMaxQuestionReoccurrencesCommit(values[0]);
               }}
             />
           </div>
