@@ -3,9 +3,14 @@ import { useEffect } from "react";
 interface Options {
   nextAction: () => void;
   skipQuestion: () => void;
+  isHistoryQuestion: boolean;
 }
 
-export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
+export function useKeyShortcuts({
+  nextAction,
+  skipQuestion,
+  isHistoryQuestion,
+}: Options) {
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -24,6 +29,12 @@ export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
           break;
         }
         case "s": {
+          if (
+            document.querySelectorAll("div[role=dialog]").length > 0 ||
+            isHistoryQuestion
+          ) {
+            break;
+          }
           skipQuestion();
           break;
         }
@@ -37,5 +48,5 @@ export function useKeyShortcuts({ nextAction, skipQuestion }: Options) {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [nextAction, skipQuestion]);
+  }, [nextAction, skipQuestion, isHistoryQuestion]);
 }

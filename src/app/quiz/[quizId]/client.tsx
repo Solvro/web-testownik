@@ -77,6 +77,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   useKeyShortcuts({
     nextAction,
     skipQuestion,
+    isHistoryQuestion,
   });
 
   useEffect(() => {
