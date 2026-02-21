@@ -4,7 +4,7 @@ import { ArrowDownToLineIcon, Loader2, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { QuestionForm } from "@/components/quiz/editor/question-form";
+import { QuestionFormContainer } from "@/components/quiz/editor/question-form-container";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -431,14 +431,14 @@ export function QuizEditor(props: QuizEditorProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Pytania</h2>
             <Button type="button" onClick={addQuestion}>
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon />
               Dodaj pytanie
             </Button>
           </div>
 
           <div className="space-y-6">
             {questions.map((question) => (
-              <QuestionForm
+              <QuestionFormContainer
                 key={question.id}
                 question={question}
                 onUpdate={(updates) => {
@@ -459,7 +459,7 @@ export function QuizEditor(props: QuizEditorProps) {
             className="w-full border-dashed py-8"
             onClick={addQuestion}
           >
-            <PlusIcon className="mr-2 size-4" />
+            <PlusIcon />
             Dodaj kolejne pytanie
           </Button>
         </div>

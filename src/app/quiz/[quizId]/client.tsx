@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, startTransition, useContext, useEffect } from "react";
 import ReactPlayer from "react-player";
@@ -19,6 +20,13 @@ import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 
 interface QuizPageClientProps {
@@ -124,29 +132,47 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         >
           <div className="min-w-0 lg:col-span-2">
             <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
-              <QuestionCard
-                quizId={quiz.id}
-                question={currentQuestion}
-                selectedAnswers={selectedAnswers}
-                setSelectedAnswers={(newSelected) => {
-                  // If question is not multiple, unselect everything except the new
-                  if (currentQuestion !== null && !currentQuestion.multiple) {
-                    setSelectedAnswers(
-                      newSelected.length > 0 ? [newSelected[0]] : [],
-                    );
-                  } else {
-                    setSelectedAnswers(newSelected);
-                  }
-                }}
-                answers={answers}
-                questionChecked={questionChecked}
-                nextAction={nextAction}
-                isQuizFinished={isQuizFinished}
-                restartQuiz={resetProgress}
-                goToPreviousQuestion={goToPreviousQuestion}
-                isHistoryQuestion={isHistoryQuestion}
-                canGoBack={canGoBack}
-              />
+              {quiz.questions.length === 0 ? (
+                <Card>
+                  <CardContent>
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <FileQuestionMarkIcon />
+                        </EmptyMedia>
+                        <EmptyTitle>Brak pytań</EmptyTitle>
+                        <EmptyDescription>
+                          W tym quizie nie ma jeszcze żadnych pytań.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </CardContent>
+                </Card>
+              ) : (
+                <QuestionCard
+                  quizId={quiz.id}
+                  question={currentQuestion}
+                  selectedAnswers={selectedAnswers}
+                  setSelectedAnswers={(newSelected) => {
+                    // If question is not multiple, unselect everything except the new
+                    if (currentQuestion !== null && !currentQuestion.multiple) {
+                      setSelectedAnswers(
+                        newSelected.length > 0 ? [newSelected[0]] : [],
+                      );
+                    } else {
+                      setSelectedAnswers(newSelected);
+                    }
+                  }}
+                  answers={answers}
+                  questionChecked={questionChecked}
+                  nextAction={nextAction}
+                  isQuizFinished={isQuizFinished}
+                  restartQuiz={resetProgress}
+                  goToPreviousQuestion={goToPreviousQuestion}
+                  isHistoryQuestion={isHistoryQuestion}
+                  canGoBack={canGoBack}
+                />
+              )}
             </ViewTransition>
           </div>
           <ViewTransition name="quiz-info" update="h-full">

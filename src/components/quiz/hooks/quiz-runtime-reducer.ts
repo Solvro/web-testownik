@@ -251,7 +251,7 @@ export function runtimeReducer(
         currentQuestion: firstQuestion,
         selectedAnswers: [],
         questionChecked: false,
-        isQuizFinished: false,
+        isQuizFinished: firstQuestion === null,
         nextQuestion: null,
         canGoBack: false,
         isHistoryQuestion: false,

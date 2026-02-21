@@ -547,4 +547,22 @@ export class QuizService extends BaseApiService {
     );
     return response.data;
   }
+
+  async updateQuestion(
+    questionId: string,
+    data: Partial<Question>,
+  ): Promise<Question> {
+    const response = await this.patch<Question>(
+      `questions/${questionId}/`,
+      data,
+    );
+    return response.data;
+  }
+
+  async deleteQuestion(questionId: string): Promise<string | null> {
+    const response = await this.delete<{ current_question: string | null }>(
+      `questions/${questionId}/`,
+    );
+    return response.data.current_question;
+  }
 }

@@ -161,7 +161,7 @@ function prepareAnswerForSubmission(answer: AnswerFormData) {
  * Prepare question data for submission to the backend.
  * Removes the read-only fields (image, image_width, image_height) and ensures mutual exclusivity of `image_url` and `image_upload`.
  */
-function prepareQuestionForSubmission(question: QuestionFormData) {
+export function prepareQuestionForSubmission(question: QuestionFormData) {
   const { image, image_width, image_height, answers, ...rest } = question;
 
   const preparedQuestion = {
