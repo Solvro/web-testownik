@@ -34,7 +34,7 @@ export function ExternalImageWarning({
             setCollapsed(false);
           }}
         >
-          <ShieldAlertIcon className="mr-2 size-4" />
+          <ShieldAlertIcon />
           <span className="truncate">Zewnętrzne zdjęcia są zablokowane</span>
           <MaximizeIcon className="ml-2 size-3 opacity-50" />
         </Button>

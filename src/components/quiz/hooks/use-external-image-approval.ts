@@ -31,6 +31,7 @@ function getHostname(url: string): string | null {
 }
 
 const ALLOWED_DOMAINS = new Set([
+  "s3.b.solvro.pl",
   "github.com",
   "githubusercontent.com",
   "raw.githubusercontent.com",
