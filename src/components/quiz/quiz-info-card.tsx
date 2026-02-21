@@ -180,7 +180,7 @@ export function QuizInfoCard({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="destructive" size="sm" onClick={resetProgress}>
+                <Button variant="destructive" size="sm" onClick={resetProgress} disabled={totalQuestions === 0}>
                   <RotateCcwIcon className="size-4" /> Reset
                 </Button>
               }
