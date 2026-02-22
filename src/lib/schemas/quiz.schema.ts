@@ -1,5 +1,7 @@
 import * as z from "zod";
 
+import { formatValidationError } from "@/lib/schemas/validation-utils";
+
 export const answerFormSchema = z
   .object({
     id: z.string(),
@@ -79,41 +81,39 @@ export type AnswerFormData = z.infer<typeof answerFormSchema>;
 export type QuestionFormData = z.infer<typeof questionFormSchema>;
 export type QuizFormData = z.infer<typeof quizFormSchema>;
 
-export type ValidationResult =
-  | { success: true; data: QuizFormData }
+export type ValidationResult<T> =
+  | { success: true; data: T }
   | { success: false; error: string; path?: (string | number)[] };
 
-export function validateQuizForm(data: unknown): ValidationResult {
+export function validateQuizForm(
+  data: unknown,
+): ValidationResult<QuizFormData> {
   const result = quizFormSchema.safeParse(data);
 
   if (!result.success) {
     const firstIssue = result.error.issues[0];
     const path = firstIssue.path;
-    let errorMessage = firstIssue.message;
+    const errorMessage = formatValidationError(path, firstIssue.message);
 
-    if (path.length > 0) {
-      const parts: string[] = [];
+    return {
+      success: false,
+      error: errorMessage,
+      path: path as (string | number)[],
+    };
+  }
 
-      const questionIndex = path.indexOf("questions");
-      if (questionIndex !== -1 && path.length > questionIndex + 1) {
-        const index = path[questionIndex + 1];
-        if (typeof index === "number") {
-          parts.push(`Pytanie ${String(index + 1)}`);
-        }
-      }
+  return { success: true, data: result.data };
+}
 
-      const answerIndex = path.indexOf("answers");
-      if (answerIndex !== -1 && path.length > answerIndex + 1) {
-        const index = path[answerIndex + 1];
-        if (typeof index === "number") {
-          parts.push(`Odpowiedź ${String(index + 1)}`);
-        }
-      }
+export function validateQuestionForm(
+  data: unknown,
+): ValidationResult<QuestionFormData> {
+  const result = questionFormSchema.safeParse(data);
 
-      if (parts.length > 0) {
-        errorMessage = `${parts.join(", ")}: ${errorMessage}`;
-      }
-    }
+  if (!result.success) {
+    const firstIssue = result.error.issues[0];
+    const path = firstIssue.path;
+    const errorMessage = formatValidationError(path, firstIssue.message);
 
     return {
       success: false,

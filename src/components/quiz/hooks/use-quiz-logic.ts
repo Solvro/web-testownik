@@ -217,6 +217,7 @@ export function useQuizLogic({
     const session = await appContext.services.quiz.deleteQuizProgress(
       quizId,
       userSettings.sync_progress,
+      quiz,
     );
     sessionActions.resetProgress(session);
     setTimer(0, Date.now());

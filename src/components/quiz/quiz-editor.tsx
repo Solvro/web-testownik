@@ -25,6 +25,7 @@ import type {
   QuizFormData,
 } from "@/lib/schemas/quiz.schema";
 import { validateQuizForm } from "@/lib/schemas/quiz.schema";
+import { handleValidationFailure } from "@/lib/schemas/validation-utils";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
 
@@ -219,68 +220,6 @@ export function QuizEditor(props: QuizEditorProps) {
     setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
   }
 
-  const handleValidationFailure = (validation: {
-    success: false;
-    error: string;
-    path?: (string | number)[];
-  }) => {
-    let scrollToId: string | null = null;
-    const path = validation.path;
-
-    if (Array.isArray(path) && path.length > 0) {
-      const questionIndex = path.indexOf("questions");
-
-      if (questionIndex !== -1) {
-        const rawQIndex = path[questionIndex + 1];
-
-        if (typeof rawQIndex === "number") {
-          const question = questions[rawQIndex];
-
-          scrollToId = `question-${question.id}`;
-
-          const answerIndex = path.indexOf("answers");
-          if (answerIndex !== -1) {
-            const rawAIndex = path[answerIndex + 1];
-
-            if (typeof rawAIndex === "number") {
-              const answer = question.answers[rawAIndex];
-
-              scrollToId = `answer-${answer.id}`;
-            }
-          }
-        }
-      }
-    }
-
-    toast.error(validation.error, {
-      action:
-        scrollToId === null
-          ? undefined
-          : {
-              label: "Pokaż",
-              onClick: () => {
-                const element = document.querySelector<HTMLElement>(
-                  `#${scrollToId}`,
-                );
-                if (element !== null) {
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                  const input =
-                    element.querySelector<HTMLElement>("input, textarea");
-                  if (input !== null) {
-                    input.focus();
-                  }
-                }
-              },
-            },
-      actionButtonStyle: {
-        background: "var(--destructive)",
-      },
-    });
-  };
-
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -293,7 +232,7 @@ export function QuizEditor(props: QuizEditorProps) {
 
     const validation = validateQuizForm(formData);
     if (!validation.success) {
-      handleValidationFailure(validation);
+      handleValidationFailure(validation, { questions });
       return;
     }
 
@@ -329,7 +268,7 @@ export function QuizEditor(props: QuizEditorProps) {
 
     const validation = validateQuizForm(formData);
     if (!validation.success) {
-      handleValidationFailure(validation);
+      handleValidationFailure(validation, { questions });
       return;
     }
 

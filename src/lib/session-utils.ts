@@ -203,7 +203,10 @@ export function resolveCurrentQuestion(
     questions: quiz.questions,
     answers,
     settings,
-    seed: `${String(session?.id)}-${String(session?.study_time)}`,
+    seed:
+      session == null
+        ? undefined
+        : `${session.id}-${String(session.study_time)}`,
   });
 }
 

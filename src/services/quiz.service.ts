@@ -365,11 +365,20 @@ export class QuizService extends BaseApiService {
       }
     }
 
-    const quizContext =
-      fallbackContext ?? (await this.getQuizWithProgress(quizId));
+    if (fallbackContext == null) {
+      return {
+        id: crypto.randomUUID(),
+        started_at: new Date().toISOString(),
+        ended_at: null,
+        is_active: true,
+        study_time: 0,
+        current_question: null,
+        answers: [],
+      };
+    }
     return buildFallbackSession(
-      quizContext,
-      deriveSettings(quizContext.user_settings),
+      fallbackContext,
+      deriveSettings(fallbackContext.user_settings),
     );
   }
 

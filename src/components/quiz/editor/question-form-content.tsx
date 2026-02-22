@@ -269,7 +269,7 @@ export function QuestionFormContent({
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="f ml-auto flex items-center gap-1.5 px-2">
+              <div className="ml-auto flex items-center gap-1.5 px-2">
                 <Checkbox
                   id={`multiple-${question.id}`}
                   checked={question.multiple}

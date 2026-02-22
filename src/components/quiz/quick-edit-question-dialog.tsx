@@ -33,7 +33,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import { prepareQuestionForSubmission } from "@/lib/schemas/quiz.schema";
+import {
+  prepareQuestionForSubmission,
+  validateQuestionForm,
+} from "@/lib/schemas/quiz.schema";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
 import { quizDetailQueryKey } from "./hooks/use-active-quiz";
@@ -109,7 +112,7 @@ export function QuickEditQuestionDialog({
         (oldData) => {
           if (oldData == null) {
             void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
-            return;
+            return oldData;
           }
           return {
             ...oldData,
@@ -137,7 +140,7 @@ export function QuickEditQuestionDialog({
         (oldData) => {
           if (oldData == null) {
             void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
-            return;
+            return oldData;
           }
 
           return {
@@ -161,6 +164,13 @@ export function QuickEditQuestionDialog({
   });
 
   const handleSave = async () => {
+    const validation = validateQuestionForm(formData);
+
+    if (!validation.success) {
+      toast.error(validation.error);
+      return;
+    }
+
     await saveQuestion();
   };
 
