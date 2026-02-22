@@ -36,6 +36,8 @@ import { useImageUpload } from "@/hooks/use-image-upload";
 import { prepareQuestionForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
+import { quizDetailQueryKey } from "./hooks/use-active-quiz";
+
 interface QuickEditQuestionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -100,21 +102,14 @@ export function QuickEditQuestionDialog({
         payload,
       );
     },
-    onSuccess: async (updatedQuestion) => {
+    onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
-      await queryClient.setQueryData(
-        [
-          "quiz",
-          quizId,
-          "details",
-          { include: ["user_settings", "current_session"] },
-        ],
-        (
-          oldData: QuizWithUserProgress | undefined,
-        ): QuizWithUserProgress | undefined => {
-          if (oldData?.current_session == null) {
+      queryClient.setQueryData<QuizWithUserProgress>(
+        quizDetailQueryKey(quizId),
+        (oldData) => {
+          if (oldData == null) {
             void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
-            return undefined;
+            return;
           }
           return {
             ...oldData,
@@ -135,29 +130,26 @@ export function QuickEditQuestionDialog({
     mutationFn: async () => {
       return await appContext.services.quiz.deleteQuestion(question.id);
     },
-    onSuccess: async (newCurrentQuestionId) => {
+    onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
-      await queryClient.setQueryData(
-        [
-          "quiz",
-          quizId,
-          "details",
-          { include: ["user_settings", "current_session"] },
-        ],
-        (
-          oldData: QuizWithUserProgress | undefined,
-        ): QuizWithUserProgress | undefined => {
-          if (oldData?.current_session == null) {
+      queryClient.setQueryData<QuizWithUserProgress>(
+        quizDetailQueryKey(quizId),
+        (oldData) => {
+          if (oldData == null) {
             void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
-            return undefined;
+            return;
           }
+
           return {
             ...oldData,
             questions: oldData.questions.filter((q) => q.id !== question.id),
-            current_session: {
-              ...oldData.current_session,
-              current_question: newCurrentQuestionId,
-            },
+            current_session:
+              oldData.current_session == null
+                ? null
+                : {
+                    ...oldData.current_session,
+                    current_question: newCurrentQuestionId ?? null,
+                  },
           };
         },
       );

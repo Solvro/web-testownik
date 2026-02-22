@@ -32,9 +32,7 @@ export default async function QuizPage({
   await queryClient.prefetchQuery({
     queryKey: ["quiz", quizId, "details", { include }],
     queryFn: async () => {
-      return await services.quiz.getQuiz(quizId, {
-        include,
-      });
+      return await services.quiz.getQuizWithProgress(quizId);
     },
   });
 

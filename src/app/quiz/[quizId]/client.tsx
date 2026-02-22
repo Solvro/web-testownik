@@ -55,8 +55,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     masteredCount,
     totalQuestions,
     timerStore,
-    answers,
   } = stats;
+  const answers = quiz.current_session?.answers ?? [];
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
@@ -65,7 +65,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setSelectedAnswers,
     toggleHistory,
     toggleBrainrot,
-    goToPreviousQuestion,
+    togglePreviousQuestion,
   } = actions;
 
   const {
@@ -168,7 +168,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   nextAction={nextAction}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
-                  goToPreviousQuestion={goToPreviousQuestion}
+                  togglePreviousQuestion={togglePreviousQuestion}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
                 />
