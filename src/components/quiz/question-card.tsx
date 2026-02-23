@@ -33,7 +33,7 @@ interface QuestionCardProps {
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
-  goToPreviousQuestion: () => void;
+  togglePreviousQuestion: () => void;
   canGoBack: boolean;
   isHistoryQuestion: boolean;
 }
@@ -48,7 +48,7 @@ export function QuestionCard({
   nextAction,
   isQuizFinished,
   restartQuiz,
-  goToPreviousQuestion,
+  togglePreviousQuestion,
   canGoBack,
   isHistoryQuestion,
 }: QuestionCardProps) {
@@ -239,7 +239,7 @@ export function QuestionCard({
         </div>
         <div className="mt-2 flex justify-end gap-2">
           {isHistoryQuestion ? (
-            <Button variant="outline" onClick={goToPreviousQuestion}>
+            <Button variant="outline" onClick={togglePreviousQuestion}>
               Powrót do pytań
             </Button>
           ) : (
@@ -251,7 +251,7 @@ export function QuestionCard({
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={goToPreviousQuestion}
+                        onClick={togglePreviousQuestion}
                       >
                         <Undo2 />
                       </Button>

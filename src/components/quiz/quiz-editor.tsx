@@ -4,7 +4,7 @@ import { ArrowDownToLineIcon, Loader2, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { QuestionForm } from "@/components/quiz/editor/question-form";
+import { QuestionFormContainer } from "@/components/quiz/editor/question-form-container";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import type {
   QuizFormData,
 } from "@/lib/schemas/quiz.schema";
 import { validateQuizForm } from "@/lib/schemas/quiz.schema";
+import { handleValidationFailure } from "@/lib/schemas/validation-utils";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
 
@@ -219,68 +220,6 @@ export function QuizEditor(props: QuizEditorProps) {
     setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
   }
 
-  const handleValidationFailure = (validation: {
-    success: false;
-    error: string;
-    path?: (string | number)[];
-  }) => {
-    let scrollToId: string | null = null;
-    const path = validation.path;
-
-    if (Array.isArray(path) && path.length > 0) {
-      const questionIndex = path.indexOf("questions");
-
-      if (questionIndex !== -1) {
-        const rawQIndex = path[questionIndex + 1];
-
-        if (typeof rawQIndex === "number") {
-          const question = questions[rawQIndex];
-
-          scrollToId = `question-${question.id}`;
-
-          const answerIndex = path.indexOf("answers");
-          if (answerIndex !== -1) {
-            const rawAIndex = path[answerIndex + 1];
-
-            if (typeof rawAIndex === "number") {
-              const answer = question.answers[rawAIndex];
-
-              scrollToId = `answer-${answer.id}`;
-            }
-          }
-        }
-      }
-    }
-
-    toast.error(validation.error, {
-      action:
-        scrollToId === null
-          ? undefined
-          : {
-              label: "Pokaż",
-              onClick: () => {
-                const element = document.querySelector<HTMLElement>(
-                  `#${scrollToId}`,
-                );
-                if (element !== null) {
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                  const input =
-                    element.querySelector<HTMLElement>("input, textarea");
-                  if (input !== null) {
-                    input.focus();
-                  }
-                }
-              },
-            },
-      actionButtonStyle: {
-        background: "var(--destructive)",
-      },
-    });
-  };
-
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -293,7 +232,7 @@ export function QuizEditor(props: QuizEditorProps) {
 
     const validation = validateQuizForm(formData);
     if (!validation.success) {
-      handleValidationFailure(validation);
+      handleValidationFailure(validation, { questions });
       return;
     }
 
@@ -329,7 +268,7 @@ export function QuizEditor(props: QuizEditorProps) {
 
     const validation = validateQuizForm(formData);
     if (!validation.success) {
-      handleValidationFailure(validation);
+      handleValidationFailure(validation, { questions });
       return;
     }
 
@@ -432,14 +371,14 @@ export function QuizEditor(props: QuizEditorProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Pytania</h2>
             <Button type="button" onClick={addQuestion}>
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon />
               Dodaj pytanie
             </Button>
           </div>
 
           <div className="space-y-6">
             {questions.map((question) => (
-              <QuestionForm
+              <QuestionFormContainer
                 key={question.id}
                 question={question}
                 onUpdate={(updates) => {
@@ -460,7 +399,7 @@ export function QuizEditor(props: QuizEditorProps) {
             className="w-full border-dashed py-8"
             onClick={addQuestion}
           >
-            <PlusIcon className="mr-2 size-4" />
+            <PlusIcon />
             Dodaj kolejne pytanie
           </Button>
         </div>
