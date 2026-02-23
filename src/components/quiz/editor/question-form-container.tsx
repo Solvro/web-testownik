@@ -69,36 +69,32 @@ export function QuestionFormContainer({
     );
   }
 
-  const header = (
-    <QuestionFormHeader
-      question={question}
-      onUpdate={onUpdate}
-      onRemove={onRemove}
-      isImageUploading={isImageUploading}
-      onImageChange={handleImageChange}
-      onUpload={handleUpload}
-    />
-  );
-
-  const content = (
-    <QuestionFormContent
-      question={question}
-      onUpdate={onUpdate}
-      isImageUploading={isImageUploading}
-      onImageChange={handleImageChange}
-      onUpload={handleUpload}
-      onUploadStart={onUploadStart}
-      onUploadEnd={onUploadEnd}
-    />
-  );
-
   return (
     <Card
       id={`question-${question.id}`}
       className={cn("transition-shadow", className)}
     >
-      <CardHeader className="pb-0">{header}</CardHeader>
-      <CardContent>{content}</CardContent>
+      <CardHeader className="pb-0">
+        <QuestionFormHeader
+          question={question}
+          onUpdate={onUpdate}
+          onRemove={onRemove}
+          isImageUploading={isImageUploading}
+          onImageChange={handleImageChange}
+          onUpload={handleUpload}
+        />
+      </CardHeader>
+      <CardContent>
+        <QuestionFormContent
+          question={question}
+          onUpdate={onUpdate}
+          isImageUploading={isImageUploading}
+          onImageChange={handleImageChange}
+          onUpload={handleUpload}
+          onUploadStart={onUploadStart}
+          onUploadEnd={onUploadEnd}
+        />
+      </CardContent>
     </Card>
   );
 }
