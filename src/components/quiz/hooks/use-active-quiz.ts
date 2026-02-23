@@ -1,3 +1,4 @@
+import formbricks from "@formbricks/js";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useContext, useState } from "react";
 
@@ -114,6 +115,13 @@ export function useActiveQuiz(quizId: string) {
                 current_question: client.nextQuestionId,
               },
       }));
+
+      if (
+        client.nextQuestionId === null &&
+        isQuizComplete(quiz.questions, answers, userSettings)
+      ) {
+        void formbricks.track("quiz_finished");
+      }
     }
 
     setClient(INITIAL_CLIENT_STATE);

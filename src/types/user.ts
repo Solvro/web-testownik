@@ -28,14 +28,14 @@ export interface SettingsFormProps {
   onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
 }
 
-export const DEFAULT_USER_SETTINGS: UserSettings = {
+export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
   sync_progress: false,
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,
-};
+});
 
 export interface Term {
   id: string;
