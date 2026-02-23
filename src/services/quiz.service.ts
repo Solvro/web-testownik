@@ -1,9 +1,10 @@
 import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import { getCookie } from "@/lib/cookies";
+import { buildFallbackSession, deriveSettings } from "@/lib/session-utils";
 import type { ApiPaginatedResponse } from "@/types/common";
 import type { Question } from "@/types/quiz";
-import { DEFAULT_USER_SETTINGS } from "@/types/user";
 import type { UserSettings } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -54,54 +55,56 @@ export class QuizService extends BaseApiService {
   /**
    * Fetch a specific quiz by ID
    */
-  async getQuiz(
-    quizId: string,
-    options?: { include?: string[] },
-  ): Promise<QuizWithUserProgress> {
+  async getQuiz(quizId: string): Promise<Quiz> {
     if (this.isGuestMode()) {
       const guestQuizzes = this.getGuestQuizzes();
       const quiz = guestQuizzes.find((q) => q.id === quizId);
       if (quiz === undefined) {
         throw new GuestQuizNotFoundError("Quiz not found");
       }
+      return quiz;
+    }
 
+    const response = await this.get<Quiz>(`quizzes/${quizId}/`);
+    return response.data;
+  }
+
+  async getQuizWithProgress(quizId: string): Promise<QuizWithUserProgress> {
+    if (this.isGuestMode()) {
+      const quiz = await this.getQuiz(quizId);
       const result: QuizWithUserProgress = { ...quiz };
 
-      if (options?.include?.includes("current_session") ?? false) {
-        const progress = await this.getQuizProgress(quizId);
-        if (progress !== null) {
-          result.current_session = progress;
-        }
-      }
-
-      if (options?.include?.includes("user_settings") ?? false) {
-        let settings = { ...DEFAULT_USER_SETTINGS };
-        if (typeof window !== "undefined") {
-          try {
-            const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-            if (stored !== null) {
-              const parsed = JSON.parse(stored) as Partial<UserSettings>;
-              settings = { ...settings, ...parsed };
-            }
-          } catch (error) {
-            console.error("Failed to load guest settings", error);
+      let settings = { ...DEFAULT_USER_SETTINGS };
+      if (typeof window !== "undefined") {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+          if (stored !== null) {
+            const parsed = JSON.parse(stored) as Partial<UserSettings>;
+            settings = { ...settings, ...parsed };
           }
+        } catch (error) {
+          console.error("Failed to load guest settings", error);
         }
-        result.user_settings = settings;
       }
+      result.user_settings = settings;
+
+      result.current_session = this.getLocalQuizProgress(quizId, result);
 
       return result;
     }
 
-    const parameters: Record<string, unknown> = {};
-    if (options?.include !== undefined) {
-      parameters.include = options.include.join(",");
-    }
-
     const response = await this.get<QuizWithUserProgress>(
       `quizzes/${quizId}/`,
-      parameters,
+      {
+        include: ["user_settings", "current_session"].join(","),
+      },
     );
+
+    response.data.current_session ??= buildFallbackSession(
+      response.data,
+      deriveSettings(response.data.user_settings),
+    );
+
     return response.data;
   }
 
@@ -319,20 +322,10 @@ export class QuizService extends BaseApiService {
   /**
    * Get quiz progress
    */
-  async getQuizProgress(
+  getLocalQuizProgress(
     quizId: string,
-    applyRemote = true,
-  ): Promise<QuizSession | null> {
-    if (!this.isGuestMode() && applyRemote) {
-      try {
-        const response = await this.get<QuizSession>(
-          `quizzes/${quizId}/progress/`,
-        );
-        return response.data;
-      } catch {
-        // If remote fetch fails, return local progress if available
-      }
-    }
+    fallbackContext: QuizWithUserProgress,
+  ): QuizSession {
     if (typeof window !== "undefined") {
       const localProgress = localStorage.getItem(
         STORAGE_KEYS.QUIZ_PROGRESS(quizId),
@@ -346,17 +339,47 @@ export class QuizService extends BaseApiService {
         }
       }
     }
-    return null;
+
+    return buildFallbackSession(
+      fallbackContext,
+      deriveSettings(fallbackContext.user_settings),
+    );
   }
 
   /**
-   * Delete quiz progress
+   * Delete quiz progress, guaranteed to strictly return the server's newly created session
+   * or a local fallback.
    */
-  async deleteQuizProgress(quizId: string, applyRemote = true): Promise<void> {
+  async deleteQuizProgress(
+    quizId: string,
+    applyRemote = true,
+    fallbackContext?: QuizWithUserProgress,
+  ): Promise<QuizSession> {
     localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS(quizId));
     if (!this.isGuestMode() && applyRemote) {
-      await this.delete(`quizzes/${quizId}/progress/`);
+      const response = await this.delete<QuizSession | null>(
+        `quizzes/${quizId}/progress/`,
+      );
+      if (response.data !== null) {
+        return response.data;
+      }
     }
+
+    if (fallbackContext == null) {
+      return {
+        id: crypto.randomUUID(),
+        started_at: new Date().toISOString(),
+        ended_at: null,
+        is_active: true,
+        study_time: 0,
+        current_question: null,
+        answers: [],
+      };
+    }
+    return buildFallbackSession(
+      fallbackContext,
+      deriveSettings(fallbackContext.user_settings),
+    );
   }
 
   /**
@@ -546,5 +569,29 @@ export class QuizService extends BaseApiService {
       parameters,
     );
     return response.data;
+  }
+
+  async updateQuestion(
+    questionId: string,
+    data: Partial<Question>,
+  ): Promise<Question> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot update questions in guest mode");
+    }
+    const response = await this.patch<Question>(
+      `questions/${questionId}/`,
+      data,
+    );
+    return response.data;
+  }
+
+  async deleteQuestion(questionId: string): Promise<string | null> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot delete questions in guest mode");
+    }
+    const response = await this.delete<{ current_question: string | null }>(
+      `questions/${questionId}/`,
+    );
+    return response.data.current_question;
   }
 }
