@@ -225,23 +225,25 @@ export function useQuizLogic({
     continuity.sendResetProgress(session);
   };
 
+  const historyQuestion =
+    historyQuestionId == null
+      ? null
+      : (quiz.questions.find((q) => q.id === historyQuestionId) ?? null);
+
   return {
     quiz,
     userSettings,
     state: {
-      currentQuestion:
-        historyQuestionId == null
-          ? currentQuestion
-          : (quiz.questions.find((q) => q.id === historyQuestionId) ?? null),
+      currentQuestion: historyQuestion ?? currentQuestion,
       selectedAnswers:
-        historyQuestionId == null
+        historyQuestion == null
           ? selectedAnswers
           : (answers.find((a) => a.question === historyQuestionId)
               ?.selected_answers ?? []),
-      questionChecked: historyQuestionId == null ? questionChecked : true,
+      questionChecked: historyQuestion == null ? questionChecked : true,
       isQuizFinished,
       canGoBack: answers.length > 0,
-      isHistoryQuestion: historyQuestionId != null,
+      isHistoryQuestion: historyQuestion != null,
       showHistory,
       showBrainrot,
     },

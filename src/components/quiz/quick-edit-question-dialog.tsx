@@ -151,7 +151,9 @@ export function QuickEditQuestionDialog({
                 ? null
                 : {
                     ...oldData.current_session,
-                    current_question: newCurrentQuestionId ?? null,
+                    ...(newCurrentQuestionId == null
+                      ? {}
+                      : { current_question: newCurrentQuestionId }),
                   },
           };
         },
