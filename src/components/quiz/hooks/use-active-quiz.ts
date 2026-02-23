@@ -3,6 +3,10 @@ import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import {
+  INITIAL_CLIENT_STATE,
+  quizDetailQueryKey,
+} from "@/components/quiz/helpers/utils";
+import {
   deriveSettings,
   getAnswerCounts,
   getMasteredCount,
@@ -19,21 +23,6 @@ import type {
 
 import type { ClientState } from "./types";
 
-export const INITIAL_CLIENT_STATE: ClientState = {
-  selectedAnswers: [],
-  questionChecked: false,
-  nextQuestionId: null,
-};
-
-export function quizDetailQueryKey(quizId: string) {
-  return [
-    "quiz",
-    quizId,
-    "details",
-    { include: ["user_settings", "current_session"] },
-  ] as const;
-}
-
 export function useActiveQuiz(quizId: string) {
   const queryClient = useQueryClient();
   const appContext = useContext(AppContext);
@@ -46,7 +35,6 @@ export function useActiveQuiz(quizId: string) {
     retry: 1,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
     refetchOnReconnect: false,
   });
 
@@ -115,22 +103,20 @@ export function useActiveQuiz(quizId: string) {
   };
 
   const advanceQuestion = () => {
-    setClient((previous) => {
-      if (previous.questionChecked) {
-        updateServerCache((quizData) => ({
-          ...quizData,
-          current_session:
-            quizData.current_session == null
-              ? quizData.current_session
-              : {
-                  ...quizData.current_session,
-                  current_question: previous.nextQuestionId,
-                },
-        }));
-      }
+    if (client.questionChecked) {
+      updateServerCache((quizData) => ({
+        ...quizData,
+        current_session:
+          quizData.current_session == null
+            ? quizData.current_session
+            : {
+                ...quizData.current_session,
+                current_question: client.nextQuestionId,
+              },
+      }));
+    }
 
-      return INITIAL_CLIENT_STATE;
-    });
+    setClient(INITIAL_CLIENT_STATE);
   };
 
   const setCurrentQuestion = (question: Question | null) => {

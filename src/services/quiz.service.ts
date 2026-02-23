@@ -575,6 +575,9 @@ export class QuizService extends BaseApiService {
     questionId: string,
     data: Partial<Question>,
   ): Promise<Question> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot update questions in guest mode");
+    }
     const response = await this.patch<Question>(
       `questions/${questionId}/`,
       data,
@@ -583,6 +586,9 @@ export class QuizService extends BaseApiService {
   }
 
   async deleteQuestion(questionId: string): Promise<string | null> {
+    if (this.isGuestMode()) {
+      throw new Error("Cannot delete questions in guest mode");
+    }
     const response = await this.delete<{ current_question: string | null }>(
       `questions/${questionId}/`,
     );

@@ -88,7 +88,7 @@ export const handleValidationFailure = (
         : {
             label: "Pokaż",
             onClick: () => {
-              setTimeout(() => {
+              requestAnimationFrame(() => {
                 const element = document.querySelector<HTMLElement>(
                   `#${scrollToId}`,
                 );
@@ -103,7 +103,7 @@ export const handleValidationFailure = (
                     input.focus();
                   }
                 }
-              }, 50);
+              });
             },
           },
     actionButtonStyle: {

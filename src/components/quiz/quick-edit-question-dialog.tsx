@@ -39,7 +39,7 @@ import {
 } from "@/lib/schemas/quiz.schema";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
-import { quizDetailQueryKey } from "./hooks/use-active-quiz";
+import { quizDetailQueryKey } from "./helpers/utils";
 
 interface QuickEditQuestionDialogProps {
   open: boolean;

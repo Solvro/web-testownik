@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 import { Loader } from "@/components/loader";
+import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
@@ -27,10 +28,8 @@ export default async function QuizPage({
 
   const services = new ServiceRegistry(API_URL, {}, accessToken);
 
-  const include = ["user_settings", "current_session"];
-
   await queryClient.prefetchQuery({
-    queryKey: ["quiz", quizId, "details", { include }],
+    queryKey: quizDetailQueryKey(quizId),
     queryFn: async () => {
       return await services.quiz.getQuizWithProgress(quizId);
     },
