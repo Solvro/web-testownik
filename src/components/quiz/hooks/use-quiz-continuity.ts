@@ -3,7 +3,7 @@ import type { DataConnection } from "peerjs";
 import { useEffect, useRef, useState } from "react";
 
 import { env } from "@/env";
-import type { AnswerRecord, Question } from "@/types/quiz";
+import type { AnswerRecord, Question, QuizSession } from "@/types/quiz";
 
 import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
@@ -54,8 +54,12 @@ interface InitialSyncMessage {
 }
 interface QuestionUpdateMessage {
   type: "question_update";
-  question: Question;
+  question: Question | null;
   selectedAnswers: string[];
+}
+interface ResetProgressMessage {
+  type: "reset_progress";
+  session: QuizSession;
 }
 interface AnswerCheckedMessage {
   type: "answer_checked";
@@ -73,7 +77,8 @@ export type PeerMessage =
   | QuestionUpdateMessage
   | AnswerCheckedMessage
   | PingMessage
-  | PongMessage;
+  | PongMessage
+  | ResetProgressMessage;
 
 interface UseQuizContinuityOptions {
   enabled: boolean;
@@ -93,8 +98,9 @@ interface UseQuizContinuityOptions {
     answers?: AnswerRecord[];
     studyTime?: number;
   }) => void;
-  onQuestionUpdate: (q: Question, selected: string[]) => void;
+  onQuestionUpdate: (q: Question | null, selected: string[]) => void;
   onAnswerChecked: (nextQuestion: Question | null) => void;
+  onResetProgress: (session: QuizSession) => void;
 }
 
 export function useQuizContinuity({
@@ -104,6 +110,7 @@ export function useQuizContinuity({
   onInitialSync,
   onQuestionUpdate,
   onAnswerChecked,
+  onResetProgress,
   userId,
 }: UseQuizContinuityOptions & { userId: string | null | undefined }) {
   const [peerConnections, setPeerConnections] = useState<DataConnection[]>([]);
@@ -149,9 +156,7 @@ export function useQuizContinuity({
       correctAnswers,
       selectedAnswers,
     } = getCurrentState();
-    if (question === null) {
-      return;
-    }
+
     send(conn, {
       type: "initial_sync",
       startTime,
@@ -208,6 +213,10 @@ export function useQuizContinuity({
         onAnswerChecked(data.nextQuestion);
         break;
       }
+      case "reset_progress": {
+        onResetProgress(data.session);
+        break;
+      }
       case "ping": {
         if (peerConnectionsRef.current.length > 0) {
           send(peerConnectionsRef.current[0], { type: "pong" });
@@ -233,6 +242,11 @@ export function useQuizContinuity({
       }
       case "answer_checked": {
         onAnswerChecked(data.nextQuestion);
+        broadcastExcept(conn, data);
+        break;
+      }
+      case "reset_progress": {
+        onResetProgress(data.session);
         broadcastExcept(conn, data);
         break;
       }
@@ -400,8 +414,14 @@ export function useQuizContinuity({
     sendAnswerChecked: (nextQuestion: Question | null) => {
       broadcast({ type: "answer_checked", nextQuestion });
     },
-    sendQuestionUpdate: (question: Question, selectedAnswers: string[]) => {
+    sendQuestionUpdate: (
+      question: Question | null,
+      selectedAnswers: string[],
+    ) => {
       broadcast({ type: "question_update", question, selectedAnswers });
+    },
+    sendResetProgress: (session: QuizSession) => {
+      broadcast({ type: "reset_progress", session });
     },
   };
 }
