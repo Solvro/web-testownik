@@ -6,12 +6,20 @@ import {
   TrashIcon,
   UserIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn, getInitials } from "@/lib/utils";
 import type { QuizMetadata } from "@/types/quiz";
 import type { Group, User } from "@/types/user";
@@ -35,6 +43,54 @@ interface AccessListProps {
   ) => void;
 }
 
+function PersistentTooltip({
+  pressed,
+  onPressedChange,
+  tooltipContentPressed,
+  tooltipContentUnpressed,
+  IconPressed,
+  IconUnpressed,
+  classNamePressed,
+  classNameUnpressed,
+}: {
+  pressed: boolean;
+  onPressedChange: (value: boolean) => void;
+  tooltipContentPressed: React.ReactNode;
+  tooltipContentUnpressed: React.ReactNode;
+  IconPressed: LucideIcon;
+  IconUnpressed: LucideIcon;
+  classNamePressed: string;
+  classNameUnpressed: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip open={open} onOpenChange={setOpen}>
+        <TooltipTrigger asChild>
+          <Toggle
+            pressed={pressed}
+            onPressedChange={(value) => {
+              setOpen(true);
+              onPressedChange(value);
+            }}
+            size="sm"
+            className={cn(
+              "size-8 rounded-full p-0 transition-colors",
+              pressed ? classNamePressed : classNameUnpressed,
+            )}
+          >
+            {pressed ? <IconPressed /> : <IconUnpressed />}
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="center">
+          {pressed ? tooltipContentPressed : tooltipContentUnpressed}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function AccessList({
   quizMetadata,
   usersWithAccess,
@@ -47,7 +103,7 @@ export function AccessList({
   handleToggleGroupEdit,
 }: AccessListProps) {
   return (
-    <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
+    <ScrollArea className="w-full **:data-[slot=scroll-area-viewport]:max-h-64">
       <div className="flex flex-col gap-2">
         {quizMetadata.maintainer != null && (
           <div
@@ -70,21 +126,16 @@ export function AccessList({
                   {quizMetadata.maintainer.full_name}
                 </p>
               </div>
-              <Toggle
+              <PersistentTooltip
                 pressed={isMaintainerAnonymous}
                 onPressedChange={setIsMaintainerAnonymous}
-                size="sm"
-                className={cn(
-                  "size-8 rounded-full p-0 transition-colors",
-                  "data-[state=off]:bg-sky-500/15 data-[state=on]:bg-red-500/15",
-                )}
-              >
-                {isMaintainerAnonymous ? (
-                  <HatGlassesIcon className="size-5 text-red-500" />
-                ) : (
-                  <UserIcon className="size-5 text-sky-500" />
-                )}
-              </Toggle>
+                tooltipContentPressed="Ujawnij właściciela"
+                tooltipContentUnpressed="Ukryj właściciela"
+                IconPressed={HatGlassesIcon}
+                IconUnpressed={UserIcon}
+                classNamePressed="bg-red-500/15 text-red-500 hover:bg-red-500/20 hover:text-red-600"
+                classNameUnpressed="bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 hover:text-sky-600"
+              />
             </div>
             <Button
               variant="ghost"
@@ -109,25 +160,19 @@ export function AccessList({
                 </Avatar>
                 <p className="m-0 text-sm font-medium">{user.full_name}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Toggle
-                  pressed={user.allow_edit}
-                  onPressedChange={() => {
-                    handleToggleUserEdit(user);
-                  }}
-                  size="sm"
-                  className={cn(
-                    "size-8 rounded-full p-0 transition-colors",
-                    "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
-                  )}
-                >
-                  {user.allow_edit ? (
-                    <PencilIcon className="size-5 text-green-600" />
-                  ) : (
-                    <EyeIcon className="text-muted-foreground size-5" />
-                  )}
-                </Toggle>
-              </div>
+
+              <PersistentTooltip
+                pressed={user.allow_edit}
+                onPressedChange={() => {
+                  handleToggleUserEdit(user);
+                }}
+                tooltipContentPressed="Wyłącz edycję"
+                tooltipContentUnpressed="Zezwól na edycję"
+                IconPressed={PencilIcon}
+                IconUnpressed={EyeIcon}
+                classNamePressed="bg-green-500/15 text-green-500 hover:bg-green-500/20 hover:text-green-600"
+                classNameUnpressed="bg-muted hover:bg-muted/20 hover:text-muted-foreground"
+              />
             </div>
             <Button
               variant="ghost"
@@ -155,23 +200,18 @@ export function AccessList({
                 <p className="m-0 text-sm font-medium">{group.name}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Toggle
+                <PersistentTooltip
                   pressed={group.allow_edit}
                   onPressedChange={() => {
                     handleToggleGroupEdit(group);
                   }}
-                  size="sm"
-                  className={cn(
-                    "size-8 rounded-full p-0 transition-colors",
-                    "data-[state=off]:bg-muted data-[state=on]:bg-green-500/15",
-                  )}
-                >
-                  {group.allow_edit ? (
-                    <PencilIcon className="size-5 text-green-600" />
-                  ) : (
-                    <EyeIcon className="text-muted-foreground size-5" />
-                  )}
-                </Toggle>
+                  tooltipContentPressed="Wyłącz edycję"
+                  tooltipContentUnpressed="Zezwól na edycję"
+                  IconPressed={PencilIcon}
+                  IconUnpressed={EyeIcon}
+                  classNamePressed="bg-green-500/15 text-green-500 hover:bg-green-500/20 hover:text-green-600"
+                  classNameUnpressed="bg-muted hover:bg-muted/20 hover:text-muted-foreground"
+                />
               </div>
             </div>
             <Button

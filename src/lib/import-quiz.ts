@@ -598,7 +598,7 @@ export const useImportQuiz = () => {
           : String(importError);
 
       setError("Wystąpił błąd podczas importowania quizu.");
-      setErrorDetail(detail.length ? detail : null);
+      setErrorDetail(detail.length > 0 ? detail : null);
     }
   };
 

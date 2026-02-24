@@ -18,7 +18,7 @@ export function MobileMenuButton({
       aria-label="Menu"
       variant="ghost"
       size="icon"
-      className="sm:hidden"
+      className="md:hidden"
       onClick={onToggle}
     >
       {expanded ? (

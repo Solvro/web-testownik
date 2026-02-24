@@ -469,7 +469,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         Pominięcie przesyłania zdjęć może zmniejszyć dokładność
-                        niektórych pytań, zwłaszcza tych opartych na obrazach.
+                        niektórych pytań, zwłaszcza tych opartych na zdjęciach.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -561,7 +561,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                         </li>
                         <li>
                           <TypographyInlineCode>image_url</TypographyInlineCode>{" "}
-                          – adres obrazka pytania (opcjonalne).
+                          – adres zdjęcia pytania (opcjonalne).
                         </li>
                         <li>
                           <TypographyInlineCode>answers</TypographyInlineCode> –
@@ -591,7 +591,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                               <TypographyInlineCode>
                                 image_url
                               </TypographyInlineCode>{" "}
-                              – adres obrazka odpowiedzi (opcjonalne).
+                              – adres zdjęcia odpowiedzi (opcjonalne).
                             </li>
                           </ul>
                         </li>
