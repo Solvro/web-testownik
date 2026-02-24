@@ -10,7 +10,6 @@ import type { AnswerRecord, Question } from "@/types/quiz";
 export interface ProgressSettings {
   initialReoccurrences: number;
   wrongAnswerReoccurrences: number;
-  maxQuestionReoccurrences: number;
 }
 
 export interface RuntimeState {
@@ -84,7 +83,6 @@ export const initialRuntime: RuntimeState = {
   settings: {
     initialReoccurrences: 1,
     wrongAnswerReoccurrences: 1,
-    maxQuestionReoccurrences: 3,
   },
   isQuizFinished: false,
   showHistory: false,
