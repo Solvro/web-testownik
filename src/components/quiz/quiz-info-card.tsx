@@ -182,6 +182,7 @@ export function QuizInfoCard({
                 variant="destructive"
                 size="sm"
                 onClick={resetProgress}
+                disabled={totalQuestions === 0}
                 aria-label="Resetuj postęp"
               >
                 <RotateCcwIcon className="size-4" /> Reset

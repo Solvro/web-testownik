@@ -104,7 +104,7 @@ export function AnswerForm({
                 type="button"
                 onClick={onToggleCorrect}
                 className={cn(
-                  "mt-2 flex size-5 shrink-0 items-center justify-center border-2 text-white transition-all duration-300",
+                  "mt-2 flex size-5 shrink-0 items-center justify-center border-2 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:outline-none",
                   isMultiple ? "rounded" : "rounded-full",
                   answer.is_correct
                     ? "border-green-500 bg-green-500"

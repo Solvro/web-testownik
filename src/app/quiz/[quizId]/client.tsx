@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, startTransition, useContext, useEffect } from "react";
 import ReactPlayer from "react-player";
@@ -8,6 +9,9 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
+import { ExternalImageContext } from "@/components/quiz/external-image-context";
+import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
+import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
@@ -16,6 +20,13 @@ import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 
 interface QuizPageClientProps {
@@ -44,8 +55,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     masteredCount,
     totalQuestions,
     timerStore,
-    answers,
   } = stats;
+  const answers = quiz.current_session?.answers ?? [];
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
@@ -54,8 +65,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setSelectedAnswers,
     toggleHistory,
     toggleBrainrot,
-    goToPreviousQuestion,
+    togglePreviousQuestion,
   } = actions;
+
+  const {
+    isApproved: externalImagesApproved,
+    isInitialized,
+    domains: externalDomains,
+    approve: approveExternalImages,
+    hasExternalImages,
+  } = useExternalImageApproval(quiz);
 
   const handleToggleBrainrot = () => {
     startTransition(() => {
@@ -94,7 +113,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   }, [quiz]);
 
   return (
-    <>
+    <ExternalImageContext.Provider
+      value={{ externalImagesApproved, isInitialized }}
+    >
+      {isInitialized && hasExternalImages && !externalImagesApproved ? (
+        <ExternalImageWarning
+          domains={externalDomains}
+          onApprove={approveExternalImages}
+        />
+      ) : null}
+
       <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div
           className={cn(
@@ -102,30 +130,49 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             showBrainrot ? "lg:col-span-3" : "lg:col-span-4",
           )}
         >
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
-              <QuestionCard
-                quizId={quiz.id}
-                question={currentQuestion}
-                selectedAnswers={selectedAnswers}
-                setSelectedAnswers={(newSelected) => {
-                  // If question is not multiple, unselect everything except the new
-                  if (currentQuestion !== null && !currentQuestion.multiple) {
-                    setSelectedAnswers(
-                      newSelected.length > 0 ? [newSelected[0]] : [],
-                    );
-                  } else {
-                    setSelectedAnswers(newSelected);
-                  }
-                }}
-                questionChecked={questionChecked}
-                nextAction={nextAction}
-                isQuizFinished={isQuizFinished}
-                restartQuiz={resetProgress}
-                goToPreviousQuestion={goToPreviousQuestion}
-                isHistoryQuestion={isHistoryQuestion}
-                canGoBack={canGoBack}
-              />
+              {quiz.questions.length === 0 ? (
+                <Card>
+                  <CardContent>
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <FileQuestionMarkIcon />
+                        </EmptyMedia>
+                        <EmptyTitle>Brak pytań</EmptyTitle>
+                        <EmptyDescription>
+                          W tym quizie nie ma jeszcze żadnych pytań.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </CardContent>
+                </Card>
+              ) : (
+                <QuestionCard
+                  quizId={quiz.id}
+                  question={currentQuestion}
+                  selectedAnswers={selectedAnswers}
+                  setSelectedAnswers={(newSelected) => {
+                    // If question is not multiple, unselect everything except the new
+                    if (currentQuestion !== null && !currentQuestion.multiple) {
+                      setSelectedAnswers(
+                        newSelected.length > 0 ? [newSelected[0]] : [],
+                      );
+                    } else {
+                      setSelectedAnswers(newSelected);
+                    }
+                  }}
+                  answers={answers}
+                  questionChecked={questionChecked}
+                  nextAction={nextAction}
+                  isQuizFinished={isQuizFinished}
+                  restartQuiz={resetProgress}
+                  togglePreviousQuestion={togglePreviousQuestion}
+                  isHistoryQuestion={isHistoryQuestion}
+                  canGoBack={canGoBack}
+                />
+              )}
             </ViewTransition>
           </div>
           <ViewTransition name="quiz-info" update="h-full">
@@ -150,7 +197,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           </ViewTransition>
         </div>
         {showBrainrot ? (
-          <div className="animate-in fade-in slide-in-from-right duration-300">
+          <div className="animate-in fade-in lg:slide-in-from-right duration-300">
             <Card>
               <CardContent>
                 <AspectRatio
@@ -186,7 +233,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
       />
-    </>
+    </ExternalImageContext.Provider>
   );
 }
 

@@ -7,10 +7,11 @@ import {
   SkullIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export function QuizActionButtons({
 }: QuizActionButtonsProps) {
   const appContext = useContext(AppContext);
   const router = useRouter();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isMaintainer =
     (quiz.can_edit ?? false) ||
@@ -82,10 +84,14 @@ export function QuizActionButtons({
 
   const handleEdit = () => {
     if (question == null) {
-      toast.error("Nie można edytować pytania: brak pytania");
+      router.push(`/edit-quiz/${quiz.id}`);
       return;
     }
-    router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
+    if (appContext.isGuest) {
+      router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
+      return;
+    }
+    setIsEditOpen(true);
   };
 
   return (
@@ -146,13 +152,14 @@ export function QuizActionButtons({
                 variant="outline"
                 size="icon"
                 onClick={handleEdit}
-                disabled={!canUseQuestion}
                 aria-label="Edytuj pytanie"
               >
                 <PencilLineIcon />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Edytuj pytanie</TooltipContent>
+            <TooltipContent>
+              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
+            </TooltipContent>
           </Tooltip>
         ) : null}
         <Tooltip>
@@ -161,7 +168,6 @@ export function QuizActionButtons({
               variant="outline"
               size="icon"
               onClick={onToggleHistory}
-              disabled={!canUseQuestion}
               aria-label="Historia odpowiedzi"
             >
               <HistoryIcon />
@@ -183,6 +189,15 @@ export function QuizActionButtons({
           <TooltipContent>Brainrot mode</TooltipContent>
         </Tooltip>
       </CardContent>
+      {question == null ? null : (
+        <QuickEditQuestionDialog
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          question={question}
+          quizId={quiz.id}
+          key={question.id}
+        />
+      )}
     </Card>
   );
 }

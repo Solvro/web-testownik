@@ -1,26 +1,30 @@
 /**
  * Session utilities for computing quiz progress from answer history.
  */
-import type { AnswerRecord, Question } from "@/types/quiz.ts";
+import type {
+  AnswerRecord,
+  Question,
+  QuizSession,
+  QuizWithUserProgress,
+} from "@/types/quiz";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
+import type { UserSettings } from "@/types/user";
 
-interface ProgressSettings {
-  initialReoccurrences: number;
-  wrongAnswerReoccurrences: number;
-}
+import { getDeterministicShuffle } from "./shuffle-utils";
 
 /**
  * Compute remaining attempts for a specific question based on answer history.
  *
  * Logic:
- * - Start with initialReoccurrences
+ * - Start with initial_reoccurrences
  * - Each correct answer decrements by 1
- * - Each wrong answer increments by wrongAnswerReoccurrences
+ * - Each wrong answer increments by wrong_answer_reoccurrences
  * - Minimum is 0 (question is mastered)
  */
 export function getRemainingAttempts(
   questionId: string,
   answers: AnswerRecord[],
-  settings: ProgressSettings,
+  settings: UserSettings,
 ): number {
   // Filter answers for this question, sorted by time
   const questionAnswers = answers
@@ -30,13 +34,13 @@ export function getRemainingAttempts(
         new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime(),
     );
 
-  let remaining = settings.initialReoccurrences;
+  let remaining = settings.initial_reoccurrences;
 
   for (const answer of questionAnswers) {
     if (answer.was_correct) {
       remaining = Math.max(0, remaining - 1);
     } else {
-      remaining += settings.wrongAnswerReoccurrences;
+      remaining += settings.wrong_answer_reoccurrences;
     }
   }
 
@@ -49,7 +53,7 @@ export function getRemainingAttempts(
 export function getUnansweredQuestions(
   questions: Question[],
   answers: AnswerRecord[],
-  settings: ProgressSettings,
+  settings: UserSettings,
 ): Question[] {
   return questions.filter(
     (q) => getRemainingAttempts(q.id, answers, settings) > 0,
@@ -62,7 +66,7 @@ export function getUnansweredQuestions(
 export function isQuizComplete(
   questions: Question[],
   answers: AnswerRecord[],
-  settings: ProgressSettings,
+  settings: UserSettings,
 ): boolean {
   return questions.every(
     (q) => getRemainingAttempts(q.id, answers, settings) === 0,
@@ -75,7 +79,7 @@ export function isQuizComplete(
 export function getMasteredCount(
   questions: Question[],
   answers: AnswerRecord[],
-  settings: ProgressSettings,
+  settings: UserSettings,
 ): number {
   return questions.filter(
     (q) => getRemainingAttempts(q.id, answers, settings) === 0,
@@ -101,12 +105,19 @@ export function getAnswerCounts(answers: AnswerRecord[]): {
  * Strategy: Pick a random question from those with remaining attempts > 0,
  * avoiding the current question if possible.
  */
-export function pickNextQuestion(
-  questions: Question[],
-  answers: AnswerRecord[],
-  settings: ProgressSettings,
-  currentQuestionId: string | null,
-): Question | null {
+export function pickNextQuestion({
+  questions,
+  answers,
+  settings,
+  currentQuestionId,
+  seed,
+}: {
+  questions: Question[];
+  answers: AnswerRecord[];
+  settings: UserSettings;
+  currentQuestionId?: string | null;
+  seed?: string;
+}): Question | null {
   const unanswered = getUnansweredQuestions(questions, answers, settings);
 
   if (unanswered.length === 0) {
@@ -121,7 +132,7 @@ export function pickNextQuestion(
 
   return {
     ...question,
-    answers: question.answers.toSorted(() => Math.random() - 0.5),
+    answers: getDeterministicShuffle(question.answers, seed ?? question.id),
   };
 }
 
@@ -143,4 +154,80 @@ export function checkAnswerCorrectness(
     selectedSet.size === correctSet.size &&
     [...selectedSet].every((id) => correctSet.has(id))
   );
+}
+
+export function createAnswerRecord(
+  questionId: string,
+  selectedAnswers: string[],
+  wasCorrect: boolean,
+): AnswerRecord {
+  return {
+    id: crypto.randomUUID(),
+    question: questionId,
+    answered_at: new Date().toISOString(),
+    selected_answers: selectedAnswers,
+    was_correct: wasCorrect,
+  };
+}
+
+export function deriveSettings(
+  userSettings?: UserSettings | null,
+): UserSettings {
+  return {
+    ...DEFAULT_USER_SETTINGS,
+    ...userSettings,
+  };
+}
+
+export function resolveCurrentQuestion(
+  quiz: QuizWithUserProgress,
+  settings: UserSettings,
+): Question | null {
+  const session = quiz.current_session;
+  const answers = session?.answers ?? [];
+
+  if (session?.current_question != null) {
+    const savedQuestion = quiz.questions.find(
+      (q) => q.id === session.current_question,
+    );
+    if (savedQuestion !== undefined) {
+      const seed = `${session.id}-${String(session.study_time)}`;
+      return {
+        ...savedQuestion,
+        answers: getDeterministicShuffle(savedQuestion.answers, seed),
+      };
+    }
+  }
+
+  return pickNextQuestion({
+    questions: quiz.questions,
+    answers,
+    settings,
+    seed:
+      session == null
+        ? undefined
+        : `${session.id}-${String(session.study_time)}`,
+  });
+}
+
+export function buildFallbackSession(
+  quiz: QuizWithUserProgress,
+  settings: UserSettings,
+): QuizSession {
+  const firstQuestion = pickNextQuestion({
+    questions: quiz.questions,
+    answers: [],
+    settings,
+    currentQuestionId: null,
+  });
+
+  return {
+    id: crypto.randomUUID(),
+    started_at: new Date().toISOString(),
+    ended_at: null,
+    is_active: true,
+    study_time: 0,
+    current_question: firstQuestion?.id ?? null,
+    answers: [],
+  };
 }
