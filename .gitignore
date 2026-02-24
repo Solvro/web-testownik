@@ -27,4 +27,5 @@ coverage
 .next
 .eslintcache
 /tsconfig.tsbuildinfo
+.env
 next-env.d.ts
