@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { AppContextProvider } from "@/app-context-provider";
 import { FormbricksProvider } from "@/app/formbricks";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getQueryClient } from "@/lib/query-client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,18 +15,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AppContextProvider>
       <QueryClientProvider client={queryClient}>
-        <Suspense>
-          <FormbricksProvider />
-        </Suspense>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        <TooltipProvider delay={0}>
+          <Suspense>
+            <FormbricksProvider />
+          </Suspense>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </TooltipProvider>
       </QueryClientProvider>
     </AppContextProvider>
   );

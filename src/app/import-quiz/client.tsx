@@ -219,11 +219,13 @@ function ImportQuizPageContent(): React.JSX.Element {
                   open={isErrorDialogOpen}
                   onOpenChange={setIsErrorDialogOpen}
                 >
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      Pokaż szczegóły
-                    </Button>
-                  </DialogTrigger>
+                  <DialogTrigger
+                    render={
+                      <Button variant="outline" size="sm">
+                        Pokaż szczegóły
+                      </Button>
+                    }
+                  ></DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Szczegóły błędu</DialogTitle>
@@ -258,7 +260,7 @@ function ImportQuizPageContent(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="dark:bg-background mx-auto grid h-auto grid-cols-3 py-0.75 dark:border">
+            <TabsList className="mx-auto grid h-auto grid-cols-3 py-0.75">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="legacy">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
@@ -267,7 +269,7 @@ function ImportQuizPageContent(): React.JSX.Element {
               <div className="space-y-2">
                 <Label htmlFor="file-input">Plik JSON z quizem</Label>
                 <div
-                  className="hover:bg-accent/40 dark:bg-input/30 border-input cursor-pointer rounded-md border p-6 text-center shadow-xs transition-colors"
+                  className="hover:bg-accent/40 dark:bg-input/30 bg-input border-border cursor-pointer rounded-md border p-6 text-center shadow-xs transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                   onDrop={handleFileDrop}
                   onDragOver={handleDragOverFile}
@@ -322,7 +324,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                   <div className="space-y-2 md:col-span-5">
                     <Label htmlFor="file-old-input">Plik zip z pytaniami</Label>
                     <div
-                      className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
+                      className="hover:bg-muted/40 dark:bg-input/30 bg-input border-border dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
                       onClick={() => fileOldRef.current?.click()}
                       onDrop={handleFileDrop}
                       onDragOver={handleDragOverFile}
@@ -363,7 +365,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                   <div className="space-y-2 md:col-span-5">
                     <Label htmlFor="directory-input">Folder z pytaniami</Label>
                     <div
-                      className="hover:bg-muted/40 dark:bg-input/30 border-input dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
+                      className="hover:bg-muted/40 dark:bg-input/30 bg-input border-border dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
                       onClick={() => directoryInputRef.current?.click()}
                       onDrop={handleDirectoryDrop}
                       onDragOver={handleDragOverDirectory}
@@ -457,11 +459,17 @@ function ImportQuizPageContent(): React.JSX.Element {
                   value={(uploadProgress.current / uploadProgress.total) * 100}
                 />
                 <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="mt-2 w-full">
-                      Kontynuuj bez zdjęć
-                    </Button>
-                  </AlertDialogTrigger>
+                  <AlertDialogTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 w-full"
+                      >
+                        Kontynuuj bez zdjęć
+                      </Button>
+                    }
+                  ></AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
@@ -497,15 +505,17 @@ function ImportQuizPageContent(): React.JSX.Element {
       />
       {uploadType === "json" || uploadType === "file" ? (
         <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="link"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Jak powinien wyglądać quiz w formacie JSON?
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Jak powinien wyglądać quiz w formacie JSON?
+              </Button>
+            }
+          ></DialogTrigger>
           <DialogContent className="flex h-[90dvh] flex-col sm:max-w-[90dvw] md:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Format JSON quizu</DialogTitle>
@@ -678,9 +688,9 @@ function ImportQuizPageContent(): React.JSX.Element {
                 {checkIcon ? <CheckIcon /> : <CopyIcon />}
                 Kopiuj instrukcję
               </Button>
-              <DialogClose asChild>
-                <Button variant="outline">Zamknij</Button>
-              </DialogClose>
+              <DialogClose
+                render={<Button variant="outline">Zamknij</Button>}
+              ></DialogClose>
             </DialogFooter>
           </DialogContent>
         </Dialog>

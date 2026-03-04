@@ -71,7 +71,7 @@ export function AboutCard({
                       >
                         <Avatar className="border-ring border">
                           <AvatarImage src={`${contributor.avatar_url}&s=48`} />
-                          <AvatarFallback delayMs={600}>
+                          <AvatarFallback delay={600}>
                             {getInitials(contributor.login)}
                           </AvatarFallback>
                         </Avatar>

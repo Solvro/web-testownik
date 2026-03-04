@@ -1,3 +1,5 @@
+"use client";
+
 import { Import, LayersPlus } from "lucide-react";
 import Link from "next/link";
 
@@ -10,18 +12,24 @@ export function ImportButtonsCard({
   return (
     <Card {...props}>
       <CardContent className="flex h-full flex-col flex-wrap content-center justify-center gap-3">
-        <Button asChild>
-          <Link href="/create-quiz">
-            <LayersPlus className="size-6" />
-            Dodaj nowy quiz
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href="/import-quiz">
-            <Import className="size-6" />
-            Importuj quiz
-          </Link>
-        </Button>
+        <Button
+          nativeButton={false}
+          render={(rendererProps) => (
+            <Link {...rendererProps} href="/create-quiz">
+              <LayersPlus className="size-6" />
+              Dodaj nowy quiz
+            </Link>
+          )}
+        ></Button>
+        <Button
+          nativeButton={false}
+          render={(rendererProps) => (
+            <Link {...rendererProps} href="/import-quiz">
+              <Import className="size-6" />
+              Importuj quiz
+            </Link>
+          )}
+        ></Button>
       </CardContent>
     </Card>
   );

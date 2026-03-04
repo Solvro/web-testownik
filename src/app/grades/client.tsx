@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -58,6 +59,11 @@ function GradesContent() {
   });
 
   const terms = gradesData?.terms ?? [];
+  const termsItems =
+    gradesData?.terms.map((item) => ({
+      label: item.name,
+      value: item.id,
+    })) ?? [];
   const courses = gradesData?.courses ?? [];
 
   const [selectedTerm, setSelectedTerm] = useState<string>("");
@@ -222,10 +228,12 @@ function GradesContent() {
             <Label htmlFor="term-select" className="sr-only">
               Semestr
             </Label>
+
             <Select
-              value={selectedTerm}
+              items={termsItems}
+              defaultValue={selectedTerm}
               onValueChange={(value) => {
-                setSelectedTerm(value);
+                setSelectedTerm(value ?? "");
                 setEditing(false);
                 setEditedGrades({});
               }}
@@ -235,11 +243,13 @@ function GradesContent() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {terms.map((term) => (
-                  <SelectItem key={term.id} value={term.id}>
-                    {term.name}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {terms.map((term) => (
+                    <SelectItem key={term.id} value={term.id}>
+                      {term.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -320,25 +330,27 @@ function GradesContent() {
         </div>
         <div className="flex justify-end">
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                className={
-                  editing
-                    ? "bg-yellow-500 text-white hover:bg-yellow-600 hover:text-white dark:bg-yellow-600 dark:hover:bg-yellow-700"
-                    : ""
-                }
-                pressed={editing}
-                onPressedChange={(pressed) => {
-                  setEditing(pressed);
-                  if (!pressed) {
-                    setEditedGrades({});
+            <TooltipTrigger
+              render={
+                <Toggle
+                  className={
+                    editing
+                      ? "bg-yellow-500 text-white hover:bg-yellow-600 hover:text-white dark:bg-yellow-600 dark:hover:bg-yellow-700"
+                      : ""
                   }
-                }}
-              >
-                <span>Tryb edycji</span>
-                <NotebookPenIcon />
-              </Toggle>
-            </TooltipTrigger>
+                  pressed={editing}
+                  onPressedChange={(pressed) => {
+                    setEditing(pressed);
+                    if (!pressed) {
+                      setEditedGrades({});
+                    }
+                  }}
+                >
+                  <span>Tryb edycji</span>
+                  <NotebookPenIcon />
+                </Toggle>
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               {editing
                 ? "Tryb edycji (oceny nie są zapisywane, służy do podglądu średniej)"

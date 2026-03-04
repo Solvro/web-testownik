@@ -75,12 +75,15 @@ export default function QuizError({
             >
               <RotateCcwIcon /> Spróbuj ponownie
             </Button>
-            <Link href="/connect-account">
-              <Button>
-                <LogInIcon />
-                Zaloguj się
-              </Button>
-            </Link>
+            <Button
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href="/connect-account">
+                  <LogInIcon />
+                  Zaloguj się
+                </Link>
+              )}
+            ></Button>
           </div>
         </EmptyContent>
       </Empty>
@@ -106,23 +109,31 @@ export default function QuizError({
         </EmptyHeader>
         <EmptyContent>
           <div className="flex justify-center gap-2">
-            <Button asChild variant="outline">
-              <Link href="/">
-                <HomeIcon />
-                Strona główna
-              </Link>
-            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href="/">
+                  <HomeIcon />
+                  Strona główna
+                </Link>
+              )}
+            ></Button>
             {!appContext.isAuthenticated && (
-              <Button asChild>
-                <a
-                  href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-                    currentUrl,
-                  )}`}
-                >
-                  <LogInIcon />
-                  Zaloguj się
-                </a>
-              </Button>
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link
+                    {...props}
+                    href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+                      currentUrl,
+                    )}`}
+                  >
+                    <LogInIcon />
+                    Zaloguj się
+                  </Link>
+                )}
+              ></Button>
             )}
           </div>
         </EmptyContent>
@@ -153,7 +164,7 @@ export default function QuizError({
         )}
       </EmptyHeader>
       <EmptyContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           <AccordionItem value="error-details" className="border-none">
             <AccordionTrigger className="justify-center gap-2 py-2 hover:no-underline">
               Szczegóły błędu
@@ -176,34 +187,43 @@ export default function QuizError({
             Spróbuj ponownie
           </Button>
           {appContext.isAuthenticated ? (
-            <Button asChild variant="outline">
-              <Link href="/">
-                <HomeIcon />
-                Strona główna
-              </Link>
-            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href="/">
+                  <HomeIcon />
+                  Strona główna
+                </Link>
+              )}
+            ></Button>
           ) : (
-            <Button asChild variant="outline">
-              <a
-                href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-                  currentUrl,
-                )}`}
-              >
-                <LogInIcon />
-                Zaloguj się
-              </a>
-            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={(props) => (
+                <Link
+                  {...props}
+                  href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+                    currentUrl,
+                  )}`}
+                >
+                  <LogInIcon />
+                  Zaloguj się
+                </Link>
+              )}
+            ></Button>
           )}
         </div>
         <EmptyDescription>
           Jeśli problem się powtarza, możesz utworzyć zgłoszenie na{" "}
-          <a
+          <Link
             href="https://github.com/solvro/web-testownik/issues"
             target="_blank"
             rel="noreferrer"
           >
             GitHubie
-          </a>
+          </Link>
           .
         </EmptyDescription>
       </EmptyContent>

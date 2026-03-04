@@ -105,13 +105,14 @@ export function ProfilePageClient(): React.JSX.Element {
           <TabsTrigger
             value="privacy-policy"
             className="hidden md:inline-flex md:w-full md:justify-start"
-            asChild
-          >
-            <Link href="/privacy-policy" target="_blank">
-              Polityka prywatności
-              <SquareArrowOutUpRightIcon />
-            </Link>
-          </TabsTrigger>
+            nativeButton={false}
+            render={(props) => (
+              <Link {...props} href="/privacy-policy" target="_blank">
+                Polityka prywatności
+                <SquareArrowOutUpRightIcon />
+              </Link>
+            )}
+          ></TabsTrigger>
         </TabsList>
         <div className="space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
