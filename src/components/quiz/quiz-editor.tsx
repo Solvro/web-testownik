@@ -413,9 +413,10 @@ export function QuizEditor(props: QuizEditorProps) {
                 <div className="flex items-center gap-3">
                   <Checkbox
                     id="all-multiple"
-                    checked={allQuestionsMultiple ?? "indeterminate"}
+                    indeterminate={allQuestionsMultiple === null}
+                    checked={allQuestionsMultiple === true}
                     onCheckedChange={(checked) => {
-                      setAllQuestionsMultiple(Boolean(checked));
+                      setAllQuestionsMultiple(checked satisfies boolean);
                     }}
                   />
                   <Label htmlFor="all-multiple" className="cursor-pointer">

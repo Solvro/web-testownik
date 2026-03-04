@@ -7,6 +7,7 @@ import {
   LogInIcon,
   RefreshCwIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 
@@ -210,14 +211,20 @@ export function LoginPrompt(): React.JSX.Element {
               ) : null}
 
               <div className="mb-0 grid gap-2">
-                <Button asChild size="lg" className="w-full">
-                  <a
-                    href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
-                  >
-                    <LogInIcon />
-                    Zaloguj przez USOS
-                  </a>
-                </Button>
+                <Button
+                  size="lg"
+                  className="w-full"
+                  nativeButton={false}
+                  render={(props) => (
+                    <Link
+                      {...props}
+                      href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
+                    >
+                      <LogInIcon />
+                      Zaloguj przez USOS
+                    </Link>
+                  )}
+                ></Button>
 
                 <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center">
@@ -230,14 +237,21 @@ export function LoginPrompt(): React.JSX.Element {
                   </div>
                 </div>
 
-                <Button asChild variant="outline" size="lg" className="w-full">
-                  <a
-                    href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
-                  >
-                    <SolvroLogo width={20} />
-                    Zaloguj z Solvro Auth
-                  </a>
-                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  nativeButton={false}
+                  render={(props) => (
+                    <a
+                      {...props}
+                      href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
+                    >
+                      <SolvroLogo width={20} />
+                      Zaloguj z Solvro Auth
+                    </a>
+                  )}
+                ></Button>
 
                 <Button
                   variant="outline"
@@ -266,23 +280,23 @@ export function LoginPrompt(): React.JSX.Element {
             </CardContent>
             <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-1 border-t p-4 text-center text-xs">
               <span>Powered by</span>
-              <a
+              <Link
                 className="inline-flex items-center gap-1"
                 href="https://solvro.pwr.edu.pl/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <SolvroLogo width={16} /> Solvro
-              </a>
+              </Link>
               <span className="font-semibold">&</span>
               <span>created by</span>
-              <a
+              <Link
                 href="https://github.com/Antoni-Czaplicki"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Antoni Czaplicki
-              </a>
+              </Link>
             </div>
           </>
         )}

@@ -28,9 +28,6 @@ export function SearchResultsPopover({
       align="start"
       side="bottom"
       sideOffset={4}
-      onOpenAutoFocus={(event_) => {
-        event_.preventDefault();
-      }}
       className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
     >
       <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
@@ -51,7 +48,7 @@ export function SearchResultsPopover({
               >
                 <Avatar>
                   <AvatarImage src={result.photo} />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(
                       "full_name" in result ? result.full_name : result.name,
                     )}

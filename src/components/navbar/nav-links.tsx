@@ -77,14 +77,14 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
           Zgłoś błąd
         </Button>
         {isStaff ? (
-          <a
+          <Link
             href={`${API_URL}/admin/`}
             target="_blank"
             className="text-muted-foreground hover:text-foreground transition-colors"
             rel="noreferrer"
           >
             Panel administratora
-          </a>
+          </Link>
         ) : null}
         <ReportBugDialog
           open={showReportDialog}
@@ -99,41 +99,47 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
       <NavigationMenu className="hidden sm:flex" viewport={false}>
         <NavigationMenuList className="gap-2.5">
           <NavigationMenuItem>
-            <NavigationMenuLink active={isActive("/quizzes")} asChild>
-              <Link href="/quizzes">Twoje quizy</Link>
-            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={isActive("/quizzes")}
+              render={<Link href="/quizzes">Twoje quizy</Link>}
+            ></NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink active={isActive("/grades")} asChild>
-              <Link href="/grades" onMouseEnter={prefetchGrades}>
-                Oceny
-              </Link>
-            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={isActive("/grades")}
+              render={
+                <Link href="/grades" onMouseEnter={prefetchGrades}>
+                  Oceny
+                </Link>
+              }
+            ></NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink
               onClick={() => {
                 setShowReportDialog(true);
               }}
-              asChild
-            >
-              <Button variant="outline" className="font-normal">
-                Zgłoś błąd
-              </Button>
-            </NavigationMenuLink>
+              render={
+                <Button variant="outline" className="font-normal">
+                  Zgłoś błąd
+                </Button>
+              }
+            ></NavigationMenuLink>
           </NavigationMenuItem>
           {isStaff ? (
             <NavigationMenuItem>
-              <NavigationMenuLink asChild>
-                <a
-                  href={`${API_URL}/admin/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex"
-                >
-                  Panel administratora
-                </a>
-              </NavigationMenuLink>
+              <NavigationMenuLink
+                render={
+                  <a
+                    href={`${API_URL}/admin/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex"
+                  >
+                    Panel administratora
+                  </a>
+                }
+              ></NavigationMenuLink>
             </NavigationMenuItem>
           ) : null}
         </NavigationMenuList>

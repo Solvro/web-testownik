@@ -82,82 +82,108 @@ export function QuizCard({
                 </span>
               </div>
             ) : (
-              <Button size="sm" asChild disabled={isLoading}>
-                <Link
-                  href={onOpenPath(quiz)}
-                  onClick={() => {
-                    setIsLoading(true);
-                  }}
-                >
-                  Otwórz
-                </Link>
-              </Button>
+              <Button
+                size="sm"
+                disabled={isLoading}
+                nativeButton={false}
+                render={(rendererProps) => (
+                  <Link
+                    {...rendererProps}
+                    href={onOpenPath(quiz)}
+                    onClick={() => {
+                      setIsLoading(true);
+                    }}
+                  >
+                    Otwórz
+                  </Link>
+                )}
+              ></Button>
             )}
           </ViewTransition>
           <div className="flex gap-1 opacity-80">
             {Boolean(showEdit) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon-sm" asChild>
-                    <Link href={onEditPath(quiz)}>
-                      <PencilIcon />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      nativeButton={false}
+                      render={(rendererProps) => (
+                        <Link {...rendererProps} href={onEditPath(quiz)}>
+                          <PencilIcon />
+                        </Link>
+                      )}
+                    ></Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Edytuj quiz</TooltipContent>
               </Tooltip>
             )}
             {Boolean(showShare) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onShare?.(quiz)}
-                  >
-                    <ShareIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onShare?.(quiz)}
+                    >
+                      <ShareIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Udostępnij quiz</TooltipContent>
               </Tooltip>
             )}
             {showDownload ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onDownload?.(quiz)}
-                  >
-                    <DownloadIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onDownload?.(quiz)}
+                    >
+                      <DownloadIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Pobierz quiz</TooltipContent>
               </Tooltip>
             ) : null}
             {Boolean(showSearch) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon-sm" asChild>
-                    <Link href={onSearchPath(quiz)}>
-                      <SearchIcon />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      nativeButton={false}
+                      render={(rendererProps) => (
+                        <Link {...rendererProps} href={onSearchPath(quiz)}>
+                          <SearchIcon />
+                        </Link>
+                      )}
+                    ></Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Szukaj w quizie</TooltipContent>
               </Tooltip>
             )}
             {Boolean(showDelete) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onDelete?.(quiz)}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onDelete?.(quiz)}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Usuń quiz</TooltipContent>
               </Tooltip>
             )}

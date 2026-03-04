@@ -221,15 +221,17 @@ export function QuestionCard({
             <>
               {canGoBack && !questionChecked ? (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={goToPreviousQuestion}
-                    >
-                      <Undo2 />
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToPreviousQuestion}
+                      >
+                        <Undo2 />
+                      </Button>
+                    }
+                  ></TooltipTrigger>
                   <TooltipContent>Poprzednie pytanie</TooltipContent>
                 </Tooltip>
               ) : null}

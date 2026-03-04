@@ -389,22 +389,25 @@ export function ShareQuizDialog({
               open={open ? searchQuery.length > 0 : undefined}
               modal={true}
             >
-              <PopoverTrigger asChild>
-                <div className="relative w-full">
-                  <Input
-                    placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
-                    value={searchQuery}
-                    onChange={handleSearchInput}
-                    onKeyUp={() => {
-                      if (searchQuery.length >= 3) {
-                        void handleSearch(searchQuery);
-                      } else {
-                        setSearchResults([]);
-                      }
-                    }}
-                  />
-                </div>
-              </PopoverTrigger>
+              <PopoverTrigger
+                nativeButton={false}
+                render={
+                  <div className="relative w-full">
+                    <Input
+                      placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
+                      value={searchQuery}
+                      onChange={handleSearchInput}
+                      onKeyUp={() => {
+                        if (searchQuery.length >= 3) {
+                          void handleSearch(searchQuery);
+                        } else {
+                          setSearchResults([]);
+                        }
+                      }}
+                    />
+                  </div>
+                }
+              ></PopoverTrigger>
               {searchQuery.length > 0 && (
                 <SearchResultsPopover
                   searchResults={searchResults}
@@ -451,7 +454,7 @@ export function ShareQuizDialog({
                     allowAnonymous ? accessLevel >= AccessLevel.UNLISTED : false
                   }
                   onCheckedChange={(checked) => {
-                    setAllowAnonymous(Boolean(checked));
+                    setAllowAnonymous(checked satisfies boolean);
                   }}
                   disabled={accessLevel < AccessLevel.UNLISTED}
                 />
@@ -489,15 +492,17 @@ export function ShareQuizDialog({
             Kopiuj link
           </Button>
           <div className="flex flex-wrap-reverse gap-2">
-            <DialogClose asChild>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto"
-                disabled={isSaving}
-              >
-                Anuluj
-              </Button>
-            </DialogClose>
+            <DialogClose
+              render={
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={isSaving}
+                >
+                  Anuluj
+                </Button>
+              }
+            ></DialogClose>
             <Button
               className="w-full sm:w-auto"
               onClick={handleSave}

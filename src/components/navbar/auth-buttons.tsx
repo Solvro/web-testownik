@@ -43,21 +43,32 @@ export function AuthButtons({
   if (isGuest) {
     return (
       <>
-        <Button asChild>
-          <Link href="/profile">
-            <IdCardLanyardIcon />
-            <span>Gość</span>
-          </Link>
-        </Button>
+        <Button
+          nativeButton={false}
+          render={(props) => (
+            <Link {...props} href="/profile">
+              <IdCardLanyardIcon />
+              <span>Gość</span>
+            </Link>
+          )}
+        ></Button>
 
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="p-2" asChild>
-              <Link href="/connect-account">
-                <CloudUploadIcon />
-              </Link>
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                className="p-2"
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/connect-account">
+                    <CloudUploadIcon />
+                  </Link>
+                )}
+              ></Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent side="bottom">
             <p>Połącz konto</p>
           </TooltipContent>
@@ -68,34 +79,42 @@ export function AuthButtons({
 
   if (isAuthenticated) {
     return (
-      <Button asChild variant="cta">
-        <Link href="/profile">
-          {profilePicture === null ? (
-            <CircleUserRoundIcon className="size-6" />
-          ) : (
-            <Avatar className="size-6">
-              <AvatarImage src={profilePicture} className="user-avatar" />
-              <AvatarFallback delayMs={600} className="bg-transparent">
-                <CircleUserRoundIcon className="size-6" />
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <span>Profil</span>
-        </Link>
-      </Button>
+      <Button
+        variant="cta"
+        nativeButton={false}
+        render={(props) => (
+          <Link {...props} href="/profile">
+            {profilePicture === null ? (
+              <CircleUserRoundIcon className="size-6" />
+            ) : (
+              <Avatar className="size-6">
+                <AvatarImage src={profilePicture} className="user-avatar" />
+                <AvatarFallback delay={600} className="bg-transparent">
+                  <CircleUserRoundIcon className="size-6" />
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <span>Profil</span>
+          </Link>
+        )}
+      ></Button>
     );
   }
 
   return (
-    <Button asChild>
-      <a
-        href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-          currentUrl,
-        )}`}
-      >
-        <LogInIcon />
-        Zaloguj się
-      </a>
-    </Button>
+    <Button
+      nativeButton={false}
+      render={(props) => (
+        <Link
+          {...props}
+          href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+            currentUrl,
+          )}`}
+        >
+          <LogInIcon />
+          Zaloguj się
+        </Link>
+      )}
+    ></Button>
   );
 }

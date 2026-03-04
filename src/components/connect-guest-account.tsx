@@ -400,17 +400,19 @@ export function ConnectGuestAccount() {
             ) : null}
             <div className="flex flex-wrap justify-center gap-3">
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    disabled={
-                      categories.quizzes && selectedQuizIds.length === 0
-                        ? guestQuizzes.length > 0
-                        : false
-                    }
-                  >
-                    Rozpocznij migrację
-                  </Button>
-                </DialogTrigger>
+                <DialogTrigger
+                  render={
+                    <Button
+                      disabled={
+                        categories.quizzes && selectedQuizIds.length === 0
+                          ? guestQuizzes.length > 0
+                          : false
+                      }
+                    >
+                      Rozpocznij migrację
+                    </Button>
+                  }
+                ></DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Potwierdź migrację danych</DialogTitle>
@@ -436,14 +438,16 @@ export function ConnectGuestAccount() {
                     </p>
                   ) : null}
                   <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline">Anuluj</Button>
-                    </DialogClose>
-                    <DialogClose asChild>
-                      <Button onClick={executeMigration} disabled={migrating}>
-                        Potwierdź
-                      </Button>
-                    </DialogClose>
+                    <DialogClose
+                      render={<Button variant="outline">Anuluj</Button>}
+                    ></DialogClose>
+                    <DialogClose
+                      render={
+                        <Button onClick={executeMigration} disabled={migrating}>
+                          Potwierdź
+                        </Button>
+                      }
+                    ></DialogClose>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -491,23 +495,39 @@ export function ConnectGuestAccount() {
           )}
           <CardContent className="text-sm">
             <div className="grid gap-2">
-              <Button asChild>
-                <a
-                  href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-                    redirectUrl,
-                  )}`}
-                >
-                  Zaloguj się z USOS
-                </a>
-              </Button>
-              <Button asChild>
-                <a href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}>
-                  Zaloguj się z Solvro Auth
-                </a>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/">Anuluj i kontynuuj jako gość</Link>
-              </Button>
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link
+                    {...props}
+                    href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
+                      redirectUrl,
+                    )}`}
+                  >
+                    Zaloguj się z USOS
+                  </Link>
+                )}
+              ></Button>
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link
+                    {...props}
+                    href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}
+                  >
+                    Zaloguj się z Solvro Auth
+                  </Link>
+                )}
+              ></Button>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/">
+                    Anuluj i kontynuuj jako gość
+                  </Link>
+                )}
+              ></Button>
             </div>
             <div className="text-center">
               <Button
@@ -530,9 +550,15 @@ export function ConnectGuestAccount() {
             Migracja danych jest dostępna tylko dla użytkowników zalogowanych
             jako gość.
             <div className="mt-2">
-              <Button variant="outline" asChild>
-                <Link href="/">Strona główna</Link>
-              </Button>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/">
+                    Strona główna
+                  </Link>
+                )}
+              ></Button>
             </div>
           </AlertDescription>
         </Alert>

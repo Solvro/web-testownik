@@ -65,24 +65,26 @@ function PersistentTooltip({
   const [open, setOpen] = useState(false);
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delay={0}>
       <Tooltip open={open} onOpenChange={setOpen}>
-        <TooltipTrigger asChild>
-          <Toggle
-            pressed={pressed}
-            onPressedChange={(value) => {
-              setOpen(true);
-              onPressedChange(value);
-            }}
-            size="sm"
-            className={cn(
-              "size-8 rounded-full p-0 transition-colors",
-              pressed ? classNamePressed : classNameUnpressed,
-            )}
-          >
-            {pressed ? <IconPressed /> : <IconUnpressed />}
-          </Toggle>
-        </TooltipTrigger>
+        <TooltipTrigger
+          render={
+            <Toggle
+              pressed={pressed}
+              onPressedChange={(value) => {
+                setOpen(true);
+                onPressedChange(value);
+              }}
+              size="sm"
+              className={cn(
+                "size-8 rounded-full p-0 transition-colors",
+                pressed ? classNamePressed : classNameUnpressed,
+              )}
+            >
+              {pressed ? <IconPressed /> : <IconUnpressed />}
+            </Toggle>
+          }
+        ></TooltipTrigger>
         <TooltipContent side="top" align="center">
           {pressed ? tooltipContentPressed : tooltipContentUnpressed}
         </TooltipContent>
@@ -118,7 +120,7 @@ export function AccessList({
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage src={quizMetadata.maintainer.photo} />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(quizMetadata.maintainer.full_name)}
                   </AvatarFallback>
                 </Avatar>
@@ -154,7 +156,7 @@ export function AccessList({
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage src={user.photo} />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(user.full_name)}
                   </AvatarFallback>
                 </Avatar>
@@ -193,7 +195,7 @@ export function AccessList({
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage src={group.photo} />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(group.name)}
                   </AvatarFallback>
                 </Avatar>

@@ -99,26 +99,28 @@ export function AnswerForm({
       <div className="space-y-2">
         <div className="flex items-start gap-2">
           <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={onToggleCorrect}
-                className={cn(
-                  "mt-2 flex size-5 shrink-0 items-center justify-center border-2 text-white transition-all duration-300",
-                  isMultiple ? "rounded" : "rounded-full",
-                  answer.is_correct
-                    ? "border-green-500 bg-green-500"
-                    : "border-muted-foreground/30 hover:border-muted-foreground/50",
-                )}
-                aria-label={
-                  answer.is_correct
-                    ? "Oznacz jako niepoprawną"
-                    : "Oznacz jako poprawną"
-                }
-              >
-                {answer.is_correct ? <CheckIcon strokeWidth={3} /> : null}
-              </button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={onToggleCorrect}
+                  className={cn(
+                    "mt-2 flex size-5 shrink-0 items-center justify-center border-2 text-white transition-all duration-300",
+                    isMultiple ? "rounded" : "rounded-full",
+                    answer.is_correct
+                      ? "border-green-500 bg-green-500"
+                      : "border-muted-foreground/30 hover:border-muted-foreground/50",
+                  )}
+                  aria-label={
+                    answer.is_correct
+                      ? "Oznacz jako niepoprawną"
+                      : "Oznacz jako poprawną"
+                  }
+                >
+                  {answer.is_correct ? <CheckIcon strokeWidth={3} /> : null}
+                </button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               <p>
                 {answer.is_correct
@@ -143,19 +145,21 @@ export function AnswerForm({
           />
 
           <Tooltip>
-            <TooltipTrigger asChild>
-              <ImageButton
-                image={answer.image}
-                imageUrl={answer.image_url}
-                imageUploadId={answer.image_upload}
-                imageWidth={answer.image_width}
-                imageHeight={answer.image_height}
-                onImageChange={handleImageChange}
-                onUpload={handleUpload}
-                isUploading={isImageUploading}
-                className="mt-0.5"
-              />
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <ImageButton
+                  image={answer.image}
+                  imageUrl={answer.image_url}
+                  imageUploadId={answer.image_upload}
+                  imageWidth={answer.image_width}
+                  imageHeight={answer.image_height}
+                  onImageChange={handleImageChange}
+                  onUpload={handleUpload}
+                  isUploading={isImageUploading}
+                  className="mt-0.5"
+                />
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               {answer.image === null ? "Dodaj zdjęcie" : "Zarządzaj zdjęciem"}
             </TooltipContent>
