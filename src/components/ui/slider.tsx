@@ -20,11 +20,20 @@ function Slider({
     if (isNumberArray(value)) {
       return value;
     }
+
+    if (typeof value === "number") {
+      return [value];
+    }
+
     if (isNumberArray(defaultValue)) {
       return defaultValue;
     }
-    return [min, max];
-  }, [value, defaultValue, min, max]);
+    if (typeof defaultValue === "number") {
+      return [defaultValue];
+    }
+
+    return [min];
+  }, [value, defaultValue, min]);
 
   return (
     <SliderPrimitive.Root

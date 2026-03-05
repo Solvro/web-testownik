@@ -12,8 +12,10 @@ const tableVariants = cva(
     variants: {
       variant: {
         default: "[&_tbody>tr]:py-2 [&_tbody>tr>td:last-child]:font-normal",
-        border:
+        gradient:
           "dark:bg-linear-to-r dark:from-(--card-gradient-from) to-(--card-gradient-to) [&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
+        border:
+          "[&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
       },
     },
     defaultVariants: {
@@ -28,9 +30,9 @@ function Table({
   ...props
 }: React.ComponentProps<"table"> & VariantProps<typeof tableVariants>) {
   const wrapperClass =
-    variant === "default"
-      ? undefined
-      : "border border-border rounded-[10px] overflow-hidden";
+    variant === "border"
+      ? "border border-border rounded-[10px] overflow-hidden"
+      : undefined;
 
   return (
     <div data-slot="table-container" className={wrapperClass}>
@@ -98,7 +100,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-0.5",
         className,
       )}
       {...props}
@@ -111,7 +113,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-0.5",
         className,
       )}
       {...props}
