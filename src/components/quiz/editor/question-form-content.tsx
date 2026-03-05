@@ -246,13 +246,17 @@ export function QuestionFormContent({
             <span className="text-muted-foreground text-xs font-medium">
               Odpowiedzi
             </span>
-            <HoverCard openDelay={100} closeDelay={200}>
-              <HoverCardTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-xs">
-                  <CircleHelp className="text-muted-foreground size-4" />
-                  <span className="sr-only">Pomoc</span>
-                </Button>
-              </HoverCardTrigger>
+            <HoverCard>
+              <HoverCardTrigger
+                delay={100}
+                closeDelay={200}
+                render={
+                  <Button type="button" variant="ghost" size="icon-xs">
+                    <CircleHelp className="text-muted-foreground size-4" />
+                    <span className="sr-only">Pomoc</span>
+                  </Button>
+                }
+              ></HoverCardTrigger>
               <HoverCardContent className="w-80 space-y-2" align="start">
                 <h4 className="text-sm font-semibold">Wskazówki</h4>
                 <p className="text-sm">
@@ -268,23 +272,25 @@ export function QuestionFormContent({
             </HoverCard>
           </div>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="ml-auto flex items-center gap-1.5 px-2">
-                <Checkbox
-                  id={`multiple-${question.id}`}
-                  checked={question.multiple}
-                  onCheckedChange={(checked) => {
-                    onUpdate({ multiple: Boolean(checked) });
-                  }}
-                />
-                <Label
-                  htmlFor={`multiple-${question.id}`}
-                  className="cursor-pointer text-xs"
-                >
-                  Multi
-                </Label>
-              </div>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <div className="ml-auto flex items-center gap-1.5 px-2">
+                  <Checkbox
+                    id={`multiple-${question.id}`}
+                    checked={question.multiple}
+                    onCheckedChange={(checked) => {
+                      onUpdate({ multiple: checked satisfies boolean });
+                    }}
+                  />
+                  <Label
+                    htmlFor={`multiple-${question.id}`}
+                    className="cursor-pointer text-xs"
+                  >
+                    Multi
+                  </Label>
+                </div>
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               <p>Wielokrotny wybór</p>
             </TooltipContent>
