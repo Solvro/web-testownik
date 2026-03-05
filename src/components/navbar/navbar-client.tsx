@@ -5,10 +5,10 @@ import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
+import { AuthButtons } from "@/components/navbar/auth-buttons";
 import { LogoutButton } from "@/components/navbar/logout-button";
 import type { JWTPayload } from "@/lib/auth/types";
 
-import { AuthButtons } from "./auth-buttons";
 import { MobileMenu } from "./mobile-menu";
 import { MobileMenuButton } from "./mobile-menu-button";
 import { NavLinks } from "./nav-links";
@@ -45,7 +45,7 @@ export function NavbarClient({
           <NavLinks isStaff={isStaff} variant="desktop" />
         </div>
         <div className="hidden items-center gap-2 md:flex">
-          <NavbarActions
+          <AuthButtons
             isAuthenticated={isAuthenticated}
             isGuest={isGuestMode}
             profilePicture={profilePicture}

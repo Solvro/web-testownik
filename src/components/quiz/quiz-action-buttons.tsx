@@ -152,11 +152,7 @@ export function QuizActionButtons({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleEdit}
-                >
+                <Button variant="outline" size="icon" onClick={handleEdit}>
                   <PencilLineIcon />
                 </Button>
               }
@@ -166,27 +162,14 @@ export function QuizActionButtons({
             </TooltipContent>
           </Tooltip>
         ) : null}
-        {isMaintainer ? (
-          <Tooltip>
-            <TooltipTrigger render={
-              <Button variant="outline" size="icon" onClick={handleEdit}>
-                <PencilLineIcon />
-              </Button>
-              }>
-              
-            </TooltipTrigger>
-            <TooltipContent>
-              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
         <Tooltip>
-          <TooltipTrigger render={
-            <Button variant="outline" size="icon" onClick={onToggleHistory}>
-              <HistoryIcon />
-            </Button>
-            }>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button variant="outline" size="icon" onClick={onToggleHistory}>
+                <HistoryIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Historia odpowiedzi</TooltipContent>
         </Tooltip>
         <Tooltip>

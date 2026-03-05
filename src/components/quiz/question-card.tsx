@@ -154,15 +154,16 @@ export function QuestionCard({
                 </MarkdownRenderer>
               </span>
               <Tooltip>
-                <TooltipTrigger render={
-                  <Badge
-                    variant="secondary"
-                    className="my-px shrink-0 select-none"
-                  >
-                    {answersCount}
-                  </Badge>
-                }>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Badge
+                      variant="secondary"
+                      className="my-px shrink-0 select-none"
+                    >
+                      {answersCount}
+                    </Badge>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>
                   To pytanie pojawiło się{" "}
                   {answersCount === 1
