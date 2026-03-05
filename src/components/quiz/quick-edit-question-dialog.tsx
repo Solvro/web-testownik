@@ -1,6 +1,5 @@
 "use client";
 
-import { FocusScope } from "@radix-ui/react-focus-scope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -200,17 +199,15 @@ export function QuickEditQuestionDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-1">
-          <FocusScope>
-            <QuestionFormContent
-              question={formData}
-              onUpdate={(updates) => {
-                setFormData((previous) => ({ ...previous, ...updates }));
-              }}
-              isImageUploading={isImageUploading}
-              onImageChange={handleImageChange}
-              onUpload={handleUpload}
-            />
-          </FocusScope>
+          <QuestionFormContent
+            question={formData}
+            onUpdate={(updates) => {
+              setFormData((previous) => ({ ...previous, ...updates }));
+            }}
+            isImageUploading={isImageUploading}
+            onImageChange={handleImageChange}
+            onUpload={handleUpload}
+          />
         </div>
 
         <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">

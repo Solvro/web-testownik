@@ -231,7 +231,7 @@ function GradesContent() {
 
             <Select
               items={termsItems}
-              defaultValue={selectedTerm}
+              value={selectedTerm}
               onValueChange={(value) => {
                 setSelectedTerm(value ?? "");
                 setEditing(false);

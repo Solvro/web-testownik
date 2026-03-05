@@ -11,6 +11,95 @@ import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useContributors } from "@/hooks/use-dashboard";
 import { cn, getInitials } from "@/lib/utils";
 
+// export function AboutCard({
+//   className,
+//   ...props
+// }: React.ComponentProps<typeof Card>): React.JSX.Element {
+//   const { data: contributors = [], isLoading } = useContributors();
+//
+//   return (
+//     <Card
+//       className={cn("max-h-80 overflow-hidden md:max-h-none", className)}
+//       {...props}
+//     >
+//       <CardContent className="flex h-full flex-col space-y-3">
+//         <CardTitle className="flex items-center justify-between">
+//           <span>Twórcy</span>
+//           <Button
+//             variant="ghost"
+//             size="icon-xs"
+//             onClick={() =>
+//               window.open("https://github.com/solvro/web-testownik")
+//             }
+//             className="rounded-full"
+//           >
+//             <SiGithub className="size-6" />
+//           </Button>
+//         </CardTitle>
+//         <ScrollArea className="min-h-0 flex-1">
+//           <Table variant="border" className="border-none!">
+//             <TableBody>
+//               {isLoading ? (
+//                 Array.from({ length: 10 }).map((_, index) => (
+//                   <TableRow
+//                     key={`loading-contributor-${index.toString()}`}
+//                     className="transition-none hover:bg-transparent"
+//                   >
+//                     <TableCell>
+//                       <div className="flex items-center gap-2">
+//                         <Skeleton className="size-6 rounded-full" />
+//                         <Skeleton className="h-4 w-32" />
+//                       </div>
+//                     </TableCell>
+//                     <TableCell>
+//                       <Skeleton className="h-3 w-16" />
+//                     </TableCell>
+//                   </TableRow>
+//                 ))
+//               ) : contributors.length > 0 ? (
+//                 contributors.map((contributor) => (
+//                   <TableRow
+//                     key={contributor.id}
+//                     className="transition-none hover:bg-transparent"
+//                   >
+//                     <TableCell className="flex items-center gap-2">
+//                       <a
+//                         href={contributor.html_url}
+//                         target="_blank"
+//                         className="flex items-center gap-2 hover:underline"
+//                         rel="noreferrer"
+//                       >
+//                         <Avatar className="border-ring border">
+//                           <AvatarImage src={`${contributor.avatar_url}&s=48`} />
+//                           <AvatarFallback delay={600}>
+//                             {getInitials(contributor.login)}
+//                           </AvatarFallback>
+//                         </Avatar>
+//                         <span>{contributor.login}</span>
+//                       </a>
+//                     </TableCell>
+//                     <TableCell className="text-right">
+//                       {contributor.contributions} commits
+//                     </TableCell>
+//                   </TableRow>
+//                 ))
+//               ) : (
+//                 <TableRow className="transition-none hover:bg-transparent">
+//                   <TableCell className="text-muted-foreground text-xs">
+//                     Nie udało się pobrać informacji o autorach
+//                   </TableCell>
+//                 </TableRow>
+//               )}
+//             </TableBody>
+//           </Table>
+//         </ScrollArea>
+//       </CardContent>
+//     </Card>
+//   );
+// }
+
+// ... reszta importów
+
 export function AboutCard({
   className,
   ...props
@@ -36,18 +125,19 @@ export function AboutCard({
             <SiGithub className="size-6" />
           </Button>
         </CardTitle>
-        <ScrollArea className="min-h-0 flex-1">
-          <Table variant="border">
+
+        <ScrollArea className="border-border min-h-0 flex-1 rounded-md border">
+          <Table variant="gradient">
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
                   <TableRow
                     key={`loading-contributor-${index.toString()}`}
-                    className="transition-none hover:bg-transparent"
+                    className="border-b transition-none last:border-0 hover:bg-transparent"
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Skeleton className="size-6 rounded-full" />
+                        <Skeleton className="size-8 rounded-full" />
                         <Skeleton className="h-4 w-32" />
                       </div>
                     </TableCell>
@@ -60,7 +150,7 @@ export function AboutCard({
                 contributors.map((contributor) => (
                   <TableRow
                     key={contributor.id}
-                    className="transition-none hover:bg-transparent"
+                    className="border-b transition-none last:border-0 hover:bg-transparent"
                   >
                     <TableCell className="flex items-center gap-2">
                       <a
@@ -69,7 +159,7 @@ export function AboutCard({
                         className="flex items-center gap-2 hover:underline"
                         rel="noreferrer"
                       >
-                        <Avatar className="border-ring border">
+                        <Avatar className="border-ring size-8 border">
                           <AvatarImage src={`${contributor.avatar_url}&s=48`} />
                           <AvatarFallback delay={600}>
                             {getInitials(contributor.login)}
@@ -85,7 +175,7 @@ export function AboutCard({
                 ))
               ) : (
                 <TableRow className="transition-none hover:bg-transparent">
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-muted-foreground p-4 text-xs">
                     Nie udało się pobrać informacji o autorach
                   </TableCell>
                 </TableRow>
