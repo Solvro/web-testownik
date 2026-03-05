@@ -39,6 +39,7 @@ function Table({
         className={cn(
           tableVariants({ variant }),
           "w-full caption-bottom text-sm",
+          className,
         )}
         {...props}
       />
