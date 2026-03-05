@@ -64,7 +64,7 @@ describe("GradesPage", () => {
     server.use(
       http.get("*/grades/", async () => {
         await delay(200);
-        return HttpResponse.json({});
+        return HttpResponse.json({ terms: [], courses: [] });
       }),
     );
     await setup();
@@ -177,7 +177,9 @@ describe("GradesPage", () => {
 
     const termSelect = screen.getByRole("combobox");
     await user.click(termSelect);
-    await user.click(screen.getByRole("option", { name: mockTerms[0].name }));
+    await user.click(
+      await screen.findByRole("option", { name: mockTerms[0].name }),
+    );
 
     expect(await screen.findByText(mockCourses[0].course_name)).toBeVisible();
     expect(await screen.findByText(mockCourses[1].course_name)).toBeVisible();
