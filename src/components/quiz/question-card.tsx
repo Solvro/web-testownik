@@ -172,6 +172,7 @@ export function QuestionCard({
               </Tooltip>
             </div>
           </CardTitle>
+
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         <CardDescription>
