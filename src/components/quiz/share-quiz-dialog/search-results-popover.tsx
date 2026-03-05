@@ -28,9 +28,12 @@ export function SearchResultsPopover({
       align="start"
       side="bottom"
       sideOffset={4}
-      className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
+      className={cn(
+        "w-(--anchor-width) max-w-(--available-width) min-w-0 p-0",
+        className,
+      )}
     >
-      <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
+      <ScrollArea className="max-h-64 w-full">
         <div className="flex flex-col gap-2 text-sm">
           {searchResultsLoading ? (
             <div className="flex justify-center pt-4 pb-8">
