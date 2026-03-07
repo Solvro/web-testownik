@@ -86,6 +86,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     nextAction,
     skipQuestion,
     isHistoryQuestion,
+    togglePreviousQuestion,
   });
 
   useEffect(() => {
