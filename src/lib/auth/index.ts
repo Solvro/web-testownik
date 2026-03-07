@@ -1,3 +1,4 @@
+export { createGuestAccount } from "./utils";
 export {
   decodeAccessToken,
   isTokenExpired,

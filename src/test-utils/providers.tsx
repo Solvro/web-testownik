@@ -3,19 +3,14 @@ import { useState } from "react";
 import type { PropsWithChildren } from "react";
 
 import { AppContextProvider } from "@/app-context-provider";
-import { AUTH_COOKIES, GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { deleteCookie, setCookie } from "@/lib/cookies";
 
 interface ProvidersProps extends PropsWithChildren {
-  guest?: boolean;
   accessToken?: string;
 }
 
-export function Providers({
-  children,
-  guest = false,
-  accessToken,
-}: ProvidersProps) {
+export function Providers({ children, accessToken }: ProvidersProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [queryClient, setQueryClient] = useState(
     () =>
@@ -30,17 +25,12 @@ export function Providers({
 
   deleteCookie(AUTH_COOKIES.ACCESS_TOKEN);
 
-  if (guest) {
-    setCookie(GUEST_COOKIE_NAME, "true");
-  } else {
-    if (accessToken != null) {
-      setCookie(AUTH_COOKIES.ACCESS_TOKEN, accessToken);
-    }
-    deleteCookie(GUEST_COOKIE_NAME);
+  if (accessToken != null) {
+    setCookie(AUTH_COOKIES.ACCESS_TOKEN, accessToken);
   }
 
   return (
-    <AppContextProvider>
+    <AppContextProvider initialUser={null}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </AppContextProvider>
   );

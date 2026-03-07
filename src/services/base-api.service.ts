@@ -1,4 +1,3 @@
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 import { isTokenExpired } from "@/lib/auth/jwt-utils";
 import { AUTH_COOKIE_NAMES, deleteCookie, getCookie } from "@/lib/cookies";
 
@@ -145,10 +144,6 @@ export class BaseApiService {
       let response = await fetch(fullURL, requestOptions);
 
       if (response.status === 401) {
-        const isGuest = getCookie(GUEST_COOKIE_NAME) === "true";
-        if (isGuest) {
-          throw new Error("Unauthorized");
-        }
         const refreshed = await this.queueTokenRefresh();
         if (refreshed) {
           headers = this.getAuthHeaders();
@@ -293,11 +288,6 @@ export class BaseApiService {
   }
 
   private async ensureFreshToken(): Promise<void> {
-    const isGuest = getCookie(GUEST_COOKIE_NAME) === "true";
-    if (isGuest) {
-      return;
-    }
-
     const token = this.getAccessToken();
     if (token !== null && isTokenExpired(token)) {
       await this.queueTokenRefresh();
@@ -333,13 +323,11 @@ export class BaseApiService {
   protected async post<T>(
     url: string,
     data?: unknown,
-    options: { includeCredentials?: boolean } = {},
   ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(url, {
       method: "POST",
       body:
         data !== undefined && data !== null ? JSON.stringify(data) : undefined,
-      credentials: options.includeCredentials === true ? "include" : undefined,
     });
   }
 

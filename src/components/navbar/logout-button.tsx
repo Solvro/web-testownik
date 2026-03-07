@@ -2,17 +2,14 @@
 
 import { LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
 
-import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
-  const appContext = useContext(AppContext);
   const router = useRouter();
 
   const handleLogout = async () => {
-    // Call server route to clear  cookies
+    // Call server route to clear cookies
     await fetch("/auth/logout", { method: "POST" });
 
     // Clear legacy localStorage data
@@ -24,11 +21,8 @@ export function LogoutButton() {
     localStorage.removeItem("user_id");
     localStorage.removeItem("is_guest");
 
-    // Update context
-    appContext.setAuthenticated(false);
-    appContext.setGuest(false);
-
     router.push("/");
+    router.refresh();
   };
 
   return (

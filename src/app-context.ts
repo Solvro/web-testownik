@@ -7,13 +7,7 @@ import type { ServiceRegistry } from "./services";
 
 export const AppContext = createContext<AppContextType>({
   isAuthenticated: false,
-  setAuthenticated: () => {
-    // no-op
-  },
-  isGuest: false,
-  setGuest: () => {
-    // no-op
-  },
-  user: undefined,
+  user: null,
   services: null as unknown as ServiceRegistry, // This will be set in the provider
+  checkPermission: () => false,
 });

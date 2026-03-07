@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -25,8 +26,9 @@ interface SearchResult {
 export function SearchCard({
   className,
   ...props
-}: React.ComponentProps<typeof Card>): React.JSX.Element {
-  const appContext = useContext(AppContext);
+}: React.ComponentProps<typeof Card>): React.ReactNode {
+  const { services, checkPermission } = useContext(AppContext);
+  const canSearch = checkPermission(PermissionAction.SEARCH_QUIZZES);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
@@ -41,7 +43,7 @@ export function SearchCard({
         return [];
       }
       const data = Object.values(
-        await appContext.services.quiz.searchQuizzes(debouncedQuery),
+        await services.quiz.searchQuizzes(debouncedQuery),
       ).flat() as SearchResult[];
 
       const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>
@@ -67,12 +69,13 @@ export function SearchCard({
             onChange={(event) => {
               setSearchQuery(event.target.value);
             }}
+            disabled={!canSearch}
           />
           <Button
             variant="outline"
             size="icon"
             className="shrink-0"
-            disabled={isLoading}
+            disabled={isLoading || !canSearch}
           >
             <SearchIcon className="size-4" />
           </Button>
@@ -116,7 +119,9 @@ export function SearchCard({
                 ) : (
                   <TableRow>
                     <TableCell className="text-muted-foreground text-center text-xs">
-                      Tu pojawią się wyniki wyszukiwania.
+                      {canSearch
+                        ? "Tu pojawią się wyniki wyszukiwania."
+                        : "Wyszukiwanie quizów jest obecnie niedostępne."}
                     </TableCell>
                   </TableRow>
                 )}

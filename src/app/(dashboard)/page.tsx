@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 
 import { LoginPrompt } from "@/components/login-prompt";
 import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES, GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { AUTH_COOKIES } from "@/lib/auth";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { getContributorsSSR } from "@/lib/dashboard-ssr";
 import { getQueryClient } from "@/lib/query-client";
 import { QuizService } from "@/services/quiz.service";
@@ -17,28 +18,25 @@ import { SearchCard } from "./components/search-card";
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
-  const isGuest = cookieStore.get(GUEST_COOKIE_NAME)?.value === "true";
+  const user = await getServerCurrentUser();
 
-  const isAuthenticated =
-    (accessToken !== undefined && accessToken !== "") || isGuest;
-
-  if (!isAuthenticated) {
+  if (user == null) {
     return <LoginPrompt />;
   }
 
   const queryClient = getQueryClient();
 
-  if (!isGuest) {
+  if (accessToken !== undefined && accessToken !== "") {
     const quizService = new QuizService(API_URL, {}, accessToken);
 
     await Promise.all([
       queryClient.prefetchInfiniteQuery({
-        queryKey: ["last-used-quizzes", isGuest, 10],
+        queryKey: ["last-used-quizzes", 10],
         queryFn: async () => quizService.getLastUsedQuizzes(10, 0),
         initialPageParam: 0,
       }),
       queryClient.prefetchQuery({
-        queryKey: ["random-question", isGuest],
+        queryKey: ["random-question"],
         queryFn: async () => quizService.getRandomQuestion(),
       }),
       queryClient.prefetchQuery({
@@ -51,9 +49,9 @@ export default async function DashboardPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="grid gap-4 sm:grid-cols-2 sm:grid-rows-3 md:h-[70vh] md:grid-cols-3 md:grid-rows-2">
-        <LastUsedCard className="md:order-2" isGuest={isGuest} />
+        <LastUsedCard className="md:order-2" />
         <ImportButtonsCard className="md:order-4" />
-        <QuestionQuizCard className="row-span-2 md:order-1" isGuest={isGuest} />
+        <QuestionQuizCard className="row-span-2 md:order-1" />
         <SearchCard className="md:order-3" />
         <AboutCard className="md:order-5" />
       </div>
