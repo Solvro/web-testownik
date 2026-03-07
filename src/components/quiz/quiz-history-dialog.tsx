@@ -72,8 +72,7 @@ export function QuizHistoryDialog({
                           "w-full rounded-md px-4 py-3 text-left text-sm font-medium transition-colors",
                           computeAnswerVariantText(
                             answer.selected_answers.length > 0 ||
-                              (answer.selected_answers.length === 0 &&
-                                answer.was_correct),
+                              answer.was_correct,
                             true,
                             answer.selected_answers.length > 0
                               ? answer.was_correct
