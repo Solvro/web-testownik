@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     // Call server route to clear cookies
@@ -23,6 +25,7 @@ export function LogoutButton() {
 
     router.push("/");
     router.refresh();
+    queryClient.clear();
   };
 
   return (

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
+import { AppContext } from "@/app-context";
+import { PermissionAction } from "@/lib/auth/permissions";
 import {
   checkAnswerCorrectness,
   createAnswerRecord,
@@ -13,8 +15,9 @@ import { useStudyTimer } from "./use-study-timer";
 
 export function useQuizLogic({
   quizId,
-  appContext,
 }: UseQuizLogicParameters): UseQuizLogicResult {
+  const { services, checkPermission, user } = useContext(AppContext);
+
   const {
     quiz,
     userSettings,
@@ -56,7 +59,7 @@ export function useQuizLogic({
 
   // continuity hook
   const continuity = useQuizContinuity({
-    enabled: userSettings.sync_progress && appContext.isAuthenticated,
+    enabled: checkPermission(PermissionAction.QUIZ_CONTINUITY),
     quizId,
     getCurrentState: () => ({
       question: currentQuestionRef.current,
@@ -87,7 +90,7 @@ export function useQuizLogic({
       setTimer(0, Date.now());
       setHistoryQuestionId(null);
     },
-    userId: appContext.user?.user_id,
+    userId: user?.user_id,
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,7 +123,7 @@ export function useQuizLogic({
     nextQuestionRef.current = nextQuestion;
 
     if (!remote) {
-      void appContext.services.quiz.recordAnswer(
+      void services.quiz.recordAnswer(
         quizId,
         newAnswer,
         getCurrentStudyTime(),
@@ -175,7 +178,7 @@ export function useQuizLogic({
     const { nextQuestion: nextQ } = sessionActions.recordAnswer(newAnswer);
     nextQuestionRef.current = nextQ;
 
-    void appContext.services.quiz.recordAnswer(
+    void services.quiz.recordAnswer(
       quizId,
       newAnswer,
       getCurrentStudyTime(),
@@ -214,11 +217,7 @@ export function useQuizLogic({
   };
 
   const resetProgress = async () => {
-    const session = await appContext.services.quiz.deleteQuizProgress(
-      quizId,
-      userSettings.sync_progress,
-      quiz,
-    );
+    const session = await services.quiz.deleteQuizProgress(quizId, quiz);
     sessionActions.resetProgress(session);
     setTimer(0, Date.now());
     setHistoryQuestionId(null);

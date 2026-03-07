@@ -28,7 +28,7 @@ export function SearchCard({
   ...props
 }: React.ComponentProps<typeof Card>): React.ReactNode {
   const { services, checkPermission } = useContext(AppContext);
-  const canSearch = checkPermission(PermissionAction.SEARCH_QUIZZES);
+  const canSearch = checkPermission(PermissionAction.BROWSE_PUBLIC_QUIZZES);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
