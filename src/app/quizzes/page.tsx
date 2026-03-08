@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
-import { decodeAccessToken } from "@/lib/auth/jwt-utils";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { getQueryClient } from "@/lib/query-client";
 import { QuizService } from "@/services/quiz.service";
 
@@ -18,10 +18,7 @@ export default async function QuizzesPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
 
-  const userId =
-    accessToken === undefined
-      ? undefined
-      : decodeAccessToken(accessToken)?.user_id;
+  const user = await getServerCurrentUser();
 
   const queryClient = getQueryClient();
 
@@ -42,7 +39,7 @@ export default async function QuizzesPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <QuizzesPageClient userId={userId} />
+      <QuizzesPageClient userId={user?.user_id} />
     </HydrationBoundary>
   );
 }

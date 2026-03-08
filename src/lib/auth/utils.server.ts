@@ -5,7 +5,7 @@ import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 
 import { AUTH_COOKIES } from "./constants";
-import { decodeAccessToken } from "./jwt-utils";
+import { verifyAccessToken } from "./jwt-utils.server";
 import type { JWTPayload } from "./types";
 
 export async function getServerCurrentUser(): Promise<JWTPayload | null> {
@@ -16,7 +16,7 @@ export async function getServerCurrentUser(): Promise<JWTPayload | null> {
     return null;
   }
 
-  return decodeAccessToken(token);
+  return await verifyAccessToken(token);
 }
 
 export async function createGuestAccount(): Promise<Response | null> {

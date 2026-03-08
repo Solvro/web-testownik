@@ -50,8 +50,14 @@ export function AppContextProvider({
       return;
     }
 
-    setIsAuthenticated(false);
     setUser(null);
+    setIsAuthenticated((previousIsAuthenticated) => {
+      if (previousIsAuthenticated) {
+        const queryClient = getQueryClient();
+        queryClient.clear();
+      }
+      return false;
+    });
   }, [readToken]);
 
   useEffect(() => {
@@ -84,12 +90,16 @@ export function AppContextProvider({
       }
     };
 
-    cookieStore.addEventListener("change", handleCookieStoreChange);
+    if (typeof cookieStore !== "undefined") {
+      cookieStore.addEventListener("change", handleCookieStoreChange);
+    }
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      cookieStore.removeEventListener("change", handleCookieStoreChange);
+      if (typeof cookieStore !== "undefined") {
+        cookieStore.removeEventListener("change", handleCookieStoreChange);
+      }
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
