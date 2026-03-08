@@ -6,11 +6,10 @@ import {
   LockIcon,
   LogInIcon,
   RefreshCwIcon,
-  RotateCcwIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useContext } from "react";
 
 import { AppContext } from "@/app-context";
 import {
@@ -28,8 +27,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { API_URL } from "@/lib/api";
-import { GuestQuizNotFoundError } from "@/services/quiz.service";
+import { ACCOUNT_TYPE } from "@/types/user";
 
 export default function QuizError({
   error,
@@ -38,54 +36,9 @@ export default function QuizError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const appContext = useContext(AppContext);
-  const [currentUrl, setCurrentUrl] = useState("/");
-  const searchParameters = useSearchParams();
+  const { isAuthenticated, user } = useContext(AppContext);
+  const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
   const pathname = usePathname();
-
-  useEffect(() => {
-    const redirect = searchParameters.get("redirect");
-    const url = new URL(redirect ?? pathname, window.location.origin);
-    setCurrentUrl(url.toString());
-  }, [pathname, searchParameters]);
-
-  if (error instanceof GuestQuizNotFoundError) {
-    return (
-      <Empty className="border">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LockIcon className="text-muted-foreground" />
-          </EmptyMedia>
-          <EmptyTitle>Brak dostępu dla gości</EmptyTitle>
-          <EmptyDescription>
-            Quiz nie został znaleziony lub nie jest dostępny dla gości.
-          </EmptyDescription>
-          <EmptyDescription>
-            Możesz spróbować się zalogować, aby uzyskać dostęp do tego quizu,
-            lub skontaktować się z jego twórcą aby ustawić dostępność.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <div className="flex justify-center gap-2">
-            <Button
-              onClick={() => {
-                window.location.reload();
-              }}
-              variant="outline"
-            >
-              <RotateCcwIcon /> Spróbuj ponownie
-            </Button>
-            <Link href="/connect-account">
-              <Button>
-                <LogInIcon />
-                Zaloguj się
-              </Button>
-            </Link>
-          </div>
-        </EmptyContent>
-      </Empty>
-    );
-  }
 
   if (error.message.includes("403") || error.message.includes("401")) {
     const is401 = error.message.includes("401");
@@ -99,9 +52,11 @@ export default function QuizError({
             {is401 ? "Wymagane logowanie" : "Brak dostępu"}
           </EmptyTitle>
           <EmptyDescription>
-            {is401
-              ? "Ten quiz jest dostępny tylko dla zalogowanych użytkowników."
-              : "Nie masz dostępu do tego quizu. Skontaktuj się z jego twórcą aby ustawić dostępność."}
+            {isGuest
+              ? "Ten quiz nie jest dostępny dla gości, zaloguj się aby spróbować ponownie, lub skontaktuj się z twórcą quizu aby udostępnił go dla niezalogowanych użytkowników."
+              : is401
+                ? "Ten quiz jest dostępny tylko dla zalogowanych użytkowników."
+                : "Nie masz dostępu do tego quizu. Skontaktuj się z jego twórcą aby ustawić dostępność."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -112,18 +67,15 @@ export default function QuizError({
                 Strona główna
               </Link>
             </Button>
-            {!appContext.isAuthenticated && (
-              <Button asChild>
-                <a
-                  href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-                    currentUrl,
-                  )}`}
-                >
-                  <LogInIcon />
-                  Zaloguj się
-                </a>
-              </Button>
-            )}
+            {!isAuthenticated ||
+              (isGuest && (
+                <Button asChild>
+                  <Link href={`/login?redirect=${pathname}`}>
+                    <LogInIcon />
+                    Zaloguj się
+                  </Link>
+                </Button>
+              ))}
           </div>
         </EmptyContent>
       </Empty>
@@ -141,7 +93,7 @@ export default function QuizError({
           Nie udało się załadować quizu. Może nie istnieć lub wystąpił problem z
           połączeniem.
         </EmptyDescription>
-        {appContext.isAuthenticated ? (
+        {isAuthenticated && !isGuest ? (
           <EmptyDescription>
             Upewnij się, że quiz istnieje i masz do niego dostęp.
           </EmptyDescription>
@@ -175,7 +127,7 @@ export default function QuizError({
             <RefreshCwIcon />
             Spróbuj ponownie
           </Button>
-          {appContext.isAuthenticated ? (
+          {isAuthenticated && !isGuest ? (
             <Button asChild variant="outline">
               <Link href="/">
                 <HomeIcon />
@@ -184,14 +136,10 @@ export default function QuizError({
             </Button>
           ) : (
             <Button asChild variant="outline">
-              <a
-                href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-                  currentUrl,
-                )}`}
-              >
+              <Link href={`/login?redirect=${pathname}`}>
                 <LogInIcon />
                 Zaloguj się
-              </a>
+              </Link>
             </Button>
           )}
         </div>
