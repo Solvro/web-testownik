@@ -502,7 +502,7 @@ export function ConnectGuestAccount() {
               </Button>
               <Button asChild>
                 <a href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}>
-                  Zaloguj się z Solvro Auth
+                  Zaloguj się przez e-mail
                 </a>
               </Button>
               <Button variant="outline" asChild>
