@@ -2,8 +2,9 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
+import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,7 @@ interface LoginOTPCodeClientProps {
 }
 
 export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
+  const appContext = useContext(AppContext);
   const router = useRouter();
   const [otp, setOtp] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -55,8 +57,11 @@ export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
       return;
     }
     setSubmitting(true);
+    const guestId = appContext.user?.user_id;
+    const guestParameter =
+      guestId === undefined ? "" : `&guest_id=${encodeURIComponent(guestId)}`;
     router.push(
-      `/auth/login-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
+      `/auth/login-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}${guestParameter}`,
     );
     setTimeout(() => {
       setSubmitting(false);

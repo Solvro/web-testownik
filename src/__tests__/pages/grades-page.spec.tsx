@@ -18,15 +18,13 @@ import { server } from "@/test-utils/mocks/server";
 import { Providers } from "@/test-utils/providers";
 import { generateTestToken } from "@/test-utils/token-factory";
 
-const setup = async ({
-  asGuest: guest = false,
-  accessToken,
-}: { asGuest?: boolean; accessToken?: string } = {}) => {
+const setup = async ({ accessToken }: { accessToken?: string } = {}) => {
   const user = userEvent.setup();
-  const token = accessToken ?? (await generateTestToken());
+  const token =
+    accessToken ?? (await generateTestToken({ account_type: "student" }));
 
   render(
-    <Providers guest={guest} accessToken={token}>
+    <Providers accessToken={token}>
       <GradesPage />
     </Providers>,
   );
@@ -36,28 +34,26 @@ const setup = async ({
 
 describe("GradesPage", () => {
   it("should have restricted gui for guest users", async () => {
-    await setup({ asGuest: true });
+    const guestToken = await generateTestToken({ account_type: "guest" });
+    await setup({ accessToken: guestToken });
 
     expect(screen.getByText(/oceny/i)).toBeVisible();
-    expect(
-      screen.getByText(/nie jest dostępna w trybie gościa/i),
-    ).toBeVisible();
+    expect(screen.getByText(/nie jest dostępna/i)).toBeVisible();
 
-    const connectButton = screen.getByRole("button", { name: /połącz konto/i });
+    const connectButton = screen.getByRole("button", { name: /zaloguj się/i });
     expect(connectButton).toBeVisible();
   });
 
   it("should have restricted gui for authenticated users without student number", async () => {
     const tokenWithoutStudentNumber = await generateTestToken({
       student_number: "",
+      account_type: "email",
     });
 
     await setup({ accessToken: tokenWithoutStudentNumber });
 
     expect(screen.getByText(/oceny/i)).toBeVisible();
-    expect(
-      screen.getByText(/nie jest dostępna dla kont Solvro Auth/i),
-    ).toBeVisible();
+    expect(screen.getByText(/nie jest dostępna/i)).toBeVisible();
   });
 
   it("should show loading spinner", async () => {
