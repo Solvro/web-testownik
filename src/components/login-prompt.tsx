@@ -234,8 +234,8 @@ export function LoginPrompt(): React.JSX.Element {
                   <a
                     href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                   >
-                    <SolvroLogo width={20} />
-                    Zaloguj z Solvro Auth
+                    <LogInIcon />
+                    Zaloguj się przez e-mail
                   </a>
                 </Button>
 
