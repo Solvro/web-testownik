@@ -17,6 +17,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
+import { ACCOUNT_TYPE } from "@/types/user";
 
 function buildLoginUrl(
   base: string,
@@ -64,7 +65,8 @@ export function LoginPrompt(): React.JSX.Element {
     setRedirectUrl(url.toString());
   }, [redirect]);
 
-  const guestId = user?.account_type === "guest" ? user.user_id : undefined;
+  const guestId =
+    user?.account_type === ACCOUNT_TYPE.GUEST ? user.user_id : undefined;
 
   return (
     <div className="flex justify-center">
@@ -108,7 +110,7 @@ export function LoginPrompt(): React.JSX.Element {
                 size="sm"
                 className="w-full"
                 onClick={async () => {
-                  if (user?.account_type === "guest") {
+                  if (user?.account_type === ACCOUNT_TYPE.GUEST) {
                     router.push(redirect ?? "/quizzes");
                   } else {
                     const result = await createGuestAccount();

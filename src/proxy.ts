@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES, verifyAccessToken } from "@/lib/auth";
-import { createGuestAccount } from "@/lib/auth/utils";
+import { AUTH_COOKIES } from "@/lib/auth";
+import { createGuestAccount, verifyAccessToken } from "@/lib/auth/server";
 
 const BOT_UA_PATTERNS =
   /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegrambot|discordbot|applebot|bingpreview|googleother|google-inspectiontool|storebot-google|petalbot|yandexbot|baiduspider|duckduckbot|sogou|exabot|ia_archiver|archive\.org_bot|semrushbot|ahrefsbot|mj12bot|dotbot|rogerbot|screaming frog|dataforseo|gptbot|chatgpt-user|claude-web|anthropic-ai|bytespider|amazonbot|ccbot|cohere-ai|diffbot|omgili|paper\.li|feedfetcher|mediapartners-google|adsbot-google|apis-google|google-read-aloud|headlesschrome|phantomjs|prerender|snap url preview|kakaotalk-scrap|daum|naver|yeti|pinterestbot|redditbot|vkshare|w3c_validator|lighthouse|chrome-lighthouse|pagespeed|gtmetrix|uptimerobot|pingdom|statuscake|site24x7|newrelic|datadog/i;

@@ -73,7 +73,7 @@ export function GuestAlertClient({
         </TooltipTrigger>
         <TooltipContent>Ukryj na 3 dni</TooltipContent>
       </Tooltip>
-      <AlertTitle>Kożystasz z konta gościa</AlertTitle>
+      <AlertTitle>Korzystasz z konta gościa</AlertTitle>
       <AlertDescription>
         {isJustCreated ? (
           <>

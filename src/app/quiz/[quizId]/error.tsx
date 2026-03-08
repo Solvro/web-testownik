@@ -67,15 +67,14 @@ export default function QuizError({
                 Strona główna
               </Link>
             </Button>
-            {!isAuthenticated ||
-              (isGuest && (
-                <Button asChild>
-                  <Link href={`/login?redirect=${pathname}`}>
-                    <LogInIcon />
-                    Zaloguj się
-                  </Link>
-                </Button>
-              ))}
+            {!isAuthenticated || isGuest ? (
+              <Button asChild>
+                <Link href={`/login?redirect=${pathname}`}>
+                  <LogInIcon />
+                  Zaloguj się
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </EmptyContent>
       </Empty>

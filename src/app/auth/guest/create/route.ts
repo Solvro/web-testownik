@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createGuestAccount } from "@/lib/auth";
+import { createGuestAccount } from "@/lib/auth/server";
 
 export async function POST(_request: Request) {
   const backendResponse = await createGuestAccount();
