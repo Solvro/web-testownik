@@ -100,8 +100,8 @@ export function LoginPrompt(): React.JSX.Element {
 
               <Button asChild variant="outline" size="lg" className="w-full">
                 <a href={buildLoginUrl("/login", redirectUrl, guestId)}>
-                  <SolvroLogo width={20} />
-                  Zaloguj z Solvro Auth
+                  <LogInIcon />
+                  Zaloguj się przez e-mail
                 </a>
               </Button>
 
