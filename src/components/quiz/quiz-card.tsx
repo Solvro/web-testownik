@@ -74,31 +74,23 @@ export function QuizCard({
         </CardHeader>
         <CardFooter className="mt-auto flex items-center justify-between">
           <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">
-            {isLoading ? (
-              <div className="relative -m-1 inline-flex h-10 overflow-hidden rounded-md p-1">
-                <span className="absolute inset-[-100%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_55%,var(--card)_60%)]" />
-                <span className="bg-primary text-primary-foreground inline-flex h-full w-full items-center justify-center rounded-md p-3 text-sm font-medium backdrop-blur-3xl">
+            <Button
+              size="sm"
+              disabled={isLoading}
+              nativeButton={false}
+              variant={isLoading ? "loading" : "default"}
+              render={(rendererProps) => (
+                <Link
+                  {...rendererProps}
+                  href={onOpenPath(quiz)}
+                  onClick={() => {
+                    setIsLoading(true);
+                  }}
+                >
                   Otwórz
-                </span>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                disabled={isLoading}
-                nativeButton={false}
-                render={(rendererProps) => (
-                  <Link
-                    {...rendererProps}
-                    href={onOpenPath(quiz)}
-                    onClick={() => {
-                      setIsLoading(true);
-                    }}
-                  >
-                    Otwórz
-                  </Link>
-                )}
-              ></Button>
-            )}
+                </Link>
+              )}
+            ></Button>
           </ViewTransition>
           <div className="flex gap-1 opacity-80">
             {Boolean(showEdit) && (

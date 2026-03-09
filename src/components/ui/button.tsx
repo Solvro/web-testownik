@@ -23,6 +23,7 @@ const buttonVariants = cva(
           "hover:bg-accent-input hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         cta: "bg-linear-to-r from-(--cta-gradient-from) to-(--cta-gradient-to) text-primary-foreground",
+        loading: "",
       },
       size: {
         default: "h-10 px-4 py-2.5",
@@ -49,6 +50,22 @@ function Button({
   render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  if (variant === "loading") {
+    return (
+      <div
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          "relative -left-1 -my-1 inline-flex h-10 overflow-hidden rounded-md border-none p-1",
+        )}
+      >
+        <span className="absolute -inset-full animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--border)_45%,var(--border)_55%,var(--card)_60%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--ring)_45%,var(--ring)_55%,var(--card)_60%)]" />
+        <span className="bg-accent-input dark:bg-ring inline-flex h-full w-full items-center justify-center rounded-md border px-3 text-base font-medium backdrop-blur-3xl dark:border-none">
+          Otwórz
+        </span>
+      </div>
+    );
+  }
+
   return (
     <ButtonPrimitive
       data-slot="button"
