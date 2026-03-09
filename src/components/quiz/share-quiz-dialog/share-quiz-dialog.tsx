@@ -470,7 +470,9 @@ export function ShareQuizDialog({
             <Button
               variant="outline"
               onClick={() => {
-                router.push("/login");
+                router.push(
+                  `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+                );
               }}
             >
               Zaloguj się

@@ -11,8 +11,7 @@ export async function verifyAccessToken(
   const secret = env.JWT_SECRET;
 
   if (secret === undefined || secret === "") {
-    console.error("JWT_SECRET environment variable is not set");
-    return null;
+    throw new Error("JWT_SECRET environment variable is not set");
   }
 
   try {

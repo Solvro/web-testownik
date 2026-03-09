@@ -13,7 +13,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -27,8 +26,7 @@ export function SearchCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.ReactNode {
-  const { services, checkPermission } = useContext(AppContext);
-  const canSearch = checkPermission(PermissionAction.BROWSE_PUBLIC_QUIZZES);
+  const { services } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
@@ -69,13 +67,12 @@ export function SearchCard({
             onChange={(event) => {
               setSearchQuery(event.target.value);
             }}
-            disabled={!canSearch}
           />
           <Button
             variant="outline"
             size="icon"
             className="shrink-0"
-            disabled={isLoading || !canSearch}
+            disabled={isLoading}
           >
             <SearchIcon className="size-4" />
           </Button>
@@ -119,9 +116,7 @@ export function SearchCard({
                 ) : (
                   <TableRow>
                     <TableCell className="text-muted-foreground text-center text-xs">
-                      {canSearch
-                        ? "Tu pojawią się wyniki wyszukiwania."
-                        : "Wyszukiwanie quizów jest obecnie niedostępne."}
+                      Tu pojawią się wyniki wyszukiwania.
                     </TableCell>
                   </TableRow>
                 )}

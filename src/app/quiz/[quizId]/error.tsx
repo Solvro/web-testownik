@@ -69,7 +69,7 @@ export default function QuizError({
             </Button>
             {!isAuthenticated || isGuest ? (
               <Button asChild>
-                <Link href={`/login?redirect=${pathname}`}>
+                <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
                   <LogInIcon />
                   Zaloguj się
                 </Link>
@@ -135,7 +135,7 @@ export default function QuizError({
             </Button>
           ) : (
             <Button asChild variant="outline">
-              <Link href={`/login?redirect=${pathname}`}>
+              <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
                 <LogInIcon />
                 Zaloguj się
               </Link>
