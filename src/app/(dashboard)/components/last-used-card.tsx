@@ -11,17 +11,12 @@ import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useLastUsedQuizzes } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
 
-interface LastUsedCardProps extends React.ComponentProps<typeof Card> {
-  isGuest: boolean;
-}
-
 export function LastUsedCard({
   className,
-  isGuest,
   ...props
-}: LastUsedCardProps): React.JSX.Element {
+}: React.ComponentProps<typeof Card>): React.JSX.Element {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useLastUsedQuizzes(isGuest);
+    useLastUsedQuizzes();
 
   const quizzes = data?.pages.flatMap((page) => page.results) ?? [];
   const { ref, inView } = useInView({

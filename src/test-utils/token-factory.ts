@@ -16,6 +16,8 @@ export const DEFAULT_USER_PAYLOAD: JWTPayload = {
   photo: "https://example.com/avatar.jpg",
   is_staff: false,
   is_superuser: false,
+  is_banned: false,
+  account_type: "email",
 };
 
 /**

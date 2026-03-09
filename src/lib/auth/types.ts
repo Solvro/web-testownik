@@ -1,3 +1,5 @@
+import type { AccountType } from "@/types/user";
+
 export interface JWTPayload {
   token_type: "access" | "refresh";
   exp: number;
@@ -7,11 +9,13 @@ export interface JWTPayload {
   first_name: string;
   last_name: string;
   full_name: string;
-  email: string;
+  email: string | null;
   student_number: string;
-  photo: string;
+  photo: string | null;
   is_staff: boolean;
   is_superuser: boolean;
+  is_banned: boolean;
+  account_type: AccountType;
 }
 
 export interface TokenRefreshResponse {

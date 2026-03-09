@@ -9,12 +9,12 @@ import { server } from "@/test-utils/mocks/server";
 import { Providers } from "@/test-utils/providers";
 import { generateTestToken } from "@/test-utils/token-factory";
 
-const setup = async ({ asGuest = false } = {}) => {
+const setup = async () => {
   const user = userEvent.setup();
   const token = await generateTestToken();
 
   render(
-    <Providers guest={asGuest} accessToken={token}>
+    <Providers accessToken={token}>
       <ImportQuizPage />
     </Providers>,
   );

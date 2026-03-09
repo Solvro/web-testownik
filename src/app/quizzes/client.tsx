@@ -38,29 +38,33 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
   userId?: string;
-  isGuest: boolean;
 }
 
-function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
-  const appContext = useContext(AppContext);
+function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
+  const { checkPermission, services } = useContext(AppContext);
   const queryClient = useQueryClient();
+  const canSearchInQuizzes = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
+  const canViewShared = checkPermission(PermissionAction.VIEW_SHARED_QUIZZES);
 
   const {
     data: userQuizzes = [],
     isLoading: isLoadingUserQuizzes,
     error: userQuizzesError,
-  } = useUserQuizzes(isGuest);
+  } = useUserQuizzes();
 
   const {
     data: allSharedQuizzes = [],
     isLoading: isLoadingSharedQuizzes,
     error: sharedQuizzesError,
-  } = useSharedQuizzes(isGuest);
+  } = useSharedQuizzes({
+    enabled: canViewShared,
+  });
 
   // Filter shared quizzes to get unique ones
   const sharedQuizzes = allSharedQuizzes.filter(
@@ -120,7 +124,7 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
     const quiz = currentDialog.quiz;
 
     try {
-      await appContext.services.quiz.deleteQuiz(quiz.id);
+      await services.quiz.deleteQuiz(quiz.id);
       void queryClient.invalidateQueries({
         queryKey: ["user-quizzes"],
       });
@@ -134,7 +138,7 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
 
   const handleDownloadQuiz = async (quiz: QuizMetadata) => {
     try {
-      const fullQuiz = await appContext.services.quiz.getQuiz(quiz.id);
+      const fullQuiz = await services.quiz.getQuiz(quiz.id);
       // Create a downloadable version
       const downloadableQuiz = prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
@@ -155,7 +159,7 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
 
   const updateQuiz = (quiz: QuizMetadata) => {
     queryClient.setQueryData(
-      ["user-quizzes", isGuest],
+      ["user-quizzes"],
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
@@ -235,7 +239,7 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
                 showEdit
                 showShare
                 showDownload
-                showSearch={!appContext.isGuest}
+                showSearch={canSearchInQuizzes}
                 showDelete
                 onShare={handleShareQuiz}
                 onDelete={handleDeleteQuiz}
@@ -393,9 +397,6 @@ function QuizzesPageContent({ userId, isGuest }: QuizzesPageContentProps) {
   );
 }
 
-export function QuizzesPageClient({
-  userId,
-  isGuest,
-}: QuizzesPageContentProps) {
-  return <QuizzesPageContent userId={userId} isGuest={isGuest} />;
+export function QuizzesPageClient({ userId }: QuizzesPageContentProps) {
+  return <QuizzesPageContent userId={userId} />;
 }

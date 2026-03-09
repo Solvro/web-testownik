@@ -1,6 +1,3 @@
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
-import { getCookie } from "@/lib/cookies";
-
 import { BaseApiService } from "./base-api.service";
 import type { ApiResponse } from "./types";
 
@@ -57,10 +54,6 @@ export function validateFile(
 
 export class ImageService extends BaseApiService {
   async upload(file: File): Promise<ApiResponse<ImageUploadResponse>> {
-    const isGuest = getCookie(GUEST_COOKIE_NAME) === "true";
-    if (isGuest) {
-      throw new Error(UPLOAD_ERROR_MESSAGES.GUEST_ERROR);
-    }
     const validation = validateFile(file);
     if (!validation.valid) {
       throw new Error(validation.error);
