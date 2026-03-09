@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth";
 import { createGuestAccount, verifyAccessToken } from "@/lib/auth/server";
@@ -66,8 +67,14 @@ async function tryRefreshTokens(
         url.searchParams.set("ban_reason", data.ban_reason ?? "Unknown reason");
 
         const response = NextResponse.redirect(url);
-        response.cookies.delete(AUTH_COOKIES.ACCESS_TOKEN);
-        response.cookies.delete(AUTH_COOKIES.REFRESH_TOKEN);
+        response.cookies.delete({
+          name: AUTH_COOKIES.ACCESS_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
+        response.cookies.delete({
+          name: AUTH_COOKIES.REFRESH_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
 
         return response;
       }
