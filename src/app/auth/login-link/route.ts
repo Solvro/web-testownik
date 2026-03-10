@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_URL } from "@/lib/api";
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
@@ -12,10 +11,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const guestId = request.nextUrl.searchParams.get("guest_id");
+
     const backendResponse = await fetch(`${API_URL}/login-link/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({
+        token,
+        ...(guestId === null ? {} : { guest_id: guestId }),
+      }),
     });
 
     if (!backendResponse.ok) {
@@ -31,11 +35,6 @@ export async function GET(request: NextRequest) {
     for (const cookie of setCookieHeaders) {
       result.headers.append("Set-Cookie", cookie);
     }
-
-    result.headers.append(
-      "Set-Cookie",
-      `${GUEST_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-    );
 
     return result;
   } catch {

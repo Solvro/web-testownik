@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { AccountTypeBadge } from "@/components/account-type-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn, getInitials } from "@/lib/utils";
+import { ACCOUNT_TYPE } from "@/types/user";
 import type { UserData } from "@/types/user";
 
 interface ProfileDetailsProps {
@@ -63,7 +65,7 @@ export function ProfileDetails({
           setUserData({ ...userData, photo: selectedPhoto });
           // Refresh token to get updated user data (avatar) in the token payload
           await appContext.services.user.refreshToken();
-          appContext.setAuthenticated(true);
+          router.refresh();
         }
       })
       .catch((error: unknown) => {
@@ -114,25 +116,28 @@ export function ProfileDetails({
     ),
   ];
 
-  if (appContext.isGuest) {
+  if (userData?.account_type === ACCOUNT_TYPE.GUEST) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center py-8 text-center">
-          <IdCardLanyardIcon className="text-muted-foreground size-24" />
-          <h1 className="mt-4 text-xl font-semibold">Gość</h1>
-          <Badge className="mt-2 bg-amber-500/15 text-amber-600 dark:text-amber-400">
-            Konto lokalne
-          </Badge>
-          <Button
-            className="mt-4"
-            onClick={() => {
-              router.push("/connect-account");
-            }}
-          >
-            Połącz konto
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="flex flex-col items-center py-8 text-center">
+            <IdCardLanyardIcon className="text-muted-foreground size-24" />
+            <h1 className="mt-4 text-xl font-semibold">Gość</h1>
+            <AccountTypeBadge
+              accountType={ACCOUNT_TYPE.GUEST}
+              className="mt-2"
+            />
+            <Button
+              className="mt-4"
+              onClick={() => {
+                router.push("/login");
+              }}
+            >
+              Zaloguj się
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -187,9 +192,9 @@ export function ProfileDetails({
                   Obsługa
                 </Badge>
               ) : null}
-              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                Student
-              </Badge>
+              <AccountTypeBadge
+                accountType={userData?.account_type ?? ACCOUNT_TYPE.GUEST}
+              />
             </div>
             <div className="bg-border h-px w-full" />
             <div className="w-full space-y-2 text-sm">
@@ -198,7 +203,7 @@ export function ProfileDetails({
               </h5>
               <ul className="space-y-1">
                 <li>Id: {userData?.id}</li>
-                <li>Email: {userData?.email}</li>
+                <li>Email: {userData?.email ?? "—"}</li>
               </ul>
             </div>
             <div className="bg-border h-px w-full" />

@@ -108,14 +108,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         quiz_id: quizId,
 
         location: window.location.href,
-        localStorage: {
-          user_id: appContext.user?.user_id ?? localStorage.getItem("user_id"), // localStorage user_id is deprecated, should be removed in the future
-          is_guest: appContext.isGuest,
-          is_authenticated: appContext.isAuthenticated,
-          quiz_progress:
-            quizId == null ? null : localStorage.getItem(`${quizId}_progress`),
-        },
-        sessionStorage: JSON.stringify(sessionStorage),
+        user_id: appContext.user?.user_id,
+        account_type: appContext.user?.account_type,
+        is_authenticated: appContext.isAuthenticated,
       };
       form.diagnostic = JSON.stringify(diagnostics, null, 2);
     }

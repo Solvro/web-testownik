@@ -7,12 +7,19 @@ import { Suspense } from "react";
 import { AppContextProvider } from "@/app-context-provider";
 import { FormbricksProvider } from "@/app/formbricks";
 import { ThemeProvider } from "@/components/theme-provider";
+import type { JWTPayload } from "@/lib/auth/types";
 import { getQueryClient } from "@/lib/query-client";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser: JWTPayload | null;
+}) {
   const queryClient = getQueryClient();
   return (
-    <AppContextProvider>
+    <AppContextProvider initialUser={initialUser}>
       <QueryClientProvider client={queryClient}>
         <Suspense>
           <FormbricksProvider />

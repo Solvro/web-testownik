@@ -25,8 +25,8 @@ interface SearchResult {
 export function SearchCard({
   className,
   ...props
-}: React.ComponentProps<typeof Card>): React.JSX.Element {
-  const appContext = useContext(AppContext);
+}: React.ComponentProps<typeof Card>): React.ReactNode {
+  const { services } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
@@ -41,7 +41,7 @@ export function SearchCard({
         return [];
       }
       const data = Object.values(
-        await appContext.services.quiz.searchQuizzes(debouncedQuery),
+        await services.quiz.searchQuizzes(debouncedQuery),
       ).flat() as SearchResult[];
 
       const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>

@@ -2,21 +2,28 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES, verifyAccessToken } from "@/lib/auth";
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { AUTH_COOKIES } from "@/lib/auth";
+import { createGuestAccount, verifyAccessToken } from "@/lib/auth/server";
 
-// Routes that require authentication
-const PROTECTED_ROUTES = [
-  "/profile",
-  "/quizzes",
-  "/grades",
-  "/create-quiz",
-  "/edit-quiz",
-  "/import-quiz",
-];
+const BOT_UA_PATTERNS =
+  /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegrambot|discordbot|applebot|bingpreview|googleother|google-inspectiontool|storebot-google|petalbot|yandexbot|baiduspider|duckduckbot|sogou|exabot|ia_archiver|archive\.org_bot|semrushbot|ahrefsbot|mj12bot|dotbot|rogerbot|screaming frog|dataforseo|gptbot|chatgpt-user|claude-web|anthropic-ai|bytespider|amazonbot|ccbot|cohere-ai|diffbot|omgili|paper\.li|feedfetcher|mediapartners-google|adsbot-google|apis-google|google-read-aloud|headlesschrome|phantomjs|prerender|snap url preview|kakaotalk-scrap|daum|naver|yeti|pinterestbot|redditbot|vkshare|w3c_validator|lighthouse|chrome-lighthouse|pagespeed|gtmetrix|uptimerobot|pingdom|statuscake|site24x7|newrelic|datadog/i;
 
-function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+const AUTH_ROUTES = ["/login", "/auth", "/login-otp"];
+
+function shouldCreateGuestAccount(
+  pathname: string,
+  userAgent: string | null,
+): boolean {
+  if (pathname === "/") {
+    return false;
+  }
+  if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
+    return false;
+  }
+  if (userAgent !== null && BOT_UA_PATTERNS.test(userAgent)) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -76,16 +83,29 @@ async function tryRefreshTokens(
   }
 }
 
+async function createGuestAccountAndRedirect(
+  requestUrl: string,
+): Promise<NextResponse | null> {
+  const backendResponse = await createGuestAccount();
+
+  if (backendResponse === null) {
+    return null;
+  }
+
+  // Redirect to same URL with a query param to trigger the consent alert
+  const url = new URL(requestUrl);
+  url.searchParams.set("guest_created", "true");
+  const response = NextResponse.redirect(url);
+
+  forwardAuthCookies(backendResponse, response);
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
-  const isGuest = request.cookies.get(GUEST_COOKIE_NAME)?.value === "true";
 
   const response = NextResponse.next();
-
-  if (isGuest) {
-    return response;
-  }
 
   if (accessToken !== undefined && accessToken !== "") {
     const payload = await verifyAccessToken(accessToken);
@@ -102,9 +122,18 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // No valid auth - redirect if protected route
-  if (isProtectedRoute(request.nextUrl.pathname)) {
-    const loginUrl = new URL("/", request.url);
+  if (
+    shouldCreateGuestAccount(
+      request.nextUrl.pathname,
+      request.headers.get("user-agent"),
+    )
+  ) {
+    const guestResponse = await createGuestAccountAndRedirect(request.url);
+    if (guestResponse !== null) {
+      return guestResponse;
+    }
+
+    const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -115,6 +144,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // eslint-disable-next-line unicorn/prefer-string-raw
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json)$).*)",
   ],
 };

@@ -9,6 +9,7 @@ const ALLOWED_QUIZ_KEYS = [
   "questions",
   "maintainer",
   "comment",
+  "can_edit",
 ];
 
 const ALLOWED_QUESTION_KEYS = [

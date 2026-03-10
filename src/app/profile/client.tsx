@@ -19,16 +19,7 @@ export function ProfilePageClient(): React.JSX.Element {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<string>("account");
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    if (typeof window === "undefined") {
-      return { ...DEFAULT_USER_SETTINGS };
-    }
-    const storedSettings = appContext.services.user.getStoredSettings();
-    if (storedSettings != null) {
-      return storedSettings;
-    }
-    return { ...DEFAULT_USER_SETTINGS };
-  });
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
 
   const handleTabSelect = (tabKey: string) => {
     if (tabKey === "privacy-policy") {
@@ -41,10 +32,6 @@ export function ProfilePageClient(): React.JSX.Element {
     if (typeof window !== "undefined" && window.location.hash) {
       handleTabSelect(window.location.hash.slice(1));
       window.history.replaceState(null, "", pathname);
-    }
-
-    if (appContext.isGuest) {
-      return;
     }
 
     // Fetch user data
@@ -66,7 +53,7 @@ export function ProfilePageClient(): React.JSX.Element {
       .catch((error: unknown) => {
         console.error("Error fetching settings:", error);
       });
-  }, [appContext.services.user, appContext.isGuest, pathname]);
+  }, [appContext.services.user, pathname]);
 
   const handleSettingChange = async (
     name: keyof UserSettings,

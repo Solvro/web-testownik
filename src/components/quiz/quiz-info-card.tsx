@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PermissionAction } from "@/lib/auth/permissions";
 import type { Quiz } from "@/types/quiz";
 
 import type { TimerStore } from "./hooks/use-study-timer";
@@ -85,7 +86,9 @@ export function QuizInfoCard({
   timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const appContext = useContext(AppContext);
+  const { checkPermission } = useContext(AppContext);
+  const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
+  const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const router = useRouter();
   if (quiz === null) {
     return null;
@@ -138,43 +141,41 @@ export function QuizInfoCard({
         />
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  onClick={openSearchInQuiz}
-                  disabled={!appContext.isAuthenticated}
-                  aria-label="Wyszukaj w quizie"
-                >
-                  <SearchIcon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {appContext.isAuthenticated
-                  ? "Wyszukaj w quizie"
-                  : "Zaloguj się, aby użyć tej funkcji"}
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  onClick={() => {
-                    void navigator.clipboard
-                      .writeText(window.location.href)
-                      .then(() => {
-                        toast.success("Skopiowano link do quizu");
-                      });
-                  }}
-                  aria-label="Kopiuj link do quizu"
-                >
-                  <Link2Icon className="size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Kopiuj link do quizu</TooltipContent>
-            </Tooltip>
+            {canSearchInQuiz ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    onClick={openSearchInQuiz}
+                    aria-label="Wyszukaj w quizie"
+                  >
+                    <SearchIcon className="size-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Wyszukaj w quizie</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {canShare ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    onClick={() => {
+                      void navigator.clipboard
+                        .writeText(window.location.href)
+                        .then(() => {
+                          toast.success("Skopiowano link do quizu");
+                        });
+                    }}
+                  >
+                    <Link2Icon className="size-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Kopiuj link do quizu</TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
           <Tooltip>
             <TooltipTrigger asChild>

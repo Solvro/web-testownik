@@ -1,8 +1,10 @@
 "use client";
 
 import { KeyRoundIcon } from "lucide-react";
+import { useContext } from "react";
 import { toast } from "sonner";
 
+import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -26,16 +28,9 @@ async function copyJWTAccessToken() {
     toast.error("Nie udało się skopiować tokenu");
   }
 }
+export function CopyJWTAccessTokenButton() {
+  const { isAuthenticated } = useContext(AppContext);
 
-interface CopyJWTAccessTokenButtonProps {
-  isAuthenticated: boolean;
-  isGuest: boolean;
-}
-
-export function CopyJWTAccessTokenButton({
-  isAuthenticated,
-  isGuest,
-}: CopyJWTAccessTokenButtonProps) {
   if (process.env.NODE_ENV !== "development") {
     return null;
   }
@@ -47,7 +42,7 @@ export function CopyJWTAccessTokenButton({
           onClick={copyJWTAccessToken}
           size="icon"
           variant="outline"
-          disabled={!isAuthenticated || isGuest}
+          disabled={!isAuthenticated}
           className="pointer-events-auto!"
           aria-label="Skopiuj token JWT"
         >
@@ -55,11 +50,9 @@ export function CopyJWTAccessTokenButton({
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {isAuthenticated && !isGuest
+        {isAuthenticated
           ? "Skopiuj token JWT"
-          : isGuest
-            ? "Kopiowanie tokenu nie jest dostępne w trybie gościa"
-            : "Zaloguj się żeby skopiować token JWT"}
+          : "Zaloguj się żeby skopiować token JWT"}
       </TooltipContent>
     </Tooltip>
   );

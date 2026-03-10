@@ -3,11 +3,10 @@
 import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition, startTransition, useContext, useEffect } from "react";
+import { ViewTransition, startTransition, useEffect } from "react";
 import ReactPlayer from "react-player";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
@@ -34,10 +33,8 @@ interface QuizPageClientProps {
 }
 
 function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
-  const appContext = useContext(AppContext);
   const { quiz, state, stats, continuity, actions } = useQuizLogic({
     quizId,
-    appContext,
   });
   const {
     currentQuestion,

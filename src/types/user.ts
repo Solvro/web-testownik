@@ -1,3 +1,12 @@
+export const ACCOUNT_TYPE = {
+  GUEST: "guest",
+  EMAIL: "email",
+  STUDENT: "student",
+  LECTURER: "lecturer",
+} as const;
+
+export type AccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
+
 export interface User {
   id: string;
   full_name: string;
@@ -6,16 +15,16 @@ export interface User {
 }
 
 export interface UserData extends User {
-  email: string;
+  email: string | null;
   photo_url: string;
   overriden_photo_url: string | null;
   is_superuser: boolean;
   is_staff: boolean;
   hide_profile: boolean;
+  account_type: AccountType;
 }
 
 export interface UserSettings {
-  sync_progress: boolean;
   initial_reoccurrences: number;
   wrong_answer_reoccurrences: number;
   notify_quiz_shared: boolean;
@@ -29,7 +38,6 @@ export interface SettingsFormProps {
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
-  sync_progress: false,
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
   notify_quiz_shared: true,

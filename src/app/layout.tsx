@@ -4,8 +4,11 @@ import { Suspense } from "react";
 
 import { Alerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
+import { ErrorHandler } from "@/components/error-handler";
+import { GuestAlert } from "@/components/guest-alert";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -62,11 +65,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getServerCurrentUser();
+
   return (
     <html lang="pl" suppressHydrationWarning>
       <head>
@@ -84,13 +89,15 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>
+        <Providers initialUser={user}>
           <div
             className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
             id="container"
           >
             <Navbar />
             <Suspense>
+              <ErrorHandler />
+              <GuestAlert />
               <Alerts />
             </Suspense>
             {children}
