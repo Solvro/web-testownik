@@ -132,7 +132,7 @@ function NavigationMenuLink({
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
       className={cn(
-        "data-[active=true]:focus:bg-input data-[active=true]:hover:bg-input data-[active=true]:bg-input data-[active=true]:text-accent-foreground bg-input dark:bg-background hover:bg-accent-input hover:dark:bg-input hover:text-accent-foreground focus:bg-input focus:text-accent-foreground focus-visible:ring-ring [&_svg:not([class*='text-'])]:text-muted-foreground dark:border-accent border-border flex flex-col gap-1 rounded-[10px] border px-4 py-2.5 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
+        "data-[active=true]:focus:bg-input data-[active=true]:hover:bg-input data-[active=true]:bg-input data-[active=true]:text-accent-foreground bg-input dark:bg-background hover:bg-accent-input/50 hover:dark:bg-input hover:text-accent-foreground focus:bg-input focus:text-accent-foreground focus-visible:ring-ring [&_svg:not([class*='text-'])]:text-muted-foreground dark:border-accent border-border flex flex-col gap-1 rounded-[10px] border px-4 py-2.5 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
