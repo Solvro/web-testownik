@@ -515,7 +515,7 @@ export function ConnectGuestAccount() {
                     {...props}
                     href={`${API_URL}/login?jwt=true&redirect=${redirectUrl}`}
                   >
-                    Zaloguj się z Solvro Auth
+                    Zaloguj się przez e-mail
                   </Link>
                 )}
               ></Button>

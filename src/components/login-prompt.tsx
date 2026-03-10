@@ -247,8 +247,8 @@ export function LoginPrompt(): React.JSX.Element {
                       {...props}
                       href={`${API_URL}/login?jwt=true&redirect=${encodeURIComponent(currentUrl)}`}
                     >
-                      <SolvroLogo width={20} />
-                      Zaloguj z Solvro Auth
+                      <LogInIcon />
+                      Zaloguj się przez e-mail
                     </a>
                   )}
                 ></Button>
@@ -280,23 +280,23 @@ export function LoginPrompt(): React.JSX.Element {
             </CardContent>
             <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-1 border-t p-4 text-center text-xs">
               <span>Powered by</span>
-              <Link
+              <a
                 className="inline-flex items-center gap-1"
                 href="https://solvro.pwr.edu.pl/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <SolvroLogo width={16} /> Solvro
-              </Link>
+              </a>
               <span className="font-semibold">&</span>
               <span>created by</span>
-              <Link
+              <a
                 href="https://github.com/Antoni-Czaplicki"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Antoni Czaplicki
-              </Link>
+              </a>
             </div>
           </>
         )}
