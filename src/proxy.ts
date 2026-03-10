@@ -1,30 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth";
-import { createGuestAccount, verifyAccessToken } from "@/lib/auth/server";
-
-const BOT_UA_PATTERNS =
-  /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegrambot|discordbot|applebot|bingpreview|googleother|google-inspectiontool|storebot-google|petalbot|yandexbot|baiduspider|duckduckbot|sogou|exabot|ia_archiver|archive\.org_bot|semrushbot|ahrefsbot|mj12bot|dotbot|rogerbot|screaming frog|dataforseo|gptbot|chatgpt-user|claude-web|anthropic-ai|bytespider|amazonbot|ccbot|cohere-ai|diffbot|omgili|paper\.li|feedfetcher|mediapartners-google|adsbot-google|apis-google|google-read-aloud|headlesschrome|phantomjs|prerender|snap url preview|kakaotalk-scrap|daum|naver|yeti|pinterestbot|redditbot|vkshare|w3c_validator|lighthouse|chrome-lighthouse|pagespeed|gtmetrix|uptimerobot|pingdom|statuscake|site24x7|newrelic|datadog/i;
-
-const AUTH_ROUTES = ["/login", "/auth", "/login-otp"];
-
-function shouldCreateGuestAccount(
-  pathname: string,
-  userAgent: string | null,
-): boolean {
-  if (pathname === "/") {
-    return false;
-  }
-  if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
-    return false;
-  }
-  if (userAgent !== null && BOT_UA_PATTERNS.test(userAgent)) {
-    return false;
-  }
-  return true;
-}
+import { verifyAccessToken } from "@/lib/auth/server";
 
 /**
  * Forward Set-Cookie headers from backend response to Next.js response.
@@ -66,8 +46,14 @@ async function tryRefreshTokens(
         url.searchParams.set("ban_reason", data.ban_reason ?? "Unknown reason");
 
         const response = NextResponse.redirect(url);
-        response.cookies.delete(AUTH_COOKIES.ACCESS_TOKEN);
-        response.cookies.delete(AUTH_COOKIES.REFRESH_TOKEN);
+        response.cookies.delete({
+          name: AUTH_COOKIES.ACCESS_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
+        response.cookies.delete({
+          name: AUTH_COOKIES.REFRESH_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
 
         return response;
       }
@@ -81,24 +67,6 @@ async function tryRefreshTokens(
   } catch {
     return null;
   }
-}
-
-async function createGuestAccountAndRedirect(
-  requestUrl: string,
-): Promise<NextResponse | null> {
-  const backendResponse = await createGuestAccount();
-
-  if (backendResponse === null) {
-    return null;
-  }
-
-  // Redirect to same URL with a query param to trigger the consent alert
-  const url = new URL(requestUrl);
-  url.searchParams.set("guest_created", "true");
-  const response = NextResponse.redirect(url);
-
-  forwardAuthCookies(backendResponse, response);
-  return response;
 }
 
 export async function proxy(request: NextRequest) {
@@ -120,22 +88,6 @@ export async function proxy(request: NextRequest) {
     if (refreshResponse !== null) {
       return refreshResponse;
     }
-  }
-
-  if (
-    shouldCreateGuestAccount(
-      request.nextUrl.pathname,
-      request.headers.get("user-agent"),
-    )
-  ) {
-    const guestResponse = await createGuestAccountAndRedirect(request.url);
-    if (guestResponse !== null) {
-      return guestResponse;
-    }
-
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
   }
 
   return response;
