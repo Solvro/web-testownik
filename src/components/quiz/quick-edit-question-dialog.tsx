@@ -27,11 +27,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import {
@@ -178,152 +176,109 @@ export function QuickEditQuestionDialog({
   };
 
   return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="default" />}>
-        Otwórz pierwszy dialog
-      </DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Pierwszy Poziom</DialogTitle>
-          <DialogDescription>
-            To jest główny dialog. Możesz teraz otworzyć kolejny wewnątrz tego
-            okna.
-          </DialogDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden px-0 sm:max-w-4xl"
+        onKeyDown={(event_) => {
+          event_.stopPropagation();
+        }}
+        aria-describedby={undefined}
+      >
+        <DialogHeader className="px-6 pr-10">
+          <DialogTitle className="sr-only">Edycja pytania</DialogTitle>
+          <QuestionFormHeader
+            question={formData}
+            onUpdate={(updates) => {
+              setFormData((previous) => ({ ...previous, ...updates }));
+            }}
+            isImageUploading={isImageUploading}
+            onImageChange={handleImageChange}
+            onUpload={handleUpload}
+            hideDelete
+          />
         </DialogHeader>
 
-        <div className="flex justify-center border-y border-dashed py-6">
-          {/* DRUGI DIALOG (ZAGNIEŻDŻONY) */}
-          <Dialog>
-            <DialogTrigger render={<Button variant="secondary" />}>
-              Otwórz drugi dialog
-            </DialogTrigger>
-
-            <DialogContent className="border-primary/20 max-w-xs shadow-2xl">
-              <DialogHeader>
-                <DialogTitle>Drugi Poziom</DialogTitle>
-                <DialogDescription>
-                  Właśnie otworzyłeś dialog nad dialogiem.
-                </DialogDescription>
-              </DialogHeader>
-
-              <DialogFooter>
-                <p className="text-muted-foreground text-xs italic">
-                  Naciśnij ESC, aby zamknąć tylko to okno.
-                </p>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex-1 overflow-y-auto px-6 py-1">
+          <QuestionFormContent
+            question={formData}
+            onUpdate={(updates) => {
+              setFormData((previous) => ({ ...previous, ...updates }));
+            }}
+            isImageUploading={isImageUploading}
+            onImageChange={handleImageChange}
+            onUpload={handleUpload}
+          />
         </div>
 
-        <DialogFooter showCloseButton>
-          <Button variant="ghost">Opcjonalna akcja</Button>
+        <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">
+          <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 />
+                    Usuń pytanie
+                  </Button>
+                }
+              ></AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Czy na pewno chcesz usunąć to pytanie?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tej operacji nie można cofnąć. Pytanie zostanie trwale
+                    usunięte z quizu.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      await deleteQuestion();
+                    }}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Usuwanie..." : "Usuń"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              variant="ghost"
+              nativeButton={false}
+              render={
+                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                  Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
+                </Link>
+              }
+            ></Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            >
+              Anuluj
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
+                  Zapisywanie...
+                </>
+              ) : (
+                "Zapisz zmiany"
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    // <Dialog open={open} onOpenChange={onOpenChange}>
-    //   <DialogContent
-    //     className="flex max-h-[85vh] flex-col gap-0 overflow-hidden px-0 sm:max-w-4xl"
-    //     onKeyDown={(event_) => {
-    //       event_.stopPropagation();
-    //     }}
-    //     aria-describedby={undefined}
-    //   >
-    //     <DialogHeader className="px-6 pr-10">
-    //       <DialogTitle className="sr-only">Edycja pytania</DialogTitle>
-    //       <QuestionFormHeader
-    //         question={formData}
-    //         onUpdate={(updates) => {
-    //           setFormData((previous) => ({ ...previous, ...updates }));
-    //         }}
-    //         isImageUploading={isImageUploading}
-    //         onImageChange={handleImageChange}
-    //         onUpload={handleUpload}
-    //         hideDelete
-    //       />
-    //     </DialogHeader>
-    //
-    //     <div className="flex-1 overflow-y-auto px-6 py-1">
-    //       <QuestionFormContent
-    //         question={formData}
-    //         onUpdate={(updates) => {
-    //           setFormData((previous) => ({ ...previous, ...updates }));
-    //         }}
-    //         isImageUploading={isImageUploading}
-    //         onImageChange={handleImageChange}
-    //         onUpload={handleUpload}
-    //       />
-    //     </div>
-    //
-    //     <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">
-    //       <div className="flex items-center gap-2">
-    //         <AlertDialog>
-    //           <AlertDialogTrigger
-    //             render={
-    //               <Button
-    //                 variant="ghost"
-    //                 className="text-destructive hover:text-destructive"
-    //               >
-    //                 <Trash2 />
-    //                 Usuń pytanie
-    //               </Button>
-    //             }
-    //           ></AlertDialogTrigger>
-    //           <AlertDialogContent>
-    //             <AlertDialogHeader>
-    //               <AlertDialogTitle>
-    //                 Czy na pewno chcesz usunąć to pytanie?
-    //               </AlertDialogTitle>
-    //               <AlertDialogDescription>
-    //                 Tej operacji nie można cofnąć. Pytanie zostanie trwale
-    //                 usunięte z quizu.
-    //               </AlertDialogDescription>
-    //             </AlertDialogHeader>
-    //             <AlertDialogFooter>
-    //               <AlertDialogCancel>Anuluj</AlertDialogCancel>
-    //               <AlertDialogAction
-    //                 onClick={async () => {
-    //                   await deleteQuestion();
-    //                 }}
-    //                 disabled={isDeleting}
-    //               >
-    //                 {isDeleting ? "Usuwanie..." : "Usuń"}
-    //               </AlertDialogAction>
-    //             </AlertDialogFooter>
-    //           </AlertDialogContent>
-    //         </AlertDialog>
-    //         <Button
-    //           variant="ghost"
-    //           nativeButton={false}
-    //           render={
-    //             <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-    //               Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-    //             </Link>
-    //           }
-    //         ></Button>
-    //       </div>
-    //       <div className="flex gap-2">
-    //         <Button
-    //           variant="outline"
-    //           onClick={() => {
-    //             onOpenChange(false);
-    //           }}
-    //         >
-    //           Anuluj
-    //         </Button>
-    //         <Button onClick={handleSave} disabled={isSaving}>
-    //           {isSaving ? (
-    //             <>
-    //               <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
-    //               Zapisywanie...
-    //             </>
-    //           ) : (
-    //             "Zapisz zmiany"
-    //           )}
-    //         </Button>
-    //       </div>
-    //     </DialogFooter>
-    //   </DialogContent>
-    // </Dialog>
   );
 }
