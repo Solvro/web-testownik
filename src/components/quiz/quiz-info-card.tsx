@@ -1,5 +1,10 @@
 import { format } from "date-fns";
-import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
+import {
+  BookCopyIcon,
+  Link2Icon,
+  RotateCcwIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import { toast } from "sonner";
@@ -86,7 +91,7 @@ export function QuizInfoCard({
   timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const { checkPermission } = useContext(AppContext);
+  const { checkPermission, services } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const router = useRouter();
@@ -174,6 +179,32 @@ export function QuizInfoCard({
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await services.quiz.copyQuiz(quiz.id);
+                      toast.success(
+                        "Quiz został skopiowany do Twojej biblioteki",
+                      );
+                    } catch (error) {
+                      console.error("Failed to copy quiz:", error);
+                      toast.error("Nie udało się skopiować quizu:", {
+                        ...(error instanceof Error
+                          ? { description: error.message }
+                          : {}),
+                      });
+                    }
+                  }}
+                >
+                  <BookCopyIcon className="size-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Kopiuj quiz</TooltipContent>
+            </Tooltip>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
