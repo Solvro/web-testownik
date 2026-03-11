@@ -95,21 +95,21 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             min={10}
             max={100}
             step={1}
-            value={[sliderInitialValue]}
-            onValueChange={(values) => {
-              if (Array.isArray(values)) {
-                setSliderInitialValue(values[0] as number);
-                const transformedValue = Math.max(
-                  1,
-                  Math.round(values[0] / 10),
-                );
-                setLocalInitialReoccurrences(transformedValue.toString());
-              }
+            value={sliderInitialValue}
+            onValueChange={(value) => {
+              const value_ = (
+                Array.isArray(value) ? value[0] : value
+              ) as number;
+
+              setSliderInitialValue(value_);
+              const transformedValue = Math.max(1, Math.round(value_ / 10));
+              setLocalInitialReoccurrences(transformedValue.toString());
             }}
-            onValueCommitted={(values) => {
-              if (Array.isArray(values)) {
-                handleInitialReoccurrencesCommit(values[0] as number);
-              }
+            onValueCommitted={(value) => {
+              const value_ = (
+                Array.isArray(value) ? value[0] : value
+              ) as number;
+              handleInitialReoccurrencesCommit(value_);
             }}
           />
         </div>
@@ -147,17 +147,20 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             max={100}
             step={1}
             value={[sliderWrongAnswerValue]}
-            onValueChange={(values) => {
-              if (Array.isArray(values)) {
-                setSliderWrongAnswerValue(values[0] as number);
-                const transformedValue = Math.round(values[0] / 10);
-                setLocalWrongAnswerReoccurrences(transformedValue.toString());
-              }
+            onValueChange={(value) => {
+              const value_ = (
+                Array.isArray(value) ? value[0] : value
+              ) as number;
+
+              setSliderWrongAnswerValue(value_);
+              const transformedValue = Math.round(value_ / 10);
+              setLocalWrongAnswerReoccurrences(transformedValue.toString());
             }}
-            onValueCommitted={(values) => {
-              if (Array.isArray(values)) {
-                handleWrongAnswerReoccurrencesCommit(values[0] as number);
-              }
+            onValueCommitted={(value) => {
+              const value_ = (
+                Array.isArray(value) ? value[0] : value
+              ) as number;
+              handleWrongAnswerReoccurrencesCommit(value_);
             }}
           />
         </div>

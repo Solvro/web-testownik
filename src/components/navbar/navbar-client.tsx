@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
+import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
 import { AuthButtons } from "@/components/navbar/auth-buttons";
+import { LogoutButton } from "@/components/navbar/logout-button";
 
 import { MobileMenu } from "./mobile-menu";
 import { MobileMenuButton } from "./mobile-menu-button";
@@ -13,6 +15,7 @@ import { NavbarActions } from "./navbar-actions";
 
 export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
+  const { isAuthenticated, user } = useContext(AppContext);
 
   return (
     <nav className="flex flex-col gap-2 py-4">
@@ -24,8 +27,9 @@ export function NavbarClient() {
           <NavLinks variant="desktop" />
         </div>
         <div className="hidden items-center gap-2 md:flex">
-          <NavbarActions />
           <AuthButtons />
+          <NavbarActions />
+          {isAuthenticated ? <LogoutButton /> : null}
         </div>
         <MobileMenuButton
           expanded={expanded}

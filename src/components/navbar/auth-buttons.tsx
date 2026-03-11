@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ACCOUNT_TYPE } from "@/types/user";
 
-import { LogoutButton } from "./logout-button";
-
 export function AuthButtons() {
   const { isAuthenticated, user } = useContext(AppContext);
   const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
@@ -71,28 +69,25 @@ export function AuthButtons() {
 
   if (isAuthenticated) {
     return (
-      <>
-        <Button
-          variant="cta"
-          nativeButton={false}
-          render={(props) => (
-            <Link {...props} href="/profile">
-              {profilePicture === null ? (
-                <CircleUserRoundIcon className="size-6" />
-              ) : (
-                <Avatar className="size-6">
-                  <AvatarImage src={profilePicture} className="user-avatar" />
-                  <AvatarFallback delay={600} className="bg-transparent">
-                    <CircleUserRoundIcon className="size-6" />
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <span>Profil</span>
-            </Link>
-          )}
-        ></Button>
-        <LogoutButton />
-      </>
+      <Button
+        variant="cta"
+        nativeButton={false}
+        render={(props) => (
+          <Link {...props} href="/profile">
+            {profilePicture === null ? (
+              <CircleUserRoundIcon className="size-6" />
+            ) : (
+              <Avatar className="size-6">
+                <AvatarImage src={profilePicture} className="user-avatar" />
+                <AvatarFallback delay={600} className="bg-transparent">
+                  <CircleUserRoundIcon className="size-6" />
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <span>Profil</span>
+          </Link>
+        )}
+      ></Button>
     );
   }
 
