@@ -143,7 +143,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-fit overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
           <DialogDescription>
