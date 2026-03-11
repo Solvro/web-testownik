@@ -12,15 +12,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border dark:border-0 bg-input hover:bg-accent-input/50 dark:hover:bg-ring",
+          "border dark:border-0 bg-input hover:bg-accent-input dark:hover:bg-ring",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border border-border has-[>svg]:dark:border-input bg-input shadow-xs hover:bg-accent-input/50 hover:text-accent-foreground dark:bg-background dark:border-input dark:hover:bg-input",
+          "border border-border has-[>svg]:dark:border-input bg-input shadow-xs hover:bg-accent-input hover:text-accent-foreground dark:bg-background dark:border-input dark:hover:bg-input",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent-input/50 hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-accent-input hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         cta: "bg-linear-to-r from-(--cta-gradient-from) to-(--cta-gradient-to) text-primary-foreground",
         loading: "",
@@ -59,7 +59,7 @@ function Button({
         )}
       >
         <span className="absolute -inset-full animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--border)_45%,var(--border)_55%,var(--card)_60%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--ring)_45%,var(--ring)_55%,var(--card)_60%)]" />
-        <span className="bg-accent-input/50 dark:bg-ring inline-flex h-full w-full items-center justify-center rounded-md border px-3 text-base font-medium backdrop-blur-3xl dark:border-none">
+        <span className="bg-accent-input dark:bg-ring inline-flex h-full w-full items-center justify-center rounded-md border px-3 text-base font-medium backdrop-blur-3xl dark:border-none">
           Otwórz
         </span>
       </div>
