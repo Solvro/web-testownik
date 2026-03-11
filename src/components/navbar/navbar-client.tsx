@@ -15,7 +15,7 @@ import { NavbarActions } from "./navbar-actions";
 
 export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
-  const { isAuthenticated, user } = useContext(AppContext);
+  const { isAuthenticated } = useContext(AppContext);
 
   return (
     <nav className="flex flex-col gap-2 py-4">
