@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -12,6 +13,12 @@ import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import "./globals.css";
 import { Providers } from "./providers";
+
+const hankenGrotesk = Hanken_Grotesk({
+  weight: ["100", "300", "400"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -64,7 +71,11 @@ export default async function RootLayout({
   const user = await getServerCurrentUser();
 
   return (
-    <html lang="pl" suppressHydrationWarning>
+    <html
+      lang="pl"
+      suppressHydrationWarning
+      className={hankenGrotesk.className}
+    >
       <head>
         <script
           type="application/ld+json"
@@ -79,7 +90,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%">
         <Providers initialUser={user}>
           <div
             className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"

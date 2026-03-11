@@ -142,50 +142,56 @@ export function QuizInfoCard({
           <div className="flex gap-2">
             {canSearchInQuiz ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={openSearchInQuiz}
-                  >
-                    <SearchIcon className="size-5" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-sm"
+                      variant="outline"
+                      onClick={openSearchInQuiz}
+                    >
+                      <SearchIcon className="size-5" />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Wyszukaj w quizie</TooltipContent>
               </Tooltip>
             ) : null}
             {canShare ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={() => {
-                      void navigator.clipboard
-                        .writeText(window.location.href)
-                        .then(() => {
-                          toast.success("Skopiowano link do quizu");
-                        });
-                    }}
-                  >
-                    <Link2Icon className="size-5" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-sm"
+                      variant="outline"
+                      onClick={() => {
+                        void navigator.clipboard
+                          .writeText(window.location.href)
+                          .then(() => {
+                            toast.success("Skopiowano link do quizu");
+                          });
+                      }}
+                    >
+                      <Link2Icon className="size-5" />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
           </div>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={resetProgress}
-                disabled={totalQuestions === 0}
-              >
-                <RotateCcwIcon className="size-4" /> Reset
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={resetProgress}
+                  disabled={totalQuestions === 0}
+                >
+                  <RotateCcwIcon className="size-4" /> Reset
+                </Button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>Resetuj postęp</TooltipContent>
           </Tooltip>
         </div>

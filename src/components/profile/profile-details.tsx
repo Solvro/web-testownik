@@ -161,7 +161,7 @@ export function ProfileDetails({
             <div className="relative">
               <Avatar className="size-24">
                 <AvatarImage src={userData?.photo} />
-                <AvatarFallback className="text-3xl" delayMs={600}>
+                <AvatarFallback className="text-3xl" delay={600}>
                   {getInitials(userData?.full_name ?? "")}
                 </AvatarFallback>
               </Avatar>

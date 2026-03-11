@@ -97,12 +97,19 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             step={1}
             value={[sliderInitialValue]}
             onValueChange={(values) => {
-              setSliderInitialValue(values[0]);
-              const transformedValue = Math.max(1, Math.round(values[0] / 10));
-              setLocalInitialReoccurrences(transformedValue.toString());
+              if (Array.isArray(values)) {
+                setSliderInitialValue(values[0] as number);
+                const transformedValue = Math.max(
+                  1,
+                  Math.round(values[0] / 10),
+                );
+                setLocalInitialReoccurrences(transformedValue.toString());
+              }
             }}
-            onValueCommit={(values) => {
-              handleInitialReoccurrencesCommit(values[0]);
+            onValueCommitted={(values) => {
+              if (Array.isArray(values)) {
+                handleInitialReoccurrencesCommit(values[0] as number);
+              }
             }}
           />
         </div>
@@ -141,12 +148,16 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             step={1}
             value={[sliderWrongAnswerValue]}
             onValueChange={(values) => {
-              setSliderWrongAnswerValue(values[0]);
-              const transformedValue = Math.round(values[0] / 10);
-              setLocalWrongAnswerReoccurrences(transformedValue.toString());
+              if (Array.isArray(values)) {
+                setSliderWrongAnswerValue(values[0] as number);
+                const transformedValue = Math.round(values[0] / 10);
+                setLocalWrongAnswerReoccurrences(transformedValue.toString());
+              }
             }}
-            onValueCommit={(values) => {
-              handleWrongAnswerReoccurrencesCommit(values[0]);
+            onValueCommitted={(values) => {
+              if (Array.isArray(values)) {
+                handleWrongAnswerReoccurrencesCommit(values[0] as number);
+              }
             }}
           />
         </div>

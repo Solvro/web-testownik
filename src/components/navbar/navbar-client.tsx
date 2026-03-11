@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { AppLogo } from "@/components/app-logo";
+import { AuthButtons } from "@/components/navbar/auth-buttons";
 
-import { AuthButtons } from "./auth-buttons";
 import { MobileMenu } from "./mobile-menu";
 import { MobileMenuButton } from "./mobile-menu-button";
 import { NavLinks } from "./nav-links";

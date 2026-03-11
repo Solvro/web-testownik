@@ -117,6 +117,18 @@ vi.stubGlobal("cookieStore", {
   removeEventListener: vi.fn(),
 });
 
+// Base UI ScrollArea expects Element.getAnimations in browsers; JSDOM lacks it.
+if (
+  typeof (Element.prototype as unknown as { getAnimations?: unknown })
+    .getAnimations !== "function"
+) {
+  (
+    Element.prototype as unknown as {
+      getAnimations: (options?: GetAnimationsOptions) => Animation[];
+    }
+  ).getAnimations = () => [];
+}
+
 beforeAll(() => {
   server.listen();
 });
