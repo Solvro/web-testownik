@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { MonacoEditor } from "@/components/monaco-editor";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
@@ -110,6 +111,8 @@ function ImportQuizPageContent(): React.JSX.Element {
     quizTitle,
     quizDescription,
     quiz,
+    monacoEditorRef,
+    legacyContent,
 
     // Functions
     handleFileDrop,
@@ -122,9 +125,9 @@ function ImportQuizPageContent(): React.JSX.Element {
     setQuizDescription,
     handleImport,
     handleSkipImages,
+    setLegacyContent,
     uploadProgress,
     isUploading,
-    textInputRef,
   } = useImportQuiz();
 
   const router = useRouter();
@@ -307,17 +310,20 @@ function ImportQuizPageContent(): React.JSX.Element {
                 </div>
               </div>
             </TabsContent>
+
             <TabsContent value="json" className="mt-4">
               <div className="space-y-2">
                 <Label htmlFor="text-input">Quiz w formacie JSON</Label>
-                <Textarea
-                  id="text-input"
-                  rows={5}
-                  placeholder="Wklej quiz w formie tekstu"
-                  ref={textInputRef}
+                <MonacoEditor
+                  setLegacyContent={setLegacyContent}
+                  defaultValue={legacyContent}
+                  onMount={(editor) => {
+                    monacoEditorRef.current ??= editor;
+                  }}
                 />
               </div>
             </TabsContent>
+
             <TabsContent value="legacy" className="mt-4">
               <div className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-11">

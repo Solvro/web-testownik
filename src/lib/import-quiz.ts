@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { editor } from "monaco-editor";
 import type React from "react";
 import { useContext, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +10,8 @@ import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
 import { migrateLegacyQuiz } from "@/lib/migration";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
+
+import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
 const trueFalseStrings = {
   prawda: true,
@@ -269,7 +272,8 @@ export const useImportQuiz = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileOldRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
-  const textInputRef = useRef<HTMLTextAreaElement>(null);
+  const monacoEditorRef = useRef<IStandaloneCodeEditor>(null);
+  const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
   const [uploadProgress, setUploadProgress] = useState<{
@@ -697,14 +701,14 @@ export const useImportQuiz = () => {
         break;
       }
       case "json": {
-        const textInput = textInputRef.current?.value;
-        if (textInput == null || textInput.trim() === "") {
+        const editorInput = monacoEditorRef.current?.getValue();
+        if (editorInput == null || editorInput.trim() === "") {
           setErrorAndNotify("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
         try {
-          await processAndSubmitImport(JSON.parse(textInput));
+          await processAndSubmitImport(JSON.parse(editorInput));
         } catch (parseError) {
           if (parseError instanceof Error) {
             setErrorAndNotify(
@@ -879,6 +883,8 @@ export const useImportQuiz = () => {
     errorDetail,
     uploadProgress,
     isUploading,
+    monacoEditorRef,
+    legacyContent,
 
     // Functions
     handleFileDrop,
@@ -891,6 +897,6 @@ export const useImportQuiz = () => {
     setQuizDescription,
     handleImport,
     handleSkipImages,
-    textInputRef,
+    setLegacyContent,
   };
 };
