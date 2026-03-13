@@ -19,34 +19,12 @@ export async function generateMetadata({
 }: PageProps<"/quiz/[quizId]">): Promise<Metadata> {
   const { quizId } = await params;
 
-  const cookieStore = await cookies();
-  const isGuest: boolean = cookieStore.get("is_guest")?.value === "true";
-
-  if (isGuest) {
-    return {
-      title: "Quiz",
-    };
-  }
-
   const metadata = await getQuizMetadata(quizId);
 
   return {
     title: metadata.title,
     description: metadata.description,
     authors: [{ name: metadata.maintainer?.full_name ?? "" }],
-    other: {
-      "application/ld+json": JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Quiz",
-        name: metadata.title,
-        description: metadata.description,
-        numberOfQuestions: metadata.question_count,
-        author: {
-          "@type": "Person",
-          name: metadata.maintainer?.full_name,
-        },
-      }),
-    },
   };
 }
 
