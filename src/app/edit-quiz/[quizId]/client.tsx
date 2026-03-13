@@ -72,7 +72,7 @@ function EditQuizPageContent({
     }
 
     void fetchQuiz();
-  }, [quizId, appContext.services.quiz, appContext.isGuest, searchParameters]);
+  }, [quizId, appContext.services.quiz, searchParameters]);
 
   async function handleSave(data: QuizFormData): Promise<boolean> {
     if (quizId.trim() === "") {

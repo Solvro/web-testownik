@@ -5,11 +5,11 @@ import { AppContext } from "@/app-context";
 import { GITHUB_REPOS, parseContributors } from "@/lib/contributors";
 import type { GitHubContributor } from "@/lib/contributors";
 
-export function useLastUsedQuizzes(isGuest: boolean, limit = 10) {
+export function useLastUsedQuizzes(limit = 10) {
   const appContext = useContext(AppContext);
 
   return useInfiniteQuery({
-    queryKey: ["last-used-quizzes", isGuest, limit],
+    queryKey: ["last-used-quizzes", limit],
     queryFn: async ({ pageParam: pageParameter }: { pageParam: number }) => {
       return appContext.services.quiz.getLastUsedQuizzes(limit, pageParameter);
     },
@@ -22,19 +22,21 @@ export function useLastUsedQuizzes(isGuest: boolean, limit = 10) {
     },
     // Don't refetch on window focus for dashboard data to avoid jumping content
     refetchOnWindowFocus: false,
+    enabled: appContext.isAuthenticated,
   });
 }
 
-export function useRandomQuestion(isGuest: boolean) {
+export function useRandomQuestion() {
   const appContext = useContext(AppContext);
 
   return useQuery({
-    queryKey: ["random-question", isGuest],
+    queryKey: ["random-question"],
     queryFn: async () => {
       return appContext.services.quiz.getRandomQuestion();
     },
     refetchOnWindowFocus: false,
-    retry: isGuest ? 0 : 1,
+    retry: false,
+    enabled: appContext.isAuthenticated,
   });
 }
 

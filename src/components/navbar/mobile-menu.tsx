@@ -1,30 +1,16 @@
 "use client";
 
 import { AuthButtons } from "./auth-buttons";
-import type { AuthButtonsProps } from "./auth-buttons";
 import { NavLinks } from "./nav-links";
 import { NavbarActions } from "./navbar-actions";
 
-interface MobileMenuProps extends Omit<AuthButtonsProps, "variant"> {
-  isStaff: boolean;
-}
-
-export function MobileMenu({
-  isAuthenticated,
-  isGuest,
-  isStaff,
-  profilePicture,
-}: MobileMenuProps) {
+export function MobileMenu() {
   return (
     <div className="flex flex-col gap-2 border-t pt-2 md:hidden">
-      <NavLinks isStaff={isStaff} variant="mobile" />
+      <NavLinks variant="mobile" />
       <div className="flex flex-wrap gap-2 pt-2">
-        <AuthButtons
-          isAuthenticated={isAuthenticated}
-          isGuest={isGuest}
-          profilePicture={profilePicture}
-        />
-        <NavbarActions isAuthenticated={isAuthenticated} isGuest={isGuest} />
+        <AuthButtons />
+        <NavbarActions />
       </div>
     </div>
   );

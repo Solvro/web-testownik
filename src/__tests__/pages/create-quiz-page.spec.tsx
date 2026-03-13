@@ -23,12 +23,12 @@ const testQuiz = {
   answers: ["test answer 1", "test answer 2", "test answer 3", "test answer 4"],
 };
 
-const setup = async ({ asGuest = false } = {}) => {
+const setup = async () => {
   const user = userEvent.setup();
   const token = await generateTestToken();
 
   render(
-    <Providers guest={asGuest} accessToken={token}>
+    <Providers accessToken={token}>
       <CreateQuizPage />
     </Providers>,
   );

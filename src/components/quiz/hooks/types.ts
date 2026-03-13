@@ -1,6 +1,5 @@
 import type { DataConnection } from "peerjs";
 
-import type { AppContextType } from "@/app-context-type";
 import type { Question, Quiz, QuizWithUserProgress } from "@/types/quiz";
 import type { UserSettings } from "@/types/user";
 
@@ -8,7 +7,6 @@ import type { TimerStore } from "./use-study-timer";
 
 export interface UseQuizLogicParameters {
   quizId: string;
-  appContext: AppContextType;
   onQuizLoaded?: (quiz: Quiz) => void;
 }
 

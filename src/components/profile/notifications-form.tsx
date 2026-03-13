@@ -6,22 +6,33 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PermissionAction } from "@/lib/auth/permissions";
+import { cn } from "@/lib/utils";
+import { ACCOUNT_TYPE } from "@/types/user";
 import type { SettingsFormProps } from "@/types/user";
 
 export function NotificationsForm({
   settings,
   onSettingChange,
 }: SettingsFormProps) {
-  const appContext = useContext(AppContext);
+  const { user, checkPermission } = useContext(AppContext);
+
+  const canManageNotifications = checkPermission(
+    PermissionAction.NOTIFICATION_SETTINGS,
+  );
 
   return (
     <>
-      {appContext.isGuest ? (
+      {!canManageNotifications && (
         <Alert variant="destructive">
           <AlertCircleIcon />
-          <AlertTitle>Część ustawień jest niedostępna dla gości.</AlertTitle>
+          <AlertTitle>
+            {user?.account_type === ACCOUNT_TYPE.GUEST
+              ? "Powiadomienia są niedostępne w trybie gościa."
+              : "Powiadomienia są niedostępne dla Twojego typu konta."}
+          </AlertTitle>
         </Alert>
-      ) : null}
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Powiadomienia</CardTitle>
@@ -33,7 +44,10 @@ export function NotificationsForm({
           <div className="flex items-center gap-4">
             <div>
               <Label
-                className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
+                className={cn(
+                  "text-sm font-medium",
+                  !canManageNotifications && "text-muted-foreground",
+                )}
                 htmlFor="notify-quiz-share"
               >
                 Udostępnienie quizu
@@ -48,14 +62,17 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_quiz_shared", checked);
               }}
-              disabled={appContext.isGuest}
+              disabled={!canManageNotifications}
               className="ml-auto"
             />
           </div>
           <div className="flex items-center gap-4">
             <div>
               <Label
-                className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
+                className={cn(
+                  "text-sm font-medium",
+                  !canManageNotifications && "text-muted-foreground",
+                )}
                 htmlFor="notify-bug-report"
               >
                 Zgłoszenie problemu
@@ -70,14 +87,17 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_bug_reported", checked);
               }}
-              disabled={appContext.isGuest}
+              disabled={!canManageNotifications}
               className="ml-auto"
             />
           </div>
           <div className="flex items-center gap-4">
             <div>
               <Label
-                className={`text-sm font-medium ${appContext.isGuest ? "text-muted-foreground" : ""}`}
+                className={cn(
+                  "text-sm font-medium",
+                  !canManageNotifications && "text-muted-foreground",
+                )}
                 htmlFor="notify-marketing"
               >
                 Marketingowe
@@ -93,7 +113,7 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_marketing", checked);
               }}
-              disabled={appContext.isGuest}
+              disabled={!canManageNotifications}
               className="ml-auto"
             />
           </div>

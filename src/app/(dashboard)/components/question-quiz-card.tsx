@@ -20,13 +20,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRandomQuestion } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
 
-interface QuestionQuizCardProps extends React.ComponentProps<typeof Card> {
-  isGuest: boolean;
-}
+interface QuestionQuizCardProps extends React.ComponentProps<typeof Card> {}
 
 export function QuestionQuizCard({
   className,
-  isGuest,
   ...props
 }: QuestionQuizCardProps): React.JSX.Element {
   const {
@@ -34,7 +31,7 @@ export function QuestionQuizCard({
     isLoading,
     refetch,
     isFetching,
-  } = useRandomQuestion(isGuest);
+  } = useRandomQuestion();
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [enableEdit, setEnableEdit] = useState<boolean>(true);
   const [result, setResult] = useState<string | null>(null);

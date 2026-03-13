@@ -10,7 +10,7 @@ import {
   FolderOpenIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -136,7 +136,7 @@ function ImportQuizPageContent(): React.JSX.Element {
   const textRef = useRef<HTMLDivElement | null>(null);
   const [checkIcon, setCheckIcon] = useState<boolean>(false);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
-  const formattedErrorDetail = useMemo(() => {
+  const formattedErrorDetail = (() => {
     if (errorDetail == null) {
       return null;
     }
@@ -167,7 +167,7 @@ function ImportQuizPageContent(): React.JSX.Element {
     }
 
     return errorDetail;
-  }, [errorDetail]);
+  })();
   const handleTextCopy = async () => {
     const copyTextElement = textRef.current;
     if (copyTextElement == null) {

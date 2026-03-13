@@ -111,6 +111,12 @@ if (
   ).releasePointerCapture = () => {};
 }
 
+// JSDOM doesn't implement Cookie Store API; used by AppContextProvider to sync auth state.
+vi.stubGlobal("cookieStore", {
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+});
+
 beforeAll(() => {
   server.listen();
 });

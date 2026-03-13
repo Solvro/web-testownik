@@ -20,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PermissionAction } from "@/lib/auth/permissions";
 import type { Question, Quiz } from "@/types/quiz";
 
 interface QuizActionButtonsProps {
@@ -37,13 +38,12 @@ export function QuizActionButtons({
   onToggleBrainrot,
   disabled = false,
 }: QuizActionButtonsProps) {
-  const appContext = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isMaintainer =
-    (quiz.can_edit ?? false) ||
-    quiz.maintainer?.id === appContext.user?.user_id;
+    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 
@@ -87,10 +87,6 @@ export function QuizActionButtons({
       router.push(`/edit-quiz/${quiz.id}`);
       return;
     }
-    if (appContext.isGuest) {
-      router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
-      return;
-    }
     setIsEditOpen(true);
   };
 
@@ -123,7 +119,8 @@ export function QuizActionButtons({
           </TooltipTrigger>
           <TooltipContent>Otwórz w ChatGPT</TooltipContent>
         </Tooltip>
-        {!isMaintainer && appContext.isAuthenticated && !appContext.isGuest ? (
+        {!isMaintainer &&
+        checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
