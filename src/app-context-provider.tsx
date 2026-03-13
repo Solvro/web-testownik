@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { AppContext } from "@/app-context";
 import type { AppContextType } from "@/app-context-type";
+import { useAutoGuest } from "@/hooks/use-auto-guest";
 import { useGuestQuizMigration } from "@/hooks/use-guest-quiz-migration";
 import { useSyncAuth } from "@/hooks/use-sync-auth";
 import { API_URL } from "@/lib/api";
@@ -23,6 +24,7 @@ export function AppContextProvider({
   initialUser: JWTPayload | null;
 }) {
   const { isAuthenticated, user } = useSyncAuth(initialUser);
+  useAutoGuest(user);
   useGuestQuizMigration(user);
 
   const checkPermission = (action: PermissionAction) =>
