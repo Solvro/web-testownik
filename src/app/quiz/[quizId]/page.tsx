@@ -25,6 +25,7 @@ export async function generateMetadata({
     title: metadata.title,
     description: metadata.description,
     authors: [{ name: metadata.maintainer?.full_name ?? "" }],
+    robots: { index: false, follow: true },
   };
 }
 
