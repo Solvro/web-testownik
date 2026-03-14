@@ -26,6 +26,12 @@ export async function generateMetadata({
     description: metadata.description,
     authors: [{ name: metadata.maintainer?.full_name ?? "" }],
     robots: { index: false, follow: true },
+    openGraph: {
+      title: `${metadata.title} - Testownik Solvro`,
+      description: metadata.description,
+      type: "website",
+      locale: "pl_PL",
+    },
   };
 }
 
