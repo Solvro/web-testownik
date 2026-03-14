@@ -4,6 +4,7 @@ import { ViewTransition, useEffect } from "react";
 
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,15 @@ export function QuestionCard({
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
+        const target = event.target as HTMLElement;
+        if (isInputElement(target)) {
+          return;
+        }
+
+        if (isModalOpen()) {
+          return;
+        }
+
         const answerIndex = Number.parseInt(event.key, 10) - 1;
         if (question !== null && answerIndex < question.answers.length) {
           handleAnswerClick(question.answers[answerIndex].id);
