@@ -4,6 +4,7 @@ import { ViewTransition, useEffect } from "react";
 
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,14 +85,11 @@ export function QuestionCard({
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
         const target = event.target as HTMLElement;
-        const isInput =
-          (target.tagName.toLowerCase() === "input" ||
-            target.tagName.toLowerCase() === "textarea") &&
-          (target as HTMLInputElement).type !== "checkbox";
+        if (isInputElement(target)) {
+          return;
+        }
 
-        const isModalOpen = Boolean(document.querySelector('[role="dialog"]'));
-
-        if (isInput || isModalOpen) {
+        if (isModalOpen()) {
           return;
         }
 

@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 
+import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
+
 interface Options {
   nextAction: () => void;
   skipQuestion: () => void;
@@ -16,22 +18,22 @@ export function useKeyShortcuts({
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      const isInput =
-        (target.tagName.toLowerCase() === "input" ||
-          target.tagName.toLowerCase() === "textarea") &&
-        (target as HTMLInputElement).type !== "checkbox";
-
-      const isModalOpen = Boolean(document.querySelector('[role="dialog"]'));
-
-      if (isInput || isModalOpen) {
+      if (isInputElement(target)) {
         return;
       }
 
       const key = event.key.toLowerCase();
+      const isHandledKey = key === "enter" || key === "s";
+
+      if (!isHandledKey || isModalOpen()) {
+        return;
+      }
+
+      const tagName = target.tagName.toLowerCase();
 
       switch (key) {
         case "enter": {
-          if (target.tagName.toLowerCase() !== "button") {
+          if (tagName !== "button") {
             if (isHistoryQuestion) {
               togglePreviousQuestion();
             } else {
@@ -44,9 +46,6 @@ export function useKeyShortcuts({
           if (!isHistoryQuestion) {
             skipQuestion();
           }
-          break;
-        }
-        default: {
           break;
         }
       }
