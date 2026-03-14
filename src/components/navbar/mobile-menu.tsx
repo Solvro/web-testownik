@@ -6,12 +6,12 @@ import { NavbarActions } from "./navbar-actions";
 
 export function MobileMenu() {
   return (
-    <div className="flex flex-col gap-2 border-t pt-2 md:hidden">
+    <nav className="flex flex-col gap-2 border-t pt-2 md:hidden">
       <NavLinks variant="mobile" />
       <div className="flex flex-wrap gap-2 pt-2">
         <AuthButtons />
         <NavbarActions />
       </div>
-    </div>
+    </nav>
   );
 }
