@@ -169,6 +169,7 @@ export function QuizInfoCard({
                           toast.success("Skopiowano link do quizu");
                         });
                     }}
+                    aria-label="Skopiuj link do quizu"
                   >
                     <Link2Icon className="size-5" />
                   </Button>

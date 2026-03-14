@@ -91,7 +91,7 @@ export default async function RootLayout({
       <body>
         <Providers initialUser={user}>
           <div
-            className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
+            className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
             id="container"
           >
             <Navbar />
@@ -100,7 +100,7 @@ export default async function RootLayout({
               <GuestAlert />
               <Alerts />
             </Suspense>
-            {children}
+            <main>{children}</main>
           </div>
           <Toaster richColors />
           <AppFooter />
