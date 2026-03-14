@@ -83,6 +83,18 @@ export function QuestionCard({
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
+        const target = event.target as HTMLElement;
+        const isInput =
+          (target.tagName.toLowerCase() === "input" ||
+            target.tagName.toLowerCase() === "textarea") &&
+          (target as HTMLInputElement).type !== "checkbox";
+
+        const isModalOpen = Boolean(document.querySelector('[role="dialog"]'));
+
+        if (isInput || isModalOpen) {
+          return;
+        }
+
         const answerIndex = Number.parseInt(event.key, 10) - 1;
         if (question !== null && answerIndex < question.answers.length) {
           handleAnswerClick(question.answers[answerIndex].id);

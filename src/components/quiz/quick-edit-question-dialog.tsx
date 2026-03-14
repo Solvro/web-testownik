@@ -180,9 +180,6 @@ export function QuickEditQuestionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[85vh] flex-col gap-0 overflow-hidden px-0 sm:max-w-4xl"
-        onKeyDown={(event_) => {
-          event_.stopPropagation();
-        }}
         aria-describedby={undefined}
       >
         <DialogHeader className="px-6 pr-10">
