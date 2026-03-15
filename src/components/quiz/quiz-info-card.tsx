@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   BookCopyIcon,
@@ -95,6 +96,24 @@ export function QuizInfoCard({
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { mutate: copyQuiz, isPending: isCopying } = useMutation({
+    mutationFn: async (quizId: string) => services.quiz.copyQuiz(quizId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user-quizzes"] }),
+        queryClient.invalidateQueries({ queryKey: ["last-used-quizzes"] }),
+      ]);
+      toast.success("Quiz został skopiowany do Twojej biblioteki");
+    },
+    onError: (error) => {
+      console.error("Failed to copy quiz", error);
+      toast.error("Nie udało się skopiować quizu", {
+        ...(error instanceof Error ? { description: error.message } : {}),
+      });
+    },
+  });
   if (quiz === null) {
     return null;
   }
@@ -184,26 +203,22 @@ export function QuizInfoCard({
                 <Button
                   size="icon-sm"
                   variant="outline"
-                  onClick={async () => {
-                    try {
-                      await services.quiz.copyQuiz(quiz.id);
-                      toast.success(
-                        "Quiz został skopiowany do Twojej biblioteki",
-                      );
-                    } catch (error) {
-                      console.error("Failed to copy quiz:", error);
-                      toast.error("Nie udało się skopiować quizu:", {
-                        ...(error instanceof Error
-                          ? { description: error.message }
-                          : {}),
-                      });
+                  disabled={isCopying}
+                  onClick={() => {
+                    if (quiz.id) {
+                      copyQuiz(quiz.id);
                     }
                   }}
                 >
-                  <BookCopyIcon className="size-5" />
+                  {/* Opcjonalnie: możesz zmienić ikonkę na spinner, gdy isCopying jest true */}
+                  <BookCopyIcon
+                    className={`size-5 ${isCopying ? "animate-pulse opacity-50" : ""}`}
+                  />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Kopiuj quiz</TooltipContent>
+              <TooltipContent>
+                {isCopying ? "Kopiowanie..." : "Kopiuj quiz"}
+              </TooltipContent>
             </Tooltip>
           </div>
           <Tooltip>
