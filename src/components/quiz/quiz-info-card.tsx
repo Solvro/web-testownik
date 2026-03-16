@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
-  BookCopyIcon,
+  Copy,
   Link2Icon,
+  Loader2,
   RotateCcwIcon,
   SearchIcon,
 } from "lucide-react";
@@ -110,7 +111,7 @@ export function QuizInfoCard({
     onError: (error) => {
       console.error("Failed to copy quiz", error);
       toast.error("Nie udało się skopiować quizu", {
-        ...(error instanceof Error ? { description: error.message } : {}),
+        description: error instanceof Error ? error.message : undefined,
       });
     },
   });
@@ -208,15 +209,15 @@ export function QuizInfoCard({
                   variant="outline"
                   disabled={isCopying}
                   onClick={() => {
-                    if (quiz.id) {
-                      copyQuiz(quiz.id);
-                    }
+                    copyQuiz(quiz.id);
                   }}
+                  aria-label={isCopying ? "Kopiowanie quizu" : "Kopiuj quiz"}
                 >
-                  {/* Opcjonalnie: możesz zmienić ikonkę na spinner, gdy isCopying jest true */}
-                  <BookCopyIcon
-                    className={`size-5 ${isCopying ? "animate-pulse opacity-50" : ""}`}
-                  />
+                  {isCopying ? (
+                    <Loader2 className="size-5 animate-spin" />
+                  ) : (
+                    <Copy className="size-5" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
