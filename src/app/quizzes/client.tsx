@@ -70,7 +70,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   const sharedQuizzes = allSharedQuizzes.filter(
     (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
       index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-      sq.quiz.maintainer?.id !== userId,
+      sq.quiz.creator?.id !== userId,
   );
 
   const loading = isLoadingUserQuizzes || isLoadingSharedQuizzes;

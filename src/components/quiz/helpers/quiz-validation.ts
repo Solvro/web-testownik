@@ -10,7 +10,7 @@ const ALLOWED_QUIZ_KEYS = [
   "is_anonymous",
   "version",
   "questions",
-  "maintainer",
+  "creator",
   "comment",
   "can_edit",
 ];

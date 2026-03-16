@@ -7,7 +7,7 @@ const ALLOWED_LEGACY_QUIZ_KEYS = [
   "is_anonymous",
   "version",
   "questions",
-  "maintainer",
+  "creator",
 ];
 
 const ALLOWED_LEGACY_QUESTION_KEYS = [
