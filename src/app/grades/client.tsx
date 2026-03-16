@@ -122,7 +122,7 @@ function GradesContent() {
       return "-";
     }
 
-    return (sum / totalWeight).toFixed(2);
+    return (sum / totalWeight).toFixed(3);
   };
 
   const filteredCourses = selectedTerm
