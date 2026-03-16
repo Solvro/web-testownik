@@ -31,8 +31,8 @@ interface AccessListProps {
     shared_quiz_id?: string;
     allow_edit: boolean;
   })[];
-  isMaintainerAnonymous: boolean;
-  setIsMaintainerAnonymous: Dispatch<SetStateAction<boolean>>;
+  isCreatorAnonymous: boolean;
+  setIsCreatorAnonymous: Dispatch<SetStateAction<boolean>>;
   handleRemoveUserAccess: (user: User) => void;
   handleRemoveGroupAccess: (group: Group) => void;
   handleToggleUserEdit: (
@@ -95,8 +95,8 @@ export function AccessList({
   quizMetadata,
   usersWithAccess,
   groupsWithAccess,
-  isMaintainerAnonymous,
-  setIsMaintainerAnonymous,
+  isCreatorAnonymous,
+  setIsCreatorAnonymous,
   handleRemoveUserAccess,
   handleRemoveGroupAccess,
   handleToggleUserEdit,
@@ -105,10 +105,10 @@ export function AccessList({
   return (
     <ScrollArea className="w-full **:data-[slot=scroll-area-viewport]:max-h-64">
       <div className="flex flex-col gap-2">
-        {quizMetadata.maintainer != null && (
+        {quizMetadata.creator != null && (
           <div
             className="flex w-full items-center gap-1"
-            key={`maintainer-${quizMetadata.maintainer.id}`}
+            key={`creator-${quizMetadata.creator.id}`}
           >
             <div
               className={cn(
@@ -118,20 +118,20 @@ export function AccessList({
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage
-                    src={quizMetadata.maintainer.photo}
-                    alt={`Zdjęcie profilowe użytkownika ${quizMetadata.maintainer.full_name}`}
+                    src={quizMetadata.creator.photo}
+                    alt={`Zdjęcie profilowe użytkownika ${quizMetadata.creator.full_name}`}
                   />
                   <AvatarFallback delayMs={600}>
-                    {getInitials(quizMetadata.maintainer.full_name)}
+                    {getInitials(quizMetadata.creator.full_name)}
                   </AvatarFallback>
                 </Avatar>
                 <p className="m-0 text-sm font-medium">
-                  {quizMetadata.maintainer.full_name}
+                  {quizMetadata.creator.full_name}
                 </p>
               </div>
               <PersistentTooltip
-                pressed={isMaintainerAnonymous}
-                onPressedChange={setIsMaintainerAnonymous}
+                pressed={isCreatorAnonymous}
+                onPressedChange={setIsCreatorAnonymous}
                 tooltipContentPressed="Ujawnij właściciela"
                 tooltipContentUnpressed="Ukryj właściciela"
                 IconPressed={HatGlassesIcon}

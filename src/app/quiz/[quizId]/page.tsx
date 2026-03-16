@@ -24,7 +24,7 @@ export async function generateMetadata({
   return {
     title: metadata.title,
     description: metadata.description,
-    authors: [{ name: metadata.maintainer?.full_name ?? "" }],
+    authors: [{ name: metadata.creator?.full_name ?? "" }],
     robots: { index: false, follow: true },
     openGraph: {
       title: `${metadata.title} - Testownik Solvro`,

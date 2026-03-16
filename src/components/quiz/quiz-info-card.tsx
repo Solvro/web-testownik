@@ -129,8 +129,8 @@ export function QuizInfoCard({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer == null ? null : (
-          <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
+        {quiz.creator == null ? null : (
+          <CardDescription>by {quiz.creator.full_name}</CardDescription>
         )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">

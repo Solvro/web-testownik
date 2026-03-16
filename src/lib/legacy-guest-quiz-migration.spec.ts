@@ -13,7 +13,7 @@ const currentQuiz: Quiz = {
   visibility: 0,
   allow_anonymous: false,
   is_anonymous: false,
-  maintainer: null,
+  creator: null,
   questions: [
     {
       id: "q-1",
