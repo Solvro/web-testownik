@@ -65,7 +65,7 @@ export function ShareQuizDialog({
   const [groupsWithAccess, setGroupsWithAccess] = useState<
     (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
   >([]);
-  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(
+  const [isCreatorAnonymous, setIsCreatorAnonymous] = useState(
     quiz.is_anonymous,
   );
   const [allowAnonymous, setAllowAnonymous] = useState(quiz.allow_anonymous);
@@ -214,7 +214,7 @@ export function ShareQuizDialog({
       // Prevent duplicates
       if (
         !usersWithAccess.some((u) => u.id === entity.id) &&
-        entity.id !== quiz.maintainer?.id
+        entity.id !== quiz.creator?.id
       ) {
         setUsersWithAccess((previous) => [
           ...previous,
@@ -275,7 +275,7 @@ export function ShareQuizDialog({
       const quizResponse = await appContext.services.quiz.updateQuiz(quiz.id, {
         visibility: accessLevel,
         allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
-        is_anonymous: isMaintainerAnonymous,
+        is_anonymous: isCreatorAnonymous,
       });
 
       const removedUsers = initialUsersWithAccess.filter(
@@ -419,8 +419,8 @@ export function ShareQuizDialog({
                   quizMetadata={quiz}
                   usersWithAccess={usersWithAccess}
                   groupsWithAccess={groupsWithAccess}
-                  isMaintainerAnonymous={isMaintainerAnonymous}
-                  setIsMaintainerAnonymous={setIsMaintainerAnonymous}
+                  isCreatorAnonymous={isCreatorAnonymous}
+                  setIsCreatorAnonymous={setIsCreatorAnonymous}
                   handleRemoveUserAccess={handleRemoveUserAccess}
                   handleRemoveGroupAccess={handleRemoveGroupAccess}
                   handleToggleUserEdit={handleToggleUserEdit}

@@ -8,7 +8,7 @@ export enum PermissionAction {
   VIEW_SHARED_QUIZZES = "view_shared_quizzes",
   // Sharing quizzes with others
   SHARE_QUIZZES = "share_quizzes",
-  // Reporting quiz issues to its maintainers
+  // Reporting quiz issues to its creators
   REPORT_QUIZ_ISSUES = "report_quiz_issues",
   // Viewing users' grades
   VIEW_GRADES = "view_grades",

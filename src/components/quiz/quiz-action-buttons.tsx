@@ -42,8 +42,8 @@ export function QuizActionButtons({
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const isMaintainer =
-    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
+  const isCreator =
+    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 
@@ -121,8 +121,7 @@ export function QuizActionButtons({
           </TooltipTrigger>
           <TooltipContent>Otwórz w ChatGPT</TooltipContent>
         </Tooltip>
-        {!isMaintainer &&
-        checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
+        {!isCreator && checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
@@ -142,7 +141,7 @@ export function QuizActionButtons({
             <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
           </Tooltip>
         ) : null}
-        {isMaintainer ? (
+        {isCreator ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

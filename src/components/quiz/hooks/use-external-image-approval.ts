@@ -95,7 +95,7 @@ export function useExternalImageApproval(
 ): UseExternalImageApprovalResult {
   const appContext = useContext(AppContext);
 
-  const isMaintainer = quiz.maintainer?.id === appContext.user?.user_id;
+  const isCreator = quiz.creator?.id === appContext.user?.user_id;
 
   const hasExternalImages = quiz.has_external_images ?? false;
 
@@ -123,7 +123,7 @@ export function useExternalImageApproval(
   };
 
   const [isApproved, setIsApproved] = useState<boolean>(() => {
-    if (isMaintainer || !hasExternalImages || domains.length === 0) {
+    if (isCreator || !hasExternalImages || domains.length === 0) {
       return true;
     }
     return getStoredApproval();
@@ -132,7 +132,7 @@ export function useExternalImageApproval(
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isMaintainer || !hasExternalImages || domains.length === 0) {
+    if (isCreator || !hasExternalImages || domains.length === 0) {
       setIsApproved(true);
       setIsInitialized(true);
       return;
@@ -141,7 +141,7 @@ export function useExternalImageApproval(
     const approved = getStoredApproval();
     setIsApproved(approved);
     setIsInitialized(true);
-  }, [domains.length, getStoredApproval, hasExternalImages, isMaintainer]);
+  }, [domains.length, getStoredApproval, hasExternalImages, isCreator]);
 
   const approve = () => {
     if (typeof window !== "undefined") {
