@@ -15,14 +15,14 @@ export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <nav className="flex flex-col gap-2 py-4">
+    <header className="flex flex-col gap-2 py-4">
       <div className="flex items-center justify-between gap-4 sm:px-4">
-        <div className="flex items-center gap-6">
+        <nav className="flex items-center gap-6">
           <Link href="/">
             <AppLogo />
           </Link>
           <NavLinks variant="desktop" />
-        </div>
+        </nav>
         <div className="hidden items-center gap-2 md:flex">
           <NavbarActions />
           <AuthButtons />
@@ -35,6 +35,6 @@ export function NavbarClient() {
         />
       </div>
       {expanded ? <MobileMenu /> : null}
-    </nav>
+    </header>
   );
 }
