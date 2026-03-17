@@ -27,6 +27,7 @@ export interface UserData extends User {
 export interface UserSettings {
   initial_reoccurrences: number;
   wrong_answer_reoccurrences: number;
+  max_question_reoccurrences: number;
   notify_quiz_shared: boolean;
   notify_bug_reported: boolean;
   notify_marketing: boolean;
@@ -40,6 +41,7 @@ export interface SettingsFormProps {
 export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
+  max_question_reoccurrences: 1,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,
