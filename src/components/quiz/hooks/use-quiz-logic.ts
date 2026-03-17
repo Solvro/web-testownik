@@ -1,103 +1,65 @@
-import { useEffect, useReducer, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
+import { AppContext } from "@/app-context";
+import { PermissionAction } from "@/lib/auth/permissions";
 import {
   checkAnswerCorrectness,
-  getMasteredCount,
-  pickNextQuestion,
-} from "@/lib/session-utils";
-import { getDeterministicShuffle } from "@/lib/shuffle-utils";
-import type {
-  AnswerRecord,
-  Question,
-  QuizWithUserProgress,
-} from "@/types/quiz";
-import { DEFAULT_USER_SETTINGS } from "@/types/user";
-
-import {
   createAnswerRecord,
-  initialRuntime,
-  runtimeReducer,
-  selectAnswerCounts,
-} from "./quiz-runtime-reducer";
+} from "@/lib/session-utils";
+import type { AnswerRecord, Question } from "@/types/quiz";
+
 import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
+import { useActiveQuiz } from "./use-active-quiz";
 import { useQuizContinuity } from "./use-quiz-continuity";
-import { useQuizData } from "./use-quiz-data";
 import { useStudyTimer } from "./use-study-timer";
 
 export function useQuizLogic({
   quizId,
-  appContext,
 }: UseQuizLogicParameters): UseQuizLogicResult {
-  const { data: initialData } = useQuizData(quizId);
-  const quiz = initialData;
-  const userSettings = initialData.user_settings ?? {
-    ...DEFAULT_USER_SETTINGS,
-  };
-
-  const [runtime, dispatch] = useReducer(
-    runtimeReducer,
-    initialData,
-    (data) => {
-      const payload = getInitialSessionPayload(data);
-      return runtimeReducer(initialRuntime, {
-        type: "INIT_SESSION",
-        payload,
-      });
-    },
-  );
-
-  useEffect(() => {
-    const payload = getInitialSessionPayload(initialData);
-
-    dispatch({
-      type: "INIT_SESSION",
-      payload,
-    });
-  }, [initialData]);
+  const { services, checkPermission, user } = useContext(AppContext);
 
   const {
+    quiz,
+    userSettings,
     currentQuestion,
-    selectedAnswers,
-    questionChecked,
     isQuizFinished,
-    showHistory,
-    showBrainrot,
     answers,
-    questions,
-    settings,
-    canGoBack,
-    isHistoryQuestion,
-  } = runtime;
+    answerCounts,
+    mastered,
+    client,
+    actions: sessionActions,
+  } = useActiveQuiz(quizId);
+
+  const { selectedAnswers, questionChecked } = client;
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [showBrainrot, setShowBrainrot] = useState(false);
+  const [historyQuestionId, setHistoryQuestionId] = useState<string | null>(
+    null,
+  );
 
   const {
     store: timerStore,
     setFromLoaded: setTimer,
     getStartTime,
-  } = useStudyTimer(
-    isQuizFinished,
-    initialData.current_session?.study_time ?? 0,
-  );
+  } = useStudyTimer(isQuizFinished, quiz.current_session?.study_time ?? 0);
 
   const getCurrentStudyTime = () => timerStore.getSnapshot();
 
   // refs for continuity
-  const currentQuestionRef = useRef<Question | null>(null);
-  const answersRef = useRef<AnswerRecord[]>([]);
-  const selectedAnswersRef = useRef<string[]>([]);
-  const historyQuestionRef = useRef<Question | null>(null);
+  const currentQuestionRef = useRef<Question | null>(currentQuestion);
+  const answersRef = useRef<AnswerRecord[]>(answers);
+  const selectedAnswersRef = useRef<string[]>(selectedAnswers);
+  const nextQuestionRef = useRef<Question | null>(null);
   const checkAnswerRef = useRef<
     (remote?: boolean, nextQuestion?: Question | null) => void
   >(() => {
     /* noop until assigned */
   });
 
-  // Compute stats from answers
-  const answerCounts = selectAnswerCounts(runtime);
-  const mastered = getMasteredCount(questions, answers, settings);
-
   // continuity hook
   const continuity = useQuizContinuity({
-    enabled: userSettings.sync_progress && appContext.isAuthenticated,
+    enabled: checkPermission(PermissionAction.QUIZ_CONTINUITY),
     quizId,
     getCurrentState: () => ({
       question: currentQuestionRef.current,
@@ -109,31 +71,27 @@ export function useQuizLogic({
     }),
     onInitialSync: (d) => {
       timerStore.setStartTime(d.startTime);
-      dispatch({
-        type: "APPLY_LOADED_PROGRESS",
-        payload: {
-          answers: d.answers ?? [],
-          question: null, // will be set by onQuestionUpdate
-          finished: false,
-        },
-      });
+      sessionActions.applyLoadedProgress(
+        d.answers ?? [],
+        null, // will be set by onQuestionUpdate
+      );
     },
     onQuestionUpdate: (q, selected) => {
-      dispatch({ type: "SET_CURRENT_QUESTION", payload: { question: q } });
-      dispatch({ type: "SET_SELECTED_ANSWERS", payload: selected });
+      sessionActions.setCurrentQuestion(q);
+      sessionActions.setSelectedAnswers(selected);
+      setHistoryQuestionId(null);
     },
     onAnswerChecked: (nextQuestion) => {
       checkAnswerRef.current(true, nextQuestion);
+      setHistoryQuestionId(null);
     },
-    userId: appContext.user?.user_id,
+    onResetProgress: (session) => {
+      sessionActions.resetProgress(session);
+      setTimer(0, Date.now());
+      setHistoryQuestionId(null);
+    },
+    userId: user?.user_id,
   });
-
-  // effects to keep refs updated
-  useEffect(() => {
-    currentQuestionRef.current = currentQuestion;
-    answersRef.current = answers;
-    selectedAnswersRef.current = selectedAnswers;
-  }, [currentQuestion, answers, selectedAnswers]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const checkAnswer = (
@@ -141,9 +99,6 @@ export function useQuizLogic({
     nextQuestionOverride?: Question | null,
     force?: boolean,
   ) => {
-    /**
-     * Sometimes we want to force checking answer - used in viewing history question
-     */
     if (
       currentQuestionRef.current == null ||
       (force === false && questionChecked)
@@ -153,56 +108,52 @@ export function useQuizLogic({
 
     const isCorrect = checkAnswerCorrectness(
       currentQuestionRef.current,
-      selectedAnswers,
+      selectedAnswersRef.current,
     );
     const newAnswer = createAnswerRecord(
       currentQuestionRef.current.id,
-      selectedAnswers,
+      selectedAnswersRef.current,
       isCorrect,
     );
-    const updatedAnswers = [newAnswer, ...runtime.answers];
-    const nextQuestion_ =
-      nextQuestionOverride ??
-      pickNextQuestion(
-        runtime.questions,
-        updatedAnswers,
-        runtime.settings,
-        currentQuestionRef.current.id,
-      );
 
-    dispatch({
-      type: "RECORD_ANSWER",
-      payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
-    });
+    const { nextQuestion } = sessionActions.recordAnswer(
+      newAnswer,
+      nextQuestionOverride,
+    );
+    nextQuestionRef.current = nextQuestion;
 
     if (!remote) {
-      void appContext.services.quiz.recordAnswer(
+      void services.quiz.recordAnswer(
         quizId,
         newAnswer,
         getCurrentStudyTime(),
-        nextQuestion_?.id ?? null,
+        nextQuestionRef.current?.id ?? client.nextQuestionId,
       );
     }
 
     if (!remote) {
-      continuity.sendAnswerChecked(nextQuestion_);
+      const nextQ = nextQuestionRef.current;
+      continuity.sendAnswerChecked(nextQ);
     }
   };
 
   useEffect(() => {
+    currentQuestionRef.current = currentQuestion;
+    answersRef.current = answers;
+    selectedAnswersRef.current = selectedAnswers;
     checkAnswerRef.current = checkAnswer;
-  }, [checkAnswer]);
+  }, [currentQuestion, answers, selectedAnswers, checkAnswer]);
 
-  const nextQuestion = () => {
-    dispatch({ type: "ADVANCE_QUESTION" });
-    if (runtime.nextQuestion !== null) {
-      continuity.sendQuestionUpdate(runtime.nextQuestion, []);
-    }
+  const advanceToNext = () => {
+    const nextQ = nextQuestionRef.current;
+    sessionActions.advanceQuestion();
+    nextQuestionRef.current = null;
+    continuity.sendQuestionUpdate(nextQ, []);
   };
 
   const nextAction = () => {
     if (questionChecked) {
-      nextQuestion();
+      advanceToNext();
     } else {
       checkAnswer();
     }
@@ -210,7 +161,7 @@ export function useQuizLogic({
 
   const skipQuestion = () => {
     if (questionChecked) {
-      nextQuestion();
+      advanceToNext();
       return;
     }
 
@@ -223,48 +174,33 @@ export function useQuizLogic({
       [],
       false,
     );
-    const updatedAnswers = [...runtime.answers, newAnswer];
-    const nextQuestion_ = pickNextQuestion(
-      runtime.questions,
-      updatedAnswers,
-      runtime.settings,
-      currentQuestionRef.current.id,
-    );
 
-    dispatch({
-      type: "RECORD_ANSWER",
-      payload: { answer: newAnswer, nextQuestion: nextQuestion_ },
-    });
+    const { nextQuestion: nextQ } = sessionActions.recordAnswer(newAnswer);
+    nextQuestionRef.current = nextQ;
 
-    void appContext.services.quiz.recordAnswer(
+    void services.quiz.recordAnswer(
       quizId,
       newAnswer,
       getCurrentStudyTime(),
-      nextQuestion_?.id ?? null,
+      nextQ?.id ?? null,
     );
 
-    continuity.sendAnswerChecked(nextQuestion_);
-    if (nextQuestion_ !== null) {
-      continuity.sendQuestionUpdate(nextQuestion_, []);
-    }
-    dispatch({ type: "ADVANCE_QUESTION" });
+    continuity.sendAnswerChecked(nextQ);
+    continuity.sendQuestionUpdate(nextQ, []);
+    sessionActions.advanceQuestion();
+    nextQuestionRef.current = null;
   };
 
-  const goToPreviousQuestion = () => {
-    if (isHistoryQuestion && historyQuestionRef.current != null) {
-      dispatch({
-        type: "SET_IS_HISTORY_QUESTION",
-        payload: false,
-      });
-      dispatch({
-        type: "SET_CURRENT_QUESTION",
-        payload: { question: historyQuestionRef.current },
-      });
-      historyQuestionRef.current = null;
+  const togglePreviousQuestion = () => {
+    if (historyQuestionId !== null) {
+      setHistoryQuestionId(null);
+      if (currentQuestion !== null) {
+        continuity.sendQuestionUpdate(currentQuestion, selectedAnswers);
+      }
       return;
     }
 
-    if (answersRef.current.length === 0 || !canGoBack) {
+    if (answersRef.current.length === 0) {
       return;
     }
 
@@ -277,43 +213,36 @@ export function useQuizLogic({
       return;
     }
 
-    historyQuestionRef.current = currentQuestionRef.current;
-    dispatch({
-      type: "SET_IS_HISTORY_QUESTION",
-      payload: true,
-    });
-    dispatch({
-      type: "SET_CURRENT_QUESTION",
-      payload: { question: previousQuestion },
-    });
-    dispatch({
-      type: "SET_SELECTED_ANSWERS",
-      payload: lastAnswer.selected_answers,
-    });
-    checkAnswer(true, null, true);
+    setHistoryQuestionId(previousQuestion.id);
   };
 
   const resetProgress = async () => {
-    await appContext.services.quiz.deleteQuizProgress(
-      quizId,
-      userSettings.sync_progress,
-    );
-    dispatch({
-      type: "RESET_PROGRESS",
-    });
+    const session = await services.quiz.deleteQuizProgress(quizId, quiz);
+    sessionActions.resetProgress(session);
     setTimer(0, Date.now());
+    setHistoryQuestionId(null);
+    continuity.sendResetProgress(session);
   };
+
+  const historyQuestion =
+    historyQuestionId == null
+      ? null
+      : (quiz.questions.find((q) => q.id === historyQuestionId) ?? null);
 
   return {
     quiz,
     userSettings,
     state: {
-      currentQuestion,
-      selectedAnswers,
-      questionChecked,
+      currentQuestion: historyQuestion ?? currentQuestion,
+      selectedAnswers:
+        historyQuestion == null
+          ? selectedAnswers
+          : (answers.find((a) => a.question === historyQuestionId)
+              ?.selected_answers ?? []),
+      questionChecked: historyQuestion == null ? questionChecked : true,
       isQuizFinished,
-      canGoBack,
-      isHistoryQuestion,
+      canGoBack: answers.length > 0,
+      isHistoryQuestion: historyQuestion != null,
       showHistory,
       showBrainrot,
     },
@@ -321,9 +250,8 @@ export function useQuizLogic({
       correctAnswersCount: answerCounts.correct,
       wrongAnswersCount: answerCounts.wrong,
       masteredCount: mastered,
-      totalQuestions: questions.length,
+      totalQuestions: quiz.questions.length,
       timerStore,
-      answers,
     },
     continuity: {
       isHost: continuity.isHost,
@@ -335,52 +263,18 @@ export function useQuizLogic({
       resetProgress,
       setSelectedAnswers: (ans: string[]) => {
         selectedAnswersRef.current = ans;
-        dispatch({ type: "SET_SELECTED_ANSWERS", payload: ans });
+        sessionActions.setSelectedAnswers(ans);
         if (currentQuestion !== null) {
           continuity.sendQuestionUpdate(currentQuestion, ans);
         }
       },
       toggleHistory: () => {
-        dispatch({ type: "TOGGLE_HISTORY" });
+        setShowHistory((h) => !h);
       },
       toggleBrainrot: () => {
-        dispatch({ type: "TOGGLE_BRAINROT" });
+        setShowBrainrot((b) => !b);
       },
-      goToPreviousQuestion,
+      togglePreviousQuestion,
     },
   } as const;
-}
-
-function getInitialSessionPayload(initialData: QuizWithUserProgress) {
-  const progressSettings = {
-    initialReoccurrences:
-      initialData.user_settings?.initial_reoccurrences ??
-      DEFAULT_USER_SETTINGS.initial_reoccurrences,
-    wrongAnswerReoccurrences:
-      initialData.user_settings?.wrong_answer_reoccurrences ??
-      DEFAULT_USER_SETTINGS.wrong_answer_reoccurrences,
-  };
-
-  const session = initialData.current_session;
-  let precomputedCurrentQuestion: Question | null = null;
-  if (session?.current_question != null) {
-    const savedQuestion = initialData.questions.find(
-      (q) => q.id === session.current_question,
-    );
-    if (savedQuestion !== undefined) {
-      const seed = `${session.id}-${String(session.study_time)}`;
-      precomputedCurrentQuestion = {
-        ...savedQuestion,
-        answers: getDeterministicShuffle(savedQuestion.answers, seed),
-      };
-    }
-  }
-
-  return {
-    questions: initialData.questions,
-    settings: progressSettings,
-    answers: session?.answers,
-    currentQuestionId: session?.current_question,
-    precomputedCurrentQuestion,
-  };
 }

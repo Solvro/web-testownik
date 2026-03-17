@@ -4,8 +4,11 @@ import { Suspense } from "react";
 
 import { Alerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
+import { ErrorHandler } from "@/components/error-handler";
+import { GuestAlert } from "@/components/guest-alert";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -17,9 +20,10 @@ export const metadata: Metadata = {
   },
   description:
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
-  keywords:
-    "Testownik, Solvro, KN Solvro, nauka do egzaminu, quizy, aplikacja edukacyjna, interaktywna nauka, przygotowanie do sesji, politechnika, studia, uczelnia, testy online, aplikacja mobilna, nauka online, edukacja, pwr, testownik, testownik solvro, testownik pwr, testownik politechnika, testownik studia, testownik uczelnia, testownik aplikacja, testownik edukacja, testownik nauka, testownik quizy, testownik przygotowanie do sesji",
-  authors: [{ name: "KN Solvro" }],
+  creator: "KN Solvro",
+  alternates: {
+    canonical: "https://testownik.solvro.pl",
+  },
   robots: "index, follow",
   ...(process.env.COOLIFY_URL != null &&
     process.env.COOLIFY_URL !== "" && {
@@ -51,13 +55,23 @@ export const metadata: Metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Testownik Solvro",
+      url: "https://testownik.solvro.pl",
+    }),
+  },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getServerCurrentUser();
+
   return (
     <html lang="pl" suppressHydrationWarning>
       <head>
@@ -75,16 +89,18 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>
+        <Providers initialUser={user}>
           <div
-            className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
+            className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
             id="container"
           >
             <Navbar />
             <Suspense>
+              <ErrorHandler />
+              <GuestAlert />
               <Alerts />
             </Suspense>
-            {children}
+            <main>{children}</main>
           </div>
           <Toaster richColors />
           <AppFooter />

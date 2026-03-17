@@ -7,10 +7,11 @@ import {
   SkullIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
 import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PermissionAction } from "@/lib/auth/permissions";
 import type { Question, Quiz } from "@/types/quiz";
 
 interface QuizActionButtonsProps {
@@ -36,12 +38,12 @@ export function QuizActionButtons({
   onToggleBrainrot,
   disabled = false,
 }: QuizActionButtonsProps) {
-  const appContext = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isMaintainer =
-    (quiz.can_edit ?? false) ||
-    quiz.maintainer?.id === appContext.user?.user_id;
+    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 
@@ -82,10 +84,10 @@ export function QuizActionButtons({
 
   const handleEdit = () => {
     if (question == null) {
-      toast.error("Nie można edytować pytania: brak pytania");
+      router.push(`/edit-quiz/${quiz.id}`);
       return;
     }
-    router.push(`/edit-quiz/${quiz.id}#question-${question.id}`);
+    setIsEditOpen(true);
   };
 
   return (
@@ -98,6 +100,7 @@ export function QuizActionButtons({
               size="icon"
               onClick={handleCopy}
               disabled={!canUseQuestion}
+              aria-label="Kopiuj pytanie i odpowiedzi"
             >
               <ClipboardCopyIcon />
             </Button>
@@ -111,13 +114,15 @@ export function QuizActionButtons({
               size="icon"
               onClick={handleOpenChatGPT}
               disabled={!canUseQuestion}
+              aria-label="Otwórz w ChatGPT"
             >
               <SiOpenai />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Otwórz w ChatGPT</TooltipContent>
         </Tooltip>
-        {!isMaintainer && appContext.isAuthenticated && !appContext.isGuest ? (
+        {!isMaintainer &&
+        checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
@@ -128,6 +133,7 @@ export function QuizActionButtons({
                   variant="outline"
                   size="icon"
                   disabled={!canUseQuestion}
+                  aria-label="Zgłoś problem z pytaniem"
                 >
                   <MessageSquareWarningIcon />
                 </Button>
@@ -143,12 +149,14 @@ export function QuizActionButtons({
                 variant="outline"
                 size="icon"
                 onClick={handleEdit}
-                disabled={!canUseQuestion}
+                aria-label="Edytuj pytanie"
               >
                 <PencilLineIcon />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Edytuj pytanie</TooltipContent>
+            <TooltipContent>
+              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
+            </TooltipContent>
           </Tooltip>
         ) : null}
         <Tooltip>
@@ -157,7 +165,7 @@ export function QuizActionButtons({
               variant="outline"
               size="icon"
               onClick={onToggleHistory}
-              disabled={!canUseQuestion}
+              aria-label="Historia odpowiedzi"
             >
               <HistoryIcon />
             </Button>
@@ -166,13 +174,27 @@ export function QuizActionButtons({
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onToggleBrainrot}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onToggleBrainrot}
+              aria-label="Brainrot mode"
+            >
               <SkullIcon />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Brainrot mode</TooltipContent>
         </Tooltip>
       </CardContent>
+      {question == null ? null : (
+        <QuickEditQuestionDialog
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          question={question}
+          quizId={quiz.id}
+          key={question.id}
+        />
+      )}
     </Card>
   );
 }

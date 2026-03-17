@@ -41,11 +41,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { ACCOUNT_TYPE } from "@/types/user";
 import type { Course } from "@/types/user";
 
 function GradesContent() {
-  const appContext = useContext(AppContext);
+  const { checkPermission, services, user } = useContext(AppContext);
 
   const {
     data: gradesData,
@@ -53,8 +55,8 @@ function GradesContent() {
     error,
   } = useQuery({
     queryKey: ["grades"],
-    queryFn: async () => appContext.services.user.getGrades(),
-    enabled: !appContext.isGuest && Boolean(appContext.user?.student_number),
+    queryFn: async () => services.user.getGrades(),
+    enabled: checkPermission(PermissionAction.VIEW_GRADES),
   });
 
   const terms = gradesData?.terms ?? [];
@@ -120,14 +122,14 @@ function GradesContent() {
       return "-";
     }
 
-    return (sum / totalWeight).toFixed(2);
+    return (sum / totalWeight).toFixed(3);
   };
 
   const filteredCourses = selectedTerm
     ? courses.filter((course) => course.term_id === selectedTerm)
     : courses;
 
-  if (appContext.isGuest) {
+  if (!checkPermission(PermissionAction.VIEW_GRADES)) {
     return (
       <Card>
         <CardHeader className="text-center">
@@ -136,32 +138,17 @@ function GradesContent() {
         <CardContent className="space-y-4 text-center text-sm">
           <p>
             Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
-            w trybie gościa.
+            dla Twojego typu konta.
           </p>
-          <Link href="/connect-account">
-            <Button>Połącz konto</Button>
-          </Link>
+          {user?.account_type === ACCOUNT_TYPE.GUEST && (
+            <Link href="/login?redirect=/grades">
+              <Button>Zaloguj się</Button>
+            </Link>
+          )}
         </CardContent>
       </Card>
     );
   }
-
-  if (!(appContext.user?.student_number ?? "")) {
-    return (
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>Oceny</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-center text-sm">
-          <p>
-            Ta funkcja korzysta z Twoich danych z USOSa, więc nie jest dostępna
-            dla kont Solvro Auth.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (error != null) {
     return (
       <Alert variant="destructive">
@@ -231,7 +218,10 @@ function GradesContent() {
               }}
               disabled={terms.length === 0}
             >
-              <SelectTrigger className="w-full sm:w-60">
+              <SelectTrigger
+                className="w-full sm:w-60"
+                aria-label="Wybierz semestr"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

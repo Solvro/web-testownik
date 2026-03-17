@@ -15,28 +15,27 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { API_URL } from "@/lib/api";
+import { PermissionAction } from "@/lib/auth/permissions";
 
 interface NavLinksProps {
-  isStaff: boolean;
   variant?: "desktop" | "mobile";
 }
 
-export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
+export function NavLinks({ variant = "desktop" }: NavLinksProps) {
+  const { user, services, checkPermission } = useContext(AppContext);
+  const isStaff = user?.is_staff ?? false;
+
   const pathname = usePathname();
   const [showReportDialog, setShowReportDialog] = useState(false);
-  const appContext = useContext(AppContext);
   const queryClient = useQueryClient();
 
   const prefetchGrades = () => {
-    if (
-      !appContext.isAuthenticated ||
-      !(appContext.user?.student_number ?? "")
-    ) {
+    if (!checkPermission(PermissionAction.VIEW_GRADES)) {
       return;
     }
     void queryClient.prefetchQuery({
       queryKey: ["grades"],
-      queryFn: async () => appContext.services.user.getGrades(),
+      queryFn: async () => services.user.getGrades(),
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
   };
@@ -96,7 +95,7 @@ export function NavLinks({ isStaff, variant = "desktop" }: NavLinksProps) {
 
   return (
     <>
-      <NavigationMenu className="hidden sm:flex" viewport={false}>
+      <NavigationMenu className="hidden md:flex" viewport={false}>
         <NavigationMenuList className="gap-1">
           <NavigationMenuItem>
             <NavigationMenuLink active={isActive("/quizzes")} asChild>

@@ -5,7 +5,13 @@ export default await solvro({
     "react-refresh/only-export-components": [
       "warn",
       {
-        allowExportNames: ["metadata", "viewport", "size", "contentType"],
+        allowExportNames: [
+          "metadata",
+          "generateMetadata",
+          "viewport",
+          "size",
+          "contentType",
+        ],
       },
     ],
     "react/no-unknown-property": ["error", { ignore: ["tw"] }],

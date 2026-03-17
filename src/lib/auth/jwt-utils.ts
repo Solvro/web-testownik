@@ -1,6 +1,4 @@
-import { decodeJwt, jwtVerify } from "jose";
-
-import { env } from "@/env";
+import { decodeJwt } from "jose";
 
 import type { JWTPayload } from "./types";
 
@@ -28,30 +26,4 @@ export function isTokenExpired(token: string): boolean {
   }
   // Add 30 second buffer
   return Date.now() >= payload.exp * 1000 - 30_000;
-}
-
-/**
- * Verify JWT with secret key (for server-side use only).
- * Returns null if verification fails.
- */
-export async function verifyAccessToken(
-  token: string,
-): Promise<JWTPayload | null> {
-  const secret = env.JWT_SECRET;
-
-  if (secret === undefined || secret === "") {
-    console.error("JWT_SECRET environment variable is not set");
-    return null;
-  }
-
-  try {
-    const secretKey = new TextEncoder().encode(secret);
-    const { payload } = await jwtVerify(token, secretKey, {
-      algorithms: ["HS256"],
-    });
-    return payload as unknown as JWTPayload;
-  } catch (error) {
-    console.error("Failed to verify access token", error);
-    return null;
-  }
 }

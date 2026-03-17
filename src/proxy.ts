@@ -1,23 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { env } from "@/env";
 import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES, verifyAccessToken } from "@/lib/auth";
-import { GUEST_COOKIE_NAME } from "@/lib/auth/constants";
-
-// Routes that require authentication
-const PROTECTED_ROUTES = [
-  "/profile",
-  "/quizzes",
-  "/grades",
-  "/create-quiz",
-  "/edit-quiz",
-  "/import-quiz",
-];
-
-function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-}
+import { AUTH_COOKIES } from "@/lib/auth";
+import { verifyAccessToken } from "@/lib/auth/server";
 
 /**
  * Forward Set-Cookie headers from backend response to Next.js response.
@@ -59,8 +46,14 @@ async function tryRefreshTokens(
         url.searchParams.set("ban_reason", data.ban_reason ?? "Unknown reason");
 
         const response = NextResponse.redirect(url);
-        response.cookies.delete(AUTH_COOKIES.ACCESS_TOKEN);
-        response.cookies.delete(AUTH_COOKIES.REFRESH_TOKEN);
+        response.cookies.delete({
+          name: AUTH_COOKIES.ACCESS_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
+        response.cookies.delete({
+          name: AUTH_COOKIES.REFRESH_TOKEN,
+          domain: env.JWT_COOKIE_DOMAIN,
+        });
 
         return response;
       }
@@ -79,13 +72,8 @@ async function tryRefreshTokens(
 export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
-  const isGuest = request.cookies.get(GUEST_COOKIE_NAME)?.value === "true";
 
   const response = NextResponse.next();
-
-  if (isGuest) {
-    return response;
-  }
 
   if (accessToken !== undefined && accessToken !== "") {
     const payload = await verifyAccessToken(accessToken);
@@ -102,19 +90,12 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // No valid auth - redirect if protected route
-  if (isProtectedRoute(request.nextUrl.pathname)) {
-    const loginUrl = new URL("/", request.url);
-    loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   return response;
 }
 
 export const config = {
   matcher: [
     // eslint-disable-next-line unicorn/prefer-string-raw
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json)$).*)",
   ],
 };

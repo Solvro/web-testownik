@@ -32,7 +32,4 @@ export interface ApiError {
 // Storage keys for localStorage
 export const STORAGE_KEYS = {
   GUEST_QUIZZES: "guest_quizzes",
-  IS_GUEST: "is_guest",
-  SETTINGS: "settings",
-  QUIZ_PROGRESS: (quizId: string) => `${quizId}_progress`,
 } as const;

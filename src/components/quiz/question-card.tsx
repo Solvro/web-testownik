@@ -4,6 +4,7 @@ import { ViewTransition, useEffect } from "react";
 
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ interface QuestionCardProps {
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
-  goToPreviousQuestion: () => void;
+  togglePreviousQuestion: () => void;
   canGoBack: boolean;
   isHistoryQuestion: boolean;
 }
@@ -48,7 +49,7 @@ export function QuestionCard({
   nextAction,
   isQuizFinished,
   restartQuiz,
-  goToPreviousQuestion,
+  togglePreviousQuestion,
   canGoBack,
   isHistoryQuestion,
 }: QuestionCardProps) {
@@ -83,6 +84,15 @@ export function QuestionCard({
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
+        const target = event.target as HTMLElement;
+        if (isInputElement(target)) {
+          return;
+        }
+
+        if (isModalOpen()) {
+          return;
+        }
+
         const answerIndex = Number.parseInt(event.key, 10) - 1;
         if (question !== null && answerIndex < question.answers.length) {
           handleAnswerClick(question.answers[answerIndex].id);
@@ -239,7 +249,7 @@ export function QuestionCard({
         </div>
         <div className="mt-2 flex justify-end gap-2">
           {isHistoryQuestion ? (
-            <Button variant="outline" onClick={goToPreviousQuestion}>
+            <Button variant="outline" onClick={togglePreviousQuestion}>
               Powrót do pytań
             </Button>
           ) : (
@@ -250,7 +260,7 @@ export function QuestionCard({
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={goToPreviousQuestion}
+                      onClick={togglePreviousQuestion}
                     >
                       <Undo2 />
                     </Button>

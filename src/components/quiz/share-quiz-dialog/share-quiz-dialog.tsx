@@ -24,9 +24,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
+import { ACCOUNT_TYPE } from "@/types/user";
 import type { Group, User } from "@/types/user";
 
 interface ShareQuizDialogProps {
@@ -43,6 +45,10 @@ export function ShareQuizDialog({
   setQuiz,
 }: ShareQuizDialogProps) {
   const appContext = useContext(AppContext);
+  const { checkPermission, user: currentUser } = appContext;
+
+  const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
+  const canShareQuiz = checkPermission(PermissionAction.SHARE_QUIZZES);
   const router = useRouter();
 
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
@@ -80,7 +86,7 @@ export function ShareQuizDialog({
         }+${group.name.split(" ")[1] || ""}&size=128`,
       }));
     },
-    enabled: open && !appContext.isGuest,
+    enabled: open && canShareQuiz,
     refetchOnMount: true,
     staleTime: 0,
     initialData: [],
@@ -90,7 +96,7 @@ export function ShareQuizDialog({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
       await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
-    enabled: open && !appContext.isGuest,
+    enabled: open && canShareQuiz,
     staleTime: 0,
   });
 
@@ -369,21 +375,7 @@ export function ShareQuizDialog({
         <DialogHeader>
           <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
         </DialogHeader>
-        {appContext.isGuest ? (
-          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-4 text-center text-sm">
-            <p className="mb-2 font-medium">
-              Musisz być zalogowany, aby móc udostępniać quizy.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                router.push("/connect-account");
-              }}
-            >
-              Połącz konto
-            </Button>
-          </div>
-        ) : (
+        {canShareQuiz ? (
           <div className="space-y-4">
             <Popover
               open={open ? searchQuery.length > 0 : undefined}
@@ -468,11 +460,29 @@ export function ShareQuizDialog({
                 </div>
               )}
           </div>
+        ) : (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-4 text-center text-sm">
+            <p className="mb-2 font-medium">
+              {isGuest
+                ? "Tryb gościa nie pozwala na udostępnianie quizów. Zaloguj się, aby uzyskać dostęp do tej funkcji."
+                : "Nie możesz udostępniać quizów na swoim typie konta."}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                router.push(
+                  `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+                );
+              }}
+            >
+              Zaloguj się
+            </Button>
+          </div>
         )}
         <DialogFooter
           className={cn(
             "sm:flex-row sm:justify-between",
-            appContext.isGuest && "hidden",
+            !canShareQuiz && "hidden",
           )}
         >
           <Button

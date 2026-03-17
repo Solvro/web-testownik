@@ -1,21 +1,11 @@
-import { CopyJWTAccessTokenButton } from "@/components/copy-jwt-button";
 import { ModeToggle } from "@/components/mode-toggle";
 
-interface NavbarActionsProps {
-  isAuthenticated: boolean;
-  isGuest: boolean;
-}
+import { CopyJWTAccessTokenButton } from "./copy-jwt-button";
 
-export function NavbarActions({
-  isAuthenticated,
-  isGuest,
-}: NavbarActionsProps) {
+export function NavbarActions() {
   return (
     <>
-      <CopyJWTAccessTokenButton
-        isAuthenticated={isAuthenticated}
-        isGuest={isGuest}
-      />
+      <CopyJWTAccessTokenButton />
       <ModeToggle />
     </>
   );

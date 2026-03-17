@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { AUTH_COOKIES, GUEST_COOKIE_NAME } from "@/lib/auth/constants";
+import { env } from "@/env";
+import { AUTH_COOKIES } from "@/lib/auth/constants";
 
 export function POST() {
   const response = NextResponse.json({ success: true });
@@ -8,17 +9,14 @@ export function POST() {
   response.cookies.set(AUTH_COOKIES.ACCESS_TOKEN, "", {
     path: "/",
     maxAge: 0,
+    domain: env.JWT_COOKIE_DOMAIN,
   });
 
   response.cookies.set(AUTH_COOKIES.REFRESH_TOKEN, "", {
     path: "/",
     httpOnly: true,
     maxAge: 0,
-  });
-
-  response.cookies.set(GUEST_COOKIE_NAME, "", {
-    path: "/",
-    maxAge: 0,
+    domain: env.JWT_COOKIE_DOMAIN,
   });
 
   return response;

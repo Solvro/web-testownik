@@ -2,14 +2,14 @@
 
 import {
   CircleUserRoundIcon,
-  CloudUploadIcon,
   IdCardLanyardIcon,
   LogInIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useContext } from "react";
 
+import { AppContext } from "@/app-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,53 +17,44 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { API_URL } from "@/lib/api";
+import { ACCOUNT_TYPE } from "@/types/user";
 
 import { LogoutButton } from "./logout-button";
 
-export interface AuthButtonsProps {
-  isAuthenticated: boolean;
-  isGuest: boolean;
-  profilePicture: string | null;
-}
+export function AuthButtons() {
+  const { isAuthenticated, user } = useContext(AppContext);
+  const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
+  const profilePicture = user?.photo;
 
-export function AuthButtons({
-  isAuthenticated,
-  isGuest,
-  profilePicture,
-}: AuthButtonsProps) {
-  const [currentUrl, setCurrentUrl] = useState("/");
-  const searchParameters = useSearchParams();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const redirect = searchParameters.get("redirect");
-    const url = new URL(redirect ?? pathname, window.location.origin);
-    setCurrentUrl(url.toString());
-  }, [pathname, searchParameters]);
+  const loginHref =
+    pathname === "/" || pathname === "/login"
+      ? "/login"
+      : `/login?redirect=${encodeURIComponent(pathname)}`;
 
   if (isGuest) {
     return (
       <>
-        <Button asChild>
-          <Link href="/profile">
-            <IdCardLanyardIcon />
-            <span>Gość</span>
-          </Link>
-        </Button>
-
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="p-2" asChild>
-              <Link href="/connect-account">
-                <CloudUploadIcon />
+            <Button variant="outline" size="icon" className="relative" asChild>
+              <Link href="/profile">
+                <IdCardLanyardIcon />
+                <div className="absolute -top-1 -right-1 size-3 rounded-full bg-amber-500" />
               </Link>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Połącz konto</p>
+            Korzystasz z konta gościa
           </TooltipContent>
         </Tooltip>
+
+        <Button asChild>
+          <Link href={loginHref}>
+            <LogInIcon />
+            Zaloguj się
+          </Link>
+        </Button>
       </>
     );
   }
@@ -77,7 +68,11 @@ export function AuthButtons({
               <CircleUserRoundIcon className="size-6" />
             ) : (
               <Avatar className="size-6">
-                <AvatarImage src={profilePicture} className="user-avatar" />
+                <AvatarImage
+                  src={profilePicture}
+                  className="user-avatar"
+                  alt="Zdjęcie profilowe użytkownika"
+                />
                 <AvatarFallback delayMs={600} className="bg-transparent">
                   <CircleUserRoundIcon className="size-6" />
                 </AvatarFallback>
@@ -93,14 +88,10 @@ export function AuthButtons({
 
   return (
     <Button asChild>
-      <a
-        href={`${API_URL}/login/usos?jwt=true&redirect=${encodeURIComponent(
-          currentUrl,
-        )}`}
-      >
+      <Link href={loginHref}>
         <LogInIcon />
         Zaloguj się
-      </a>
+      </Link>
     </Button>
   );
 }
