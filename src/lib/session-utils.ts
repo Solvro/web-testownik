@@ -36,7 +36,19 @@ export function getRemainingAttempts(
 
   let remaining = settings.initial_reoccurrences;
 
+  const answeredCount = getQuestionAnsweredCount(
+    questionId,
+    true,
+    questionAnswers,
+  );
+
   for (const answer of questionAnswers) {
+    // Reached max question reoccurrences
+    if (answeredCount >= settings.max_question_reoccurrences) {
+      remaining = 0;
+      continue;
+    }
+
     if (answer.was_correct) {
       remaining = Math.max(0, remaining - 1);
     } else {
@@ -57,6 +69,20 @@ export function getUnansweredQuestions(
 ): Question[] {
   return questions.filter(
     (q) => getRemainingAttempts(q.id, answers, settings) > 0,
+  );
+}
+
+/**
+ * Get how many times question was answered (correct or not)
+ */
+export function getQuestionAnsweredCount(
+  questionId: string,
+  questionChecked: boolean,
+  answers: AnswerRecord[],
+): number {
+  return answers.reduce(
+    (count, answer) => (answer.question === questionId ? count + 1 : count),
+    questionChecked ? 0 : 1,
   );
 }
 
