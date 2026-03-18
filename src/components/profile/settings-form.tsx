@@ -65,7 +65,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   };
 
   const handleMaxQuestionReoccurrencesCommit = (sliderValue: number) => {
-    const transformedValue = Math.round(sliderValue / 10);
+    const transformedValue = Math.max(1, Math.round(sliderValue / 10));
     setLocalMaxQuestionReoccurrences(transformedValue.toString());
     setSliderMaxQuestionValue(transformedValue * 10);
     onSettingChange("max_question_reoccurrences", transformedValue);
