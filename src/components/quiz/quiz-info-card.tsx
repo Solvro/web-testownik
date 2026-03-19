@@ -207,23 +207,25 @@ export function QuizInfoCard({
               </Tooltip>
             ) : null}
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  disabled={isCopying}
-                  onClick={() => {
-                    copyQuiz(quiz.id);
-                  }}
-                  aria-label={isCopying ? "Kopiowanie quizu" : "Kopiuj quiz"}
-                >
-                  {isCopying ? (
-                    <Loader2Icon className="size-5 animate-spin" />
-                  ) : (
-                    <CopyIcon className="size-5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    disabled={isCopying}
+                    onClick={() => {
+                      copyQuiz(quiz.id);
+                    }}
+                    aria-label={isCopying ? "Kopiowanie quizu" : "Kopiuj quiz"}
+                  >
+                    {isCopying ? (
+                      <Loader2Icon className="size-5 animate-spin" />
+                    ) : (
+                      <CopyIcon className="size-5" />
+                    )}
+                  </Button>
+                }
+              ></TooltipTrigger>
               <TooltipContent>
                 {isCopying ? "Kopiowanie..." : "Kopiuj quiz"}
               </TooltipContent>
