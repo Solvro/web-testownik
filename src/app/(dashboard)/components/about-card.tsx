@@ -33,25 +33,26 @@ export function AboutCard({
             }
             className="rounded-full"
           >
-            <SiGithub className="size-5" />
+            <SiGithub className="size-6" />
           </Button>
         </CardTitle>
-        <ScrollArea className="min-h-0 flex-1">
-          <Table>
+
+        <ScrollArea className="border-border min-h-0 flex-1 rounded-md border">
+          <Table variant="gradient">
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
                   <TableRow
                     key={`loading-contributor-${index.toString()}`}
-                    className="transition-none hover:bg-transparent"
+                    className="border-b transition-none last:border-0 hover:bg-transparent"
                   >
-                    <TableCell className="py-2">
+                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <Skeleton className="size-6 rounded-full" />
+                        <Skeleton className="size-8 rounded-full" />
                         <Skeleton className="h-4 w-32" />
                       </div>
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell>
                       <Skeleton className="h-3 w-16" />
                     </TableCell>
                   </TableRow>
@@ -60,37 +61,35 @@ export function AboutCard({
                 contributors.map((contributor) => (
                   <TableRow
                     key={contributor.id}
-                    className="transition-none hover:bg-transparent"
+                    className="border-b transition-none last:border-0 hover:bg-transparent"
                   >
-                    <TableCell className="flex items-center gap-2 py-2">
+                    <TableCell className="flex items-center gap-2">
                       <a
                         href={contributor.html_url}
                         target="_blank"
                         className="flex items-center gap-2 hover:underline"
                         rel="noreferrer"
                       >
-                        <Avatar className="size-6">
+                        <Avatar className="border-ring size-8 border">
                           <AvatarImage
                             src={`${contributor.avatar_url}&s=48`}
                             alt={`Zdjęcie profilowe twórcy ${contributor.login}`}
                           />
-                          <AvatarFallback delayMs={600}>
+                          <AvatarFallback delay={600}>
                             {getInitials(contributor.login)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-muted-foreground text-sm">
-                          {contributor.login}
-                        </span>
+                        <span>{contributor.login}</span>
                       </a>
                     </TableCell>
-                    <TableCell className="text-muted-foreground py-2 text-xs">
+                    <TableCell className="text-right">
                       {contributor.contributions} commits
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow className="transition-none hover:bg-transparent">
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-muted-foreground p-4 text-xs">
                     Nie udało się pobrać informacji o autorach
                   </TableCell>
                 </TableRow>

@@ -5,20 +5,20 @@ export const computeAnswerVariant = (
 ) => {
   if (isResult) {
     if (isCorrect && isSelected) {
-      return "border-green-500 bg-green-500/15 text-green-600 dark:text-green-400";
+      return "border-green-500! bg-green-500/15! [&_p]:text-green-600 [&_p]:dark:text-green-400";
     } // Correct & chosen
     if (isCorrect && !isSelected) {
-      return "border-yellow-500 bg-yellow-500/15 text-yellow-600 dark:text-yellow-400";
+      return "border-yellow-500! bg-yellow-500/15! [&_p]:text-yellow-600 [&_p]:dark:text-yellow-400";
     } // Missed correct answer
     if (!isCorrect && isSelected) {
-      return "border-red-500 bg-red-500/15 text-red-600 dark:text-red-400";
+      return "border-red-500! bg-red-500/15! [&_p]:text-red-600 [&_p]:dark:text-red-400";
     } // Chosen but incorrect
     return "opacity-50"; // Not selected & incorrect (distractor)
   }
   // Idle (selecting answers) phase
   return isSelected
-    ? "bg-primary/10 border-primary"
-    : "hover:bg-accent border-border";
+    ? "bg-primary/10 border-primary dark:bg-input/70 dark:border-ring"
+    : "hover:bg-accent-input border-border dark:hover:bg-accent/60";
 };
 
 export const computeAnswerVariantText = (

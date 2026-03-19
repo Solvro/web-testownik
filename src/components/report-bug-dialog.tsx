@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -134,9 +135,15 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       });
   };
 
+  const reportType = [
+    { label: "Błąd", value: "bug" },
+    { label: "Propozycja", value: "enhancement" },
+    { label: "Pytanie", value: "question" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-fit overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
           <DialogDescription>
@@ -240,12 +247,14 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               <Label htmlFor="reportType" className="text-sm font-medium">
                 Typ zgłoszenia
               </Label>
+
               <Select
+                items={reportType}
                 value={form.reportType}
                 onValueChange={(value) => {
                   setForm((previous) => ({
                     ...previous,
-                    reportType: value,
+                    reportType: value ?? form.reportType,
                   }));
                 }}
               >
@@ -253,18 +262,22 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bug">Błąd</SelectItem>
-                  <SelectItem value="enhancement">Propozycja</SelectItem>
-                  <SelectItem value="question">Pytanie</SelectItem>
+                  <SelectGroup>
+                    {reportType.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
         <DialogFooter className="pt-6">
-          <DialogClose asChild>
-            <Button variant="outline">Anuluj</Button>
-          </DialogClose>
+          <DialogClose
+            render={<Button variant="outline">Anuluj</Button>}
+          ></DialogClose>
           <Button disabled={isSending} onClick={handleSend}>
             Wyślij formularz
           </Button>

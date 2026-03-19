@@ -44,7 +44,7 @@ export function ImageButton({
     <>
       <Button
         type="button"
-        variant={hasImage ? "secondary" : "ghost"}
+        variant={hasImage ? "default" : "ghost"}
         size="icon-sm"
         className={cn("shrink-0", className)}
         onClick={() => {

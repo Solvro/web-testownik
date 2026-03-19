@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import "@testing-library/jest-dom/vitest";
+import React from "react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { server } from "./mocks/server";
@@ -17,6 +18,32 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => "/",
   useParams: () => ({}),
+}));
+
+vi.mock("@/components/monaco-editor", () => ({
+  MonacoEditor: ({
+    setLegacyContent,
+    defaultValue,
+    onMount,
+  }: {
+    setLegacyContent: (value: string) => void;
+    defaultValue: string;
+    onMount: (editor: { getValue: () => string }) => void;
+  }) => {
+    let currentValue = defaultValue;
+    onMount({
+      getValue: () => currentValue,
+    });
+
+    return React.createElement("textarea", {
+      id: "text-input",
+      defaultValue,
+      onChange: (event: { target: { value: string } }) => {
+        currentValue = event.target.value;
+        setLegacyContent(currentValue);
+      },
+    });
+  },
 }));
 
 // JSDOM doesn't implement matchMedia; used by Loader when theme === "system".
@@ -116,6 +143,26 @@ vi.stubGlobal("cookieStore", {
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 });
+
+// Monaco checks this legacy API when clipboard support is unavailable in test environments.
+const legacyDocumentApi = document as unknown as Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/dot-notation
+if (typeof legacyDocumentApi["queryCommandSupported"] !== "function") {
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  legacyDocumentApi["queryCommandSupported"] = () => false;
+}
+
+// Base UI ScrollArea expects Element.getAnimations in browsers; JSDOM lacks it.
+if (
+  typeof (Element.prototype as unknown as { getAnimations?: unknown })
+    .getAnimations !== "function"
+) {
+  (
+    Element.prototype as unknown as {
+      getAnimations: (options?: GetAnimationsOptions) => Animation[];
+    }
+  ).getAnimations = () => [];
+}
 
 beforeAll(() => {
   server.listen();

@@ -94,31 +94,35 @@ export function QuizActionButtons({
     <Card className="py-4">
       <CardContent className="flex justify-around">
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleCopy}
-              disabled={!canUseQuestion}
-              aria-label="Kopiuj pytanie i odpowiedzi"
-            >
-              <ClipboardCopyIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopy}
+                disabled={!canUseQuestion}
+                aria-label="Kopiuj pytanie i odpowiedzi"
+              >
+                <ClipboardCopyIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleOpenChatGPT}
-              disabled={!canUseQuestion}
-              aria-label="Otwórz w ChatGPT"
-            >
-              <SiOpenai />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleOpenChatGPT}
+                disabled={!canUseQuestion}
+                aria-label="Otwórz w ChatGPT"
+              >
+                <SiOpenai />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Otwórz w ChatGPT</TooltipContent>
         </Tooltip>
         {!isMaintainer &&
@@ -128,61 +132,69 @@ export function QuizActionButtons({
               quizId={quiz.id}
               questionId={question?.id}
             >
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={!canUseQuestion}
-                  aria-label="Zgłoś problem z pytaniem"
-                >
-                  <MessageSquareWarningIcon />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={!canUseQuestion}
+                    aria-label="Zgłoś problem z pytaniem"
+                  >
+                    <MessageSquareWarningIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
             </ReportQuestionIssueDialog>
             <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
           </Tooltip>
         ) : null}
         {isMaintainer ? (
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleEdit}
-                aria-label="Edytuj pytanie"
-              >
-                <PencilLineIcon />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleEdit}
+                  aria-label="Edytuj pytanie"
+                >
+                  <PencilLineIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
             </TooltipContent>
           </Tooltip>
         ) : null}
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onToggleHistory}
-              aria-label="Historia odpowiedzi"
-            >
-              <HistoryIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleHistory}
+                aria-label="Historia odpowiedzi"
+              >
+                <HistoryIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Historia odpowiedzi</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onToggleBrainrot}
-              aria-label="Brainrot mode"
-            >
-              <SkullIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleBrainrot}
+                aria-label="Brainrot mode"
+              >
+                <SkullIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Brainrot mode</TooltipContent>
         </Tooltip>
       </CardContent>

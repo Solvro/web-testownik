@@ -1,18 +1,48 @@
 "use client";
 
+import type { VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+const tableVariants = cva(
+  "relative w-full overflow-x-auto caption-bottom text-sm text-accent-foreground",
+  {
+    variants: {
+      variant: {
+        default: "[&_tbody>tr]:py-2 [&_tbody>tr>td:last-child]:font-normal",
+        gradient:
+          "dark:bg-linear-to-r dark:from-(--card-gradient-from) to-(--card-gradient-to) [&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
+        border:
+          "[&_tbody>tr]:bg-card [&_tbody>tr:hover]:bg-ring/20 dark:[&_tbody>tr:hover]:bg-input/20 [&_tbody>tr>td]:py-1.5 [&_tbody>tr>td]:px-2 [&_tbody>tr>td:last-child]:pr-5 [&_tbody>tr>td]:text-base [&_tbody>tr>td:last-child]:text-sm [&_tbody>tr>td]:font-light [&_tbody>tr>td:last-child]:font-thin dark:[&_tbody>tr>td:last-child]:opacity-50 [&_tbody>img]:size-7",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+function Table({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"table"> & VariantProps<typeof tableVariants>) {
+  const wrapperClass =
+    variant === "border"
+      ? "border border-border rounded-[10px] overflow-hidden"
+      : undefined;
+
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <div data-slot="table-container" className={wrapperClass}>
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          tableVariants({ variant }),
+          "w-full caption-bottom text-sm",
+          className,
+        )}
         {...props}
       />
     </div>
@@ -70,7 +100,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-0.5",
         className,
       )}
       {...props}
@@ -83,7 +113,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-0.5",
         className,
       )}
       {...props}

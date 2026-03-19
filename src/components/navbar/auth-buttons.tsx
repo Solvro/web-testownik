@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ACCOUNT_TYPE } from "@/types/user";
 
-import { LogoutButton } from "./logout-button";
-
 export function AuthButtons() {
   const { isAuthenticated, user } = useContext(AppContext);
   const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
@@ -36,34 +34,46 @@ export function AuthButtons() {
     return (
       <>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="relative" asChild>
-              <Link href="/profile">
-                <IdCardLanyardIcon />
-                <div className="absolute -top-1 -right-1 size-3 rounded-full bg-amber-500" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                nativeButton={false}
+                variant="outline"
+                size="icon"
+                className="relative"
+                render={(props) => (
+                  <Link {...props} href="/profile">
+                    <IdCardLanyardIcon />
+                    <div className="absolute -top-1 -right-1 size-3 rounded-full bg-amber-500" />
+                  </Link>
+                )}
+              ></Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent side="bottom">
             Korzystasz z konta gościa
           </TooltipContent>
         </Tooltip>
 
-        <Button asChild>
-          <Link href={loginHref}>
-            <LogInIcon />
-            Zaloguj się
-          </Link>
-        </Button>
+        <Button
+          render={(props) => (
+            <Link {...props} href={loginHref}>
+              <LogInIcon />
+              Zaloguj się
+            </Link>
+          )}
+        ></Button>
       </>
     );
   }
 
   if (isAuthenticated) {
     return (
-      <>
-        <Button asChild>
-          <Link href="/profile">
+      <Button
+        variant="cta"
+        nativeButton={false}
+        render={(props) => (
+          <Link {...props} href="/profile">
             {profilePicture === null ? (
               <CircleUserRoundIcon className="size-6" />
             ) : (
@@ -73,25 +83,27 @@ export function AuthButtons() {
                   className="user-avatar"
                   alt="Zdjęcie profilowe użytkownika"
                 />
-                <AvatarFallback delayMs={600} className="bg-transparent">
+                <AvatarFallback delay={600} className="bg-transparent">
                   <CircleUserRoundIcon className="size-6" />
                 </AvatarFallback>
               </Avatar>
             )}
             <span>Profil</span>
           </Link>
-        </Button>
-        <LogoutButton />
-      </>
+        )}
+      ></Button>
     );
   }
 
   return (
-    <Button asChild>
-      <Link href={loginHref}>
-        <LogInIcon />
-        Zaloguj się
-      </Link>
-    </Button>
+    <Button
+      nativeButton={false}
+      render={(props) => (
+        <Link {...props} href={loginHref}>
+          <LogInIcon />
+          Zaloguj się
+        </Link>
+      )}
+    ></Button>
   );
 }

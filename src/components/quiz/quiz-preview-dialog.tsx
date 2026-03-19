@@ -46,7 +46,7 @@ export function QuizPreviewDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent className="w-lg">
           <DialogHeader>
             <DialogTitle>
               {type === "created"
@@ -146,19 +146,32 @@ export function QuizPreviewDialog({
           </div>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
             <div className="grid grid-cols-3 gap-2 sm:flex">
-              <DialogClose asChild>
-                <Button variant="outline">Zamknij</Button>
-              </DialogClose>
+              <DialogClose
+                render={<Button variant="outline">Zamknij</Button>}
+              ></DialogClose>
               <Button variant="outline" onClick={handleShare}>
                 Udostępnij
               </Button>
-              <Button variant="outline" className="w-full sm:w-auto" asChild>
-                <Link href={`/edit-quiz/${id}`}>Edytuj</Link>
-              </Button>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href={`/edit-quiz/${id}`}>
+                    Edytuj
+                  </Link>
+                )}
+              ></Button>
             </div>
-            <Button className="w-full sm:w-auto" asChild>
-              <Link href={`/quiz/${id}`}>Otwórz</Link>
-            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href={`/quiz/${id}`}>
+                  Otwórz
+                </Link>
+              )}
+            ></Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

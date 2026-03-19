@@ -103,19 +103,21 @@ export function QuizSort({
       <ViewTransition name="quiz-info">
         <div className="flex flex-row items-center gap-2">
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn("size-9", !isFiltered && "hidden")}
-                onClick={() => {
-                  onResetFilters();
-                  handleClearFilters();
-                }}
-                aria-label="Wyczyść filtry"
-              >
-                <XIcon />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant={"outline"}
+                  className={cn("size-9", !isFiltered && "hidden")}
+                  onClick={() => {
+                    onResetFilters();
+                    handleClearFilters();
+                  }}
+                  aria-label="Wyczyść filtry"
+                >
+                  <XIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>Wyczyść filtry</TooltipContent>
           </Tooltip>
           <InputGroup className="w-full sm:w-xs">
@@ -133,21 +135,25 @@ export function QuizSort({
           </InputGroup>
           <DropdownMenu>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Sortuj quizy"
-                  >
-                    {selectedOption === null ? (
-                      <ArrowDownUp />
-                    ) : (
-                      selectedOption.icon
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label="Sortuj quizy"
+                      >
+                        {selectedOption === null ? (
+                          <ArrowDownUp />
+                        ) : (
+                          selectedOption.icon
+                        )}
+                      </Button>
+                    }
+                  ></DropdownMenuTrigger>
+                }
+              ></TooltipTrigger>
               <TooltipContent>Sortuj</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">

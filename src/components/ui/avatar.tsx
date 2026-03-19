@@ -1,15 +1,21 @@
-import * as AvatarPrimitive from "@radix-ui/react-avatar";
+"use client";
+
+import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 function Avatar({
   className,
+  size = "default",
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+}: AvatarPrimitive.Root.Props & {
+  size?: "default" | "sm" | "lg";
+}) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
+      data-size={size}
       className={cn(
         "relative flex size-8 shrink-0 overflow-hidden rounded-full",
         className,
@@ -19,10 +25,7 @@ function Avatar({
   );
 }
 
-function AvatarImage({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -36,7 +39,7 @@ function AvatarFallback({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: AvatarPrimitive.Fallback.Props) {
   const colors = [
     "bg-red-500",
     "bg-blue-500",

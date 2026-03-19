@@ -59,13 +59,17 @@ export function QuestionFormHeader({
       <span className="text-muted-foreground text-sm font-medium">
         Pytanie {question.order}
       </span>
-      <HoverCard openDelay={100} closeDelay={200}>
-        <HoverCardTrigger asChild>
-          <Button type="button" variant="ghost" size="icon-xs">
-            <CircleHelp className="text-muted-foreground size-4" />
-            <span className="sr-only">Pomoc</span>
-          </Button>
-        </HoverCardTrigger>
+      <HoverCard>
+        <HoverCardTrigger
+          delay={100}
+          closeDelay={200}
+          render={
+            <Button type="button" variant="ghost" size="icon-xs">
+              <CircleHelp className="text-muted-foreground size-4" />
+              <span className="sr-only">Pomoc</span>
+            </Button>
+          }
+        ></HoverCardTrigger>
         <HoverCardContent className="w-80 space-y-2" align="start">
           <h4 className="text-sm font-semibold">Wskazówki</h4>
           <p className="text-sm">
@@ -77,37 +81,41 @@ export function QuestionFormHeader({
 
       <div className="ml-auto flex items-center gap-1">
         <Tooltip>
-          <TooltipTrigger asChild>
-            <ImageButton
-              image={question.image}
-              imageUrl={question.image_url}
-              imageUploadId={question.image_upload}
-              imageWidth={question.image_width}
-              imageHeight={question.image_height}
-              onImageChange={onImageChange}
-              onUpload={onUpload}
-              isUploading={isImageUploading}
-            />
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <ImageButton
+                image={question.image}
+                imageUrl={question.image_url}
+                imageUploadId={question.image_upload}
+                imageWidth={question.image_width}
+                imageHeight={question.image_height}
+                onImageChange={onImageChange}
+                onUpload={onUpload}
+                isUploading={isImageUploading}
+              />
+            }
+          ></TooltipTrigger>
           <TooltipContent>Zarządzaj zdjęciem pytania</TooltipContent>
         </Tooltip>
 
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant={hasExplanation ? "secondary" : "ghost"}
-              size="icon-sm"
-              onClick={() => {
-                setExplanationOpen(true);
-              }}
-              aria-label={
-                hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"
-              }
-            >
-              <MessageSquareText className="size-4" />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant={hasExplanation ? "secondary" : "ghost"}
+                size="icon-sm"
+                onClick={() => {
+                  setExplanationOpen(true);
+                }}
+                aria-label={
+                  hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"
+                }
+              >
+                <MessageSquareText className="size-4" />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>
             {hasExplanation ? "Edytuj wyjaśnienie" : "Dodaj wyjaśnienie"}
           </TooltipContent>

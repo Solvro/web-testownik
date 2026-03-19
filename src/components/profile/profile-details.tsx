@@ -164,7 +164,7 @@ export function ProfileDetails({
                   src={userData?.photo}
                   alt={`Zdjęcie profilowe użytkownika ${userData?.full_name ?? ""}`}
                 />
-                <AvatarFallback className="text-3xl" delayMs={600}>
+                <AvatarFallback className="text-3xl" delay={600}>
                   {getInitials(userData?.full_name ?? "")}
                 </AvatarFallback>
               </Avatar>

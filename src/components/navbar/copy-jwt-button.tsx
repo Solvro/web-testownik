@@ -37,18 +37,20 @@ export function CopyJWTAccessTokenButton() {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          onClick={copyJWTAccessToken}
-          size="icon"
-          variant="outline"
-          disabled={!isAuthenticated}
-          className="pointer-events-auto!"
-          aria-label="Skopiuj token JWT"
-        >
-          <KeyRoundIcon />
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <Button
+            onClick={copyJWTAccessToken}
+            size="icon"
+            variant="outline"
+            disabled={!isAuthenticated}
+            className="pointer-events-auto!"
+            aria-label="Skopiuj token JWT"
+          >
+            <KeyRoundIcon />
+          </Button>
+        }
+      ></TooltipTrigger>
       <TooltipContent>
         {isAuthenticated
           ? "Skopiuj token JWT"

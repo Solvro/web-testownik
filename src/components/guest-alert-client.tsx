@@ -55,22 +55,24 @@ export function GuestAlertClient({
     <Alert variant="default">
       <IdCardLanyardIcon />
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Ukryj"
-            onClick={() => {
-              setIsHidden(true);
-              setCookie("guest-alert-hidden", "true", {
-                maxAge: 60 * 60 * 24 * 3,
-              }); // 3 days
-            }}
-            className="text-muted-foreground hover:text-foreground absolute top-0 right-0 m-1"
-          >
-            <EyeOffIcon />
-          </Button>
-        </TooltipTrigger>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Ukryj"
+              onClick={() => {
+                setIsHidden(true);
+                setCookie("guest-alert-hidden", "true", {
+                  maxAge: 60 * 60 * 24 * 3,
+                }); // 3 days
+              }}
+              className="text-muted-foreground hover:text-foreground absolute top-0 right-0 m-1"
+            >
+              <EyeOffIcon />
+            </Button>
+          }
+        ></TooltipTrigger>
         <TooltipContent>Ukryj na 3 dni</TooltipContent>
       </Tooltip>
       <AlertTitle>Korzystasz z konta gościa</AlertTitle>
