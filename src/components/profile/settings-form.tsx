@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import type { SettingsFormProps } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [localInitialReoccurrences, setLocalInitialReoccurrences] = useState(
@@ -13,7 +14,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [localWrongAnswerReoccurrences, setLocalWrongAnswerReoccurrences] =
     useState(settings.wrong_answer_reoccurrences.toString());
   const [localMaxQuestionReoccurrences, setLocalMaxQuestionReoccurrences] =
-    useState(settings.max_question_reoccurrences.toString());
+    useState(
+      settings.max_question_reoccurrences === null
+        ? (DEFAULT_USER_SETTINGS.max_question_reoccurrences ?? 3).toString()
+        : settings.max_question_reoccurrences.toString(),
+    );
 
   const [sliderInitialValue, setSliderInitialValue] = useState(
     settings.initial_reoccurrences * 10,
@@ -22,7 +27,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     settings.wrong_answer_reoccurrences * 10,
   );
   const [sliderMaxQuestionValue, setSliderMaxQuestionValue] = useState(
-    settings.max_question_reoccurrences * 10,
+    settings.max_question_reoccurrences === null
+      ? (DEFAULT_USER_SETTINGS.max_question_reoccurrences ?? 3) * 10
+      : settings.max_question_reoccurrences * 10,
   );
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -122,8 +129,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               const transformedValue = Math.max(1, Math.round(values[0] / 10));
               setLocalInitialReoccurrences(transformedValue.toString());
             }}
-            onValueCommit={(values) => {
-              handleInitialReoccurrencesCommit(values[0]);
+            onLostPointerCapture={() => {
+              handleInitialReoccurrencesCommit(
+                Number.parseInt(localInitialReoccurrences) * 10,
+              );
             }}
           />
         </div>
@@ -172,8 +181,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               const transformedValue = Math.round(values[0] / 10);
               setLocalWrongAnswerReoccurrences(transformedValue.toString());
             }}
-            onValueCommit={(values) => {
-              handleWrongAnswerReoccurrencesCommit(values[0]);
+            onLostPointerCapture={() => {
+              handleWrongAnswerReoccurrencesCommit(
+                Number.parseInt(localWrongAnswerReoccurrences) * 10,
+              );
             }}
           />
         </div>
@@ -221,8 +232,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               const transformedValue = Math.max(1, Math.round(values[0] / 10));
               setLocalMaxQuestionReoccurrences(transformedValue.toString());
             }}
-            onValueCommit={(values) => {
-              handleMaxQuestionReoccurrencesCommit(values[0]);
+            onLostPointerCapture={() => {
+              handleMaxQuestionReoccurrencesCommit(
+                Number.parseInt(localMaxQuestionReoccurrences) * 10,
+              );
             }}
           />
         </div>
