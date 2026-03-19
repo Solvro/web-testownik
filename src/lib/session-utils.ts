@@ -43,7 +43,12 @@ export function getRemainingAttempts(
   );
 
   // Reached max question reoccurrences
-  if (answeredCount >= settings.max_question_reoccurrences) {
+  if (
+    answeredCount >=
+    (settings.max_question_reoccurrences ??
+      DEFAULT_USER_SETTINGS.max_question_reoccurrences ??
+      3)
+  ) {
     remaining = 0;
     return remaining;
   }
@@ -73,7 +78,15 @@ export function getUnansweredQuestions(
 }
 
 /**
- * Get how many times question was answered (correct or not)
+ * Get how many times a question has appeared / been interacted with.
+ *
+ * Semantics:
+ * - When `questionChecked` is `true`, this returns the number of stored
+ *   answers for the given question (i.e. how many times it was actually
+ *   answered, correct or not).
+ * - When `questionChecked` is `false`, this additionally counts the current,
+ *   not-yet-checked attempt as one more appearance (i.e. "times shown",
+ *   including the current attempt).
  */
 export function getQuestionAnsweredCount(
   questionId: string,
