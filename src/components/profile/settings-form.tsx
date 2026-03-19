@@ -69,7 +69,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
               htmlFor="initial-reoccurrences"
@@ -123,7 +123,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
           </div>
         </div>
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
               htmlFor="wrong-answer-reoccurrences"
@@ -177,7 +177,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
           </div>
         </div>
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
               htmlFor="max-question-reoccurrences"
