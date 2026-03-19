@@ -134,6 +134,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 Number.parseInt(localInitialReoccurrences) * 10,
               );
             }}
+            onValueCommit={(values) => {
+              handleInitialReoccurrencesCommit(values[0]);
+            }}
           />
         </div>
         <div className="grid gap-2">
@@ -186,6 +189,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 Number.parseInt(localWrongAnswerReoccurrences) * 10,
               );
             }}
+            onValueCommit={(values) => {
+              handleWrongAnswerReoccurrencesCommit(values[0]);
+            }}
           />
         </div>
         <div className="grid gap-2">
@@ -236,6 +242,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               handleMaxQuestionReoccurrencesCommit(
                 Number.parseInt(localMaxQuestionReoccurrences) * 10,
               );
+            }}
+            onValueCommit={(values) => {
+              handleMaxQuestionReoccurrencesCommit(values[0]);
             }}
           />
         </div>
