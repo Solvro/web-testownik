@@ -8,6 +8,11 @@ import { Label } from "@/components/ui/label";
 import type { SettingsFormProps } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
+const normalizeValue = (value: string) => {
+  const parsed = Number.parseInt(value);
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 0;
+};
+
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [localInitialReoccurrences, setLocalInitialReoccurrences] = useState(
     settings.initial_reoccurrences.toString(),
@@ -81,9 +86,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleInitialReoccurrencesCommit(
-                    Number.parseInt(localInitialReoccurrences) - 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localInitialReoccurrences) - 1,
+                    1,
                   );
+                  handleInitialReoccurrencesCommit(nextValue);
                 }}
               >
                 <MinusIcon />
@@ -94,8 +101,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 value={localInitialReoccurrences}
                 onChange={(_event) => {
                   const value = _event.target.value;
-                  setLocalInitialReoccurrences(value);
-                  const numberValue = Number(value);
+                  const numberValue = Math.floor(Number(value));
+                  setLocalInitialReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 1) {
                     debouncedSave("initial_reoccurrences", numberValue);
                   }
@@ -112,9 +119,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleInitialReoccurrencesCommit(
-                    Number.parseInt(localInitialReoccurrences) + 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localInitialReoccurrences) + 1,
+                    1,
                   );
+                  handleInitialReoccurrencesCommit(nextValue);
                 }}
               >
                 <PlusIcon />
@@ -128,16 +137,18 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               className="text-sm font-medium"
               htmlFor="wrong-answer-reoccurrences"
             >
-              <p>Dodatkowe potwórzenia przy błędnej odpowiedzi</p>
+              <p>Dodatkowe powtórzenia przy błędnej odpowiedzi</p>
             </Label>
             <div className="flex gap-1">
               <Button
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleWrongAnswerReoccurrencesCommit(
-                    Number.parseInt(localWrongAnswerReoccurrences) - 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localWrongAnswerReoccurrences) - 1,
+                    0,
                   );
+                  handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
               >
                 <MinusIcon />
@@ -148,8 +159,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 value={localWrongAnswerReoccurrences}
                 onChange={(event_) => {
                   const value = event_.target.value;
-                  setLocalWrongAnswerReoccurrences(value);
-                  const numberValue = Number(value);
+                  const numberValue = Math.floor(Number(value));
+                  setLocalWrongAnswerReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 0) {
                     debouncedSave("wrong_answer_reoccurrences", numberValue);
                   }
@@ -166,9 +177,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleWrongAnswerReoccurrencesCommit(
-                    Number.parseInt(localWrongAnswerReoccurrences) + 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localWrongAnswerReoccurrences) + 1,
+                    0,
                   );
+                  handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
               >
                 <PlusIcon />
@@ -189,9 +202,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleMaxQuestionReoccurrencesCommit(
-                    Number.parseInt(localMaxQuestionReoccurrences) - 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) - 1,
+                    1,
                   );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
               >
                 <MinusIcon />
@@ -202,8 +217,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 value={localMaxQuestionReoccurrences}
                 onChange={(event_) => {
                   const value = event_.target.value;
-                  setLocalMaxQuestionReoccurrences(value);
-                  const numberValue = Number(value);
+                  const numberValue = Math.floor(Number(value));
+                  setLocalMaxQuestionReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 1) {
                     debouncedSave("max_question_reoccurrences", numberValue);
                   }
@@ -220,9 +235,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 size="icon-sm"
                 variant="outline"
                 onClick={() => {
-                  handleMaxQuestionReoccurrencesCommit(
-                    Number.parseInt(localMaxQuestionReoccurrences) + 1,
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) + 1,
+                    1,
                   );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
               >
                 <PlusIcon />
