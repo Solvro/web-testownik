@@ -46,8 +46,7 @@ export function getRemainingAttempts(
   if (
     answeredCount >=
     (settings.max_question_reoccurrences ??
-      DEFAULT_USER_SETTINGS.max_question_reoccurrences ??
-      3)
+      DEFAULT_USER_SETTINGS.max_question_reoccurrences)
   ) {
     remaining = 0;
     return remaining;

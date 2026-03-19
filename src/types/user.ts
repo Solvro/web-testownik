@@ -38,14 +38,14 @@ export interface SettingsFormProps {
   onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
 }
 
-export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
+export const DEFAULT_USER_SETTINGS = {
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
-  max_question_reoccurrences: 3,
+  max_question_reoccurrences: 5,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,
-});
+} as const satisfies UserSettings;
 
 export interface Term {
   id: string;
