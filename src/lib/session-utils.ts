@@ -42,13 +42,13 @@ export function getRemainingAttempts(
     questionAnswers,
   );
 
-  for (const answer of questionAnswers) {
-    // Reached max question reoccurrences
-    if (answeredCount >= settings.max_question_reoccurrences) {
-      remaining = 0;
-      continue;
-    }
+  // Reached max question reoccurrences
+  if (answeredCount >= settings.max_question_reoccurrences) {
+    remaining = 0;
+    return remaining;
+  }
 
+  for (const answer of questionAnswers) {
     if (answer.was_correct) {
       remaining = Math.max(0, remaining - 1);
     } else {
