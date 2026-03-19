@@ -79,7 +79,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               className="text-sm font-medium"
               htmlFor="initial-reoccurrences"
             >
-              <p>Wstępna liczba powtórzeń pytania</p>
+              Wstępna liczba powtórzeń pytania
             </Label>
             <div className="flex gap-1">
               <Button
@@ -92,6 +92,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleInitialReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zmniejsz liczbę powtórzeń"
               >
                 <MinusIcon />
               </Button>
@@ -125,6 +126,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleInitialReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zwiększ liczbę powtórzeń"
               >
                 <PlusIcon />
               </Button>
@@ -137,7 +139,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               className="text-sm font-medium"
               htmlFor="wrong-answer-reoccurrences"
             >
-              <p>Dodatkowe powtórzenia przy błędnej odpowiedzi</p>
+              Dodatkowe powtórzenia przy błędnej odpowiedzi
             </Label>
             <div className="flex gap-1">
               <Button
@@ -150,6 +152,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zmniejsz liczbę powtórzeń"
               >
                 <MinusIcon />
               </Button>
@@ -183,6 +186,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zwiększ liczbę powtórzeń"
               >
                 <PlusIcon />
               </Button>
@@ -195,7 +199,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               className="text-sm font-medium"
               htmlFor="max-question-reoccurrences"
             >
-              <p>Maksymalna liczba powtórzeń pytania</p>
+              Maksymalna liczba powtórzeń pytania
             </Label>
             <div className="flex gap-1">
               <Button
@@ -208,6 +212,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zmniejsz liczbę powtórzeń"
               >
                 <MinusIcon />
               </Button>
@@ -241,6 +246,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   );
                   handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
+                aria-label="Zwiększ liczbę powtórzeń"
               >
                 <PlusIcon />
               </Button>
