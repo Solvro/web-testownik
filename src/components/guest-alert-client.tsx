@@ -2,8 +2,8 @@
 
 import { EyeOffIcon, IdCardLanyardIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,24 +24,24 @@ export function GuestAlertClient({
   isInitiallyHidden = false,
 }: GuestAlertClientProps): React.JSX.Element | null {
   const { user } = useContext(AppContext);
-  const searchParameters = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const [isJustCreated, setIsJustCreated] = useState(false);
   const [isHidden, setIsHidden] = useState(isInitiallyHidden);
+  const previousUserRef = useRef(user);
 
   useEffect(() => {
-    if (searchParameters.get("guest_created") === "true") {
+    const previousUser = previousUserRef.current;
+    previousUserRef.current = user;
+
+    if (
+      previousUser === null &&
+      user !== null &&
+      user.account_type === ACCOUNT_TYPE.GUEST
+    ) {
       setIsJustCreated(true);
-      const newSearchParameters = new URLSearchParams(
-        searchParameters.toString(),
-      );
-      newSearchParameters.delete("guest_created");
-      const newUrl = `${pathname}${newSearchParameters.toString() ? `?${newSearchParameters.toString()}` : ""}`;
-      router.replace(newUrl, { scroll: false });
     }
-  }, [searchParameters, pathname, router]);
+  }, [user]);
 
   if (
     user?.account_type !== ACCOUNT_TYPE.GUEST ||

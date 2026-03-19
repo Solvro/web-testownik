@@ -45,6 +45,7 @@ export function CopyJWTAccessTokenButton() {
             variant="outline"
             disabled={!isAuthenticated}
             className="pointer-events-auto!"
+            aria-label="Skopiuj token JWT"
           >
             <KeyRoundIcon />
           </Button>

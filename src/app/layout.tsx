@@ -27,9 +27,10 @@ export const metadata: Metadata = {
   },
   description:
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
-  keywords:
-    "Testownik, Solvro, KN Solvro, nauka do egzaminu, quizy, aplikacja edukacyjna, interaktywna nauka, przygotowanie do sesji, politechnika, studia, uczelnia, testy online, aplikacja mobilna, nauka online, edukacja, pwr, testownik, testownik solvro, testownik pwr, testownik politechnika, testownik studia, testownik uczelnia, testownik aplikacja, testownik edukacja, testownik nauka, testownik quizy, testownik przygotowanie do sesji",
-  authors: [{ name: "KN Solvro" }],
+  creator: "KN Solvro",
+  alternates: {
+    canonical: "https://testownik.solvro.pl",
+  },
   robots: "index, follow",
   ...(process.env.COOLIFY_URL != null &&
     process.env.COOLIFY_URL !== "" && {
@@ -60,6 +61,14 @@ export const metadata: Metadata = {
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
+  },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Testownik Solvro",
+      url: "https://testownik.solvro.pl",
+    }),
   },
 };
 
@@ -93,7 +102,7 @@ export default async function RootLayout({
       <body className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%">
         <Providers initialUser={user}>
           <div
-            className="mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
+            className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
             id="container"
           >
             <Navbar />
@@ -102,7 +111,7 @@ export default async function RootLayout({
               <GuestAlert />
               <Alerts />
             </Suspense>
-            {children}
+            <main>{children}</main>
           </div>
           <Toaster richColors />
           <AppFooter />

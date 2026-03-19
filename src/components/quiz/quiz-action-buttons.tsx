@@ -101,6 +101,7 @@ export function QuizActionButtons({
                 size="icon"
                 onClick={handleCopy}
                 disabled={!canUseQuestion}
+                aria-label="Kopiuj pytanie i odpowiedzi"
               >
                 <ClipboardCopyIcon />
               </Button>
@@ -116,6 +117,7 @@ export function QuizActionButtons({
                 size="icon"
                 onClick={handleOpenChatGPT}
                 disabled={!canUseQuestion}
+                aria-label="Otwórz w ChatGPT"
               >
                 <SiOpenai />
               </Button>
@@ -136,6 +138,7 @@ export function QuizActionButtons({
                     variant="outline"
                     size="icon"
                     disabled={!canUseQuestion}
+                    aria-label="Zgłoś problem z pytaniem"
                   >
                     <MessageSquareWarningIcon />
                   </Button>
@@ -149,7 +152,12 @@ export function QuizActionButtons({
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button variant="outline" size="icon" onClick={handleEdit}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleEdit}
+                  aria-label="Edytuj pytanie"
+                >
                   <PencilLineIcon />
                 </Button>
               }
@@ -162,7 +170,12 @@ export function QuizActionButtons({
         <Tooltip>
           <TooltipTrigger
             render={
-              <Button variant="outline" size="icon" onClick={onToggleHistory}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleHistory}
+                aria-label="Historia odpowiedzi"
+              >
                 <HistoryIcon />
               </Button>
             }
@@ -172,7 +185,12 @@ export function QuizActionButtons({
         <Tooltip>
           <TooltipTrigger
             render={
-              <Button variant="outline" size="icon" onClick={onToggleBrainrot}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleBrainrot}
+                aria-label="Brainrot mode"
+              >
                 <SkullIcon />
               </Button>
             }

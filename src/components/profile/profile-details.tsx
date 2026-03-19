@@ -160,7 +160,10 @@ export function ProfileDetails({
           <CardContent className="flex flex-col items-center space-y-4 text-center">
             <div className="relative">
               <Avatar className="size-24">
-                <AvatarImage src={userData?.photo} />
+                <AvatarImage
+                  src={userData?.photo}
+                  alt={`Zdjęcie profilowe użytkownika ${userData?.full_name ?? ""}`}
+                />
                 <AvatarFallback className="text-3xl" delay={600}>
                   {getInitials(userData?.full_name ?? "")}
                 </AvatarFallback>

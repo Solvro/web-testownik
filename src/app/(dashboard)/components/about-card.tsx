@@ -71,7 +71,10 @@ export function AboutCard({
                         rel="noreferrer"
                       >
                         <Avatar className="border-ring size-8 border">
-                          <AvatarImage src={`${contributor.avatar_url}&s=48`} />
+                          <AvatarImage
+                            src={`${contributor.avatar_url}&s=48`}
+                            alt={`Zdjęcie profilowe twórcy ${contributor.login}`}
+                          />
                           <AvatarFallback delay={600}>
                             {getInitials(contributor.login)}
                           </AvatarFallback>

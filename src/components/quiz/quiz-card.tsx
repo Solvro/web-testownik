@@ -100,6 +100,7 @@ export function QuizCard({
                     <Button
                       variant="outline"
                       size="icon-sm"
+                      aria-label="Edytuj quiz"
                       nativeButton={false}
                       render={(rendererProps) => (
                         <Link {...rendererProps} href={onEditPath(quiz)}>
@@ -120,6 +121,7 @@ export function QuizCard({
                       variant="outline"
                       size="icon-sm"
                       onClick={() => onShare?.(quiz)}
+                      aria-label="Udostępnij quiz"
                     >
                       <ShareIcon />
                     </Button>
@@ -136,6 +138,7 @@ export function QuizCard({
                       variant="outline"
                       size="icon-sm"
                       onClick={() => onDownload?.(quiz)}
+                      aria-label="Pobierz quiz"
                     >
                       <DownloadIcon />
                     </Button>
@@ -151,6 +154,7 @@ export function QuizCard({
                     <Button
                       variant="outline"
                       size="icon-sm"
+                      aria-label="Szukaj w quizie"
                       nativeButton={false}
                       render={(rendererProps) => (
                         <Link {...rendererProps} href={onSearchPath(quiz)}>
@@ -171,6 +175,7 @@ export function QuizCard({
                       variant="outline"
                       size="icon-sm"
                       onClick={() => onDelete?.(quiz)}
+                      aria-label="Usuń quiz"
                     >
                       <TrashIcon />
                     </Button>
