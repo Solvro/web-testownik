@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getQuestionAnsweredCount } from "@/lib/session-utils";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, Question } from "@/types/quiz";
 
@@ -147,9 +148,10 @@ export function QuestionCard({
       return answer.is_correct === selectedAnswers.includes(answer.id);
     });
 
-  const answersCount = answers.reduce(
-    (count, answer) => (answer.question === question.id ? count + 1 : count),
-    questionChecked ? 0 : 1,
+  const answersCount = getQuestionAnsweredCount(
+    question.id,
+    questionChecked,
+    answers,
   );
 
   return (

@@ -1,10 +1,17 @@
+import { MinusIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import type { SettingsFormProps } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
+
+const normalizeValue = (value: string) => {
+  const parsed = Number.parseInt(value);
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 0;
+};
 
 export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [localInitialReoccurrences, setLocalInitialReoccurrences] = useState(
@@ -12,18 +19,21 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   );
   const [localWrongAnswerReoccurrences, setLocalWrongAnswerReoccurrences] =
     useState(settings.wrong_answer_reoccurrences.toString());
-
-  const [sliderInitialValue, setSliderInitialValue] = useState(
-    settings.initial_reoccurrences * 10,
-  );
-  const [sliderWrongAnswerValue, setSliderWrongAnswerValue] = useState(
-    settings.wrong_answer_reoccurrences * 10,
-  );
+  const [localMaxQuestionReoccurrences, setLocalMaxQuestionReoccurrences] =
+    useState(
+      (
+        settings.max_question_reoccurrences ??
+        DEFAULT_USER_SETTINGS.max_question_reoccurrences
+      ).toString(),
+    );
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const debouncedSave = (
-    key: "initial_reoccurrences" | "wrong_answer_reoccurrences",
+    key:
+      | "initial_reoccurrences"
+      | "wrong_answer_reoccurrences"
+      | "max_question_reoccurrences",
     value: number,
   ) => {
     if (timeoutRef.current !== undefined) {
@@ -42,18 +52,19 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     };
   }, []);
 
-  const handleInitialReoccurrencesCommit = (sliderValue: number) => {
-    const transformedValue = Math.max(1, Math.round(sliderValue / 10));
-    setLocalInitialReoccurrences(transformedValue.toString());
-    setSliderInitialValue(transformedValue * 10);
-    onSettingChange("initial_reoccurrences", transformedValue);
+  const handleInitialReoccurrencesCommit = (value: number) => {
+    setLocalInitialReoccurrences(value < 1 ? "1" : value.toString());
+    onSettingChange("initial_reoccurrences", Math.max(value, 1));
   };
 
-  const handleWrongAnswerReoccurrencesCommit = (sliderValue: number) => {
-    const transformedValue = Math.round(sliderValue / 10);
-    setLocalWrongAnswerReoccurrences(transformedValue.toString());
-    setSliderWrongAnswerValue(transformedValue * 10);
-    onSettingChange("wrong_answer_reoccurrences", transformedValue);
+  const handleWrongAnswerReoccurrencesCommit = (value: number) => {
+    setLocalWrongAnswerReoccurrences(value < 0 ? "0" : value.toString());
+    onSettingChange("wrong_answer_reoccurrences", Math.max(value, 0));
+  };
+
+  const handleMaxQuestionReoccurrencesCommit = (value: number) => {
+    setLocalMaxQuestionReoccurrences(value < 1 ? "1" : value.toString());
+    onSettingChange("max_question_reoccurrences", Math.max(value, 1));
   };
 
   return (
@@ -63,92 +74,184 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
               htmlFor="initial-reoccurrences"
             >
-              Wstępna liczba powtórzeń
+              Wstępna liczba powtórzeń pytania
             </Label>
-            <Input
-              type="number"
-              min={1}
-              value={localInitialReoccurrences}
-              onChange={(event_) => {
-                const value = event_.target.value;
-                setLocalInitialReoccurrences(value);
-                const numberValue = Number(value);
-                if (!Number.isNaN(numberValue) && numberValue >= 1) {
-                  setSliderInitialValue(numberValue * 10);
-                  debouncedSave("initial_reoccurrences", numberValue);
-                }
-              }}
-              aria-invalid={(() => {
-                const numberValue = Number(localInitialReoccurrences);
-                return Number.isNaN(numberValue) || numberValue < 1;
-              })()}
-              className="h-8 w-16 text-center font-semibold"
-            />
+            <div className="flex gap-1">
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localInitialReoccurrences) - 1,
+                    1,
+                  );
+                  handleInitialReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zmniejsz liczbę powtórzeń"
+              >
+                <MinusIcon />
+              </Button>
+              <Input
+                type="number"
+                min={1}
+                value={localInitialReoccurrences}
+                onChange={(_event) => {
+                  const value = _event.target.value;
+                  const numberValue = Math.floor(Number(value));
+                  setLocalInitialReoccurrences(numberValue.toString());
+                  if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                    debouncedSave("initial_reoccurrences", numberValue);
+                  }
+                }}
+                aria-invalid={(() => {
+                  const numberValue = Number.parseInt(
+                    localInitialReoccurrences,
+                  );
+                  return Number.isNaN(numberValue) || numberValue < 1;
+                })()}
+                className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localInitialReoccurrences) + 1,
+                    1,
+                  );
+                  handleInitialReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zwiększ liczbę powtórzeń"
+              >
+                <PlusIcon />
+              </Button>
+            </div>
           </div>
-          <Slider
-            id="initial-reoccurrences"
-            min={10}
-            max={100}
-            step={1}
-            value={[sliderInitialValue]}
-            onValueChange={(values) => {
-              setSliderInitialValue(values[0]);
-              const transformedValue = Math.max(1, Math.round(values[0] / 10));
-              setLocalInitialReoccurrences(transformedValue.toString());
-            }}
-            onValueCommit={(values) => {
-              handleInitialReoccurrencesCommit(values[0]);
-            }}
-          />
         </div>
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
               htmlFor="wrong-answer-reoccurrences"
             >
-              Liczba dodatkowych powtórzeń przy błędnej odpowiedzi
+              Dodatkowe powtórzenia przy błędnej odpowiedzi
             </Label>
-            <Input
-              type="number"
-              min={0}
-              value={localWrongAnswerReoccurrences}
-              onChange={(event_) => {
-                const value = event_.target.value;
-                setLocalWrongAnswerReoccurrences(value);
-                const numberValue = Number(value);
-                if (!Number.isNaN(numberValue) && numberValue >= 0) {
-                  setSliderWrongAnswerValue(numberValue * 10);
-                  debouncedSave("wrong_answer_reoccurrences", numberValue);
-                }
-              }}
-              aria-invalid={(() => {
-                const numberValue = Number(localWrongAnswerReoccurrences);
-                return Number.isNaN(numberValue) || numberValue < 0;
-              })()}
-              className="h-8 w-16 text-center font-semibold"
-            />
+            <div className="flex gap-1">
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localWrongAnswerReoccurrences) - 1,
+                    0,
+                  );
+                  handleWrongAnswerReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zmniejsz liczbę powtórzeń"
+              >
+                <MinusIcon />
+              </Button>
+              <Input
+                type="number"
+                min={0}
+                value={localWrongAnswerReoccurrences}
+                onChange={(event_) => {
+                  const value = event_.target.value;
+                  const numberValue = Math.floor(Number(value));
+                  setLocalWrongAnswerReoccurrences(numberValue.toString());
+                  if (!Number.isNaN(numberValue) && numberValue >= 0) {
+                    debouncedSave("wrong_answer_reoccurrences", numberValue);
+                  }
+                }}
+                aria-invalid={(() => {
+                  const numberValue = Number.parseInt(
+                    localWrongAnswerReoccurrences,
+                  );
+                  return Number.isNaN(numberValue) || numberValue < 0;
+                })()}
+                className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localWrongAnswerReoccurrences) + 1,
+                    0,
+                  );
+                  handleWrongAnswerReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zwiększ liczbę powtórzeń"
+              >
+                <PlusIcon />
+              </Button>
+            </div>
           </div>
-          <Slider
-            id="wrong-answer-reoccurrences"
-            min={0}
-            max={100}
-            step={1}
-            value={[sliderWrongAnswerValue]}
-            onValueChange={(values) => {
-              setSliderWrongAnswerValue(values[0]);
-              const transformedValue = Math.round(values[0] / 10);
-              setLocalWrongAnswerReoccurrences(transformedValue.toString());
-            }}
-            onValueCommit={(values) => {
-              handleWrongAnswerReoccurrencesCommit(values[0]);
-            }}
-          />
+        </div>
+        <div className="grid gap-2">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <Label
+              className="text-sm font-medium"
+              htmlFor="max-question-reoccurrences"
+            >
+              Maksymalna liczba powtórzeń pytania
+            </Label>
+            <div className="flex gap-1">
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) - 1,
+                    1,
+                  );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zmniejsz liczbę powtórzeń"
+              >
+                <MinusIcon />
+              </Button>
+              <Input
+                type="number"
+                min={1}
+                value={localMaxQuestionReoccurrences}
+                onChange={(event_) => {
+                  const value = event_.target.value;
+                  const numberValue = Math.floor(Number(value));
+                  setLocalMaxQuestionReoccurrences(numberValue.toString());
+                  if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                    debouncedSave("max_question_reoccurrences", numberValue);
+                  }
+                }}
+                aria-invalid={(() => {
+                  const numberValue = Number.parseInt(
+                    localMaxQuestionReoccurrences,
+                  );
+                  return Number.isNaN(numberValue) || numberValue < 1;
+                })()}
+                className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) + 1,
+                    1,
+                  );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zwiększ liczbę powtórzeń"
+              >
+                <PlusIcon />
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
