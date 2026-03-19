@@ -76,15 +76,21 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       <CardHeader>
         <CardTitle>Ustawienia</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
-            <Label
-              className="text-sm font-medium"
-              htmlFor="initial-reoccurrences"
-            >
-              Wstępna liczba powtórzeń
-            </Label>
+            <div className="flex flex-col">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="initial-reoccurrences"
+              >
+                <p>Wstępna liczba powtórzeń pytania</p>
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Standardowa ilość powtórzeń pytania która może ulec zmianie w
+                trakcie wykonywania quizu
+              </p>
+            </div>
             <Input
               type="number"
               min={1}
@@ -123,12 +129,18 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
         </div>
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
-            <Label
-              className="text-sm font-medium"
-              htmlFor="wrong-answer-reoccurrences"
-            >
-              Liczba dodatkowych powtórzeń przy błędnej odpowiedzi
-            </Label>
+            <div className="flex flex-col">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="wrong-answer-reoccurrences"
+              >
+                <p>Liczba dodatkowych powtórzeń przy błędnej odpowiedzi</p>
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Określa, ile dodatkowych razy to pytanie pojawi się w quizie,
+                jeśli użytkownik udzieli błędnej odpowiedzi
+              </p>
+            </div>
             <Input
               type="number"
               min={0}
@@ -167,15 +179,20 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
         </div>
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
-            <Label
-              className="text-sm font-medium"
-              htmlFor="max-question-reoccurrences"
-            >
-              Maksymalna liczba powtórzeń pytania
-            </Label>
+            <div className="flex flex-col">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="max-question-reoccurrences"
+              >
+                <p>Maksymalna liczba powtórzeń pytania</p>
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Maksymalna liczba powtórek tego pytania w jednej sesji quizu
+              </p>
+            </div>
             <Input
               type="number"
-              min={0}
+              min={1}
               value={localMaxQuestionReoccurrences}
               onChange={(event_) => {
                 const value = event_.target.value;
@@ -188,7 +205,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               }}
               aria-invalid={(() => {
                 const numberValue = Number(localMaxQuestionReoccurrences);
-                return Number.isNaN(numberValue) || numberValue < 0;
+                return Number.isNaN(numberValue) || numberValue < 1;
               })()}
               className="h-8 w-16 text-center font-semibold"
             />
