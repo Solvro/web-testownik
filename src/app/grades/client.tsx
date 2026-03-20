@@ -122,7 +122,7 @@ function GradesContent() {
       return "-";
     }
 
-    return (sum / totalWeight).toFixed(2);
+    return (sum / totalWeight).toFixed(3);
   };
 
   const filteredCourses = selectedTerm
@@ -218,7 +218,10 @@ function GradesContent() {
               }}
               disabled={terms.length === 0}
             >
-              <SelectTrigger className="w-full sm:w-60">
+              <SelectTrigger
+                className="w-full sm:w-60"
+                aria-label="Wybierz semestr"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
