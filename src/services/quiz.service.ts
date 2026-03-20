@@ -293,4 +293,9 @@ export class QuizService extends BaseApiService {
     );
     return response.data.current_question;
   }
+
+  async copyQuiz(quizId: string): Promise<Quiz> {
+    const response = await this.post<Quiz>(`quizzes/${quizId}/copy/`);
+    return response.data;
+  }
 }

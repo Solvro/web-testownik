@@ -36,6 +36,22 @@ export function getRemainingAttempts(
 
   let remaining = settings.initial_reoccurrences;
 
+  const answeredCount = getQuestionAnsweredCount(
+    questionId,
+    true,
+    questionAnswers,
+  );
+
+  // Reached max question reoccurrences
+  if (
+    answeredCount >=
+    (settings.max_question_reoccurrences ??
+      DEFAULT_USER_SETTINGS.max_question_reoccurrences)
+  ) {
+    remaining = 0;
+    return remaining;
+  }
+
   for (const answer of questionAnswers) {
     if (answer.was_correct) {
       remaining = Math.max(0, remaining - 1);
@@ -57,6 +73,28 @@ export function getUnansweredQuestions(
 ): Question[] {
   return questions.filter(
     (q) => getRemainingAttempts(q.id, answers, settings) > 0,
+  );
+}
+
+/**
+ * Get how many times a question has appeared / been interacted with.
+ *
+ * Semantics:
+ * - When `questionChecked` is `true`, this returns the number of stored
+ *   answers for the given question (i.e. how many times it was actually
+ *   answered, correct or not).
+ * - When `questionChecked` is `false`, this additionally counts the current,
+ *   not-yet-checked attempt as one more appearance (i.e. "times shown",
+ *   including the current attempt).
+ */
+export function getQuestionAnsweredCount(
+  questionId: string,
+  questionChecked: boolean,
+  answers: AnswerRecord[],
+): number {
+  return answers.reduce(
+    (count, answer) => (answer.question === questionId ? count + 1 : count),
+    questionChecked ? 0 : 1,
   );
 }
 

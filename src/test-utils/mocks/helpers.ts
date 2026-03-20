@@ -17,5 +17,5 @@ export const calculateAverageGrade = (courses: Course[]) => {
     return "0.00";
   }
 
-  return (total / ects).toFixed(2);
+  return (total / ects).toFixed(3);
 };

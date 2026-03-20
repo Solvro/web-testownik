@@ -1,5 +1,12 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Link2Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
+import {
+  Copy,
+  Link2Icon,
+  Loader2,
+  RotateCcwIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import { toast } from "sonner";
@@ -86,10 +93,28 @@ export function QuizInfoCard({
   timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const { checkPermission } = useContext(AppContext);
+  const { checkPermission, services } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { mutate: copyQuiz, isPending: isCopying } = useMutation({
+    mutationFn: async (quizId: string) => services.quiz.copyQuiz(quizId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user-quizzes"] }),
+        queryClient.invalidateQueries({ queryKey: ["last-used-quizzes"] }),
+      ]);
+      toast.success("Quiz został skopiowany do Twojej biblioteki");
+    },
+    onError: (error) => {
+      console.error("Failed to copy quiz", error);
+      toast.error("Nie udało się skopiować quizu", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    },
+  });
   if (quiz === null) {
     return null;
   }
@@ -136,6 +161,7 @@ export function QuizInfoCard({
           style={{
             ["--bar-color" as never]: getProgressColor(progressPercentage),
           }}
+          aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
           className="[&_[data-slot=progress-indicator]]:bg-[var(--bar-color)]"
         />
         <div className="flex items-center justify-between pt-2">
@@ -147,6 +173,7 @@ export function QuizInfoCard({
                     size="icon-sm"
                     variant="outline"
                     onClick={openSearchInQuiz}
+                    aria-label="Wyszukaj w quizie"
                   >
                     <SearchIcon className="size-5" />
                   </Button>
@@ -167,6 +194,7 @@ export function QuizInfoCard({
                           toast.success("Skopiowano link do quizu");
                         });
                     }}
+                    aria-label="Skopiuj link do quizu"
                   >
                     <Link2Icon className="size-5" />
                   </Button>
@@ -174,6 +202,28 @@ export function QuizInfoCard({
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  disabled={isCopying}
+                  onClick={() => {
+                    copyQuiz(quiz.id);
+                  }}
+                  aria-label={isCopying ? "Kopiowanie quizu" : "Kopiuj quiz"}
+                >
+                  {isCopying ? (
+                    <Loader2 className="size-5 animate-spin" />
+                  ) : (
+                    <Copy className="size-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isCopying ? "Kopiowanie..." : "Kopiuj quiz"}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -182,6 +232,7 @@ export function QuizInfoCard({
                 size="sm"
                 onClick={resetProgress}
                 disabled={totalQuestions === 0}
+                aria-label="Resetuj postęp"
               >
                 <RotateCcwIcon className="size-4" /> Reset
               </Button>
