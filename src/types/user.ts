@@ -22,6 +22,7 @@ export interface UserData extends User {
   is_staff: boolean;
   hide_profile: boolean;
   account_type: AccountType;
+  account_level: "basic" | "gold";
 }
 
 export interface UserSettings {

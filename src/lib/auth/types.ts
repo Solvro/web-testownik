@@ -16,6 +16,7 @@ export interface JWTPayload {
   is_superuser: boolean;
   is_banned: boolean;
   account_type: AccountType;
+  account_level: "basic" | "gold";
 }
 
 export interface TokenRefreshResponse {

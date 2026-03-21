@@ -18,6 +18,7 @@ export const DEFAULT_USER_PAYLOAD: JWTPayload = {
   is_superuser: false,
   is_banned: false,
   account_type: "email",
+  account_level: "basic",
 };
 
 /**
