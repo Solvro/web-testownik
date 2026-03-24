@@ -9,7 +9,7 @@ export function useLastUsedQuizzes(limit = 10) {
   const appContext = useContext(AppContext);
 
   return useInfiniteQuery({
-    queryKey: ["last-used-quizzes", limit],
+    queryKey: ["last-used-quizzes", limit, appContext],
     queryFn: async ({ pageParam: pageParameter }: { pageParam: number }) => {
       return appContext.services.quiz.getLastUsedQuizzes(limit, pageParameter);
     },
@@ -30,7 +30,7 @@ export function useRandomQuestion() {
   const appContext = useContext(AppContext);
 
   return useQuery({
-    queryKey: ["random-question"],
+    queryKey: ["random-question", appContext],
     queryFn: async () => {
       return appContext.services.quiz.getRandomQuestion();
     },

@@ -1,6 +1,12 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { AppContext } from "@/app-context";
 import { env } from "@/env";
@@ -96,74 +102,92 @@ export function useExternalImageApproval(
   const appContext = useContext(AppContext);
 
   const isMaintainer = quiz.maintainer?.id === appContext.user?.user_id;
-
   const hasExternalImages = quiz.has_external_images ?? false;
 
-  const domains = hasExternalImages ? extractExternalDomains(quiz) : [];
+  const domains = useMemo(
+    () => (hasExternalImages ? extractExternalDomains(quiz) : []),
+    [hasExternalImages, quiz],
+  );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const getStoredApproval = (): boolean => {
+  const shouldAutoApprove =
+    isMaintainer || !hasExternalImages || domains.length === 0;
+
+  const storageKey = `${STORAGE_KEY_PREFIX}${quiz.id}`;
+
+  const readStoredApproval = useCallback((): boolean => {
     if (typeof window === "undefined") {
       return false;
     }
+
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${quiz.id}`);
+      const stored = localStorage.getItem(storageKey);
       if (stored === null) {
         return false;
       }
+
       const parsed = JSON.parse(stored) as StoredApproval;
+
       if (parsed.domains.length !== domains.length) {
         return false;
       }
+
       const storedSet = new Set(parsed.domains);
       return domains.every((d) => storedSet.has(d));
     } catch {
       return false;
     }
-  };
+  }, [storageKey, domains]);
 
-  const [isApproved, setIsApproved] = useState<boolean>(() => {
-    if (isMaintainer || !hasExternalImages || domains.length === 0) {
-      return true;
-    }
-    return getStoredApproval();
-  });
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (typeof window === "undefined") {
+        return () => {
+          /* empty */
+        };
+      }
 
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+      const handler = (event: StorageEvent) => {
+        // Only react to changes for this quiz key (or clear)
+        if (event.key === storageKey || event.key === null) {
+          onStoreChange();
+        }
+      };
 
-  useEffect(() => {
-    if (isMaintainer || !hasExternalImages || domains.length === 0) {
-      setIsApproved(true);
-      setIsInitialized(true);
-      return;
-    }
+      window.addEventListener("storage", handler);
+      return () => {
+        window.removeEventListener("storage", handler);
+      };
+    },
+    [storageKey],
+  );
 
-    const approved = getStoredApproval();
-    setIsApproved(approved);
-    setIsInitialized(true);
-  }, [domains.length, getStoredApproval, hasExternalImages, isMaintainer]);
+  const storedApproved = useSyncExternalStore(
+    subscribe,
+    readStoredApproval,
+    () => false,
+  );
 
-  const approve = () => {
+  const [manualApproved, setManualApproved] = useState(false);
+  const isApproved = shouldAutoApprove || manualApproved || storedApproved;
+
+  const approve = useCallback(() => {
     if (typeof window !== "undefined") {
       const data: StoredApproval = { domains };
-      localStorage.setItem(
-        `${STORAGE_KEY_PREFIX}${quiz.id}`,
-        JSON.stringify(data),
-      );
+      localStorage.setItem(storageKey, JSON.stringify(data));
     }
-    setIsApproved(true);
-  };
+    setManualApproved(true);
+  }, [domains, storageKey]);
 
-  const revoke = () => {
+  const revoke = useCallback(() => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}`);
+      localStorage.removeItem(storageKey);
     }
-    setIsApproved(false);
-  };
+    setManualApproved(false);
+  }, [storageKey]);
 
   return {
     isApproved,
-    isInitialized,
+    isInitialized: true,
     domains,
     approve,
     revoke,

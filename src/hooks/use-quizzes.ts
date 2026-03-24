@@ -11,7 +11,7 @@ export function useUserQuizzes(
   const appContext = useContext(AppContext);
 
   return useQuery({
-    queryKey: ["user-quizzes"],
+    queryKey: ["user-quizzes", appContext],
     queryFn: async () => {
       return appContext.services.quiz.getQuizzes();
     },
@@ -27,7 +27,7 @@ export function useSharedQuizzes(
   const appContext = useContext(AppContext);
 
   return useQuery({
-    queryKey: ["shared-quizzes"],
+    queryKey: ["shared-quizzes", appContext],
     queryFn: async () => {
       return appContext.services.quiz.getSharedQuizzes();
     },
