@@ -55,6 +55,7 @@
     "@tanstack/react-pacer": "^0.19.3",
     "@tanstack/react-query": "^5.90.19",
     "@tanstack/react-query-devtools": "^5.91.2",
+    "@testing-library/dom": "^10.4.1",
     "@types/seedrandom": "^3.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -73,6 +74,7 @@
     "postcss": "^8.5.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-icons": "^5.6.0",
     "react-intersection-observer": "^10.0.2",
     "react-markdown": "^10.1.0",
     "react-player": "^3.4.0",
@@ -90,7 +92,7 @@
     "@solvro/config": "^2.1.1",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/dom-navigation": "^1.0.6",
     "@types/js-cookie": "^3.0.6",
@@ -112,5 +114,6 @@
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
-  }
+  },
+  "preinstall": "npx only-allow pnpm"
 }
