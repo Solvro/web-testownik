@@ -29,6 +29,7 @@ export function useActiveQuiz(quizId: string) {
   const appContext = useContext(AppContext);
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: quizDetailQueryKey(quizId),
     queryFn: async () => {
       return await appContext.services.quiz.getQuizWithProgress(quizId);

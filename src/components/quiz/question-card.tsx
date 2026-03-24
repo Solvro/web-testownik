@@ -162,7 +162,7 @@ export function QuestionCard({
             <div className="inline-flex items-start gap-2">
               <span className="inline-block leading-tight">
                 <MarkdownRenderer className="inline-block">
-                  {`${String(question.order)}\\. ${question.text}`}
+                  {String.raw`${String(question.order)}\. ${question.text}`}
                 </MarkdownRenderer>
               </span>
               <Tooltip>

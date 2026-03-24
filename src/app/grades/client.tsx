@@ -54,7 +54,7 @@ function GradesContent() {
     isPending: loading,
     error,
   } = useQuery({
-    queryKey: ["grades"],
+    queryKey: ["grades", services],
     queryFn: async () => services.user.getGrades(),
     enabled: checkPermission(PermissionAction.VIEW_GRADES),
   });

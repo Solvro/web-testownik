@@ -55,6 +55,7 @@ export default async function QuizPage({
   const services = new ServiceRegistry(API_URL, {}, accessToken);
 
   await queryClient.prefetchQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: quizDetailQueryKey(quizId),
     queryFn: async () => {
       return await services.quiz.getQuizWithProgress(quizId);

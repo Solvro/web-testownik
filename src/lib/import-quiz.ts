@@ -531,7 +531,7 @@ export const useImportQuiz = () => {
         const content = await fileData.async("uint8array");
         let lines;
         try {
-          const decoder = new TextDecoder("utf8", { fatal: true });
+          const decoder = new TextDecoder("utf-8", { fatal: true });
           lines = decoder
             .decode(content)
             .split("\n")
@@ -849,7 +849,7 @@ export const useImportQuiz = () => {
   async function detectEncodingAndReadFile(file: File): Promise<string> {
     const content = await file.arrayBuffer();
     try {
-      const decoder = new TextDecoder("utf8", { fatal: true });
+      const decoder = new TextDecoder("utf-8", { fatal: true });
       return decoder.decode(content);
     } catch {
       const decoder = new TextDecoder("windows-1250");

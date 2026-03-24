@@ -1,8 +1,9 @@
 import {
   QueryClient,
   defaultShouldDehydrateQuery,
-  isServer,
 } from "@tanstack/react-query";
+
+const isServer = typeof window === "undefined";
 
 function makeQueryClient() {
   return new QueryClient({

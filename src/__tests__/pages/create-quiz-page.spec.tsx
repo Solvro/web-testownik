@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -126,7 +125,10 @@ describe("CreateQuizPage", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "Tytuł quizu jest wymagany",
       expect.objectContaining({
-        actionButtonStyle: expect.objectContaining({}),
+        actionButtonStyle: expect.objectContaining({}) as unknown as Record<
+          string,
+          unknown
+        >,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();
@@ -152,7 +154,9 @@ describe("CreateQuizPage", () => {
         "Pytanie 1: Pytanie musi zawierać tekst lub zdjęcie",
       ),
       expect.objectContaining({
-        action: expect.objectContaining({ label: "Pokaż" }),
+        action: expect.objectContaining({
+          label: "Pokaż",
+        }) as unknown as Record<string, unknown>,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();
@@ -175,7 +179,9 @@ describe("CreateQuizPage", () => {
         "Pytanie 1, Odpowiedź 1: Odpowiedź musi zawierać tekst lub zdjęcie",
       ),
       expect.objectContaining({
-        action: expect.objectContaining({ label: "Pokaż" }),
+        action: expect.objectContaining({
+          label: "Pokaż",
+        }) as unknown as Record<string, unknown>,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();
