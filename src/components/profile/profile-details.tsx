@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ export function ProfileDetails({
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
+  const isGold = userData?.account_level === "gold";
 
   useEffect(() => {
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
@@ -159,7 +161,14 @@ export function ProfileDetails({
         ) : (
           <CardContent className="flex flex-col items-center space-y-4 text-center">
             <div className="relative">
-              <Avatar className="size-24">
+              <Avatar
+                className={cn(
+                  "size-24",
+                  isGold
+                    ? "ring-offset-background shadow-[0_0_24px_-8px_rgba(245,158,11,0.95)] ring-4 ring-amber-400/85 ring-offset-2"
+                    : null,
+                )}
+              >
                 <AvatarImage
                   src={userData?.photo}
                   alt={`Zdjęcie profilowe użytkownika ${userData?.full_name ?? ""}`}
@@ -194,6 +203,9 @@ export function ProfileDetails({
               ) : null}
               <AccountTypeBadge
                 accountType={userData?.account_type ?? ACCOUNT_TYPE.GUEST}
+              />
+              <AccountLevelBadge
+                accountLevel={userData?.account_level ?? "basic"}
               />
             </div>
             <div className="bg-border h-px w-full" />
