@@ -91,7 +91,7 @@ export function BrainrotCard(): React.JSX.Element {
                   aria-label="Wybierz film: Minecraft parkour"
                   onClick={() => {
                     handleBrainrotVideoChange(
-                      "https://www.youtube.com/watch?v=OqPxaKs8xrk",
+                      "https://www.youtube.com/watch?v=vrcSq1-r25U&list=PLmSs-0cFIbfVWhkZx0i4UMiZdr2C0Z8w7",
                     );
                   }}
                 >
