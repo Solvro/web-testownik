@@ -4,9 +4,9 @@ import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, startTransition, useEffect } from "react";
-import ReactPlayer from "react-player";
 import { toast } from "sonner";
 
+import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
@@ -17,7 +17,6 @@ import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
@@ -195,31 +194,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </div>
           </ViewTransition>
         </div>
-        {showBrainrot ? (
-          <div className="animate-in fade-in lg:slide-in-from-right duration-300">
-            <Card>
-              <CardContent>
-                <AspectRatio
-                  ratio={9 / 20}
-                  className="overflow-hidden rounded-md"
-                >
-                  <ReactPlayer
-                    className="min-w-0"
-                    src="https://www.youtube.com/watch?v=zZ7AimPACzc"
-                    playing
-                    playsInline
-                    loop
-                    muted
-                    width="100%"
-                    height="100%"
-                  />
-                </AspectRatio>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+        {showBrainrot ? <BrainrotCard /> : null}
       </div>
-
       <QuizHistoryDialog
         quiz={quiz}
         answers={answers}
