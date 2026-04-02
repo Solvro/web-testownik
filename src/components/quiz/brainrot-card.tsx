@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BoxIcon,
   BubblesIcon,
@@ -17,8 +19,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function BrainrotCard(): React.JSX.Element | null {
-  // Subway Surfes is default video
+export function BrainrotCard(): React.JSX.Element {
+  // Subway Surfers is default video
   const [brainrotVideo, setBrainrotVideo] = React.useState(
     "https://www.youtube.com/watch?v=zZ7AimPACzc",
   );
@@ -35,6 +37,9 @@ export function BrainrotCard(): React.JSX.Element | null {
         <CardContent>
           <AspectRatio
             ratio={9 / 20}
+            role="button"
+            tabIndex={0}
+            aria-label="Play/pause brainrot video"
             className="relative flex flex-col items-center justify-center overflow-hidden rounded-md"
             onClick={() => {
               setIsVideoPlaying(!isVideoPlaying);
@@ -65,6 +70,7 @@ export function BrainrotCard(): React.JSX.Element | null {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Wybierz film: Brainrot memes"
                   onClick={() => {
                     handleBrainrotVideoChange(
                       "https://www.youtube.com/watch?v=9q6eL3iSATM&t=756s",
@@ -82,6 +88,7 @@ export function BrainrotCard(): React.JSX.Element | null {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Wybierz film: Minecraft parkour"
                   onClick={() => {
                     handleBrainrotVideoChange(
                       "https://www.youtube.com/watch?v=OqPxaKs8xrk",
@@ -99,6 +106,7 @@ export function BrainrotCard(): React.JSX.Element | null {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Wybierz film: Mydełka"
                   onClick={() => {
                     handleBrainrotVideoChange(
                       "https://www.youtube.com/watch?v=IiEVXWIIr0k",
@@ -116,6 +124,7 @@ export function BrainrotCard(): React.JSX.Element | null {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Wybierz film: Subway Surfers"
                   onClick={() => {
                     handleBrainrotVideoChange(
                       "https://www.youtube.com/watch?v=zZ7AimPACzc",
