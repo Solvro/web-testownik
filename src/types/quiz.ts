@@ -10,6 +10,7 @@ export interface QuizMetadata {
   is_anonymous: boolean;
   created_at: string;
   updated_at: string;
+  last_used_at: string;
   version: number;
   can_edit?: boolean;
   preview_question?: Question;
