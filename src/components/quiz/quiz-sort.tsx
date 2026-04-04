@@ -4,6 +4,7 @@ import {
   ArrowDownZA,
   CalendarArrowDownIcon,
   CalendarArrowUpIcon,
+  HistoryIcon,
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
@@ -61,18 +62,19 @@ const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
 };
 
 const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
-  const dateStr = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
-  return new Date(dateStr);
+  const dateString = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
+  return new Date(dateString);
 };
 
-const getUpdateDate = (quiz: QuizMetadata | SharedQuiz): Date => {
-  const dateStr = "quiz" in quiz ? quiz.quiz.updated_at : quiz.updated_at;
-  return new Date(dateStr);
+const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateString =
+    "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
+  return new Date(dateString);
 };
 
 const options: Option[] = [
   {
-    label: "Alfabetycznie (A - Z)",
+    label: "A → Z",
     icon: <ArrowDownAZ />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
@@ -82,7 +84,7 @@ const options: Option[] = [
     },
   },
   {
-    label: "Alfabetycznie (Z - A)",
+    label: "Z → A",
     icon: <ArrowDownZA />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
@@ -92,7 +94,7 @@ const options: Option[] = [
     },
   },
   {
-    label: "Od najnowszego",
+    label: "Najnowsze",
     icon: <CalendarArrowDownIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
@@ -102,13 +104,23 @@ const options: Option[] = [
     },
   },
   {
-    label: "Od najstarszego",
+    label: "Najstarsze",
     icon: <CalendarArrowUpIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
     ): number => {
       return getCreationDate(a).getTime() - getCreationDate(b).getTime();
+    },
+  },
+  {
+    label: "Ostatnio używane",
+    icon: <HistoryIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getLastUsedDate(b).getTime() - getLastUsedDate(a).getTime();
     },
   },
 ];
