@@ -29,9 +29,14 @@ export function LoginPageClient() {
               Masz już aktywne konto. Przejdź do strony głównej, aby korzystać z
               Testownika.
             </p>
-            <Button asChild>
-              <Link href="/">Strona główna</Link>
-            </Button>
+            <Button
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href="/">
+                  Strona główna
+                </Link>
+              )}
+            ></Button>
           </CardContent>
         </Card>
       </div>

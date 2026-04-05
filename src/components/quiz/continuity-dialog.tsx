@@ -62,21 +62,23 @@ export function ContinuityDialog({
       : "flat-color-icons:multiple-devices";
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          className={`fixed right-4 bottom-4 z-50 h-12 w-12 rounded-full p-0 shadow-lg ${peerConnections.length === 0 ? "hidden" : ""}`}
-          variant="outline"
-        >
-          <span className="relative inline-flex h-full w-full items-center justify-center">
-            <Icon icon={iconName} className="text-xl" />
-            {isContinuityHost ? (
-              <span className="absolute -top-1 -right-1 inline-flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-white shadow">
-                <CrownIcon className="size-3" />
-              </span>
-            ) : null}
-          </span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            className={`fixed right-4 bottom-4 z-50 h-12 w-12 rounded-full p-0 shadow-lg ${peerConnections.length === 0 ? "hidden" : ""}`}
+            variant="outline"
+          >
+            <span className="relative inline-flex h-full w-full items-center justify-center">
+              <Icon icon={iconName} className="text-xl" />
+              {isContinuityHost ? (
+                <span className="absolute -top-1 -right-1 inline-flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-white shadow">
+                  <CrownIcon className="size-3" />
+                </span>
+              ) : null}
+            </span>
+          </Button>
+        }
+      ></DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Continuity</DialogTitle>
@@ -101,9 +103,9 @@ export function ContinuityDialog({
           autoplay
         />
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Zamknij</Button>
-          </DialogClose>
+          <DialogClose
+            render={<Button variant="outline">Zamknij</Button>}
+          ></DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>

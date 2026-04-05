@@ -1,6 +1,5 @@
 "use client";
 
-import { FocusScope } from "@radix-ui/react-focus-scope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -197,31 +196,31 @@ export function QuickEditQuestionDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-1">
-          <FocusScope>
-            <QuestionFormContent
-              question={formData}
-              onUpdate={(updates) => {
-                setFormData((previous) => ({ ...previous, ...updates }));
-              }}
-              isImageUploading={isImageUploading}
-              onImageChange={handleImageChange}
-              onUpload={handleUpload}
-            />
-          </FocusScope>
+          <QuestionFormContent
+            question={formData}
+            onUpdate={(updates) => {
+              setFormData((previous) => ({ ...previous, ...updates }));
+            }}
+            isImageUploading={isImageUploading}
+            onImageChange={handleImageChange}
+            onUpload={handleUpload}
+          />
         </div>
 
         <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">
           <div className="flex items-center gap-2">
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 />
-                  Usuń pytanie
-                </Button>
-              </AlertDialogTrigger>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 />
+                    Usuń pytanie
+                  </Button>
+                }
+              ></AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
@@ -245,11 +244,15 @@ export function QuickEditQuestionDialog({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="ghost" asChild>
-              <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-                Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-              </Link>
-            </Button>
+            <Button
+              variant="ghost"
+              nativeButton={false}
+              render={
+                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                  Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
+                </Link>
+              }
+            ></Button>
           </div>
           <div className="flex gap-2">
             <Button

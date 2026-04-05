@@ -75,7 +75,7 @@ export function SearchCard({
             disabled={isLoading}
             aria-label="Wyszukaj quizy"
           >
-            <SearchIcon className="size-4" />
+            <SearchIcon />
           </Button>
         </div>
         <ScrollArea className="min-h-0 flex-1">

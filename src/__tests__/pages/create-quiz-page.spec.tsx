@@ -51,19 +51,11 @@ const setup = async () => {
     await user.type(answers[0], testQuiz.answers[0]);
     await user.type(answers[1], testQuiz.answers[1]);
 
-    // Mark first answer as correct
-    const checkboxes = screen.getAllByRole("checkbox", {
-      name: /oznacz jako poprawną|wielokrotny wybór/i,
+    // Mark first answer as correct (answer correctness toggle is a button)
+    const correctAnswerButtons = screen.getAllByRole("button", {
+      name: /oznacz jako poprawną/i,
     });
-    // Skip the "all questions multiple" checkbox and click first answer checkbox
-    const answerCheckbox = checkboxes.find(
-      (checkbox) =>
-        checkbox.getAttribute("id")?.includes("all-multiple") !== true &&
-        checkbox.getAttribute("id")?.includes("multiple-choice") !== true,
-    );
-    if (answerCheckbox != null) {
-      await user.click(answerCheckbox);
-    }
+    await user.click(correctAnswerButtons[0]);
   };
 
   const submit = async () => {

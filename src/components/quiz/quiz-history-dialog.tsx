@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, Quiz } from "@/types/quiz";
 
@@ -44,9 +44,9 @@ export function QuizHistoryDialog({
             Wybierz pytanie poniżej aby zobaczyć jego podgląd
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1 overflow-y-scroll">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="grid max-h-80 w-full flex-col gap-2">
-            <Accordion type="single" collapsible className="max-w-lg">
+            <Accordion className="max-w-lg">
               {answers.length === 0 ? (
                 <p className="flex justify-center p-4 text-sm">
                   Nie znaleziono historii w tej sesji quizu.
@@ -130,12 +130,11 @@ export function QuizHistoryDialog({
               )}
             </Accordion>
           </div>
-          <ScrollBar orientation="vertical" />
         </ScrollArea>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Zamknij</Button>
-          </DialogClose>
+          <DialogClose
+            render={<Button variant="outline">Zamknij</Button>}
+          ></DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
