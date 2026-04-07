@@ -3,12 +3,19 @@ import type { MetadataRoute } from "next";
 // eslint-disable-next-line import/no-default-export
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Testownik Solvro",
     short_name: "Testownik",
     description:
       "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi.",
     start_url: "/",
+    scope: "/",
+    lang: "pl",
+    dir: "ltr",
+    orientation: "any",
+    categories: ["education"],
     display: "standalone",
+    display_override: ["standalone", "browser"],
     theme_color: "#1A2856",
     background_color: "#0b111c",
     icons: [
