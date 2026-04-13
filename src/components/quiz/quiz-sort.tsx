@@ -67,9 +67,9 @@ const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
 };
 
 const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
-  const dateString =
+  const dateString: string | null =
     "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
-  return new Date(dateString);
+  return new Date(dateString ?? 0); // Return earliest date if last_used_at is null
 };
 
 const options: Option[] = [

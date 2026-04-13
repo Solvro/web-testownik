@@ -48,7 +48,7 @@ export function migrateLegacyQuiz(
     description: legacy.description ?? "",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    last_used_at: "",
+    last_used_at: null,
     questions,
     version: 1,
     visibility: AccessLevel.PRIVATE,
