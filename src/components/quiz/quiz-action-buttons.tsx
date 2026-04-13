@@ -1,4 +1,3 @@
-import { SiOpenai } from "@icons-pack/react-simple-icons";
 import {
   ClipboardCopyIcon,
   HistoryIcon,
@@ -8,6 +7,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
+import { SiOpenai } from "react-icons/si";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";

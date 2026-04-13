@@ -1,6 +1,6 @@
 "use client";
 
-import { SiGithub } from "@icons-pack/react-simple-icons";
+import { FiGithub } from "react-icons/fi";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function AboutCard({
             }
             className="rounded-full"
           >
-            <SiGithub className="size-6" />
+            <FiGithub className="size-6" />
           </Button>
         </CardTitle>
 
