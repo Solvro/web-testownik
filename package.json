@@ -27,7 +27,6 @@
     "@base-ui/react": "^1.2.0",
     "@formbricks/js": "^4.3.0",
     "@iconify/react": "^6.0.2",
-    "@icons-pack/react-simple-icons": "^13.8.0",
     "@lottiefiles/dotlottie-react": "^0.17.13",
     "@monaco-editor/react": "^4.7.0",
     "@t3-oss/env-nextjs": "^0.13.10",
