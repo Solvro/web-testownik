@@ -1,8 +1,8 @@
-import { SiGithub } from "@icons-pack/react-simple-icons";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { RotateCcwIcon, SparklesIcon, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, useEffect } from "react";
+import { SiGithub } from "react-icons/si";
 
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -153,21 +153,23 @@ export function QuestionCard({
           </CardHeader>
           <CardContent className="relative">
             <Button
-              asChild
+              render={(props) => (
+                <Link
+                  {...props}
+                  href="https://github.com/Solvro/web-testownik"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
+                >
+                  <SiGithub className="size-4" />
+                  Wesprzyj nas gwiazdką
+                </Link>
+              )}
               className="group w-full"
               variant="outline"
               size="lg"
-            >
-              <Link
-                href="https://github.com/Solvro/web-testownik"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
-              >
-                <SiGithub className="size-4" />
-                Wesprzyj nas gwiazdką
-              </Link>
-            </Button>
+              nativeButton={false}
+            ></Button>
           </CardContent>
         </Card>
       </div>
