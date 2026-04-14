@@ -61,19 +61,29 @@ export default function QuizError({
         </EmptyHeader>
         <EmptyContent>
           <div className="flex justify-center gap-2">
-            <Button asChild variant="outline">
-              <Link href="/">
-                <HomeIcon />
-                Strona główna
-              </Link>
-            </Button>
-            {!isAuthenticated || isGuest ? (
-              <Button asChild>
-                <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
-                  <LogInIcon />
-                  Zaloguj się
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={(props) => (
+                <Link {...props} href="/">
+                  <HomeIcon />
+                  Strona główna
                 </Link>
-              </Button>
+              )}
+            ></Button>
+            {!isAuthenticated || isGuest ? (
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link
+                    {...props}
+                    href={`/login?redirect=${encodeURIComponent(pathname)}`}
+                  >
+                    <LogInIcon />
+                    Zaloguj się
+                  </Link>
+                )}
+              ></Button>
             ) : null}
           </div>
         </EmptyContent>
@@ -104,7 +114,7 @@ export default function QuizError({
         )}
       </EmptyHeader>
       <EmptyContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           <AccordionItem value="error-details" className="border-none">
             <AccordionTrigger className="justify-center gap-2 py-2 hover:no-underline">
               Szczegóły błędu
@@ -127,19 +137,30 @@ export default function QuizError({
             Spróbuj ponownie
           </Button>
           {isAuthenticated && !isGuest ? (
-            <Button asChild variant="outline">
-              <Link href="/">
-                <HomeIcon />
-                Strona główna
-              </Link>
-            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={(props) => (
+                <Link {...props} href="/">
+                  <HomeIcon />
+                  Strona główna
+                </Link>
+              )}
+            ></Button>
           ) : (
-            <Button asChild variant="outline">
-              <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
-                <LogInIcon />
-                Zaloguj się
-              </Link>
-            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={(props) => (
+                <Link
+                  {...props}
+                  href={`/login?redirect=${encodeURIComponent(pathname)}`}
+                >
+                  <LogInIcon />
+                  Zaloguj się
+                </Link>
+              )}
+            ></Button>
           )}
         </div>
         <EmptyDescription>

@@ -254,21 +254,29 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               </CardHeader>
               <CardFooter className="mt-auto flex items-center justify-between">
                 <ViewTransition name="create-quiz">
-                  <Link href="/create-quiz">
-                    <Button size="sm">
-                      Stwórz
-                      <PlusIcon />
-                    </Button>
-                  </Link>
+                  <Button
+                    size="sm"
+                    nativeButton={false}
+                    render={(props) => (
+                      <Link {...props} href="/create-quiz">
+                        Stwórz
+                        <PlusIcon />
+                      </Link>
+                    )}
+                  ></Button>
                 </ViewTransition>
                 <div className="flex gap-1">
                   <ViewTransition name="import-quiz">
-                    <Link href="/import-quiz">
-                      <Button size="sm">
-                        Importuj
-                        <UploadIcon />
-                      </Button>
-                    </Link>
+                    <Button
+                      size="sm"
+                      nativeButton={false}
+                      render={(props) => (
+                        <Link {...props} href="/import-quiz">
+                          Importuj
+                          <UploadIcon />
+                        </Link>
+                      )}
+                    ></Button>
                   </ViewTransition>
                 </div>
               </CardFooter>
@@ -291,19 +299,26 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
                 Wyczyść Filtry <XIcon />
               </Button>
               <ViewTransition name="create-quiz">
-                <Link href="/create-quiz">
-                  <Button>
-                    Stwórz quiz <PlusIcon />
-                  </Button>
-                </Link>
+                <Button
+                  nativeButton={false}
+                  render={(props) => (
+                    <Link {...props} href="/create-quiz">
+                      Stwórz quiz
+                      <PlusIcon />
+                    </Link>
+                  )}
+                ></Button>
               </ViewTransition>
               <ViewTransition name="import-quiz">
-                <Link href="/import-quiz">
-                  <Button>
-                    Importuj
-                    <UploadIcon />
-                  </Button>
-                </Link>
+                <Button
+                  nativeButton={false}
+                  render={(props) => (
+                    <Link {...props} href="/import-quiz">
+                      Importuj
+                      <UploadIcon />
+                    </Link>
+                  )}
+                ></Button>
               </ViewTransition>
             </EmptyContent>
           </Empty>
@@ -315,17 +330,25 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               Nie masz jeszcze żadnych quizów.
             </p>
             <div className="flex flex-row justify-center gap-2">
-              <Link href="/create-quiz">
-                <Button>
-                  Stwórz quiz <PlusIcon />
-                </Button>
-              </Link>
-              <Link href="/import-quiz">
-                <Button>
-                  Importuj
-                  <UploadIcon />
-                </Button>
-              </Link>
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/create-quiz">
+                    Stwórz quiz
+                    <PlusIcon />
+                  </Link>
+                )}
+              ></Button>
+
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/import-quiz">
+                    Importuj
+                    <UploadIcon />
+                  </Link>
+                )}
+              ></Button>
             </div>
           </div>
         </ViewTransition>

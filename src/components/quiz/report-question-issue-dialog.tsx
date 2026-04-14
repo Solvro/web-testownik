@@ -68,8 +68,12 @@ export function ReportQuestionIssueDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
+      <DialogTrigger>{children}</DialogTrigger>
+      <DialogContent
+        onKeyDown={(event_) => {
+          event_.stopPropagation();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Zgłoś problem z pytaniem</DialogTitle>
         </DialogHeader>
@@ -86,9 +90,9 @@ export function ReportQuestionIssueDialog({
           />
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Anuluj</Button>
-          </DialogClose>
+          <DialogClose
+            render={<Button variant="outline">Anuluj</Button>}
+          ></DialogClose>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !issue.trim()}
