@@ -1,5 +1,7 @@
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import { RotateCcwIcon, Undo2 } from "lucide-react";
+import { RotateCcwIcon, SparklesIcon, Undo2 } from "lucide-react";
+import Link from "next/link";
 import { ViewTransition, useEffect } from "react";
 
 import { ImageLoad } from "@/components/image-load";
@@ -109,32 +111,66 @@ export function QuestionCard({
 
   if (isQuizFinished) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Quiz został ukończony</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p>
-            Gratulacje! Ukończyłeś cały quiz. Aby kontynuować naukę, zresetuj
-            swoje postępy.
-          </p>
-          <DotLottieReact
-            src="https://lottie.host/dfccc02f-66a0-41dc-894c-c5f376a1f8dd/nMskjwo4wX.lottie"
-            autoplay
-          />
-          <div className="flex justify-center">
-            <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-              <Button variant="outline" onClick={restartQuiz}>
-                <RotateCcwIcon />
-                Uruchom ponownie quiz
-              </Button>
-            </ViewTransition>
-          </div>
-          <p className="text-muted-foreground mt-3 text-center text-xs">
-            Lub idź się napić piwka, no i odpocznij - zasłużyłeś!
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quiz został ukończony</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              Gratulacje! Ukończyłeś cały quiz. Aby kontynuować naukę, zresetuj
+              swoje postępy.
+            </p>
+            <DotLottieReact
+              src="https://lottie.host/dfccc02f-66a0-41dc-894c-c5f376a1f8dd/nMskjwo4wX.lottie"
+              autoplay
+            />
+            <div className="flex justify-center">
+              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+                <Button variant="outline" onClick={restartQuiz}>
+                  <RotateCcwIcon />
+                  Uruchom ponownie quiz
+                </Button>
+              </ViewTransition>
+            </div>
+            <p className="text-muted-foreground mt-3 text-center text-xs">
+              Lub idź się napić piwka, no i odpocznij - zasłużyłeś!
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden">
+          <CardHeader className="relative">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <span className="bg-primary/10 text-primary inline-flex h-8 w-8 items-center justify-center rounded-full">
+                <SparklesIcon className="size-4" />
+              </span>
+              Podoba Ci się Testownik?
+            </CardTitle>
+            <CardDescription className="max-w-prose text-sm leading-relaxed">
+              Doceń pracę naszego zespołu oraz wesprzyj projekt zostawiając
+              gwiazdkę na GitHubie.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="relative">
+            <Button
+              asChild
+              className="group w-full"
+              variant="outline"
+              size="lg"
+            >
+              <Link
+                href="https://github.com/Solvro/web-testownik"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
+              >
+                <SiGithub className="size-4" />
+                Wesprzyj nas gwiazdką
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
