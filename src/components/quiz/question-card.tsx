@@ -1,8 +1,8 @@
-import { SiGithub } from "@icons-pack/react-simple-icons";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { RotateCcwIcon, SparklesIcon, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, useEffect } from "react";
+import { SiGithub } from "react-icons/si";
 
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -153,21 +153,23 @@ export function QuestionCard({
           </CardHeader>
           <CardContent className="relative">
             <Button
-              asChild
+              render={(props) => (
+                <Link
+                  {...props}
+                  href="https://github.com/Solvro/web-testownik"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
+                >
+                  <SiGithub className="size-4" />
+                  Wesprzyj nas gwiazdką
+                </Link>
+              )}
               className="group w-full"
               variant="outline"
               size="lg"
-            >
-              <Link
-                href="https://github.com/Solvro/web-testownik"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
-              >
-                <SiGithub className="size-4" />
-                Wesprzyj nas gwiazdką
-              </Link>
-            </Button>
+              nativeButton={false}
+            ></Button>
           </CardContent>
         </Card>
       </div>
@@ -202,14 +204,16 @@ export function QuestionCard({
                 </MarkdownRenderer>
               </span>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="secondary"
-                    className="my-px shrink-0 select-none"
-                  >
-                    {answersCount}
-                  </Badge>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Badge
+                      variant="secondary"
+                      className="my-px shrink-0 select-none"
+                    >
+                      {answersCount}
+                    </Badge>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>
                   To pytanie pojawiło się{" "}
                   {answersCount === 1
@@ -245,7 +249,7 @@ export function QuestionCard({
                 }}
                 disabled={questionChecked}
                 className={cn(
-                  "w-full justify-start rounded-md border px-4 py-3 text-left font-medium wrap-break-word transition-colors focus:outline-none disabled:cursor-not-allowed",
+                  "bg-input dark:bg-background w-full justify-start rounded-md border px-4 py-3 text-left font-medium wrap-break-word transition-colors focus:outline-none disabled:cursor-not-allowed",
                   computeAnswerVariant(
                     selectedAnswers.includes(answer.id),
                     questionChecked,
@@ -294,15 +298,17 @@ export function QuestionCard({
             <>
               {canGoBack && !questionChecked ? (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={togglePreviousQuestion}
-                    >
-                      <Undo2 />
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={togglePreviousQuestion}
+                      >
+                        <Undo2 />
+                      </Button>
+                    }
+                  ></TooltipTrigger>
                   <TooltipContent>Poprzednie pytanie</TooltipContent>
                 </Tooltip>
               ) : null}

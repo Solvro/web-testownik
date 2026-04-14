@@ -85,6 +85,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={Number(localInitialReoccurrences) <= 1}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localInitialReoccurrences) - 1,
@@ -145,6 +146,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={Number(localWrongAnswerReoccurrences) <= 0}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localWrongAnswerReoccurrences) - 1,
@@ -205,6 +207,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={Number(localMaxQuestionReoccurrences) <= 1}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localMaxQuestionReoccurrences) - 1,

@@ -44,7 +44,7 @@ export function ImageButton({
     <>
       <Button
         type="button"
-        variant={hasImage ? "secondary" : "ghost"}
+        variant={hasImage ? "default" : "ghost"}
         size="icon-sm"
         className={cn("shrink-0", className)}
         onClick={() => {
@@ -54,6 +54,7 @@ export function ImageButton({
         }}
         disabled={disabled || isUploading}
         aria-label={hasImage ? "Zmień zdjęcie" : "Dodaj zdjęcie"}
+        tabIndex={-1}
       >
         {isUploading ? (
           <Loader2 className="size-4 animate-spin" />
