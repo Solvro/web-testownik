@@ -57,6 +57,8 @@ export function QuickEditQuestionDialog({
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
 
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
 
@@ -179,6 +181,7 @@ export function QuickEditQuestionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[85vh] flex-col gap-0 overflow-hidden px-0 sm:max-w-4xl"
+        data-nested-dialog-open={isAlertDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="px-6 pr-10">
@@ -209,7 +212,10 @@ export function QuickEditQuestionDialog({
 
         <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">
           <div className="flex items-center gap-2">
-            <AlertDialog>
+            <AlertDialog
+              open={isAlertDialogOpen}
+              onOpenChange={setIsAlertDialogOpen}
+            >
               <AlertDialogTrigger
                 render={
                   <Button
@@ -221,14 +227,14 @@ export function QuickEditQuestionDialog({
                   </Button>
                 }
               ></AlertDialogTrigger>
+
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     Czy na pewno chcesz usunąć to pytanie?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tej operacji nie można cofnąć. Pytanie zostanie trwale
-                    usunięte z quizu.
+                    Tej operacji nie można cofnąć.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
