@@ -69,6 +69,7 @@
     "tailwind-merge": "^3.4.0",
     "ua-parser-js": "^2.0.8",
     "vaul": "^1.1.2",
+    "web-haptics": "^0.0.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
