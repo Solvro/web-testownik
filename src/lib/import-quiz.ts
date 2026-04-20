@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import { migrateLegacyQuiz } from "@/lib/migration";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";

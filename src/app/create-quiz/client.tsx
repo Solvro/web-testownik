@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import type { QuizFormData } from "@/lib/schemas/quiz.schema";
 import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Quiz } from "@/types/quiz";

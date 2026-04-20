@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import { PermissionAction } from "@/lib/auth/permissions";
 import {
   checkAnswerCorrectness,

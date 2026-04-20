@@ -4,7 +4,7 @@ import { useWebHaptics } from "web-haptics/react";
 type HapticPreset = "success" | "warning" | "error" | "selection";
 
 export const useHaptics = () => {
-  const { trigger, isSupported } = useWebHaptics({ debug: true });
+  const { trigger, isSupported } = useWebHaptics();
 
   const [isEnabled, setIsEnabled] = useState<boolean>(() => {
     if (typeof window === "undefined") {

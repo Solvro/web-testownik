@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import type { SettingsFormProps } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
@@ -29,17 +29,13 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       ).toString(),
     );
 
-  const [localUseHaptics, setLocalUseHaptics] = useState<boolean>(() => {
-    const saved = localStorage.getItem("use-haptics");
-
-    if (saved != null) {
-      return saved === "true";
-    }
-
-    localStorage.setItem("use-haptics", "true");
-    return true;
-  });
   const haptics = useHaptics();
+  const [localUseHaptics, setLocalUseHaptics] = useState<boolean>(
+    haptics.isEnabled,
+  );
+  useEffect(() => {
+    setLocalUseHaptics(haptics.isEnabled);
+  }, [haptics.isEnabled]);
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -84,7 +80,6 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const handleChangeUseHaptics = (value: boolean) => {
     setLocalUseHaptics(value);
     haptics.setHapticsEnabled(value);
-    localStorage.setItem("use-haptics", String(value));
   };
 
   return (
@@ -290,7 +285,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             <div>
               <Label
                 className="text-sm font-medium"
-                htmlFor="wrong-answer-reoccurrences"
+                htmlFor="haptics-and-sounds"
               >
                 Haptyka i dźwięki
               </Label>
@@ -300,12 +295,13 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               </p>
             </div>
             <Switch
-              id="notify-quiz-share"
+              id="haptics-and-sounds"
               checked={localUseHaptics}
               onCheckedChange={(checked) => {
                 handleChangeUseHaptics(checked);
               }}
               className="ml-auto"
+              aria-label="Przełącz haptykę i dźwięki"
             />
           </div>
         </div>

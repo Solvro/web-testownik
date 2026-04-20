@@ -4,7 +4,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(

@@ -23,7 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useHaptics } from "@/hooks/haptics";
+import { useHaptics } from "@/hooks/use-haptics";
 import { getQuestionAnsweredCount } from "@/lib/session-utils";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, Question } from "@/types/quiz";
