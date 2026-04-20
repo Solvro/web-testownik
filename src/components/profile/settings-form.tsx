@@ -286,13 +286,19 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
         <div className="bg-border h-px w-full" />
 
         <div className="grid gap-2">
-          <div className="flex flex-col justify-between gap-2 md:flex-row">
-            <Label
-              className="text-sm font-medium"
-              htmlFor="wrong-answer-reoccurrences"
-            >
-              Haptyka i dźwięki
-            </Label>
+          <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
+            <div>
+              <Label
+                className="text-sm font-medium"
+                htmlFor="wrong-answer-reoccurrences"
+              >
+                Haptyka i dźwięki
+              </Label>
+              <p className="text-muted-foreground text-left text-xs">
+                To ustawienie nie jest zapisywane na Twoim koncie i dotyczy
+                tylko tego urządzenia.
+              </p>
+            </div>
             <Switch
               id="notify-quiz-share"
               checked={localUseHaptics}
