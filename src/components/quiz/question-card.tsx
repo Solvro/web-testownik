@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHaptics } from "@/hooks/haptics";
 import { getQuestionAnsweredCount } from "@/lib/session-utils";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, Question } from "@/types/quiz";
@@ -56,8 +57,10 @@ export function QuestionCard({
   canGoBack,
   isHistoryQuestion,
 }: QuestionCardProps) {
+  const haptics = useHaptics();
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAnswerClick = (answerId: string) => {
+  const handleAnswerClick = async (answerId: string) => {
     if (questionChecked) {
       return;
     }
@@ -81,10 +84,12 @@ export function QuestionCard({
     }
 
     setSelectedAnswers(newSelectedAnswers);
+
+    await haptics.vibrate("selection");
   };
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
       // Only process number keys 1-9
       if (event.key >= "1" && event.key <= "9") {
         const target = event.target as HTMLElement;
@@ -98,7 +103,7 @@ export function QuestionCard({
 
         const answerIndex = Number.parseInt(event.key, 10) - 1;
         if (question !== null && answerIndex < question.answers.length) {
-          handleAnswerClick(question.answers[answerIndex].id);
+          await handleAnswerClick(question.answers[answerIndex].id);
         }
       }
     };
@@ -244,8 +249,8 @@ export function QuestionCard({
               <button
                 key={`answer-${answer.id}`}
                 id={`answer-${answer.id}`}
-                onClick={() => {
-                  handleAnswerClick(answer.id);
+                onClick={async () => {
+                  await handleAnswerClick(answer.id);
                 }}
                 disabled={questionChecked}
                 className={cn(
@@ -291,7 +296,11 @@ export function QuestionCard({
         </div>
         <div className="mt-2 flex justify-end gap-2">
           {isHistoryQuestion ? (
-            <Button variant="outline" onClick={togglePreviousQuestion}>
+            <Button
+              variant="outline"
+              onClick={togglePreviousQuestion}
+              hapticsOnClick
+            >
               Powrót do pytań
             </Button>
           ) : (
@@ -304,6 +313,7 @@ export function QuestionCard({
                         variant="outline"
                         size="icon"
                         onClick={togglePreviousQuestion}
+                        hapticsOnClick
                       >
                         <Undo2 />
                       </Button>
@@ -314,9 +324,13 @@ export function QuestionCard({
               ) : null}
               <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
                 {questionChecked ? (
-                  <Button onClick={nextAction}>Następne pytanie</Button>
+                  <Button onClick={nextAction} hapticsOnClick>
+                    Następne pytanie
+                  </Button>
                 ) : (
-                  <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+                  <Button onClick={nextAction} hapticsOnClick>
+                    Sprawdź odpowiedź
+                  </Button>
                 )}
               </ViewTransition>
             </>

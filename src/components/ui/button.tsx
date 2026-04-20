@@ -4,6 +4,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 
+import { useHaptics } from "@/hooks/haptics";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -47,9 +48,14 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  onClick,
+  hapticsOnClick = false,
   render,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { hapticsOnClick?: boolean }) {
+  const haptics = useHaptics();
+
   if (variant === "loading") {
     return (
       <div
@@ -72,6 +78,15 @@ function Button({
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={async (event) => {
+        if (onClick != null) {
+          onClick(event);
+        }
+
+        if (hapticsOnClick) {
+          await haptics.vibrate("selection");
+        }
+      }}
       {...props}
       render={render}
     />

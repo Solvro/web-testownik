@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { AppContext } from "@/app-context";
+import { useHaptics } from "@/hooks/haptics";
 import { PermissionAction } from "@/lib/auth/permissions";
 import {
   checkAnswerCorrectness,
@@ -17,6 +18,7 @@ export function useQuizLogic({
   quizId,
 }: UseQuizLogicParameters): UseQuizLogicResult {
   const { services, checkPermission, user } = useContext(AppContext);
+  const haptics = useHaptics();
 
   const {
     quiz,
@@ -94,7 +96,7 @@ export function useQuizLogic({
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const checkAnswer = (
+  const checkAnswer = async (
     remote = false,
     nextQuestionOverride?: Question | null,
     force?: boolean,
@@ -135,6 +137,8 @@ export function useQuizLogic({
       const nextQ = nextQuestionRef.current;
       continuity.sendAnswerChecked(nextQ);
     }
+
+    await (isCorrect ? haptics.vibrate("success") : haptics.vibrate("error"));
   };
 
   useEffect(() => {
@@ -151,11 +155,11 @@ export function useQuizLogic({
     continuity.sendQuestionUpdate(nextQ, []);
   };
 
-  const nextAction = () => {
+  const nextAction = async () => {
     if (questionChecked) {
       advanceToNext();
     } else {
-      checkAnswer();
+      await checkAnswer();
     }
   };
 

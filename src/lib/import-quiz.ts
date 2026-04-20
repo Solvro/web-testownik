@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
+import { useHaptics } from "@/hooks/haptics";
 import { migrateLegacyQuiz } from "@/lib/migration";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
@@ -275,6 +276,8 @@ export const useImportQuiz = () => {
   const monacoEditorRef = useRef<IStandaloneCodeEditor>(null);
   const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+
+  const haptics = useHaptics();
 
   const [uploadProgress, setUploadProgress] = useState<{
     current: number;
@@ -579,12 +582,13 @@ export const useImportQuiz = () => {
     }
   };
 
-  const setErrorAndNotify = (message: string, detail?: string | null) => {
+  const setErrorAndNotify = async (message: string, detail?: string | null) => {
     setError(message);
     setErrorDetail(detail ?? null);
     toast.error(message);
     setLoading(false);
     setIsUploading(false);
+    await haptics.vibrate("error");
   };
 
   const submitImport = async (data: Quiz) => {
@@ -594,6 +598,7 @@ export const useImportQuiz = () => {
 
       setQuiz(result);
       setErrorDetail(null);
+      await haptics.vibrate("success");
     } catch (importError) {
       console.error("Błąd importowania quizu:", importError);
       const detail =
@@ -659,14 +664,16 @@ export const useImportQuiz = () => {
       const { quiz: migratedQuiz } = migrateLegacyQuiz(data as LegacyQuiz);
       const postMigrationError = validateQuiz(migratedQuiz);
       if (postMigrationError !== null) {
-        setErrorAndNotify(`Błąd migracji quizu legacy: ${postMigrationError}`);
+        await setErrorAndNotify(
+          `Błąd migracji quizu legacy: ${postMigrationError}`,
+        );
         return;
       }
       await submitImport(migratedQuiz);
       return;
     }
 
-    setErrorAndNotify(`Nieprawidłowy format quizu. ${validationError}`);
+    await setErrorAndNotify(`Nieprawidłowy format quizu. ${validationError}`);
   };
 
   const handleSkipImages = () => {
@@ -681,20 +688,18 @@ export const useImportQuiz = () => {
       case "file": {
         const file = fileInputRef.current?.files?.[0];
         if (file === undefined) {
-          setErrorAndNotify("Wybierz plik z quizem.");
+          await setErrorAndNotify("Wybierz plik z quizem.");
           return;
         }
         try {
           const text = await file.text();
           await processAndSubmitImport(JSON.parse(text));
         } catch (fileError) {
-          if (fileError instanceof Error) {
-            setErrorAndNotify(
-              `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
-            );
-          } else {
-            setErrorAndNotify("Wystąpił błąd podczas wczytywania pliku.");
-          }
+          await (fileError instanceof Error
+            ? setErrorAndNotify(
+                `Wystąpił błąd podczas wczytywania pliku: ${fileError.message}`,
+              )
+            : setErrorAndNotify("Wystąpił błąd podczas wczytywania pliku."));
           console.error("Błąd podczas wczytywania pliku:", fileError);
         }
 
@@ -703,22 +708,20 @@ export const useImportQuiz = () => {
       case "json": {
         const editorInput = monacoEditorRef.current?.getValue();
         if (editorInput == null || editorInput.trim() === "") {
-          setErrorAndNotify("Wklej quiz w formie tekstu.");
+          await setErrorAndNotify("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
         try {
           await processAndSubmitImport(JSON.parse(editorInput));
         } catch (parseError) {
-          if (parseError instanceof Error) {
-            setErrorAndNotify(
-              `Wystąpił błąd podczas parsowania JSON: ${parseError.message}`,
-            );
-          } else {
-            setErrorAndNotify(
-              `Wystąpił błąd podczas parsowania JSON: ${String(parseError)}`,
-            );
-          }
+          await (parseError instanceof Error
+            ? setErrorAndNotify(
+                `Wystąpił błąd podczas parsowania JSON: ${parseError.message}`,
+              )
+            : setErrorAndNotify(
+                `Wystąpił błąd podczas parsowania JSON: ${String(parseError)}`,
+              ));
           console.error("Błąd podczas parsowania JSON:", parseError);
         }
 
@@ -726,12 +729,12 @@ export const useImportQuiz = () => {
       }
       case "legacy": {
         if (fileNameOld == null && directoryName == null) {
-          setErrorAndNotify("Nie wybrano pliku ani folderu.");
+          await setErrorAndNotify("Nie wybrano pliku ani folderu.");
           setLoading(false);
           return;
         }
         if (!quizTitle.trim()) {
-          setErrorAndNotify("Nie podano nazwy quizu.");
+          await setErrorAndNotify("Nie podano nazwy quizu.");
           setLoading(false);
           return;
         }
@@ -838,7 +841,7 @@ export const useImportQuiz = () => {
             await appContext.services.quiz.createQuiz(quizData);
           setQuiz(importedQuiz);
         } catch (error_) {
-          setErrorAndNotify(
+          await setErrorAndNotify(
             "Wystąpił błąd podczas przetwarzania plików.",
             error_ instanceof Error ? error_.message : String(error_),
           );
