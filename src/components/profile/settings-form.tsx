@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useHaptics } from "@/hooks/haptics";
 import type { SettingsFormProps } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
@@ -26,6 +28,18 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
         DEFAULT_USER_SETTINGS.max_question_reoccurrences
       ).toString(),
     );
+
+  const [localUseHaptics, setLocalUseHaptics] = useState<boolean>(() => {
+    const saved = localStorage.getItem("use-haptics");
+
+    if (saved != null) {
+      return saved === "true";
+    }
+
+    localStorage.setItem("use-haptics", "true");
+    return true;
+  });
+  const haptics = useHaptics();
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -67,6 +81,12 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     onSettingChange("max_question_reoccurrences", Math.max(value, 1));
   };
 
+  const handleChangeUseHaptics = (value: boolean) => {
+    setLocalUseHaptics(value);
+    haptics.setHapticsEnabled(value);
+    localStorage.setItem("use-haptics", String(value));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -94,6 +114,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleInitialReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zmniejsz liczbę powtórzeń"
+                hapticsOnClick
               >
                 <MinusIcon />
               </Button>
@@ -128,6 +149,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleInitialReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zwiększ liczbę powtórzeń"
+                hapticsOnClick
               >
                 <PlusIcon />
               </Button>
@@ -155,6 +177,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zmniejsz liczbę powtórzeń"
+                hapticsOnClick
               >
                 <MinusIcon />
               </Button>
@@ -189,6 +212,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleWrongAnswerReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zwiększ liczbę powtórzeń"
+                hapticsOnClick
               >
                 <PlusIcon />
               </Button>
@@ -216,6 +240,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zmniejsz liczbę powtórzeń"
+                hapticsOnClick
               >
                 <MinusIcon />
               </Button>
@@ -250,10 +275,32 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   handleMaxQuestionReoccurrencesCommit(nextValue);
                 }}
                 aria-label="Zwiększ liczbę powtórzeń"
+                hapticsOnClick
               >
                 <PlusIcon />
               </Button>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-border h-px w-full" />
+
+        <div className="grid gap-2">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <Label
+              className="text-sm font-medium"
+              htmlFor="wrong-answer-reoccurrences"
+            >
+              Haptyka i dźwięki
+            </Label>
+            <Switch
+              id="notify-quiz-share"
+              checked={localUseHaptics}
+              onCheckedChange={(checked) => {
+                handleChangeUseHaptics(checked);
+              }}
+              className="ml-auto"
+            />
           </div>
         </div>
       </CardContent>
