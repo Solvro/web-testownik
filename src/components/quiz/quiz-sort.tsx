@@ -154,7 +154,7 @@ export function QuizSort({
                 render={
                   <Button
                     variant="outline"
-                    className="size-9"
+                    size="icon"
                     onClick={() => {
                       onResetFilters();
                       handleClearFilters();
@@ -167,8 +167,7 @@ export function QuizSort({
               ></TooltipTrigger>
               <TooltipContent>Wyczyść filtry</TooltipContent>
             </Tooltip>
-          )}
-
+          ) : null}
           <InputGroup className="w-full sm:w-xs">
             <InputGroupInput
               placeholder="Wyszukaj quiz"
