@@ -72,8 +72,8 @@ const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
   return new Date(dateString ?? 0); // Return earliest date if last_used_at is null
 };
 
-const options: Option[] = [
-  {
+const sortingOptions: Record<string, Option> = {
+  ascending: {
     label: "A → Z",
     icon: <ArrowDownAZIcon />,
     comparator: (
@@ -83,7 +83,7 @@ const options: Option[] = [
       return getTitle(a).localeCompare(getTitle(b));
     },
   },
-  {
+  descending: {
     label: "Z → A",
     icon: <ArrowDownZAIcon />,
     comparator: (
@@ -93,7 +93,7 @@ const options: Option[] = [
       return getTitle(b).localeCompare(getTitle(a));
     },
   },
-  {
+  lastest: {
     label: "Najnowsze",
     icon: <CalendarArrowDownIcon />,
     comparator: (
@@ -103,7 +103,7 @@ const options: Option[] = [
       return getCreationDate(b).getTime() - getCreationDate(a).getTime();
     },
   },
-  {
+  oldest: {
     label: "Najstarsze",
     icon: <CalendarArrowUpIcon />,
     comparator: (
@@ -113,7 +113,7 @@ const options: Option[] = [
       return getCreationDate(a).getTime() - getCreationDate(b).getTime();
     },
   },
-  {
+  lastUsed: {
     label: "Ostatnio używane",
     icon: <HistoryIcon />,
     comparator: (
@@ -123,17 +123,20 @@ const options: Option[] = [
       return getLastUsedDate(b).getTime() - getLastUsedDate(a).getTime();
     },
   },
-];
+};
 
 export function QuizSort({
   onSortChange,
   onNameFilterChange,
   onResetFilters,
 }: QuizSortProps) {
-  const [selectedOption, setSelectedOption] = useState<Option | null>(null);
+  const [selectedOption, setSelectedOption] = useState<Option | null>(
+    sortingOptions.lastUsed,
+  );
   const [searchValue, setSearchValue] = useState<string>("");
 
-  const isFiltered: boolean = selectedOption !== null || searchValue !== "";
+  const isFiltered =
+    selectedOption !== sortingOptions.lastUsed || searchValue !== "";
 
   const handleClearFilters = () => {
     setSelectedOption(null);
@@ -201,17 +204,17 @@ export function QuizSort({
               <TooltipContent>Sortuj</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
-              {options.map((o) => (
+              {Object.values(sortingOptions).map((option) => (
                 <DropdownMenuItem
-                  key={o.label}
+                  key={option.label}
                   onClick={() => {
-                    setSelectedOption(o);
-                    onSortChange(o.comparator);
+                    setSelectedOption(option);
+                    onSortChange(option.comparator);
                   }}
                   className="flex w-auto justify-between"
                 >
-                  {o.label}
-                  {o.icon}
+                  {option.label}
+                  {option.icon}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
