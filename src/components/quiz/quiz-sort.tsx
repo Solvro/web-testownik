@@ -27,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface Option {
@@ -149,24 +148,27 @@ export function QuizSort({
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
       <ViewTransition name="quiz-info">
         <div className="flex flex-row items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant={"outline"}
-                  className={cn("size-9", !isFiltered && "hidden")}
-                  onClick={() => {
-                    onResetFilters();
-                    handleClearFilters();
-                  }}
-                  aria-label="Wyczyść filtry"
-                >
-                  <XIcon />
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>Wyczyść filtry</TooltipContent>
-          </Tooltip>
+          {isFiltered ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className="size-9"
+                    onClick={() => {
+                      onResetFilters();
+                      handleClearFilters();
+                    }}
+                    aria-label="Wyczyść filtry"
+                  >
+                    <XIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Wyczyść filtry</TooltipContent>
+            </Tooltip>
+          )}
+
           <InputGroup className="w-full sm:w-xs">
             <InputGroupInput
               placeholder="Wyszukaj quiz"
