@@ -1,7 +1,10 @@
 import {
-  ArrowDownAZ,
-  ArrowDownUp,
-  ArrowDownZA,
+  ArrowDownAZIcon,
+  ArrowDownUpIcon,
+  ArrowDownZAIcon,
+  CalendarArrowDownIcon,
+  CalendarArrowUpIcon,
+  HistoryIcon,
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
@@ -24,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface Option {
@@ -58,10 +60,21 @@ const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
   return "quiz" in quiz ? quiz.quiz.title : quiz.title;
 };
 
-const options: Option[] = [
-  {
-    label: "A - Z",
-    icon: <ArrowDownAZ />,
+const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateString = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
+  return new Date(dateString);
+};
+
+const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateString: string | null =
+    "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
+  return new Date(dateString ?? 0); // Return earliest date if last_used_at is null
+};
+
+const sortingOptions: Record<string, Option> = {
+  ascending: {
+    label: "A → Z",
+    icon: <ArrowDownAZIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
@@ -69,9 +82,9 @@ const options: Option[] = [
       return getTitle(a).localeCompare(getTitle(b));
     },
   },
-  {
-    label: "Z - A",
-    icon: <ArrowDownZA />,
+  descending: {
+    label: "Z → A",
+    icon: <ArrowDownZAIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
@@ -79,17 +92,50 @@ const options: Option[] = [
       return getTitle(b).localeCompare(getTitle(a));
     },
   },
-];
+  lastest: {
+    label: "Najnowsze",
+    icon: <CalendarArrowDownIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(b).getTime() - getCreationDate(a).getTime();
+    },
+  },
+  oldest: {
+    label: "Najstarsze",
+    icon: <CalendarArrowUpIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(a).getTime() - getCreationDate(b).getTime();
+    },
+  },
+  lastUsed: {
+    label: "Ostatnio używane",
+    icon: <HistoryIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getLastUsedDate(b).getTime() - getLastUsedDate(a).getTime();
+    },
+  },
+};
 
 export function QuizSort({
   onSortChange,
   onNameFilterChange,
   onResetFilters,
 }: QuizSortProps) {
-  const [selectedOption, setSelectedOption] = useState<Option | null>(null);
+  const [selectedOption, setSelectedOption] = useState<Option | null>(
+    sortingOptions.lastUsed,
+  );
   const [searchValue, setSearchValue] = useState<string>("");
 
-  const isFiltered: boolean = selectedOption !== null || searchValue !== "";
+  const isFiltered =
+    selectedOption !== sortingOptions.lastUsed || searchValue !== "";
 
   const handleClearFilters = () => {
     setSelectedOption(null);
@@ -102,24 +148,26 @@ export function QuizSort({
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
       <ViewTransition name="quiz-info">
         <div className="flex flex-row items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant={"outline"}
-                  className={cn("size-9", !isFiltered && "hidden")}
-                  onClick={() => {
-                    onResetFilters();
-                    handleClearFilters();
-                  }}
-                  aria-label="Wyczyść filtry"
-                >
-                  <XIcon />
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>Wyczyść filtry</TooltipContent>
-          </Tooltip>
+          {isFiltered ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      onResetFilters();
+                      handleClearFilters();
+                    }}
+                    aria-label="Wyczyść filtry"
+                  >
+                    <XIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Wyczyść filtry</TooltipContent>
+            </Tooltip>
+          ) : null}
           <InputGroup className="w-full sm:w-xs">
             <InputGroupInput
               placeholder="Wyszukaj quiz"
@@ -145,7 +193,7 @@ export function QuizSort({
                         aria-label="Sortuj quizy"
                       >
                         {selectedOption === null ? (
-                          <ArrowDownUp />
+                          <ArrowDownUpIcon />
                         ) : (
                           selectedOption.icon
                         )}
@@ -157,17 +205,17 @@ export function QuizSort({
               <TooltipContent>Sortuj</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
-              {options.map((o) => (
+              {Object.values(sortingOptions).map((option) => (
                 <DropdownMenuItem
-                  key={o.label}
+                  key={option.label}
                   onClick={() => {
-                    setSelectedOption(o);
-                    onSortChange(o.comparator);
+                    setSelectedOption(option);
+                    onSortChange(option.comparator);
                   }}
                   className="flex w-auto justify-between"
                 >
-                  {o.label}
-                  {o.icon}
+                  {option.label}
+                  {option.icon}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
