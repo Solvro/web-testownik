@@ -1,7 +1,7 @@
 import {
-  ArrowDownAZ,
-  ArrowDownUp,
-  ArrowDownZA,
+  ArrowDownAZIcon,
+  ArrowDownUpIcon,
+  ArrowDownZAIcon,
   CalendarArrowDownIcon,
   CalendarArrowUpIcon,
   HistoryIcon,
@@ -75,7 +75,7 @@ const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
 const options: Option[] = [
   {
     label: "A → Z",
-    icon: <ArrowDownAZ />,
+    icon: <ArrowDownAZIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
@@ -85,7 +85,7 @@ const options: Option[] = [
   },
   {
     label: "Z → A",
-    icon: <ArrowDownZA />,
+    icon: <ArrowDownZAIcon />,
     comparator: (
       a: QuizMetadata | SharedQuiz,
       b: QuizMetadata | SharedQuiz,
@@ -189,7 +189,7 @@ export function QuizSort({
                         aria-label="Sortuj quizy"
                       >
                         {selectedOption === null ? (
-                          <ArrowDownUp />
+                          <ArrowDownUpIcon />
                         ) : (
                           selectedOption.icon
                         )}
