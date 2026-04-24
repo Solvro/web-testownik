@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import type { JWTPayload } from "@/lib/auth/types";
+import { normalizePathname } from "@/lib/pathname";
 
 const GUEST_EXCLUDED_ROUTES = [
   "/",
@@ -15,6 +16,7 @@ const GUEST_EXCLUDED_ROUTES = [
 
 export function useAutoGuest(user: JWTPayload | null) {
   const pathname = usePathname();
+  const normalizedPathname = normalizePathname(pathname);
   const router = useRouter();
   const creatingRef = useRef(false);
 
@@ -30,8 +32,8 @@ export function useAutoGuest(user: JWTPayload | null) {
     if (
       GUEST_EXCLUDED_ROUTES.some(
         (route) =>
-          pathname === route ||
-          (route !== "/" && pathname.startsWith(`${route}/`)),
+          normalizedPathname === route ||
+          (route !== "/" && normalizedPathname.startsWith(`${route}/`)),
       )
     ) {
       return;
@@ -47,17 +49,17 @@ export function useAutoGuest(user: JWTPayload | null) {
 
         if (!response.ok) {
           const loginUrl = new URL("/login", window.location.origin);
-          loginUrl.searchParams.set("redirect", pathname);
+          loginUrl.searchParams.set("redirect", normalizedPathname);
           router.replace(loginUrl.toString());
         }
       } catch {
         const loginUrl = new URL("/login", window.location.origin);
-        loginUrl.searchParams.set("redirect", pathname);
+        loginUrl.searchParams.set("redirect", normalizedPathname);
         router.replace(loginUrl.toString());
       } finally {
         creatingRef.current = false;
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- We only want to run this effect when the pathname changes, not when the user changes
-  }, [pathname]);
+  }, [normalizedPathname]);
 }

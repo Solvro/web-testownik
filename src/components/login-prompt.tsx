@@ -17,6 +17,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
+import { sanitizeRedirectPath } from "@/lib/pathname";
 import { ACCOUNT_TYPE } from "@/types/user";
 
 function buildLoginUrl(
@@ -59,11 +60,12 @@ export function LoginPrompt(): React.JSX.Element {
   const searchParameters = useSearchParams();
 
   const redirect = searchParameters.get("redirect");
+  const safeRedirectPath = sanitizeRedirectPath(redirect, "/quizzes");
 
   useEffect(() => {
-    const url = new URL(redirect ?? "/quizzes", window.location.origin);
+    const url = new URL(safeRedirectPath, window.location.origin);
     setRedirectUrl(url.toString());
-  }, [redirect]);
+  }, [safeRedirectPath]);
 
   const guestId =
     user?.account_type === ACCOUNT_TYPE.GUEST ? user.user_id : undefined;
@@ -125,11 +127,11 @@ export function LoginPrompt(): React.JSX.Element {
                 className="w-full"
                 onClick={async () => {
                   if (user?.account_type === ACCOUNT_TYPE.GUEST) {
-                    router.push(redirect ?? "/quizzes");
+                    router.push(safeRedirectPath);
                   } else {
                     const result = await createGuestAccount();
                     if (result) {
-                      router.push(redirect ?? "/quizzes");
+                      router.push(safeRedirectPath);
                     } else {
                       toast.error(
                         "Nie udało się utworzyć konta gościa. Spróbuj ponownie.",

@@ -5,6 +5,7 @@ import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth";
 import { verifyAccessToken } from "@/lib/auth/server";
+import { normalizePathname } from "@/lib/pathname";
 
 /**
  * Forward Set-Cookie headers from backend response to Next.js response.
@@ -70,6 +71,13 @@ async function tryRefreshTokens(
 }
 
 export async function proxy(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const normalizedPathname = normalizePathname(requestUrl.pathname);
+  if (normalizedPathname !== requestUrl.pathname) {
+    requestUrl.pathname = normalizedPathname;
+    return NextResponse.redirect(requestUrl);
+  }
+
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
 
@@ -84,7 +92,10 @@ export async function proxy(request: NextRequest) {
 
   // Try to refresh the token if we have a refresh token
   if (refreshToken !== undefined && refreshToken !== "") {
-    const refreshResponse = await tryRefreshTokens(refreshToken, request.url);
+    const refreshResponse = await tryRefreshTokens(
+      refreshToken,
+      requestUrl.toString(),
+    );
     if (refreshResponse !== null) {
       return refreshResponse;
     }
