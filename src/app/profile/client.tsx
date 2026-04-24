@@ -11,8 +11,13 @@ import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { normalizePathname } from "@/lib/pathname";
 import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
+
+const PROFILE_TAB_KEYS = ["account", "settings", "notifications"] as const;
+
+type ProfileTabKey = (typeof PROFILE_TAB_KEYS)[number];
 
 export function ProfilePageClient(): React.JSX.Element {
   const appContext = useContext(AppContext);
@@ -22,16 +27,20 @@ export function ProfilePageClient(): React.JSX.Element {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
 
   const handleTabSelect = (tabKey: string) => {
-    if (tabKey === "privacy-policy") {
+    if (!PROFILE_TAB_KEYS.includes(tabKey as ProfileTabKey)) {
       return;
     }
+
     setActiveTab(tabKey);
   };
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash) {
-      handleTabSelect(window.location.hash.slice(1));
-      window.history.replaceState(null, "", pathname);
+      const hashTab = window.location.hash.slice(1);
+      const safePathname = normalizePathname(pathname);
+
+      handleTabSelect(hashTab);
+      window.history.replaceState(null, "", safePathname);
     }
 
     // Fetch user data

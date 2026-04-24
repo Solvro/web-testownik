@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +10,7 @@ import { Loader } from "@/components/loader";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import { normalizePathname } from "@/lib/pathname";
 import type { QuizFormData } from "@/lib/schemas/quiz.schema";
 import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
 import type { Quiz } from "@/types/quiz";
@@ -27,6 +28,7 @@ function EditQuizPageContent({
   const appContext = useContext(AppContext);
   const router = useRouter();
   const searchParameters = useSearchParams();
+  const pathname = usePathname();
 
   const [initialQuiz, setInitialQuiz] = useState<Quiz | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +57,11 @@ function EditQuizPageContent({
             if (element !== null) {
               element.scrollIntoView({ behavior: "smooth" });
               if (window.location.hash) {
+                const safePathname = normalizePathname(pathname);
                 window.history.replaceState(
                   null,
                   "",
-                  window.location.pathname + window.location.search,
+                  safePathname + window.location.search,
                 );
               }
             }
@@ -72,7 +75,7 @@ function EditQuizPageContent({
     }
 
     void fetchQuiz();
-  }, [quizId, appContext.services.quiz, searchParameters]);
+  }, [quizId, appContext.services.quiz, searchParameters, pathname]);
 
   async function handleSave(data: QuizFormData): Promise<boolean> {
     if (quizId.trim() === "") {
