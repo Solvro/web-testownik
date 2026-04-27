@@ -23,7 +23,7 @@ export function useKeyShortcuts({
       }
 
       const key = event.key.toLowerCase();
-      const isHandledKey = key === "enter" || key === "s";
+      const isHandledKey = key === "enter" || key === "s" || key === " ";
 
       if (!isHandledKey || isModalOpen()) {
         return;
@@ -46,6 +46,10 @@ export function useKeyShortcuts({
           if (!isHistoryQuestion) {
             skipQuestion();
           }
+          break;
+        }
+        case " ": {
+          nextAction();
           break;
         }
       }
