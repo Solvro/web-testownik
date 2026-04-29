@@ -81,6 +81,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   useKeyShortcuts({
     nextAction,
     skipQuestion,
+    questionChecked,
     isHistoryQuestion,
     togglePreviousQuestion,
   });
