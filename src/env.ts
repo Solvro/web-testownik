@@ -14,10 +14,12 @@ export const env = createEnv({
     NEXT_PUBLIC_API_URL: z.url(),
     NEXT_PUBLIC_TURN_USERNAME: z.string().optional(),
     NEXT_PUBLIC_TURN_CREDENTIAL: z.string().optional(),
+    NEXT_PUBLIC_ALERTS_APP_CODE: z.string().min(1).default("testownik"),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_TURN_USERNAME: process.env.NEXT_PUBLIC_TURN_USERNAME,
     NEXT_PUBLIC_TURN_CREDENTIAL: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
+    NEXT_PUBLIC_ALERTS_APP_CODE: process.env.NEXT_PUBLIC_ALERTS_APP_CODE,
   },
 });
