@@ -15,8 +15,6 @@ export type {
   UserSettings,
   UserData,
 } from "@/types/user";
-export type { AlertData } from "@/types/alert";
-
 export interface ApiResponse<T> {
   data: T;
   status: number;
