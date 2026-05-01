@@ -88,7 +88,16 @@ function persistDismissedIds(ids: string[]): void {
 }
 
 function isExternalLink(link: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:\/\//i.test(link);
+  if (typeof window === "undefined") {
+    return /^[a-z][a-z0-9+.-]*:\/\//i.test(link);
+  }
+  try {
+    return (
+      new URL(link, window.location.href).origin !== window.location.origin
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function fetchAlerts(appCode: string): Promise<SolvroAlert[]> {
@@ -112,18 +121,12 @@ async function fetchAlerts(appCode: string): Promise<SolvroAlert[]> {
   return Array.isArray(payload) ? (payload as SolvroAlert[]) : [];
 }
 
-interface AlertsProps {
-  appCode?: string;
-}
-
-export function Alerts({
-  appCode,
-}: AlertsProps = {}): React.JSX.Element | null {
-  const resolvedAppCode = appCode ?? env.NEXT_PUBLIC_ALERTS_APP_CODE;
+export function Alerts(): React.JSX.Element | null {
+  const appCode = env.NEXT_PUBLIC_ALERTS_APP_CODE;
 
   const { data, error } = useQuery({
-    queryKey: ["solvro-alerts", resolvedAppCode],
-    queryFn: async () => fetchAlerts(resolvedAppCode),
+    queryKey: ["solvro-alerts", appCode],
+    queryFn: async () => fetchAlerts(appCode),
     staleTime: 60_000,
     gcTime: 60_000,
     retry: false,
