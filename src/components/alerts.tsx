@@ -21,6 +21,7 @@ interface SolvroAlert {
   content: string;
   alert_type: "info" | "warning" | "critical";
   link: string;
+  open_in_new_tab: boolean;
   is_global: boolean;
   is_dismissable: boolean;
   start_at: string | null;
@@ -33,20 +34,33 @@ const DISMISSED_STORAGE_KEY = "solvro-alerts-dismissed";
 const ALLOWED_TAGS = [
   "a",
   "b",
-  "em",
-  "i",
-  "strong",
-  "u",
-  "p",
+  "blockquote",
   "br",
-  "ul",
-  "ol",
-  "li",
+  "code",
+  "del",
+  "div",
+  "em",
+  "h1",
   "h2",
   "h3",
   "h4",
+  "h5",
+  "h6",
+  "hr",
+  "i",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "s",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "u",
+  "ul",
 ];
-const ALLOWED_ATTR = ["href", "title", "target", "rel"];
+const ALLOWED_ATTR = ["href", "title", "target"];
 
 const VARIANT_STYLES: Record<SolvroAlert["alert_type"], string> = {
   info: "border-blue-200 bg-blue-50 text-blue-900 [&>svg]:text-blue-600 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100 dark:[&>svg]:text-blue-300",
@@ -85,19 +99,6 @@ function persistDismissedIds(ids: string[]): void {
     return;
   }
   window.localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify(ids));
-}
-
-function isExternalLink(link: string): boolean {
-  if (typeof window === "undefined") {
-    return /^[a-z][a-z0-9+.-]*:\/\//i.test(link);
-  }
-  try {
-    return (
-      new URL(link, window.location.href).origin !== window.location.origin
-    );
-  } catch {
-    return false;
-  }
 }
 
 async function fetchAlerts(appCode: string): Promise<SolvroAlert[]> {
@@ -168,12 +169,12 @@ export function Alerts(): React.JSX.Element | null {
           ALLOWED_ATTR,
         });
         const hasLink = alert.link !== "";
-        const external = hasLink && isExternalLink(alert.link);
 
         const body = (
           <Alert
             className={cn(
-              "relative pr-10",
+              "relative",
+              alert.is_dismissable && "pr-10",
               VARIANT_STYLES[alert.alert_type],
               hasLink && "cursor-pointer transition-opacity hover:opacity-90",
             )}
@@ -199,7 +200,7 @@ export function Alerts(): React.JSX.Element | null {
               <div
                 // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: safeContent }}
-                className="[&_a]:underline"
+                className="prose prose-sm dark:prose-invert max-w-none"
               />
             </AlertDescription>
           </Alert>
@@ -213,7 +214,7 @@ export function Alerts(): React.JSX.Element | null {
           <a
             key={alert.id}
             href={alert.link}
-            {...(external
+            {...(alert.open_in_new_tab
               ? { target: "_blank", rel: "noopener noreferrer" }
               : {})}
             className="block no-underline"
