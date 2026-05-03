@@ -120,7 +120,7 @@ export function QuizInfoCard({
   }
 
   const isMaintainer =
-    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
+    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
 
   const openSearchInQuiz = () => {
     router.push(`/search-in-quiz/${quiz.id}`);
