@@ -76,7 +76,7 @@ export function ShareQuizDialog({
   const [isSaving, setIsSaving] = useState(false);
 
   const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
-    queryKey: ["study-groups"],
+    queryKey: ["study-groups", appContext],
     queryFn: async () => {
       const groups = await appContext.services.quiz.getStudyGroups();
       return groups.map((group) => ({
@@ -93,7 +93,7 @@ export function ShareQuizDialog({
   });
 
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
-    queryKey: ["shared-quiz", quiz.id],
+    queryKey: ["shared-quiz", quiz.id, appContext],
     queryFn: async () =>
       await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
     enabled: open && canShareQuiz,
@@ -130,9 +130,13 @@ export function ShareQuizDialog({
             ],
       );
 
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setGroupsWithAccess(foundGroups);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialGroupsWithAccess(foundGroups);
     }
   }, [sharedData]);

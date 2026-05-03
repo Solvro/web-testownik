@@ -34,7 +34,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
       return;
     }
     void queryClient.prefetchQuery({
-      queryKey: ["grades"],
+      queryKey: ["grades", services],
       queryFn: async () => services.user.getGrades(),
       staleTime: 5 * 60 * 1000, // 5 minutes
     });

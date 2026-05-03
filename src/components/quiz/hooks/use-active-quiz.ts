@@ -29,7 +29,7 @@ export function useActiveQuiz(quizId: string) {
   const appContext = useContext(AppContext);
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
-    queryKey: quizDetailQueryKey(quizId),
+    queryKey: [quizDetailQueryKey(quizId), appContext],
     queryFn: async () => {
       return await appContext.services.quiz.getQuizWithProgress(quizId);
     },

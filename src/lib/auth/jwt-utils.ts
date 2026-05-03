@@ -9,7 +9,7 @@ import type { JWTPayload } from "./types";
  */
 export function decodeAccessToken(token: string): JWTPayload | null {
   try {
-    return decodeJwt(token) as JWTPayload;
+    return decodeJwt(token);
   } catch {
     return null;
   }

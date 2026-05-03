@@ -38,7 +38,7 @@ export function migrateLegacyQuiz(
         multiple: question.multiple,
         image_url: question.image,
         answers,
-      } as Question;
+      };
     },
   );
 
