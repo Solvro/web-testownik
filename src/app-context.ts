@@ -3,11 +3,9 @@
 import { createContext } from "react";
 
 import type { AppContextType } from "./app-context-type";
-import type { ServiceRegistry } from "./services";
 
 export const AppContext = createContext<AppContextType>({
   isAuthenticated: false,
   user: null,
-  services: null as unknown as ServiceRegistry, // This will be set in the provider
   checkPermission: () => false,
 });

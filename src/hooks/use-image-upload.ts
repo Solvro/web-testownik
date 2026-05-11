@@ -1,11 +1,10 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
+import { getImageService } from "@/services";
 import { validateFile } from "@/services/image.service";
 
 export function useImageUpload() {
-  const { services } = useContext(AppContext);
   const [isUploading, setIsUploading] = useState(false);
 
   const upload = async (
@@ -27,7 +26,7 @@ export function useImageUpload() {
 
     setIsUploading(true);
     try {
-      const response = await services.image.upload(file);
+      const response = await getImageService().upload(file);
       onSuccess(
         response.data.url,
         response.data.id,

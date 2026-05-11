@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PermissionAction } from "@/lib/auth/permissions";
+import { getQuizService } from "@/services";
 import type { Quiz } from "@/types/quiz";
 
 import type { TimerStore } from "./hooks/use-study-timer";
@@ -93,14 +94,14 @@ export function QuizInfoCard({
   timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const { checkPermission, services, user } = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
-    mutationFn: async (quizId: string) => services.quiz.copyQuiz(quizId),
+    mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["user-quizzes"] }),

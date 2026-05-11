@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
-import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getUserService } from "@/services";
 
 function getUrlErrorMessage(errorCode: string | null): string | null {
   switch (errorCode) {
@@ -29,7 +29,6 @@ function getUrlErrorMessage(errorCode: string | null): string | null {
 }
 
 export function LoginOTPPageClient() {
-  const appContext = useContext(AppContext);
   const router = useRouter();
   const urlSearchParameters = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +46,7 @@ export function LoginOTPPageClient() {
     }
     setSubmitting(true);
     try {
-      await appContext.services.user.generateOTP(email);
+      await getUserService().generateOTP(email);
       setError(null);
       // Redirect to code entry page
       router.push(`/login-otp/code?email=${encodeURIComponent(email.trim())}`);

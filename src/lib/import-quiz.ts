@@ -1,12 +1,12 @@
 import JSZip from "jszip";
 import type React from "react";
-import { useContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
 import { migrateLegacyQuiz } from "@/lib/migration";
+import { getImageService, getQuizService } from "@/services";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
@@ -259,7 +259,6 @@ export const extractImagesToUpload = (
 };
 
 export const useImportQuiz = () => {
-  const appContext = useContext(AppContext);
   const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
@@ -591,7 +590,7 @@ export const useImportQuiz = () => {
   const submitImport = async (data: Quiz) => {
     try {
       const { id, ...rest } = data;
-      const result = await appContext.services.quiz.createQuiz(rest);
+      const result = await getQuizService().createQuiz(rest);
 
       setQuiz(result);
       setErrorDetail(null);
@@ -774,7 +773,7 @@ export const useImportQuiz = () => {
               } else {
                 try {
                   const uploadResult =
-                    await appContext.services.image.upload(imageFile);
+                    await getImageService().upload(imageFile);
                   filenameToUploadId.set(filename, uploadResult.data.id);
                 } catch (error_) {
                   console.error(`Failed to upload image ${filename}:`, error_);
@@ -835,8 +834,7 @@ export const useImportQuiz = () => {
             questions,
           };
 
-          const importedQuiz =
-            await appContext.services.quiz.createQuiz(quizData);
+          const importedQuiz = await getQuizService().createQuiz(quizData);
           setQuiz(importedQuiz);
         } catch (error_) {
           setErrorAndNotify(

@@ -3,10 +3,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import {
   QuestionFormContent,
   QuestionFormHeader,
@@ -36,6 +35,7 @@ import {
   prepareQuestionForSubmission,
   validateQuestionForm,
 } from "@/lib/schemas/quiz.schema";
+import { getQuizService } from "@/services";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
 import { quizDetailQueryKey } from "./helpers/utils";
@@ -53,7 +53,6 @@ export function QuickEditQuestionDialog({
   question,
   quizId,
 }: QuickEditQuestionDialogProps) {
-  const appContext = useContext(AppContext);
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
 
@@ -101,10 +100,7 @@ export function QuickEditQuestionDialog({
   const { isPending: isSaving, mutateAsync: saveQuestion } = useMutation({
     mutationFn: async () => {
       const payload = prepareQuestionForSubmission(formData);
-      return await appContext.services.quiz.updateQuestion(
-        question.id,
-        payload,
-      );
+      return await getQuizService().updateQuestion(question.id, payload);
     },
     onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
@@ -132,7 +128,7 @@ export function QuickEditQuestionDialog({
 
   const { isPending: isDeleting, mutateAsync: deleteQuestion } = useMutation({
     mutationFn: async () => {
-      return await appContext.services.quiz.deleteQuestion(question.id);
+      return await getQuizService().deleteQuestion(question.id);
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
