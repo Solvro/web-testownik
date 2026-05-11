@@ -55,7 +55,7 @@ export default async function QuizPage({
   const services = new ServiceRegistry(API_URL, {}, accessToken);
 
   await queryClient.prefetchQuery({
-    queryKey: quizDetailQueryKey(quizId),
+    queryKey: [quizDetailQueryKey(quizId), services],
     queryFn: async () => {
       return await services.quiz.getQuizWithProgress(quizId);
     },

@@ -35,7 +35,7 @@ export function SearchCard({
     isLoading,
     isFetched,
   } = useQuery({
-    queryKey: ["search-quizzes", debouncedQuery],
+    queryKey: ["search-quizzes", debouncedQuery, services],
     queryFn: async () => {
       if (!debouncedQuery) {
         return [];

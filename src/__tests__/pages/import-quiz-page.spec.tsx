@@ -78,7 +78,7 @@ describe("ImportQuizPage", () => {
       expect(
         await screen.findByRole("heading", {
           name: new RegExp(
-            `quiz\\s+"${mockQuiz.title}"\\s+został\\s+zaimportowany`,
+            String.raw`quiz\s+"${mockQuiz.title}"\s+został\s+zaimportowany`,
             "i",
           ),
         }),
@@ -104,7 +104,7 @@ describe("ImportQuizPage", () => {
       expect(
         await screen.findByRole("heading", {
           name: new RegExp(
-            `quiz\\s+"${mockLegacyQuiz.title}"\\s+został\\s+zaimportowany`,
+            String.raw`quiz\s+"${mockLegacyQuiz.title}"\s+został\s+zaimportowany`,
             "i",
           ),
         }),
@@ -233,7 +233,7 @@ describe("ImportQuizPage", () => {
       expect(
         await screen.findByRole("heading", {
           name: new RegExp(
-            `quiz\\s+"${mockQuiz.title}"\\s+został\\s+zaimportowany`,
+            String.raw`quiz\s+"${mockQuiz.title}"\s+został\s+zaimportowany`,
             "i",
           ),
         }),
@@ -250,7 +250,7 @@ describe("ImportQuizPage", () => {
       expect(
         await screen.findByRole("heading", {
           name: new RegExp(
-            `quiz\\s+"${mockLegacyQuiz.title}"\\s+został\\s+zaimportowany`,
+            String.raw`quiz\s+"${mockLegacyQuiz.title}"\s+został\s+zaimportowany`,
             "i",
           ),
         }),

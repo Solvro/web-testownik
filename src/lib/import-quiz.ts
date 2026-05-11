@@ -1,5 +1,4 @@
 import JSZip from "jszip";
-import { editor } from "monaco-editor";
 import type React from "react";
 import { useContext, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -11,8 +10,6 @@ import { migrateLegacyQuiz } from "@/lib/migration";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-
 const trueFalseStrings = {
   prawda: true,
   tak: true,
@@ -23,6 +20,10 @@ const trueFalseStrings = {
 };
 
 export type UploadType = "file" | "json" | "legacy";
+
+interface JsonCodeEditor {
+  getValue: () => string;
+}
 
 const parseQTemplate = (
   lines: string[],
@@ -272,7 +273,7 @@ export const useImportQuiz = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileOldRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
-  const monacoEditorRef = useRef<IStandaloneCodeEditor>(null);
+  const monacoEditorRef = useRef<JsonCodeEditor | null>(null);
   const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
@@ -535,7 +536,7 @@ export const useImportQuiz = () => {
         const content = await fileData.async("uint8array");
         let lines;
         try {
-          const decoder = new TextDecoder("utf8", { fatal: true });
+          const decoder = new TextDecoder("utf-8", { fatal: true });
           lines = decoder
             .decode(content)
             .split("\n")
@@ -853,7 +854,7 @@ export const useImportQuiz = () => {
   async function detectEncodingAndReadFile(file: File): Promise<string> {
     const content = await file.arrayBuffer();
     try {
-      const decoder = new TextDecoder("utf8", { fatal: true });
+      const decoder = new TextDecoder("utf-8", { fatal: true });
       return decoder.decode(content);
     } catch {
       const decoder = new TextDecoder("windows-1250");

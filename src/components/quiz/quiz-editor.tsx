@@ -92,10 +92,18 @@ const scrollToTop = () => {
 };
 
 export function QuizEditor(props: QuizEditorProps) {
+  let initialData = getDefaultFormData();
+  const initialQuiz = props.mode === "edit" ? props.initialQuiz : undefined;
+  if (initialQuiz !== undefined) {
+    initialData = initialQuiz;
+  }
+
   // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [questions, setQuestions] = useState<QuestionFormData[]>([]);
+  const [title, setTitle] = useState(initialData.title);
+  const [description, setDescription] = useState(initialData.description);
+  const [questions, setQuestions] = useState<QuestionFormData[]>(
+    initialData.questions,
+  );
 
   // UI state
   const [savingState, setSavingState] = useState<SavingState>("idle");
@@ -104,20 +112,6 @@ export function QuizEditor(props: QuizEditorProps) {
   const activeUploadsRef = useRef(0);
   const [atBottom, setAtBottom] = useState(false);
   const [atTop, setAtTop] = useState(true);
-
-  // Initialize form data
-  const initialQuiz = props.mode === "edit" ? props.initialQuiz : undefined;
-  useEffect(() => {
-    let initialData = getDefaultFormData();
-
-    if (initialQuiz !== undefined) {
-      initialData = initialQuiz;
-    }
-
-    setTitle(initialData.title);
-    setDescription(initialData.description);
-    setQuestions(initialData.questions);
-  }, [props.mode, initialQuiz]);
 
   // Scroll position tracking
   useEffect(() => {
@@ -130,6 +124,7 @@ export function QuizEditor(props: QuizEditorProps) {
       setAtBottom(distanceToBottom < THRESHOLD);
       setAtTop(scrollTop < THRESHOLD);
     };
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
@@ -216,8 +211,10 @@ export function QuizEditor(props: QuizEditorProps) {
     return null;
   })();
 
-  function setAllQuestionsMultiple(multiple: boolean) {
-    setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
+  function setAllQuestionsMultiple(multiple: boolean | "indeterminate") {
+    setQuestions((previous) =>
+      previous.map((q) => ({ ...q, multiple: multiple === true })),
+    );
   }
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -355,7 +352,7 @@ export function QuizEditor(props: QuizEditorProps) {
                     indeterminate={allQuestionsMultiple === null}
                     checked={allQuestionsMultiple === true}
                     onCheckedChange={(checked) => {
-                      setAllQuestionsMultiple(checked satisfies boolean);
+                      setAllQuestionsMultiple(checked);
                     }}
                   />
                   <Label htmlFor="all-multiple" className="cursor-pointer">

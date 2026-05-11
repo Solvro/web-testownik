@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
 
 jobs:
@@ -17,11 +17,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: "true"
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Setup build cache
         uses: actions/cache@v4
@@ -32,22 +37,22 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Check commit name
         if: github.event_name == 'pull_request'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        run: pnpm dlx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
       - name: Format check
-        run: npm run format:check
+        run: pnpm run format:check
         if: always()
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
         if: always()
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
         if: always()

@@ -71,5 +71,11 @@ export function useKeyShortcuts({
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [nextAction, skipQuestion, isHistoryQuestion, togglePreviousQuestion]);
+  }, [
+    nextAction,
+    skipQuestion,
+    isHistoryQuestion,
+    togglePreviousQuestion,
+    questionChecked,
+  ]);
 }
