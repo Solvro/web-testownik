@@ -28,7 +28,7 @@ export function useActiveQuiz(quizId: string) {
   const queryClient = useQueryClient();
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
-    queryKey: [quizDetailQueryKey(quizId)],
+    queryKey: quizDetailQueryKey(quizId),
     queryFn: async () => getQuizService().getQuizWithProgress(quizId),
     retry: 1,
     staleTime: Infinity,
@@ -100,8 +100,10 @@ export function useActiveQuiz(quizId: string) {
     return { nextQuestion: next };
   };
 
-  const advanceQuestion = () => {
-    if (client.questionChecked) {
+  const advanceQuestion = (overrideNextQuestionId?: string | null) => {
+    const nextId = overrideNextQuestionId ?? client.nextQuestionId;
+
+    if (client.questionChecked || overrideNextQuestionId !== undefined) {
       updateServerCache((quizData) => ({
         ...quizData,
         current_session:
@@ -109,12 +111,12 @@ export function useActiveQuiz(quizId: string) {
             ? quizData.current_session
             : {
                 ...quizData.current_session,
-                current_question: client.nextQuestionId,
+                current_question: nextId,
               },
       }));
 
       if (
-        client.nextQuestionId === null &&
+        nextId === null &&
         isQuizComplete(quiz.questions, answers, userSettings)
       ) {
         void formbricks.track("quiz_finished");
