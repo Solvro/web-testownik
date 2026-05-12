@@ -19,7 +19,7 @@ export async function verifyAccessToken(
     const { payload } = await jwtVerify(token, secretKey, {
       algorithms: ["HS256"],
     });
-    return payload as unknown as JWTPayload;
+    return { ...payload } as unknown as JWTPayload;
   } catch (error) {
     console.error("Failed to verify access token", error);
     return null;

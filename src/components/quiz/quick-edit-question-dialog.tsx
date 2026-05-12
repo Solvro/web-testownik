@@ -108,7 +108,9 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (oldData) => {
           if (oldData == null) {
-            void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
+            void queryClient.refetchQueries({
+              queryKey: quizDetailQueryKey(quizId),
+            });
             return oldData;
           }
           return {
@@ -136,7 +138,9 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (oldData) => {
           if (oldData == null) {
-            void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
+            void queryClient.refetchQueries({
+              queryKey: quizDetailQueryKey(quizId),
+            });
             return oldData;
           }
 

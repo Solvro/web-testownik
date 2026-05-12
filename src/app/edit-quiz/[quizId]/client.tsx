@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Loader } from "@/components/loader";
+import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
@@ -92,7 +93,9 @@ function EditQuizPageContent({
   async function handleSaveAndClose(data: QuizFormData): Promise<boolean> {
     const ok = await handleSave(data);
     if (ok) {
-      await queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
+      await queryClient.refetchQueries({
+        queryKey: quizDetailQueryKey(quizId),
+      });
       const navigation = window.navigation as Navigation | null;
 
       if (navigation?.canGoBack === true) {
