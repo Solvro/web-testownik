@@ -74,6 +74,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/config-conventional": "^21.0.0",
     "@next/eslint-plugin-next": "^16.1.1",
     "@solvro/config": "^2.1.1",
     "@tailwindcss/typography": "^0.5.19",
