@@ -28,7 +28,7 @@ export function useActiveQuiz(quizId: string) {
   const queryClient = useQueryClient();
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
-    queryKey: [quizDetailQueryKey(quizId)],
+    queryKey: quizDetailQueryKey(quizId),
     queryFn: async () => getQuizService().getQuizWithProgress(quizId),
     retry: 1,
     staleTime: Infinity,

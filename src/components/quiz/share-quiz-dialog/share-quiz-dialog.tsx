@@ -375,7 +375,7 @@ export function ShareQuizDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
         </DialogHeader>

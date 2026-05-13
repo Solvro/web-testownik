@@ -26,7 +26,7 @@ export function useKeyShortcuts({
 
       const key = event.key.toLowerCase();
       const isHandledKey =
-        key === "enter" || key === "s" || key === " " || key === "backspace";
+        key === "enter" || key === "s" || key === "a" || key === "backspace";
 
       if (!isHandledKey || isModalOpen()) {
         return;
@@ -51,7 +51,7 @@ export function useKeyShortcuts({
           }
           break;
         }
-        case " ": {
+        case "a": {
           if (isHistoryQuestion) {
             togglePreviousQuestion();
           } else {

@@ -17,8 +17,8 @@ export const computeAnswerVariant = (
   }
   // Idle (selecting answers) phase
   return isSelected
-    ? "bg-primary/10 border-primary dark:bg-input/70 dark:border-ring"
-    : "hover:bg-accent-input border-border dark:hover:bg-accent/60";
+    ? "bg-primary/10 hover:bg-primary/15 border-primary dark:bg-input/50 dark:border-ring dark:hover:bg-input/60"
+    : "hover:bg-primary/10 border-border dark:hover:bg-accent/40";
 };
 
 export const computeAnswerVariantText = (

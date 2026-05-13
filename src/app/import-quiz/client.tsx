@@ -201,8 +201,8 @@ function ImportQuizPageContent(): React.JSX.Element {
   };
 
   return (
-    <>
-      <Card>
+    <div className="flex flex-col items-center gap-4">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Zaimportuj quiz</CardTitle>
         </CardHeader>
@@ -261,7 +261,7 @@ function ImportQuizPageContent(): React.JSX.Element {
             }}
             className="w-full"
           >
-            <TabsList className="mx-auto grid h-auto grid-cols-3 py-0.75">
+            <TabsList className="mx-auto grid grid-cols-3 py-0.75">
               <TabsTrigger value="file">Plik</TabsTrigger>
               <TabsTrigger value="legacy">Stara wersja</TabsTrigger>
               <TabsTrigger value="json">Tekst</TabsTrigger>
@@ -695,7 +695,7 @@ function ImportQuizPageContent(): React.JSX.Element {
           </DialogContent>
         </Dialog>
       ) : null}
-    </>
+    </div>
   );
 }
 

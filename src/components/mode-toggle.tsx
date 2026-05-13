@@ -1,4 +1,4 @@
-import { MoonIcon, SunIcon } from "lucide-react";
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ export function ModeToggle() {
             setTheme("light");
           }}
         >
+          <SunIcon />
           Jasny
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -36,6 +37,7 @@ export function ModeToggle() {
             setTheme("dark");
           }}
         >
+          <MoonIcon />
           Ciemny
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -43,6 +45,7 @@ export function ModeToggle() {
             setTheme("system");
           }}
         >
+          <MonitorIcon />
           System
         </DropdownMenuItem>
       </DropdownMenuContent>

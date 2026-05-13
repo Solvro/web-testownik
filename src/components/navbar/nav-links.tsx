@@ -13,6 +13,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { API_URL } from "@/lib/api";
 import { PermissionAction } from "@/lib/auth/permissions";
@@ -74,7 +75,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
           }}
           className="text-muted-foreground hover:text-foreground h-auto justify-start p-0 text-left text-base font-normal transition-colors"
         >
-          Zgłoś błąd
+          Prześlij opinię
         </Button>
         {isStaff ? (
           <Link
@@ -100,46 +101,55 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
         <NavigationMenuList className="gap-2.5">
           <NavigationMenuItem>
             <NavigationMenuLink
-              active={isActive("/quizzes")}
-              render={<Link href="/quizzes">Twoje quizy</Link>}
-            ></NavigationMenuLink>
+              data-active={isActive("/quizzes")}
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
+              render={<Link href="/quizzes" />}
+              className={navigationMenuTriggerStyle()}
+            >
+              Twoje quizy
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink
-              active={isActive("/grades")}
-              render={
-                <Link href="/grades" onMouseEnter={prefetchGrades}>
-                  Oceny
-                </Link>
-              }
-            ></NavigationMenuLink>
+              data-active={isActive("/grades")}
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
+              render={<Link href="/grades" onMouseEnter={prefetchGrades} />}
+              className={navigationMenuTriggerStyle()}
+            >
+              Oceny
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink
+              data-active={showReportDialog}
               onClick={() => {
                 setShowReportDialog(true);
               }}
               render={
-                <Button variant="outline" className="font-normal">
-                  Zgłoś błąd
-                </Button>
+                <Button
+                  variant="ghost"
+                  className={navigationMenuTriggerStyle()}
+                />
               }
-            ></NavigationMenuLink>
+            >
+              Prześlij opinię
+            </NavigationMenuLink>
           </NavigationMenuItem>
           {isStaff ? (
             <NavigationMenuItem>
               <NavigationMenuLink
                 render={
+                  // eslint-disable-next-line jsx-a11y/anchor-has-content
                   <a
                     href={`${API_URL}/admin/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex"
-                  >
-                    Panel administratora
-                  </a>
+                  />
                 }
-              ></NavigationMenuLink>
+                className={navigationMenuTriggerStyle()}
+              >
+                Panel administratora
+              </NavigationMenuLink>
             </NavigationMenuItem>
           ) : null}
         </NavigationMenuList>
