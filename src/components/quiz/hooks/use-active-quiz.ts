@@ -101,7 +101,10 @@ export function useActiveQuiz(quizId: string) {
   };
 
   const advanceQuestion = (overrideNextQuestionId?: string | null) => {
-    const nextId = overrideNextQuestionId ?? client.nextQuestionId;
+    const nextId =
+      overrideNextQuestionId === undefined
+        ? client.nextQuestionId
+        : overrideNextQuestionId;
 
     if (client.questionChecked || overrideNextQuestionId !== undefined) {
       updateServerCache((quizData) => ({
