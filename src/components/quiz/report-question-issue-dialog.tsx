@@ -1,7 +1,6 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getQuizService } from "@/services";
 
 interface ReportQuestionIssueDialogProps {
   children: React.ReactNode;
@@ -26,7 +26,6 @@ export function ReportQuestionIssueDialog({
   quizId,
   questionId,
 }: ReportQuestionIssueDialogProps) {
-  const appContext = useContext(AppContext);
   const [issue, setIssue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -45,11 +44,7 @@ export function ReportQuestionIssueDialog({
     setIsSubmitting(true);
 
     try {
-      await appContext.services.quiz.reportQuestionIssue(
-        quizId,
-        questionId,
-        issue,
-      );
+      await getQuizService().reportQuestionIssue(quizId, questionId, issue);
 
       toast.success(
         "Zgłoszenie zostało wysłane do właściciela quizu. Dziękujemy!",

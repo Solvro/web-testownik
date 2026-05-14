@@ -7,14 +7,10 @@ import type { AppContextType } from "@/app-context-type";
 import { useAutoGuest } from "@/hooks/use-auto-guest";
 import { useGuestQuizMigration } from "@/hooks/use-guest-quiz-migration";
 import { useSyncAuth } from "@/hooks/use-sync-auth";
-import { API_URL } from "@/lib/api";
 import type { JWTPayload } from "@/lib/auth/types";
 
 import { hasPermission } from "./lib/auth/permissions";
 import type { PermissionAction } from "./lib/auth/permissions";
-import { getServices, initializeServices } from "./services";
-
-initializeServices(API_URL);
 
 export function AppContextProvider({
   children,
@@ -33,7 +29,6 @@ export function AppContextProvider({
   const context: AppContextType = {
     isAuthenticated,
     user,
-    services: getServices(),
     checkPermission,
   };
 

@@ -1,15 +1,13 @@
-import type { Monaco } from "@monaco-editor/react";
 import { Editor } from "@monaco-editor/react";
-import { editor } from "monaco-editor";
+import type { Monaco, OnMount } from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
 interface MonacoEditorProps {
   setLegacyContent: (value: string) => void;
   defaultValue: string;
-  onMount: (editor: IStandaloneCodeEditor) => void;
+  onMount: (editor: editor.IStandaloneCodeEditor) => void;
 }
 
 export function MonacoEditor({
@@ -17,18 +15,12 @@ export function MonacoEditor({
   defaultValue,
   onMount,
 }: MonacoEditorProps) {
-  const { theme } = useTheme();
-  const systemTheme =
-    typeof window === "undefined"
-      ? "light"
-      : window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-  const activeTheme = theme === "system" ? systemTheme : theme;
-
+  const { resolvedTheme } = useTheme();
   const [height, setHeight] = useState(200);
 
-  const handleEditorMount = (monacoEditor: IStandaloneCodeEditor) => {
+  const handleEditorMount: OnMount = (monacoEditor) => {
+    onMount(monacoEditor);
+
     const updateHeight = () => {
       const contentHeight = monacoEditor.getContentHeight();
       const lineHeight = 21;
@@ -66,14 +58,11 @@ export function MonacoEditor({
             },
           });
         }}
-        theme={`testownik-${activeTheme ?? "dark"}`}
+        theme={resolvedTheme === "dark" ? "testownik-dark" : "vs-light"}
         height="100%"
         defaultLanguage="json"
         defaultValue={defaultValue}
-        onMount={(monacoEditor: IStandaloneCodeEditor) => {
-          onMount(monacoEditor);
-          handleEditorMount(monacoEditor);
-        }}
+        onMount={handleEditorMount}
         onChange={(value) => {
           setLegacyContent(value ?? "");
         }}

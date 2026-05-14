@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/navigation-menu";
 import { API_URL } from "@/lib/api";
 import { PermissionAction } from "@/lib/auth/permissions";
+import { getUserService } from "@/services";
 
 interface NavLinksProps {
   variant?: "desktop" | "mobile";
 }
 
 export function NavLinks({ variant = "desktop" }: NavLinksProps) {
-  const { user, services, checkPermission } = useContext(AppContext);
+  const { user, checkPermission } = useContext(AppContext);
   const isStaff = user?.is_staff ?? false;
 
   const pathname = usePathname();
@@ -35,7 +36,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
     }
     void queryClient.prefetchQuery({
       queryKey: ["grades"],
-      queryFn: async () => services.user.getGrades(),
+      queryFn: async () => getUserService().getGrades(),
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
   };

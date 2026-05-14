@@ -2,13 +2,13 @@
 
 import { distance } from "fastest-levenshtein";
 import { AlertCircleIcon } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-import { AppContext } from "@/app-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getQuizService } from "@/services";
 import type { Quiz } from "@/types/quiz";
 
 interface SearchInQuizPageClientProps {
@@ -43,8 +43,6 @@ const highlightMatch = (text: string, q: string): ReactNode => {
 };
 
 function SearchInQuizPageContent({ quizId }: { quizId: string }) {
-  const appContext = useContext(AppContext);
-
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [query, setQuery] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -64,7 +62,7 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
 
       setLoading(true);
       try {
-        const data = await appContext.services.quiz.getQuiz(quizId);
+        const data = await getQuizService().getQuiz(quizId);
         setQuiz(data);
       } catch {
         setError("Wystąpił błąd podczas ładowania quizu.");
@@ -74,7 +72,7 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
     };
 
     void fetchQuiz();
-  }, [quizId, appContext.services.quiz]);
+  }, [quizId]);
 
   const filteredQuestions = (() => {
     if (quiz == null || !query.trim()) {

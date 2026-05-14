@@ -1,7 +1,7 @@
 "use client";
 
 import { FileTextIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,15 +25,12 @@ export function ExplanationDialog({
   value,
   onChange,
 }: ExplanationDialogProps) {
-  const [localValue, setLocalValue] = useState(value);
-
-  // eslint-disable-next-line react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change
-  useEffect(() => {
+  const [localValue, setLocalValue] = useState(() => {
     if (open) {
-      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
-      setLocalValue(value);
+      return value;
     }
-  }, [open, value]);
+    return value;
+  });
 
   function handleSave() {
     onChange(localValue);

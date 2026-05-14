@@ -1,8 +1,7 @@
 import formbricks from "@formbricks/js";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
-import { AppContext } from "@/app-context";
 import {
   INITIAL_CLIENT_STATE,
   quizDetailQueryKey,
@@ -15,6 +14,7 @@ import {
   pickNextQuestion,
   resolveCurrentQuestion,
 } from "@/lib/session-utils";
+import { getQuizService } from "@/services";
 import type {
   AnswerRecord,
   Question,
@@ -26,13 +26,10 @@ import type { ClientState } from "./types";
 
 export function useActiveQuiz(quizId: string) {
   const queryClient = useQueryClient();
-  const appContext = useContext(AppContext);
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
-    queryKey: quizDetailQueryKey(quizId),
-    queryFn: async () => {
-      return await appContext.services.quiz.getQuizWithProgress(quizId);
-    },
+    queryKey: [quizDetailQueryKey(quizId)],
+    queryFn: async () => getQuizService().getQuizWithProgress(quizId),
     retry: 1,
     staleTime: Infinity,
     refetchOnWindowFocus: false,

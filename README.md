@@ -26,7 +26,7 @@
 ### Wymagania
 
 - [Node.js](https://nodejs.org/) (zalecana wersja LTS)
-- npm (dostarczany z Node.js)
+- pnpm (dostarczany z Node.js)
 
 ### Instalacja
 
@@ -40,13 +40,13 @@
 2. **Zainstaluj zależności**
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Uruchom serwer deweloperski**
 
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 4. **Otwórz przeglądarkę** i przejdź do `http://localhost:3000`
@@ -55,15 +55,15 @@
 
 ## 📜 Dostępne skrypty
 
-| Komenda                | Opis                                |
-| ---------------------- | ----------------------------------- |
-| `npm run dev`          | Uruchamia serwer deweloperski z HMR |
-| `npm run build`        | Buduje aplikację do produkcji       |
-| `npm run start`        | Uruchamia serwer produkcyjny        |
-| `npm run lint`         | Sprawdza kod za pomocą ESLint       |
-| `npm run format`       | Formatuje kod za pomocą Prettier    |
-| `npm run format:check` | Sprawdza formatowanie kodu          |
-| `npm run typecheck`    | Sprawdza typy TypeScript            |
+| Komenda                 | Opis                                |
+| ----------------------- | ----------------------------------- |
+| `pnpm run dev`          | Uruchamia serwer deweloperski z HMR |
+| `pnpm run build`        | Buduje aplikację do produkcji       |
+| `pnpm run start`        | Uruchamia serwer produkcyjny        |
+| `pnpm run lint`         | Sprawdza kod za pomocą ESLint       |
+| `pnpm run format`       | Formatuje kod za pomocą Prettier    |
+| `pnpm run format:check` | Sprawdza formatowanie kodu          |
+| `pnpm run typecheck`    | Sprawdza typy TypeScript            |
 
 ---
 

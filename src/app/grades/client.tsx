@@ -44,11 +44,12 @@ import {
 } from "@/components/ui/tooltip";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { getUserService } from "@/services";
 import { ACCOUNT_TYPE } from "@/types/user";
 import type { Course } from "@/types/user";
 
 function GradesContent() {
-  const { checkPermission, services, user } = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
 
   const {
     data: gradesData,
@@ -56,7 +57,7 @@ function GradesContent() {
     error,
   } = useQuery({
     queryKey: ["grades"],
-    queryFn: async () => services.user.getGrades(),
+    queryFn: async () => getUserService().getGrades(),
     enabled: checkPermission(PermissionAction.VIEW_GRADES),
   });
 

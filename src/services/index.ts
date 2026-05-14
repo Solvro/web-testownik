@@ -1,3 +1,5 @@
+import { API_URL } from "@/lib/api";
+
 import { ImageService } from "./image.service";
 import { QuizService } from "./quiz.service";
 import { UserService } from "./user.service";
@@ -57,15 +59,12 @@ export function initializeServices(
 }
 
 /**
- * Get the service registry instance
- * Must be initialized first with initializeServices()
+ * Get the service registry instance.
+ * Lazily initializes with the default API URL on first access; callers can
+ * override earlier by calling initializeServices() explicitly.
  */
 export function getServices(): ServiceRegistry {
-  if (serviceRegistry === null) {
-    throw new Error(
-      "Services not initialized. Call initializeServices() first.",
-    );
-  }
+  serviceRegistry ??= new ServiceRegistry(API_URL);
   return serviceRegistry;
 }
 

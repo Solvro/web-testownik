@@ -3,19 +3,18 @@
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getUserService } from "@/services";
 import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 export function ProfilePageClient(): React.JSX.Element {
-  const appContext = useContext(AppContext);
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<string>("account");
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -34,8 +33,10 @@ export function ProfilePageClient(): React.JSX.Element {
       window.history.replaceState(null, "", pathname);
     }
 
+    const userService = getUserService();
+
     // Fetch user data
-    appContext.services.user
+    userService
       .getUserData()
       .then((data) => {
         setUserData(data);
@@ -45,7 +46,7 @@ export function ProfilePageClient(): React.JSX.Element {
       });
 
     // Fetch settings data
-    appContext.services.user
+    userService
       .getUserSettings()
       .then((data) => {
         setSettings(data);
@@ -53,7 +54,7 @@ export function ProfilePageClient(): React.JSX.Element {
       .catch((error: unknown) => {
         console.error("Error fetching settings:", error);
       });
-  }, [appContext.services.user, pathname]);
+  }, [pathname]);
 
   const handleSettingChange = async (
     name: keyof UserSettings,
@@ -61,7 +62,7 @@ export function ProfilePageClient(): React.JSX.Element {
   ) => {
     setSettings({ ...settings, [name]: value });
     try {
-      await appContext.services.user.updateUserSettings({ [name]: value });
+      await getUserService().updateUserSettings({ [name]: value });
     } catch (error) {
       console.error("Error updating settings:", error);
       toast.error("Wystąpił błąd podczas aktualizacji ustawień.");

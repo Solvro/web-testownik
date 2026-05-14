@@ -11,6 +11,7 @@ const ALLOWED_QUIZ_KEYS = [
   "version",
   "questions",
   "creator",
+  "maintainer", // Backward compatibility for older exports
   "comment",
   "can_edit",
 ];

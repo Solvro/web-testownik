@@ -40,6 +40,7 @@ import {
 import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
+import { getQuizService } from "@/services";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
@@ -47,7 +48,7 @@ interface QuizzesPageContentProps {
 }
 
 function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
-  const { checkPermission, services } = useContext(AppContext);
+  const { checkPermission } = useContext(AppContext);
   const queryClient = useQueryClient();
   const canSearchInQuizzes = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewShared = checkPermission(PermissionAction.VIEW_SHARED_QUIZZES);
@@ -124,7 +125,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     const quiz = currentDialog.quiz;
 
     try {
-      await services.quiz.deleteQuiz(quiz.id);
+      await getQuizService().deleteQuiz(quiz.id);
       void queryClient.invalidateQueries({
         queryKey: ["user-quizzes"],
       });
@@ -138,7 +139,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
   const handleDownloadQuiz = async (quiz: QuizMetadata) => {
     try {
-      const fullQuiz = await services.quiz.getQuiz(quiz.id);
+      const fullQuiz = await getQuizService().getQuiz(quiz.id);
       // Create a downloadable version
       const downloadableQuiz = prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(

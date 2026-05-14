@@ -6,6 +6,7 @@ import {
   checkAnswerCorrectness,
   createAnswerRecord,
 } from "@/lib/session-utils";
+import { getQuizService } from "@/services";
 import type { AnswerRecord, Question } from "@/types/quiz";
 
 import type { UseQuizLogicParameters, UseQuizLogicResult } from "./types";
@@ -16,7 +17,7 @@ import { useStudyTimer } from "./use-study-timer";
 export function useQuizLogic({
   quizId,
 }: UseQuizLogicParameters): UseQuizLogicResult {
-  const { services, checkPermission, user } = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
 
   const {
     quiz,
@@ -123,7 +124,7 @@ export function useQuizLogic({
     nextQuestionRef.current = nextQuestion;
 
     if (!remote) {
-      void services.quiz.recordAnswer(
+      void getQuizService().recordAnswer(
         quizId,
         newAnswer,
         getCurrentStudyTime(),
@@ -178,7 +179,7 @@ export function useQuizLogic({
     const { nextQuestion: nextQ } = sessionActions.recordAnswer(newAnswer);
     nextQuestionRef.current = nextQ;
 
-    void services.quiz.recordAnswer(
+    void getQuizService().recordAnswer(
       quizId,
       newAnswer,
       getCurrentStudyTime(),
@@ -217,7 +218,7 @@ export function useQuizLogic({
   };
 
   const resetProgress = async () => {
-    const session = await services.quiz.deleteQuizProgress(quizId, quiz);
+    const session = await getQuizService().deleteQuizProgress(quizId, quiz);
     sessionActions.resetProgress(session);
     setTimer(0, Date.now());
     setHistoryQuestionId(null);

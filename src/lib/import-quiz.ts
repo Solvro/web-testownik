@@ -1,17 +1,14 @@
 import JSZip from "jszip";
-import { editor } from "monaco-editor";
 import type React from "react";
-import { useContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
 import { migrateLegacyQuiz } from "@/lib/migration";
+import { getImageService, getQuizService } from "@/services";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
-
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 
 const trueFalseStrings = {
   prawda: true,
@@ -23,6 +20,10 @@ const trueFalseStrings = {
 };
 
 export type UploadType = "file" | "json" | "legacy";
+
+interface JsonCodeEditor {
+  getValue: () => string;
+}
 
 const parseQTemplate = (
   lines: string[],
@@ -258,7 +259,6 @@ export const extractImagesToUpload = (
 };
 
 export const useImportQuiz = () => {
-  const appContext = useContext(AppContext);
   const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
@@ -272,7 +272,7 @@ export const useImportQuiz = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileOldRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
-  const monacoEditorRef = useRef<IStandaloneCodeEditor>(null);
+  const monacoEditorRef = useRef<JsonCodeEditor | null>(null);
   const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
@@ -535,7 +535,7 @@ export const useImportQuiz = () => {
         const content = await fileData.async("uint8array");
         let lines;
         try {
-          const decoder = new TextDecoder("utf8", { fatal: true });
+          const decoder = new TextDecoder("utf-8", { fatal: true });
           lines = decoder
             .decode(content)
             .split("\n")
@@ -590,7 +590,7 @@ export const useImportQuiz = () => {
   const submitImport = async (data: Quiz) => {
     try {
       const { id, ...rest } = data;
-      const result = await appContext.services.quiz.createQuiz(rest);
+      const result = await getQuizService().createQuiz(rest);
 
       setQuiz(result);
       setErrorDetail(null);
@@ -773,7 +773,7 @@ export const useImportQuiz = () => {
               } else {
                 try {
                   const uploadResult =
-                    await appContext.services.image.upload(imageFile);
+                    await getImageService().upload(imageFile);
                   filenameToUploadId.set(filename, uploadResult.data.id);
                 } catch (error_) {
                   console.error(`Failed to upload image ${filename}:`, error_);
@@ -834,8 +834,7 @@ export const useImportQuiz = () => {
             questions,
           };
 
-          const importedQuiz =
-            await appContext.services.quiz.createQuiz(quizData);
+          const importedQuiz = await getQuizService().createQuiz(quizData);
           setQuiz(importedQuiz);
         } catch (error_) {
           setErrorAndNotify(
@@ -853,7 +852,7 @@ export const useImportQuiz = () => {
   async function detectEncodingAndReadFile(file: File): Promise<string> {
     const content = await file.arrayBuffer();
     try {
-      const decoder = new TextDecoder("utf8", { fatal: true });
+      const decoder = new TextDecoder("utf-8", { fatal: true });
       return decoder.decode(content);
     } catch {
       const decoder = new TextDecoder("windows-1250");

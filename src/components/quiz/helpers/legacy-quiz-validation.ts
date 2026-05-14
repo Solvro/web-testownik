@@ -8,6 +8,7 @@ const ALLOWED_LEGACY_QUIZ_KEYS = [
   "version",
   "questions",
   "creator",
+  "maintainer", // Backward compatibility for older exports
 ];
 
 const ALLOWED_LEGACY_QUESTION_KEYS = [

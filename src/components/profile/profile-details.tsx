@@ -2,10 +2,9 @@ import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn, getInitials } from "@/lib/utils";
+import { getUserService } from "@/services";
 import { ACCOUNT_TYPE } from "@/types/user";
 import type { UserData } from "@/types/user";
 
@@ -36,7 +36,6 @@ export function ProfileDetails({
   loading,
   setUserData,
 }: ProfileDetailsProps) {
-  const appContext = useContext(AppContext);
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
@@ -57,7 +56,7 @@ export function ProfileDetails({
 
   const handleSavePhoto = () => {
     handleCloseDialog();
-    appContext.services.user
+    getUserService()
       .updateUserProfile({
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
@@ -66,7 +65,7 @@ export function ProfileDetails({
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
           // Refresh token to get updated user data (avatar) in the token payload
-          await appContext.services.user.refreshToken();
+          await getUserService().refreshToken();
           router.refresh();
         }
       })
@@ -77,7 +76,7 @@ export function ProfileDetails({
   };
 
   const handleHideProfile = (hide: boolean) => {
-    appContext.services.user
+    getUserService()
       .updateUserProfile({ hide_profile: hide })
       .then(() => {
         if (userData !== null) {

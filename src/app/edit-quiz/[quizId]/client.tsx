@@ -2,16 +2,16 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import type { QuizFormData } from "@/lib/schemas/quiz.schema";
 import { prepareQuizForSubmission } from "@/lib/schemas/quiz.schema";
+import { getQuizService } from "@/services";
 import type { Quiz } from "@/types/quiz";
 
 interface EditQuizPageClientProps {
@@ -24,7 +24,6 @@ function EditQuizPageContent({
   quizId: string;
 }): React.JSX.Element {
   const queryClient = useQueryClient();
-  const appContext = useContext(AppContext);
   const router = useRouter();
   const searchParameters = useSearchParams();
 
@@ -44,7 +43,7 @@ function EditQuizPageContent({
         return;
       }
       try {
-        const data: Quiz = await appContext.services.quiz.getQuiz(quizId);
+        const data: Quiz = await getQuizService().getQuiz(quizId);
         setInitialQuiz(data);
         setTimeout(() => {
           const scrollTo = searchParameters.get("scroll_to");
@@ -72,7 +71,7 @@ function EditQuizPageContent({
     }
 
     void fetchQuiz();
-  }, [quizId, appContext.services.quiz, searchParameters]);
+  }, [quizId, searchParameters]);
 
   async function handleSave(data: QuizFormData): Promise<boolean> {
     if (quizId.trim() === "") {
@@ -81,7 +80,7 @@ function EditQuizPageContent({
     }
     const payload = prepareQuizForSubmission(data);
     try {
-      await appContext.services.quiz.updateQuiz(quizId, payload);
+      await getQuizService().updateQuiz(quizId, payload);
       toast.success("Quiz został zaktualizowany.");
       return true;
     } catch {

@@ -10,7 +10,7 @@ import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { getQuizMetadata } from "@/lib/metadata";
 import { getQueryClient } from "@/lib/query-client";
-import { ServiceRegistry } from "@/services";
+import { QuizService } from "@/services/quiz.service";
 
 import { QuizPageClient } from "./client";
 
@@ -52,13 +52,10 @@ export default async function QuizPage({
 
   const queryClient = getQueryClient();
 
-  const services = new ServiceRegistry(API_URL, {}, accessToken);
-
   await queryClient.prefetchQuery({
-    queryKey: quizDetailQueryKey(quizId),
-    queryFn: async () => {
-      return await services.quiz.getQuizWithProgress(quizId);
-    },
+    queryKey: [quizDetailQueryKey(quizId)],
+    queryFn: async () =>
+      new QuizService(API_URL, {}, accessToken).getQuizWithProgress(quizId),
   });
 
   return (

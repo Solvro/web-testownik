@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getUserService } from "@/services";
 
 interface ReportBugDialogProps {
   open: boolean;
@@ -116,7 +117,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       form.diagnostic = JSON.stringify(diagnostics, null, 2);
     }
 
-    appContext.services.user
+    getUserService()
       .sendFeedback({
         ...form,
         sendDiagnostics: form.sendDiagnostics ? "true" : "false",

@@ -26,6 +26,7 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { getQuizService } from "@/services";
 import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
 import { ACCOUNT_TYPE } from "@/types/user";
@@ -44,8 +45,7 @@ export function ShareQuizDialog({
   quiz,
   setQuiz,
 }: ShareQuizDialogProps) {
-  const appContext = useContext(AppContext);
-  const { checkPermission, user: currentUser } = appContext;
+  const { checkPermission, user: currentUser } = useContext(AppContext);
 
   const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
   const canShareQuiz = checkPermission(PermissionAction.SHARE_QUIZZES);
@@ -78,7 +78,7 @@ export function ShareQuizDialog({
   const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
     queryKey: ["study-groups"],
     queryFn: async () => {
-      const groups = await appContext.services.quiz.getStudyGroups();
+      const groups = await getQuizService().getStudyGroups();
       return groups.map((group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
@@ -95,7 +95,7 @@ export function ShareQuizDialog({
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
-      await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
+      await getQuizService().getSharedQuizzesForQuiz(quiz.id),
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
@@ -130,9 +130,13 @@ export function ShareQuizDialog({
             ],
       );
 
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setGroupsWithAccess(foundGroups);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialGroupsWithAccess(foundGroups);
     }
   }, [sharedData]);
@@ -145,7 +149,7 @@ export function ShareQuizDialog({
     setSearchResultsLoading(true);
     try {
       // Fetch users
-      const users = await appContext.services.quiz.searchUsers(query);
+      const users = await getQuizService().searchUsers(query);
       let data: (User | Group)[] = [...users];
 
       // Filter groups by the query
@@ -272,7 +276,7 @@ export function ShareQuizDialog({
     try {
       setIsSaving(true);
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-      const quizResponse = await appContext.services.quiz.updateQuiz(quiz.id, {
+      const quizResponse = await getQuizService().updateQuiz(quiz.id, {
         visibility: accessLevel,
         allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
         is_anonymous: isCreatorAnonymous,
@@ -306,18 +310,18 @@ export function ShareQuizDialog({
         if (rUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.deleteSharedQuiz(rUser.shared_quiz_id);
+        await getQuizService().deleteSharedQuiz(rUser.shared_quiz_id);
       }
 
       for (const rGroup of removedGroups) {
         if (rGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.deleteSharedQuiz(rGroup.shared_quiz_id);
+        await getQuizService().deleteSharedQuiz(rGroup.shared_quiz_id);
       }
 
       for (const aUser of addedUsers) {
-        await appContext.services.quiz.shareQuizWithUser(
+        await getQuizService().shareQuizWithUser(
           quiz.id,
           aUser.id,
           aUser.allow_edit || false,
@@ -325,7 +329,7 @@ export function ShareQuizDialog({
       }
 
       for (const aGroup of addedGroups) {
-        await appContext.services.quiz.shareQuizWithGroup(
+        await getQuizService().shareQuizWithGroup(
           quiz.id,
           aGroup.id,
           aGroup.allow_edit || false,
@@ -337,7 +341,7 @@ export function ShareQuizDialog({
         if (cUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.updateSharedQuiz(
+        await getQuizService().updateSharedQuiz(
           cUser.shared_quiz_id,
           cUser.allow_edit,
         );
@@ -347,7 +351,7 @@ export function ShareQuizDialog({
         if (cGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.updateSharedQuiz(
+        await getQuizService().updateSharedQuiz(
           cGroup.shared_quiz_id,
           cGroup.allow_edit,
         );

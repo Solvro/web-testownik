@@ -73,9 +73,7 @@ const extractOwnText = (element: Element): string => {
       node.tagName !== "P"
     ) {
       const text = node.textContent;
-      if (typeof text === "string") {
-        buffer += text;
-      }
+      buffer += text;
     }
   }
   return buffer.trim();
@@ -389,9 +387,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                         id="directory-input"
                         type="file"
                         ref={directoryInputRef}
-                        {...({ webkitdirectory: "" } as {
-                          webkitdirectory: string;
-                        })}
+                        {...{ webkitdirectory: "" }}
                         onChange={handleDirectorySelect}
                         className="hidden"
                       />
