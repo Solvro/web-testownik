@@ -101,7 +101,7 @@ export function useExternalImageApproval(
 ): UseExternalImageApprovalResult {
   const appContext = useContext(AppContext);
 
-  const isMaintainer = quiz.maintainer?.id === appContext.user?.user_id;
+  const isCreator = quiz.creator?.id === appContext.user?.user_id;
   const hasExternalImages = quiz.has_external_images ?? false;
 
   const domains = useMemo(
@@ -110,7 +110,7 @@ export function useExternalImageApproval(
   );
 
   const shouldAutoApprove =
-    isMaintainer || !hasExternalImages || domains.length === 0;
+    isCreator || !hasExternalImages || domains.length === 0;
 
   const storageKey = `${STORAGE_KEY_PREFIX}${quiz.id}`;
 

@@ -18,7 +18,7 @@ import { getQuizService } from "@/services";
 interface SearchResult {
   id: string;
   title: string;
-  maintainer: string;
+  creator: string;
   is_anonymous: boolean;
 }
 
@@ -96,9 +96,7 @@ export function SearchCard({
                             <span className="text-muted-foreground font-normal">
                               {" "}
                               by{" "}
-                              {result.is_anonymous
-                                ? "anonim"
-                                : result.maintainer}
+                              {result.is_anonymous ? "anonim" : result.creator}
                             </span>
                           </div>
                         </Link>
