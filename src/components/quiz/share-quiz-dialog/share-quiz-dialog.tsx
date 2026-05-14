@@ -141,10 +141,7 @@ export function ShareQuizDialog({
     }
   }, [sharedData]);
 
-  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event_.target.value);
-  };
-
+  // TODO: switch to uding tanstack query for search as well
   const handleSearch = async (query: string) => {
     setSearchResultsLoading(true);
     try {
@@ -209,6 +206,16 @@ export function ShareQuizDialog({
       setSearchResults([]);
     } finally {
       setSearchResultsLoading(false);
+    }
+  };
+
+  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event_.target.value;
+    setSearchQuery(value);
+    if (value.length >= 3) {
+      void handleSearch(value);
+    } else {
+      setSearchResults([]);
     }
   };
 
@@ -383,7 +390,7 @@ export function ShareQuizDialog({
           <div className="space-y-4">
             <Popover
               open={open ? searchQuery.length > 0 : undefined}
-              modal={true}
+              modal={false}
             >
               <PopoverTrigger
                 nativeButton={false}
@@ -393,13 +400,6 @@ export function ShareQuizDialog({
                       placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
                       value={searchQuery}
                       onChange={handleSearchInput}
-                      onKeyUp={() => {
-                        if (searchQuery.length >= 3) {
-                          void handleSearch(searchQuery);
-                        } else {
-                          setSearchResults([]);
-                        }
-                      }}
                     />
                   </div>
                 }
