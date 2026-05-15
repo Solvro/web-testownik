@@ -3,9 +3,19 @@
 import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition, startTransition, useEffect } from "react";
+import {
+  ViewTransition,
+  startTransition,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
+import { AppContext } from "@/app-context";
+import { AiChat } from "@/components/ai/ai-chat";
+import { AiExplainCard } from "@/components/ai/ai-explain-card";
+import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
@@ -32,6 +42,7 @@ interface QuizPageClientProps {
 }
 
 function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
+  const { user } = useContext(AppContext);
   const { quiz, state, stats, continuity, actions } = useQuizLogic({
     quizId,
   });
@@ -71,6 +82,17 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     approve: approveExternalImages,
     hasExternalImages,
   } = useExternalImageApproval(quiz);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showAiExplain, setShowAiExplain] = useState(false);
+  const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+  useEffect(() => {
+    setShowAiExplain(false);
+    setAnswerHints([]);
+  }, [currentQuestion?.id]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
 
   const handleToggleBrainrot = () => {
     startTransition(() => {
@@ -153,7 +175,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   question={currentQuestion}
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
-                    // If question is not multiple, unselect everything except the new
                     if (currentQuestion !== null && !currentQuestion.multiple) {
                       setSelectedAnswers(
                         newSelected.length > 0 ? [newSelected[0]] : [],
@@ -170,6 +191,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   togglePreviousQuestion={togglePreviousQuestion}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
+                  answerHints={answerHints}
                 />
               )}
             </ViewTransition>
@@ -190,8 +212,27 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 question={currentQuestion}
                 onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
+                onExplain={() => {
+                  setShowAiExplain(true);
+                }}
+                onOpenChat={() => {
+                  setIsChatOpen(true);
+                }}
                 disabled={isQuizFinished || currentQuestion == null}
+                isExplainOpen={showAiExplain}
+                isChatOpen={isChatOpen}
               />
+              {showAiExplain && currentQuestion != null ? (
+                <AiExplainCard
+                  question={currentQuestion}
+                  questionChecked={questionChecked}
+                  onClose={() => {
+                    setShowAiExplain(false);
+                    setAnswerHints([]);
+                  }}
+                  onAnswerHints={setAnswerHints}
+                />
+              ) : null}
             </div>
           </ViewTransition>
         </div>
@@ -208,6 +249,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       <ContinuityDialog
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
+      />
+
+      <AiChat
+        open={isChatOpen}
+        onOpenChange={setIsChatOpen}
+        quizId={quiz.id}
+        quiz={{ title: quiz.title, description: quiz.description }}
+        question={currentQuestion}
+        questions={quiz.questions}
+        userName={user?.first_name}
       />
     </ExternalImageContext.Provider>
   );

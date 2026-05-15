@@ -65,7 +65,7 @@ export function ShareQuizDialog({
   const [groupsWithAccess, setGroupsWithAccess] = useState<
     (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
   >([]);
-  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(
+  const [isCreatorAnonymous, setIsCreatorAnonymous] = useState(
     quiz.is_anonymous,
   );
   const [allowAnonymous, setAllowAnonymous] = useState(quiz.allow_anonymous);
@@ -141,10 +141,7 @@ export function ShareQuizDialog({
     }
   }, [sharedData]);
 
-  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event_.target.value);
-  };
-
+  // TODO: switch to uding tanstack query for search as well
   const handleSearch = async (query: string) => {
     setSearchResultsLoading(true);
     try {
@@ -212,13 +209,23 @@ export function ShareQuizDialog({
     }
   };
 
+  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event_.target.value;
+    setSearchQuery(value);
+    if (value.length >= 3) {
+      void handleSearch(value);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
   const handleAddEntity = (entity: User | Group) => {
     // If it's a user
     if ("full_name" in entity) {
       // Prevent duplicates
       if (
         !usersWithAccess.some((u) => u.id === entity.id) &&
-        entity.id !== quiz.maintainer?.id
+        entity.id !== quiz.creator?.id
       ) {
         setUsersWithAccess((previous) => [
           ...previous,
@@ -279,7 +286,7 @@ export function ShareQuizDialog({
       const quizResponse = await getQuizService().updateQuiz(quiz.id, {
         visibility: accessLevel,
         allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
-        is_anonymous: isMaintainerAnonymous,
+        is_anonymous: isCreatorAnonymous,
       });
 
       const removedUsers = initialUsersWithAccess.filter(
@@ -375,7 +382,7 @@ export function ShareQuizDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
         </DialogHeader>
@@ -383,7 +390,7 @@ export function ShareQuizDialog({
           <div className="space-y-4">
             <Popover
               open={open ? searchQuery.length > 0 : undefined}
-              modal={true}
+              modal={false}
             >
               <PopoverTrigger
                 nativeButton={false}
@@ -393,13 +400,6 @@ export function ShareQuizDialog({
                       placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
                       value={searchQuery}
                       onChange={handleSearchInput}
-                      onKeyUp={() => {
-                        if (searchQuery.length >= 3) {
-                          void handleSearch(searchQuery);
-                        } else {
-                          setSearchResults([]);
-                        }
-                      }}
                     />
                   </div>
                 }
@@ -426,8 +426,8 @@ export function ShareQuizDialog({
                   quizMetadata={quiz}
                   usersWithAccess={usersWithAccess}
                   groupsWithAccess={groupsWithAccess}
-                  isMaintainerAnonymous={isMaintainerAnonymous}
-                  setIsMaintainerAnonymous={setIsMaintainerAnonymous}
+                  isCreatorAnonymous={isCreatorAnonymous}
+                  setIsCreatorAnonymous={setIsCreatorAnonymous}
                   handleRemoveUserAccess={handleRemoveUserAccess}
                   handleRemoveGroupAccess={handleRemoveGroupAccess}
                   handleToggleUserEdit={handleToggleUserEdit}

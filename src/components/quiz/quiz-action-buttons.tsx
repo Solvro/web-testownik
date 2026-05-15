@@ -1,13 +1,14 @@
 import {
+  BotMessageSquareIcon,
   ClipboardCopyIcon,
   HistoryIcon,
   MessageSquareWarningIcon,
   PencilLineIcon,
   SkullIcon,
+  SparklesIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
-import { SiOpenai } from "react-icons/si";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
@@ -28,7 +29,11 @@ interface QuizActionButtonsProps {
   question: Question | null;
   onToggleHistory: () => void;
   onToggleBrainrot: () => void;
+  onExplain: () => void;
+  onOpenChat: () => void;
   disabled?: boolean;
+  isExplainOpen?: boolean;
+  isChatOpen?: boolean;
 }
 
 export function QuizActionButtons({
@@ -36,14 +41,18 @@ export function QuizActionButtons({
   question,
   onToggleHistory,
   onToggleBrainrot,
+  onExplain,
+  onOpenChat,
   disabled = false,
+  isExplainOpen = false,
+  isChatOpen = false,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const isMaintainer =
-    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
+  const isCreator =
+    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 
@@ -62,24 +71,6 @@ export function QuizActionButtons({
     void navigator.clipboard
       .writeText(full)
       .then(() => toast.info("Pytanie skopiowane do schowka!"));
-  };
-
-  const handleOpenChatGPT = () => {
-    if (question == null) {
-      toast.error("Nie można otworzyć ChatGPT: brak pytania");
-      return;
-    }
-    const answersText = question.answers
-      .map(
-        (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
-      )
-      .join("\n");
-    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\nOdpowiedzi:\n${answersText}`;
-    window.open(
-      `https://chat.openai.com/?q=${encodeURIComponent(fullText)}`,
-      "_blank",
-    );
   };
 
   const handleEdit = () => {
@@ -109,24 +100,43 @@ export function QuizActionButtons({
           ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleOpenChatGPT}
-                disabled={!canUseQuestion}
-                aria-label="Otwórz w ChatGPT"
-              >
-                <SiOpenai />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Otwórz w ChatGPT</TooltipContent>
-        </Tooltip>
-        {!isMaintainer &&
-        checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
+        {checkPermission(PermissionAction.AI_FEATURES) ? (
+          <>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onExplain}
+                    disabled={!canUseQuestion || isExplainOpen}
+                    aria-label="Wyjaśnij pytanie (AI)"
+                  >
+                    <SparklesIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Wyjaśnij pytanie (AI)</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onOpenChat}
+                    disabled={!canUseQuestion || isChatOpen}
+                    aria-label="Czat AI"
+                  >
+                    <BotMessageSquareIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Czat AI</TooltipContent>
+            </Tooltip>
+          </>
+        ) : null}
+        {!isCreator && checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
@@ -148,7 +158,7 @@ export function QuizActionButtons({
             <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
           </Tooltip>
         ) : null}
-        {isMaintainer ? (
+        {isCreator ? (
           <Tooltip>
             <TooltipTrigger
               render={

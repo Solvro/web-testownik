@@ -106,7 +106,6 @@ export function LoginPrompt(): React.JSX.Element {
               <Button
                 nativeButton={false}
                 variant="outline"
-                size="lg"
                 className="w-full"
                 render={(props) => (
                   <a
@@ -121,7 +120,6 @@ export function LoginPrompt(): React.JSX.Element {
 
               <Button
                 variant="outline"
-                size="sm"
                 className="w-full"
                 onClick={async () => {
                   if (user?.account_type === ACCOUNT_TYPE.GUEST) {

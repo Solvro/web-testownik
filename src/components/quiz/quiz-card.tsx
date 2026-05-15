@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import { ViewTransition, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -74,23 +74,34 @@ export function QuizCard({
         </CardHeader>
         <CardFooter className="mt-auto flex items-center justify-between">
           <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">
-            <Button
-              size="sm"
-              disabled={isLoading}
-              nativeButton={false}
-              variant={isLoading ? "loading" : "default"}
-              render={(rendererProps) => (
-                <Link
-                  {...rendererProps}
-                  href={onOpenPath(quiz)}
-                  onClick={() => {
-                    setIsLoading(true);
-                  }}
+            {isLoading ? (
+              <div className="relative -left-1 -my-1 inline-flex h-10 overflow-hidden rounded-md border-none p-1">
+                <span className="absolute -inset-full animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)]" />
+                <span
+                  className={buttonVariants({ size: "sm", className: "z-1" })}
                 >
                   Otwórz
-                </Link>
-              )}
-            ></Button>
+                </span>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                disabled={isLoading}
+                nativeButton={false}
+                variant="default"
+                render={(rendererProps) => (
+                  <Link
+                    {...rendererProps}
+                    href={onOpenPath(quiz)}
+                    onClick={() => {
+                      setIsLoading(true);
+                    }}
+                  >
+                    Otwórz
+                  </Link>
+                )}
+              ></Button>
+            )}
           </ViewTransition>
           <div className="flex gap-1 opacity-80">
             {Boolean(showEdit) && (

@@ -24,7 +24,7 @@ export async function generateMetadata({
     return {
       title: metadata.title,
       description: metadata.description,
-      authors: [{ name: metadata.maintainer?.full_name ?? "" }],
+      authors: [{ name: metadata.creator?.full_name ?? "" }],
       robots: { index: false, follow: true },
       openGraph: {
         title: `${metadata.title} - Testownik Solvro`,
@@ -53,7 +53,7 @@ export default async function QuizPage({
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: [quizDetailQueryKey(quizId)],
+    queryKey: quizDetailQueryKey(quizId),
     queryFn: async () =>
       new QuizService(API_URL, {}, accessToken).getQuizWithProgress(quizId),
   });

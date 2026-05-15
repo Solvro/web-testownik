@@ -120,8 +120,8 @@ export function QuizInfoCard({
     return null;
   }
 
-  const isMaintainer =
-    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
+  const isCreator =
+    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
 
   const openSearchInQuiz = () => {
     router.push(`/search-in-quiz/${quiz.id}`);
@@ -133,8 +133,8 @@ export function QuizInfoCard({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer == null ? null : (
-          <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
+        {quiz.creator == null ? null : (
+          <CardDescription>by {quiz.creator.full_name}</CardDescription>
         )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
@@ -210,7 +210,7 @@ export function QuizInfoCard({
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
-            {isMaintainer ? null : (
+            {isCreator ? null : (
               <Tooltip>
                 <TooltipTrigger
                   render={

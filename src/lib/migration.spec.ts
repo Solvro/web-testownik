@@ -218,7 +218,7 @@ describe("Migration", () => {
       expect(quiz.visibility).toBeDefined();
       expect(quiz.allow_anonymous).toBe(false);
       expect(quiz.is_anonymous).toBe(false);
-      expect(quiz.maintainer).toBeNull();
+      expect(quiz.creator).toBeNull();
     });
 
     it("should fallback to 'Untitled Quiz' if title is empty", () => {

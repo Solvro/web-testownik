@@ -6,6 +6,7 @@ export const env = createEnv({
     JWT_SECRET: z.string().min(1).optional(),
     JWT_COOKIE_DOMAIN: z.string().min(1).optional(),
     INTERNAL_API_KEY: z.string().min(1).optional(),
+    OPENAI_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

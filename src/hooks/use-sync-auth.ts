@@ -29,7 +29,7 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
       setUser((previousUser) => {
         if (previousUser !== null && previousUser.user_id !== payload.user_id) {
           const queryClient = getQueryClient();
-          queryClient.clear();
+          void queryClient.resetQueries();
         }
         return payload;
       });
@@ -40,7 +40,7 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
     setIsAuthenticated((previousIsAuthenticated) => {
       if (previousIsAuthenticated) {
         const queryClient = getQueryClient();
-        queryClient.clear();
+        void queryClient.resetQueries();
       }
       return false;
     });

@@ -188,7 +188,7 @@ export function useQuizLogic({
 
     continuity.sendAnswerChecked(nextQ);
     continuity.sendQuestionUpdate(nextQ, []);
-    sessionActions.advanceQuestion();
+    sessionActions.setCurrentQuestion(nextQ);
     nextQuestionRef.current = null;
   };
 

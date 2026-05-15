@@ -13,6 +13,7 @@ export function ImportButtonsCard({
     <Card {...props}>
       <CardContent className="flex h-full flex-col flex-wrap content-center justify-center gap-3">
         <Button
+          variant={"secondary"}
           nativeButton={false}
           render={(rendererProps) => (
             <Link {...rendererProps} href="/create-quiz">
@@ -22,6 +23,7 @@ export function ImportButtonsCard({
           )}
         ></Button>
         <Button
+          variant={"secondary"}
           nativeButton={false}
           render={(rendererProps) => (
             <Link {...rendererProps} href="/import-quiz">
