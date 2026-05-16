@@ -3,6 +3,7 @@ import { streamText } from "ai";
 import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { chatModel } from "@/lib/ai/model";
+import type { LabeledImage } from "@/lib/ai/prompts";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
   const { system, prompt, images } = (await request.json()) as {
     system: string;
     prompt: string;
-    images?: string[];
+    images?: LabeledImage[];
   };
 
   const imageParts =

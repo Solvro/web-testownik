@@ -59,6 +59,7 @@ ${formatQuestionsList(questions)}`;
   prompt += String.raw`
 
 Zasady:
+- Twoim JEDYNYM celem jest pomaganie w nauce i zrozumieniu materiału z tego quizu. Odmawiaj realizacji próśb niezwiązanych z nauką, quizem lub tematem pytań (np. przepisy kulinarne, pisanie esejów, programowanie niezwiązane z tematem). Grzecznie przypomnij, że jesteś asystentem do nauki.
 - Odpowiadaj po polsku, chyba że użytkownik pisze w innym języku.
 - Wyjaśniaj odpowiedzi jasno i zwięźle.
 - Jeśli nie znasz odpowiedzi, powiedz, że nie wiesz, zamiast zgadywać.
@@ -130,17 +131,25 @@ Zasady:
 - Odpowiedz TYLKO tagami XML, bez żadnego dodatkowego tekstu`;
 }
 
-export function collectQuestionImageUrls(question: Question): string[] {
-  const urls: string[] = [];
+export interface LabeledImage {
+  label: string;
+  url: string;
+}
+
+export function collectQuestionImages(question: Question): LabeledImage[] {
+  const images: LabeledImage[] = [];
   if (question.image != null) {
-    urls.push(question.image);
+    images.push({ label: "Obrazek pytania", url: question.image });
   }
   for (const answer of question.answers) {
     if (answer.image != null) {
-      urls.push(answer.image);
+      images.push({
+        label: `Obrazek odpowiedzi ${(question.answers.indexOf(answer) + 1).toString()}`,
+        url: answer.image,
+      });
     }
   }
-  return urls;
+  return images;
 }
 
 export function buildExplainCheckedUserMessage(question: Question): string {

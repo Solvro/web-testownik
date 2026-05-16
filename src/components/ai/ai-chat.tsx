@@ -20,10 +20,7 @@ import { EditQuestionToolUI } from "@/components/ai/tool-ui-edit-question";
 import { GeneratedQuestionsToolUI } from "@/components/ai/tool-ui-question";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
-import {
-  buildChatSystemPrompt,
-  collectQuestionImageUrls,
-} from "@/lib/ai/prompts";
+import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
@@ -63,7 +60,7 @@ function ChatRuntime({
   );
 
   const images = useMemo(
-    () => (question === null ? [] : collectQuestionImageUrls(question)),
+    () => (question === null ? [] : collectQuestionImages(question)),
     [question],
   );
 

@@ -10,6 +10,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    S3_URL: z.url().optional(),
   },
   client: {
     NEXT_PUBLIC_API_URL: z.url(),

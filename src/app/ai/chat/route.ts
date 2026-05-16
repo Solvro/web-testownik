@@ -7,6 +7,7 @@ import { z } from "zod";
 import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { chatModel } from "@/lib/ai/model";
+import type { LabeledImage } from "@/lib/ai/prompts";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
@@ -76,16 +77,18 @@ export async function POST(request: Request) {
     system,
     images,
     canEdit,
-    quizId,
+    quizId: rawQuizId,
     tools: clientTools,
   } = (await request.json()) as {
     messages: UIMessage[];
     system?: string;
-    images?: string[];
+    images?: LabeledImage[];
     canEdit?: boolean;
     quizId?: string;
     tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
   };
+
+  const quizId = z.uuid().safeParse(rawQuizId).success ? rawQuizId : undefined;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
@@ -101,10 +104,7 @@ export async function POST(request: Request) {
       ? [
           {
             role: "user" as const,
-            content: [
-              { type: "text" as const, text: "[Obrazki z aktualnego pytania]" },
-              ...imageParts,
-            ],
+            content: imageParts,
           },
           {
             role: "assistant" as const,

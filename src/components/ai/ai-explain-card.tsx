@@ -18,7 +18,7 @@ import {
   buildExplainCheckedUserMessage,
   buildExplainUncheckedPrompt,
   buildExplainUncheckedUserMessage,
-  collectQuestionImageUrls,
+  collectQuestionImages,
 } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
@@ -114,7 +114,7 @@ export function AiExplainCard({
     [question, questionChecked],
   );
 
-  const images = useMemo(() => collectQuestionImageUrls(question), [question]);
+  const images = useMemo(() => collectQuestionImages(question), [question]);
 
   const { completion, isLoading, error, complete, stop } = useCompletion({
     api: "/ai/explain",
