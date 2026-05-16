@@ -29,6 +29,7 @@ export function buildChatSystemPrompt(
   question: Question | null,
   questions: Question[] = [],
   userName?: string,
+  canEdit?: boolean,
 ): string {
   let prompt = `Jesteś pomocnym asystentem do nauki, wbudowanym w aplikację Testownik.
 Pomagasz studentom zrozumieć pytania quizowe i przygotować się do egzaminów.
@@ -63,9 +64,11 @@ Zasady:
 - Jeśli nie znasz odpowiedzi, użyj narzędzia wyszukiwania w internecie.
 - Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
 - Możesz pomagać w zrozumieniu materiału, wyjaśniać pojęcia.
-- Jeśli użytkownik prosi o pytanie treningowe, podobne pytanie lub chce się przetestować, użyj narzędzia generate_practice_question aby wygenerować interaktywne pytanie.
-- Jeśli użytkownik prosi o poprawienie, ulepszenie lub zmianę aktualnego pytania, użyj narzędzia edit_question aby zaproponować edycję. Użytkownik musi zatwierdzić zmiany.
-- Gdy użyjesz narzędzia (generate_practice_question lub edit_question), NIE powtarzaj treści pytania, odpowiedzi ani wyjaśnienia w tekście wiadomości — narzędzie już je wyświetli jako interaktywną kartę.`;
+- Jeśli użytkownik prosi o pytanie treningowe, podobne pytanie lub chce się przetestować, użyj narzędzia generate_practice_questionss aby wygenerować interaktywne pytania. Możesz wygenerować jedno lub wiele pytań w jednym wywołaniu — dostosuj liczbę do prośby użytkownika.
+- Jeśli użytkownik pyta o konkretne pytanie z quizu (np. "pokaż pytanie 5", "wyjaśnij pytanie nr 12"), użyj narzędzia get_question aby pobrać pełne szczegóły tego pytania.
+- ${canEdit === true ? "Jeśli użytkownik prosi o poprawienie, ulepszenie lub zmianę aktualnego pytania, użyj narzędzia edit_question aby zaproponować edycję. Użytkownik musi zatwierdzić zmiany. WAŻNE: Wywołuj edit_question MAKSYMALNIE RAZ na odpowiedź — nigdy nie generuj wielu edycji równolegle." : "Użytkownik NIE ma uprawnień do edycji tego quizu. Jeśli poprosi o edycję pytania, poinformuj go, że nie ma uprawnień do edycji tego quizu."}
+- Gdy użyjesz narzędzia (generate_practice_questions${canEdit === true ? " lub edit_question" : ""}), NIE powtarzaj treści pytania, odpowiedzi ani wyjaśnienia w tekście wiadomości — narzędzie już je wyświetli jako interaktywną kartę.
+- ${canEdit === true ? "Użytkownik ma uprawnienia do edycji quizu — może dodawać pytania i edytować istniejące." : "Użytkownik NIE ma uprawnień do dodawania pytań do quizu. Wygenerowane pytania treningowe mogą służyć tylko do ćwiczeń."}`;
 
   return prompt;
 }

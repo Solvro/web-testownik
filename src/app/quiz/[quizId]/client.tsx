@@ -215,12 +215,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 onExplain={() => {
                   setShowAiExplain(true);
                 }}
-                onOpenChat={() => {
-                  setIsChatOpen(true);
-                }}
                 disabled={isQuizFinished || currentQuestion == null}
                 isExplainOpen={showAiExplain}
-                isChatOpen={isChatOpen}
               />
               {showAiExplain && currentQuestion != null ? (
                 <AiExplainCard
@@ -259,6 +255,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         question={currentQuestion}
         questions={quiz.questions}
         userName={user?.first_name}
+        canEdit={(quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id}
       />
     </ExternalImageContext.Provider>
   );

@@ -16,7 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
 import { EditQuestionToolUI } from "@/components/ai/tool-ui-edit-question";
-import { GeneratedQuestionToolUI } from "@/components/ai/tool-ui-question";
+import { GeneratedQuestionsToolUI } from "@/components/ai/tool-ui-question";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,7 @@ interface AiChatProps {
   question: Question | null;
   questions: Question[];
   userName?: string;
+  canEdit?: boolean;
 }
 
 function ChatRuntime({
@@ -44,6 +45,7 @@ function ChatRuntime({
   question,
   questions,
   userName,
+  canEdit,
   children,
 }: {
   quizId: string;
@@ -51,11 +53,12 @@ function ChatRuntime({
   question: Question | null;
   questions: Question[];
   userName?: string;
+  canEdit: boolean;
   children: React.ReactNode;
 }) {
   const system = useMemo(
-    () => buildChatSystemPrompt(quiz, question, questions, userName),
-    [quiz, question, questions, userName],
+    () => buildChatSystemPrompt(quiz, question, questions, userName, canEdit),
+    [quiz, question, questions, userName, canEdit],
   );
 
   const images = useMemo(
@@ -77,9 +80,11 @@ function ChatRuntime({
         body: () => ({
           system: systemRef.current,
           images: imagesRef.current,
+          canEdit,
+          quizId,
         }),
       }),
-    [],
+    [canEdit, quizId],
   );
 
   const suggestions = useMemo(
@@ -94,14 +99,14 @@ function ChatRuntime({
   const runtime = useChatRuntime({ transport, suggestions });
 
   const chatContext = useMemo(
-    () => ({ quizId, questionId: question?.id ?? null }),
-    [quizId, question?.id],
+    () => ({ quizId, questionId: question?.id ?? null, canEdit }),
+    [quizId, question?.id, canEdit],
   );
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <AiChatProvider value={chatContext}>
-        <GeneratedQuestionToolUI />
+        <GeneratedQuestionsToolUI />
         <EditQuestionToolUI />
         {children}
       </AiChatProvider>
@@ -117,6 +122,7 @@ export function AiChat({
   question,
   questions,
   userName,
+  canEdit = false,
 }: AiChatProps) {
   const [mode, setMode] = useState<ChatMode>("popup");
   const [chatKey, setChatKey] = useState(0);
@@ -230,6 +236,7 @@ export function AiChat({
             question={question}
             questions={questions}
             userName={userName}
+            canEdit={canEdit}
           >
             <Thread />
           </ChatRuntime>

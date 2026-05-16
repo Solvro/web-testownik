@@ -5,6 +5,7 @@ import { createContext, useContext } from "react";
 interface AiChatContextValue {
   quizId: string;
   questionId: string | null;
+  canEdit: boolean;
 }
 
 const AiChatContext = createContext<AiChatContextValue | null>(null);

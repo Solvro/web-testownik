@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getQuizService } from "@/services";
 
 interface ReportQuestionIssueDialogProps {
-  children: React.ReactNode;
+  children: React.ReactElement;
   quizId?: string;
   questionId?: string;
 }
@@ -63,7 +63,7 @@ export function ReportQuestionIssueDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>{children}</DialogTrigger>
+      <DialogTrigger render={children}></DialogTrigger>
       <DialogContent
         onKeyDown={(event_) => {
           event_.stopPropagation();
