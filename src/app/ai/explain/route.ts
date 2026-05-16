@@ -9,7 +9,7 @@ import { getServerCurrentUser } from "@/lib/auth/utils.server";
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
-  if (env.OPENAI_API_KEY === undefined) {
+  if (!env.NEXT_PUBLIC_AI_ENABLED || env.OPENAI_API_KEY === undefined) {
     return new Response("AI is not configured", { status: 503 });
   }
 

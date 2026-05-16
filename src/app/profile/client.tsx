@@ -11,6 +11,7 @@ import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { env } from "@/env";
 import { getUserService } from "@/services";
 import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
@@ -116,10 +117,12 @@ export function ProfilePageClient(): React.JSX.Element {
               settings={settings}
               onSettingChange={handleSettingChange}
             />
-            <AiSettingsForm
-              settings={settings}
-              onSettingChange={handleSettingChange}
-            />
+            {env.NEXT_PUBLIC_AI_ENABLED ? (
+              <AiSettingsForm
+                settings={settings}
+                onSettingChange={handleSettingChange}
+              />
+            ) : null}
           </TabsContent>
           <TabsContent value="notifications" className="space-y-6 md:mt-0">
             <NotificationsForm

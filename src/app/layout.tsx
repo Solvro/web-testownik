@@ -122,6 +122,14 @@ export default async function RootLayout({
           data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
           strategy="afterInteractive"
         />
+        <Script
+          src="https://analytics.solvro.pl/recorder.js"
+          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          data-sample-rate="1"
+          data-mask-level="moderate"
+          data-max-duration="300000"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

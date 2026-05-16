@@ -35,6 +35,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { env } from "@/env";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
@@ -89,7 +90,10 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
 
   const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
-  const showAi = hasAiAccess && !(quiz.user_settings?.ai_disabled ?? false);
+  const showAi =
+    env.NEXT_PUBLIC_AI_ENABLED &&
+    hasAiAccess &&
+    !(quiz.user_settings?.ai_disabled ?? false);
 
   /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
   useEffect(() => {
