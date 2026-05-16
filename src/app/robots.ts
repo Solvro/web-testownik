@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://testownik.solvro.pl";
+import { env } from "@/env";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/auth/", "/api/"],
+      disallow: ["/auth/", "/api/", "/ai/"],
     },
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: `${env.NEXT_PUBLIC_SITE_URL}/sitemap.xml`,
   };
 }

@@ -1,30 +1,26 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://testownik.solvro.pl";
+import { env } from "@/env";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: BASE_URL,
-      lastModified: new Date(),
+      url: env.NEXT_PUBLIC_SITE_URL,
       changeFrequency: "daily",
       priority: 1,
     },
     {
-      url: `${BASE_URL}/quizzes`,
-      lastModified: new Date(),
+      url: `${env.NEXT_PUBLIC_SITE_URL}/quizzes`,
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/login`,
-      lastModified: new Date(),
+      url: `${env.NEXT_PUBLIC_SITE_URL}/login`,
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${BASE_URL}/privacy-policy`,
-      lastModified: new Date(),
+      url: `${env.NEXT_PUBLIC_SITE_URL}/privacy-policy`,
       changeFrequency: "monthly",
       priority: 0.3,
     },
