@@ -34,7 +34,10 @@ export function Providers({
           >
             {children}
           </ThemeProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-left"
+          />
         </TooltipProvider>
       </QueryClientProvider>
     </AppContextProvider>

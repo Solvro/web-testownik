@@ -39,6 +39,7 @@ export const questionFormSchema = z
     text: z.string(),
     explanation: z.string().optional(),
     multiple: z.boolean(),
+    is_ai_generated: z.boolean().optional(),
     image: z.string().optional().nullable().readonly(), // Read-only (Display URL from backend)
     image_url: z.string().optional().nullable(), // Write-only (Input for external URLs)
     image_upload: z.string().optional().nullable(), // Write-only (UUID from /api/upload/)
