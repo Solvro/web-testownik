@@ -194,12 +194,8 @@ function ImageDialogBody({
         disabled={disabled}
       />
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full overflow-hidden"
-      >
-        <TabsList className="mx-auto grid h-auto w-full grid-cols-2 py-0.75">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mx-auto grid w-full grid-cols-2 py-0.75">
           <TabsTrigger value="upload">
             {hasImage ? "Zmień zdjęcie" : "Prześlij plik"}
           </TabsTrigger>

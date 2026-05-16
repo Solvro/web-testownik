@@ -4,7 +4,7 @@ export interface QuizMetadata {
   id: string;
   title: string;
   description: string;
-  maintainer?: User | null;
+  creator?: User | null;
   visibility: AccessLevel;
   allow_anonymous: boolean;
   is_anonymous: boolean;

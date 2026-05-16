@@ -41,7 +41,7 @@ export function MonacoEditor({
   return (
     <div
       style={{ height }}
-      className="dark:border-ring overflow-hidden rounded-md border"
+      className="dark:border-ring min-h-60 overflow-hidden rounded-md border"
     >
       <Editor
         beforeMount={(monaco: Monaco) => {
@@ -60,7 +60,7 @@ export function MonacoEditor({
         }}
         theme={resolvedTheme === "dark" ? "testownik-dark" : "vs-light"}
         height="100%"
-        defaultLanguage="json"
+        language="json"
         defaultValue={defaultValue}
         onMount={handleEditorMount}
         onChange={(value) => {
@@ -81,6 +81,9 @@ export function MonacoEditor({
             useShadows: false,
             verticalHasArrows: false,
             horizontalHasArrows: false,
+          },
+          padding: {
+            top: 10,
           },
         }}
       />

@@ -10,7 +10,8 @@ const ALLOWED_QUIZ_KEYS = [
   "is_anonymous",
   "version",
   "questions",
-  "maintainer",
+  "creator",
+  "maintainer", // Backward compatibility for older exports
   "comment",
   "can_edit",
 ];

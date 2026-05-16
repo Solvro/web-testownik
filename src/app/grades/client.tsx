@@ -8,7 +8,12 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/app-context";
 import { CourseTypeBadge } from "@/components/course-type-badge";
 import { Loader } from "@/components/loader";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -161,18 +166,18 @@ function GradesContent() {
       <Alert variant="destructive">
         <AlertCircleIcon />
         <AlertTitle>Wystąpił błąd podczas pobierania ocen.</AlertTitle>
-        <AlertDescription>
-          {error.message}
+        <AlertDescription>{error.message}</AlertDescription>
+        <AlertAction>
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={() => {
               window.location.reload();
             }}
           >
             Spróbuj ponownie
           </Button>
-        </AlertDescription>
+        </AlertAction>
       </Alert>
     );
   }
