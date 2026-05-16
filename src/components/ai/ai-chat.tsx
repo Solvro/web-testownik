@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
+import { DisableAiToolUI } from "@/components/ai/tool-ui-disable-ai";
 import { EditQuestionToolUI } from "@/components/ai/tool-ui-edit-question";
 import { GeneratedQuestionsToolUI } from "@/components/ai/tool-ui-question";
 import { Thread } from "@/components/assistant-ui/thread";
@@ -108,6 +109,7 @@ function ChatRuntime({
       <AiChatProvider value={chatContext}>
         <GeneratedQuestionsToolUI />
         <EditQuestionToolUI />
+        <DisableAiToolUI />
         {children}
       </AiChatProvider>
     </AssistantRuntimeProvider>

@@ -70,7 +70,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ustawienia</CardTitle>
+        <CardTitle>Ustawienia quizów</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">

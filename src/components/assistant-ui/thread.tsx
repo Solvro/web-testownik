@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 const INLINE_TOOL_NAMES = new Set([
   "generate_practice_questions",
   "edit_question",
+  "disable_ai",
 ]);
 
 function BranchPicker({
@@ -196,7 +197,7 @@ function AssistantMessage() {
     >
       <div
         data-slot="aui_assistant-message-content"
-        className="text-foreground px-2 leading-relaxed wrap-break-word"
+        className="text-foreground px-2 py-px leading-relaxed wrap-break-word"
       >
         <MessagePrimitive.GroupedParts
           groupBy={(part) => {

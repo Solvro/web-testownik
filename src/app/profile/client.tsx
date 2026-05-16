@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { AiSettingsForm } from "@/components/profile/ai-settings-form";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
@@ -112,6 +113,10 @@ export function ProfilePageClient(): React.JSX.Element {
           </TabsContent>
           <TabsContent value="settings" className="space-y-6 md:mt-0">
             <SettingsForm
+              settings={settings}
+              onSettingChange={handleSettingChange}
+            />
+            <AiSettingsForm
               settings={settings}
               onSettingChange={handleSettingChange}
             />

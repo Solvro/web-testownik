@@ -213,6 +213,23 @@ export async function POST(request: Request) {
             },
           }
         : {}),
+      disable_ai: {
+        description:
+          "Zaproponuj wyłączenie wszystkich funkcji AI w aplikacji. Użyj tego TYLKO gdy użytkownik wyraźnie mówi, że nie chce korzystać z AI, nie potrzebuje AI, lub prosi o wyłączenie/usunięcie AI. Wymaga potwierdzenia użytkownika.",
+        inputSchema: z.object({
+          reason: z
+            .string()
+            .describe(
+              "Krótkie wyjaśnienie dlaczego AI proponuje wyłączenie (np. na prośbę użytkownika)",
+            ),
+        }),
+        execute: (arguments_: { reason: string }) => {
+          return JSON.stringify({
+            action: "disable_ai",
+            reason: arguments_.reason,
+          });
+        },
+      },
     },
   });
 

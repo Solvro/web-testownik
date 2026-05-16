@@ -35,6 +35,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
 interface QuizPageClientProps {
@@ -42,7 +43,7 @@ interface QuizPageClientProps {
 }
 
 function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
-  const { user } = useContext(AppContext);
+  const { user, checkPermission } = useContext(AppContext);
   const { quiz, state, stats, continuity, actions } = useQuizLogic({
     quizId,
   });
@@ -86,6 +87,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showAiExplain, setShowAiExplain] = useState(false);
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
+
+  const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
+  const showAi = hasAiAccess && !(quiz.user_settings?.ai_disabled ?? false);
 
   /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
   useEffect(() => {
@@ -217,8 +221,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 }}
                 disabled={isQuizFinished || currentQuestion == null}
                 isExplainOpen={showAiExplain}
+                aiDisabled={!showAi}
               />
-              {showAiExplain && currentQuestion != null ? (
+              {showAi && showAiExplain && currentQuestion != null ? (
                 <AiExplainCard
                   question={currentQuestion}
                   questionChecked={questionChecked}
@@ -247,16 +252,20 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         isContinuityHost={isContinuityHost}
       />
 
-      <AiChat
-        open={isChatOpen}
-        onOpenChange={setIsChatOpen}
-        quizId={quiz.id}
-        quiz={{ title: quiz.title, description: quiz.description }}
-        question={currentQuestion}
-        questions={quiz.questions}
-        userName={user?.first_name}
-        canEdit={(quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id}
-      />
+      {showAi ? (
+        <AiChat
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          quizId={quiz.id}
+          quiz={{ title: quiz.title, description: quiz.description }}
+          question={currentQuestion}
+          questions={quiz.questions}
+          userName={user?.first_name}
+          canEdit={
+            (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id
+          }
+        />
+      ) : null}
     </ExternalImageContext.Provider>
   );
 }

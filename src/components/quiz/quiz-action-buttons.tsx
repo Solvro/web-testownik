@@ -31,6 +31,7 @@ interface QuizActionButtonsProps {
   onExplain: () => void;
   disabled?: boolean;
   isExplainOpen?: boolean;
+  aiDisabled?: boolean;
 }
 
 export function QuizActionButtons({
@@ -41,6 +42,7 @@ export function QuizActionButtons({
   onExplain,
   disabled = false,
   isExplainOpen = false,
+  aiDisabled = false,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
@@ -95,7 +97,7 @@ export function QuizActionButtons({
           ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
-        {checkPermission(PermissionAction.AI_FEATURES) ? (
+        {!aiDisabled && checkPermission(PermissionAction.AI_FEATURES) ? (
           <Tooltip>
             <TooltipTrigger
               render={

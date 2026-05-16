@@ -147,7 +147,7 @@ export function QuestionCard({
               </span>
               Podoba Ci się Testownik?
             </CardTitle>
-            <CardDescription className="max-w-prose text-sm leading-relaxed">
+            <CardDescription className="text-sm leading-relaxed">
               Doceń pracę naszego zespołu oraz wesprzyj projekt zostawiając
               gwiazdkę na GitHubie.
             </CardDescription>
