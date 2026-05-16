@@ -29,6 +29,7 @@ export interface UserSettings {
   initial_reoccurrences: number;
   wrong_answer_reoccurrences: number;
   max_question_reoccurrences: number | null;
+  ai_disabled: boolean;
   notify_quiz_shared: boolean;
   notify_bug_reported: boolean;
   notify_marketing: boolean;
@@ -43,6 +44,7 @@ export const DEFAULT_USER_SETTINGS = {
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
   max_question_reoccurrences: 5,
+  ai_disabled: false,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,

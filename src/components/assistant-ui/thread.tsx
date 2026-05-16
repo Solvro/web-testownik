@@ -45,8 +45,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const INLINE_TOOL_NAMES = new Set([
-  "generate_practice_question",
+  "generate_practice_questions",
   "edit_question",
+  "disable_ai",
 ]);
 
 function BranchPicker({
@@ -196,7 +197,7 @@ function AssistantMessage() {
     >
       <div
         data-slot="aui_assistant-message-content"
-        className="text-foreground px-2 leading-relaxed wrap-break-word"
+        className="text-foreground px-2 py-px leading-relaxed wrap-break-word"
       >
         <MessagePrimitive.GroupedParts
           groupBy={(part) => {
@@ -264,6 +265,20 @@ function AssistantMessage() {
         </MessagePrimitive.GroupedParts>
         <MessageError />
       </div>
+      <AuiIf
+        condition={(s) =>
+          s.thread.isRunning &&
+          !s.message.content.some((p) => p.type === "text")
+        }
+      >
+        <div className="flex items-center gap-1.5 px-1 py-3">
+          <span className="flex gap-1">
+            <span className="bg-foreground/50 size-1.5 animate-pulse rounded-full" />
+            <span className="bg-foreground/50 size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
+            <span className="bg-foreground/50 size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
+          </span>
+        </div>
+      </AuiIf>
 
       <div
         data-slot="aui_assistant-message-footer"

@@ -1,5 +1,4 @@
 import {
-  BotMessageSquareIcon,
   ClipboardCopyIcon,
   HistoryIcon,
   MessageSquareWarningIcon,
@@ -30,10 +29,9 @@ interface QuizActionButtonsProps {
   onToggleHistory: () => void;
   onToggleBrainrot: () => void;
   onExplain: () => void;
-  onOpenChat: () => void;
   disabled?: boolean;
   isExplainOpen?: boolean;
-  isChatOpen?: boolean;
+  aiDisabled?: boolean;
 }
 
 export function QuizActionButtons({
@@ -42,10 +40,9 @@ export function QuizActionButtons({
   onToggleHistory,
   onToggleBrainrot,
   onExplain,
-  onOpenChat,
   disabled = false,
   isExplainOpen = false,
-  isChatOpen = false,
+  aiDisabled = false,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
@@ -100,41 +97,23 @@ export function QuizActionButtons({
           ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
-        {checkPermission(PermissionAction.AI_FEATURES) ? (
-          <>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onExplain}
-                    disabled={!canUseQuestion || isExplainOpen}
-                    aria-label="Wyjaśnij pytanie (AI)"
-                  >
-                    <SparklesIcon />
-                  </Button>
-                }
-              ></TooltipTrigger>
-              <TooltipContent>Wyjaśnij pytanie (AI)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onOpenChat}
-                    disabled={!canUseQuestion || isChatOpen}
-                    aria-label="Czat AI"
-                  >
-                    <BotMessageSquareIcon />
-                  </Button>
-                }
-              ></TooltipTrigger>
-              <TooltipContent>Czat AI</TooltipContent>
-            </Tooltip>
-          </>
+        {!aiDisabled && checkPermission(PermissionAction.AI_FEATURES) ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onExplain}
+                  disabled={!canUseQuestion || isExplainOpen}
+                  aria-label="Wyjaśnij pytanie (AI)"
+                >
+                  <SparklesIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>Wyjaśnij pytanie (AI)</TooltipContent>
+          </Tooltip>
         ) : null}
         {!isCreator && checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>

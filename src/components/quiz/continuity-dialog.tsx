@@ -65,7 +65,7 @@ export function ContinuityDialog({
       <DialogTrigger
         render={
           <Button
-            className={`fixed right-4 bottom-4 z-50 h-12 w-12 rounded-full p-0 shadow-lg ${peerConnections.length === 0 ? "hidden" : ""}`}
+            className={`fixed right-20 bottom-4 z-50 h-12 w-12 rounded-full p-0 shadow-lg ${peerConnections.length === 0 ? "hidden" : ""}`}
             variant="outline"
           >
             <span className="relative inline-flex h-full w-full items-center justify-center">

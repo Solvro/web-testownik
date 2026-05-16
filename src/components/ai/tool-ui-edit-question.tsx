@@ -40,7 +40,7 @@ interface EditedQuestion {
 }
 
 function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
-  const { quizId, questionId } = useAiChatContext();
+  const { quizId, questionId, canEdit } = useAiChatContext();
   const queryClient = useQueryClient();
   const { status, propStatus } = useToolArgsStatus();
   const isRunning = status === "running";
@@ -159,7 +159,7 @@ function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
           </div>
         ) : null}
 
-        {answersComplete && questionId !== null ? (
+        {answersComplete && questionId !== null && canEdit ? (
           <Button
             variant="outline"
             size="sm"
@@ -188,7 +188,7 @@ function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
           </Button>
         ) : null}
 
-        {answersComplete && questionId === null ? (
+        {answersComplete && questionId === null && canEdit ? (
           <p className="text-muted-foreground mt-2 text-center text-xs">
             Brak aktualnego pytania do edycji
           </p>

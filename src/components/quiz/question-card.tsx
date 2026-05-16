@@ -147,7 +147,7 @@ export function QuestionCard({
               </span>
               Podoba Ci się Testownik?
             </CardTitle>
-            <CardDescription className="max-w-prose text-sm leading-relaxed">
+            <CardDescription className="text-sm leading-relaxed">
               Doceń pracę naszego zespołu oraz wesprzyj projekt zostawiając
               gwiazdkę na GitHubie.
             </CardDescription>
@@ -204,6 +204,24 @@ export function QuestionCard({
                   {String.raw`${String(question.order)}\. ${question.text}`}
                 </MarkdownRenderer>
               </span>
+              {question.is_ai_generated === true ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Badge
+                        variant="outline"
+                        className="border-primary/20 text-primary/70 my-px shrink-0 gap-1 px-1.5 select-none"
+                      >
+                        <SparklesIcon className="size-3" />
+                        AI
+                      </Badge>
+                    }
+                  ></TooltipTrigger>
+                  <TooltipContent>
+                    To pytanie zostało wygenerowane przez AI
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
               <Tooltip>
                 <TooltipTrigger
                   render={
