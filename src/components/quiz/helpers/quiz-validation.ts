@@ -22,6 +22,7 @@ const ALLOWED_QUESTION_KEYS = [
   "text",
   "explanation",
   "multiple",
+  "is_ai_generated",
   "image", // Also allowed for backward compatibility
   "image_url",
   "answers",
