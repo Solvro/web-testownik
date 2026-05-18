@@ -18,6 +18,8 @@ export enum PermissionAction {
   SEARCH_IN_QUIZ = "search_in_quiz",
   // Accessing quiz continuity features - sharing quiz progress across devices in real-time
   QUIZ_CONTINUITY = "quiz_continuity",
+  // Accessing AI chat and explain features
+  AI_FEATURES = "ai_features",
 }
 
 export const PERMISSIONS_BY_ROLE: Record<
@@ -36,6 +38,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.SEARCH_IN_QUIZ,
     PermissionAction.QUIZ_CONTINUITY,
+    PermissionAction.AI_FEATURES,
   ],
   [ACCOUNT_TYPE.STUDENT]: [
     PermissionAction.BROWSE_PUBLIC_QUIZZES,
@@ -46,6 +49,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.SEARCH_IN_QUIZ,
     PermissionAction.QUIZ_CONTINUITY,
+    PermissionAction.AI_FEATURES,
   ],
   [ACCOUNT_TYPE.LECTURER]: [
     PermissionAction.VIEW_SHARED_QUIZZES,
@@ -54,6 +58,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.VIEW_GRADES,
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.QUIZ_CONTINUITY,
+    PermissionAction.AI_FEATURES,
   ],
 };
 

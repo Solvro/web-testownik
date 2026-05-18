@@ -3,9 +3,19 @@
 import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition, startTransition, useEffect } from "react";
+import {
+  ViewTransition,
+  startTransition,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
+import { AppContext } from "@/app-context";
+import { AiChat } from "@/components/ai/ai-chat";
+import { AiExplainCard } from "@/components/ai/ai-explain-card";
+import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
@@ -25,6 +35,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { env } from "@/env";
+import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
 interface QuizPageClientProps {
@@ -32,6 +44,7 @@ interface QuizPageClientProps {
 }
 
 function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
+  const { user, checkPermission } = useContext(AppContext);
   const { quiz, state, stats, continuity, actions } = useQuizLogic({
     quizId,
   });
@@ -71,6 +84,23 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     approve: approveExternalImages,
     hasExternalImages,
   } = useExternalImageApproval(quiz);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showAiExplain, setShowAiExplain] = useState(false);
+  const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
+
+  const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
+  const showAi =
+    env.NEXT_PUBLIC_AI_ENABLED &&
+    hasAiAccess &&
+    !(quiz.user_settings?.ai_disabled ?? false);
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+  useEffect(() => {
+    setShowAiExplain(false);
+    setAnswerHints([]);
+  }, [currentQuestion?.id]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
 
   const handleToggleBrainrot = () => {
     startTransition(() => {
@@ -153,7 +183,6 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   question={currentQuestion}
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
-                    // If question is not multiple, unselect everything except the new
                     if (currentQuestion !== null && !currentQuestion.multiple) {
                       setSelectedAnswers(
                         newSelected.length > 0 ? [newSelected[0]] : [],
@@ -170,6 +199,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   togglePreviousQuestion={togglePreviousQuestion}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
+                  answerHints={answerHints}
                 />
               )}
             </ViewTransition>
@@ -190,8 +220,24 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 question={currentQuestion}
                 onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
+                onExplain={() => {
+                  setShowAiExplain(true);
+                }}
                 disabled={isQuizFinished || currentQuestion == null}
+                isExplainOpen={showAiExplain}
+                aiDisabled={!showAi}
               />
+              {showAi && showAiExplain && currentQuestion != null ? (
+                <AiExplainCard
+                  question={currentQuestion}
+                  questionChecked={questionChecked}
+                  onClose={() => {
+                    setShowAiExplain(false);
+                    setAnswerHints([]);
+                  }}
+                  onAnswerHints={setAnswerHints}
+                />
+              ) : null}
             </div>
           </ViewTransition>
         </div>
@@ -209,6 +255,21 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
       />
+
+      {showAi ? (
+        <AiChat
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          quizId={quiz.id}
+          quiz={{ title: quiz.title, description: quiz.description }}
+          question={currentQuestion}
+          questions={quiz.questions}
+          userName={user?.first_name}
+          canEdit={
+            (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id
+          }
+        />
+      ) : null}
     </ExternalImageContext.Provider>
   );
 }

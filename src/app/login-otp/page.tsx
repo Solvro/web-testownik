@@ -5,6 +5,10 @@ import { LoginOTPPageClient } from "./client";
 
 export const metadata: Metadata = {
   title: "Logowanie OTP",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function LoginOTPPage() {

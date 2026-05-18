@@ -130,9 +130,8 @@ function AnswerOption({
 }
 
 async function renderFallbackImage() {
-  // TODO: Replace with a proper fallback image
   const fallbackImageBuffer = await readFile(
-    path.join(process.cwd(), "public", "favicon", "180x180.png"),
+    path.join(process.cwd(), "src", "app", "opengraph-image.png"),
   );
   return new NextResponse(fallbackImageBuffer, {
     headers: {

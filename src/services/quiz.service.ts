@@ -276,6 +276,64 @@ export class QuizService extends BaseApiService {
     return response.data;
   }
 
+  async createQuestion(
+    quizId: string,
+    data: {
+      text: string;
+      explanation?: string;
+      multiple: boolean;
+      is_ai_generated?: boolean;
+      answers: { text: string; is_correct: boolean }[];
+    },
+  ): Promise<Question> {
+    const response = await this.post<Question>("questions/", {
+      quiz: quizId,
+      text: data.text,
+      explanation: data.explanation ?? "",
+      multiple: data.multiple,
+      question_type: 0,
+      is_flashcard: false,
+      is_markdown_enabled: true,
+      is_ai_generated: data.is_ai_generated ?? false,
+      answers: data.answers.map((a, index) => ({
+        order: index + 1,
+        text: a.text,
+        is_correct: a.is_correct,
+      })),
+    });
+    return response.data;
+  }
+
+  async bulkCreateQuestions(
+    quizId: string,
+    questions: {
+      text: string;
+      explanation?: string;
+      multiple: boolean;
+      is_ai_generated?: boolean;
+      answers: { text: string; is_correct: boolean }[];
+    }[],
+  ): Promise<Question[]> {
+    const response = await this.post<Question[]>("questions/bulk-create/", {
+      quiz: quizId,
+      questions: questions.map((q) => ({
+        text: q.text,
+        explanation: q.explanation ?? "",
+        multiple: q.multiple,
+        question_type: 0,
+        is_flashcard: false,
+        is_markdown_enabled: true,
+        is_ai_generated: q.is_ai_generated ?? false,
+        answers: q.answers.map((a, index) => ({
+          order: index + 1,
+          text: a.text,
+          is_correct: a.is_correct,
+        })),
+      })),
+    });
+    return response.data;
+  }
+
   async updateQuestion(
     questionId: string,
     data: Partial<Question>,

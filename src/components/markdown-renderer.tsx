@@ -16,7 +16,10 @@ export function MarkdownRenderer({
 }: MarkdownRendererProps) {
   return (
     <div
-      className={cn("prose dark:prose-invert max-w-none leading-6", className)}
+      className={cn(
+        "prose dark:prose-invert prose-code:before:content-none prose-code:after:content-none max-w-none leading-6",
+        className,
+      )}
     >
       <Markdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
         {children?.replaceAll("\n", "  \n")}

@@ -9,6 +9,7 @@ import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import "./globals.css";
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
   creator: "KN Solvro",
   alternates: {
-    canonical: "https://testownik.solvro.pl",
+    canonical: env.NEXT_PUBLIC_SITE_URL,
   },
   robots: "index, follow",
   ...(process.env.COOLIFY_URL != null &&
@@ -41,7 +42,6 @@ export const metadata: Metadata = {
     description:
       "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
     type: "website",
-    images: "/favicon/180x180.png",
     locale: "pl_PL",
   },
   icons: {
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "Testownik Solvro",
-      url: "https://testownik.solvro.pl",
+      url: env.NEXT_PUBLIC_SITE_URL,
     }),
   },
 };
@@ -94,7 +94,7 @@ export default async function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "Testownik Solvro",
-              url: "https://testownik.solvro.pl",
+              url: env.NEXT_PUBLIC_SITE_URL,
             }),
           }}
         />
@@ -119,7 +119,15 @@ export default async function RootLayout({
         <Script
           src="https://analytics.solvro.pl/script.js"
           data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
-          data-domains="testownik.solvro.pl"
+          data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://analytics.solvro.pl/recorder.js"
+          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          data-sample-rate="1"
+          data-mask-level="moderate"
+          data-max-duration="300000"
           strategy="afterInteractive"
         />
       </body>
