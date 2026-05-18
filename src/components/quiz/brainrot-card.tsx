@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  BoxIcon,
-  BubblesIcon,
-  PauseIcon,
-  ShuffleIcon,
-  SprayCanIcon,
-} from "lucide-react";
+import { BoxIcon, BubblesIcon, ShuffleIcon, SprayCanIcon } from "lucide-react";
 import React from "react";
 import ReactPlayer from "react-player";
 
@@ -35,34 +29,20 @@ export function BrainrotCard(): React.JSX.Element {
     <div className="animate-in fade-in lg:slide-in-from-right duration-300">
       <Card>
         <CardContent>
-          <AspectRatio
-            ratio={9 / 20}
-            role="button"
-            tabIndex={0}
-            aria-label="Play/pause brainrot video"
-            className="relative flex flex-col items-center justify-center overflow-hidden rounded-md"
-            onClick={() => {
-              setIsVideoPlaying(!isVideoPlaying);
-            }}
-          >
-            {!isVideoPlaying && (
-              <div className="animate-in fade-in z-20 rounded-full bg-black/60 p-4">
-                <PauseIcon className="size-10" />
-              </div>
-            )}
-
-            <ReactPlayer
-              src={brainrotVideo}
-              playing={isVideoPlaying}
-              playsInline
-              loop
-              muted
-              controls={false}
-              width="auto"
-              height="100%"
-              className="absolute top-1/2 left-1/2 min-w-[395%] -translate-x-1/2 -translate-y-1/2"
-              style={{ pointerEvents: "none" }}
-            />
+          <AspectRatio ratio={9 / 20} className="overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ReactPlayer
+                src={brainrotVideo}
+                playing={isVideoPlaying}
+                playsInline
+                loop
+                muted
+                controls={false}
+                width="360%"
+                height="100%"
+                style={{ position: "absolute" }}
+              />
+            </div>
           </AspectRatio>
           <div className="flex items-center justify-around gap-2 pt-6">
             <Tooltip>
