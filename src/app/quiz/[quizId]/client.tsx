@@ -21,12 +21,22 @@ import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
 import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
+import { useFocusMode } from "@/components/quiz/hooks/use-focus-mode";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
@@ -66,6 +76,13 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     timerStore,
   } = stats;
   const answers = quiz.current_session?.answers ?? [];
+  const {
+    isFocusModeActive,
+    toggleFocusMode,
+    resetInactivityTimer,
+    focusAlert,
+    closeFocusAlert,
+  } = useFocusMode(timerStore);
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
@@ -152,6 +169,34 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         />
       ) : null}
 
+      <AlertDialog
+        open={focusAlert?.isOpen ?? false}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            closeFocusAlert();
+          }
+        }}
+      >
+        <AlertDialogContent className="border-1 border-red-500 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">
+              {focusAlert?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {focusAlert?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogAction
+              onClick={closeFocusAlert}
+              className="w-full sm:w-auto"
+            >
+              Wracam do nauki
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div
           className={cn(
@@ -183,6 +228,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   question={currentQuestion}
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
+                    resetInactivityTimer();
+                    // If question is not multiple, unselect everything except the new
                     if (currentQuestion !== null && !currentQuestion.multiple) {
                       setSelectedAnswers(
                         newSelected.length > 0 ? [newSelected[0]] : [],
@@ -191,9 +238,12 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                       setSelectedAnswers(newSelected);
                     }
                   }}
+                  nextAction={() => {
+                    resetInactivityTimer();
+                    nextAction();
+                  }}
                   answers={answers}
                   questionChecked={questionChecked}
-                  nextAction={nextAction}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
                   togglePreviousQuestion={togglePreviousQuestion}
@@ -214,6 +264,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 totalQuestions={totalQuestions}
                 timerStore={timerStore}
                 resetProgress={resetProgress}
+                isFocusModeActive={isFocusModeActive}
+                toggleFocusMode={toggleFocusMode}
               />
               <QuizActionButtons
                 quiz={quiz}

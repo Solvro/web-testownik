@@ -43,9 +43,11 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  isDialogOpen = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
+  isDialogOpen?: boolean;
 }) {
   return (
     <DialogPortal>
@@ -57,6 +59,8 @@ function DialogContent({
           "data-nested-dialog-open:pointer-events-none data-nested-dialog-open:scale-[0.95] data-nested-dialog-open:blur-xs data-nested-dialog-open:brightness-95",
           className,
         )}
+        data-nested-dialog-open={isDialogOpen ? "" : undefined}
+        aria-describedby={undefined}
         {...props}
       >
         {children}
