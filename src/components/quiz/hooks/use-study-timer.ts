@@ -29,9 +29,6 @@ function createTimerStore(initial: number) {
     getStartTime() {
       return startTime;
     },
-    getIsPaused() {
-      return isPaused;
-    },
     setStartTime(time: number) {
       startTime = time;
     },
