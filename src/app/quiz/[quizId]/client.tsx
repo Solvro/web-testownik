@@ -82,6 +82,9 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     resetInactivityTimer,
     focusAlert,
     closeFocusAlert,
+    showOnboarding,
+    confirmOnboarding,
+    cancelOnboarding,
   } = useFocusMode(timerStore);
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
@@ -187,11 +190,42 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
-            <AlertDialogAction
-              onClick={closeFocusAlert}
-              className="w-full sm:w-auto"
-            >
+            <AlertDialogAction onClick={closeFocusAlert}>
               Wracam do nauki
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showOnboarding}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            cancelOnboarding();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czym jest tryb skupienia?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-1 text-base">
+              Tryb skupienia to funkcja, która pomaga Ci skoncentrować się na
+              quizie.
+              <span className="mt-2 block">
+                <strong>Jak to działa? </strong>
+                Po włączeniu tego trybu, jeśli opuścisz tę kartę lub nie
+                wykonasz żadnej akcji przez 5 minut, timer zostanie
+                automatycznie zatrzymany, a Ty otrzymasz powiadomienie, które
+                przypomni Ci o skupieniu się na nauce.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={cancelOnboarding}>
+              Anuluj
+            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmOnboarding}>
+              Rozumiem, włącz tryb skupienia
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

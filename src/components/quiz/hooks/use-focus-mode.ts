@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import type { TimerStore } from "./use-study-timer";
 
@@ -8,20 +14,32 @@ export type FocusAlertState = {
   message: string;
 } | null;
 
-export function useFocusMode(timerStore: TimerStore) {
-  const [isFocusModeActive, setIsFocusModeActive] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("focusMode") === "true";
-    }
-    return false;
-  });
-  const [focusAlert, setFocusAlert] = useState<FocusAlertState>(null);
+const subscribeToFocusMode = (listener: () => void) => {
+  window.addEventListener("focusModeChange", listener);
+  return () => {
+    window.removeEventListener("focusModeChange", listener);
+  };
+};
 
-  useEffect(() => {
-    localStorage.setItem("focusMode", String(isFocusModeActive));
-  }, [isFocusModeActive]);
+const getSnapshot = () => {
+  return sessionStorage.getItem("focusMode") === "true";
+};
+
+const getServerSnapshot = () => {
+  return false;
+};
+
+export function useFocusMode(timerStore: TimerStore) {
+  const isFocusModeActive = useSyncExternalStore(
+    subscribeToFocusMode,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const [focusAlert, setFocusAlert] = useState<FocusAlertState>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isAlertOpenRef = useRef(false);
 
   const startInactivityCountdown = useCallback(() => {
     if (inactivityTimerRef.current !== null) {
@@ -30,6 +48,10 @@ export function useFocusMode(timerStore: TimerStore) {
 
     inactivityTimerRef.current = setTimeout(
       () => {
+        if (isAlertOpenRef.current) {
+          return;
+        }
+        isAlertOpenRef.current = true;
         timerStore.pause();
         const audio = new Audio("/sounds/quiz/metal-pipe.mp3");
         audio.play().catch(console.error);
@@ -52,16 +74,40 @@ export function useFocusMode(timerStore: TimerStore) {
     startInactivityCountdown();
   }, [isFocusModeActive, timerStore, startInactivityCountdown]);
 
-  const toggleFocusMode = () => {
+  const executeToggle = useCallback(() => {
     const nextState = !isFocusModeActive;
-    setIsFocusModeActive(nextState);
+    sessionStorage.setItem("focusMode", String(nextState));
+    window.dispatchEvent(new Event("focusModeChange"));
     if (nextState) {
       timerStore.resume();
     }
+  }, [isFocusModeActive, timerStore]);
+
+  const toggleFocusMode = () => {
+    if (!isFocusModeActive) {
+      const hasSeenOnboarding =
+        localStorage.getItem("focusModeOnboarding") === "true";
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+        return;
+      }
+    }
+    executeToggle();
+  };
+
+  const confirmOnboarding = () => {
+    localStorage.setItem("focusModeOnboarding", "true");
+    setShowOnboarding(false);
+    executeToggle();
+  };
+
+  const cancelOnboarding = () => {
+    setShowOnboarding(false);
   };
 
   const closeFocusAlert = useCallback(() => {
     setFocusAlert(null);
+    isAlertOpenRef.current = false;
     resetInactivityTimer();
   }, [resetInactivityTimer]);
 
@@ -77,6 +123,10 @@ export function useFocusMode(timerStore: TimerStore) {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        if (isAlertOpenRef.current) {
+          return;
+        }
+        isAlertOpenRef.current = true;
         timerStore.pause();
         const audio = new Audio("/sounds/quiz/metal-pipe.mp3");
         audio.play().catch(console.error);
@@ -104,5 +154,8 @@ export function useFocusMode(timerStore: TimerStore) {
     resetInactivityTimer,
     focusAlert,
     closeFocusAlert,
+    showOnboarding,
+    confirmOnboarding,
+    cancelOnboarding,
   };
 }
