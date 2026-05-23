@@ -87,7 +87,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@next/eslint-plugin-next": "^16.1.1",
-    "@solvro/config": "^2.1.1",
+    "@solvro/config": "^2.3.3",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
