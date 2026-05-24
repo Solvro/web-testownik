@@ -44,7 +44,7 @@ const serwist = new Serwist({
 
 const getOfflineResponse = async () => {
   const fromPrecache = await serwist.matchPrecache(OFFLINE_URL);
-  if (fromPrecache) {
+  if (fromPrecache != null) {
     return fromPrecache;
   }
   return caches.match(OFFLINE_URL, { ignoreSearch: true });
@@ -53,7 +53,7 @@ const getOfflineResponse = async () => {
 serwist.setCatchHandler(async ({ request }) => {
   if (request.mode === "navigate" || request.destination === "document") {
     const offlinePage = await getOfflineResponse();
-    if (offlinePage) {
+    if (offlinePage != null) {
       return offlinePage;
     }
   }

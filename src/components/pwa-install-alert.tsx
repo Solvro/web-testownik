@@ -23,8 +23,8 @@ export function PwaInstallAlert() {
   const [isDismissed, setIsDismissed] = useState(readIsDismissed);
   const isInstallTarget = useIsPwaInstallTarget();
   const isStandalone = useIsStandalone();
-  const searchParams = useSearchParams();
-  const forceInstall = searchParams.get("install") === "true";
+  const searchParameters = useSearchParams();
+  const forceInstall = searchParameters.get("install") === "true";
 
   const handleDismiss = () => {
     localStorage.setItem(PWA_INSTALL_ALERT_DISMISSED_KEY, "true");

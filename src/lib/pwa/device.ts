@@ -9,10 +9,16 @@ export function isIosDevice(): boolean {
     return false;
   }
 
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
+  // Primary check for iOS devices
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    return true;
+  }
+
+  // Modern iPadOS (as of iOS 13+) may present as Mac, so we infer by touch support and user agent
+  const isMacIntelWithTouch =
+    navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1;
+
+  return isMacIntelWithTouch;
 }
 
 export function isMobileUserAgent(): boolean {
@@ -29,7 +35,7 @@ export function getPwaPlatform(): PwaPlatform {
   }
 
   const isIos = isIosDevice();
-  const isMac = /Macintosh/.test(navigator.userAgent);
+  const isMac = navigator.userAgent.includes("Macintosh");
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
 

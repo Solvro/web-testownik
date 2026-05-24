@@ -45,7 +45,7 @@ export function PwaInstallPrompt({
   const installTriggered = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParameters = useSearchParams();
   const isStandalone = useIsStandalone();
   const [platform, setPlatform] = useState<ReturnType<
     typeof getPwaPlatform
@@ -75,17 +75,17 @@ export function PwaInstallPrompt({
   }, []);
 
   const clearInstallQuery = useCallback(() => {
-    if (searchParams.get("install") === "true") {
+    if (searchParameters.get("install") === "true") {
       router.replace(pathname);
     }
-  }, [pathname, router, searchParams]);
+  }, [pathname, router, searchParameters]);
 
   const handleInstallClick = useCallback(async () => {
     if (isStandalone) {
       return;
     }
 
-    if (installPromptEvent) {
+    if (installPromptEvent !== null) {
       await installPromptEvent.prompt();
       clearInstallQuery();
       return;
@@ -108,14 +108,14 @@ export function PwaInstallPrompt({
 
   useEffect(() => {
     if (
-      searchParams.get("install") === "true" &&
+      searchParameters.get("install") === "true" &&
       !installTriggered.current &&
       (installPromptEvent !== null || isIos || isMacSafari)
     ) {
       setIsAutoInstallModalOpen(true);
       installTriggered.current = true;
     }
-  }, [installPromptEvent, isIos, isMacSafari, searchParams]);
+  }, [installPromptEvent, isIos, isMacSafari, searchParameters]);
 
   const iosInstructions = (
     <ol className="list-decimal space-y-2 pl-5 text-sm">
@@ -202,7 +202,7 @@ export function PwaInstallPrompt({
         </DialogContent>
       </Dialog>
 
-      {(isIos || isMacSafari) && (
+      {isIos || isMacSafari ? (
         <Dialog
           open={isInstructionsOpen}
           onOpenChange={(open) => {
@@ -226,7 +226,7 @@ export function PwaInstallPrompt({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
+      ) : null}
 
       <Dialog
         open={isFallbackInstructionsOpen}
