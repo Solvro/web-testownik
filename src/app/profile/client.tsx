@@ -60,7 +60,7 @@ export function ProfilePageClient(): React.JSX.Element {
 
   const handleSettingChange = async (
     name: keyof UserSettings,
-    value: boolean | number,
+    value: boolean | number | null,
   ) => {
     setSettings({ ...settings, [name]: value });
     try {
