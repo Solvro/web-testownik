@@ -4,9 +4,14 @@ import Link from "next/link";
 
 import { Card, CardContent } from "@/components/ui/card";
 
+// Wersja online trasy /offline (pełny layout aplikacji).
+// Service worker serwuje public/offline.html jako fallback offline.
+
 export const metadata: Metadata = {
   title: "Brak połączenia",
 };
+
+export const dynamic = "force-static";
 
 export default function OfflinePage() {
   return (

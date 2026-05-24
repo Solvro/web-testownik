@@ -1,5 +1,6 @@
 "use client";
 
+import { SerwistProvider } from "@serwist/next/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Suspense } from "react";
@@ -11,6 +12,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { JWTPayload } from "@/lib/auth/types";
 import { getQueryClient } from "@/lib/query-client";
 
+const serwistDisabled =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ENABLE_SW === "false";
+
 export function Providers({
   children,
   initialUser,
@@ -20,23 +25,33 @@ export function Providers({
 }) {
   const queryClient = getQueryClient();
   return (
-    <AppContextProvider initialUser={initialUser}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider delay={0}>
-          <Suspense>
-            <FormbricksProvider />
-          </Suspense>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <ReactQueryDevtools />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </AppContextProvider>
+    <SerwistProvider
+      swUrl="/sw.js"
+      disable={serwistDisabled}
+      reloadOnOnline={true}
+      options={{ updateViaCache: "none" }}
+    >
+      <AppContextProvider initialUser={initialUser}>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider delay={0}>
+            <Suspense>
+              <FormbricksProvider />
+            </Suspense>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+            <ReactQueryDevtools
+              initialIsOpen={false}
+              buttonPosition="bottom-left"
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </AppContextProvider>
+    </SerwistProvider>
   );
 }
