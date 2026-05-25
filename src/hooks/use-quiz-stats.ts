@@ -1,0 +1,73 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { getQuizService } from "@/services";
+import type { StatsScope } from "@/types/quiz-stats";
+
+export const quizStatsKeys = {
+  all: (quizId: string) => ["quiz", quizId, "stats"] as const,
+  aggregated: (quizId: string, scope: StatsScope) =>
+    ["quiz", quizId, "stats", "aggregated", scope] as const,
+  timeline: (quizId: string, scope: StatsScope, days: number) =>
+    ["quiz", quizId, "stats", "timeline", scope, days] as const,
+  sessions: (quizId: string, scope: StatsScope, days: number) =>
+    ["quiz", quizId, "stats", "sessions", scope, days] as const,
+  hardest: (quizId: string, scope: StatsScope, limit: number) =>
+    ["quiz", quizId, "stats", "hardest", scope, limit] as const,
+  hourly: (quizId: string, scope: StatsScope) =>
+    ["quiz", quizId, "stats", "hourly", scope] as const,
+};
+
+export function useQuizStats(
+  quizId: string,
+  scope: StatsScope,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: quizStatsKeys.aggregated(quizId, scope),
+    queryFn: async () => getQuizService().getQuizStats(quizId, scope),
+    refetchOnWindowFocus: false,
+    retry: 1,
+    enabled,
+  });
+}
+
+export function useQuizTimeline(quizId: string, scope: StatsScope, days = 30) {
+  return useQuery({
+    queryKey: quizStatsKeys.timeline(quizId, scope, days),
+    queryFn: async () => getQuizService().getQuizTimeline(quizId, scope, days),
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+}
+
+export function useQuizSessions(quizId: string, scope: StatsScope, days = 30) {
+  return useQuery({
+    queryKey: quizStatsKeys.sessions(quizId, scope, days),
+    queryFn: async () => getQuizService().getQuizSessions(quizId, scope, days),
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+}
+
+export function useQuizHardestQuestions(
+  quizId: string,
+  scope: StatsScope,
+  limit = 10,
+) {
+  return useQuery({
+    queryKey: quizStatsKeys.hardest(quizId, scope, limit),
+    queryFn: async () =>
+      getQuizService().getQuizHardestQuestions(quizId, scope, limit),
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+}
+
+export function useQuizHourly(quizId: string, scope: StatsScope) {
+  return useQuery({
+    queryKey: quizStatsKeys.hourly(quizId, scope),
+    queryFn: async () => getQuizService().getQuizHourly(quizId, scope),
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+}
