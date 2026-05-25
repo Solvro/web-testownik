@@ -48,6 +48,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     settings.max_question_reoccurrences !== null,
   );
   const handleMaxReoccurrencesToggle = (checked: boolean) => {
+    if (timeoutRef.current !== undefined) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
     if (checked) {
       onSettingChange(
         "max_question_reoccurrences",
