@@ -214,27 +214,27 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
           </div>
         </div>
         <div className="grid gap-2">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <Label
-                  className="text-sm font-medium"
-                  htmlFor="max-question-reoccurrences"
-                >
-                  Maksymalna liczba powtórzeń pytania
-                </Label>
-                <p className="text-muted-foreground text-xs">
-                  Ogranicz ile razy pytanie może się powtórzyć w sesji.
-                </p>
-              </div>
-              <Switch
-                id="max-question-reoccurrences"
-                checked={isMaxReoccurrencesEnabled}
-                onCheckedChange={handleMaxReoccurrencesToggle}
-              />
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <div className="space-y-1">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="max-question-reoccurrences"
+              >
+                Maksymalna liczba powtórzeń pytania
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Ogranicz ile razy pytanie może się powtórzyć w sesji.
+              </p>
             </div>
-            <div className="flex w-full">
-              <div className="ml-auto flex gap-1">
+            <div className="flex items-center justify-start gap-2 md:justify-center">
+              <div className="mr-2 flex items-center justify-center">
+                <Switch
+                  id="max-question-reoccurrences"
+                  checked={isMaxReoccurrencesEnabled}
+                  onCheckedChange={handleMaxReoccurrencesToggle}
+                />
+              </div>
+              <div className="flex gap-1">
                 <Button
                   size="icon-sm"
                   variant="outline"
