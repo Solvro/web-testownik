@@ -62,6 +62,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       );
     } else {
       onSettingChange("max_question_reoccurrences", null);
+      setLocalMaxQuestionReoccurrences("-");
     }
     setIsMaxReoccurrencesEnabled(checked);
   };
