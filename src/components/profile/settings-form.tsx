@@ -51,11 +51,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
 
   useEffect(() => {
     setIsMaxReoccurrencesEnabled(settings.max_question_reoccurrences !== null);
+
     setLocalMaxQuestionReoccurrences(
-      (
-        settings.max_question_reoccurrences ??
-        DEFAULT_USER_SETTINGS.max_question_reoccurrences
-      ).toString(),
+      settings.max_question_reoccurrences === null
+        ? ""
+        : settings.max_question_reoccurrences.toString(),
     );
   }, [settings.max_question_reoccurrences]);
 
@@ -74,7 +74,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
       );
     } else {
       onSettingChange("max_question_reoccurrences", null);
-      setLocalMaxQuestionReoccurrences("-");
+      setLocalMaxQuestionReoccurrences("");
     }
     setIsMaxReoccurrencesEnabled(checked);
   };
@@ -246,7 +246,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             <div className="flex items-center justify-start gap-2 md:justify-center">
               <div className="mr-2 flex items-center justify-center">
                 <Switch
-                  id="max-question-reoccurrences"
+                  aria-label={
+                    isMaxReoccurrencesEnabled
+                      ? "Limit number of question repetitions"
+                      : "Do not limit number of question repetitions"
+                  }
                   checked={isMaxReoccurrencesEnabled}
                   onCheckedChange={handleMaxReoccurrencesToggle}
                 />
@@ -271,6 +275,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   <MinusIcon />
                 </Button>
                 <Input
+                  id="max-question-reoccurrences"
                   type="number"
                   min={1}
                   value={localMaxQuestionReoccurrences}
