@@ -293,7 +293,6 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                     />
                   </div>
                 )}
-
                 <Button
                   size="icon-sm"
                   variant="outline"
