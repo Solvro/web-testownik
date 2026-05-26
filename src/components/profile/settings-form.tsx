@@ -124,8 +124,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 id="initial-reoccurrences"
                 min={1}
                 value={localInitialReoccurrences}
-                onChange={(_event) => {
-                  const value = _event.target.value;
+                onChange={(event_) => {
+                  const value = event_.target.value;
                   const numberValue = Math.floor(Number(value));
                   setLocalInitialReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 1) {
