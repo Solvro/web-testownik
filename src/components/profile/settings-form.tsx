@@ -122,6 +122,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               </Button>
               <Input
                 type="number"
+                id="initial-reoccurrences"
                 min={1}
                 value={localInitialReoccurrences}
                 onChange={(_event) => {
@@ -183,6 +184,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               </Button>
               <Input
                 type="number"
+                id="wrong-answer-reoccurrences"
                 min={0}
                 value={localWrongAnswerReoccurrences}
                 onChange={(event_) => {
@@ -223,7 +225,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             <div className="space-y-1">
               <Label
                 className="text-sm font-medium"
-                htmlFor="max-question-reoccurrences"
+                htmlFor="max-question-reoccurrences-switch"
               >
                 Maksymalna liczba powtórzeń pytania
               </Label>
@@ -234,7 +236,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             <div className="flex items-center justify-start gap-2 md:justify-center">
               <div className="mr-2 flex items-center justify-center">
                 <Switch
-                  aria-label="Ogranicz liczbę powtórzeń pytania"
+                  id="max-question-reoccurrences-switch"
                   checked={isMaxReoccurrencesEnabled}
                   onCheckedChange={handleMaxReoccurrencesToggle}
                 />
@@ -259,8 +261,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   <MinusIcon />
                 </Button>
                 <Input
-                  id="max-question-reoccurrences"
+                  id="max-question-reoccurrences-input"
                   type="number"
+                  aria-label="Wartość maksymalnej liczby powtórzeń pytania"
                   min={1}
                   value={localMaxQuestionReoccurrences}
                   disabled={!isMaxReoccurrencesEnabled}
