@@ -288,7 +288,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 ) : (
                   <div className="flex w-16 items-center justify-center">
                     <InfinityIcon
-                      className="text-muted-foreground h-6 w-6"
+                      className="h-6 w-6 text-muted-foreground"
                       aria-label="Brak limitu"
                     />
                   </div>
