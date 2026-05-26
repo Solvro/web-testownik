@@ -18,15 +18,13 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [localInitialReoccurrences, setLocalInitialReoccurrences] = useState(
     settings.initial_reoccurrences.toString(),
   );
-
   const [localWrongAnswerReoccurrences, setLocalWrongAnswerReoccurrences] =
     useState(settings.wrong_answer_reoccurrences.toString());
   const [localMaxQuestionReoccurrences, setLocalMaxQuestionReoccurrences] =
     useState(
-      (
-        settings.max_question_reoccurrences ??
-        DEFAULT_USER_SETTINGS.max_question_reoccurrences
-      ).toString(),
+      settings.max_question_reoccurrences === null
+        ? ""
+        : settings.max_question_reoccurrences.toString(),
     );
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -48,16 +46,6 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   const [isMaxReoccurrencesEnabled, setIsMaxReoccurrencesEnabled] = useState(
     settings.max_question_reoccurrences !== null,
   );
-
-  useEffect(() => {
-    setIsMaxReoccurrencesEnabled(settings.max_question_reoccurrences !== null);
-
-    setLocalMaxQuestionReoccurrences(
-      settings.max_question_reoccurrences === null
-        ? ""
-        : settings.max_question_reoccurrences.toString(),
-    );
-  }, [settings.max_question_reoccurrences]);
 
   const handleMaxReoccurrencesToggle = (checked: boolean) => {
     if (timeoutRef.current !== undefined) {
