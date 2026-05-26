@@ -246,11 +246,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
             <div className="flex items-center justify-start gap-2 md:justify-center">
               <div className="mr-2 flex items-center justify-center">
                 <Switch
-                  aria-label={
-                    isMaxReoccurrencesEnabled
-                      ? "Limit number of question repetitions"
-                      : "Do not limit number of question repetitions"
-                  }
+                  aria-label="Ogranicz liczbę powtórzeń pytania"
                   checked={isMaxReoccurrencesEnabled}
                   onCheckedChange={handleMaxReoccurrencesToggle}
                 />
