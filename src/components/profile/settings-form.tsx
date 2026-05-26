@@ -1,6 +1,5 @@
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { MinusIcon, PlusIcon, InfinityIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -260,29 +259,41 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 >
                   <MinusIcon />
                 </Button>
-                <Input
-                  id="max-question-reoccurrences-input"
-                  type="number"
-                  aria-label="Wartość maksymalnej liczby powtórzeń pytania"
-                  min={1}
-                  value={localMaxQuestionReoccurrences}
-                  disabled={!isMaxReoccurrencesEnabled}
-                  onChange={(event_) => {
-                    const value = event_.target.value;
-                    const numberValue = Math.floor(Number(value));
-                    setLocalMaxQuestionReoccurrences(numberValue.toString());
-                    if (!Number.isNaN(numberValue) && numberValue >= 1) {
-                      debouncedSave("max_question_reoccurrences", numberValue);
-                    }
-                  }}
-                  aria-invalid={(() => {
-                    const numberValue = Number.parseInt(
-                      localMaxQuestionReoccurrences,
-                    );
-                    return Number.isNaN(numberValue) || numberValue < 1;
-                  })()}
-                  className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
+                {isMaxReoccurrencesEnabled ? (
+                  <Input
+                    id="max-question-reoccurrences-input"
+                    type="number"
+                    aria-label="Wartość maksymalnej liczby powtórzeń pytania"
+                    min={1}
+                    value={localMaxQuestionReoccurrences}
+                    onChange={(event_) => {
+                      const value = event_.target.value;
+                      const numberValue = Math.floor(Number(value));
+                      setLocalMaxQuestionReoccurrences(numberValue.toString());
+                      if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                        debouncedSave(
+                          "max_question_reoccurrences",
+                          numberValue,
+                        );
+                      }
+                    }}
+                    aria-invalid={(() => {
+                      const numberValue = Number.parseInt(
+                        localMaxQuestionReoccurrences,
+                      );
+                      return Number.isNaN(numberValue) || numberValue < 1;
+                    })()}
+                    className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                ) : (
+                  <div className="flex w-16 items-center justify-center">
+                    <InfinityIcon
+                      className="text-muted-foreground h-6 w-6"
+                      aria-label="Brak limitu"
+                    />
+                  </div>
+                )}
+
                 <Button
                   size="icon-sm"
                   variant="outline"
