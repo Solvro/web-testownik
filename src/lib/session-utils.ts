@@ -98,6 +98,58 @@ export function getQuestionAnsweredCount(
   );
 }
 
+function getQuestionAppearanceNumber(
+  questionId: string,
+  answers: AnswerRecord[],
+): number {
+  return getQuestionAnsweredCount(questionId, false, answers);
+}
+
+function getAnswerShuffleSeed(
+  seed: string | undefined,
+  questionId: string,
+  appearanceNumber: number,
+): string {
+  return `${seed ?? "question"}-${questionId}-${appearanceNumber.toString()}`;
+}
+
+export function getQuestionWithShuffledAnswers(
+  question: Question,
+  answers: AnswerRecord[],
+  seed?: string,
+): Question {
+  return {
+    ...question,
+    answers: getDeterministicShuffle(
+      question.answers,
+      getAnswerShuffleSeed(
+        seed,
+        question.id,
+        getQuestionAppearanceNumber(question.id, answers),
+      ),
+    ),
+  };
+}
+
+export function getAnsweredQuestionWithShuffledAnswers(
+  question: Question,
+  answers: AnswerRecord[],
+  seed?: string,
+): Question {
+  const appearanceNumber = Math.max(
+    1,
+    answers.filter((answer) => answer.question === question.id).length,
+  );
+
+  return {
+    ...question,
+    answers: getDeterministicShuffle(
+      question.answers,
+      getAnswerShuffleSeed(seed, question.id, appearanceNumber),
+    ),
+  };
+}
+
 /**
  * Check if quiz is complete (all questions have 0 remaining attempts).
  */
@@ -168,10 +220,7 @@ export function pickNextQuestion({
   const randomIndex = Math.floor(Math.random() * candidates.length);
   const question = candidates[randomIndex];
 
-  return {
-    ...question,
-    answers: getDeterministicShuffle(question.answers, seed ?? question.id),
-  };
+  return getQuestionWithShuffledAnswers(question, answers, seed);
 }
 
 /**
@@ -229,11 +278,7 @@ export function resolveCurrentQuestion(
       (q) => q.id === session.current_question,
     );
     if (savedQuestion !== undefined) {
-      const seed = `${session.id}-${String(session.study_time)}`;
-      return {
-        ...savedQuestion,
-        answers: getDeterministicShuffle(savedQuestion.answers, seed),
-      };
+      return getQuestionWithShuffledAnswers(savedQuestion, answers, session.id);
     }
   }
 
@@ -241,10 +286,7 @@ export function resolveCurrentQuestion(
     questions: quiz.questions,
     answers,
     settings,
-    seed:
-      session == null
-        ? undefined
-        : `${session.id}-${String(session.study_time)}`,
+    seed: session?.id,
   });
 }
 

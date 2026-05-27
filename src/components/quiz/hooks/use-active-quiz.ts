@@ -68,6 +68,7 @@ export function useActiveQuiz(quizId: string) {
 
   const recordAnswer = (
     answer: AnswerRecord,
+    studyTime: number,
     nextQuestionOverride?: Question | null,
   ): { nextQuestion: Question | null } => {
     const updatedAnswers = [answer, ...answers];
@@ -87,6 +88,7 @@ export function useActiveQuiz(quizId: string) {
           ? previous.current_session
           : {
               ...previous.current_session,
+              study_time: studyTime,
               answers: [answer, ...previous.current_session.answers],
             },
     }));
