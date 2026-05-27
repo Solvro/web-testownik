@@ -41,7 +41,7 @@ import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
 import { getQuizService } from "@/services";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import type { QuizBase, QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
   userId?: string;
@@ -158,13 +158,13 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     }
   };
 
-  const updateQuiz = (quiz: QuizMetadata) => {
+  const updateQuiz = (quiz: QuizBase) => {
     queryClient.setQueryData(
       ["user-quizzes"],
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
-          : old.map((q) => (q.id === quiz.id ? quiz : q));
+          : old.map((q) => (q.id === quiz.id ? { ...q, ...quiz } : q));
       },
     );
   };

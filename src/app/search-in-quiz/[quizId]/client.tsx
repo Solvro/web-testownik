@@ -2,14 +2,13 @@
 
 import { distance } from "fastest-levenshtein";
 import { AlertCircleIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getQuizService } from "@/services";
-import type { Quiz } from "@/types/quiz";
+import { useQuiz } from "@/hooks/use-quiz";
 
 interface SearchInQuizPageClientProps {
   quizId: string;
@@ -43,36 +42,19 @@ const highlightMatch = (text: string, q: string): ReactNode => {
 };
 
 function SearchInQuizPageContent({ quizId }: { quizId: string }) {
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [query, setQuery] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: quiz,
+    isLoading,
+    isError,
+  } = useQuiz(quizId, {
+    enabled: quizId.trim() !== "",
+  });
+  const isInvalidQuizId = quizId.trim() === "";
 
   if (typeof document !== "undefined") {
     document.title = `Wyszukaj w quizach - ${quiz?.title ?? "Ładowanie..."} - Testownik Solvro`;
   }
-
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      if (quizId.trim() === "") {
-        setError("Nieprawidłowy identyfikator quizu.");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const data = await getQuizService().getQuiz(quizId);
-        setQuiz(data);
-      } catch {
-        setError("Wystąpił błąd podczas ładowania quizu.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchQuiz();
-  }, [quizId]);
 
   const filteredQuestions = (() => {
     if (quiz == null || !query.trim()) {
@@ -171,16 +153,20 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
       .toSorted((a, b) => a.relevance - b.relevance);
   })();
 
-  if (loading) {
+  if (isLoading) {
     return <div className="text-center">Ładowanie...</div>;
   }
 
-  if (error != null) {
+  if (isInvalidQuizId || isError) {
     return (
       <Alert variant="destructive">
         <AlertCircleIcon />
         <AlertTitle>Wystąpił błąd: </AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>
+          {isInvalidQuizId
+            ? "Nieprawidłowy identyfikator quizu."
+            : "Wystąpił błąd podczas ładowania quizu."}
+        </AlertDescription>
       </Alert>
     );
   }

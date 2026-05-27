@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuiState, useScrollLock } from "@assistant-ui/react";
+import { useScrollLock } from "@assistant-ui/react";
 import type { ReasoningMessagePartComponent } from "@assistant-ui/react";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
@@ -220,40 +220,6 @@ function ReasoningImpl() {
   return <MarkdownText />;
 }
 
-function ReasoningGroupImpl({
-  children,
-  startIndex,
-  endIndex,
-}: {
-  children: React.ReactNode;
-  startIndex: number;
-  endIndex: number;
-}) {
-  const isReasoningStreaming = useAuiState((s) => {
-    if (s.message.status?.type !== "running") {
-      return false;
-    }
-    const lastIndex = s.message.parts.length - 1;
-    if (lastIndex < 0) {
-      return false;
-    }
-    const lastType = s.message.parts[lastIndex]?.type;
-    if (lastType !== "reasoning") {
-      return false;
-    }
-    return lastIndex >= startIndex && lastIndex <= endIndex;
-  });
-
-  return (
-    <ReasoningRoot defaultOpen={isReasoningStreaming}>
-      <ReasoningTrigger active={isReasoningStreaming} />
-      <ReasoningContent aria-busy={isReasoningStreaming}>
-        <ReasoningText>{children}</ReasoningText>
-      </ReasoningContent>
-    </ReasoningRoot>
-  );
-}
-
 const Reasoning = memo(
   ReasoningImpl,
 ) as unknown as ReasoningMessagePartComponent & {
@@ -271,22 +237,8 @@ Reasoning.Content = ReasoningContent;
 Reasoning.Text = ReasoningText;
 Reasoning.Fade = ReasoningFade;
 
-/**
- * @deprecated This wrapper targets the legacy `components.ReasoningGroup`
- * prop on `<MessagePrimitive.Parts>`. Use `<MessagePrimitive.GroupedParts>`
- * with a `groupBy` returning `"group-reasoning"` and compose `ReasoningRoot`
- * / `ReasoningTrigger` / `ReasoningContent` / `ReasoningText` directly.
- * See `thread.tsx` for an example.
- */
-
-const ReasoningGroup = memo(ReasoningGroupImpl);
-// eslint-disable-next-line @typescript-eslint/no-deprecated
-ReasoningGroup.displayName = "ReasoningGroup";
-
 export {
   Reasoning,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  ReasoningGroup,
   ReasoningRoot,
   ReasoningTrigger,
   ReasoningContent,

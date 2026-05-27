@@ -95,6 +95,7 @@ export function AiExplainCard({
   onAnswerHints,
 }: AiExplainCardProps) {
   const startedRef = useRef(false);
+  // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
   const previousQuestionId = useRef(question.id);
   const lastHintsRef = useRef<string>("");
 
@@ -129,12 +130,14 @@ export function AiExplainCard({
     void complete(prompt, { body: { system, images } });
   }, [complete, prompt, system, images]);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   useEffect(() => {
     if (previousQuestionId.current !== question.id) {
       previousQuestionId.current = question.id;
       onClose();
     }
   }, [question.id, onClose]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
   useEffect(() => {
     if (!startedRef.current) {
@@ -142,7 +145,7 @@ export function AiExplainCard({
     }
   }, [handleStart]);
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-pass-data-to-parent */
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
   useEffect(() => {
     if (!questionChecked && completion !== "" && onAnswerHints !== undefined) {
       const { answerHints } = parseHints(completion);
@@ -153,7 +156,7 @@ export function AiExplainCard({
       }
     }
   }, [completion, questionChecked, onAnswerHints]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-pass-data-to-parent */
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
 
   const { displayContent, hasAnswerHintsOnly } = useMemo(() => {
     if (questionChecked) {
