@@ -222,17 +222,12 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
         </div>
         <div className="grid gap-2">
           <div className="flex flex-col justify-between gap-2 md:flex-row">
-            <div className="space-y-1">
-              <Label
-                className="text-sm font-medium"
-                htmlFor="max-question-reoccurrences-switch"
-              >
-                Maksymalna liczba powtórzeń pytania
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Ogranicz ile razy pytanie może się powtórzyć w sesji.
-              </p>
-            </div>
+            <Label
+              className="text-sm font-medium"
+              htmlFor="max-question-reoccurrences-switch"
+            >
+              Ogranicz maksymalną liczbę powtórzeń
+            </Label>
             <div className="flex items-center justify-start gap-2 md:justify-center">
               <div className="mr-2 flex items-center justify-center">
                 <Switch
@@ -241,79 +236,86 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                   onCheckedChange={handleMaxReoccurrencesToggle}
                 />
               </div>
-              <div className="flex gap-1">
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  disabled={
-                    Number(localMaxQuestionReoccurrences) <= 1 ||
-                    !isMaxReoccurrencesEnabled
-                  }
-                  onClick={() => {
-                    const nextValue = Math.max(
-                      normalizeValue(localMaxQuestionReoccurrences) - 1,
-                      1,
-                    );
-                    handleMaxQuestionReoccurrencesCommit(nextValue);
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <Label
+              className="text-sm font-medium"
+              htmlFor="max-question-reoccurrences-switch"
+            >
+              Maksymalna liczba powtórzeń pytań
+            </Label>
+            <div className="flex gap-1">
+              <Button
+                size="icon-sm"
+                variant="outline"
+                disabled={
+                  Number(localMaxQuestionReoccurrences) <= 1 ||
+                  !isMaxReoccurrencesEnabled
+                }
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) - 1,
+                    1,
+                  );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zmniejsz liczbę powtórzeń"
+              >
+                <MinusIcon />
+              </Button>
+              {isMaxReoccurrencesEnabled ? (
+                <Input
+                  id="max-question-reoccurrences-input"
+                  type="number"
+                  aria-label="Wartość maksymalnej liczby powtórzeń pytania"
+                  min={1}
+                  value={localMaxQuestionReoccurrences}
+                  onChange={(_event) => {
+                    const value = _event.target.value;
+                    const numberValue = Math.floor(Number(value));
+                    setLocalMaxQuestionReoccurrences(numberValue.toString());
+                    if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                      debouncedSave("max_question_reoccurrences", numberValue);
+                    }
                   }}
-                  aria-label="Zmniejsz liczbę powtórzeń"
-                >
-                  <MinusIcon />
-                </Button>
-                {isMaxReoccurrencesEnabled ? (
+                  aria-invalid={(() => {
+                    const numberValue = Number.parseInt(
+                      localMaxQuestionReoccurrences,
+                    );
+                    return Number.isNaN(numberValue) || numberValue < 1;
+                  })()}
+                  className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              ) : (
+                <div className="relative flex w-16 items-center justify-center">
                   <Input
-                    id="max-question-reoccurrences-input"
-                    type="number"
-                    aria-label="Wartość maksymalnej liczby powtórzeń pytania"
-                    min={1}
-                    value={localMaxQuestionReoccurrences}
-                    onChange={(_event) => {
-                      const value = _event.target.value;
-                      const numberValue = Math.floor(Number(value));
-                      setLocalMaxQuestionReoccurrences(numberValue.toString());
-                      if (!Number.isNaN(numberValue) && numberValue >= 1) {
-                        debouncedSave(
-                          "max_question_reoccurrences",
-                          numberValue,
-                        );
-                      }
-                    }}
-                    aria-invalid={(() => {
-                      const numberValue = Number.parseInt(
-                        localMaxQuestionReoccurrences,
-                      );
-                      return Number.isNaN(numberValue) || numberValue < 1;
-                    })()}
-                    className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    disabled
+                    className="pointer-events-none h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
-                ) : (
-                  <div className="relative flex w-16 items-center justify-center">
-                    <Input
-                      disabled
-                      className="pointer-events-none h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                    <InfinityIcon
-                      className="text-muted-foreground absolute size-5"
-                      aria-label="Brak limitu"
-                    />
-                  </div>
-                )}
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  disabled={!isMaxReoccurrencesEnabled}
-                  onClick={() => {
-                    const nextValue = Math.max(
-                      normalizeValue(localMaxQuestionReoccurrences) + 1,
-                      1,
-                    );
-                    handleMaxQuestionReoccurrencesCommit(nextValue);
-                  }}
-                  aria-label="Zwiększ liczbę powtórzeń"
-                >
-                  <PlusIcon />
-                </Button>
-              </div>
+                  <InfinityIcon
+                    className="text-muted-foreground absolute size-5"
+                    aria-label="Brak limitu"
+                  />
+                </div>
+              )}
+              <Button
+                size="icon-sm"
+                variant="outline"
+                disabled={!isMaxReoccurrencesEnabled}
+                onClick={() => {
+                  const nextValue = Math.max(
+                    normalizeValue(localMaxQuestionReoccurrences) + 1,
+                    1,
+                  );
+                  handleMaxQuestionReoccurrencesCommit(nextValue);
+                }}
+                aria-label="Zwiększ liczbę powtórzeń"
+              >
+                <PlusIcon />
+              </Button>
             </div>
           </div>
         </div>
