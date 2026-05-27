@@ -125,8 +125,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 id="initial-reoccurrences"
                 min={1}
                 value={localInitialReoccurrences}
-                onChange={(event_) => {
-                  const value = event_.target.value;
+                onChange={(_event) => {
+                  const value = _event.target.value;
                   const numberValue = Math.floor(Number(value));
                   setLocalInitialReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 1) {
@@ -187,8 +187,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                 id="wrong-answer-reoccurrences"
                 min={0}
                 value={localWrongAnswerReoccurrences}
-                onChange={(event_) => {
-                  const value = event_.target.value;
+                onChange={(_event) => {
+                  const value = _event.target.value;
                   const numberValue = Math.floor(Number(value));
                   setLocalWrongAnswerReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 0) {
@@ -267,8 +267,8 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                     aria-label="Wartość maksymalnej liczby powtórzeń pytania"
                     min={1}
                     value={localMaxQuestionReoccurrences}
-                    onChange={(event_) => {
-                      const value = event_.target.value;
+                    onChange={(_event) => {
+                      const value = _event.target.value;
                       const numberValue = Math.floor(Number(value));
                       setLocalMaxQuestionReoccurrences(numberValue.toString());
                       if (!Number.isNaN(numberValue) && numberValue >= 1) {
