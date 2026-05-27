@@ -287,9 +287,13 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
                     className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 ) : (
-                  <div className="flex w-16 items-center justify-center">
+                  <div className="relative flex w-16 items-center justify-center">
+                    <Input
+                      disabled
+                      className="pointer-events-none h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
                     <InfinityIcon
-                      className="text-muted-foreground h-6 w-6"
+                      className="text-muted-foreground absolute size-5"
                       aria-label="Brak limitu"
                     />
                   </div>
