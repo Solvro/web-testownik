@@ -9,12 +9,16 @@ export function useQuiz(
   quizId: string,
   props?: Omit<UseQueryOptions<Quiz>, "queryKey" | "queryFn">,
 ) {
+  const { enabled = true, ...queryOptions } = props ?? {};
+  const hasQuizId = quizId.trim() !== "";
+
   return useQuery({
     queryKey: quizQueryKey(quizId),
     queryFn: async () => getQuizService().getQuiz(quizId),
-    enabled: quizId.trim() !== "",
     refetchOnWindowFocus: false,
     retry: 1,
-    ...props,
+    ...queryOptions,
+    enabled: (query) =>
+      hasQuizId && (typeof enabled === "function" ? enabled(query) : enabled),
   });
 }

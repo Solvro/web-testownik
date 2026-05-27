@@ -5,18 +5,18 @@ import type { QuizMetadata } from "@/types/quiz";
 import type { StatsScope } from "@/types/quiz-stats";
 
 export const quizStatsKeys = {
-  all: (quizId: string) => ["quiz", quizId, "stats"] as const,
-  metadata: (quizId: string) => ["quiz", quizId, "metadata"] as const,
+  all: (quizId: string) => ["quiz-stats", quizId] as const,
+  metadata: (quizId: string) => ["quiz-stats", quizId, "metadata"] as const,
   aggregated: (quizId: string, scope: StatsScope) =>
-    ["quiz", quizId, "stats", "aggregated", scope] as const,
+    ["quiz-stats", quizId, "aggregated", scope] as const,
   timeline: (quizId: string, scope: StatsScope, days: number) =>
-    ["quiz", quizId, "stats", "timeline", scope, days] as const,
+    ["quiz-stats", quizId, "timeline", scope, days] as const,
   sessions: (quizId: string, scope: StatsScope, days: number) =>
-    ["quiz", quizId, "stats", "sessions", scope, days] as const,
+    ["quiz-stats", quizId, "sessions", scope, days] as const,
   hardest: (quizId: string, scope: StatsScope, limit: number) =>
-    ["quiz", quizId, "stats", "hardest", scope, limit] as const,
+    ["quiz-stats", quizId, "hardest", scope, limit] as const,
   hourly: (quizId: string, scope: StatsScope) =>
-    ["quiz", quizId, "stats", "hourly", scope] as const,
+    ["quiz-stats", quizId, "hourly", scope] as const,
 };
 
 export function useQuizMetadata(quizId: string) {
