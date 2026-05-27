@@ -1,8 +1,13 @@
 import { describe, expect, test } from "vitest";
 
-import type { Question } from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import type { Question, Quiz } from "@/types/quiz";
 
-import { extractImagesToUpload } from "./import-quiz";
+import {
+  countDataUrlImages,
+  extractImagesToUpload,
+  uploadDataUrlImages,
+} from "./import-quiz";
 import { prepareQuizForSubmission } from "./schemas/quiz.schema";
 import type { QuizFormData } from "./schemas/quiz.schema";
 
@@ -177,6 +182,188 @@ describe("extractImagesToUpload", () => {
       id: "q1",
       filename: "",
     });
+  });
+});
+
+describe("uploadDataUrlImages", () => {
+  test("should upload data url images and replace them with upload ids", async () => {
+    const quiz: Quiz = {
+      id: "quiz-1",
+      title: "Test Quiz",
+      description: "Description",
+      version: 1,
+      visibility: AccessLevel.PRIVATE,
+      allow_anonymous: false,
+      is_anonymous: false,
+      questions: [
+        {
+          id: "q1",
+          order: 1,
+          text: "Question 1",
+          explanation: "",
+          multiple: false,
+          image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
+          answers: [
+            {
+              id: "a1",
+              order: 1,
+              text: "Answer 1",
+              is_correct: true,
+              image_url: "data:image/jpeg;base64,YW5zd2VyLWJ5dGVz",
+            },
+          ],
+        },
+      ],
+    };
+
+    const uploadedFiles: File[] = [];
+    const result = await uploadDataUrlImages(quiz, async (file) => {
+      uploadedFiles.push(file);
+      return await Promise.resolve(`upload-${String(uploadedFiles.length)}`);
+    });
+
+    expect(result.questions[0].image_url).toBeNull();
+    expect(result.questions[0].image_upload).toBe("upload-1");
+    expect(result.questions[0].answers[0].image_url).toBeNull();
+    expect(result.questions[0].answers[0].image_upload).toBe("upload-2");
+    expect(uploadedFiles).toHaveLength(2);
+    expect(uploadedFiles[0].name).toBe("question-1.png");
+    expect(uploadedFiles[0].type).toBe("image/png");
+    expect(uploadedFiles[1].name).toBe("answer-1-1.jpg");
+    expect(uploadedFiles[1].type).toBe("image/jpeg");
+  });
+
+  test("should report upload progress for each data url image", async () => {
+    const quiz: Quiz = {
+      id: "quiz-1",
+      title: "Test Quiz",
+      description: "Description",
+      version: 1,
+      visibility: AccessLevel.PRIVATE,
+      allow_anonymous: false,
+      is_anonymous: false,
+      questions: [
+        {
+          id: "q1",
+          order: 1,
+          text: "Question 1",
+          multiple: false,
+          image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
+          answers: [
+            {
+              id: "a1",
+              order: 1,
+              text: "Answer 1",
+              is_correct: true,
+              image_url: "data:image/jpeg;base64,YW5zd2VyLWJ5dGVz",
+            },
+          ],
+        },
+      ],
+    };
+
+    const progress: { current: number; total: number }[] = [];
+
+    await uploadDataUrlImages(quiz, {
+      uploadImage: async () => {
+        return await Promise.resolve("upload-id");
+      },
+      onProgress: (current, total) => {
+        progress.push({ current, total });
+      },
+    });
+
+    expect(countDataUrlImages(quiz)).toBe(2);
+    expect(progress).toEqual([
+      { current: 1, total: 2 },
+      { current: 2, total: 2 },
+    ]);
+  });
+
+  test("should clear skipped data url images without uploading them", async () => {
+    const quiz: Quiz = {
+      id: "quiz-1",
+      title: "Test Quiz",
+      description: "Description",
+      version: 1,
+      visibility: AccessLevel.PRIVATE,
+      allow_anonymous: false,
+      is_anonymous: false,
+      questions: [
+        {
+          id: "q1",
+          order: 1,
+          text: "Question 1",
+          multiple: false,
+          image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
+          answers: [
+            {
+              id: "a1",
+              order: 1,
+              text: "Answer 1",
+              is_correct: true,
+              image_url: "data:image/jpeg;base64,YW5zd2VyLWJ5dGVz",
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = await uploadDataUrlImages(quiz, {
+      shouldSkip: () => true,
+      uploadImage: async () => {
+        await Promise.resolve();
+        throw new Error("Skipped data urls should not be uploaded");
+      },
+    });
+
+    expect(result.questions[0].image_url).toBeNull();
+    expect(result.questions[0].image_upload).toBeNull();
+    expect(result.questions[0].answers[0].image_url).toBeNull();
+    expect(result.questions[0].answers[0].image_upload).toBeNull();
+  });
+
+  test("should keep regular image urls untouched", async () => {
+    const quiz: Quiz = {
+      id: "quiz-1",
+      title: "Test Quiz",
+      description: "Description",
+      version: 1,
+      visibility: AccessLevel.PRIVATE,
+      allow_anonymous: false,
+      is_anonymous: false,
+      questions: [
+        {
+          id: "q1",
+          order: 1,
+          text: "Question 1",
+          explanation: "",
+          multiple: false,
+          image_url: "https://example.test/image.png",
+          answers: [
+            {
+              id: "a1",
+              order: 1,
+              text: "Answer 1",
+              is_correct: true,
+              image_url: "https://example.test/answer.png",
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = await uploadDataUrlImages(quiz, async () => {
+      await Promise.resolve();
+      throw new Error("Regular urls should not be uploaded");
+    });
+
+    expect(result.questions[0].image_url).toBe(
+      "https://example.test/image.png",
+    );
+    expect(result.questions[0].answers[0].image_url).toBe(
+      "https://example.test/answer.png",
+    );
   });
 });
 

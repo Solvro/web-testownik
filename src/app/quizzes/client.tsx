@@ -141,7 +141,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     try {
       const fullQuiz = await getQuizService().getQuiz(quiz.id);
       // Create a downloadable version
-      const downloadableQuiz = prepareQuizForDownload(fullQuiz);
+      const downloadableQuiz = await prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
