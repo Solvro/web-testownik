@@ -37,7 +37,10 @@ export interface UserSettings {
 
 export interface SettingsFormProps {
   settings: UserSettings;
-  onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
+  onSettingChange: <K extends keyof UserSettings>(
+    name: K,
+    value: UserSettings[K],
+  ) => void;
 }
 
 export const DEFAULT_USER_SETTINGS = {
