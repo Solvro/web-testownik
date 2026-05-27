@@ -176,6 +176,7 @@ function useQuestionCompletion({
   }, [startCompletion]);
   /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
   useEffect(() => {
     if (retryAfter === null || retryAfter <= 0) {
       return;
