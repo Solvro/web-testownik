@@ -18,6 +18,7 @@ export function useAutoGuest(user: JWTPayload | null) {
   const router = useRouter();
   const creatingRef = useRef(false);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -60,4 +61,5 @@ export function useAutoGuest(user: JWTPayload | null) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- We only want to run this effect when the pathname changes, not when the user changes
   }, [pathname]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 }

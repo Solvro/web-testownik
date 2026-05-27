@@ -21,11 +21,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn, getInitials } from "@/lib/utils";
-import type { QuizMetadata } from "@/types/quiz";
+import type { QuizBase } from "@/types/quiz";
 import type { Group, User } from "@/types/user";
 
 interface AccessListProps {
-  quizMetadata: QuizMetadata;
+  quizMetadata: QuizBase;
   usersWithAccess: (User & { shared_quiz_id?: string; allow_edit: boolean })[];
   groupsWithAccess: (Group & {
     shared_quiz_id?: string;

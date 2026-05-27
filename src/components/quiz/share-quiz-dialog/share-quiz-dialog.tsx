@@ -27,7 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { getQuizService } from "@/services";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import type { QuizBase, SharedQuiz } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
 import { ACCOUNT_TYPE } from "@/types/user";
 import type { Group, User } from "@/types/user";
@@ -35,8 +35,8 @@ import type { Group, User } from "@/types/user";
 interface ShareQuizDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  quiz: QuizMetadata;
-  setQuiz?: (quiz: QuizMetadata) => void;
+  quiz: QuizBase;
+  setQuiz?: (quiz: QuizBase) => void;
 }
 
 export function ShareQuizDialog({
@@ -92,6 +92,7 @@ export function ShareQuizDialog({
     initialData: [],
   });
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
@@ -99,6 +100,7 @@ export function ShareQuizDialog({
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
   const loading = isSharedDataLoading || isUserGroupsLoading;
 

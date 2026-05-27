@@ -9,6 +9,7 @@ import { ACCOUNT_TYPE } from "@/types/user";
 export function useGuestQuizMigration(user: JWTPayload | null) {
   const migrationUserIdRef = useRef<string | null>(null);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -47,4 +48,5 @@ export function useGuestQuizMigration(user: JWTPayload | null) {
       ]);
     })();
   }, [user]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 }
