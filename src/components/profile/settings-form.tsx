@@ -243,7 +243,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
           <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
-              htmlFor="max-question-reoccurrences-switch"
+              htmlFor="max-question-reoccurrences-input"
             >
               Maksymalna liczba powtórzeń pytań
             </Label>
