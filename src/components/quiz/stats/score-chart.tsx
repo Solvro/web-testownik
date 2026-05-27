@@ -5,10 +5,13 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import type { ChartConfig } from "@/components/ui/chart";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { useQuizTimeline } from "@/hooks/use-quiz-stats";
+import { useQuizSessions, useQuizTimeline } from "@/hooks/use-quiz-stats";
 import type { StatsScope } from "@/types/quiz-stats";
 
 import { ChartCard } from "./chart-card";
+import { ChartModeToggle } from "./chart-mode-toggle";
+import type { ChartMode } from "./chart-mode-toggle";
+import { SessionTooltip } from "./session-tooltip";
 import { TimelineTooltip } from "./timeline-tooltip";
 
 interface ScoreChartProps {
@@ -59,14 +62,33 @@ function getDaysThroughToday(startDateKey: string): string[] {
 
 export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
+  const [mode, setMode] = useState<ChartMode>("sessions");
+  const canUseSessions = scope === "me";
   const {
     data: raw,
-    isFetching,
-    isPending,
+    isFetching: isTimelineFetching,
+    isPending: isTimelinePending,
   } = useQuizTimeline(quizId, scope, TIMELINE_DAYS);
-  const isRefreshing = isFetching && !isPending;
+  const {
+    data: sessionsRaw,
+    isFetching: isSessionsFetching,
+    isPending: isSessionsPending,
+  } = useQuizSessions(
+    quizId,
+    "me",
+    TIMELINE_DAYS,
+    mode === "sessions" && canUseSessions,
+  );
 
-  const data = useMemo(() => {
+  const effectiveMode = canUseSessions ? mode : "timeline";
+  const isPending =
+    effectiveMode === "sessions" ? isSessionsPending : isTimelinePending;
+  const isRefreshing =
+    effectiveMode === "sessions"
+      ? isSessionsFetching && !isSessionsPending
+      : isTimelineFetching && !isTimelinePending;
+
+  const timelineData = useMemo(() => {
     const entriesByDate = new Map(raw?.map((entry) => [entry.date, entry]));
     const firstNonZeroEntry = raw?.find((entry) => entry.total_answers > 0);
 
@@ -74,11 +96,12 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
       return [];
     }
 
-    return getDaysThroughToday(firstNonZeroEntry.date).map((date) => {
+    return getDaysThroughToday(firstNonZeroEntry.date).map((date, index) => {
       const entry = entriesByDate.get(date);
 
       return {
         date,
+        sessionIndex: index + 1,
         sessions_count: entry?.sessions_count ?? 0,
         total_answers: entry?.total_answers ?? 0,
         correct_answers: entry?.correct_answers ?? 0,
@@ -95,34 +118,81 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
     });
   }, [raw]);
 
-  const hasData = data.some((d) => d.accuracy !== null);
+  const sessionData = useMemo(
+    () =>
+      sessionsRaw?.map((entry, index) => ({
+        ...entry,
+        date: entry.started_at,
+        sessionIndex: index + 1,
+        sessions_count: 1,
+        total_study_time_seconds: entry.study_time_seconds,
+        accuracy: Number(entry.accuracy.toFixed(1)),
+      })) ?? [],
+    [sessionsRaw],
+  );
+
+  const data = effectiveMode === "sessions" ? sessionData : timelineData;
+  const hasData =
+    effectiveMode === "sessions"
+      ? sessionData.some((d) => d.total_answers > 0)
+      : timelineData.some((d) => d.accuracy !== null);
+  const handleScopeChange = (nextScope: StatsScope) => {
+    setScope(nextScope);
+
+    if (nextScope === "all") {
+      setMode("timeline");
+    }
+  };
 
   return (
     <ChartCard
-      title="Średni wynik w czasie"
-      description="Wynik kolejnych sesji (30 dni)"
+      title="Wynik w czasie"
+      description={
+        effectiveMode === "sessions"
+          ? "Wynik kolejnych sesji (30 dni)"
+          : "Wynik dzienny według dat odpowiedzi (30 dni)"
+      }
       scope={scope}
-      onScopeChange={setScope}
+      onScopeChange={handleScopeChange}
       canViewAll={canViewAll}
       isLoading={isPending}
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
+      toolbar={
+        <ChartModeToggle
+          mode={effectiveMode}
+          onModeChange={setMode}
+          canUseSessions={canUseSessions}
+        />
+      }
     >
       <ChartContainer config={chartConfig} className="min-h-[250px]">
         <LineChart data={data} accessibilityLayer>
           <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tickFormatter={(value: string) => {
-              const date = new Date(value);
-              return `${date.getDate().toString().padStart(2, "0")}.${(date.getMonth() + 1).toString().padStart(2, "0")}`;
-            }}
-            interval="preserveStartEnd"
-            minTickGap={40}
-          />
+          {effectiveMode === "sessions" ? (
+            <XAxis
+              dataKey="sessionIndex"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value: number) => `#${value.toString()}`}
+              interval="preserveStartEnd"
+              minTickGap={24}
+            />
+          ) : (
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value: string) => {
+                const date = new Date(value);
+                return `${date.getDate().toString().padStart(2, "0")}.${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+              }}
+              interval="preserveStartEnd"
+              minTickGap={40}
+            />
+          )}
           <YAxis
             tickLine={false}
             axisLine={false}
@@ -132,11 +202,19 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
           />
           <ChartTooltip
             content={
-              <TimelineTooltip
-                primaryDataKey="accuracy"
-                primaryLabel="Wynik"
-                primaryFormatter={(value) => `${String(value)}%`}
-              />
+              effectiveMode === "sessions" ? (
+                <SessionTooltip
+                  primaryDataKey="accuracy"
+                  primaryLabel="Wynik"
+                  primaryFormatter={(value) => `${String(value)}%`}
+                />
+              ) : (
+                <TimelineTooltip
+                  primaryDataKey="accuracy"
+                  primaryLabel="Wynik"
+                  primaryFormatter={(value) => `${String(value)}%`}
+                />
+              )
             }
           />
           <Line

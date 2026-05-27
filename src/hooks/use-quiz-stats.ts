@@ -54,13 +54,19 @@ export function useQuizTimeline(quizId: string, scope: StatsScope, days = 30) {
   });
 }
 
-export function useQuizSessions(quizId: string, scope: "me", days = 30) {
+export function useQuizSessions(
+  quizId: string,
+  scope: "me",
+  days = 30,
+  enabled = true,
+) {
   return useQuery({
     queryKey: quizStatsKeys.sessions(quizId, scope, days),
     queryFn: async () => getQuizService().getQuizSessions(quizId, scope, days),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
+    enabled,
   });
 }
 

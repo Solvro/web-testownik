@@ -2,6 +2,7 @@
 
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -78,6 +79,7 @@ interface ChartCardProps {
   isRefreshing?: boolean;
   isEmpty: boolean;
   placeholderClassName?: string;
+  toolbar?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -91,19 +93,25 @@ export function ChartCard({
   isRefreshing = false,
   isEmpty,
   placeholderClassName = DEFAULT_CHART_PLACEHOLDER_CLASS,
+  toolbar,
   children,
 }: ChartCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between">
-        <div>
+    <Card className="@container/card">
+      <CardHeader>
+        <div className="">
           <CardTitle>{title}</CardTitle>
           {description == null ? null : (
             <CardDescription>{description}</CardDescription>
           )}
         </div>
-        {canViewAll ? (
-          <ScopeToggle scope={scope} onScopeChange={onScopeChange} />
+        {toolbar != null || canViewAll ? (
+          <CardAction className="flex flex-col-reverse flex-wrap items-end justify-end gap-2 @sm/card:flex-row @sm/card:items-center">
+            {toolbar}
+            {canViewAll ? (
+              <ScopeToggle scope={scope} onScopeChange={onScopeChange} />
+            ) : null}
+          </CardAction>
         ) : null}
       </CardHeader>
       <CardContent>
