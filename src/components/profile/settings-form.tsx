@@ -1,5 +1,6 @@
-import { MinusIcon, PlusIcon, InfinityIcon } from "lucide-react";
+import { InfinityIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
