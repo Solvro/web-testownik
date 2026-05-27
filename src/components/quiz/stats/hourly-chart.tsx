@@ -34,7 +34,7 @@ export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
   const chartData = useMemo(
     () =>
       data?.map((d) => ({
-        hour: `${d.hour.toString().padStart(2, "0")}:00`,
+        hour: d.hour.toString().padStart(2, "0"),
         sessions_count: d.sessions_count,
       })) ?? [],
     [data],

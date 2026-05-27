@@ -40,12 +40,13 @@ function formatPercentage(value: number): string {
 
 interface MetricRow {
   label: string;
+  description?: string;
   getValue: (stats: QuizStats) => string;
 }
 
 const METRICS: MetricRow[] = [
   {
-    label: "Liczba uruchomień (sesji)",
+    label: "Liczba uruchomień",
     getValue: (s) => s.sessions_count.toString(),
   },
   {
@@ -69,7 +70,8 @@ const METRICS: MetricRow[] = [
     getValue: (s) => formatTime(s.total_study_time_seconds),
   },
   {
-    label: "Średni wynik (pierwsze odpowiedzi)",
+    label: "Średni wynik",
+    description: "z pierwszych odpowiedzi",
     getValue: (s) => formatPercentage(s.first_answer_accuracy),
   },
 ];
@@ -79,6 +81,19 @@ function StatCell({ isLoading, value }: { isLoading: boolean; value: string }) {
     return <Skeleton className="ml-auto h-4 w-12" />;
   }
   return <span className="tabular-nums">{value}</span>;
+}
+
+function MetricLabel({ metric }: { metric: MetricRow }) {
+  return (
+    <div className="space-y-0.5">
+      <div>{metric.label}</div>
+      {metric.description == null ? null : (
+        <div className="text-muted-foreground text-xs font-normal">
+          {metric.description}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function UniqueUsersDescription({
@@ -122,7 +137,7 @@ export function StatsTable({ quizId, canViewAll }: StatsTableProps) {
         ) : null}
       </CardHeader>
       <CardContent>
-        <Table>
+        <Table wrapperClassName="rounded-md">
           <TableHeader>
             <TableRow>
               <TableHead>Metryka</TableHead>
@@ -135,7 +150,9 @@ export function StatsTable({ quizId, canViewAll }: StatsTableProps) {
           <TableBody>
             {METRICS.map((metric) => (
               <TableRow key={metric.label}>
-                <TableCell className="font-medium">{metric.label}</TableCell>
+                <TableCell className="font-medium">
+                  <MetricLabel metric={metric} />
+                </TableCell>
                 {canViewAll ? (
                   <TableCell className="text-right">
                     <StatCell

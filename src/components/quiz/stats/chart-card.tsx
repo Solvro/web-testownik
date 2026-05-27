@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -60,10 +61,10 @@ function ChartCardContent({
         )}
       </div>
       {isRefreshing ? (
-        <div className="bg-background/90 text-muted-foreground ring-border absolute top-2 right-2 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs shadow-sm ring-1 backdrop-blur-sm">
+        <Badge variant="outline" className="absolute top-2 right-2">
           <Spinner className="size-3" />
           <span>Ładuję</span>
-        </div>
+        </Badge>
       ) : null}
     </div>
   );
