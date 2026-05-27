@@ -11,16 +11,19 @@ import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
 import { StatsTable } from "@/components/quiz/stats/stats-table";
 import { StudyTimeChart } from "@/components/quiz/stats/study-time-chart";
 import { ButtonLink } from "@/components/ui/button";
-import { useQuizStats } from "@/hooks/use-quiz-stats";
-import type { QuizMetadata } from "@/types/quiz";
+import { useQuizMetadata, useQuizStats } from "@/hooks/use-quiz-stats";
 
 interface StatsPageClientProps {
   quizId: string;
-  quiz: QuizMetadata;
 }
 
-export function StatsPageClient({ quizId, quiz }: StatsPageClientProps) {
+export function StatsPageClient({ quizId }: StatsPageClientProps) {
+  const { data: quiz } = useQuizMetadata(quizId);
   const { data: myStats } = useQuizStats(quizId, "me");
+
+  if (quiz === undefined) {
+    return null;
+  }
 
   const canViewAll = quiz.can_edit === true;
 

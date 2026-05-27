@@ -407,7 +407,7 @@ export class QuizService extends BaseApiService {
 
   async getQuizSessions(
     quizId: string,
-    scope: StatsScope = "me",
+    scope: "me",
     days = 30,
   ): Promise<SessionEntry[]> {
     const response = await this.get<SessionEntry[]>(

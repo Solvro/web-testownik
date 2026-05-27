@@ -4,15 +4,12 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import type { ChartConfig } from "@/components/ui/chart";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { useQuizTimeline } from "@/hooks/use-quiz-stats";
 import type { StatsScope } from "@/types/quiz-stats";
 
 import { ChartCard } from "./chart-card";
+import { TimelineTooltip } from "./timeline-tooltip";
 
 interface SessionsChartProps {
   quizId: string;
@@ -67,18 +64,12 @@ export function SessionsChart({ quizId, canViewAll }: SessionsChartProps) {
           />
           <ChartTooltip
             content={
-              <ChartTooltipContent
-                labelFormatter={(value) => {
-                  const date = new Date(
-                    typeof value === "string" || typeof value === "number"
-                      ? value
-                      : "",
-                  );
-                  return date.toLocaleDateString("pl-PL", {
-                    day: "numeric",
-                    month: "long",
-                  });
-                }}
+              <TimelineTooltip
+                primaryDataKey="sessions_count"
+                primaryLabel="Sesje"
+                primaryFormatter={(value) =>
+                  Number(value).toLocaleString("pl-PL")
+                }
               />
             }
           />

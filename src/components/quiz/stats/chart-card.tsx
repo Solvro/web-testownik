@@ -45,7 +45,7 @@ function ChartCardContent({
         {isEmpty ? (
           <div
             className={cn(
-              "text-muted-foreground gap- flex flex-col items-center justify-center",
+              "text-muted-foreground flex flex-col items-center justify-center gap-1",
               placeholderClassName,
             )}
           >

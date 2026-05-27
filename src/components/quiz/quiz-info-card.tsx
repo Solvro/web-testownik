@@ -97,6 +97,7 @@ export function QuizInfoCard({
   const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
+  const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
@@ -205,21 +206,23 @@ export function QuizInfoCard({
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <ButtonLink
-                    size="icon-sm"
-                    variant="outline"
-                    href={`/quiz/${quiz.id}/stats`}
-                    aria-label="Statystyki quizu"
-                  >
-                    <BarChart3Icon className="size-5" />
-                  </ButtonLink>
-                }
-              ></TooltipTrigger>
-              <TooltipContent>Statystyki quizu</TooltipContent>
-            </Tooltip>
+            {canViewStats ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <ButtonLink
+                      size="icon-sm"
+                      variant="outline"
+                      href={`/quiz/${quiz.id}/stats`}
+                      aria-label="Statystyki quizu"
+                    >
+                      <BarChart3Icon className="size-5" />
+                    </ButtonLink>
+                  }
+                ></TooltipTrigger>
+                <TooltipContent>Statystyki quizu</TooltipContent>
+              </Tooltip>
+            ) : null}
             {canEditQuiz ? null : (
               <Tooltip>
                 <TooltipTrigger

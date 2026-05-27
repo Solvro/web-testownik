@@ -1,10 +1,12 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { getQuizService } from "@/services";
+import type { QuizMetadata } from "@/types/quiz";
 import type { StatsScope } from "@/types/quiz-stats";
 
 export const quizStatsKeys = {
   all: (quizId: string) => ["quiz", quizId, "stats"] as const,
+  metadata: (quizId: string) => ["quiz", quizId, "metadata"] as const,
   aggregated: (quizId: string, scope: StatsScope) =>
     ["quiz", quizId, "stats", "aggregated", scope] as const,
   timeline: (quizId: string, scope: StatsScope, days: number) =>
@@ -16,6 +18,16 @@ export const quizStatsKeys = {
   hourly: (quizId: string, scope: StatsScope) =>
     ["quiz", quizId, "stats", "hourly", scope] as const,
 };
+
+export function useQuizMetadata(quizId: string) {
+  return useQuery<QuizMetadata>({
+    queryKey: quizStatsKeys.metadata(quizId),
+    queryFn: async () => getQuizService().getQuizMetadata(quizId),
+    enabled: quizId.trim() !== "",
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+}
 
 export function useQuizStats(
   quizId: string,
@@ -42,7 +54,7 @@ export function useQuizTimeline(quizId: string, scope: StatsScope, days = 30) {
   });
 }
 
-export function useQuizSessions(quizId: string, scope: StatsScope, days = 30) {
+export function useQuizSessions(quizId: string, scope: "me", days = 30) {
   return useQuery({
     queryKey: quizStatsKeys.sessions(quizId, scope, days),
     queryFn: async () => getQuizService().getQuizSessions(quizId, scope, days),

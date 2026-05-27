@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { quizStatsKeys } from "@/hooks/use-quiz-stats";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
+import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { getQueryClient } from "@/lib/query-client";
 import { QuizService } from "@/services/quiz.service";
 
@@ -23,10 +25,22 @@ export default async function StatsPage({
   const { quizId } = await params;
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
+  const user = await getServerCurrentUser();
+
+  if (user === null) {
+    throw new Error("Wymagane logowanie (401)");
+  }
+
+  if (!hasPermission(user.account_type, PermissionAction.VIEW_QUIZ_STATS)) {
+    throw new Error("Brak dostępu (403)");
+  }
+
   const queryClient = getQueryClient();
-  const quiz = await new QuizService(API_URL, {}, accessToken).getQuizMetadata(
-    quizId,
-  );
+  await queryClient.fetchQuery({
+    queryKey: quizStatsKeys.metadata(quizId),
+    queryFn: async () =>
+      new QuizService(API_URL, {}, accessToken).getQuizMetadata(quizId),
+  });
 
   await Promise.all([
     queryClient.prefetchQuery({
@@ -59,7 +73,7 @@ export default async function StatsPage({
           </Card>
         }
       >
-        <StatsPageClient quizId={quizId} quiz={quiz} />
+        <StatsPageClient quizId={quizId} />
       </Suspense>
     </HydrationBoundary>
   );
