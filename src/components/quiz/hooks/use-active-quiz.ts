@@ -68,6 +68,7 @@ export function useActiveQuiz(quizId: string) {
 
   const recordAnswer = (
     answer: AnswerRecord,
+    studyTime: number,
     nextQuestionOverride?: Question | null,
   ): { nextQuestion: Question | null } => {
     const updatedAnswers = [answer, ...answers];
@@ -87,6 +88,7 @@ export function useActiveQuiz(quizId: string) {
           ? previous.current_session
           : {
               ...previous.current_session,
+              study_time: studyTime,
               answers: [answer, ...previous.current_session.answers],
             },
     }));
@@ -100,8 +102,13 @@ export function useActiveQuiz(quizId: string) {
     return { nextQuestion: next };
   };
 
-  const advanceQuestion = () => {
-    if (client.questionChecked) {
+  const advanceQuestion = (overrideNextQuestionId?: string | null) => {
+    const nextId =
+      overrideNextQuestionId === undefined
+        ? client.nextQuestionId
+        : overrideNextQuestionId;
+
+    if (client.questionChecked || overrideNextQuestionId !== undefined) {
       updateServerCache((quizData) => ({
         ...quizData,
         current_session:
@@ -109,12 +116,12 @@ export function useActiveQuiz(quizId: string) {
             ? quizData.current_session
             : {
                 ...quizData.current_session,
-                current_question: client.nextQuestionId,
+                current_question: nextId,
               },
       }));
 
       if (
-        client.nextQuestionId === null &&
+        nextId === null &&
         isQuizComplete(quiz.questions, answers, userSettings)
       ) {
         void formbricks.track("quiz_finished");

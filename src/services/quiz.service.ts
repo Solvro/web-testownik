@@ -1,6 +1,14 @@
 import { buildFallbackSession, deriveSettings } from "@/lib/session-utils";
 import type { ApiPaginatedResponse } from "@/types/common";
 import type { Question } from "@/types/quiz";
+import type {
+  HardestQuestion,
+  HourlyEntry,
+  QuizStats,
+  SessionEntry,
+  StatsScope,
+  TimelineEntry,
+} from "@/types/quiz-stats";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -32,6 +40,14 @@ export class QuizService extends BaseApiService {
    */
   async getQuiz(quizId: string): Promise<Quiz> {
     const response = await this.get<Quiz>(`quizzes/${quizId}/`);
+    return response.data;
+  }
+
+  async getQuizMetadata(quizId: string): Promise<QuizMetadata> {
+    const response = await this.get<QuizMetadata>(
+      `quizzes/${quizId}/metadata/`,
+      { include: "preview_question" },
+    );
     return response.data;
   }
 
@@ -358,6 +374,69 @@ export class QuizService extends BaseApiService {
    */
   async copyQuiz(quizId: string): Promise<Quiz> {
     const response = await this.post<Quiz>(`quizzes/${quizId}/copy/`);
+    return response.data;
+  }
+
+  async getQuizStats(
+    quizId: string,
+    scope: StatsScope = "me",
+    includePerQuestion = false,
+  ): Promise<QuizStats> {
+    const parameters: Record<string, string> = { scope };
+    if (includePerQuestion) {
+      parameters.include = "per_question";
+    }
+    const response = await this.get<QuizStats>(
+      `quizzes/${quizId}/stats/`,
+      parameters,
+    );
+    return response.data;
+  }
+
+  async getQuizTimeline(
+    quizId: string,
+    scope: StatsScope = "me",
+    days = 30,
+  ): Promise<TimelineEntry[]> {
+    const response = await this.get<TimelineEntry[]>(
+      `quizzes/${quizId}/stats/timeline/`,
+      { scope, days },
+    );
+    return response.data;
+  }
+
+  async getQuizSessions(
+    quizId: string,
+    scope: "me",
+    days = 30,
+  ): Promise<SessionEntry[]> {
+    const response = await this.get<SessionEntry[]>(
+      `quizzes/${quizId}/stats/sessions/`,
+      { scope, days },
+    );
+    return response.data;
+  }
+
+  async getQuizHardestQuestions(
+    quizId: string,
+    scope: StatsScope = "me",
+    limit = 10,
+  ): Promise<HardestQuestion[]> {
+    const response = await this.get<HardestQuestion[]>(
+      `quizzes/${quizId}/stats/hardest-questions/`,
+      { scope, limit },
+    );
+    return response.data;
+  }
+
+  async getQuizHourly(
+    quizId: string,
+    scope: StatsScope = "me",
+  ): Promise<HourlyEntry[]> {
+    const response = await this.get<HourlyEntry[]>(
+      `quizzes/${quizId}/stats/hourly/`,
+      { scope },
+    );
     return response.data;
   }
 }

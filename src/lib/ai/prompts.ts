@@ -153,9 +153,9 @@ export function collectQuestionImages(question: Question): LabeledImage[] {
 }
 
 export function buildExplainCheckedUserMessage(question: Question): string {
-  return `Wyjaśnij to pytanie:\n${question.text}\n\nOdpowiedzi:\n${formatAnswers(question)}`;
+  return `Wyjaśnij aktualne pytanie nr ${question.order.toString()}.`;
 }
 
 export function buildExplainUncheckedUserMessage(question: Question): string {
-  return `Potrzebuję wskazówki do tego pytania:\n${question.text}\n\nOdpowiedzi:\n${formatAnswersWithoutCorrectness(question)}`;
+  return `Potrzebuję wskazówki do aktualnego pytania nr ${question.order.toString()}.`;
 }

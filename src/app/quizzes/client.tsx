@@ -41,7 +41,7 @@ import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
 import { getQuizService } from "@/services";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import type { QuizBase, QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
   userId?: string;
@@ -141,7 +141,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     try {
       const fullQuiz = await getQuizService().getQuiz(quiz.id);
       // Create a downloadable version
-      const downloadableQuiz = prepareQuizForDownload(fullQuiz);
+      const downloadableQuiz = await prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
@@ -158,13 +158,13 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     }
   };
 
-  const updateQuiz = (quiz: QuizMetadata) => {
+  const updateQuiz = (quiz: QuizBase) => {
     queryClient.setQueryData(
       ["user-quizzes"],
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
-          : old.map((q) => (q.id === quiz.id ? quiz : q));
+          : old.map((q) => (q.id === quiz.id ? { ...q, ...quiz } : q));
       },
     );
   };

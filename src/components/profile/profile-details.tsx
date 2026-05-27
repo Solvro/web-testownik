@@ -20,9 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
-import { ACCOUNT_TYPE } from "@/types/user";
+import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@/types/user";
 import type { UserData } from "@/types/user";
 
 interface ProfileDetailsProps {
@@ -39,7 +40,6 @@ export function ProfileDetails({
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
-  const isGold = userData?.account_level === "gold";
 
   useEffect(() => {
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
@@ -163,9 +163,9 @@ export function ProfileDetails({
               <Avatar
                 className={cn(
                   "size-24",
-                  isGold
-                    ? "ring-offset-background shadow-[0_0_24px_-8px_rgba(245,158,11,0.95)] ring-4 ring-amber-400/85 ring-offset-2"
-                    : null,
+                  getAccountLevelProfileAvatarClassName(
+                    userData?.account_level,
+                  ),
                 )}
               >
                 <AvatarImage
@@ -204,7 +204,7 @@ export function ProfileDetails({
                 accountType={userData?.account_type ?? ACCOUNT_TYPE.GUEST}
               />
               <AccountLevelBadge
-                accountLevel={userData?.account_level ?? "basic"}
+                accountLevel={userData?.account_level ?? ACCOUNT_LEVEL.BASIC}
               />
             </div>
             <div className="bg-border h-px w-full" />

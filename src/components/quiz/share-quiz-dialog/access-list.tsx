@@ -20,12 +20,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getAccountLevelAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
-import type { QuizMetadata } from "@/types/quiz";
+import type { QuizBase } from "@/types/quiz";
 import type { Group, User } from "@/types/user";
 
 interface AccessListProps {
-  quizMetadata: QuizMetadata;
+  quizMetadata: QuizBase;
   usersWithAccess: (User & { shared_quiz_id?: string; allow_edit: boolean })[];
   groupsWithAccess: (Group & {
     shared_quiz_id?: string;
@@ -118,7 +119,13 @@ export function AccessList({
               )}
             >
               <div className="flex items-center gap-2">
-                <Avatar>
+                <Avatar
+                  className={cn(
+                    getAccountLevelAvatarClassName(
+                      quizMetadata.creator.account_level,
+                    ),
+                  )}
+                >
                   <AvatarImage
                     src={quizMetadata.creator.photo}
                     alt={`Zdjęcie profilowe użytkownika ${quizMetadata.creator.full_name}`}
@@ -157,7 +164,11 @@ export function AccessList({
           <div className="flex w-full items-center gap-1" key={user.id}>
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
-                <Avatar>
+                <Avatar
+                  className={cn(
+                    getAccountLevelAvatarClassName(user.account_level),
+                  )}
+                >
                   <AvatarImage
                     src={user.photo}
                     alt={`Zdjęcie profilowe użytkownika ${user.full_name}`}

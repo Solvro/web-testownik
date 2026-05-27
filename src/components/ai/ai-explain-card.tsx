@@ -8,7 +8,7 @@ import {
   SquareIcon,
   XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Button } from "@/components/ui/button";
@@ -95,8 +95,10 @@ export function AiExplainCard({
   onAnswerHints,
 }: AiExplainCardProps) {
   const startedRef = useRef(false);
+  // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
   const previousQuestionId = useRef(question.id);
   const lastHintsRef = useRef<string>("");
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
 
   const system = useMemo(
     () =>
@@ -116,33 +118,93 @@ export function AiExplainCard({
 
   const images = useMemo(() => collectQuestionImages(question), [question]);
 
+  const fetchWithRateLimitHandling = useCallback<typeof fetch>(
+    async (input, init) => {
+      const response = await fetch(input, init);
+      if (response.status !== 429) {
+        return response;
+      }
+
+      const retryAfterHeader = response.headers.get("Retry-After");
+      const parsedRetryAfter =
+        retryAfterHeader === null
+          ? null
+          : Number.parseInt(retryAfterHeader, 10);
+      const nextRetryAfter =
+        parsedRetryAfter === null || Number.isNaN(parsedRetryAfter)
+          ? 60
+          : Math.max(1, parsedRetryAfter);
+
+      setRetryAfter(nextRetryAfter);
+
+      return new Response(
+        `Osiągnięto limit zapytań AI. Spróbuj ponownie za ${nextRetryAfter.toString()} s.`,
+        {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        },
+      );
+    },
+    [],
+  );
+
   const { completion, isLoading, error, complete, stop } = useCompletion({
     api: "/ai/explain",
     streamProtocol: "text",
+    fetch: fetchWithRateLimitHandling,
     onError: () => {
       startedRef.current = false;
     },
   });
 
-  const handleStart = useCallback(() => {
+  const startCompletion = useCallback(() => {
+    setRetryAfter(null);
     startedRef.current = true;
     void complete(prompt, { body: { system, images } });
   }, [complete, prompt, system, images]);
 
+  const handleStart = useCallback(() => {
+    if (retryAfter !== null && retryAfter > 0) {
+      return;
+    }
+    startCompletion();
+  }, [retryAfter, startCompletion]);
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   useEffect(() => {
     if (previousQuestionId.current !== question.id) {
       previousQuestionId.current = question.id;
       onClose();
     }
   }, [question.id, onClose]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
   useEffect(() => {
     if (!startedRef.current) {
-      handleStart();
+      startCompletion();
     }
-  }, [handleStart]);
+  }, [startCompletion]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-pass-data-to-parent */
+  useEffect(() => {
+    if (retryAfter === null || retryAfter <= 0) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRetryAfter((current) =>
+        current === null || current <= 1 ? 0 : current - 1,
+      );
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [retryAfter]);
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
   useEffect(() => {
     if (!questionChecked && completion !== "" && onAnswerHints !== undefined) {
       const { answerHints } = parseHints(completion);
@@ -153,7 +215,7 @@ export function AiExplainCard({
       }
     }
   }, [completion, questionChecked, onAnswerHints]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-pass-data-to-parent */
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
 
   const { displayContent, hasAnswerHintsOnly } = useMemo(() => {
     if (questionChecked) {
@@ -176,6 +238,12 @@ export function AiExplainCard({
   }, [completion, questionChecked]);
 
   const title = questionChecked ? "Wyjaśnienie AI" : "Wskazówka AI";
+  const errorMessage =
+    retryAfter === null
+      ? error?.message
+      : retryAfter > 0
+        ? `Osiągnięto limit podpowiedzi AI. Spróbuj ponownie za ${retryAfter.toString()} s.`
+        : "Limit podpowiedzi AI minął. Możesz spróbować ponownie.";
 
   return (
     <Card
@@ -238,13 +306,16 @@ export function AiExplainCard({
           <div className="flex items-center gap-3 py-2">
             <AlertCircleIcon className="text-destructive size-4 shrink-0" />
             <span className="text-muted-foreground text-xs">
-              Nie udało się wygenerować{" "}
-              {questionChecked ? "wyjaśnienia" : "wskazówki"}.
+              {errorMessage ??
+                `Nie udało się wygenerować ${
+                  questionChecked ? "wyjaśnienia" : "wskazówki"
+                }.`}
             </span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleStart}
+              disabled={retryAfter !== null && retryAfter > 0}
               className="ml-auto"
             >
               <RefreshCwIcon className="size-3" />

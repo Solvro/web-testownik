@@ -17,13 +17,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  getAccountLevelAvatarClassName,
+  getAccountLevelCtaClassName,
+} from "@/lib/account-level";
 import { cn } from "@/lib/utils";
 import { ACCOUNT_TYPE } from "@/types/user";
 
 export function AuthButtons() {
   const { isAuthenticated, user } = useContext(AppContext);
   const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
-  const isGold = user?.account_level === "gold";
   const profilePicture = user?.photo;
 
   const pathname = usePathname();
@@ -73,32 +76,26 @@ export function AuthButtons() {
     return (
       <Button
         variant="cta"
-        className={cn(
-          isGold
-            ? "border border-amber-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-amber-950 shadow-[0_8px_22px_-14px_rgba(217,119,6,0.95)] transition-all hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300"
-            : null,
-        )}
+        className={cn(getAccountLevelCtaClassName(user?.account_level))}
         nativeButton={false}
         render={(props) => (
           <Link {...props} href="/profile">
             {profilePicture === null ? (
               <span
-                className={
-                  isGold
-                    ? "ring-offset-background relative inline-flex rounded-full ring-2 ring-amber-400/85 ring-offset-1"
-                    : "relative inline-flex"
-                }
+                className={cn(
+                  "relative inline-flex rounded-full",
+                  getAccountLevelAvatarClassName(user?.account_level),
+                )}
               >
                 <CircleUserRoundIcon className="size-6" />
               </span>
             ) : (
               <span className="relative inline-flex">
                 <Avatar
-                  className={
-                    isGold
-                      ? "ring-offset-background size-6 ring-2 ring-amber-400/85 ring-offset-1"
-                      : "size-6"
-                  }
+                  className={cn(
+                    "size-6",
+                    getAccountLevelAvatarClassName(user?.account_level),
+                  )}
                 >
                   <AvatarImage
                     src={profilePicture}

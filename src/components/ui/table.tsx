@@ -7,7 +7,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const tableVariants = cva(
-  "relative w-full overflow-x-auto caption-bottom text-sm text-accent-foreground",
+  "relative w-full caption-bottom text-sm text-accent-foreground",
   {
     variants: {
       variant: {
@@ -26,13 +26,18 @@ const tableVariants = cva(
 
 function Table({
   className,
+  wrapperClassName,
   variant = "default",
   ...props
-}: React.ComponentProps<"table"> & VariantProps<typeof tableVariants>) {
-  const wrapperClass =
-    variant === "border"
-      ? "border border-border rounded-[10px] overflow-hidden"
-      : undefined;
+}: React.ComponentProps<"table"> &
+  VariantProps<typeof tableVariants> & {
+    wrapperClassName?: string;
+  }) {
+  const wrapperClass = cn(
+    "relative w-full overflow-x-auto",
+    variant === "border" ? "border-border rounded-md border" : undefined,
+    wrapperClassName,
+  );
 
   return (
     <div data-slot="table-container" className={wrapperClass}>

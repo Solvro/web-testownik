@@ -4,8 +4,7 @@ import { useScrollLock } from "@assistant-ui/react";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ChevronDownIcon, LoaderIcon } from "lucide-react";
-import { memo, useCallback, useRef, useState } from "react";
-import type { PropsWithChildren } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import {
   Collapsible,
@@ -184,46 +183,7 @@ function ToolGroupContent({
   );
 }
 
-type ToolGroupComponent = PropsWithChildren<{
-  startIndex: number;
-  endIndex: number;
-}>;
-
-function ToolGroupImpl({ children, startIndex, endIndex }: ToolGroupComponent) {
-  const toolCount = endIndex - startIndex + 1;
-
-  return (
-    <ToolGroupRoot>
-      <ToolGroupTrigger count={toolCount} />
-      <ToolGroupContent>{children}</ToolGroupContent>
-    </ToolGroupRoot>
-  );
-}
-
-/**
- * @deprecated This wrapper targets the legacy `components.ToolGroup` prop
- * on `<MessagePrimitive.Parts>`. Use `<MessagePrimitive.GroupedParts>` with
- * a `groupBy` returning `"group-tool"` and compose `ToolGroupRoot` /
- * `ToolGroupTrigger` / `ToolGroupContent` directly. See `thread.tsx`.
- */
-/* eslint-disable @typescript-eslint/no-deprecated */
-const ToolGroup = memo(
-  ToolGroupImpl,
-) as unknown as React.FC<ToolGroupComponent> & {
-  Root: typeof ToolGroupRoot;
-  Trigger: typeof ToolGroupTrigger;
-  Content: typeof ToolGroupContent;
-};
-
-ToolGroup.displayName = "ToolGroup";
-ToolGroup.Root = ToolGroupRoot;
-ToolGroup.Trigger = ToolGroupTrigger;
-ToolGroup.Content = ToolGroupContent;
-/* eslint-enable @typescript-eslint/no-deprecated */
-
 export {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  ToolGroup,
   ToolGroupRoot,
   ToolGroupTrigger,
   ToolGroupContent,

@@ -59,10 +59,7 @@ export function QuizActionButtons({
       return;
     }
     const answersText = question.answers
-      .map(
-        (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
-      )
+      .map((a, index) => `Odpowiedź ${(index + 1).toString()}: ${a.text}`)
       .join("\n");
     const full = `${question.text}\n\n${answersText}`;
     void navigator.clipboard

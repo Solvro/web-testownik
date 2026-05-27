@@ -5,6 +5,7 @@ import { PermissionAction } from "@/lib/auth/permissions";
 import {
   checkAnswerCorrectness,
   createAnswerRecord,
+  getAnsweredQuestionWithShuffledAnswers,
 } from "@/lib/session-utils";
 import { getQuizService } from "@/services";
 import type { AnswerRecord, Question } from "@/types/quiz";
@@ -117,8 +118,10 @@ export function useQuizLogic({
       isCorrect,
     );
 
+    const studyTime = getCurrentStudyTime();
     const { nextQuestion } = sessionActions.recordAnswer(
       newAnswer,
+      studyTime,
       nextQuestionOverride,
     );
     nextQuestionRef.current = nextQuestion;
@@ -127,7 +130,7 @@ export function useQuizLogic({
       void getQuizService().recordAnswer(
         quizId,
         newAnswer,
-        getCurrentStudyTime(),
+        studyTime,
         nextQuestionRef.current?.id ?? client.nextQuestionId,
       );
     }
@@ -176,19 +179,23 @@ export function useQuizLogic({
       false,
     );
 
-    const { nextQuestion: nextQ } = sessionActions.recordAnswer(newAnswer);
+    const studyTime = getCurrentStudyTime();
+    const { nextQuestion: nextQ } = sessionActions.recordAnswer(
+      newAnswer,
+      studyTime,
+    );
     nextQuestionRef.current = nextQ;
 
     void getQuizService().recordAnswer(
       quizId,
       newAnswer,
-      getCurrentStudyTime(),
+      studyTime,
       nextQ?.id ?? null,
     );
 
     continuity.sendAnswerChecked(nextQ);
     continuity.sendQuestionUpdate(nextQ, []);
-    sessionActions.setCurrentQuestion(nextQ);
+    sessionActions.advanceQuestion(nextQ?.id ?? null);
     nextQuestionRef.current = null;
   };
 
@@ -228,7 +235,20 @@ export function useQuizLogic({
   const historyQuestion =
     historyQuestionId == null
       ? null
-      : (quiz.questions.find((q) => q.id === historyQuestionId) ?? null);
+      : (() => {
+          const question =
+            quiz.questions.find((q) => q.id === historyQuestionId) ?? null;
+          if (question == null) {
+            return null;
+          }
+
+          const session = quiz.current_session;
+          return getAnsweredQuestionWithShuffledAnswers(
+            question,
+            answers,
+            session?.id,
+          );
+        })();
 
   return {
     quiz,
