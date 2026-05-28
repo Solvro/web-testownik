@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ensureQuizCurrentQuestion,
   getQuestionWithShuffledAnswers,
   resolveCurrentQuestion,
 } from "@/lib/session-utils";
@@ -131,5 +132,33 @@ describe("session-utils answer shuffling", () => {
     expect(afterCheck?.answers.map((answer) => answer.id)).toEqual(
       beforeCheck?.answers.map((answer) => answer.id),
     );
+  });
+
+  it("normalizes an active session with null current question", () => {
+    const normalized = ensureQuizCurrentQuestion(
+      {
+        id: "quiz-1",
+        title: "Quiz",
+        description: "",
+        visibility: AccessLevel.PRIVATE,
+        allow_anonymous: false,
+        is_anonymous: false,
+        version: 1,
+        questions: [makeQuestion("q1")],
+        user_settings: DEFAULT_USER_SETTINGS,
+        current_session: {
+          id: "session-1",
+          started_at: "2026-01-01T00:00:00.000Z",
+          ended_at: null,
+          is_active: true,
+          study_time: 1,
+          current_question: null,
+          answers: [],
+        },
+      },
+      DEFAULT_USER_SETTINGS,
+    );
+
+    expect(normalized.current_session?.current_question).toBe("q1");
   });
 });
