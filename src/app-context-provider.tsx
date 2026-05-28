@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { AppContext } from "@/app-context";
 import type { AppContextType } from "@/app-context-type";
@@ -23,6 +24,18 @@ export function AppContextProvider({
   useAutoGuest(user);
   useGuestQuizMigration(user);
 
+  const [isMaintenance, setIsMaintenance] = useState(false);
+
+  useEffect(() => {
+    const handleMaintenance = () => {
+      setIsMaintenance(true);
+    };
+    window.addEventListener("backend-maintenance", handleMaintenance);
+    return () => {
+      window.removeEventListener("backend-maintenance", handleMaintenance);
+    };
+  }, []);
+
   const checkPermission = (action: PermissionAction) =>
     hasPermission(user?.account_type, action);
 
@@ -30,6 +43,8 @@ export function AppContextProvider({
     isAuthenticated,
     user,
     checkPermission,
+    isMaintenance,
+    setIsMaintenance,
   };
 
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;

@@ -143,6 +143,10 @@ export class BaseApiService {
     try {
       let response = await fetch(fullURL, requestOptions);
 
+      if (response.status === 503) {
+        window.dispatchEvent(new Event("backend-maintenance"));
+      }
+
       if (response.status === 401) {
         const refreshed = await this.queueTokenRefresh();
         if (refreshed) {
