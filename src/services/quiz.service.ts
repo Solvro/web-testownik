@@ -1,4 +1,8 @@
-import { buildFallbackSession, deriveSettings } from "@/lib/session-utils";
+import {
+  buildFallbackSession,
+  deriveSettings,
+  ensureQuizCurrentQuestion,
+} from "@/lib/session-utils";
 import type { ApiPaginatedResponse } from "@/types/common";
 import type { Question } from "@/types/quiz";
 import type {
@@ -59,12 +63,10 @@ export class QuizService extends BaseApiService {
       },
     );
 
-    response.data.current_session ??= buildFallbackSession(
+    return ensureQuizCurrentQuestion(
       response.data,
       deriveSettings(response.data.user_settings),
     );
-
-    return response.data;
   }
 
   /**

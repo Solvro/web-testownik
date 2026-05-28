@@ -93,6 +93,10 @@ export function useActiveQuiz(quizId: string) {
           : {
               ...previous.current_session,
               study_time: studyTime,
+              current_question:
+                previous.current_session.current_question ??
+                currentQuestion?.id ??
+                null,
               answers: [answer, ...previous.current_session.answers],
             },
     }));

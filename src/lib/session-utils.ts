@@ -300,6 +300,42 @@ export function resolveCurrentQuestion(
   });
 }
 
+export function ensureQuizCurrentQuestion(
+  quiz: QuizWithUserProgress,
+  settings: UserSettings,
+): QuizWithUserProgress {
+  const session = quiz.current_session;
+
+  if (session == null) {
+    return {
+      ...quiz,
+      current_session: buildFallbackSession(quiz, settings),
+    };
+  }
+
+  if (
+    session.current_question !== null ||
+    isQuizComplete(quiz.questions, session.answers, settings)
+  ) {
+    return quiz;
+  }
+
+  const currentQuestion = pickNextQuestion({
+    questions: quiz.questions,
+    answers: session.answers,
+    settings,
+    seed: session.id,
+  });
+
+  return {
+    ...quiz,
+    current_session: {
+      ...session,
+      current_question: currentQuestion?.id ?? null,
+    },
+  };
+}
+
 export function buildFallbackSession(
   quiz: QuizWithUserProgress,
   settings: UserSettings,
