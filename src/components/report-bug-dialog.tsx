@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { MessageSquareWarningIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useState } from "react";
@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { getQuizService, getUserService } from "@/services";
+import { getUserService } from "@/services";
 import type { QuizWithUserProgress } from "@/types/quiz";
 
 interface ReportBugDialogProps {
@@ -49,24 +49,19 @@ const DEFAULT_FORM_STATE = {
 
 export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const appContext = useContext(AppContext);
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
 
   const quizId = /^\/quiz\/([^/]+)/.exec(pathname)?.[1] ?? null;
-  const { data: currentQuiz } = useQuery<QuizWithUserProgress>({
-    queryKey: quizDetailQueryKey(quizId ?? ""),
-    queryFn: async () => {
-      if (quizId == null) {
-        throw new Error("Cannot load quiz without quiz ID.");
-      }
-      return getQuizService().getQuizWithProgress(quizId);
-    },
-    enabled: quizId != null,
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-  });
+  const currentQuiz =
+    quizId == null
+      ? undefined
+      : queryClient.getQueryData<QuizWithUserProgress>(
+          quizDetailQueryKey(quizId),
+        );
   const canEditCurrentQuiz =
     currentQuiz != null && (currentQuiz.can_edit ?? false);
 
