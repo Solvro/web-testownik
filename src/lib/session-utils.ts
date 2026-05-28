@@ -100,8 +100,12 @@ export function getQuestionAnsweredCount(
 function getQuestionAppearanceNumber(
   questionId: string,
   answers: AnswerRecord[],
+  questionChecked: boolean,
 ): number {
-  return getQuestionAnsweredCount(questionId, false, answers);
+  return Math.max(
+    1,
+    getQuestionAnsweredCount(questionId, questionChecked, answers),
+  );
 }
 
 function getAnswerShuffleSeed(
@@ -116,6 +120,7 @@ export function getQuestionWithShuffledAnswers(
   question: Question,
   answers: AnswerRecord[],
   seed?: string,
+  questionChecked = false,
 ): Question {
   return {
     ...question,
@@ -124,7 +129,7 @@ export function getQuestionWithShuffledAnswers(
       getAnswerShuffleSeed(
         seed,
         question.id,
-        getQuestionAppearanceNumber(question.id, answers),
+        getQuestionAppearanceNumber(question.id, answers, questionChecked),
       ),
     ),
   };
@@ -268,6 +273,7 @@ export function deriveSettings(
 export function resolveCurrentQuestion(
   quiz: QuizWithUserProgress,
   settings: UserSettings,
+  questionChecked = false,
 ): Question | null {
   const session = quiz.current_session;
   const answers = session?.answers ?? [];
@@ -277,7 +283,12 @@ export function resolveCurrentQuestion(
       (q) => q.id === session.current_question,
     );
     if (savedQuestion !== undefined) {
-      return getQuestionWithShuffledAnswers(savedQuestion, answers, session.id);
+      return getQuestionWithShuffledAnswers(
+        savedQuestion,
+        answers,
+        session.id,
+        questionChecked,
+      );
     }
   }
 

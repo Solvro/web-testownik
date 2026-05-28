@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { getQuestionWithShuffledAnswers } from "@/lib/session-utils";
-import type { AnswerRecord, Question } from "@/types/quiz";
+import {
+  getQuestionWithShuffledAnswers,
+  resolveCurrentQuestion,
+} from "@/lib/session-utils";
+import type {
+  AnswerRecord,
+  Question,
+  QuizWithUserProgress,
+} from "@/types/quiz";
+import { AccessLevel } from "@/types/quiz";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 const makeQuestion = (id: string): Question => ({
   id,
@@ -79,5 +88,48 @@ describe("session-utils answer shuffling", () => {
       "q1-c",
       "q1-a",
     ]);
+  });
+
+  it("keeps answer order stable after checking the current question", () => {
+    const quiz: QuizWithUserProgress = {
+      id: "quiz-1",
+      title: "Quiz",
+      description: "",
+      visibility: AccessLevel.PRIVATE,
+      allow_anonymous: false,
+      is_anonymous: false,
+      version: 1,
+      questions: [makeQuestion("q1")],
+      user_settings: DEFAULT_USER_SETTINGS,
+      current_session: {
+        id: "session-1",
+        started_at: "2026-01-01T00:00:00.000Z",
+        ended_at: null,
+        is_active: true,
+        study_time: 1,
+        current_question: "q1",
+        answers: [],
+      },
+    };
+
+    const beforeCheck = resolveCurrentQuestion(quiz, DEFAULT_USER_SETTINGS);
+    const afterCheck = resolveCurrentQuestion(
+      {
+        ...quiz,
+        current_session:
+          quiz.current_session == null
+            ? null
+            : {
+                ...quiz.current_session,
+                answers: [makeAnswer("q1")],
+              },
+      },
+      DEFAULT_USER_SETTINGS,
+      true,
+    );
+
+    expect(afterCheck?.answers.map((answer) => answer.id)).toEqual(
+      beforeCheck?.answers.map((answer) => answer.id),
+    );
   });
 });
