@@ -3,9 +3,11 @@ import { format } from "date-fns";
 import {
   BarChart3Icon,
   CopyIcon,
+  EyeOffIcon,
   Link2Icon,
   Loader2Icon,
   RotateCcwIcon,
+  ScanEyeIcon,
   SearchIcon,
 } from "lucide-react";
 import { useContext } from "react";
@@ -41,6 +43,8 @@ interface QuizInfoCardProps {
   totalQuestions: number;
   timerStore: TimerStore;
   resetProgress: () => void;
+  isFocusModeActive: boolean;
+  toggleFocusMode: () => void;
 }
 
 const getProgressColor = (percentage: number): string => {
@@ -93,12 +97,15 @@ export function QuizInfoCard({
   totalQuestions,
   timerStore,
   resetProgress,
+  isFocusModeActive,
+  toggleFocusMode,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
+  const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
     mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
@@ -256,6 +263,25 @@ export function QuizInfoCard({
               </Tooltip>
             )}
           </div>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant={isFocusModeActive ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={toggleFocusMode}
+                  aria-label="Tryb skupienia"
+                >
+                  <FocusModeIcon className="size-4" /> Focus
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>
+              {isFocusModeActive
+                ? "Wyłącz tryb skupienia"
+                : "Włącz tryb skupienia"}
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger
               render={
