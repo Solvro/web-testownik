@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import {
   BarChart3Icon,
   CopyIcon,
+  EyeOffIcon,
   Link2Icon,
   Loader2Icon,
   RotateCcwIcon,
@@ -104,6 +105,7 @@ export function QuizInfoCard({
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
+  const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
     mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
@@ -270,7 +272,7 @@ export function QuizInfoCard({
                   onClick={toggleFocusMode}
                   aria-label="Tryb skupienia"
                 >
-                  <ScanEyeIcon className="size-4" /> Focus
+                  <FocusModeIcon className="size-4" /> Focus
                 </Button>
               }
             ></TooltipTrigger>

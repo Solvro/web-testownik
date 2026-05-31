@@ -1,87 +1,126 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { TimerStore } from "./use-study-timer";
 
-export type FocusAlertState = {
-  isOpen: boolean;
-  title: string;
-  message: string;
-} | null;
+const FOCUS_ALERT_SOUND_SRC = "/sounds/quiz/metal-pipe.mp3";
 
-const subscribeToFocusMode = (listener: () => void) => {
-  window.addEventListener("focusModeChange", listener);
-  return () => {
-    window.removeEventListener("focusModeChange", listener);
-  };
-};
+const FOCUS_ALERT_CONTENT = {
+  inactivity: {
+    title: "Brak aktywności",
+    message:
+      "Minęło 5 minut bez żadnej akcji. Timer został zatrzymany - wróć do nauki!",
+  },
+  tabLeft: {
+    title: "Opuszczono kartę z quizem.",
+    message: "Timer został zatrzymany - skup się na nauce!",
+  },
+} as const;
 
-const getSnapshot = () => {
-  return sessionStorage.getItem("focusMode") === "true";
-};
+export type FocusAlertType = keyof typeof FOCUS_ALERT_CONTENT;
 
-const getServerSnapshot = () => {
-  return false;
-};
+function clearInactivityCountdown(inactivityTimerRef: {
+  current: NodeJS.Timeout | null;
+}) {
+  if (inactivityTimerRef.current !== null) {
+    clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = null;
+  }
+}
+
+function getFocusAlertAudio(audioRef: { current: HTMLAudioElement | null }) {
+  audioRef.current ??= new Audio(FOCUS_ALERT_SOUND_SRC);
+  audioRef.current.preload = "auto";
+  return audioRef.current;
+}
+
+function unlockFocusAlertSound(audioRef: { current: HTMLAudioElement | null }) {
+  // Prime playback during a user gesture.
+  const audio = getFocusAlertAudio(audioRef);
+  audio.muted = true;
+  audio.currentTime = 0;
+
+  void audio
+    .play()
+    .then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+    })
+    .catch(() => {
+      audio.muted = false;
+    });
+}
+
+function playFocusAlertSound(audioRef: { current: HTMLAudioElement | null }) {
+  const audio = getFocusAlertAudio(audioRef);
+  audio.muted = false;
+  audio.pause();
+  audio.currentTime = 0;
+  void audio.play().catch(console.error);
+}
+
+function startInactivityCountdown(
+  timerStore: TimerStore,
+  inactivityTimerRef: { current: NodeJS.Timeout | null },
+  isAlertOpenRef: { current: boolean },
+  audioRef: { current: HTMLAudioElement | null },
+  showFocusAlert: (type: FocusAlertType) => void,
+) {
+  clearInactivityCountdown(inactivityTimerRef);
+
+  inactivityTimerRef.current = setTimeout(
+    () => {
+      if (isAlertOpenRef.current) {
+        return;
+      }
+      isAlertOpenRef.current = true;
+      timerStore.pause();
+      playFocusAlertSound(audioRef);
+      showFocusAlert("inactivity");
+    },
+    5 * 60 * 1000,
+  );
+}
 
 export function useFocusMode(timerStore: TimerStore) {
-  const isFocusModeActive = useSyncExternalStore(
-    subscribeToFocusMode,
-    getSnapshot,
-    getServerSnapshot,
-  );
-  const [focusAlert, setFocusAlert] = useState<FocusAlertState>(null);
+  const [isFocusModeActive, setIsFocusModeActive] = useState(false);
+  const [focusAlertType, setFocusAlertType] =
+    useState<FocusAlertType>("inactivity");
+  const [isFocusAlertOpen, setIsFocusAlertOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isAlertOpenRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const startInactivityCountdown = useCallback(() => {
-    if (inactivityTimerRef.current !== null) {
-      clearTimeout(inactivityTimerRef.current);
-    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const showFocusAlert = (type: FocusAlertType) => {
+    setFocusAlertType(type);
+    setIsFocusAlertOpen(true);
+  };
 
-    inactivityTimerRef.current = setTimeout(
-      () => {
-        if (isAlertOpenRef.current) {
-          return;
-        }
-        isAlertOpenRef.current = true;
-        timerStore.pause();
-        const audio = new Audio("/sounds/quiz/metal-pipe.mp3");
-        audio.play().catch(console.error);
-        setFocusAlert({
-          isOpen: true,
-          title: "Brak aktywności",
-          message:
-            "Minęło 5 minut bez żadnej akcji. Timer został zatrzymany - wróć do nauki!",
-        });
-      },
-      5 * 60 * 1000,
-    );
-  }, [timerStore]);
-
-  const resetInactivityTimer = useCallback(() => {
+  const resetInactivityTimer = () => {
     if (!isFocusModeActive) {
       return;
     }
     timerStore.resume();
-    startInactivityCountdown();
-  }, [isFocusModeActive, timerStore, startInactivityCountdown]);
+    startInactivityCountdown(
+      timerStore,
+      inactivityTimerRef,
+      isAlertOpenRef,
+      audioRef,
+      showFocusAlert,
+    );
+  };
 
-  const executeToggle = useCallback(() => {
+  const executeToggle = () => {
     const nextState = !isFocusModeActive;
-    sessionStorage.setItem("focusMode", String(nextState));
-    window.dispatchEvent(new Event("focusModeChange"));
+    setIsFocusModeActive(nextState);
     if (nextState) {
+      unlockFocusAlertSound(audioRef);
       timerStore.resume();
     }
-  }, [isFocusModeActive, timerStore]);
+  };
 
   const toggleFocusMode = () => {
     if (!isFocusModeActive) {
@@ -96,6 +135,11 @@ export function useFocusMode(timerStore: TimerStore) {
   };
 
   const confirmOnboarding = () => {
+    setShowOnboarding(false);
+    executeToggle();
+  };
+
+  const confirmOnboardingAndHide = () => {
     localStorage.setItem("focusModeOnboarding", "true");
     setShowOnboarding(false);
     executeToggle();
@@ -105,21 +149,33 @@ export function useFocusMode(timerStore: TimerStore) {
     setShowOnboarding(false);
   };
 
-  const closeFocusAlert = useCallback(() => {
-    setFocusAlert(null);
+  const closeFocusAlert = () => {
+    setIsFocusAlertOpen(false);
     isAlertOpenRef.current = false;
     resetInactivityTimer();
-  }, [resetInactivityTimer]);
+  };
+
+  const turnOffFocusModeFromAlert = () => {
+    setIsFocusAlertOpen(false);
+    isAlertOpenRef.current = false;
+    setIsFocusModeActive(false);
+    clearInactivityCountdown(inactivityTimerRef);
+    timerStore.resume();
+  };
 
   useEffect(() => {
     if (!isFocusModeActive) {
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
+      clearInactivityCountdown(inactivityTimerRef);
       return;
     }
 
-    startInactivityCountdown();
+    startInactivityCountdown(
+      timerStore,
+      inactivityTimerRef,
+      isAlertOpenRef,
+      audioRef,
+      showFocusAlert,
+    );
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -128,13 +184,8 @@ export function useFocusMode(timerStore: TimerStore) {
         }
         isAlertOpenRef.current = true;
         timerStore.pause();
-        const audio = new Audio("/sounds/quiz/metal-pipe.mp3");
-        audio.play().catch(console.error);
-        setFocusAlert({
-          isOpen: true,
-          title: "Opuszczono kartę z quizem.",
-          message: "Timer został zatrzymany - skup się na nauce!",
-        });
+        playFocusAlertSound(audioRef);
+        showFocusAlert("tabLeft");
       }
     };
 
@@ -142,20 +193,30 @@ export function useFocusMode(timerStore: TimerStore) {
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
+      clearInactivityCountdown(inactivityTimerRef);
+    };
+  }, [isFocusModeActive, timerStore]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current != null) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
     };
-  }, [isFocusModeActive, startInactivityCountdown, timerStore]);
+  }, []);
 
   return {
     isFocusModeActive,
     toggleFocusMode,
     resetInactivityTimer,
-    focusAlert,
+    isFocusAlertOpen,
+    focusAlert: FOCUS_ALERT_CONTENT[focusAlertType],
     closeFocusAlert,
+    turnOffFocusModeFromAlert,
     showOnboarding,
     confirmOnboarding,
+    confirmOnboardingAndHide,
     cancelOnboarding,
   };
 }

@@ -14,8 +14,8 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { AiChat } from "@/components/ai/ai-chat";
-import { AiExplainCard } from "@/components/ai/ai-explain-card";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
+import { AiExplainCard } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
@@ -31,6 +31,7 @@ import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -80,10 +81,13 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     isFocusModeActive,
     toggleFocusMode,
     resetInactivityTimer,
+    isFocusAlertOpen,
     focusAlert,
     closeFocusAlert,
+    turnOffFocusModeFromAlert,
     showOnboarding,
     confirmOnboarding,
+    confirmOnboardingAndHide,
     cancelOnboarding,
   } = useFocusMode(timerStore);
   const { isHost: isContinuityHost, peerConnections } = continuity;
@@ -128,12 +132,23 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     });
   };
 
+  const handleQuizActivity = (action: () => void) => {
+    resetInactivityTimer();
+    action();
+  };
+
   useKeyShortcuts({
-    nextAction,
-    skipQuestion,
+    nextAction: () => {
+      handleQuizActivity(nextAction);
+    },
+    skipQuestion: () => {
+      handleQuizActivity(skipQuestion);
+    },
     questionChecked,
     isHistoryQuestion,
-    togglePreviousQuestion,
+    togglePreviousQuestion: () => {
+      handleQuizActivity(togglePreviousQuestion);
+    },
   });
 
   useEffect(() => {
@@ -173,23 +188,32 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       ) : null}
 
       <AlertDialog
-        open={focusAlert?.isOpen ?? false}
+        open={isFocusAlertOpen}
         onOpenChange={(open: boolean) => {
           if (!open) {
             closeFocusAlert();
           }
         }}
       >
-        <AlertDialogContent className="border-1 border-red-500 sm:max-w-md">
+        <AlertDialogContent
+          className="border-destructive ring-destructive/20 border ring-5"
+          overlayClassName="after:bg-destructive/10 after:backdrop-blur-sm after:h-full after:w-full after:fixed after:inset-0 after:animate-pulse"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">
-              {focusAlert?.title}
+              {focusAlert.title}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              {focusAlert?.message}
+              {focusAlert.message}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
+            <AlertDialogAction
+              variant="secondary"
+              onClick={turnOffFocusModeFromAlert}
+            >
+              Wyłącz tryb skupienia
+            </AlertDialogAction>
             <AlertDialogAction onClick={closeFocusAlert}>
               Wracam do nauki
             </AlertDialogAction>
@@ -215,17 +239,24 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 <strong>Jak to działa? </strong>
                 Po włączeniu tego trybu, jeśli opuścisz tę kartę lub nie
                 wykonasz żadnej akcji przez 5 minut, timer zostanie
-                automatycznie zatrzymany, a Ty otrzymasz powiadomienie, które
-                przypomni Ci o skupieniu się na nauce.
+                automatycznie zatrzymany, a aplikacja odtworzy głośny dźwięk i
+                pokaże powiadomienie przypominające o powrocie do nauki.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={cancelOnboarding}>
-              Anuluj
+            <AlertDialogAction
+              variant="secondary"
+              onClick={confirmOnboardingAndHide}
+              className="sm:mr-auto"
+            >
+              OK, nie pokazuj ponownie
             </AlertDialogAction>
+            <AlertDialogCancel onClick={cancelOnboarding}>
+              Anuluj
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmOnboarding}>
-              Rozumiem, włącz tryb skupienia
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -273,14 +304,15 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                     }
                   }}
                   nextAction={() => {
-                    resetInactivityTimer();
-                    nextAction();
+                    handleQuizActivity(nextAction);
                   }}
                   answers={answers}
                   questionChecked={questionChecked}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
-                  togglePreviousQuestion={togglePreviousQuestion}
+                  togglePreviousQuestion={() => {
+                    handleQuizActivity(togglePreviousQuestion);
+                  }}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
                   answerHints={answerHints}
