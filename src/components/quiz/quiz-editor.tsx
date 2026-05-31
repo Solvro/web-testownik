@@ -29,8 +29,6 @@ import { handleValidationFailure } from "@/lib/schemas/validation-utils";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
 
-import MarkdownTextarea from "../markdown-textarea";
-
 export type QuizEditorResult = QuizFormData;
 
 interface QuizEditorCreateProps {
@@ -339,7 +337,7 @@ export function QuizEditor(props: QuizEditorProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="quiz-description">Opis</Label>
-                <MarkdownTextarea
+                <Textarea
                   id="quiz-description"
                   rows={3}
                   placeholder="Podaj opis quizu"

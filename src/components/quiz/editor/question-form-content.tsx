@@ -5,6 +5,7 @@ import type { KeyboardEvent } from "react";
 import { toast } from "sonner";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ImageDropZone, ImagePreview } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
@@ -204,7 +205,7 @@ export function QuestionFormContent({
         label="Upuść zdjęcie do pytania"
       >
         <div className="space-y-2">
-          <Textarea
+          <MarkdownTextarea
             placeholder="Treść pytania..."
             value={question.text}
             onChange={(event) => {
