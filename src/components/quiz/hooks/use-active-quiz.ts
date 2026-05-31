@@ -39,14 +39,18 @@ export function useActiveQuiz(quizId: string) {
   const userSettings = deriveSettings(quiz.user_settings);
   const answers = quiz.current_session?.answers ?? [];
 
-  const currentQuestion = resolveCurrentQuestion(quiz, userSettings);
+  const [client, setClient] = useState<ClientState>(INITIAL_CLIENT_STATE);
+
+  const currentQuestion = resolveCurrentQuestion(
+    quiz,
+    userSettings,
+    client.questionChecked,
+  );
   const isQuizFinished =
     currentQuestion === null &&
     isQuizComplete(quiz.questions, answers, userSettings);
   const answerCounts = getAnswerCounts(answers);
   const mastered = getMasteredCount(quiz.questions, answers, userSettings);
-
-  const [client, setClient] = useState<ClientState>(INITIAL_CLIENT_STATE);
 
   const updateServerCache = (
     updater: (quiz: QuizWithUserProgress) => QuizWithUserProgress,
@@ -68,6 +72,7 @@ export function useActiveQuiz(quizId: string) {
 
   const recordAnswer = (
     answer: AnswerRecord,
+    studyTime: number,
     nextQuestionOverride?: Question | null,
   ): { nextQuestion: Question | null } => {
     const updatedAnswers = [answer, ...answers];
@@ -87,6 +92,11 @@ export function useActiveQuiz(quizId: string) {
           ? previous.current_session
           : {
               ...previous.current_session,
+              study_time: studyTime,
+              current_question:
+                previous.current_session.current_question ??
+                currentQuestion?.id ??
+                null,
               answers: [answer, ...previous.current_session.answers],
             },
     }));

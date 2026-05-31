@@ -1,9 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { MessageSquareWarningIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getUserService } from "@/services";
+import type { QuizWithUserProgress } from "@/types/quiz";
 
 interface ReportBugDialogProps {
   open: boolean;
@@ -46,12 +49,21 @@ const DEFAULT_FORM_STATE = {
 
 export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const appContext = useContext(AppContext);
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
 
-  const quizId = pathname.includes("quiz/") ? pathname.split("/").pop() : null;
+  const quizId = /^\/quiz\/([^/]+)/.exec(pathname)?.[1] ?? null;
+  const currentQuiz =
+    quizId == null
+      ? undefined
+      : queryClient.getQueryData<QuizWithUserProgress>(
+          quizDetailQueryKey(quizId),
+        );
+  const canEditCurrentQuiz =
+    currentQuiz != null && (currentQuiz.can_edit ?? false);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -148,11 +160,11 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
           <DialogDescription>
-            Opisz problem lub propozycję ulepszenia
+            Opisz problem lub propozycję ulepszenia Testownika
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
-          {quizId != null && (
+          {quizId != null && !canEditCurrentQuiz && (
             <Alert
               variant="default"
               className="border-fuchsia-500 bg-fuchsia-50 dark:bg-fuchsia-900/20"

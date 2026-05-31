@@ -7,6 +7,10 @@ export const env = createEnv({
     JWT_COOKIE_DOMAIN: z.string().min(1).optional(),
     INTERNAL_API_KEY: z.string().min(1).optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
+    AI_CHAT_RATE_LIMIT: z.coerce.number().default(10),
+    AI_CHAT_RATE_WINDOW: z.coerce.number().default(60),
+    AI_EXPLAIN_RATE_LIMIT: z.coerce.number().default(15),
+    AI_EXPLAIN_RATE_WINDOW: z.coerce.number().default(60),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

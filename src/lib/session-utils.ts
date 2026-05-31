@@ -44,9 +44,8 @@ export function getRemainingAttempts(
 
   // Reached max question reoccurrences
   if (
-    answeredCount >=
-    (settings.max_question_reoccurrences ??
-      DEFAULT_USER_SETTINGS.max_question_reoccurrences)
+    settings.max_question_reoccurrences !== null &&
+    answeredCount >= settings.max_question_reoccurrences
   ) {
     remaining = 0;
     return remaining;
@@ -96,6 +95,63 @@ export function getQuestionAnsweredCount(
     (count, answer) => (answer.question === questionId ? count + 1 : count),
     questionChecked ? 0 : 1,
   );
+}
+
+function getQuestionAppearanceNumber(
+  questionId: string,
+  answers: AnswerRecord[],
+  questionChecked: boolean,
+): number {
+  return Math.max(
+    1,
+    getQuestionAnsweredCount(questionId, questionChecked, answers),
+  );
+}
+
+function getAnswerShuffleSeed(
+  seed: string | undefined,
+  questionId: string,
+  appearanceNumber: number,
+): string {
+  return `${seed ?? "question"}-${questionId}-${appearanceNumber.toString()}`;
+}
+
+export function getQuestionWithShuffledAnswers(
+  question: Question,
+  answers: AnswerRecord[],
+  seed?: string,
+  questionChecked = false,
+): Question {
+  return {
+    ...question,
+    answers: getDeterministicShuffle(
+      question.answers,
+      getAnswerShuffleSeed(
+        seed,
+        question.id,
+        getQuestionAppearanceNumber(question.id, answers, questionChecked),
+      ),
+    ),
+  };
+}
+
+export function getAnsweredQuestionWithShuffledAnswers(
+  question: Question,
+  answers: AnswerRecord[],
+  seed?: string,
+): Question {
+  const appearanceNumber = Math.max(
+    1,
+    answers.filter((answer) => answer.question === question.id).length,
+  );
+
+  return {
+    ...question,
+    answers: getDeterministicShuffle(
+      question.answers,
+      getAnswerShuffleSeed(seed, question.id, appearanceNumber),
+    ),
+  };
 }
 
 /**
@@ -168,10 +224,7 @@ export function pickNextQuestion({
   const randomIndex = Math.floor(Math.random() * candidates.length);
   const question = candidates[randomIndex];
 
-  return {
-    ...question,
-    answers: getDeterministicShuffle(question.answers, seed ?? question.id),
-  };
+  return getQuestionWithShuffledAnswers(question, answers, seed);
 }
 
 /**
@@ -220,6 +273,7 @@ export function deriveSettings(
 export function resolveCurrentQuestion(
   quiz: QuizWithUserProgress,
   settings: UserSettings,
+  questionChecked = false,
 ): Question | null {
   const session = quiz.current_session;
   const answers = session?.answers ?? [];
@@ -229,11 +283,12 @@ export function resolveCurrentQuestion(
       (q) => q.id === session.current_question,
     );
     if (savedQuestion !== undefined) {
-      const seed = `${session.id}-${String(session.study_time)}`;
-      return {
-        ...savedQuestion,
-        answers: getDeterministicShuffle(savedQuestion.answers, seed),
-      };
+      return getQuestionWithShuffledAnswers(
+        savedQuestion,
+        answers,
+        session.id,
+        questionChecked,
+      );
     }
   }
 
@@ -241,11 +296,44 @@ export function resolveCurrentQuestion(
     questions: quiz.questions,
     answers,
     settings,
-    seed:
-      session == null
-        ? undefined
-        : `${session.id}-${String(session.study_time)}`,
+    seed: session?.id,
   });
+}
+
+export function ensureQuizCurrentQuestion(
+  quiz: QuizWithUserProgress,
+  settings: UserSettings,
+): QuizWithUserProgress {
+  const session = quiz.current_session;
+
+  if (session == null) {
+    return {
+      ...quiz,
+      current_session: buildFallbackSession(quiz, settings),
+    };
+  }
+
+  if (
+    session.current_question !== null ||
+    isQuizComplete(quiz.questions, session.answers, settings)
+  ) {
+    return quiz;
+  }
+
+  const currentQuestion = pickNextQuestion({
+    questions: quiz.questions,
+    answers: session.answers,
+    settings,
+    seed: session.id,
+  });
+
+  return {
+    ...quiz,
+    current_session: {
+      ...session,
+      current_question: currentQuestion?.id ?? null,
+    },
+  };
 }
 
 export function buildFallbackSession(

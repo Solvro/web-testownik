@@ -1,6 +1,7 @@
 import { Loader } from "@/components/loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PopoverContent } from "@/components/ui/popover";
+import { getAccountLevelAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
 import type { Group, User } from "@/types/user";
 
@@ -48,7 +49,13 @@ export function SearchResultsPopover({
                 handleAddEntity(result);
               }}
             >
-              <Avatar>
+              <Avatar
+                className={cn(
+                  "full_name" in result
+                    ? getAccountLevelAvatarClassName(result.account_level)
+                    : null,
+                )}
+              >
                 <AvatarImage
                   src={result.photo}
                   alt={`Zdjęcie profilowe ${"full_name" in result ? `użytkownika ${result.full_name}` : `grupy ${result.name}`}`}

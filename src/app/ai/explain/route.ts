@@ -4,6 +4,11 @@ import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { chatModel } from "@/lib/ai/model";
 import type { LabeledImage } from "@/lib/ai/prompts";
+import {
+  checkRateLimit,
+  createRateLimitExceededResponse,
+  createRateLimitHeaders,
+} from "@/lib/ai/rate-limit";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
@@ -20,6 +25,16 @@ export async function POST(request: Request) {
   }
   if (!hasPermission(user.account_type, PermissionAction.AI_FEATURES)) {
     return new Response("AI features require a full account", { status: 403 });
+  }
+
+  const rateLimitResult = checkRateLimit(user.user_id, "ai-explain", {
+    limit: env.AI_EXPLAIN_RATE_LIMIT,
+    window: env.AI_EXPLAIN_RATE_WINDOW,
+  });
+  const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
+
+  if (!rateLimitResult.allowed) {
+    return createRateLimitExceededResponse(rateLimitResult);
   }
 
   const { system, prompt, images } = (await request.json()) as {
@@ -47,5 +62,7 @@ export async function POST(request: Request) {
         : prompt,
   });
 
-  return result.toTextStreamResponse();
+  return result.toTextStreamResponse({
+    headers: rateLimitHeaders,
+  });
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
+  BarChart3Icon,
   CopyIcon,
   Link2Icon,
   Loader2Icon,
@@ -8,12 +9,11 @@ import {
   ScanEyeIcon,
   SearchIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -99,10 +99,10 @@ export function QuizInfoCard({
   isFocusModeActive,
   toggleFocusMode,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const { checkPermission, user } = useContext(AppContext);
+  const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
-  const router = useRouter();
+  const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
@@ -125,12 +125,8 @@ export function QuizInfoCard({
     return null;
   }
 
-  const isCreator =
-    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
+  const canEditQuiz = quiz.can_edit === true;
 
-  const openSearchInQuiz = () => {
-    router.push(`/search-in-quiz/${quiz.id}`);
-  };
   const progressPercentage =
     totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 
@@ -171,7 +167,7 @@ export function QuizInfoCard({
             ["--bar-color" as never]: getProgressColor(progressPercentage),
           }}
           aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
-          className="[&_[data-slot=progress-indicator]]:bg-[var(--bar-color)]"
+          className="**:data-[slot=progress-indicator]:bg-(--bar-color)"
         />
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-2">
@@ -179,14 +175,14 @@ export function QuizInfoCard({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Button
+                    <ButtonLink
                       size="icon-sm"
                       variant="outline"
-                      onClick={openSearchInQuiz}
+                      href={`/search-in-quiz/${quiz.id}`}
                       aria-label="Wyszukaj w quizie"
                     >
                       <SearchIcon className="size-5" />
-                    </Button>
+                    </ButtonLink>
                   }
                 ></TooltipTrigger>
                 <TooltipContent>Wyszukaj w quizie</TooltipContent>
@@ -215,7 +211,24 @@ export function QuizInfoCard({
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
-            {isCreator ? null : (
+            {canViewStats ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <ButtonLink
+                      size="icon-sm"
+                      variant="outline"
+                      href={`/quiz/${quiz.id}/stats`}
+                      aria-label="Statystyki quizu"
+                    >
+                      <BarChart3Icon className="size-5" />
+                    </ButtonLink>
+                  }
+                ></TooltipTrigger>
+                <TooltipContent>Statystyki quizu</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {canEditQuiz ? null : (
               <Tooltip>
                 <TooltipTrigger
                   render={

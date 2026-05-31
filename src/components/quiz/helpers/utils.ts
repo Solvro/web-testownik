@@ -6,6 +6,10 @@ export const INITIAL_CLIENT_STATE: ClientState = {
   nextQuestionId: null,
 };
 
+export function quizQueryKey(quizId: string) {
+  return ["quiz", quizId] as const;
+}
+
 export function quizDetailQueryKey(quizId: string) {
   return [
     "quiz",

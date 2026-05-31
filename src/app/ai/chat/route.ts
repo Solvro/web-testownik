@@ -8,6 +8,11 @@ import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { chatModel } from "@/lib/ai/model";
 import type { LabeledImage } from "@/lib/ai/prompts";
+import {
+  checkRateLimit,
+  createRateLimitExceededResponse,
+  createRateLimitHeaders,
+} from "@/lib/ai/rate-limit";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
@@ -70,6 +75,16 @@ export async function POST(request: Request) {
   }
   if (!hasPermission(user.account_type, PermissionAction.AI_FEATURES)) {
     return new Response("AI features require a full account", { status: 403 });
+  }
+
+  const rateLimitResult = checkRateLimit(user.user_id, "ai-chat", {
+    limit: env.AI_CHAT_RATE_LIMIT,
+    window: env.AI_CHAT_RATE_WINDOW,
+  });
+  const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
+
+  if (!rateLimitResult.allowed) {
+    return createRateLimitExceededResponse(rateLimitResult);
   }
 
   const {
@@ -233,5 +248,7 @@ export async function POST(request: Request) {
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    headers: rateLimitHeaders,
+  });
 }

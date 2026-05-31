@@ -225,6 +225,170 @@ const getMimeTypeFromExtension = (extension: string | undefined): string => {
   }
 };
 
+const getExtensionFromMimeType = (mimeType: string): string => {
+  switch (mimeType) {
+    case "image/png": {
+      return "png";
+    }
+    case "image/gif": {
+      return "gif";
+    }
+    case "image/webp": {
+      return "webp";
+    }
+    case "image/avif": {
+      return "avif";
+    }
+    case "image/jpeg":
+    default: {
+      return "jpg";
+    }
+  }
+};
+
+const DATA_IMAGE_URL_PATTERN =
+  /^data:(image\/(?:avif|gif|jpeg|png|webp));base64,([a-z\d+/=\s]+)$/i;
+
+const dataImageUrlToFile = (dataUrl: string, filenamePrefix: string): File => {
+  const match = DATA_IMAGE_URL_PATTERN.exec(dataUrl);
+  if (match === null) {
+    throw new Error("Nieprawidłowy format zdjęcia base64.");
+  }
+
+  const [, mimeType, base64Data] = match;
+  const binary = atob(base64Data.replaceAll(/\s/g, ""));
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index++) {
+    bytes[index] = binary.codePointAt(index) ?? 0;
+  }
+
+  return new File(
+    [bytes],
+    `${filenamePrefix}.${getExtensionFromMimeType(mimeType)}`,
+    {
+      type: mimeType,
+    },
+  );
+};
+
+const isDataImageUrl = (value: string | null | undefined): value is string =>
+  typeof value === "string" && DATA_IMAGE_URL_PATTERN.test(value);
+
+export const countDataUrlImages = (quiz: Quiz): number =>
+  quiz.questions.reduce((total, question) => {
+    const questionImageCount = isDataImageUrl(question.image_url) ? 1 : 0;
+    const answerImageCount = question.answers.filter((answer) =>
+      isDataImageUrl(answer.image_url),
+    ).length;
+
+    return total + questionImageCount + answerImageCount;
+  }, 0);
+
+interface UploadDataUrlImagesOptions {
+  uploadImage?: (file: File) => Promise<string>;
+  onProgress?: (current: number, total: number) => void;
+  shouldSkip?: () => boolean;
+}
+
+export const uploadDataUrlImages = async (
+  quiz: Quiz,
+  optionsOrUploadImage?:
+    | UploadDataUrlImagesOptions
+    | ((file: File) => Promise<string>),
+): Promise<Quiz> => {
+  const options =
+    typeof optionsOrUploadImage === "function"
+      ? { uploadImage: optionsOrUploadImage }
+      : (optionsOrUploadImage ?? {});
+  const uploadImage =
+    options.uploadImage ??
+    (async (file: File): Promise<string> => {
+      const uploadResult = await getImageService().upload(file);
+      return uploadResult.data.id;
+    });
+  const total = countDataUrlImages(quiz);
+  let current = 0;
+
+  if (total === 0) {
+    return quiz;
+  }
+
+  const markProgress = () => {
+    current++;
+    options.onProgress?.(current, total);
+  };
+
+  const questions = [];
+
+  for (const [questionIndex, question] of quiz.questions.entries()) {
+    let preparedQuestion = { ...question };
+
+    if (isDataImageUrl(question.image_url)) {
+      if (options.shouldSkip?.() === true) {
+        preparedQuestion = {
+          ...preparedQuestion,
+          image_url: null,
+          image_upload: null,
+        };
+      } else {
+        const uploadId = await uploadImage(
+          dataImageUrlToFile(
+            question.image_url,
+            `question-${String(questionIndex + 1)}`,
+          ),
+        );
+        preparedQuestion = {
+          ...preparedQuestion,
+          image_url: null,
+          image_upload: uploadId,
+        };
+      }
+      markProgress();
+    }
+
+    const answers = [];
+
+    for (const [answerIndex, answer] of question.answers.entries()) {
+      if (!isDataImageUrl(answer.image_url)) {
+        answers.push(answer);
+        continue;
+      }
+
+      if (options.shouldSkip?.() === true) {
+        answers.push({
+          ...answer,
+          image_url: null,
+          image_upload: null,
+        });
+        markProgress();
+        continue;
+      }
+
+      const uploadId = await uploadImage(
+        dataImageUrlToFile(
+          answer.image_url,
+          `answer-${String(questionIndex + 1)}-${String(answerIndex + 1)}`,
+        ),
+      );
+
+      answers.push({
+        ...answer,
+        image_url: null,
+        image_upload: uploadId,
+      });
+      markProgress();
+    }
+
+    questions.push({ ...preparedQuestion, answers });
+  }
+
+  return {
+    ...quiz,
+    questions,
+  };
+};
+
 export const extractImagesToUpload = (
   questions: Question[],
 ): { type: "question" | "answer"; id: string; filename: string }[] => {
@@ -606,6 +770,28 @@ export const useImportQuiz = () => {
     }
   };
 
+  const uploadDataUrlImagesWithProgress = async (quizData: Quiz) => {
+    const total = countDataUrlImages(quizData);
+    if (total === 0) {
+      return quizData;
+    }
+
+    setIsUploading(true);
+    stopUploadRef.current = false;
+    setUploadProgress({ current: 0, total });
+
+    try {
+      return await uploadDataUrlImages(quizData, {
+        shouldSkip: () => stopUploadRef.current,
+        onProgress: (current, total_) => {
+          setUploadProgress({ current, total: total_ });
+        },
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const processAndSubmitImport = async (data: unknown) => {
     const validationError = validateQuiz(data);
     if (validationError === null) {
@@ -650,7 +836,7 @@ export const useImportQuiz = () => {
         }),
       } as Quiz;
 
-      await submitImport(normalizedQuiz);
+      await submitImport(await uploadDataUrlImagesWithProgress(normalizedQuiz));
       return;
     }
     const legacyError = validateLegacyQuiz(data);
@@ -662,7 +848,7 @@ export const useImportQuiz = () => {
         setErrorAndNotify(`Błąd migracji quizu legacy: ${postMigrationError}`);
         return;
       }
-      await submitImport(migratedQuiz);
+      await submitImport(await uploadDataUrlImagesWithProgress(migratedQuiz));
       return;
     }
 
