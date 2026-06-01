@@ -37,6 +37,7 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
+      data-variant={variant}
       orientation={orientation}
       data-variant={variant}
       className={cn("flex gap-2 data-horizontal:flex-col", className)}
@@ -126,6 +127,13 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   );
 }
 
-export { Tabs, ResponsiveTabs, TabsList, TabsTrigger, TabsContent };
-// eslint-disable-next-line react-refresh/only-export-components
-export { tabsListVariants };
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  // eslint-disable-next-line react-refresh/only-export-components
+  tabsListVariants,
+  // eslint-disable-next-line react-refresh/only-export-components
+  tabsVariants,
+};
