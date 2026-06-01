@@ -77,7 +77,7 @@ export function StatsInfoCard({ quiz, lastActivityAt }: StatsInfoCardProps) {
         <InfoRow
           icon={UserIcon}
           label="Twórca"
-          value={(quiz.creator?.full_name ?? "") || "Anonimowy"}
+          value={quiz.creator?.full_name ?? "Anonimowy"}
         />
       </CardContent>
     </Card>
