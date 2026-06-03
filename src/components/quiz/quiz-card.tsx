@@ -2,8 +2,10 @@
 
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
+  ArchiveIcon,
   DownloadIcon,
   EllipsisVerticalIcon,
+  FileArchive,
   GlobeIcon,
   Link2Icon,
   LockIcon,
@@ -14,8 +16,8 @@ import {
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { ComponentProps, useState } from "react";
-import { ViewTransition, useEffect, useRef } from "react";
+import type { ComponentProps } from "react";
+import { ViewTransition, useEffect, useRef, useState } from "react";
 
 import {
   Card,
@@ -40,12 +42,14 @@ export interface QuizCardProps extends ComponentProps<typeof Card> {
   showDownload?: boolean;
   showDelete?: boolean;
   showSearch?: boolean;
+  showArchive?: boolean;
   onEditPath?: (quiz: QuizMetadata) => string;
   onOpenPath?: (quiz: QuizMetadata) => string;
   onSearchPath?: (quiz: QuizMetadata) => string;
   onShare?: (quiz: QuizMetadata) => void;
   onDelete?: (quiz: QuizMetadata) => void;
   onDownload?: (quiz: QuizMetadata) => void;
+  onArchive?: (quiz: QuizMetadata) => void;
   inFolder?: boolean;
   libraryKey: string;
   isDraggable?: boolean;
@@ -58,12 +62,14 @@ export function QuizCard({
   showDownload = true,
   showDelete,
   showSearch,
+  showArchive,
   onEditPath = (q) => `/edit-quiz/${q.id}`,
   onOpenPath = (q) => `/quiz/${q.id}`,
   onSearchPath = (q) => `/search-in-quiz/${q.id}`,
   onShare,
   onDelete,
   onDownload,
+  onArchive,
   className,
   inFolder = false,
   libraryKey,
@@ -75,7 +81,7 @@ export function QuizCard({
 
   useEffect(() => {
     const element = ref.current;
-    if (!element || !isDraggable) {
+    if (element == null || !isDraggable) {
       return;
     }
 
@@ -110,7 +116,11 @@ export function QuizCard({
           ) : null}
           <div className="flex w-full gap-2">
             <div className="bg-accent flex aspect-square size-14 items-center justify-center rounded-lg">
-              <NotepadTextIcon className="text-muted-foreground size-9" />
+              {quiz.folder.folder_type === "archive" ? (
+                <FileArchive className="text-muted-foreground size-9" />
+              ) : (
+                <NotepadTextIcon className="text-muted-foreground size-9" />
+              )}
             </div>
             <CardHeader className="w-full gap-0! p-0">
               <CardTitle className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
@@ -198,6 +208,12 @@ export function QuizCard({
                       Pobierz
                     </DropdownMenuItem>
                   ) : null}
+                  {Boolean(showArchive) && (
+                    <DropdownMenuItem onClick={() => onArchive?.(quiz)}>
+                      <ArchiveIcon />
+                      Archiwizuj
+                    </DropdownMenuItem>
+                  )}
                   {Boolean(showSearch) && (
                     <DropdownMenuItem
                       render={
