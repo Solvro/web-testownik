@@ -1,8 +1,9 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircleIcon,
+  ArchiveIcon,
   FolderIcon,
   FolderXIcon,
   ImportIcon,
@@ -42,6 +43,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -75,7 +83,13 @@ import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
 import { getFolderService, getQuizService } from "@/services";
-import type { Folder, QuizBase, QuizMetadata, SharedQuiz } from "@/types/quiz";
+import type {
+  Folder,
+  QuizBase,
+  LibraryItem,
+  QuizMetadata,
+  SharedQuiz,
+} from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
@@ -103,6 +117,14 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   } = useUserQuizzes();
 
   const {
+    data: allSharedQuizzes = [],
+    isLoading: isLoadingSharedQuizzes,
+    error: sharedQuizzesError,
+  } = useSharedQuizzes({
+    enabled: canViewShared,
+  });
+
+  const {
     data: library,
     isLoading: isLoadingUserLibrary,
     error: userLibraryError,
@@ -114,27 +136,62 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     error: userFoldersError,
   } = useUserFolders();
 
-  const rootFolder = library?.path[0];
+  const rootFolderId =
+    library != null && !Array.isArray(library) ? library.path[0].id : undefined;
+  const rootFolder =
+    rootFolderId == null
+      ? undefined
+      : folders.find((folder) => folder.id === rootFolderId);
+
+  const [currentFolder, setCurrentFolder] = useState<Folder | undefined>();
+  // Don't include root folder there (sections also)
+  const [foldersHistory, setFoldersHistory] = useState<Folder[]>([]);
+
+  const handleNavigateToFolder = (folder: Folder) => {
+    setCurrentFolder(folder);
+    setFoldersHistory((previous) => [...previous, folder]);
+  };
+
+  const handleNavigateToHistoryIndex = (index: number) => {
+    const newHistory = foldersHistory.slice(0, index + 1);
+
+    setFoldersHistory(newHistory);
+    setCurrentFolder(newHistory[index]);
+  };
+
+  const handleNavigateToRoot = () => {
+    setFoldersHistory([]);
+    setCurrentFolder(rootFolder);
+  };
+
+  const activeFolder = currentFolder ?? rootFolder;
+  const activeFolderId = activeFolder?.id;
+
+  const { data: currentFolderContent, isLoading: isLoadingContents } = useQuery(
+    {
+      queryKey: ["folder-library", activeFolderId],
+      queryFn: async () => {
+        if (activeFolderId == null) {
+          throw new Error("Brak aktywnego folderu");
+        }
+
+        return getFolderService().getLibraryById(activeFolderId);
+      },
+      enabled: activeFolderId != null,
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const archiveFolder = folders.find(
     (folder) => folder.folder_type === "archive",
   );
-  const archivedQuizIds = archiveFolder?.quizzes ?? [];
   const archivedQuizzes = userQuizzes.filter((quiz) =>
-    archivedQuizIds.includes(quiz.id),
+    (archiveFolder?.quizzes ?? []).includes(quiz.id),
   );
 
   // Exclude displaying root and archive folder
   const userFolders = folders.filter((folder) => {
     return folder.folder_type !== "archive" && folder.id !== rootFolder?.id;
-  });
-
-  const {
-    data: allSharedQuizzes = [],
-    isLoading: isLoadingSharedQuizzes,
-    error: sharedQuizzesError,
-  } = useSharedQuizzes({
-    enabled: canViewShared,
   });
 
   // Filter shared quizzes to get unique ones
@@ -144,13 +201,12 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       sq.quiz.creator?.id !== userId,
   );
 
-  // const deletedQuizzes = userQuizzes.filter((quiz: QuizMetadata) => quiz)
-
   const loading =
     isLoadingUserQuizzes ||
     isLoadingSharedQuizzes ||
     isLoadingUserFolders ||
-    isLoadingUserLibrary;
+    isLoadingUserLibrary ||
+    isLoadingContents;
   const error =
     userQuizzesError ??
     sharedQuizzesError ??
@@ -158,7 +214,13 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     userLibraryError;
 
   const [currentDialog, setCurrentDialog] = useState<{
-    type: "share" | "delete-quiz" | "delete-folder" | "rename-folder" | null;
+    type:
+      | "share"
+      | "delete-quiz"
+      | "create-folder"
+      | "delete-folder"
+      | "rename-folder"
+      | null;
     quiz: QuizMetadata | null;
     folderId: string | null;
   }>({ type: null, quiz: null, folderId: null });
@@ -219,7 +281,8 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       sortedUserQuizzes.filter(
         (quiz) =>
           quiz.creator?.id === userId &&
-          (searchRegex?.test(quiz.title) ?? true),
+          (searchRegex?.test(quiz.title) ?? true) &&
+          quiz.folder.folder_type !== "archive",
       ),
     [searchRegex, sortedUserQuizzes, userId],
   );
@@ -249,12 +312,11 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     [searchRegex, sortedArchivedQuizzes],
   );
 
+  const libraryItems: LibraryItem[] = currentFolderContent?.items ?? [];
+
   if (typeof document !== "undefined") {
     document.title = "Twoje quizy - Testownik Solvro";
   }
-
-  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
-
   const handleShareQuiz = (quiz: QuizMetadata) => {
     setCurrentDialog({ type: "share", quiz, folderId: null });
   };
@@ -275,6 +337,17 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
     setRenameFolderInput(folderToRename.name);
     setCurrentDialog({ type: "rename-folder", quiz: null, folderId });
+  };
+
+  const handleArchiveQuiz = async (quiz: QuizMetadata) => {
+    try {
+      await getQuizService().archiveQuiz(quiz.id);
+      void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+      toast.success("Quiz został zarchiwizowany");
+    } catch (error_) {
+      console.error("Błd podczas archiwizacji quizu:", error_);
+      toast.error("Nie udało się zarchiwizować quizu");
+    }
   };
 
   const handleMoveQuizToFolder = async (quizId: string, folderId: string) => {
@@ -336,7 +409,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
       toast.success(`Quiz "${quiz.title}" został usunięty.`);
     } catch {
-      toast.error("Nie udało się usunąć quizu.");
+      toast.error("Nie uda��o się usunąć quizu.");
     }
 
     setCurrentDialog({ type: null, quiz: null, folderId: null });
@@ -428,7 +501,6 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
       toast.success("Utworzono nowy folder");
-      setIsFolderDialogOpen(false);
       setNewFolderInput("Nowy folder");
     } catch {
       toast.error("Wystąpił błąd podczas tworzenia folderu");
@@ -469,7 +541,37 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     setCurrentDialog({ type: null, quiz: null, folderId: null });
   };
 
-  type TabKey = "all" | "library" | "public" | "shared" | "archive";
+  const handleLibraryLoad = async (folderId: string) => {
+    const folderToLoad = folders.find((folder_) => folder_.id === folderId);
+    if (folderToLoad === undefined) {
+      return;
+    }
+
+    try {
+      setCurrentFolder(folderToLoad);
+      await getFolderService().getLibraryById(folderToLoad.id);
+      void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+
+      // Find folder from history
+      const historyFolder = foldersHistory.find(
+        (folder) => folder.id === folderId,
+      );
+
+      // Not in history - open another
+      if (historyFolder === undefined) {
+        const foldersHistoryUpdate = [...foldersHistory, folderToLoad];
+        setFoldersHistory(foldersHistoryUpdate);
+      } else {
+        // Go back in history
+        handleNavigateToFolder(historyFolder);
+      }
+    } catch (error_) {
+      console.error("Nie udało się wczytać biblioteki", error_);
+    }
+  };
+
+  type TabKey = "all" | "library" | "public" | "shared" | "archive" | "trash";
   interface TabConfig {
     key: TabKey;
     titleLabel: string;
@@ -478,10 +580,10 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     showCreateButton?: boolean;
     showImportButton?: boolean;
     showSort?: boolean;
-    folders: Folder[];
-    quizzes: QuizMetadata[] | SharedQuiz[];
+    library: () => LibraryItem[];
     isFilterActive: boolean;
     emptyState?: ReactNode;
+    showBreadcrumb?: boolean;
   }
 
   const tabsConfig: TabConfig[] = [
@@ -489,8 +591,14 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       key: "all",
       titleLabel: "Wszystkie",
       icon: <SettingsIcon className="size-6" />,
-      folders: sortedFolders,
-      quizzes: filteredAllQuizzes,
+      library: () => {
+        const items: LibraryItem[] = [...(library?.items ?? [])];
+        const archivedQuizItems = filteredArchivedQuizzes.map((quiz) => ({
+          id: quiz.id,
+          type: "quiz" as const,
+        })) as LibraryItem[];
+        return [...items, ...archivedQuizItems];
+      },
       isFilterActive:
         searchValue.trim().length > 0 &&
         sortedFolders.length === 0 &&
@@ -498,13 +606,15 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       showCreateButton: true,
       showImportButton: true,
       showSort: true,
+      showBreadcrumb: true,
     },
     {
       key: "library",
       titleLabel: "Moja biblioteka",
       icon: <LibraryIcon className="size-6" />,
-      folders: sortedFolders,
-      quizzes: filteredLibraryQuizzes,
+      library: () => {
+        return libraryItems;
+      },
       isFilterActive:
         searchValue.trim().length > 0 &&
         sortedFolders.length === 0 &&
@@ -512,14 +622,19 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       showCreateButton: true,
       showImportButton: true,
       showSort: true,
+      showBreadcrumb: true,
     },
     {
       key: "public",
       titleLabel: "Publiczne",
       description: "Tu znajdziesz Twoje publiczne quizy.",
       icon: <MessageCircleQuestionMarkIcon className="size-6" />,
-      folders: sortedFolders,
-      quizzes: filteredPublicQuizzes,
+      library: () => {
+        return filteredPublicQuizzes.map((quiz) => ({
+          id: quiz.id,
+          type: "quiz" as const,
+        })) as LibraryItem[];
+      },
       isFilterActive:
         searchValue.trim().length > 0 &&
         sortedFolders.length === 0 &&
@@ -544,8 +659,12 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       titleLabel: "Udostępnione dla mnie",
       description: "Tu znajdziesz quizy udostępnione Ci przez innych.",
       icon: <Link2Icon className="size-6" />,
-      folders: sortedFolders,
-      quizzes: filteredSharedQuizzes,
+      library: () => {
+        return sortedSharedQuizzes.map((quiz) => ({
+          id: quiz.quiz.id,
+          type: "quiz" as const,
+        })) as LibraryItem[];
+      },
       isFilterActive:
         searchValue.trim().length > 0 &&
         sortedFolders.length === 0 &&
@@ -567,12 +686,15 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     },
     {
       key: "archive",
-      titleLabel: "Ostatnio usunięte",
-      description:
-        "Usunięte quizy będą przechowywane przez 30 dni, a po tym czasie zostaną trwale skasowane.",
-      icon: <MessageCircleXIcon className="size-6" />,
-      folders: [],
-      quizzes: filteredArchivedQuizzes,
+      titleLabel: "Archiwum",
+      description: "Zarchiwizowane quizy",
+      icon: <ArchiveIcon className="size-6" />,
+      library: () => {
+        return filteredArchivedQuizzes.map((quiz) => ({
+          id: quiz.id,
+          type: "quiz" as const,
+        })) as LibraryItem[];
+      },
       isFilterActive:
         searchValue.trim().length > 0 && filteredArchivedQuizzes.length === 0,
       showSort: true,
@@ -583,6 +705,32 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               <FolderXIcon />
             </EmptyMedia>
             <EmptyTitle>Archiwum jest puste</EmptyTitle>
+            <EmptyDescription>
+              Nie znaleziono żadnych usuniętych quizów
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ),
+    },
+    {
+      key: "trash",
+      titleLabel: "Ostatnio usunięte",
+      description:
+        "Usunięte quizy będą przechowywane przez 30 dni, a po tym czasie zostaną trwale skasowane.",
+      icon: <MessageCircleXIcon className="size-6" />,
+      library: () => {
+        return []; // TODO
+      },
+      isFilterActive:
+        searchValue.trim().length > 0 && filteredArchivedQuizzes.length === 0,
+      showSort: true,
+      emptyState: (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderXIcon />
+            </EmptyMedia>
+            <EmptyTitle>Kosz jest pusty</EmptyTitle>
             <EmptyDescription>
               Nie znaleziono żadnych usuniętych quizów
             </EmptyDescription>
@@ -618,7 +766,14 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     <Tabs variant="quiz" defaultValue="all">
       <TabsList>
         {tabsConfig.map((tab) => (
-          <TabsTrigger key={tab.key} value={tab.key}>
+          <TabsTrigger
+            key={tab.key}
+            value={tab.key}
+            onClick={() => {
+              setFoldersHistory([]);
+              setCurrentFolder(rootFolder);
+            }}
+          >
             {tab.icon}
             {tab.titleLabel}
           </TabsTrigger>
@@ -660,7 +815,11 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
                     <DropdownMenuItem
                       onClick={(_event) => {
                         _event.preventDefault();
-                        setIsFolderDialogOpen(true);
+                        setCurrentDialog({
+                          type: "create-folder",
+                          quiz: null,
+                          folderId: null,
+                        });
                       }}
                     >
                       <FolderIcon />
@@ -694,16 +853,60 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               ) : null}
             </div>
 
+            {tab.showBreadcrumb === true ? (
+              <div className="mb-6">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink
+                        onClick={() => {
+                          handleNavigateToRoot();
+                        }}
+                        aria-disabled={foldersHistory.length === 0}
+                      >
+                        {tab.titleLabel}
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    {foldersHistory.map((folder, index) => {
+                      const isLast = index === foldersHistory.length - 1;
+                      return (
+                        <>
+                          <BreadcrumbItem>
+                            <BreadcrumbLink
+                              onClick={() => {
+                                handleNavigateToHistoryIndex(index);
+                              }}
+                              aria-disabled={isLast}
+                            >
+                              {folder.name}
+                            </BreadcrumbLink>
+                          </BreadcrumbItem>
+                          <BreadcrumbSeparator />
+                        </>
+                      );
+                    })}
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
+            ) : null}
+
             <QuizzesLibrary
-              libraryQuizzes={tab.quizzes}
-              libraryFolders={tab.folders}
+              library={
+                foldersHistory.length === 0
+                  ? tab.library()
+                  : (currentFolderContent?.items ?? [])
+              }
               userQuizzes={userQuizzes}
+              userFolders={userFolders}
+              foldersHistory={foldersHistory}
               sortKey={sortKey}
               isFilterActive={tab.isFilterActive}
               canSearchInQuizzes={canSearchInQuizzes}
               handleShareQuiz={handleShareQuiz}
               handleDeleteQuiz={handleDeleteQuiz}
               handleDownloadQuiz={handleDownloadQuiz}
+              handleArchiveQuiz={handleArchiveQuiz}
               handleResetFilters={handleResetFilters}
               libraryKey={tab.key}
               onFolderDelete={handleDeleteFolder}
@@ -713,51 +916,11 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               isQuizDraggable={true}
               isFolderDraggable={true}
               handleMoveQuizToFolder={handleMoveQuizToFolder}
+              handleLibraryLoad={handleLibraryLoad}
             />
           </TabsContent>
         );
       })}
-
-      <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Stwórz nowy folder</DialogTitle>
-          </DialogHeader>
-          <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    className="flex items-center justify-center"
-                    onClick={handleCreateNewFolder}
-                    disabled={
-                      isCreatingNewFolder || newFolderInput.trim().length === 0
-                    }
-                  >
-                    {isCreatingNewFolder ? (
-                      <LoaderCircleIcon className="animate-spin" />
-                    ) : (
-                      <span>Utwórz</span>
-                    )}
-                  </Button>
-                }
-              ></TooltipTrigger>
-              <TooltipContent>Stwórz nowy folder</TooltipContent>
-            </Tooltip>
-            <Input
-              type="text"
-              value={newFolderInput}
-              onChange={(_event) => {
-                const value = _event.target.value;
-                setNewFolderInput(value);
-              }}
-              aria-invalid={newFolderInput.trim().length <= 0}
-              placeholder="Nowy folder"
-              className="flex flex-1"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <div className="p-5" />
       {currentDialog.type === "share" && currentDialog.quiz !== null && (
@@ -862,6 +1025,55 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
                 setRenameFolderInput(value);
               }}
               aria-invalid={renameFolderInput.trim().length <= 0}
+              className="flex flex-1"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={currentDialog.type === "create-folder"}
+        onOpenChange={(open) => {
+          setCurrentDialog({
+            type: open ? "create-folder" : null,
+            quiz: null,
+            folderId: null,
+          });
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stwórz nowy folder</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    className="flex items-center justify-center"
+                    onClick={handleCreateNewFolder}
+                    disabled={
+                      isCreatingNewFolder || newFolderInput.trim().length === 0
+                    }
+                  >
+                    {isCreatingNewFolder ? (
+                      <LoaderCircleIcon className="animate-spin" />
+                    ) : (
+                      <span>Utwórz</span>
+                    )}
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Stwórz nowy folder</TooltipContent>
+            </Tooltip>
+            <Input
+              type="text"
+              value={newFolderInput}
+              onChange={(_event) => {
+                const value = _event.target.value;
+                setNewFolderInput(value);
+              }}
+              aria-invalid={newFolderInput.trim().length <= 0}
+              placeholder="Nowy folder"
               className="flex flex-1"
             />
           </div>
