@@ -50,7 +50,23 @@ export interface Library {
       name: string;
     },
   ];
-  items: [];
+  items: LibraryItem[];
+}
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  type: "folder" | "quiz";
+  owner: {
+    id: string;
+    full_name: string;
+    student_number: string;
+    photo: string;
+    account_type: string;
+    account_level: string;
+  };
+  can_edit: boolean;
+  created_at: string;
 }
 
 export interface Question {

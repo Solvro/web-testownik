@@ -15,10 +15,10 @@ export class FolderService extends BaseApiService {
   }
 
   /**
-   * Fetch a specyfic library by ID
+   * Fetch a specific library by ID
    */
   async getLibraryById(folderId: string): Promise<Library> {
-    const response = await this.get<Library>(`library/${folderId}`);
+    const response = await this.get<Library>(`library/${folderId}/`);
     return response.data;
   }
 
@@ -51,6 +51,17 @@ export class FolderService extends BaseApiService {
     const response = await this.patch<Folder>(
       `folders/${folderId}/`,
       folderData,
+    );
+    return response.data;
+  }
+
+  /**
+   * Move folder
+   */
+  async moveFolder(folderId: string, parentId: string): Promise<Folder> {
+    const response = await this.post<Folder>(
+      `folders/${folderId}/move/`,
+      parentId,
     );
     return response.data;
   }
