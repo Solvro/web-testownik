@@ -26,10 +26,14 @@ import {
 } from "@/components/ui/tooltip";
 import { getQuestionAnsweredCount } from "@/lib/session-utils";
 import { cn } from "@/lib/utils";
-import type { AnswerRecord, Question } from "@/types/quiz";
+import type {
+  AnswerRecord,
+  Question,
+  QuizWithUserProgress,
+} from "@/types/quiz";
 
 interface QuestionCardProps {
-  quizId: string;
+  quiz: QuizWithUserProgress;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
@@ -45,7 +49,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
-  quizId,
+  quiz,
   question,
   selectedAnswers,
   setSelectedAnswers,
@@ -127,7 +131,10 @@ export function QuestionCard({
               autoplay
             />
             <div className="flex justify-center">
-              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+              <ViewTransition
+                name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+                default="h-full"
+              >
                 <Button variant="outline" onClick={restartQuiz}>
                   <RotateCcwIcon />
                   Uruchom ponownie quiz
@@ -350,7 +357,10 @@ export function QuestionCard({
                   <TooltipContent>Poprzednie pytanie</TooltipContent>
                 </Tooltip>
               ) : null}
-              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+              <ViewTransition
+                name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+                default="h-full"
+              >
                 {questionChecked ? (
                   <Button onClick={nextAction}>Następne pytanie</Button>
                 ) : (
