@@ -59,10 +59,9 @@ export class FolderService extends BaseApiService {
    * Move folder
    */
   async moveFolder(folderId: string, parentId: string): Promise<Folder> {
-    const response = await this.post<Folder>(
-      `folders/${folderId}/move/`,
-      parentId,
-    );
+    const response = await this.post<Folder>(`folders/${folderId}/move/`, {
+      parent_id: parentId,
+    });
     return response.data;
   }
 

@@ -199,7 +199,9 @@ export class QuizService extends BaseApiService {
    * Move quiz to folder
    */
   async moveQuizToFolder(quizId: string, folderId: string): Promise<Quiz> {
-    const response = await this.post<Quiz>(`quizzes/${quizId}/move/`, folderId);
+    const response = await this.post<Quiz>(`quizzes/${quizId}/move/`, {
+      folder_id: folderId,
+    });
     return response.data;
   }
 
