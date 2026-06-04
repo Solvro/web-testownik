@@ -80,8 +80,8 @@ import { getFolderService, getQuizService } from "@/services";
 import type {
   Folder,
   Library,
-  QuizBase,
   LibraryItem,
+  QuizBase,
   QuizMetadata,
   SharedQuiz,
 } from "@/types/quiz";
@@ -472,7 +472,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     try {
       const fullQuiz = await getQuizService().getQuiz(quiz.id);
       // Create a downloadable version
-      const downloadableQuiz = await prepareQuizForDownload(fullQuiz);
+      const downloadableQuiz = prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
@@ -495,7 +495,10 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
-          : old.map((q) => (q.id === quiz.id ? { ...q, ...quiz } : q));
+          : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            old.map((q) =>
+              q.id === quiz.id ? ({ ...q, ...quiz } as QuizMetadata) : q,
+            );
       },
     );
   };
