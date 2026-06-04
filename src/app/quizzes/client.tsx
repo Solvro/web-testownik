@@ -495,7 +495,10 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
-          : old.map((q) => (q.id === quiz.id ? { ...q, ...quiz } : q));
+          : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            old.map((q) =>
+              q.id === quiz.id ? ({ ...q, ...quiz } as QuizMetadata) : q,
+            );
       },
     );
   };
