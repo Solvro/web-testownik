@@ -17,6 +17,7 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { startTransition, useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -43,13 +44,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -85,6 +79,7 @@ import { prepareQuizForDownload } from "@/lib/quiz-download";
 import { getFolderService, getQuizService } from "@/services";
 import type {
   Folder,
+  Library,
   QuizBase,
   LibraryItem,
   QuizMetadata,
@@ -104,6 +99,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   const queryClient = useQueryClient();
   const canSearchInQuizzes = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewShared = checkPermission(PermissionAction.VIEW_SHARED_QUIZZES);
+  const router = useRouter();
 
   const [newFolderInput, setNewFolderInput] = useState<string>("Nowy folder");
   const [isCreatingNewFolder, setIsCreatingNewFolder] = useState(false);
@@ -143,29 +139,10 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       ? undefined
       : folders.find((folder) => folder.id === rootFolderId);
 
-  const [currentFolder, setCurrentFolder] = useState<Folder | undefined>();
-  // Don't include root folder there (sections also)
-  const [foldersHistory, setFoldersHistory] = useState<Folder[]>([]);
+  const searchParameters = useSearchParams();
+  const urlFolderId = searchParameters.get("folderId") ?? undefined;
 
-  const handleNavigateToFolder = (folder: Folder) => {
-    setCurrentFolder(folder);
-    setFoldersHistory((previous) => [...previous, folder]);
-  };
-
-  const handleNavigateToHistoryIndex = (index: number) => {
-    const newHistory = foldersHistory.slice(0, index + 1);
-
-    setFoldersHistory(newHistory);
-    setCurrentFolder(newHistory[index]);
-  };
-
-  const handleNavigateToRoot = () => {
-    setFoldersHistory([]);
-    setCurrentFolder(rootFolder);
-  };
-
-  const activeFolder = currentFolder ?? rootFolder;
-  const activeFolderId = activeFolder?.id;
+  const activeFolderId = urlFolderId ?? rootFolderId;
 
   const { data: currentFolderContent, isLoading: isLoadingContents } = useQuery(
     {
@@ -181,6 +158,34 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       refetchOnWindowFocus: false,
     },
   );
+
+  const foldersHistory = useMemo(() => {
+    if (currentFolderContent?.path == null) {
+      return [];
+    }
+    return currentFolderContent.path.slice(1) as Folder[];
+  }, [currentFolderContent]);
+
+  const handleNavigateToFolder = async (folderId: string) => {
+    try {
+      await queryClient.ensureQueryData({
+        queryKey: ["folder-library", folderId],
+        queryFn: async () => getFolderService().getLibraryById(folderId),
+      });
+      router.push(`?folderId=${folderId}`);
+    } catch {
+      router.push(`?folderId=${folderId}`);
+    }
+  };
+
+  const handleNavigateToHistoryIndex = (index: number) => {
+    const targetFolder = foldersHistory[index];
+    router.push(`?folderId=${targetFolder.id}`);
+  };
+
+  const handleNavigateToRoot = () => {
+    router.push("?");
+  };
 
   const archiveFolder = folders.find(
     (folder) => folder.folder_type === "archive",
@@ -350,46 +355,68 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     }
   };
 
-  const handleMoveQuizToFolder = async (quizId: string, folderId: string) => {
-    const targetFolder = folders.find((folder) => folder.id === folderId);
-    const originalQuiz = sortedUserQuizzes.find((quiz) => quiz.id === quizId);
-    if (targetFolder == null || originalQuiz == null) {
-      return;
-    }
-
-    const oldFolder = originalQuiz.folder;
+  const handleQuizMoveToFolder = async (quizId: string, folderId: string) => {
+    const currentFolderQueryKey = ["folder-library", activeFolderId];
 
     try {
-      // Update the target folder to include the quiz
-      const folderToUpdate = {
-        ...targetFolder,
-        quizzes: [...targetFolder.quizzes, quizId],
-      };
-      await getFolderService().updateFolder(folderId, folderToUpdate);
-
-      // If quiz was in a different folder, remove it from the old folder
-      if (oldFolder.id !== folderId) {
-        const oldFolderToUpdate = {
-          ...oldFolder,
-          quizzes: oldFolder.quizzes.filter((id) => id !== quizId),
+      queryClient.setQueryData(currentFolderQueryKey, (oldData: Library) => {
+        return {
+          ...oldData,
+          items: oldData.items.filter(
+            (item: LibraryItem) =>
+              !(item.type === "quiz" && item.id === quizId),
+          ),
         };
-        await getFolderService().updateFolder(oldFolder.id, oldFolderToUpdate);
-      }
+      });
 
-      // Update the quiz with its new folder reference
-      const quizToUpdate = {
-        ...originalQuiz,
-        folder: targetFolder,
-      };
-      await getQuizService().updateQuiz(quizId, quizToUpdate);
+      await getQuizService().moveQuizToFolder(quizId, folderId);
 
-      void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
 
       toast.success("Przeniesiono quiz do folderu");
     } catch (error_) {
       console.error("Błąd podczas przenoszenia quizu:", error_);
       toast.error("Nie udało się zapisać zmian w folderze.");
+
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+    }
+  };
+
+  const handleFolderMoveToFolder = async (
+    folderId: string,
+    parentId: string,
+  ) => {
+    if (folderId === parentId) {
+      return;
+    }
+
+    const currentFolderQueryKey = ["folder-library", activeFolderId];
+
+    try {
+      queryClient.setQueryData(currentFolderQueryKey, (oldData: Library) => {
+        return {
+          ...oldData,
+          items: oldData.items.filter(
+            (item: LibraryItem) =>
+              !(item.type === "folder" && item.id === folderId),
+          ),
+        };
+      });
+
+      await getFolderService().moveFolder(folderId, parentId);
+
+      void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+
+      toast.success("Przeniesiono folder do folderu");
+    } catch (error_) {
+      console.error("Błąd podczas przenoszenia folderu:", error_);
+      toast.error("Nie udało się zapisać zmian w folderze.");
+
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
     }
   };
 
@@ -507,6 +534,12 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     } finally {
       setIsCreatingNewFolder(false);
     }
+
+    setCurrentDialog({
+      type: null,
+      quiz: null,
+      folderId: null,
+    });
   };
 
   const confirmFolderRename = async () => {
@@ -539,36 +572,6 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
     setIsRenamingFolder(false);
     setCurrentDialog({ type: null, quiz: null, folderId: null });
-  };
-
-  const handleLibraryLoad = async (folderId: string) => {
-    const folderToLoad = folders.find((folder_) => folder_.id === folderId);
-    if (folderToLoad === undefined) {
-      return;
-    }
-
-    try {
-      setCurrentFolder(folderToLoad);
-      await getFolderService().getLibraryById(folderToLoad.id);
-      void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
-      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
-
-      // Find folder from history
-      const historyFolder = foldersHistory.find(
-        (folder) => folder.id === folderId,
-      );
-
-      // Not in history - open another
-      if (historyFolder === undefined) {
-        const foldersHistoryUpdate = [...foldersHistory, folderToLoad];
-        setFoldersHistory(foldersHistoryUpdate);
-      } else {
-        // Go back in history
-        handleNavigateToFolder(historyFolder);
-      }
-    } catch (error_) {
-      console.error("Nie udało się wczytać biblioteki", error_);
-    }
   };
 
   type TabKey = "all" | "library" | "public" | "shared" | "archive" | "trash";
@@ -719,7 +722,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
         "Usunięte quizy będą przechowywane przez 30 dni, a po tym czasie zostaną trwale skasowane.",
       icon: <MessageCircleXIcon className="size-6" />,
       library: () => {
-        return []; // TODO
+        return [];
       },
       isFilterActive:
         searchValue.trim().length > 0 && filteredArchivedQuizzes.length === 0,
@@ -770,8 +773,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
             key={tab.key}
             value={tab.key}
             onClick={() => {
-              setFoldersHistory([]);
-              setCurrentFolder(rootFolder);
+              router.push("?");
             }}
           >
             {tab.icon}
@@ -853,44 +855,6 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               ) : null}
             </div>
 
-            {tab.showBreadcrumb === true ? (
-              <div className="mb-6">
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink
-                        onClick={() => {
-                          handleNavigateToRoot();
-                        }}
-                        aria-disabled={foldersHistory.length === 0}
-                      >
-                        {tab.titleLabel}
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    {foldersHistory.map((folder, index) => {
-                      const isLast = index === foldersHistory.length - 1;
-                      return (
-                        <>
-                          <BreadcrumbItem>
-                            <BreadcrumbLink
-                              onClick={() => {
-                                handleNavigateToHistoryIndex(index);
-                              }}
-                              aria-disabled={isLast}
-                            >
-                              {folder.name}
-                            </BreadcrumbLink>
-                          </BreadcrumbItem>
-                          <BreadcrumbSeparator />
-                        </>
-                      );
-                    })}
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
-            ) : null}
-
             <QuizzesLibrary
               library={
                 foldersHistory.length === 0
@@ -915,8 +879,13 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               renderFolders={tab.key === "all" || tab.key === "library"}
               isQuizDraggable={true}
               isFolderDraggable={true}
-              handleMoveQuizToFolder={handleMoveQuizToFolder}
-              handleLibraryLoad={handleLibraryLoad}
+              handleQuizMoveToFolder={handleQuizMoveToFolder}
+              handleFolderMoveToFolder={handleFolderMoveToFolder}
+              handleNavigateToFolder={handleNavigateToFolder}
+              rootFolderId={rootFolderId ?? ""}
+              handleNavigateToRoot={handleNavigateToRoot}
+              handleNavigateToHistoryIndex={handleNavigateToHistoryIndex}
+              tabLabel={tab.titleLabel}
             />
           </TabsContent>
         );
