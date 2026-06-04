@@ -1,6 +1,6 @@
 "use client";
 
-import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useDraggable } from "@dnd-kit/react";
 import {
   ArchiveIcon,
   DownloadIcon,
@@ -16,8 +16,10 @@ import {
   TrashIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
-import { ViewTransition, useEffect, useRef, useState } from "react";
+import { ViewTransition } from "react";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -71,49 +73,49 @@ export function QuizCard({
   onDownload,
   onArchive,
   className,
-  inFolder = false,
   libraryKey,
   isDraggable = false,
   ...props
 }: QuizCardProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    const element = ref.current;
-    if (element == null || !isDraggable) {
-      return;
-    }
-
-    return draggable({
-      element,
-      getInitialData: () => ({ quizId: quiz.id }),
-      onDragStart: () => {
-        setIsDragging(true);
-      },
-      onDrop: () => {
-        setIsDragging(false);
-      },
-    });
-  }, [isDraggable, quiz.id]);
+  const { ref, isDragging } = useDraggable({
+    id: quiz.id,
+    disabled: !isDraggable || quiz.folder.folder_type === "archive",
+    data: {
+      quizId: quiz.id,
+      type: "quiz",
+    },
+  });
 
   return (
-    <ViewTransition
-      name={`quiz-open-${libraryKey}-${inFolder ? "folder" : "quiz"}-${quiz.id}`}
-    >
-      <Link href={onOpenPath(quiz)}>
+    <ViewTransition name={`quiz-open-${quiz.id}-${quiz.folder.id}`}>
+      <div
+        ref={ref}
+        onPointerDown={() => {
+          if (quiz.folder.folder_type === "archive") {
+            toast.error("Nie można przenosić zarchiwizowanych quizów");
+          }
+        }}
+        className={cn("h-full w-full", isDragging && "opacity-50")}
+      >
         <Card
           variant="gradient"
           className={cn(
             "hover:ring-ring relative flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 transition-all select-none hover:ring-2",
             className,
           )}
-          ref={ref}
+          onClick={() => {
+            if (isDragging) {
+              return;
+            }
+            router.push(onOpenPath(quiz));
+          }}
           {...props}
         >
-          {isDragging ? (
-            <div className="bg-card pointer-events-none absolute inset-0 z-50 rounded-[inherit]" />
-          ) : null}
+          {/*{isDragging ? (*/}
+          {/*  <div className="bg-card pointer-events-none absolute inset-0 z-50 rounded-[inherit]" />*/}
+          {/*) : null}*/}
           <div className="flex w-full gap-2">
             <div className="bg-accent flex aspect-square size-14 items-center justify-center rounded-lg">
               {quiz.folder.folder_type === "archive" ? (
@@ -234,144 +236,8 @@ export function QuizCard({
               </DropdownMenu>
             </span>
           </div>
-
-          {/*<CardHeader>*/}
-          {/*  <CardTitle className="overflow-hidden text-wrap wrap-break-word">*/}
-          {/*    {quiz.title}*/}
-          {/*  </CardTitle>*/}
-          {/*  {quiz.description ? (*/}
-          {/*    <CardDescription className="overflow-hidden text-wrap wrap-break-word">*/}
-          {/*      {quiz.description}*/}
-          {/*    </CardDescription>*/}
-          {/*  ) : null}*/}
-          {/*</CardHeader>*/}
-          {/*<CardFooter className="mt-auto flex items-center justify-between">*/}
-          {/*  <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">*/}
-          {/*    {isLoading ? (*/}
-          {/*      <div className="relative -left-1 -my-1 inline-flex h-10 overflow-hidden rounded-md border-none p-1">*/}
-          {/*        <span className="absolute -inset-full animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)]" />*/}
-          {/*        <span*/}
-          {/*          className={buttonVariants({ size: "sm", className: "z-1" })}*/}
-          {/*        >*/}
-          {/*          Otwórz*/}
-          {/*        </span>*/}
-          {/*      </div>*/}
-          {/*    ) : (*/}
-          {/*      <Button*/}
-          {/*        size="sm"*/}
-          {/*        disabled={isLoading}*/}
-          {/*        nativeButton={false}*/}
-          {/*        variant="default"*/}
-          {/*        render={(rendererProps) => (*/}
-          {/*          <Link*/}
-          {/*            {...rendererProps}*/}
-          {/*            href={onOpenPath(quiz)}*/}
-          {/*            onClick={() => {*/}
-          {/*              setIsLoading(true);*/}
-          {/*            }}*/}
-          {/*          >*/}
-          {/*            Otwórz*/}
-          {/*          </Link>*/}
-          {/*        )}*/}
-          {/*      ></Button>*/}
-          {/*    )}*/}
-          {/*  </ViewTransition>*/}
-          {/*  <div className="flex gap-1 opacity-80">*/}
-          {/*    {Boolean(showEdit) && (*/}
-          {/*      <Tooltip>*/}
-          {/*        <TooltipTrigger*/}
-          {/*          render={*/}
-          {/*            <Button*/}
-          {/*              variant="outline"*/}
-          {/*              size="icon-sm"*/}
-          {/*              aria-label="Edytuj quiz"*/}
-          {/*              nativeButton={false}*/}
-          {/*              render={(rendererProps) => (*/}
-          {/*                <Link {...rendererProps} href={onEditPath(quiz)}>*/}
-          {/*                  <PencilIcon />*/}
-          {/*                </Link>*/}
-          {/*              )}*/}
-          {/*            ></Button>*/}
-          {/*          }*/}
-          {/*        ></TooltipTrigger>*/}
-          {/*        <TooltipContent>Edytuj quiz</TooltipContent>*/}
-          {/*      </Tooltip>*/}
-          {/*    )}*/}
-          {/*    {Boolean(showShare) && (*/}
-          {/*      <Tooltip>*/}
-          {/*        <TooltipTrigger*/}
-          {/*          render={*/}
-          {/*            <Button*/}
-          {/*              variant="outline"*/}
-          {/*              size="icon-sm"*/}
-          {/*              onClick={() => onShare?.(quiz)}*/}
-          {/*              aria-label="Udostępnij quiz"*/}
-          {/*            >*/}
-          {/*              <ShareIcon />*/}
-          {/*            </Button>*/}
-          {/*          }*/}
-          {/*        ></TooltipTrigger>*/}
-          {/*        <TooltipContent>Udostępnij quiz</TooltipContent>*/}
-          {/*      </Tooltip>*/}
-          {/*    )}*/}
-          {/*    {showDownload ? (*/}
-          {/*      <Tooltip>*/}
-          {/*        <TooltipTrigger*/}
-          {/*          render={*/}
-          {/*            <Button*/}
-          {/*              variant="outline"*/}
-          {/*              size="icon-sm"*/}
-          {/*              onClick={() => onDownload?.(quiz)}*/}
-          {/*              aria-label="Pobierz quiz"*/}
-          {/*            >*/}
-          {/*              <DownloadIcon />*/}
-          {/*            </Button>*/}
-          {/*          }*/}
-          {/*        ></TooltipTrigger>*/}
-          {/*        <TooltipContent>Pobierz quiz</TooltipContent>*/}
-          {/*      </Tooltip>*/}
-          {/*    ) : null}*/}
-          {/*    {Boolean(showSearch) && (*/}
-          {/*      <Tooltip>*/}
-          {/*        <TooltipTrigger*/}
-          {/*          render={*/}
-          {/*            <Button*/}
-          {/*              variant="outline"*/}
-          {/*              size="icon-sm"*/}
-          {/*              aria-label="Szukaj w quizie"*/}
-          {/*              nativeButton={false}*/}
-          {/*              render={(rendererProps) => (*/}
-          {/*                <Link {...rendererProps} href={onSearchPath(quiz)}>*/}
-          {/*                  <SearchIcon />*/}
-          {/*                </Link>*/}
-          {/*              )}*/}
-          {/*            ></Button>*/}
-          {/*          }*/}
-          {/*        ></TooltipTrigger>*/}
-          {/*        <TooltipContent>Szukaj w quizie</TooltipContent>*/}
-          {/*      </Tooltip>*/}
-          {/*    )}*/}
-          {/*    {Boolean(showDelete) && (*/}
-          {/*      <Tooltip>*/}
-          {/*        <TooltipTrigger*/}
-          {/*          render={*/}
-          {/*            <Button*/}
-          {/*              variant="outline"*/}
-          {/*              size="icon-sm"*/}
-          {/*              onClick={() => onDelete?.(quiz)}*/}
-          {/*              aria-label="Usuń quiz"*/}
-          {/*            >*/}
-          {/*              <TrashIcon />*/}
-          {/*            </Button>*/}
-          {/*          }*/}
-          {/*        ></TooltipTrigger>*/}
-          {/*        <TooltipContent>Usuń quiz</TooltipContent>*/}
-          {/*      </Tooltip>*/}
-          {/*    )}*/}
-          {/*  </div>*/}
-          {/*</CardFooter>*/}
         </Card>
-      </Link>
+      </div>
     </ViewTransition>
   );
 }

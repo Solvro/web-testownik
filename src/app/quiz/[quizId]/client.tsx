@@ -270,7 +270,10 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           )}
         >
           <div className="min-w-0 lg:col-span-2">
-            <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
+            <ViewTransition
+              name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+              update="h-full"
+            >
               {quiz.questions.length === 0 ? (
                 <Card>
                   <CardContent>
@@ -289,7 +292,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 </Card>
               ) : (
                 <QuestionCard
-                  quizId={quiz.id}
+                  quiz={quiz}
                   question={currentQuestion}
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
