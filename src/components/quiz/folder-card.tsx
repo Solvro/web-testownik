@@ -1,14 +1,16 @@
 "use client";
 
-import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useDraggable, useDroppable } from "@dnd-kit/react";
 import {
+  DotIcon,
   EllipsisVerticalIcon,
   FolderIcon,
+  FolderOpenIcon,
   PencilIcon,
   TrashIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
-import { ViewTransition, useEffect, useRef, useState } from "react";
+import { ViewTransition } from "react";
 
 import type { LibrarySortKey } from "@/components/quiz/library-sort";
 import {
@@ -70,9 +72,10 @@ export function FolderCard({
   ...props
 }: FolderCardProps) {
   const pluralRules = new Intl.PluralRules("pl-PL");
-  const format = pluralRules.select(folder.quizzes.length);
+  const quizFormat = pluralRules.select(folder.quizzes.length);
+  const folderFormat = pluralRules.select(folder.subfolders.length);
 
-  const forms: Record<Intl.LDMLPluralRule, string> = {
+  const quizForms: Record<Intl.LDMLPluralRule, string> = {
     one: "quiz",
     few: "quizy",
     many: "quizów",
@@ -80,54 +83,85 @@ export function FolderCard({
     zero: "quizów",
     two: "quizy",
   };
+  const folderForms: Record<Intl.LDMLPluralRule, string> = {
+    one: "folder",
+    few: "foldery",
+    many: "folderów",
+    other: "folderu",
+    zero: "folderów",
+    two: "foldery",
+  };
 
-  const ref = useRef(null);
-  const [isDraggedOver, setIsDraggedOver] = useState(false);
+  const { ref: dragRef, isDragging } = useDraggable({
+    id: folder.id,
+    disabled: isDraggable === false,
+    data: {
+      folderId: folder.id,
+      type: "folder",
+    },
+  });
 
-  useEffect(() => {
-    const element = ref.current;
-    if (element == null) {
-      return;
-    }
+  const { ref: dropRef, isDropTarget } = useDroppable({
+    id: folder.id,
+    disabled: isDraggable === false,
+    data: {
+      folderId: folder.id,
+      type: "folder",
+    },
+  });
 
-    return dropTargetForElements({
-      element,
-      getData: () => ({ folderId: folder.id }),
-      onDragEnter: () => {
-        setIsDraggedOver(true);
-      },
-      onDragLeave: () => {
-        setIsDraggedOver(false);
-      },
-      onDrop: () => {
-        setIsDraggedOver(false);
-      },
-    });
-  }, [folder.id]);
+  const isActiveDropZone = isDropTarget && !isDragging;
 
   return (
     <ViewTransition name={`folder-open-${libraryKey}-${folder.id}`}>
-      <div ref={ref} className="block h-full w-full">
+      <div
+        ref={(element) => {
+          dragRef(element);
+          dropRef(element);
+        }}
+        className={cn(isDragging && "opacity-50 transition-opacity")}
+      >
         <Card
           variant="gradient"
           className={cn(
-            "hover:ring-ring flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 transition-all select-none hover:ring-2",
-            isDraggedOver && "ring-primary bg-primary/10 scale-[1.02] ring-4",
+            "hover:ring-ring flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 select-none hover:ring-2",
+            "transition-all duration-300 ease-out",
+
+            isActiveDropZone && [
+              "ring-primary bg-primary/10 border-primary scale-[1.02] shadow-xl ring-4",
+            ],
             className,
           )}
           onClick={() => onOpen?.(folder.id)}
           {...props}
         >
           <div className="flex w-full gap-2">
-            <div className="bg-accent flex aspect-square size-14 items-center justify-center rounded-lg">
-              <FolderIcon className="text-muted-foreground size-9" />
+            <div
+              className={cn(
+                "bg-accent flex aspect-square size-14 items-center justify-center rounded-lg transition-all duration-300",
+                isActiveDropZone && "bg-primary/20 scale-105",
+              )}
+            >
+              {isActiveDropZone ? (
+                <FolderOpenIcon className="text-primary size-9" />
+              ) : (
+                <FolderIcon className="text-muted-foreground size-9 transition-transform duration-300 group-hover:scale-105" />
+              )}
             </div>
-            <CardHeader className="flex w-full flex-col p-0">
+            <CardHeader className="flex w-full flex-col justify-center gap-0! p-0">
               <CardTitle className="w-full overflow-hidden text-left text-ellipsis whitespace-nowrap">
                 {folder.name}
               </CardTitle>
-              <CardDescription>
-                {folder.quizzes.length} {forms[format] || forms.many}
+              <CardDescription className="flex items-start gap-0">
+                {folder.quizzes.length}{" "}
+                {quizForms[quizFormat] || quizForms.many}
+                {folder.subfolders.length > 0 && (
+                  <>
+                    <DotIcon />
+                    {String(folder.subfolders.length)}{" "}
+                    {folderForms[folderFormat] || folderForms.many}
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
           </div>
