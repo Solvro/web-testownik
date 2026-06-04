@@ -1,4 +1,4 @@
-import { SiOpenai } from "@icons-pack/react-simple-icons";
+import { SiOpenaigym } from "@icons-pack/react-simple-icons";
 import {
   ClipboardCopyIcon,
   HistoryIcon,
@@ -116,7 +116,7 @@ export function QuizActionButtons({
               disabled={!canUseQuestion}
               aria-label="Otwórz w ChatGPT"
             >
-              <SiOpenai />
+              <SiOpenaigym />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Otwórz w ChatGPT</TooltipContent>

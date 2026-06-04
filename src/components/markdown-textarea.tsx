@@ -18,6 +18,7 @@ import type {
   Emphasis,
   Heading,
   InlineCode,
+  Link,
   Node,
   Paragraph,
   Parent,
@@ -32,6 +33,8 @@ import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import { unified } from "unified";
+import { visit } from "unist-util-visit";
+import { string } from "zod";
 
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
@@ -90,14 +93,344 @@ interface ToolbarAction {
   apply: (ast: Root, selection: EditorSelection) => Root;
 }
 
-const emptyDocument = unified().use(remarkParse).parse("");
+const EMPTY_DOCUMENT = unified().use(remarkParse).parse("");
 
-const callbackTime = 150;
+const CALLBACK_TIME = 150;
 
 //region Actions
 
+interface TextFragment {
+  value: string;
+  marks: string[];
+  index: number;
+  length: number;
+  parent: Parent | null; // A reference to the PharsingParent node, not direct parent
+}
+
+function getFragmentsInSelection(
+  selection: EditorSelection,
+  ast: Root,
+  replacedIndicesMap: Map<Parent | null, number[]>,
+): TextFragment[] {
+  const affectedNodes = nodesInSelection(selection, ast);
+
+  const fragments: TextFragment[] = [];
+
+  let lastPharsingParent: Parent | null = null;
+
+  const marksAccumulator: string[] = [];
+  const marksEnds: number[] = [];
+
+  for (const node of affectedNodes) {
+    switch (node.type) {
+      case "paragraph":
+      case "heading":
+      case "link": {
+        lastPharsingParent = node;
+        break;
+      }
+      case "emphasis":
+      case "strong": {
+        const index = lastPharsingParent?.children.indexOf(node) ?? -1;
+        if (index !== -1) {
+          replacedIndicesMap.set(lastPharsingParent, [
+            ...(replacedIndicesMap.get(lastPharsingParent) ?? []),
+            index,
+          ]);
+        }
+
+        marksAccumulator.push(node.type);
+        marksEnds.push(node.position?.end.offset ?? 0);
+        break;
+      }
+      case "text": {
+        const index = lastPharsingParent?.children.indexOf(node) ?? -1;
+        if (index !== -1) {
+          replacedIndicesMap.set(lastPharsingParent, [
+            ...(replacedIndicesMap.get(lastPharsingParent) ?? []),
+            index,
+          ]);
+        }
+        if ((node.position?.start.offset ?? 0) >= (marksEnds.at(-1) ?? 0)) {
+          marksAccumulator.pop();
+          marksEnds.pop();
+        }
+        const fragment: TextFragment = {
+          value: node.value,
+          marks: [...marksAccumulator],
+          parent: lastPharsingParent,
+          index: node.position?.start.offset ?? 0,
+          length:
+            (node.position?.end.offset ?? 0) -
+            (node.position?.start.offset ?? 0),
+        };
+        fragments.push(fragment);
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
+  return fragments;
+}
+
+function shouldRemoveMark(fragments: TextFragment[], mark: string): boolean {
+  return fragments.some((fragment) => fragment.marks.includes(mark));
+}
+
+function splitFragmentAt(
+  fragment: TextFragment,
+  index: number,
+): [TextFragment, TextFragment] {
+  // Split the fragment to two parts
+  const left: TextFragment = {
+    value: fragment.value.slice(0, index - fragment.index),
+    marks: [...fragment.marks],
+    index: fragment.index,
+    length: index - fragment.index,
+    parent: fragment.parent,
+  };
+  const right: TextFragment = {
+    value: fragment.value.slice(index - fragment.index),
+    marks: [...fragment.marks],
+    index,
+    length: fragment.index + fragment.length - index,
+    parent: fragment.parent,
+  };
+  return [left, right];
+}
+
+function splitFragmetsBySelection(
+  fragments: TextFragment[],
+  selection: EditorSelection,
+): void {
+  const { anchor, focus } = selection;
+
+  const fragmentInAnchor = fragments.find(
+    (fragment) =>
+      fragment.index < anchor.offset &&
+      fragment.index + fragment.length >= anchor.offset,
+  );
+
+  if (fragmentInAnchor !== undefined) {
+    // Split the fragment to two parts
+    const [left, right] = splitFragmentAt(fragmentInAnchor, anchor.offset);
+
+    // Find and replace the fragment with left and right parts
+    const index = fragments.indexOf(fragmentInAnchor);
+
+    // Fix leading space
+    const spaceCount = /^\s+/.exec(right.value)?.[0].length ?? 0;
+    if (spaceCount > 0) {
+      left.value += right.value.slice(0, spaceCount);
+      left.length += spaceCount;
+      right.value = right.value.slice(spaceCount);
+      right.index += spaceCount;
+      right.length -= spaceCount;
+    }
+
+    fragments.splice(index, 1, left, right);
+  }
+
+  const fragmentInFocus = fragments.find(
+    (fragment) =>
+      fragment.index <= focus.offset &&
+      fragment.index + fragment.length > focus.offset,
+  );
+
+  if (fragmentInFocus !== undefined) {
+    // Split the fragment to two parts
+    const [left, right] = splitFragmentAt(fragmentInFocus, focus.offset);
+
+    // Fix trailing space
+    const spaceCount = /\s+$/.exec(left.value)?.[0].length ?? 0;
+    if (spaceCount > 0) {
+      right.value = left.value.slice(-spaceCount) + right.value;
+      right.index -= spaceCount;
+      right.length += spaceCount;
+      left.value = left.value.slice(0, -spaceCount);
+      left.length -= spaceCount;
+    }
+
+    // Find and replace the fragment with left and right parts
+    const index = fragments.indexOf(fragmentInFocus);
+    fragments.splice(index, 1, left, right);
+  }
+}
+
+function fixTrailingAndLeadingSpaces(fragments: TextFragment[]): void {
+  const first: TextFragment | undefined = fragments.at(0);
+
+  if (first === undefined) {
+    return;
+  }
+
+  const leadingSpaces = /^\s+/gm.exec(first.value)?.[0].length ?? 0;
+  if (leadingSpaces > 0) {
+    const spaceNode: TextFragment = {
+      value: " ".repeat(Math.max(0, leadingSpaces)),
+      index: first.index,
+      length: leadingSpaces,
+      parent: first.parent,
+      marks: [...first.marks],
+    };
+
+    first.value = first.value.slice(leadingSpaces);
+    first.index += leadingSpaces;
+    first.length -= leadingSpaces;
+
+    const index = fragments.indexOf(first);
+    fragments.splice(index, 1, spaceNode, first);
+  }
+
+  const last: TextFragment | undefined = fragments.at(-1);
+
+  if (last === undefined) {
+    return;
+  }
+
+  const trailingSpaces = /\s+$/gm.exec(last.value)?.[0].length ?? 0;
+  if (trailingSpaces > 0) {
+    const spaceNode: TextFragment = {
+      value: " ".repeat(Math.max(0, trailingSpaces)),
+      index: last.index + last.length - trailingSpaces + 1,
+      length: trailingSpaces,
+      parent: last.parent,
+      marks: [...last.marks],
+    };
+
+    last.value = last.value.slice(0, last.length - trailingSpaces);
+    last.length -= trailingSpaces;
+
+    const index = fragments.indexOf(last);
+    fragments.splice(index, 1, last, spaceNode);
+  }
+}
+
+function applyMarkToFragmentsInSelection(
+  fragments: TextFragment[],
+  selection: EditorSelection,
+  mark: string,
+): void {
+  const { anchor, focus } = selection;
+
+  for (const fragment of fragments) {
+    if (
+      fragment.index >= anchor.offset &&
+      fragment.index + fragment.length - 1 < focus.offset &&
+      !fragment.marks.includes(mark) &&
+      !/^\s+$/gm.test(fragment.value)
+    ) {
+      fragment.marks.push(mark);
+    }
+  }
+}
+
+function groupFragmentsByParent(
+  fragments: TextFragment[],
+): Map<Parent | null, TextFragment[]> {
+  const map = new Map<Parent | null, TextFragment[]>();
+  for (const fragment of fragments) {
+    const parent = fragment.parent;
+    if (!map.has(parent)) {
+      map.set(parent, []);
+    }
+    map.get(parent)?.push(fragment);
+  }
+  return map;
+}
+
+function createNodesFromFragments(fragments: TextFragment[]): Node[] {
+  const nodes: Node[] = [];
+
+  let parentNode: Parent | null = null;
+
+  for (const fragment of fragments) {
+    // Check for marks and create/join
+    while (fragment.marks.length > 0) {
+      const mark: string = fragment.marks.pop() ?? "";
+      const last = nodes.at(-1);
+      if (last?.type === mark) {
+        // Join with previous node
+        parentNode = last as Parent;
+      } else {
+        // Create new node
+        const newNode: Parent = {
+          type: mark,
+          children: [],
+        };
+
+        if (parentNode === null) {
+          nodes.push(newNode);
+        } else {
+          parentNode.children.push(newNode as RootContent);
+        }
+
+        parentNode = newNode;
+      }
+    }
+
+    const textNode: Text = {
+      type: "text",
+      value: fragment.value,
+    };
+
+    if (parentNode === null) {
+      nodes.push(textNode);
+    } else {
+      parentNode.children.push(textNode);
+    }
+
+    parentNode = null;
+  }
+
+  return nodes;
+}
+
 const boldAction: ToolbarAction = {
-  apply(ast, selection) {},
+  apply: (ast: Root, selection: EditorSelection): Root => {
+    // Split AST to text fragments
+    // Apply change to fragments, and potentailly create new ones
+    // Reconstruct AST
+
+    // Get text fragments in selection
+    const replacedIndicesMap = new Map<Parent | null, number[]>(); // A reference for which nodes to replace when reconstructing the AST
+    const fragments = getFragmentsInSelection(
+      selection,
+      ast,
+      replacedIndicesMap,
+    );
+
+    // Determine whether we need to remove the mark
+    const remove = shouldRemoveMark(fragments, "strong");
+
+    if (remove) {
+      console.log("Pomidor");
+    } else {
+      // Split fragments by selection boundaries
+      splitFragmetsBySelection(fragments, selection);
+      // Fix leading and trailing spaces
+      fixTrailingAndLeadingSpaces(fragments);
+      // Apply 'strong' mark to fragments
+      applyMarkToFragmentsInSelection(fragments, selection, "strong");
+      // Group fragments by their parent node
+      const grouped = groupFragmentsByParent(fragments);
+
+      // Create new nodes from fragments per parent
+      for (const [parent, childrenFragments] of grouped.entries()) {
+        const newNodes = createNodesFromFragments(childrenFragments);
+        const replacedIndices = replacedIndicesMap.get(parent) ?? [];
+        parent?.children.splice(
+          Math.min(...replacedIndices),
+          replacedIndices.length,
+          ...(newNodes as RootContent[]),
+        );
+      }
+    }
+
+    return ast;
+  },
 };
 
 //endregion
@@ -169,7 +502,7 @@ function MarkdownTextarea({
   onPaste,
   ...props
 }: React.ComponentProps<"textarea">) {
-  const [ast, setAST] = useState<Root>(emptyDocument);
+  const [ast, setAST] = useState<Root>(EMPTY_DOCUMENT);
   const [markdown, setMarkdown] = useState<string>("");
   const [mode, setMode] = useState<EditorMode>("WYSIWYG");
   const [selection, setSelection] = useState<EditorSelection | null>(null);
@@ -183,7 +516,7 @@ function MarkdownTextarea({
       const tree = unified().use(remarkParse).use(remarkMath).parse(value);
       setAST(tree);
     },
-    { wait: callbackTime },
+    { wait: CALLBACK_TIME },
   );
 
   const stringify = (ast_: Root): string => {
@@ -198,9 +531,17 @@ function MarkdownTextarea({
     if (selection === null) {
       return;
     }
-    const newAST = action.apply(ast, selection);
+    const freshAST = parseToAST(markdown);
+
+    const newAST = action.apply(freshAST, selection);
     setAST(newAST);
-    setMarkdown(stringify(newAST));
+
+    const newMarkdown = stringify(newAST);
+    setMarkdown(newMarkdown);
+
+    onChange?.({
+      target: { value: newMarkdown },
+    } as React.ChangeEvent<HTMLTextAreaElement>);
   }
 
   function handleMarkdownChange(value: string) {
@@ -271,7 +612,8 @@ function MarkdownTextarea({
     mark: string,
     selection_: EditorSelection | null,
   ): boolean {
-    return getActiveMarks(nodesInSelection(selection_, ast)).includes(mark);
+    const marks = getActiveMarks(nodesInSelection(selection_, ast));
+    return marks.includes(mark);
   }
 
   return (
