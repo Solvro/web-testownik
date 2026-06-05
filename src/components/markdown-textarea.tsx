@@ -35,6 +35,7 @@ import remarkStringify from "remark-stringify";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { string } from "zod";
+import { fr } from "zod/v4/locales";
 
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
@@ -56,18 +57,6 @@ import {
 } from "./ui/popover";
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
-
-// function parse(value: string): Root {
-//   return unified().use(remarkParse).use(remarkMath).parse(value);
-// }
-
-// function stringify(ast: Root): string {
-//   return unified()
-//     .use(remarkParse)
-//     .use(remarkMath)
-//     .use(remarkStringify)
-//     .stringify(ast);
-// }
 
 type EditorMode = "WYSIWYG" | "Markdown";
 
@@ -127,6 +116,7 @@ function getFragmentsInSelection(
       case "heading":
       case "link": {
         lastPharsingParent = node;
+        marksAccumulator.splice(0);
         break;
       }
       case "emphasis":
@@ -259,55 +249,6 @@ function splitFragmetsBySelection(
   }
 }
 
-function fixTrailingAndLeadingSpaces(fragments: TextFragment[]): void {
-  const first: TextFragment | undefined = fragments.at(0);
-
-  if (first === undefined) {
-    return;
-  }
-
-  const leadingSpaces = /^\s+/gm.exec(first.value)?.[0].length ?? 0;
-  if (leadingSpaces > 0) {
-    const spaceNode: TextFragment = {
-      value: " ".repeat(Math.max(0, leadingSpaces)),
-      index: first.index,
-      length: leadingSpaces,
-      parent: first.parent,
-      marks: [...first.marks],
-    };
-
-    first.value = first.value.slice(leadingSpaces);
-    first.index += leadingSpaces;
-    first.length -= leadingSpaces;
-
-    const index = fragments.indexOf(first);
-    fragments.splice(index, 1, spaceNode, first);
-  }
-
-  const last: TextFragment | undefined = fragments.at(-1);
-
-  if (last === undefined) {
-    return;
-  }
-
-  const trailingSpaces = /\s+$/gm.exec(last.value)?.[0].length ?? 0;
-  if (trailingSpaces > 0) {
-    const spaceNode: TextFragment = {
-      value: " ".repeat(Math.max(0, trailingSpaces)),
-      index: last.index + last.length - trailingSpaces + 1,
-      length: trailingSpaces,
-      parent: last.parent,
-      marks: [...last.marks],
-    };
-
-    last.value = last.value.slice(0, last.length - trailingSpaces);
-    last.length -= trailingSpaces;
-
-    const index = fragments.indexOf(last);
-    fragments.splice(index, 1, last, spaceNode);
-  }
-}
-
 function applyMarkToFragmentsInSelection(
   fragments: TextFragment[],
   selection: EditorSelection,
@@ -323,6 +264,122 @@ function applyMarkToFragmentsInSelection(
       !/^\s+$/gm.test(fragment.value)
     ) {
       fragment.marks.push(mark);
+    }
+  }
+}
+
+function removeMarkFromFragmentsInSelection(
+  fragments: TextFragment[],
+  selection: EditorSelection,
+  mark: string,
+): void {
+  const { anchor, focus } = selection;
+
+  for (const fragment of fragments) {
+    const index = fragment.marks.indexOf(mark);
+    if (
+      fragment.index >= anchor.offset &&
+      fragment.index + fragment.length - 1 < focus.offset &&
+      index !== -1
+    ) {
+      fragment.marks.splice(index, 1);
+    }
+  }
+}
+
+function cleanFragments(fragments: TextFragment[]): void {
+  let index = 1;
+  let fragment: TextFragment | undefined = fragments.at(0);
+  if (fragment === undefined) {
+    return;
+  }
+  while (index < fragments.length) {
+    const next = fragments.at(index);
+    if (next === undefined) {
+      break;
+    }
+    const containSameMarksAndParent =
+      fragment.parent === next.parent &&
+      fragment.marks.length === next.marks.length &&
+      fragment.marks.every(
+        (element, index_) => element === next.marks.at(index_),
+      );
+    if (containSameMarksAndParent) {
+      fragment.value += next.value;
+      fragment.length += next.length;
+      fragments.splice(index, 1);
+    } else {
+      fragment = next;
+      index++;
+    }
+  }
+}
+
+function sanitizeFragments(fragments: TextFragment[]): void {
+  for (let index = 0; index < fragments.length; index++) {
+    const current = fragments[index];
+
+    // We only care about fragments that actually have active styling marks
+    if (current.marks.length === 0 || current.value === "") {
+      continue;
+    }
+
+    // 1. Handle Leading Spaces (e.g., marks: ['strong'], value: " Lorem")
+    const leadingSpaces = /^\s+/.exec(current.value)?.[0] ?? "";
+    if (leadingSpaces.length > 0) {
+      // Look at the node to the left
+      const previous = fragments[index - 1];
+      if (previous.parent === current.parent && previous.marks.length === 0) {
+        // Safe to push the space into the unformatted node on the left
+        previous.value += leadingSpaces;
+        previous.length += leadingSpaces.length;
+        current.value = current.value.slice(leadingSpaces.length);
+        current.length -= leadingSpaces.length;
+      } else {
+        // No unformatted node exists on the left; break the spaces out into a new unformatted fragment
+        const spaceFragment: TextFragment = {
+          value: leadingSpaces,
+          marks: [], // Strip marks
+          parent: current.parent,
+          index: current.index,
+          length: leadingSpaces.length,
+        };
+        current.value = current.value.slice(leadingSpaces.length);
+        current.index += leadingSpaces.length;
+        current.length -= leadingSpaces.length;
+
+        fragments.splice(index, 0, spaceFragment);
+        index++; // Offset the loop pointer because we mutated the array length
+      }
+    }
+
+    // 2. Handle Trailing Spaces (e.g., marks: ['strong'], value: "Ipsum ")
+    const trailingSpaces = /\s+$/.exec(current.value)?.[0] ?? "";
+    if (trailingSpaces.length > 0) {
+      // Look at the node to the right
+      const next = fragments[index + 1];
+      if (next.parent === current.parent && next.marks.length === 0) {
+        // Safe to prepend the space into the unformatted node on the right
+        next.value = trailingSpaces + next.value;
+        next.index -= trailingSpaces.length;
+        next.length += trailingSpaces.length;
+        current.value = current.value.slice(0, -trailingSpaces.length);
+        current.length -= trailingSpaces.length;
+      } else {
+        // Create an unformatted text slot on the right to contain the trailing space securely
+        const spaceFragment: TextFragment = {
+          value: trailingSpaces,
+          marks: [], // Strip marks
+          parent: current.parent,
+          index: current.index + current.length - trailingSpaces.length,
+          length: trailingSpaces.length,
+        };
+        current.value = current.value.slice(0, -trailingSpaces.length);
+        current.length -= trailingSpaces.length;
+
+        fragments.splice(index + 1, 0, spaceFragment);
+        index++; // Skip evaluating the newly added space block
+      }
     }
   }
 }
@@ -406,27 +463,37 @@ const boldAction: ToolbarAction = {
     const remove = shouldRemoveMark(fragments, "strong");
 
     if (remove) {
-      console.log("Pomidor");
+      // Split fragments by selection boundaries
+      splitFragmetsBySelection(fragments, selection);
+      // Remove mark from fragments
+      removeMarkFromFragmentsInSelection(fragments, selection, "strong");
+      // Merge neighbouring fragments
+      cleanFragments(fragments);
     } else {
       // Split fragments by selection boundaries
       splitFragmetsBySelection(fragments, selection);
       // Fix leading and trailing spaces
-      fixTrailingAndLeadingSpaces(fragments);
+      // fixTrailingAndLeadingSpaces(fragments);
       // Apply 'strong' mark to fragments
       applyMarkToFragmentsInSelection(fragments, selection, "strong");
-      // Group fragments by their parent node
-      const grouped = groupFragmentsByParent(fragments);
+    }
 
-      // Create new nodes from fragments per parent
-      for (const [parent, childrenFragments] of grouped.entries()) {
-        const newNodes = createNodesFromFragments(childrenFragments);
-        const replacedIndices = replacedIndicesMap.get(parent) ?? [];
-        parent?.children.splice(
-          Math.min(...replacedIndices),
-          replacedIndices.length,
-          ...(newNodes as RootContent[]),
-        );
-      }
+    sanitizeFragments(fragments);
+
+    cleanFragments(fragments);
+
+    // Group fragments by their parent node
+    const grouped = groupFragmentsByParent(fragments);
+
+    // Create new nodes from fragments per parent
+    for (const [parent, childrenFragments] of grouped.entries()) {
+      const newNodes = createNodesFromFragments(childrenFragments);
+      const replacedIndices = replacedIndicesMap.get(parent) ?? [];
+      parent?.children.splice(
+        Math.min(...replacedIndices),
+        replacedIndices.length,
+        ...(newNodes as RootContent[]),
+      );
     }
 
     return ast;
