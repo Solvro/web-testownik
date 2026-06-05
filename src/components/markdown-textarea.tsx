@@ -19,6 +19,7 @@ import type {
   Heading,
   InlineCode,
   Link,
+  List,
   Node,
   Paragraph,
   Parent,
@@ -624,14 +625,56 @@ function isStylingMark(node: Node): boolean {
   );
 }
 
-function getActiveMarks(nodes: Node[]): string[] {
-  const marks: string[] = [];
+interface Mark {
+  type: string;
+  depth?: number;
+  ordered?: boolean;
+}
+
+function areMarksEqual(a: Mark, b: Mark): boolean {
+  return a.type === b.type && a.depth === b.depth && a.ordered === b.ordered;
+}
+
+function hasMarkType(mark: string, marks: Mark[]): boolean {
+  return marks.some((element) => element.type === mark);
+}
+
+function hasMark(mark: Mark, marks: Mark[]): boolean {
+  return marks.some((element) => areMarksEqual(element, mark));
+}
+
+function getMark(mark: string, marks: Mark[]): Mark[] {
+  return marks.filter((element) => element.type === mark);
+}
+
+function getActiveMarks(nodes: Node[]): Mark[] {
+  const marks: Mark[] = [];
   for (const node of nodes) {
-    if (isStylingMark(node) && !marks.includes(node.type)) {
-      marks.push(node.type);
+    if (isStylingMark(node)) {
+      const mark: Mark = { type: node.type };
+      switch (node.type) {
+        case "heading": {
+          mark.depth = (node as Heading).depth;
+          break;
+        }
+        case "list": {
+          mark.ordered = (node as List).ordered ?? false;
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+      marks.push(mark);
     }
   }
-  return marks;
+
+  return marks.filter((element, index, self) => {
+    const firstOccuranceIndex = self.findIndex((otherElement) => {
+      return areMarksEqual(element, otherElement);
+    });
+    return index === firstOccuranceIndex;
+  });
 }
 
 function nodeOverlapsSelection(
@@ -786,15 +829,11 @@ function MarkdownTextarea({
     setSelection({ anchor: start, focus: end });
   }
 
-  function isMarkActive(
-    mark: string,
-    selection_: EditorSelection | null,
-  ): boolean {
+  function getMarksInSelection(selection_: EditorSelection | null): Mark[] {
     if (selection_ === null) {
-      return false;
+      return [];
     }
-    const marks = getActiveMarks(nodesInSelection(selection_, ast));
-    return marks.includes(mark);
+    return getActiveMarks(nodesInSelection(selection_, ast));
   }
 
   return (
@@ -804,7 +843,7 @@ function MarkdownTextarea({
         selection={selection}
         onAction={applyAction}
         onSwitchMode={switchMode}
-        isActive={isMarkActive}
+        getActive={getMarksInSelection}
       />
       <MarkdownSurface
         value={markdown}
@@ -830,7 +869,7 @@ interface ToolbarProps {
   selection: EditorSelection | null;
   onAction: (action: ToolbarAction) => void;
   onSwitchMode: () => void;
-  isActive: (mark: string, selection: EditorSelection | null) => boolean;
+  getActive: (selection: EditorSelection | null) => Mark[];
 }
 
 function Toolbar({
@@ -838,7 +877,7 @@ function Toolbar({
   selection,
   onAction,
   onSwitchMode,
-  isActive,
+  getActive,
 }: ToolbarProps) {
   function getButtonProps(
     mark: string,
@@ -860,9 +899,18 @@ function Toolbar({
       type: "button",
       variant: "outline",
       className:
-        isActive(mark, selection) || isActive(alt ?? "", selection)
+        hasMarkType(mark, getActive(selection)) ||
+        hasMarkType(alt ?? "", getActive(selection))
           ? "border-input/30 bg-primary! text-primary-foreground shadow-xs hover:bg-primary/50 hover:text-primary-foreground/50"
           : "",
+    };
+  }
+
+  function getDropdownItemProps(mark: Mark): {
+    className: string;
+  } {
+    return {
+      className: hasMark(mark, getActive(selection)) ? "font-bold" : "",
     };
   }
 
@@ -876,8 +924,9 @@ function Toolbar({
               <HeadingIcon />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
+          <DropdownMenuContent align="start" className="flex flex-col gap-1">
             <DropdownMenuItem
+              {...getDropdownItemProps({ type: "heading", depth: 1 })}
               onClick={(_event) => {
                 onAction(headingAction(1));
               }}
@@ -885,6 +934,7 @@ function Toolbar({
               <Heading1Icon /> Tytuł
             </DropdownMenuItem>
             <DropdownMenuItem
+              {...getDropdownItemProps({ type: "heading", depth: 2 })}
               onClick={(_event) => {
                 onAction(headingAction(2));
               }}
@@ -892,6 +942,7 @@ function Toolbar({
               <Heading2Icon /> Podtytuł
             </DropdownMenuItem>
             <DropdownMenuItem
+              {...getDropdownItemProps({ type: "heading", depth: 3 })}
               onClick={(_event) => {
                 onAction(headingAction(3));
               }}
@@ -962,10 +1013,14 @@ function Toolbar({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            {...getDropdownItemProps({ type: "list", ordered: false })}
+          >
             <ListIcon /> Nieuporządkowna
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            {...getDropdownItemProps({ type: "list", ordered: true })}
+          >
             <ListOrderedIcon /> Uporządkowana
           </DropdownMenuItem>
         </DropdownMenuContent>
