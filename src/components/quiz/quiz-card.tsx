@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
-import { ViewTransition } from "react";
+import { ViewTransition, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -88,13 +88,28 @@ export function QuizCard({
     },
   });
 
+  const [isPointerDown, setIsPointerDown] = useState<boolean>(false);
+  const [isShaking, setIsShaking] = useState<boolean>(false);
+
   return (
     <ViewTransition name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}>
       <div
         ref={ref}
         onPointerDown={() => {
-          if (quiz.folder?.folder_type === "archive") {
+          setIsPointerDown(true);
+        }}
+        onPointerUp={() => {
+          setIsPointerDown(false);
+        }}
+        onPointerMove={() => {
+          if (isPointerDown && quiz.folder?.folder_type === "archive") {
             toast.error("Nie można przenosić zarchiwizowanych quizów");
+            setIsPointerDown(false);
+            setIsShaking(true);
+
+            setTimeout(() => {
+              setIsShaking(false);
+            }, 400);
           }
         }}
         className={cn("h-full w-full", isDragging && "opacity-50")}
@@ -103,6 +118,7 @@ export function QuizCard({
           variant="gradient"
           className={cn(
             "hover:ring-ring relative flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 transition-all select-none hover:ring-2",
+            isShaking && "animate-shake",
             className,
           )}
           onClick={() => {
