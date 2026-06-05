@@ -77,8 +77,24 @@
     }
   }
 
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-6px);
+    }
+    40%,
+    80% {
+      transform: translateX(6px);
+    }
+  }
+
   --animate-accordion-down: accordion-down 0.2s ease-out forwards;
   --animate-accordion-up: accordion-up 0.2s ease-out forwards;
+  --animate-shake: shake 0.4s ease-in-out;
 }
 
 :root {
