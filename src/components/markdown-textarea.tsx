@@ -500,6 +500,61 @@ const boldAction: ToolbarAction = {
   },
 };
 
+const italicAction: ToolbarAction = {
+  apply: (ast: Root, selection: EditorSelection): Root => {
+    // Split AST to text fragments
+    // Apply change to fragments, and potentailly create new ones
+    // Reconstruct AST
+
+    // Get text fragments in selection
+    const replacedIndicesMap = new Map<Parent | null, number[]>(); // A reference for which nodes to replace when reconstructing the AST
+    const fragments = getFragmentsInSelection(
+      selection,
+      ast,
+      replacedIndicesMap,
+    );
+
+    // Determine whether we need to remove the mark
+    const remove = shouldRemoveMark(fragments, "emphasis");
+
+    if (remove) {
+      // Split fragments by selection boundaries
+      splitFragmetsBySelection(fragments, selection);
+      // Remove mark from fragments
+      removeMarkFromFragmentsInSelection(fragments, selection, "emphasis");
+      // Merge neighbouring fragments
+      cleanFragments(fragments);
+    } else {
+      // Split fragments by selection boundaries
+      splitFragmetsBySelection(fragments, selection);
+      // Fix leading and trailing spaces
+      // fixTrailingAndLeadingSpaces(fragments);
+      // Apply 'strong' mark to fragments
+      applyMarkToFragmentsInSelection(fragments, selection, "emphasis");
+    }
+
+    sanitizeFragments(fragments);
+
+    cleanFragments(fragments);
+
+    // Group fragments by their parent node
+    const grouped = groupFragmentsByParent(fragments);
+
+    // Create new nodes from fragments per parent
+    for (const [parent, childrenFragments] of grouped.entries()) {
+      const newNodes = createNodesFromFragments(childrenFragments);
+      const replacedIndices = replacedIndicesMap.get(parent) ?? [];
+      parent?.children.splice(
+        Math.min(...replacedIndices),
+        replacedIndices.length,
+        ...(newNodes as RootContent[]),
+      );
+    }
+
+    return ast;
+  },
+};
+
 //endregion
 
 function isStylingMark(node: Node): boolean {
@@ -798,7 +853,12 @@ function Toolbar({
         >
           <BoldIcon />
         </Button>
-        <Button {...getButtonProps("emphasis")}>
+        <Button
+          {...getButtonProps("emphasis")}
+          onClick={(_event) => {
+            onAction(italicAction);
+          }}
+        >
           <ItalicIcon />
         </Button>
         <Popover>
