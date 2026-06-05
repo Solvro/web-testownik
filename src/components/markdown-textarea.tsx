@@ -532,12 +532,14 @@ function MarkdownTextarea({
     if (selection === null) {
       return;
     }
+
     const freshAST = parseToAST(markdown);
+    const mutatedAST = action.apply(freshAST, selection);
 
-    const newAST = action.apply(freshAST, selection);
-    setAST(newAST);
+    const newMarkdown = stringify(mutatedAST);
+    const cleanASTWithOffsets = parseToAST(newMarkdown);
 
-    const newMarkdown = stringify(newAST);
+    setAST(cleanASTWithOffsets);
     setMarkdown(newMarkdown);
 
     onChange?.({
@@ -613,6 +615,9 @@ function MarkdownTextarea({
     mark: string,
     selection_: EditorSelection | null,
   ): boolean {
+    if (selection_ === null) {
+      return false;
+    }
     const marks = getActiveMarks(nodesInSelection(selection_, ast));
     return marks.includes(mark);
   }
@@ -662,20 +667,6 @@ interface ToolbarProps {
   onSwitchMode: () => void;
   isActive: (mark: string, selection: EditorSelection | null) => boolean;
 }
-
-/*
-  Actions:
-    [] Headings
-    [] Bold
-    [] Italic
-    [] Link
-    [] Code
-    [] Equation
-    [] Blockquote
-    [] Lists
-        [] Unordered
-        [] Ordered
-*/
 
 function Toolbar({
   mode,
