@@ -515,22 +515,52 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
     setIsCreatingNewFolder(true);
 
+    const currentFolderQueryKey = ["folder-library", activeFolderId];
+    const temporaryFolderId = `temp-${crypto.randomUUID()}`;
+
     try {
       if (rootFolder?.id == null) {
         toast.error("Wystąpił błąd podczas tworzenia folderu");
         return;
       }
 
+      const targetParentId = activeFolderId ?? rootFolder.id;
+
+      queryClient.setQueryData(currentFolderQueryKey, (oldData: Library) => {
+        if (oldData.items.length === 0) {
+          return oldData;
+        }
+
+        const optimisticFolder: Folder = {
+          id: temporaryFolderId,
+          name: newFolderInput.trim(),
+          parent: targetParentId,
+          quizzes: [],
+          subfolders: [],
+          created_at: new Date().toISOString(),
+          folder_type: "regular",
+        };
+
+        return {
+          ...oldData,
+          items: [optimisticFolder, ...oldData.items],
+        };
+      });
+
       await getFolderService().createFolder({
         name: newFolderInput.trim(),
-        parent: rootFolder.id,
+        parent: activeFolderId ?? rootFolder.id,
       });
+
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+
       toast.success("Utworzono nowy folder");
       setNewFolderInput("Nowy folder");
     } catch {
       toast.error("Wystąpił błąd podczas tworzenia folderu");
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
     } finally {
       setIsCreatingNewFolder(false);
     }
