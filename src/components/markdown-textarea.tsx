@@ -472,8 +472,6 @@ const boldAction: ToolbarAction = {
     } else {
       // Split fragments by selection boundaries
       splitFragmetsBySelection(fragments, selection);
-      // Fix leading and trailing spaces
-      // fixTrailingAndLeadingSpaces(fragments);
       // Apply 'strong' mark to fragments
       applyMarkToFragmentsInSelection(fragments, selection, "strong");
     }
@@ -527,8 +525,6 @@ const italicAction: ToolbarAction = {
     } else {
       // Split fragments by selection boundaries
       splitFragmetsBySelection(fragments, selection);
-      // Fix leading and trailing spaces
-      // fixTrailingAndLeadingSpaces(fragments);
       // Apply 'strong' mark to fragments
       applyMarkToFragmentsInSelection(fragments, selection, "emphasis");
     }
@@ -553,6 +549,63 @@ const italicAction: ToolbarAction = {
 
     return ast;
   },
+};
+
+const headingAction = (depth: 1 | 2 | 3): ToolbarAction => {
+  return {
+    apply: (ast: Root, selection: EditorSelection): Root => {
+      const replacedIndicesMap = new Map<Parent | null, number[]>(); // A reference for which nodes to replace when reconstructing the AST
+      const fragments = getFragmentsInSelection(
+        selection,
+        ast,
+        replacedIndicesMap,
+      );
+
+      if (fragments.length === 0) {
+        return ast;
+      }
+
+      const uniqueParents = new Set<Parent>();
+      for (const fragment of fragments) {
+        if (fragment.parent !== null) {
+          uniqueParents.add(fragment.parent);
+        }
+      }
+
+      for (const parentNode of uniqueParents) {
+        // 1. Cast to RootContent so we can inspect the block node cleanly
+        const blockNode = parentNode as RootContent;
+
+        if (blockNode.type === "heading") {
+          if (blockNode.depth === depth) {
+            // TOGGLE OFF: Create a completely fresh Paragraph object configuration
+            const children = blockNode.children; // Save the reference to the children array
+
+            // Reassign the properties by wiping the old heading shape entirely
+            const paragraphNode = blockNode as unknown as Paragraph;
+            paragraphNode.type = "paragraph";
+            paragraphNode.children = children;
+
+            // Safely drop the depth key now that the compiler knows it's a structural Paragraph shape
+            delete (paragraphNode as any).depth;
+          } else {
+            // SWITCH LEVEL: Change from H1 to H2, H3, etc.
+            blockNode.depth = depth;
+          }
+        } else if (blockNode.type === "paragraph") {
+          // TOGGLE ON: Turn a paragraph into a heading configuration block shape
+          const children = blockNode.children;
+          const headingNode = blockNode as unknown as Heading;
+
+          headingNode.type = "heading";
+          headingNode.depth = depth;
+          headingNode.children = children;
+        }
+      }
+
+      return ast;
+    },
+  };
 };
 
 //endregion
@@ -768,16 +821,6 @@ function MarkdownTextarea({
       >
         Log AST
       </Button>
-      <Button
-        type="button"
-        onClick={(e) => {
-          console.log(selection);
-          const nodes = nodesInSelection(selection, ast);
-          console.log(nodes);
-        }}
-      >
-        Get Selected Nodes
-      </Button>
     </div>
   );
 }
@@ -834,13 +877,25 @@ function Toolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(_event) => {
+                onAction(headingAction(1));
+              }}
+            >
               <Heading1Icon /> Tytuł
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(_event) => {
+                onAction(headingAction(2));
+              }}
+            >
               <Heading2Icon /> Podtytuł
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(_event) => {
+                onAction(headingAction(3));
+              }}
+            >
               <Heading3Icon /> Sekcja
             </DropdownMenuItem>
           </DropdownMenuContent>
