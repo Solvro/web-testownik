@@ -500,20 +500,21 @@ function nodesInSelection(
 function MarkdownTextarea({
   onChange,
   onPaste,
+  value,
   ...props
 }: React.ComponentProps<"textarea">) {
-  const [ast, setAST] = useState<Root>(EMPTY_DOCUMENT);
-  const [markdown, setMarkdown] = useState<string>("");
+  const [ast, setAST] = useState<Root>(parseToAST(value as string));
+  const [markdown, setMarkdown] = useState<string>(value as string);
   const [mode, setMode] = useState<EditorMode>("WYSIWYG");
   const [selection, setSelection] = useState<EditorSelection | null>(null);
 
-  function parseToAST(value: string): Root {
-    return unified().use(remarkParse).use(remarkMath).parse(value);
+  function parseToAST(value_: string): Root {
+    return unified().use(remarkParse).use(remarkMath).parse(value_);
   }
 
   const parse = useDebouncedCallback(
-    (value: string) => {
-      const tree = unified().use(remarkParse).use(remarkMath).parse(value);
+    (value_: string) => {
+      const tree = unified().use(remarkParse).use(remarkMath).parse(value_);
       setAST(tree);
     },
     { wait: CALLBACK_TIME },
@@ -544,9 +545,9 @@ function MarkdownTextarea({
     } as React.ChangeEvent<HTMLTextAreaElement>);
   }
 
-  function handleMarkdownChange(value: string) {
-    setMarkdown(value);
-    parse(value);
+  function handleMarkdownChange(value_: string) {
+    setMarkdown(value_);
+    parse(value_);
   }
 
   function switchMode() {
@@ -561,13 +562,13 @@ function MarkdownTextarea({
 
   function handleSelection(event: React.SyntheticEvent<HTMLTextAreaElement>) {
     const textarea = event.currentTarget;
-    const value = textarea.value;
-    const length = value.length;
+    const value_ = textarea.value;
+    const length = value_.length;
 
     const startIndex = textarea.selectionStart;
     const endIndex = textarea.selectionEnd;
 
-    const newLineIndicies = [...value.matchAll(/\n/g)].map(
+    const newLineIndicies = [...value_.matchAll(/\n/g)].map(
       (match) => match.index,
     );
 
@@ -584,13 +585,13 @@ function MarkdownTextarea({
     const startColumn =
       startIndex -
       Math.max(
-        ...newLineIndicies.filter((value_, _index) => value_ < startIndex),
+        ...newLineIndicies.filter((value__, _index) => value__ < startIndex),
         -1,
       );
     const endColumn =
       endIndex -
       Math.max(
-        ...newLineIndicies.filter((value_, _index) => value_ < endIndex),
+        ...newLineIndicies.filter((value__, _index) => value__ < endIndex),
         -1,
       );
 
