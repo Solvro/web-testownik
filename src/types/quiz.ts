@@ -4,7 +4,7 @@ export interface QuizBase {
   id: string;
   title: string;
   description: string;
-  folder: Folder;
+  folder: Folder | null;
   creator?: User | null;
   visibility: AccessLevel;
   allow_anonymous: boolean;
