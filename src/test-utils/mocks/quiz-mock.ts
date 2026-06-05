@@ -4,6 +4,7 @@ export const mockQuiz = {
   id: "mock-quiz-uuid-1",
   title: "Sample Quiz",
   description: "A sample quiz for testing",
+  folder: null,
   visibility: AccessLevel.PRIVATE,
   allow_anonymous: false,
   is_anonymous: false,

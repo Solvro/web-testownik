@@ -2,6 +2,7 @@ const ALLOWED_QUIZ_KEYS = [
   "id",
   "title",
   "description",
+  "folder",
   "created_at",
   "updated_at",
   "last_used_at",
