@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AiSettingsForm } from "@/components/profile/ai-settings-form";
+import { AuthorizedAppsList } from "@/components/profile/authorized-apps-list";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
@@ -93,6 +94,12 @@ export function ProfilePageClient(): React.JSX.Element {
             Powiadomienia
           </TabsTrigger>
           <TabsTrigger
+            value="authorized-apps"
+            className="md:w-full md:justify-start"
+          >
+            Integracje
+          </TabsTrigger>
+          <TabsTrigger
             value="privacy-policy"
             className="hidden md:inline-flex md:w-full md:justify-start"
             nativeButton={false}
@@ -129,6 +136,9 @@ export function ProfilePageClient(): React.JSX.Element {
               settings={settings}
               onSettingChange={handleSettingChange}
             />
+          </TabsContent>
+          <TabsContent value="authorized-apps" className="space-y-6 md:mt-0">
+            <AuthorizedAppsList />
           </TabsContent>
         </div>
       </Tabs>
