@@ -271,7 +271,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         >
           <div className="min-w-0 lg:col-span-2">
             <ViewTransition
-              name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+              name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}
               update="h-full"
             >
               {quiz.questions.length === 0 ? (

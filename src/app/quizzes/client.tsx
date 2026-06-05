@@ -287,7 +287,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
         (quiz) =>
           quiz.creator?.id === userId &&
           (searchRegex?.test(quiz.title) ?? true) &&
-          quiz.folder.folder_type !== "archive",
+          quiz.folder?.folder_type !== "archive",
       ),
     [searchRegex, sortedUserQuizzes, userId],
   );

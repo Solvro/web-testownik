@@ -81,7 +81,7 @@ export function QuizCard({
 
   const { ref, isDragging } = useDraggable({
     id: quiz.id,
-    disabled: !isDraggable || quiz.folder.folder_type === "archive",
+    disabled: !isDraggable || quiz.folder?.folder_type === "archive",
     data: {
       quizId: quiz.id,
       type: "quiz",
@@ -89,11 +89,11 @@ export function QuizCard({
   });
 
   return (
-    <ViewTransition name={`quiz-open-${quiz.id}-${quiz.folder.id}`}>
+    <ViewTransition name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}>
       <div
         ref={ref}
         onPointerDown={() => {
-          if (quiz.folder.folder_type === "archive") {
+          if (quiz.folder?.folder_type === "archive") {
             toast.error("Nie można przenosić zarchiwizowanych quizów");
           }
         }}
@@ -113,12 +113,9 @@ export function QuizCard({
           }}
           {...props}
         >
-          {/*{isDragging ? (*/}
-          {/*  <div className="bg-card pointer-events-none absolute inset-0 z-50 rounded-[inherit]" />*/}
-          {/*) : null}*/}
           <div className="flex w-full gap-2">
             <div className="bg-accent flex aspect-square size-14 items-center justify-center rounded-lg">
-              {quiz.folder.folder_type === "archive" ? (
+              {quiz.folder?.folder_type === "archive" ? (
                 <FileArchive className="text-muted-foreground size-9" />
               ) : (
                 <NotepadTextIcon className="text-muted-foreground size-9" />

@@ -132,7 +132,7 @@ export function QuestionCard({
             />
             <div className="flex justify-center">
               <ViewTransition
-                name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+                name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}
                 default="h-full"
               >
                 <Button variant="outline" onClick={restartQuiz}>
@@ -358,7 +358,7 @@ export function QuestionCard({
                 </Tooltip>
               ) : null}
               <ViewTransition
-                name={`quiz-open-${quiz.id}-${quiz.folder.id}`}
+                name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}
                 default="h-full"
               >
                 {questionChecked ? (

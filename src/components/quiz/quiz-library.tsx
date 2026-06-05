@@ -136,10 +136,10 @@ export function QuizzesLibrary({
                   key={item.id}
                   quiz={quiz}
                   showEdit={quiz.can_edit}
-                  showShare={quiz.folder.folder_type !== "archive"}
+                  showShare={quiz.folder?.folder_type !== "archive"}
                   showDelete={true}
                   showDownload={true}
-                  showArchive={quiz.folder.folder_type !== "archive"}
+                  showArchive={quiz.folder?.folder_type !== "archive"}
                   showSearch={canSearchInQuizzes}
                   onShare={handleShareQuiz}
                   onDelete={handleDeleteQuiz}
