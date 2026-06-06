@@ -93,7 +93,6 @@ export function useFocusMode(timerStore: TimerStore) {
   const isAlertOpenRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const showFocusAlert = (type: FocusAlertType) => {
     setFocusAlertType(type);
     setIsFocusAlertOpen(true);

@@ -1,4 +1,4 @@
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, BellIcon } from "lucide-react";
 import { useContext } from "react";
 
 import { AppContext } from "@/app-context";
@@ -35,7 +35,10 @@ export function NotificationsForm({
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Powiadomienia</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BellIcon className="size-5" />
+            Powiadomienia
+          </CardTitle>
           <p className="text-muted-foreground text-xs">
             Wybierz, które powiadomienia chcesz otrzymywać
           </p>
