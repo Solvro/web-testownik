@@ -57,11 +57,11 @@ interface AuthorizationDecision {
 }
 
 const AUTHORIZATION_SCOPE_SKELETONS = [
-  "quizzes-read",
-  "quizzes-write",
-  "study-read",
-  "study-write",
-  "user-read",
+  "quizzes:read",
+  "quizzes:write",
+  "study:read",
+  "study:write",
+  "user:read",
 ];
 
 const oauthAuthorizationService = new OAuthAuthorizationService(API_URL);

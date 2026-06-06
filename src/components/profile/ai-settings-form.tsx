@@ -110,7 +110,7 @@ export function AiSettingsForm({
     try {
       await navigator.clipboard.writeText(command);
       setCopiedCommand(label);
-      toast.success("Skopiowano komendę instalacji.");
+      toast.success("Skopiowano do schowka.");
       setTimeout(() => {
         setCopiedCommand((current) => (current === label ? null : current));
       }, 2000);
@@ -252,7 +252,7 @@ export function AiSettingsForm({
             </ClientSetupTab>
             <ClientSetupTab label="vscode">
               <SetupStep title="Instalacja z VS Code">
-                Aby zainstalować mcp wybierz &quot;MCP: Add Server&quote; z
+                Aby zainstalować MCP wybierz &quot;MCP: Add Server&quot; z
                 Command Palette, kliknij &quot;HTTP&quot; i wklej poniższy
                 adres.
               </SetupStep>

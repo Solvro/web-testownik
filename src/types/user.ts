@@ -47,7 +47,7 @@ export interface UserSettings {
 
 export interface AuthorizedApp {
   client_id: string;
-  oauth_application_id?: string;
+  oauth_application_id: string;
   client_name: string;
   client_uri: string;
   logo_uri: string;
