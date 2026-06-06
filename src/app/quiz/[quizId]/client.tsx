@@ -162,7 +162,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </p>
             <p>
               Możesz zmienić to w{" "}
-              <Link href="/profile#settings" className="underline">
+              <Link href="/profile?tab=settings" className="underline">
                 ustawieniach
               </Link>
               .

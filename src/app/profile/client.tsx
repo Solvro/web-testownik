@@ -2,7 +2,7 @@
 
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,25 +17,52 @@ import { getUserService } from "@/services";
 import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
+const PROFILE_TABS = [
+  "account",
+  "settings",
+  "notifications",
+  "authorized-apps",
+] as const;
+const DEFAULT_PROFILE_TAB = "account";
+const PROFILE_TAB_QUERY_PARAM = "tab";
+
+type ProfileTab = (typeof PROFILE_TABS)[number];
+
+function isProfileTab(value: string): value is ProfileTab {
+  return PROFILE_TABS.includes(value as ProfileTab);
+}
+
+function getProfileTabFromQuery(tab: string | null): ProfileTab | null {
+  return tab !== null && isProfileTab(tab) ? tab : null;
+}
+
 export function ProfilePageClient(): React.JSX.Element {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState<string>("account");
+  const router = useRouter();
+  const searchParameters = useSearchParams();
+  const tabParameter = searchParameters.get(PROFILE_TAB_QUERY_PARAM);
+  const activeTab = getProfileTabFromQuery(tabParameter) ?? DEFAULT_PROFILE_TAB;
   const [userData, setUserData] = useState<UserData | null>(null);
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
 
-  const handleTabSelect = (tabKey: string) => {
-    if (tabKey === "privacy-policy") {
+  useEffect(() => {
+    if (
+      tabParameter === null ||
+      getProfileTabFromQuery(tabParameter) !== null
+    ) {
       return;
     }
-    setActiveTab(tabKey);
-  };
+
+    const nextSearchParameters = new URLSearchParams(searchParameters);
+    nextSearchParameters.delete(PROFILE_TAB_QUERY_PARAM);
+    const queryString = nextSearchParameters.toString();
+
+    router.replace(
+      queryString === "" ? pathname : `${pathname}?${queryString}`,
+    );
+  }, [pathname, router, searchParameters, tabParameter]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
-      handleTabSelect(window.location.hash.slice(1));
-      window.history.replaceState(null, "", pathname);
-    }
-
     const userService = getUserService();
 
     // Fetch user data
@@ -57,7 +84,7 @@ export function ProfilePageClient(): React.JSX.Element {
       .catch((error: unknown) => {
         console.error("Error fetching settings:", error);
       });
-  }, [pathname]);
+  }, []);
 
   const handleSettingChange = async (
     name: keyof UserSettings,
@@ -73,6 +100,27 @@ export function ProfilePageClient(): React.JSX.Element {
     }
   };
 
+  const handleTabSelect = (tabKey: string) => {
+    if (tabKey === "privacy-policy") {
+      return;
+    }
+    if (!isProfileTab(tabKey)) {
+      return;
+    }
+
+    const nextSearchParameters = new URLSearchParams(searchParameters);
+    if (tabKey === DEFAULT_PROFILE_TAB) {
+      nextSearchParameters.delete(PROFILE_TAB_QUERY_PARAM);
+    } else {
+      nextSearchParameters.set(PROFILE_TAB_QUERY_PARAM, tabKey);
+    }
+    const queryString = nextSearchParameters.toString();
+
+    router.push(queryString === "" ? pathname : `${pathname}?${queryString}`, {
+      scroll: false,
+    });
+  };
+
   return (
     <div>
       <Tabs
@@ -80,7 +128,7 @@ export function ProfilePageClient(): React.JSX.Element {
         onValueChange={handleTabSelect}
         className="grid items-start gap-2 md:grid-cols-[220px_1fr] md:gap-6"
       >
-        <TabsList className="flex md:h-auto md:w-full md:flex-col">
+        <TabsList className="flex max-w-full justify-start overflow-x-auto overflow-y-hidden md:h-auto md:w-full md:flex-col">
           <TabsTrigger value="account" className="md:w-full md:justify-start">
             Konto
           </TabsTrigger>
@@ -111,7 +159,7 @@ export function ProfilePageClient(): React.JSX.Element {
             )}
           ></TabsTrigger>
         </TabsList>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
             <ProfileDetails
               userData={userData}
