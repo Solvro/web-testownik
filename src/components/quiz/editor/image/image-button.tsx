@@ -20,6 +20,7 @@ export interface ImageButtonProps {
   disabled?: boolean;
   className?: string;
   isUploading?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function ImageButton({
@@ -33,8 +34,14 @@ export function ImageButton({
   disabled = false,
   className,
   isUploading = false,
+  onDialogOpenChange,
 }: ImageButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  function handleDialogOpenChange(open: boolean) {
+    setDialogOpen(open);
+    onDialogOpenChange?.(open);
+  }
 
   const hasImage =
     (image !== null && image !== undefined && image !== "") ||
@@ -49,7 +56,7 @@ export function ImageButton({
         className={cn("shrink-0", className)}
         onClick={() => {
           if (!isUploading) {
-            setDialogOpen(true);
+            handleDialogOpenChange(true);
           }
         }}
         disabled={disabled || isUploading}
@@ -65,7 +72,7 @@ export function ImageButton({
 
       <ImageDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         image={image}
         imageUrl={imageUrl}
         imageUploadId={imageUploadId}

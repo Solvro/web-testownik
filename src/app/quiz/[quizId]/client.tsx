@@ -332,17 +332,21 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 resetProgress={resetProgress}
                 isFocusModeActive={isFocusModeActive}
                 toggleFocusMode={toggleFocusMode}
+                onToggleHistory={toggleHistory}
               />
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
-                onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
                 onExplain={() => {
                   setShowAiExplain(true);
                 }}
+                onOpenChat={() => {
+                  setIsChatOpen(true);
+                }}
                 disabled={isQuizFinished || currentQuestion == null}
                 isExplainOpen={showAiExplain}
+                isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
               />
               {showAi && showAiExplain && currentQuestion != null ? (

@@ -40,6 +40,7 @@ interface QuestionFormContentProps {
   onUploadStart?: () => void;
   onUploadEnd?: () => void;
   className?: string;
+  onImageDialogOpenChange?: (open: boolean) => void;
 }
 
 function createNewAnswer(order: number): AnswerFormData {
@@ -65,6 +66,7 @@ export function QuestionFormContent({
   onUploadStart,
   onUploadEnd,
   className,
+  onImageDialogOpenChange,
 }: QuestionFormContentProps) {
   const { handlePaste } = useImagePaste((file: File) => {
     void onUpload(file);
@@ -227,6 +229,7 @@ export function QuestionFormContent({
             onFileDrop={handleFileDrop}
             isUploading={isImageUploading}
             size="medium"
+            onDialogOpenChange={onImageDialogOpenChange}
           />
 
           {hasExplanation ? (
@@ -314,6 +317,7 @@ export function QuestionFormContent({
               }}
               onUploadStart={onUploadStart}
               onUploadEnd={onUploadEnd}
+              onImageDialogOpenChange={onImageDialogOpenChange}
               canDelete={question.answers.length > 1}
               onKeyDown={(event) => {
                 void handleAnswerKeyDown(answer.id, event);

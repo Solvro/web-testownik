@@ -57,6 +57,7 @@ export function QuickEditQuestionDialog({
   const [formData, setFormData] = useState(question);
 
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [isImageEditDialogOpen, setIsImageEditDialogOpen] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
@@ -121,7 +122,7 @@ export function QuickEditQuestionDialog({
           };
         },
       );
-      onOpenChange(false);
+      handleOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się zaktualizować pytania");
@@ -159,7 +160,7 @@ export function QuickEditQuestionDialog({
           };
         },
       );
-      onOpenChange(false);
+      handleOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się usunąć pytania");
@@ -177,11 +178,21 @@ export function QuickEditQuestionDialog({
     await saveQuestion();
   };
 
+  function handleOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      setIsAlertDialogOpen(false);
+      setIsImageEditDialogOpen(false);
+    }
+  }
+
+  const isNestedDialogOpen = isAlertDialogOpen || isImageEditDialogOpen;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="flex flex-col gap-0 sm:max-w-4xl"
-        data-nested-dialog-open={isAlertDialogOpen ? "" : undefined}
+        data-nested-dialog-open={isNestedDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="pr-6">
@@ -194,6 +205,7 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
+            onImageDialogOpenChange={setIsImageEditDialogOpen}
             hideDelete
           />
         </DialogHeader>
@@ -207,6 +219,7 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
+            onImageDialogOpenChange={setIsImageEditDialogOpen}
           />
         </div>
 
@@ -264,7 +277,7 @@ export function QuickEditQuestionDialog({
             <Button
               variant="outline"
               onClick={() => {
-                onOpenChange(false);
+                handleOpenChange(false);
               }}
             >
               Anuluj

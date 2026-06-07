@@ -1,6 +1,6 @@
 import {
+  BotIcon,
   ClipboardCopyIcon,
-  HistoryIcon,
   MessageSquareWarningIcon,
   PencilLineIcon,
   SkullIcon,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
+import { SiOpenai } from "react-icons/si";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
@@ -26,22 +27,24 @@ import type { Question, Quiz } from "@/types/quiz";
 interface QuizActionButtonsProps {
   quiz: Quiz;
   question: Question | null;
-  onToggleHistory: () => void;
   onToggleBrainrot: () => void;
   onExplain: () => void;
+  onOpenChat?: () => void;
   disabled?: boolean;
   isExplainOpen?: boolean;
+  isChatOpen?: boolean;
   aiDisabled?: boolean;
 }
 
 export function QuizActionButtons({
   quiz,
   question,
-  onToggleHistory,
   onToggleBrainrot,
   onExplain,
+  onOpenChat,
   disabled = false,
   isExplainOpen = false,
+  isChatOpen = false,
   aiDisabled = false,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
@@ -75,9 +78,64 @@ export function QuizActionButtons({
     setIsEditOpen(true);
   };
 
+  const canUseAi = !aiDisabled && checkPermission(PermissionAction.AI_FEATURES);
+
+  const handleOpenChatGPT = () => {
+    if (question == null) {
+      toast.error("Nie można otworzyć ChatGPT: brak pytania");
+      return;
+    }
+    const answersText = question.answers
+      .map(
+        (a, index) =>
+          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
+      )
+      .join("\n");
+    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\nOdpowiedzi:\n${answersText}`;
+    window.open(
+      `https://chat.openai.com/?q=${encodeURIComponent(fullText)}`,
+      "_blank",
+    );
+  };
+
   return (
     <Card className="py-4">
       <CardContent className="flex justify-around">
+        {canUseAi ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onExplain}
+                  disabled={!canUseQuestion || isExplainOpen}
+                  aria-label="Wyjaśnij pytanie"
+                >
+                  <SparklesIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>Wyjaśnij pytanie</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleOpenChatGPT}
+                  disabled={!canUseQuestion}
+                  aria-label="Otwórz w ChatGPT"
+                >
+                  <SiOpenai />
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>Otwórz w ChatGPT</TooltipContent>
+          </Tooltip>
+        )}
         <Tooltip>
           <TooltipTrigger
             render={
@@ -94,25 +152,25 @@ export function QuizActionButtons({
           ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
-        {!aiDisabled && checkPermission(PermissionAction.AI_FEATURES) ? (
+        {isCreator ? (
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={onExplain}
-                  disabled={!canUseQuestion || isExplainOpen}
-                  aria-label="Wyjaśnij pytanie (AI)"
+                  onClick={handleEdit}
+                  aria-label="Edytuj pytanie"
                 >
-                  <SparklesIcon />
+                  <PencilLineIcon />
                 </Button>
               }
             ></TooltipTrigger>
-            <TooltipContent>Wyjaśnij pytanie (AI)</TooltipContent>
+            <TooltipContent>
+              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
+            </TooltipContent>
           </Tooltip>
-        ) : null}
-        {!isCreator && checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
+        ) : checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
@@ -134,40 +192,24 @@ export function QuizActionButtons({
             <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
           </Tooltip>
         ) : null}
-        {isCreator ? (
+        {canUseAi && onOpenChat != null ? (
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleEdit}
-                  aria-label="Edytuj pytanie"
+                  onClick={onOpenChat}
+                  disabled={!canUseQuestion || isChatOpen}
+                  aria-label="Czat AI"
                 >
-                  <PencilLineIcon />
+                  <BotIcon />
                 </Button>
               }
             ></TooltipTrigger>
-            <TooltipContent>
-              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
-            </TooltipContent>
+            <TooltipContent>Czat AI</TooltipContent>
           </Tooltip>
         ) : null}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onToggleHistory}
-                aria-label="Historia odpowiedzi"
-              >
-                <HistoryIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Historia odpowiedzi</TooltipContent>
-        </Tooltip>
         <Tooltip>
           <TooltipTrigger
             render={

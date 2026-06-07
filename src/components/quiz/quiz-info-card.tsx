@@ -1,15 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import {
   BarChart3Icon,
   CopyIcon,
   EyeOffIcon,
+  HistoryIcon,
   Link2Icon,
   Loader2Icon,
+  MenuIcon,
   RotateCcwIcon,
   ScanEyeIcon,
   SearchIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useContext } from "react";
 import { toast } from "sonner";
 
@@ -17,11 +19,19 @@ import { AppContext } from "@/app-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
@@ -45,6 +55,7 @@ interface QuizInfoCardProps {
   resetProgress: () => void;
   isFocusModeActive: boolean;
   toggleFocusMode: () => void;
+  onToggleHistory: () => void;
 }
 
 const getProgressColor = (percentage: number): string => {
@@ -77,14 +88,26 @@ const getProgressColor = (percentage: number): string => {
   return "rgb(25, 135, 84)";
 };
 
+const formatStudyTime = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const paddedMinutes = String(minutes).padStart(2, "0");
+  const paddedSeconds = String(seconds).padStart(2, "0");
+
+  if (hours === 0) {
+    return `${paddedMinutes}:${paddedSeconds}`;
+  }
+
+  return `${String(hours)}:${paddedMinutes}:${paddedSeconds}`;
+};
+
 function StudyTimeDisplay({ timerStore }: { timerStore: TimerStore }) {
   const studyTime = useStudyTimeValue(timerStore);
-  const date = new Date(0);
-  date.setHours(0, 0, studyTime);
 
   return (
     <span className="font-medium text-emerald-600 dark:text-emerald-400">
-      {format(date, "HH:mm:ss")}
+      {formatStudyTime(studyTime)}
     </span>
   );
 }
@@ -99,6 +122,7 @@ export function QuizInfoCard({
   resetProgress,
   isFocusModeActive,
   toggleFocusMode,
+  onToggleHistory,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
@@ -139,6 +163,59 @@ export function QuizInfoCard({
         {quiz.creator == null ? null : (
           <CardDescription>by {quiz.creator.full_name}</CardDescription>
         )}
+        <CardAction>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label="Więcej opcji quizu"
+                >
+                  <MenuIcon />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-full">
+              {canViewStats ? (
+                <DropdownMenuItem
+                  render={(props) => (
+                    <Link {...props} href={`/quiz/${quiz.id}/stats`}>
+                      <BarChart3Icon />
+                      Statystyki
+                    </Link>
+                  )}
+                />
+              ) : null}
+              <DropdownMenuItem onClick={onToggleHistory}>
+                <HistoryIcon />
+                Historia odpowiedzi
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleFocusMode}>
+                <FocusModeIcon />
+                {isFocusModeActive ? "Wyłącz tryb skupienia" : "Tryb skupienia"}
+              </DropdownMenuItem>
+              {canEditQuiz ? null : (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={isCopying}
+                    onClick={() => {
+                      copyQuiz(quiz.id);
+                    }}
+                  >
+                    {isCopying ? (
+                      <Loader2Icon className="animate-spin" />
+                    ) : (
+                      <CopyIcon />
+                    )}
+                    {isCopying ? "Kopiowanie..." : "Kopiuj do siebie"}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardAction>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <div className="space-y-1">
@@ -183,7 +260,7 @@ export function QuizInfoCard({
                       href={`/search-in-quiz/${quiz.id}`}
                       aria-label="Wyszukaj w quizie"
                     >
-                      <SearchIcon className="size-5" />
+                      <SearchIcon />
                     </ButtonLink>
                   }
                 ></TooltipTrigger>
@@ -206,82 +283,14 @@ export function QuizInfoCard({
                       }}
                       aria-label="Skopiuj link do quizu"
                     >
-                      <Link2Icon className="size-5" />
+                      <Link2Icon />
                     </Button>
                   }
                 ></TooltipTrigger>
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
-            {canViewStats ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <ButtonLink
-                      size="icon-sm"
-                      variant="outline"
-                      href={`/quiz/${quiz.id}/stats`}
-                      aria-label="Statystyki quizu"
-                    >
-                      <BarChart3Icon className="size-5" />
-                    </ButtonLink>
-                  }
-                ></TooltipTrigger>
-                <TooltipContent>Statystyki quizu</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {canEditQuiz ? null : (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      size="icon-sm"
-                      variant="outline"
-                      disabled={isCopying}
-                      onClick={() => {
-                        copyQuiz(quiz.id);
-                      }}
-                      aria-label={
-                        isCopying
-                          ? "Kopiowanie quizu"
-                          : "Utwórz kopię quizu i dodaj do mojej biblioteki"
-                      }
-                    >
-                      {isCopying ? (
-                        <Loader2Icon className="size-5 animate-spin" />
-                      ) : (
-                        <CopyIcon className="size-5" />
-                      )}
-                    </Button>
-                  }
-                ></TooltipTrigger>
-                <TooltipContent>
-                  {isCopying
-                    ? "Kopiowanie..."
-                    : "Utwórz kopię quizu i dodaj do mojej biblioteki"}
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant={isFocusModeActive ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={toggleFocusMode}
-                  aria-label="Tryb skupienia"
-                >
-                  <FocusModeIcon className="size-4" /> Focus
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>
-              {isFocusModeActive
-                ? "Wyłącz tryb skupienia"
-                : "Włącz tryb skupienia"}
-            </TooltipContent>
-          </Tooltip>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -292,7 +301,7 @@ export function QuizInfoCard({
                   disabled={totalQuestions === 0}
                   aria-label="Resetuj postęp"
                 >
-                  <RotateCcwIcon className="size-4" /> Reset
+                  <RotateCcwIcon /> Reset
                 </Button>
               }
             ></TooltipTrigger>

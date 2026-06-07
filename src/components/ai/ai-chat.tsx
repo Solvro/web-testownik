@@ -143,18 +143,6 @@ export function AiChat({
 
   return (
     <>
-      {open ? null : (
-        <button
-          onClick={() => {
-            onOpenChange(true);
-          }}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 fixed right-4 bottom-4 z-40 flex size-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
-          aria-label="Otwórz czat AI"
-        >
-          <BotMessageSquareIcon className="size-5" />
-        </button>
-      )}
-
       {open && mode === "sheet" ? (
         <button
           type="button"

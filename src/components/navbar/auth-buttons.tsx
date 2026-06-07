@@ -11,7 +11,7 @@ import { useContext } from "react";
 
 import { AppContext } from "@/app-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -60,14 +60,10 @@ export function AuthButtons() {
           </TooltipContent>
         </Tooltip>
 
-        <Button
-          render={(props) => (
-            <Link {...props} href={loginHref}>
-              <LogInIcon />
-              Zaloguj się
-            </Link>
-          )}
-        ></Button>
+        <ButtonLink href={loginHref}>
+          <LogInIcon />
+          Zaloguj się
+        </ButtonLink>
       </>
     );
   }
