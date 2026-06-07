@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
 
 jobs:
@@ -15,9 +15,9 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 11
+          cache: "true"
 
       - name: Setup node
         uses: actions/setup-node@v6
@@ -34,24 +34,22 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Check commit name
         if: github.event_name == 'pull_request'
-        run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        run: pnpm commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
-      - name: Check formatting
+      - name: Format check
         run: pnpm run format:check
-        if: always()
-
-      - name: Lint code
-        run: pnpm run lint
-        if: always()
-
-      - name: Check types
-        run: pnpm run types:check
         if: always()
 
       - name: Build
         run: pnpm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        if: always()
+
+      - name: Lint
+        run: pnpm run lint
         if: always()

@@ -26,7 +26,8 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import { getQuizService } from "@/services";
+import type { QuizBase, SharedQuiz } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
 import { ACCOUNT_TYPE } from "@/types/user";
 import type { Group, User } from "@/types/user";
@@ -34,8 +35,8 @@ import type { Group, User } from "@/types/user";
 interface ShareQuizDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  quiz: QuizMetadata;
-  setQuiz?: (quiz: QuizMetadata) => void;
+  quiz: QuizBase;
+  setQuiz?: (quiz: QuizBase) => void;
 }
 
 export function ShareQuizDialog({
@@ -44,8 +45,7 @@ export function ShareQuizDialog({
   quiz,
   setQuiz,
 }: ShareQuizDialogProps) {
-  const appContext = useContext(AppContext);
-  const { checkPermission, user: currentUser } = appContext;
+  const { checkPermission, user: currentUser } = useContext(AppContext);
 
   const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
   const canShareQuiz = checkPermission(PermissionAction.SHARE_QUIZZES);
@@ -65,7 +65,7 @@ export function ShareQuizDialog({
   const [groupsWithAccess, setGroupsWithAccess] = useState<
     (Group & { shared_quiz_id?: string; allow_edit: boolean })[]
   >([]);
-  const [isMaintainerAnonymous, setIsMaintainerAnonymous] = useState(
+  const [isCreatorAnonymous, setIsCreatorAnonymous] = useState(
     quiz.is_anonymous,
   );
   const [allowAnonymous, setAllowAnonymous] = useState(quiz.allow_anonymous);
@@ -78,7 +78,7 @@ export function ShareQuizDialog({
   const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
     queryKey: ["study-groups"],
     queryFn: async () => {
-      const groups = await appContext.services.quiz.getStudyGroups();
+      const groups = await getQuizService().getStudyGroups();
       return groups.map((group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
@@ -92,13 +92,15 @@ export function ShareQuizDialog({
     initialData: [],
   });
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
-      await appContext.services.quiz.getSharedQuizzesForQuiz(quiz.id),
+      await getQuizService().getSharedQuizzesForQuiz(quiz.id),
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
   const loading = isSharedDataLoading || isUserGroupsLoading;
 
@@ -130,22 +132,23 @@ export function ShareQuizDialog({
             ],
       );
 
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setGroupsWithAccess(foundGroups);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialGroupsWithAccess(foundGroups);
     }
   }, [sharedData]);
 
-  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event_.target.value);
-  };
-
+  // TODO: switch to uding tanstack query for search as well
   const handleSearch = async (query: string) => {
     setSearchResultsLoading(true);
     try {
       // Fetch users
-      const users = await appContext.services.quiz.searchUsers(query);
+      const users = await getQuizService().searchUsers(query);
       let data: (User | Group)[] = [...users];
 
       // Filter groups by the query
@@ -208,13 +211,23 @@ export function ShareQuizDialog({
     }
   };
 
+  const handleSearchInput = (event_: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event_.target.value;
+    setSearchQuery(value);
+    if (value.length >= 3) {
+      void handleSearch(value);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
   const handleAddEntity = (entity: User | Group) => {
     // If it's a user
     if ("full_name" in entity) {
       // Prevent duplicates
       if (
         !usersWithAccess.some((u) => u.id === entity.id) &&
-        entity.id !== quiz.maintainer?.id
+        entity.id !== quiz.creator?.id
       ) {
         setUsersWithAccess((previous) => [
           ...previous,
@@ -272,10 +285,10 @@ export function ShareQuizDialog({
     try {
       setIsSaving(true);
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-      const quizResponse = await appContext.services.quiz.updateQuiz(quiz.id, {
+      const quizResponse = await getQuizService().updateQuiz(quiz.id, {
         visibility: accessLevel,
         allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
-        is_anonymous: isMaintainerAnonymous,
+        is_anonymous: isCreatorAnonymous,
       });
 
       const removedUsers = initialUsersWithAccess.filter(
@@ -306,18 +319,18 @@ export function ShareQuizDialog({
         if (rUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.deleteSharedQuiz(rUser.shared_quiz_id);
+        await getQuizService().deleteSharedQuiz(rUser.shared_quiz_id);
       }
 
       for (const rGroup of removedGroups) {
         if (rGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.deleteSharedQuiz(rGroup.shared_quiz_id);
+        await getQuizService().deleteSharedQuiz(rGroup.shared_quiz_id);
       }
 
       for (const aUser of addedUsers) {
-        await appContext.services.quiz.shareQuizWithUser(
+        await getQuizService().shareQuizWithUser(
           quiz.id,
           aUser.id,
           aUser.allow_edit || false,
@@ -325,7 +338,7 @@ export function ShareQuizDialog({
       }
 
       for (const aGroup of addedGroups) {
-        await appContext.services.quiz.shareQuizWithGroup(
+        await getQuizService().shareQuizWithGroup(
           quiz.id,
           aGroup.id,
           aGroup.allow_edit || false,
@@ -337,7 +350,7 @@ export function ShareQuizDialog({
         if (cUser.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.updateSharedQuiz(
+        await getQuizService().updateSharedQuiz(
           cUser.shared_quiz_id,
           cUser.allow_edit,
         );
@@ -347,7 +360,7 @@ export function ShareQuizDialog({
         if (cGroup.shared_quiz_id == null) {
           continue;
         }
-        await appContext.services.quiz.updateSharedQuiz(
+        await getQuizService().updateSharedQuiz(
           cGroup.shared_quiz_id,
           cGroup.allow_edit,
         );
@@ -371,7 +384,7 @@ export function ShareQuizDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Udostępnij &quot;{quiz.title}&quot;</DialogTitle>
         </DialogHeader>
@@ -379,24 +392,20 @@ export function ShareQuizDialog({
           <div className="space-y-4">
             <Popover
               open={open ? searchQuery.length > 0 : undefined}
-              modal={true}
+              modal={false}
             >
-              <PopoverTrigger asChild>
-                <div className="relative w-full">
-                  <Input
-                    placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
-                    value={searchQuery}
-                    onChange={handleSearchInput}
-                    onKeyUp={() => {
-                      if (searchQuery.length >= 3) {
-                        void handleSearch(searchQuery);
-                      } else {
-                        setSearchResults([]);
-                      }
-                    }}
-                  />
-                </div>
-              </PopoverTrigger>
+              <PopoverTrigger
+                nativeButton={false}
+                render={
+                  <div className="relative w-full">
+                    <Input
+                      placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
+                      value={searchQuery}
+                      onChange={handleSearchInput}
+                    />
+                  </div>
+                }
+              ></PopoverTrigger>
               {searchQuery.length > 0 && (
                 <SearchResultsPopover
                   searchResults={searchResults}
@@ -419,8 +428,8 @@ export function ShareQuizDialog({
                   quizMetadata={quiz}
                   usersWithAccess={usersWithAccess}
                   groupsWithAccess={groupsWithAccess}
-                  isMaintainerAnonymous={isMaintainerAnonymous}
-                  setIsMaintainerAnonymous={setIsMaintainerAnonymous}
+                  isCreatorAnonymous={isCreatorAnonymous}
+                  setIsCreatorAnonymous={setIsCreatorAnonymous}
                   handleRemoveUserAccess={handleRemoveUserAccess}
                   handleRemoveGroupAccess={handleRemoveGroupAccess}
                   handleToggleUserEdit={handleToggleUserEdit}
@@ -443,7 +452,7 @@ export function ShareQuizDialog({
                     allowAnonymous ? accessLevel >= AccessLevel.UNLISTED : false
                   }
                   onCheckedChange={(checked) => {
-                    setAllowAnonymous(Boolean(checked));
+                    setAllowAnonymous(checked satisfies boolean);
                   }}
                   disabled={accessLevel < AccessLevel.UNLISTED}
                 />
@@ -499,15 +508,17 @@ export function ShareQuizDialog({
             Kopiuj link
           </Button>
           <div className="flex flex-wrap-reverse gap-2">
-            <DialogClose asChild>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto"
-                disabled={isSaving}
-              >
-                Anuluj
-              </Button>
-            </DialogClose>
+            <DialogClose
+              render={
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={isSaving}
+                >
+                  Anuluj
+                </Button>
+              }
+            ></DialogClose>
             <Button
               className="w-full sm:w-auto"
               onClick={handleSave}

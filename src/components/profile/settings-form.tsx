@@ -1,10 +1,11 @@
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { InfinityIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { SettingsFormProps } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
@@ -21,10 +22,9 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     useState(settings.wrong_answer_reoccurrences.toString());
   const [localMaxQuestionReoccurrences, setLocalMaxQuestionReoccurrences] =
     useState(
-      (
-        settings.max_question_reoccurrences ??
-        DEFAULT_USER_SETTINGS.max_question_reoccurrences
-      ).toString(),
+      settings.max_question_reoccurrences === null
+        ? ""
+        : settings.max_question_reoccurrences.toString(),
     );
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -42,6 +42,29 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
     timeoutRef.current = setTimeout(() => {
       onSettingChange(key, value);
     }, 500);
+  };
+  const [isMaxReoccurrencesEnabled, setIsMaxReoccurrencesEnabled] = useState(
+    settings.max_question_reoccurrences !== null,
+  );
+
+  const handleMaxReoccurrencesToggle = (checked: boolean) => {
+    if (timeoutRef.current !== undefined) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
+    if (checked) {
+      onSettingChange(
+        "max_question_reoccurrences",
+        DEFAULT_USER_SETTINGS.max_question_reoccurrences,
+      );
+      setLocalMaxQuestionReoccurrences(
+        DEFAULT_USER_SETTINGS.max_question_reoccurrences.toString(),
+      );
+    } else {
+      onSettingChange("max_question_reoccurrences", null);
+      setLocalMaxQuestionReoccurrences("");
+    }
+    setIsMaxReoccurrencesEnabled(checked);
   };
 
   useEffect(() => {
@@ -70,7 +93,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ustawienia</CardTitle>
+        <CardTitle>Ustawienia quizów</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">
@@ -85,6 +108,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={Number(localInitialReoccurrences) <= 1}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localInitialReoccurrences) - 1,
@@ -98,6 +122,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               </Button>
               <Input
                 type="number"
+                id="initial-reoccurrences"
                 min={1}
                 value={localInitialReoccurrences}
                 onChange={(_event) => {
@@ -145,6 +170,7 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={Number(localWrongAnswerReoccurrences) <= 0}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localWrongAnswerReoccurrences) - 1,
@@ -158,10 +184,11 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               </Button>
               <Input
                 type="number"
+                id="wrong-answer-reoccurrences"
                 min={0}
                 value={localWrongAnswerReoccurrences}
-                onChange={(event_) => {
-                  const value = event_.target.value;
+                onChange={(_event) => {
+                  const value = _event.target.value;
                   const numberValue = Math.floor(Number(value));
                   setLocalWrongAnswerReoccurrences(numberValue.toString());
                   if (!Number.isNaN(numberValue) && numberValue >= 0) {
@@ -197,14 +224,37 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
           <div className="flex flex-col justify-between gap-2 md:flex-row">
             <Label
               className="text-sm font-medium"
-              htmlFor="max-question-reoccurrences"
+              htmlFor="max-question-reoccurrences-switch"
             >
-              Maksymalna liczba powtórzeń pytania
+              Ogranicz maksymalną liczbę powtórzeń
+            </Label>
+            <div className="flex items-center justify-start gap-2 md:justify-center">
+              <div className="mr-2 flex items-center justify-center">
+                <Switch
+                  id="max-question-reoccurrences-switch"
+                  checked={isMaxReoccurrencesEnabled}
+                  onCheckedChange={handleMaxReoccurrencesToggle}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <Label
+              className="text-sm font-medium"
+              htmlFor="max-question-reoccurrences-input"
+            >
+              Maksymalna liczba powtórzeń pytań
             </Label>
             <div className="flex gap-1">
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={
+                  Number(localMaxQuestionReoccurrences) <= 1 ||
+                  !isMaxReoccurrencesEnabled
+                }
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localMaxQuestionReoccurrences) - 1,
@@ -216,29 +266,45 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
               >
                 <MinusIcon />
               </Button>
-              <Input
-                type="number"
-                min={1}
-                value={localMaxQuestionReoccurrences}
-                onChange={(event_) => {
-                  const value = event_.target.value;
-                  const numberValue = Math.floor(Number(value));
-                  setLocalMaxQuestionReoccurrences(numberValue.toString());
-                  if (!Number.isNaN(numberValue) && numberValue >= 1) {
-                    debouncedSave("max_question_reoccurrences", numberValue);
-                  }
-                }}
-                aria-invalid={(() => {
-                  const numberValue = Number.parseInt(
-                    localMaxQuestionReoccurrences,
-                  );
-                  return Number.isNaN(numberValue) || numberValue < 1;
-                })()}
-                className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
+              {isMaxReoccurrencesEnabled ? (
+                <Input
+                  id="max-question-reoccurrences-input"
+                  type="number"
+                  aria-label="Wartość maksymalnej liczby powtórzeń pytania"
+                  min={1}
+                  value={localMaxQuestionReoccurrences}
+                  onChange={(_event) => {
+                    const value = _event.target.value;
+                    const numberValue = Math.floor(Number(value));
+                    setLocalMaxQuestionReoccurrences(numberValue.toString());
+                    if (!Number.isNaN(numberValue) && numberValue >= 1) {
+                      debouncedSave("max_question_reoccurrences", numberValue);
+                    }
+                  }}
+                  aria-invalid={(() => {
+                    const numberValue = Number.parseInt(
+                      localMaxQuestionReoccurrences,
+                    );
+                    return Number.isNaN(numberValue) || numberValue < 1;
+                  })()}
+                  className="h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              ) : (
+                <div className="relative flex w-16 items-center justify-center">
+                  <Input
+                    disabled
+                    className="pointer-events-none h-8 w-16 [appearance:textfield] text-center font-semibold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                  <InfinityIcon
+                    className="text-muted-foreground absolute size-5"
+                    aria-label="Brak limitu"
+                  />
+                </div>
+              )}
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={!isMaxReoccurrencesEnabled}
                 onClick={() => {
                   const nextValue = Math.max(
                     normalizeValue(localMaxQuestionReoccurrences) + 1,

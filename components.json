@@ -1,6 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
+  "style": "base-vega",
   "rsc": true,
   "tsx": true,
   "tailwind": {
@@ -11,6 +11,7 @@
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "rtl": false,
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
@@ -18,5 +19,9 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {
+    "@assistant-ui": "https://r.assistant-ui.com/{name}.json"
+  }
 }

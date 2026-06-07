@@ -1,5 +1,5 @@
 import { BaseApiService } from "./base-api.service";
-import type { AlertData, GradesData, UserData, UserSettings } from "./types";
+import type { GradesData, UserData, UserSettings } from "./types";
 
 /**
  * Service for handling user-related API operations
@@ -54,14 +54,6 @@ export class UserService extends BaseApiService {
     const response = await this.post<{ message: string }>("generate-otp/", {
       email,
     });
-    return response.data;
-  }
-
-  /**
-   * Get alerts
-   */
-  async getAlerts(): Promise<AlertData[]> {
-    const response = await this.get<AlertData[]>("alerts/");
     return response.data;
   }
 

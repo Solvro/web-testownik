@@ -1,7 +1,7 @@
 import { Loader } from "@/components/loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PopoverContent } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { getAccountLevelAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
 import type { Group, User } from "@/types/user";
 
@@ -28,52 +28,57 @@ export function SearchResultsPopover({
       align="start"
       side="bottom"
       sideOffset={4}
-      onOpenAutoFocus={(event_) => {
-        event_.preventDefault();
-      }}
-      className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
+      className={cn(
+        "w-(--anchor-width) max-w-(--available-width) min-w-0 p-0",
+        className,
+      )}
+      initialFocus={false}
     >
-      <ScrollArea className="w-full [&_[data-slot=scroll-area-viewport]]:max-h-64">
-        <div className="flex flex-col gap-2 text-sm">
-          {searchResultsLoading ? (
-            <div className="flex justify-center pt-4 pb-8">
-              <Loader size={8} />
-            </div>
-          ) : searchResults.length > 0 ? (
-            searchResults.map((result) => (
-              <button
-                key={result.id}
-                type="button"
-                className="hover:bg-muted focus:bg-muted flex items-center gap-2 rounded-md px-2 py-1.5 text-left focus:outline-none"
-                onClick={() => {
-                  handleAddEntity(result);
-                }}
+      <div className="flex max-h-64 flex-col gap-2 overflow-y-auto text-sm">
+        {searchResultsLoading ? (
+          <div className="flex justify-center pt-4 pb-8">
+            <Loader size={8} />
+          </div>
+        ) : searchResults.length > 0 ? (
+          searchResults.map((result) => (
+            <button
+              key={result.id}
+              type="button"
+              className="hover:bg-muted focus:bg-muted flex items-center gap-2 rounded-md px-2 py-1.5 text-left focus:outline-none"
+              onClick={() => {
+                handleAddEntity(result);
+              }}
+            >
+              <Avatar
+                className={cn(
+                  "full_name" in result
+                    ? getAccountLevelAvatarClassName(result.account_level)
+                    : null,
+                )}
               >
-                <Avatar>
-                  <AvatarImage
-                    src={result.photo}
-                    alt={`Zdjęcie profilowe ${"full_name" in result ? `użytkownika ${result.full_name}` : `grupy ${result.name}`}`}
-                  />
-                  <AvatarFallback delayMs={600}>
-                    {getInitials(
-                      "full_name" in result ? result.full_name : result.name,
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-                {"full_name" in result ? result.full_name : result.name}
-              </button>
-            ))
-          ) : searchQuery.length >= 3 ? (
-            <span className="text-muted-foreground py-2 text-center">
-              Brak wyników
-            </span>
-          ) : (
-            <span className="text-muted-foreground py-2 text-center">
-              Wpisz co najmniej 3 znaki
-            </span>
-          )}
-        </div>
-      </ScrollArea>
+                <AvatarImage
+                  src={result.photo}
+                  alt={`Zdjęcie profilowe ${"full_name" in result ? `użytkownika ${result.full_name}` : `grupy ${result.name}`}`}
+                />
+                <AvatarFallback delay={600}>
+                  {getInitials(
+                    "full_name" in result ? result.full_name : result.name,
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              {"full_name" in result ? result.full_name : result.name}
+            </button>
+          ))
+        ) : searchQuery.length >= 3 ? (
+          <span className="text-muted-foreground py-2 text-center">
+            Brak wyników
+          </span>
+        ) : (
+          <span className="text-muted-foreground py-2 text-center">
+            Wpisz co najmniej 3 znaki
+          </span>
+        )}
+      </div>
     </PopoverContent>
   );
 }

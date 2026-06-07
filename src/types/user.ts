@@ -7,11 +7,21 @@ export const ACCOUNT_TYPE = {
 
 export type AccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
 
+export const ACCOUNT_LEVEL = {
+  BASIC: "basic",
+  SILVER: "silver",
+  GOLD: "gold",
+} as const;
+
+export type AccountLevel = (typeof ACCOUNT_LEVEL)[keyof typeof ACCOUNT_LEVEL];
+
 export interface User {
   id: string;
   full_name: string;
   photo: string;
   student_number: string;
+  account_type?: AccountType;
+  account_level?: AccountLevel;
 }
 
 export interface UserData extends User {
@@ -22,13 +32,14 @@ export interface UserData extends User {
   is_staff: boolean;
   hide_profile: boolean;
   account_type: AccountType;
-  account_level: "basic" | "gold";
+  account_level: AccountLevel;
 }
 
 export interface UserSettings {
   initial_reoccurrences: number;
   wrong_answer_reoccurrences: number;
   max_question_reoccurrences: number | null;
+  ai_disabled: boolean;
   notify_quiz_shared: boolean;
   notify_bug_reported: boolean;
   notify_marketing: boolean;
@@ -36,13 +47,17 @@ export interface UserSettings {
 
 export interface SettingsFormProps {
   settings: UserSettings;
-  onSettingChange: (name: keyof UserSettings, value: boolean | number) => void;
+  onSettingChange: <K extends keyof UserSettings>(
+    name: K,
+    value: UserSettings[K],
+  ) => void;
 }
 
 export const DEFAULT_USER_SETTINGS = {
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
   max_question_reoccurrences: 5,
+  ai_disabled: false,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,

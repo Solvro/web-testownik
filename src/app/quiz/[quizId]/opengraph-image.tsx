@@ -130,9 +130,8 @@ function AnswerOption({
 }
 
 async function renderFallbackImage() {
-  // TODO: Replace with a proper fallback image
   const fallbackImageBuffer = await readFile(
-    path.join(process.cwd(), "public", "favicon", "180x180.png"),
+    path.join(process.cwd(), "src", "app", "opengraph-image.png"),
   );
   return new NextResponse(fallbackImageBuffer, {
     headers: {
@@ -205,7 +204,7 @@ export default async function Image({
     return answers[index]?.text ?? ((index + 9) % 5).toString();
   });
 
-  const shouldShowAuthor = !quiz.is_anonymous && quiz.maintainer != null;
+  const shouldShowAuthor = !quiz.is_anonymous && quiz.creator != null;
 
   return new ImageResponse(
     <div
@@ -239,9 +238,9 @@ export default async function Image({
           {/* Badge 1: Author */}
           {shouldShowAuthor ? (
             <Badge
-              avatarUrl={quiz.maintainer?.photo}
-              avatarInitial={quiz.maintainer?.full_name.charAt(0)}
-              text={quiz.maintainer?.full_name ?? ""}
+              avatarUrl={quiz.creator?.photo}
+              avatarInitial={quiz.creator?.full_name.charAt(0)}
+              text={quiz.creator?.full_name ?? ""}
             />
           ) : null}
 

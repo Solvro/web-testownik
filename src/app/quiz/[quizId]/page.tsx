@@ -10,7 +10,7 @@ import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { getQuizMetadata } from "@/lib/metadata";
 import { getQueryClient } from "@/lib/query-client";
-import { ServiceRegistry } from "@/services";
+import { QuizService } from "@/services/quiz.service";
 
 import { QuizPageClient } from "./client";
 
@@ -24,7 +24,7 @@ export async function generateMetadata({
     return {
       title: metadata.title,
       description: metadata.description,
-      authors: [{ name: metadata.maintainer?.full_name ?? "" }],
+      authors: [{ name: metadata.creator?.full_name ?? "" }],
       robots: { index: false, follow: true },
       openGraph: {
         title: `${metadata.title} - Testownik Solvro`,
@@ -52,13 +52,10 @@ export default async function QuizPage({
 
   const queryClient = getQueryClient();
 
-  const services = new ServiceRegistry(API_URL, {}, accessToken);
-
   await queryClient.prefetchQuery({
     queryKey: quizDetailQueryKey(quizId),
-    queryFn: async () => {
-      return await services.quiz.getQuizWithProgress(quizId);
-    },
+    queryFn: async () =>
+      new QuizService(API_URL, {}, accessToken).getQuizWithProgress(quizId),
   });
 
   return (

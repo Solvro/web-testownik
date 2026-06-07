@@ -2,10 +2,9 @@ import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,8 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
-import { ACCOUNT_TYPE } from "@/types/user";
+import { getUserService } from "@/services";
+import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@/types/user";
 import type { UserData } from "@/types/user";
 
 interface ProfileDetailsProps {
@@ -36,11 +37,9 @@ export function ProfileDetails({
   loading,
   setUserData,
 }: ProfileDetailsProps) {
-  const appContext = useContext(AppContext);
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
-  const isGold = userData?.account_level === "gold";
 
   useEffect(() => {
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
@@ -57,7 +56,7 @@ export function ProfileDetails({
 
   const handleSavePhoto = () => {
     handleCloseDialog();
-    appContext.services.user
+    getUserService()
       .updateUserProfile({
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
@@ -66,7 +65,7 @@ export function ProfileDetails({
         if (userData !== null) {
           setUserData({ ...userData, photo: selectedPhoto });
           // Refresh token to get updated user data (avatar) in the token payload
-          await appContext.services.user.refreshToken();
+          await getUserService().refreshToken();
           router.refresh();
         }
       })
@@ -77,7 +76,7 @@ export function ProfileDetails({
   };
 
   const handleHideProfile = (hide: boolean) => {
-    appContext.services.user
+    getUserService()
       .updateUserProfile({ hide_profile: hide })
       .then(() => {
         if (userData !== null) {
@@ -164,16 +163,16 @@ export function ProfileDetails({
               <Avatar
                 className={cn(
                   "size-24",
-                  isGold
-                    ? "ring-offset-background shadow-[0_0_24px_-8px_rgba(245,158,11,0.95)] ring-4 ring-amber-400/85 ring-offset-2"
-                    : null,
+                  getAccountLevelProfileAvatarClassName(
+                    userData?.account_level,
+                  ),
                 )}
               >
                 <AvatarImage
                   src={userData?.photo}
                   alt={`Zdjęcie profilowe użytkownika ${userData?.full_name ?? ""}`}
                 />
-                <AvatarFallback className="text-3xl" delayMs={600}>
+                <AvatarFallback className="text-3xl" delay={600}>
                   {getInitials(userData?.full_name ?? "")}
                 </AvatarFallback>
               </Avatar>
@@ -205,7 +204,7 @@ export function ProfileDetails({
                 accountType={userData?.account_type ?? ACCOUNT_TYPE.GUEST}
               />
               <AccountLevelBadge
-                accountLevel={userData?.account_level ?? "basic"}
+                accountLevel={userData?.account_level ?? ACCOUNT_LEVEL.BASIC}
               />
             </div>
             <div className="bg-border h-px w-full" />

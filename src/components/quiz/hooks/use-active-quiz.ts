@@ -1,8 +1,7 @@
 import formbricks from "@formbricks/js";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
-import { AppContext } from "@/app-context";
 import {
   INITIAL_CLIENT_STATE,
   quizDetailQueryKey,
@@ -15,6 +14,7 @@ import {
   pickNextQuestion,
   resolveCurrentQuestion,
 } from "@/lib/session-utils";
+import { getQuizService } from "@/services";
 import type {
   AnswerRecord,
   Question,
@@ -26,13 +26,10 @@ import type { ClientState } from "./types";
 
 export function useActiveQuiz(quizId: string) {
   const queryClient = useQueryClient();
-  const appContext = useContext(AppContext);
 
   const { data: quiz } = useSuspenseQuery<QuizWithUserProgress>({
     queryKey: quizDetailQueryKey(quizId),
-    queryFn: async () => {
-      return await appContext.services.quiz.getQuizWithProgress(quizId);
-    },
+    queryFn: async () => getQuizService().getQuizWithProgress(quizId),
     retry: 1,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -42,14 +39,18 @@ export function useActiveQuiz(quizId: string) {
   const userSettings = deriveSettings(quiz.user_settings);
   const answers = quiz.current_session?.answers ?? [];
 
-  const currentQuestion = resolveCurrentQuestion(quiz, userSettings);
+  const [client, setClient] = useState<ClientState>(INITIAL_CLIENT_STATE);
+
+  const currentQuestion = resolveCurrentQuestion(
+    quiz,
+    userSettings,
+    client.questionChecked,
+  );
   const isQuizFinished =
     currentQuestion === null &&
     isQuizComplete(quiz.questions, answers, userSettings);
   const answerCounts = getAnswerCounts(answers);
   const mastered = getMasteredCount(quiz.questions, answers, userSettings);
-
-  const [client, setClient] = useState<ClientState>(INITIAL_CLIENT_STATE);
 
   const updateServerCache = (
     updater: (quiz: QuizWithUserProgress) => QuizWithUserProgress,
@@ -71,6 +72,7 @@ export function useActiveQuiz(quizId: string) {
 
   const recordAnswer = (
     answer: AnswerRecord,
+    studyTime: number,
     nextQuestionOverride?: Question | null,
   ): { nextQuestion: Question | null } => {
     const updatedAnswers = [answer, ...answers];
@@ -90,6 +92,11 @@ export function useActiveQuiz(quizId: string) {
           ? previous.current_session
           : {
               ...previous.current_session,
+              study_time: studyTime,
+              current_question:
+                previous.current_session.current_question ??
+                currentQuestion?.id ??
+                null,
               answers: [answer, ...previous.current_session.answers],
             },
     }));
@@ -103,8 +110,13 @@ export function useActiveQuiz(quizId: string) {
     return { nextQuestion: next };
   };
 
-  const advanceQuestion = () => {
-    if (client.questionChecked) {
+  const advanceQuestion = (overrideNextQuestionId?: string | null) => {
+    const nextId =
+      overrideNextQuestionId === undefined
+        ? client.nextQuestionId
+        : overrideNextQuestionId;
+
+    if (client.questionChecked || overrideNextQuestionId !== undefined) {
       updateServerCache((quizData) => ({
         ...quizData,
         current_session:
@@ -112,12 +124,12 @@ export function useActiveQuiz(quizId: string) {
             ? quizData.current_session
             : {
                 ...quizData.current_session,
-                current_question: client.nextQuestionId,
+                current_question: nextId,
               },
       }));
 
       if (
-        client.nextQuestionId === null &&
+        nextId === null &&
         isQuizComplete(quiz.questions, answers, userSettings)
       ) {
         void formbricks.track("quiz_finished");

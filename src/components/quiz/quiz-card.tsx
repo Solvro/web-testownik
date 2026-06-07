@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import { ViewTransition, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -75,102 +75,123 @@ export function QuizCard({
         <CardFooter className="mt-auto flex items-center justify-between">
           <ViewTransition name={`quiz-action-${quiz.id}`} default="h-full">
             {isLoading ? (
-              <div className="relative -m-1 inline-flex h-10 overflow-hidden rounded-md p-1">
-                <span className="absolute inset-[-100%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_55%,var(--card)_60%)]" />
-                <span className="bg-primary text-primary-foreground inline-flex h-full w-full items-center justify-center rounded-md p-3 text-sm font-medium backdrop-blur-3xl">
+              <div className="relative -left-1 -my-1 inline-flex h-10 overflow-hidden rounded-md border-none p-1">
+                <span className="absolute -inset-full animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,var(--card)_40%,var(--primary)_45%,var(--primary)_59%,var(--card)_60%)]" />
+                <span
+                  className={buttonVariants({ size: "sm", className: "z-1" })}
+                >
                   Otwórz
                 </span>
               </div>
             ) : (
-              <Button size="sm" asChild disabled={isLoading}>
-                <Link
-                  href={onOpenPath(quiz)}
-                  onClick={() => {
-                    setIsLoading(true);
-                  }}
-                >
-                  Otwórz
-                </Link>
-              </Button>
+              <Button
+                size="sm"
+                disabled={isLoading}
+                nativeButton={false}
+                variant="default"
+                render={(rendererProps) => (
+                  <Link
+                    {...rendererProps}
+                    href={onOpenPath(quiz)}
+                    onClick={() => {
+                      setIsLoading(true);
+                    }}
+                  >
+                    Otwórz
+                  </Link>
+                )}
+              ></Button>
             )}
           </ViewTransition>
           <div className="flex gap-1 opacity-80">
             {Boolean(showEdit) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    asChild
-                    aria-label="Edytuj quiz"
-                  >
-                    <Link href={onEditPath(quiz)}>
-                      <PencilIcon />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Edytuj quiz"
+                      nativeButton={false}
+                      render={(rendererProps) => (
+                        <Link {...rendererProps} href={onEditPath(quiz)}>
+                          <PencilIcon />
+                        </Link>
+                      )}
+                    ></Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Edytuj quiz</TooltipContent>
               </Tooltip>
             )}
             {Boolean(showShare) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onShare?.(quiz)}
-                    aria-label="Udostępnij quiz"
-                  >
-                    <ShareIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onShare?.(quiz)}
+                      aria-label="Udostępnij quiz"
+                    >
+                      <ShareIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Udostępnij quiz</TooltipContent>
               </Tooltip>
             )}
             {showDownload ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onDownload?.(quiz)}
-                    aria-label="Pobierz quiz"
-                  >
-                    <DownloadIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onDownload?.(quiz)}
+                      aria-label="Pobierz quiz"
+                    >
+                      <DownloadIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Pobierz quiz</TooltipContent>
               </Tooltip>
             ) : null}
             {Boolean(showSearch) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    asChild
-                    aria-label="Szukaj w quizie"
-                  >
-                    <Link href={onSearchPath(quiz)}>
-                      <SearchIcon />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Szukaj w quizie"
+                      nativeButton={false}
+                      render={(rendererProps) => (
+                        <Link {...rendererProps} href={onSearchPath(quiz)}>
+                          <SearchIcon />
+                        </Link>
+                      )}
+                    ></Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Szukaj w quizie</TooltipContent>
               </Tooltip>
             )}
             {Boolean(showDelete) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onDelete?.(quiz)}
-                    aria-label="Usuń quiz"
-                  >
-                    <TrashIcon />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => onDelete?.(quiz)}
+                      aria-label="Usuń quiz"
+                    >
+                      <TrashIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Usuń quiz</TooltipContent>
               </Tooltip>
             )}

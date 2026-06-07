@@ -4,15 +4,15 @@ import { useContext } from "react";
 import { AppContext } from "@/app-context";
 import { GITHUB_REPOS, parseContributors } from "@/lib/contributors";
 import type { GitHubContributor } from "@/lib/contributors";
+import { getQuizService } from "@/services";
 
 export function useLastUsedQuizzes(limit = 10) {
-  const appContext = useContext(AppContext);
+  const { isAuthenticated } = useContext(AppContext);
 
   return useInfiniteQuery({
     queryKey: ["last-used-quizzes", limit],
-    queryFn: async ({ pageParam: pageParameter }: { pageParam: number }) => {
-      return appContext.services.quiz.getLastUsedQuizzes(limit, pageParameter);
-    },
+    queryFn: async ({ pageParam: pageParameter }: { pageParam: number }) =>
+      getQuizService().getLastUsedQuizzes(limit, pageParameter),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.next === null) {
@@ -22,21 +22,19 @@ export function useLastUsedQuizzes(limit = 10) {
     },
     // Don't refetch on window focus for dashboard data to avoid jumping content
     refetchOnWindowFocus: false,
-    enabled: appContext.isAuthenticated,
+    enabled: isAuthenticated,
   });
 }
 
 export function useRandomQuestion() {
-  const appContext = useContext(AppContext);
+  const { isAuthenticated } = useContext(AppContext);
 
   return useQuery({
     queryKey: ["random-question"],
-    queryFn: async () => {
-      return appContext.services.quiz.getRandomQuestion();
-    },
+    queryFn: async () => getQuizService().getRandomQuestion(),
     refetchOnWindowFocus: false,
     retry: false,
-    enabled: appContext.isAuthenticated,
+    enabled: isAuthenticated,
   });
 }
 

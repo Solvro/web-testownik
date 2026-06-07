@@ -80,12 +80,17 @@ export function LoginPrompt(): React.JSX.Element {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="mb-0 grid gap-2">
-              <Button asChild size="lg" className="w-full">
-                <a href={buildLoginUrl("/login/usos", redirectUrl, guestId)}>
-                  <LogInIcon />
-                  Zaloguj przez USOS
-                </a>
-              </Button>
+              <Button
+                nativeButton={false}
+                size="lg"
+                className="w-full"
+                render={
+                  <a href={buildLoginUrl("/login/usos", redirectUrl, guestId)}>
+                    <LogInIcon />
+                    Zaloguj przez USOS
+                  </a>
+                }
+              ></Button>
 
               <div className="relative py-2">
                 <div className="absolute inset-0 flex items-center">
@@ -98,16 +103,23 @@ export function LoginPrompt(): React.JSX.Element {
                 </div>
               </div>
 
-              <Button asChild variant="outline" size="lg" className="w-full">
-                <a href={buildLoginUrl("/login", redirectUrl, guestId)}>
-                  <LogInIcon />
-                  Zaloguj się przez e-mail
-                </a>
-              </Button>
+              <Button
+                nativeButton={false}
+                variant="outline"
+                className="w-full"
+                render={(props) => (
+                  <a
+                    {...props}
+                    href={buildLoginUrl("/login", redirectUrl, guestId)}
+                  >
+                    <LogInIcon />
+                    Zaloguj się przez e-mail
+                  </a>
+                )}
+              ></Button>
 
               <Button
                 variant="outline"
-                size="sm"
                 className="w-full"
                 onClick={async () => {
                   if (user?.account_type === ACCOUNT_TYPE.GUEST) {

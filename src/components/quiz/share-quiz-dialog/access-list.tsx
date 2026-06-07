@@ -20,19 +20,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getAccountLevelAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
-import type { QuizMetadata } from "@/types/quiz";
+import type { QuizBase } from "@/types/quiz";
 import type { Group, User } from "@/types/user";
 
 interface AccessListProps {
-  quizMetadata: QuizMetadata;
+  quizMetadata: QuizBase;
   usersWithAccess: (User & { shared_quiz_id?: string; allow_edit: boolean })[];
   groupsWithAccess: (Group & {
     shared_quiz_id?: string;
     allow_edit: boolean;
   })[];
-  isMaintainerAnonymous: boolean;
-  setIsMaintainerAnonymous: Dispatch<SetStateAction<boolean>>;
+  isCreatorAnonymous: boolean;
+  setIsCreatorAnonymous: Dispatch<SetStateAction<boolean>>;
   handleRemoveUserAccess: (user: User) => void;
   handleRemoveGroupAccess: (group: Group) => void;
   handleToggleUserEdit: (
@@ -65,24 +66,26 @@ function PersistentTooltip({
   const [open, setOpen] = useState(false);
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delay={0}>
       <Tooltip open={open} onOpenChange={setOpen}>
-        <TooltipTrigger asChild>
-          <Toggle
-            pressed={pressed}
-            onPressedChange={(value) => {
-              setOpen(true);
-              onPressedChange(value);
-            }}
-            size="sm"
-            className={cn(
-              "size-8 rounded-full p-0 transition-colors",
-              pressed ? classNamePressed : classNameUnpressed,
-            )}
-          >
-            {pressed ? <IconPressed /> : <IconUnpressed />}
-          </Toggle>
-        </TooltipTrigger>
+        <TooltipTrigger
+          render={
+            <Toggle
+              pressed={pressed}
+              onPressedChange={(value) => {
+                setOpen(true);
+                onPressedChange(value);
+              }}
+              size="sm"
+              className={cn(
+                "size-8 rounded-full p-0 transition-colors",
+                pressed ? classNamePressed : classNameUnpressed,
+              )}
+            >
+              {pressed ? <IconPressed /> : <IconUnpressed />}
+            </Toggle>
+          }
+        ></TooltipTrigger>
         <TooltipContent side="top" align="center">
           {pressed ? tooltipContentPressed : tooltipContentUnpressed}
         </TooltipContent>
@@ -95,8 +98,8 @@ export function AccessList({
   quizMetadata,
   usersWithAccess,
   groupsWithAccess,
-  isMaintainerAnonymous,
-  setIsMaintainerAnonymous,
+  isCreatorAnonymous,
+  setIsCreatorAnonymous,
   handleRemoveUserAccess,
   handleRemoveGroupAccess,
   handleToggleUserEdit,
@@ -105,10 +108,10 @@ export function AccessList({
   return (
     <ScrollArea className="w-full **:data-[slot=scroll-area-viewport]:max-h-64">
       <div className="flex flex-col gap-2">
-        {quizMetadata.maintainer != null && (
+        {quizMetadata.creator != null && (
           <div
             className="flex w-full items-center gap-1"
-            key={`maintainer-${quizMetadata.maintainer.id}`}
+            key={`creator-${quizMetadata.creator.id}`}
           >
             <div
               className={cn(
@@ -116,22 +119,28 @@ export function AccessList({
               )}
             >
               <div className="flex items-center gap-2">
-                <Avatar>
+                <Avatar
+                  className={cn(
+                    getAccountLevelAvatarClassName(
+                      quizMetadata.creator.account_level,
+                    ),
+                  )}
+                >
                   <AvatarImage
-                    src={quizMetadata.maintainer.photo}
-                    alt={`Zdjęcie profilowe użytkownika ${quizMetadata.maintainer.full_name}`}
+                    src={quizMetadata.creator.photo}
+                    alt={`Zdjęcie profilowe użytkownika ${quizMetadata.creator.full_name}`}
                   />
-                  <AvatarFallback delayMs={600}>
-                    {getInitials(quizMetadata.maintainer.full_name)}
+                  <AvatarFallback delay={600}>
+                    {getInitials(quizMetadata.creator.full_name)}
                   </AvatarFallback>
                 </Avatar>
                 <p className="m-0 text-sm font-medium">
-                  {quizMetadata.maintainer.full_name}
+                  {quizMetadata.creator.full_name}
                 </p>
               </div>
               <PersistentTooltip
-                pressed={isMaintainerAnonymous}
-                onPressedChange={setIsMaintainerAnonymous}
+                pressed={isCreatorAnonymous}
+                onPressedChange={setIsCreatorAnonymous}
                 tooltipContentPressed="Ujawnij właściciela"
                 tooltipContentUnpressed="Ukryj właściciela"
                 IconPressed={HatGlassesIcon}
@@ -155,12 +164,16 @@ export function AccessList({
           <div className="flex w-full items-center gap-1" key={user.id}>
             <div className="bg-muted/40 flex w-full items-center justify-between gap-2 rounded-md border p-2">
               <div className="flex items-center gap-2">
-                <Avatar>
+                <Avatar
+                  className={cn(
+                    getAccountLevelAvatarClassName(user.account_level),
+                  )}
+                >
                   <AvatarImage
                     src={user.photo}
                     alt={`Zdjęcie profilowe użytkownika ${user.full_name}`}
                   />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(user.full_name)}
                   </AvatarFallback>
                 </Avatar>
@@ -202,7 +215,7 @@ export function AccessList({
                     src={group.photo}
                     alt={`Zdjęcie profilowe grupy ${group.name}`}
                   />
-                  <AvatarFallback delayMs={600}>
+                  <AvatarFallback delay={600}>
                     {getInitials(group.name)}
                   </AvatarFallback>
                 </Avatar>

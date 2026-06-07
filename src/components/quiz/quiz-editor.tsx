@@ -92,10 +92,18 @@ const scrollToTop = () => {
 };
 
 export function QuizEditor(props: QuizEditorProps) {
+  let initialData = getDefaultFormData();
+  const initialQuiz = props.mode === "edit" ? props.initialQuiz : undefined;
+  if (initialQuiz !== undefined) {
+    initialData = initialQuiz;
+  }
+
   // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [questions, setQuestions] = useState<QuestionFormData[]>([]);
+  const [title, setTitle] = useState(initialData.title);
+  const [description, setDescription] = useState(initialData.description);
+  const [questions, setQuestions] = useState<QuestionFormData[]>(
+    initialData.questions,
+  );
 
   // UI state
   const [savingState, setSavingState] = useState<SavingState>("idle");
@@ -104,20 +112,6 @@ export function QuizEditor(props: QuizEditorProps) {
   const activeUploadsRef = useRef(0);
   const [atBottom, setAtBottom] = useState(false);
   const [atTop, setAtTop] = useState(true);
-
-  // Initialize form data
-  const initialQuiz = props.mode === "edit" ? props.initialQuiz : undefined;
-  useEffect(() => {
-    let initialData = getDefaultFormData();
-
-    if (initialQuiz !== undefined) {
-      initialData = initialQuiz;
-    }
-
-    setTitle(initialData.title);
-    setDescription(initialData.description);
-    setQuestions(initialData.questions);
-  }, [props.mode, initialQuiz]);
 
   // Scroll position tracking
   useEffect(() => {
@@ -130,6 +124,7 @@ export function QuizEditor(props: QuizEditorProps) {
       setAtBottom(distanceToBottom < THRESHOLD);
       setAtTop(scrollTop < THRESHOLD);
     };
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
@@ -216,8 +211,10 @@ export function QuizEditor(props: QuizEditorProps) {
     return null;
   })();
 
-  function setAllQuestionsMultiple(multiple: boolean) {
-    setQuestions((previous) => previous.map((q) => ({ ...q, multiple })));
+  function setAllQuestionsMultiple(multiple: boolean | "indeterminate") {
+    setQuestions((previous) =>
+      previous.map((q) => ({ ...q, multiple: multiple === true })),
+    );
   }
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -352,9 +349,10 @@ export function QuizEditor(props: QuizEditorProps) {
                 <div className="flex items-center gap-3">
                   <Checkbox
                     id="all-multiple"
-                    checked={allQuestionsMultiple ?? "indeterminate"}
+                    indeterminate={allQuestionsMultiple === null}
+                    checked={allQuestionsMultiple === true}
                     onCheckedChange={(checked) => {
-                      setAllQuestionsMultiple(Boolean(checked));
+                      setAllQuestionsMultiple(checked);
                     }}
                   />
                   <Label htmlFor="all-multiple" className="cursor-pointer">
@@ -403,7 +401,7 @@ export function QuizEditor(props: QuizEditorProps) {
           </Button>
         </div>
 
-        <div className="bg-background fixed right-0 bottom-0 left-0 z-10 border-t p-4 sm:pointer-events-none sm:sticky sm:bottom-10 sm:flex sm:justify-center sm:border-t-0 sm:bg-transparent sm:p-0">
+        <div className="bg-background fixed right-0 bottom-0 left-0 z-10 border-t p-4 sm:pointer-events-none sm:sticky sm:bottom-12 sm:flex sm:justify-center sm:border-t-0 sm:bg-transparent sm:p-0">
           <div className="sm:bg-background/60 pointer-events-auto flex flex-row flex-wrap justify-center gap-3 sm:items-center sm:rounded-md sm:px-6 sm:py-3 sm:shadow-sm sm:backdrop-blur">
             {props.mode === "edit" && props.onSaveAndClose !== undefined && (
               <Button
@@ -433,12 +431,7 @@ export function QuizEditor(props: QuizEditorProps) {
                 "Zapisz"
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={addQuestion}
-              type="button"
-            >
+            <Button variant="ghost" onClick={addQuestion} type="button">
               <PlusIcon />
               Pytanie
             </Button>

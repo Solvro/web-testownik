@@ -1,12 +1,12 @@
 import JSZip from "jszip";
 import type React from "react";
-import { useContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
 import { migrateLegacyQuiz } from "@/lib/migration";
+import { getImageService, getQuizService } from "@/services";
 import type { Answer, Question, Quiz } from "@/types/quiz";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
@@ -20,6 +20,10 @@ const trueFalseStrings = {
 };
 
 export type UploadType = "file" | "json" | "legacy";
+
+interface JsonCodeEditor {
+  getValue: () => string;
+}
 
 const parseQTemplate = (
   lines: string[],
@@ -221,6 +225,170 @@ const getMimeTypeFromExtension = (extension: string | undefined): string => {
   }
 };
 
+const getExtensionFromMimeType = (mimeType: string): string => {
+  switch (mimeType) {
+    case "image/png": {
+      return "png";
+    }
+    case "image/gif": {
+      return "gif";
+    }
+    case "image/webp": {
+      return "webp";
+    }
+    case "image/avif": {
+      return "avif";
+    }
+    case "image/jpeg":
+    default: {
+      return "jpg";
+    }
+  }
+};
+
+const DATA_IMAGE_URL_PATTERN =
+  /^data:(image\/(?:avif|gif|jpeg|png|webp));base64,([a-z\d+/=\s]+)$/i;
+
+const dataImageUrlToFile = (dataUrl: string, filenamePrefix: string): File => {
+  const match = DATA_IMAGE_URL_PATTERN.exec(dataUrl);
+  if (match === null) {
+    throw new Error("Nieprawidłowy format zdjęcia base64.");
+  }
+
+  const [, mimeType, base64Data] = match;
+  const binary = atob(base64Data.replaceAll(/\s/g, ""));
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index++) {
+    bytes[index] = binary.codePointAt(index) ?? 0;
+  }
+
+  return new File(
+    [bytes],
+    `${filenamePrefix}.${getExtensionFromMimeType(mimeType)}`,
+    {
+      type: mimeType,
+    },
+  );
+};
+
+const isDataImageUrl = (value: string | null | undefined): value is string =>
+  typeof value === "string" && DATA_IMAGE_URL_PATTERN.test(value);
+
+export const countDataUrlImages = (quiz: Quiz): number =>
+  quiz.questions.reduce((total, question) => {
+    const questionImageCount = isDataImageUrl(question.image_url) ? 1 : 0;
+    const answerImageCount = question.answers.filter((answer) =>
+      isDataImageUrl(answer.image_url),
+    ).length;
+
+    return total + questionImageCount + answerImageCount;
+  }, 0);
+
+interface UploadDataUrlImagesOptions {
+  uploadImage?: (file: File) => Promise<string>;
+  onProgress?: (current: number, total: number) => void;
+  shouldSkip?: () => boolean;
+}
+
+export const uploadDataUrlImages = async (
+  quiz: Quiz,
+  optionsOrUploadImage?:
+    | UploadDataUrlImagesOptions
+    | ((file: File) => Promise<string>),
+): Promise<Quiz> => {
+  const options =
+    typeof optionsOrUploadImage === "function"
+      ? { uploadImage: optionsOrUploadImage }
+      : (optionsOrUploadImage ?? {});
+  const uploadImage =
+    options.uploadImage ??
+    (async (file: File): Promise<string> => {
+      const uploadResult = await getImageService().upload(file);
+      return uploadResult.data.id;
+    });
+  const total = countDataUrlImages(quiz);
+  let current = 0;
+
+  if (total === 0) {
+    return quiz;
+  }
+
+  const markProgress = () => {
+    current++;
+    options.onProgress?.(current, total);
+  };
+
+  const questions = [];
+
+  for (const [questionIndex, question] of quiz.questions.entries()) {
+    let preparedQuestion = { ...question };
+
+    if (isDataImageUrl(question.image_url)) {
+      if (options.shouldSkip?.() === true) {
+        preparedQuestion = {
+          ...preparedQuestion,
+          image_url: null,
+          image_upload: null,
+        };
+      } else {
+        const uploadId = await uploadImage(
+          dataImageUrlToFile(
+            question.image_url,
+            `question-${String(questionIndex + 1)}`,
+          ),
+        );
+        preparedQuestion = {
+          ...preparedQuestion,
+          image_url: null,
+          image_upload: uploadId,
+        };
+      }
+      markProgress();
+    }
+
+    const answers = [];
+
+    for (const [answerIndex, answer] of question.answers.entries()) {
+      if (!isDataImageUrl(answer.image_url)) {
+        answers.push(answer);
+        continue;
+      }
+
+      if (options.shouldSkip?.() === true) {
+        answers.push({
+          ...answer,
+          image_url: null,
+          image_upload: null,
+        });
+        markProgress();
+        continue;
+      }
+
+      const uploadId = await uploadImage(
+        dataImageUrlToFile(
+          answer.image_url,
+          `answer-${String(questionIndex + 1)}-${String(answerIndex + 1)}`,
+        ),
+      );
+
+      answers.push({
+        ...answer,
+        image_url: null,
+        image_upload: uploadId,
+      });
+      markProgress();
+    }
+
+    questions.push({ ...preparedQuestion, answers });
+  }
+
+  return {
+    ...quiz,
+    questions,
+  };
+};
+
 export const extractImagesToUpload = (
   questions: Question[],
 ): { type: "question" | "answer"; id: string; filename: string }[] => {
@@ -255,7 +423,6 @@ export const extractImagesToUpload = (
 };
 
 export const useImportQuiz = () => {
-  const appContext = useContext(AppContext);
   const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
   const [fileNameOld, setFileNameOld] = useState<string | null>(null);
@@ -269,7 +436,8 @@ export const useImportQuiz = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileOldRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
-  const textInputRef = useRef<HTMLTextAreaElement>(null);
+  const monacoEditorRef = useRef<JsonCodeEditor | null>(null);
+  const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
   const [uploadProgress, setUploadProgress] = useState<{
@@ -531,7 +699,7 @@ export const useImportQuiz = () => {
         const content = await fileData.async("uint8array");
         let lines;
         try {
-          const decoder = new TextDecoder("utf8", { fatal: true });
+          const decoder = new TextDecoder("utf-8", { fatal: true });
           lines = decoder
             .decode(content)
             .split("\n")
@@ -586,7 +754,7 @@ export const useImportQuiz = () => {
   const submitImport = async (data: Quiz) => {
     try {
       const { id, ...rest } = data;
-      const result = await appContext.services.quiz.createQuiz(rest);
+      const result = await getQuizService().createQuiz(rest);
 
       setQuiz(result);
       setErrorDetail(null);
@@ -599,6 +767,28 @@ export const useImportQuiz = () => {
 
       setError("Wystąpił błąd podczas importowania quizu.");
       setErrorDetail(detail.length > 0 ? detail : null);
+    }
+  };
+
+  const uploadDataUrlImagesWithProgress = async (quizData: Quiz) => {
+    const total = countDataUrlImages(quizData);
+    if (total === 0) {
+      return quizData;
+    }
+
+    setIsUploading(true);
+    stopUploadRef.current = false;
+    setUploadProgress({ current: 0, total });
+
+    try {
+      return await uploadDataUrlImages(quizData, {
+        shouldSkip: () => stopUploadRef.current,
+        onProgress: (current, total_) => {
+          setUploadProgress({ current, total: total_ });
+        },
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -646,7 +836,7 @@ export const useImportQuiz = () => {
         }),
       } as Quiz;
 
-      await submitImport(normalizedQuiz);
+      await submitImport(await uploadDataUrlImagesWithProgress(normalizedQuiz));
       return;
     }
     const legacyError = validateLegacyQuiz(data);
@@ -658,7 +848,7 @@ export const useImportQuiz = () => {
         setErrorAndNotify(`Błąd migracji quizu legacy: ${postMigrationError}`);
         return;
       }
-      await submitImport(migratedQuiz);
+      await submitImport(await uploadDataUrlImagesWithProgress(migratedQuiz));
       return;
     }
 
@@ -697,14 +887,14 @@ export const useImportQuiz = () => {
         break;
       }
       case "json": {
-        const textInput = textInputRef.current?.value;
-        if (textInput == null || textInput.trim() === "") {
+        const editorInput = monacoEditorRef.current?.getValue();
+        if (editorInput == null || editorInput.trim() === "") {
           setErrorAndNotify("Wklej quiz w formie tekstu.");
           setLoading(false);
           return;
         }
         try {
-          await processAndSubmitImport(JSON.parse(textInput));
+          await processAndSubmitImport(JSON.parse(editorInput));
         } catch (parseError) {
           if (parseError instanceof Error) {
             setErrorAndNotify(
@@ -769,7 +959,7 @@ export const useImportQuiz = () => {
               } else {
                 try {
                   const uploadResult =
-                    await appContext.services.image.upload(imageFile);
+                    await getImageService().upload(imageFile);
                   filenameToUploadId.set(filename, uploadResult.data.id);
                 } catch (error_) {
                   console.error(`Failed to upload image ${filename}:`, error_);
@@ -830,8 +1020,7 @@ export const useImportQuiz = () => {
             questions,
           };
 
-          const importedQuiz =
-            await appContext.services.quiz.createQuiz(quizData);
+          const importedQuiz = await getQuizService().createQuiz(quizData);
           setQuiz(importedQuiz);
         } catch (error_) {
           setErrorAndNotify(
@@ -849,7 +1038,7 @@ export const useImportQuiz = () => {
   async function detectEncodingAndReadFile(file: File): Promise<string> {
     const content = await file.arrayBuffer();
     try {
-      const decoder = new TextDecoder("utf8", { fatal: true });
+      const decoder = new TextDecoder("utf-8", { fatal: true });
       return decoder.decode(content);
     } catch {
       const decoder = new TextDecoder("windows-1250");
@@ -879,6 +1068,8 @@ export const useImportQuiz = () => {
     errorDetail,
     uploadProgress,
     isUploading,
+    monacoEditorRef,
+    legacyContent,
 
     // Functions
     handleFileDrop,
@@ -891,6 +1082,6 @@ export const useImportQuiz = () => {
     setQuizDescription,
     handleImport,
     handleSkipImages,
-    textInputRef,
+    setLegacyContent,
   };
 };

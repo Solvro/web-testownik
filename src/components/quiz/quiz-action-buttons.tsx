@@ -1,10 +1,10 @@
-import { SiOpenaigym } from "@icons-pack/react-simple-icons";
 import {
   ClipboardCopyIcon,
   HistoryIcon,
   MessageSquareWarningIcon,
   PencilLineIcon,
   SkullIcon,
+  SparklesIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
@@ -28,7 +28,10 @@ interface QuizActionButtonsProps {
   question: Question | null;
   onToggleHistory: () => void;
   onToggleBrainrot: () => void;
+  onExplain: () => void;
   disabled?: boolean;
+  isExplainOpen?: boolean;
+  aiDisabled?: boolean;
 }
 
 export function QuizActionButtons({
@@ -36,14 +39,17 @@ export function QuizActionButtons({
   question,
   onToggleHistory,
   onToggleBrainrot,
+  onExplain,
   disabled = false,
+  isExplainOpen = false,
+  aiDisabled = false,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const isMaintainer =
-    (quiz.can_edit ?? false) || quiz.maintainer?.id === user?.user_id;
+  const isCreator =
+    (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
 
   const canUseQuestion = !disabled && question != null;
 
@@ -53,33 +59,12 @@ export function QuizActionButtons({
       return;
     }
     const answersText = question.answers
-      .map(
-        (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
-      )
+      .map((a, index) => `Odpowiedź ${(index + 1).toString()}: ${a.text}`)
       .join("\n");
     const full = `${question.text}\n\n${answersText}`;
     void navigator.clipboard
       .writeText(full)
       .then(() => toast.info("Pytanie skopiowane do schowka!"));
-  };
-
-  const handleOpenChatGPT = () => {
-    if (question == null) {
-      toast.error("Nie można otworzyć ChatGPT: brak pytania");
-      return;
-    }
-    const answersText = question.answers
-      .map(
-        (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
-      )
-      .join("\n");
-    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\nOdpowiedzi:\n${answersText}`;
-    window.open(
-      `https://chat.openai.com/?q=${encodeURIComponent(fullText)}`,
-      "_blank",
-    );
   };
 
   const handleEdit = () => {
@@ -94,95 +79,108 @@ export function QuizActionButtons({
     <Card className="py-4">
       <CardContent className="flex justify-around">
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleCopy}
-              disabled={!canUseQuestion}
-              aria-label="Kopiuj pytanie i odpowiedzi"
-            >
-              <ClipboardCopyIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopy}
+                disabled={!canUseQuestion}
+                aria-label="Kopiuj pytanie i odpowiedzi"
+              >
+                <ClipboardCopyIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleOpenChatGPT}
-              disabled={!canUseQuestion}
-              aria-label="Otwórz w ChatGPT"
-            >
-              <SiOpenaigym />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Otwórz w ChatGPT</TooltipContent>
-        </Tooltip>
-        {!isMaintainer &&
-        checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
+        {!aiDisabled && checkPermission(PermissionAction.AI_FEATURES) ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onExplain}
+                  disabled={!canUseQuestion || isExplainOpen}
+                  aria-label="Wyjaśnij pytanie (AI)"
+                >
+                  <SparklesIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>Wyjaśnij pytanie (AI)</TooltipContent>
+          </Tooltip>
+        ) : null}
+        {!isCreator && checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
           <Tooltip>
             <ReportQuestionIssueDialog
               quizId={quiz.id}
               questionId={question?.id}
             >
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={!canUseQuestion}
-                  aria-label="Zgłoś problem z pytaniem"
-                >
-                  <MessageSquareWarningIcon />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={!canUseQuestion}
+                    aria-label="Zgłoś problem z pytaniem"
+                  >
+                    <MessageSquareWarningIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
             </ReportQuestionIssueDialog>
             <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
           </Tooltip>
         ) : null}
-        {isMaintainer ? (
+        {isCreator ? (
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleEdit}
-                aria-label="Edytuj pytanie"
-              >
-                <PencilLineIcon />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleEdit}
+                  aria-label="Edytuj pytanie"
+                >
+                  <PencilLineIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>
               {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
             </TooltipContent>
           </Tooltip>
         ) : null}
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onToggleHistory}
-              aria-label="Historia odpowiedzi"
-            >
-              <HistoryIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleHistory}
+                aria-label="Historia odpowiedzi"
+              >
+                <HistoryIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Historia odpowiedzi</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onToggleBrainrot}
-              aria-label="Brainrot mode"
-            >
-              <SkullIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleBrainrot}
+                aria-label="Brainrot mode"
+              >
+                <SkullIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Brainrot mode</TooltipContent>
         </Tooltip>
       </CardContent>

@@ -6,6 +6,7 @@ interface Options {
   nextAction: () => void;
   skipQuestion: () => void;
   isHistoryQuestion: boolean;
+  questionChecked: boolean;
   togglePreviousQuestion: () => void;
 }
 
@@ -13,6 +14,7 @@ export function useKeyShortcuts({
   nextAction,
   skipQuestion,
   isHistoryQuestion,
+  questionChecked,
   togglePreviousQuestion,
 }: Options) {
   useEffect(() => {
@@ -23,7 +25,8 @@ export function useKeyShortcuts({
       }
 
       const key = event.key.toLowerCase();
-      const isHandledKey = key === "enter" || key === "s";
+      const isHandledKey =
+        key === "enter" || key === "s" || key === "a" || key === "backspace";
 
       if (!isHandledKey || isModalOpen()) {
         return;
@@ -48,6 +51,19 @@ export function useKeyShortcuts({
           }
           break;
         }
+        case "a": {
+          if (isHistoryQuestion) {
+            togglePreviousQuestion();
+          } else {
+            nextAction();
+          }
+          break;
+        }
+        case "backspace": {
+          if (!isHistoryQuestion && !questionChecked) {
+            togglePreviousQuestion();
+          }
+        }
       }
     };
 
@@ -55,5 +71,11 @@ export function useKeyShortcuts({
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [nextAction, skipQuestion, isHistoryQuestion, togglePreviousQuestion]);
+  }, [
+    nextAction,
+    skipQuestion,
+    isHistoryQuestion,
+    togglePreviousQuestion,
+    questionChecked,
+  ]);
 }

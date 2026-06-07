@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -8,10 +9,17 @@ import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import "./globals.css";
 import { Providers } from "./providers";
+
+const hankenGrotesk = Hanken_Grotesk({
+  weight: ["100", "300", "400"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +30,7 @@ export const metadata: Metadata = {
     "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
   creator: "KN Solvro",
   alternates: {
-    canonical: "https://testownik.solvro.pl",
+    canonical: env.NEXT_PUBLIC_SITE_URL,
   },
   robots: "index, follow",
   ...(process.env.COOLIFY_URL != null &&
@@ -34,7 +42,6 @@ export const metadata: Metadata = {
     description:
       "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
     type: "website",
-    images: "/favicon/180x180.png",
     locale: "pl_PL",
   },
   icons: {
@@ -60,7 +67,7 @@ export const metadata: Metadata = {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "Testownik Solvro",
-      url: "https://testownik.solvro.pl",
+      url: env.NEXT_PUBLIC_SITE_URL,
     }),
   },
 };
@@ -73,7 +80,11 @@ export default async function RootLayout({
   const user = await getServerCurrentUser();
 
   return (
-    <html lang="pl" suppressHydrationWarning>
+    <html
+      lang="pl"
+      suppressHydrationWarning
+      className={hankenGrotesk.className}
+    >
       <head>
         <script
           type="application/ld+json"
@@ -83,12 +94,12 @@ export default async function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "Testownik Solvro",
-              url: "https://testownik.solvro.pl",
+              url: env.NEXT_PUBLIC_SITE_URL,
             }),
           }}
         />
       </head>
-      <body>
+      <body className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%">
         <Providers initialUser={user}>
           <div
             className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
@@ -108,7 +119,15 @@ export default async function RootLayout({
         <Script
           src="https://analytics.solvro.pl/script.js"
           data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
-          data-domains="testownik.solvro.pl"
+          data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://analytics.solvro.pl/recorder.js"
+          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          data-sample-rate="1"
+          data-mask-level="moderate"
+          data-max-duration="300000"
           strategy="afterInteractive"
         />
       </body>

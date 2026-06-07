@@ -38,7 +38,7 @@ export function migrateLegacyQuiz(
         multiple: question.multiple,
         image_url: question.image,
         answers,
-      } as Question;
+      };
     },
   );
 
@@ -51,7 +51,7 @@ export function migrateLegacyQuiz(
     visibility: AccessLevel.PRIVATE,
     allow_anonymous: false,
     is_anonymous: false,
-    maintainer: null,
+    creator: null,
   };
 
   return { quiz, questionIdMap };

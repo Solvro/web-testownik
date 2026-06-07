@@ -2,12 +2,16 @@ const ALLOWED_QUIZ_KEYS = [
   "id",
   "title",
   "description",
+  "created_at",
+  "updated_at",
+  "last_used_at",
   "visibility",
   "allow_anonymous",
   "is_anonymous",
   "version",
   "questions",
-  "maintainer",
+  "creator",
+  "maintainer", // Backward compatibility for older exports
   "comment",
   "can_edit",
 ];
@@ -18,6 +22,7 @@ const ALLOWED_QUESTION_KEYS = [
   "text",
   "explanation",
   "multiple",
+  "is_ai_generated",
   "image", // Also allowed for backward compatibility
   "image_url",
   "answers",

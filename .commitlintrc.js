@@ -1,3 +1,1 @@
-export default {
-  extends: ["@solvro/config/commitlint"],
-};
+export { default } from "@solvro/config/commitlint";

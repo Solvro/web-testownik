@@ -1,4 +1,4 @@
-import type { AccountType } from "@/types/user";
+import type { AccountLevel, AccountType } from "@/types/user";
 
 export interface JWTPayload {
   token_type: "access" | "refresh";
@@ -16,7 +16,7 @@ export interface JWTPayload {
   is_superuser: boolean;
   is_banned: boolean;
   account_type: AccountType;
-  account_level: "basic" | "gold";
+  account_level: AccountLevel;
 }
 
 export interface TokenRefreshResponse {

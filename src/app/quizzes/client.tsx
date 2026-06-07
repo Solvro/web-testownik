@@ -40,14 +40,15 @@ import {
 import { useSharedQuizzes, useUserQuizzes } from "@/hooks/use-quizzes";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
+import { getQuizService } from "@/services";
+import type { QuizBase, QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface QuizzesPageContentProps {
   userId?: string;
 }
 
 function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
-  const { checkPermission, services } = useContext(AppContext);
+  const { checkPermission } = useContext(AppContext);
   const queryClient = useQueryClient();
   const canSearchInQuizzes = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewShared = checkPermission(PermissionAction.VIEW_SHARED_QUIZZES);
@@ -70,7 +71,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   const sharedQuizzes = allSharedQuizzes.filter(
     (sq: SharedQuiz, index: number, self: SharedQuiz[]) =>
       index === self.findIndex((q) => q.quiz.id === sq.quiz.id) &&
-      sq.quiz.maintainer?.id !== userId,
+      sq.quiz.creator?.id !== userId,
   );
 
   const loading = isLoadingUserQuizzes || isLoadingSharedQuizzes;
@@ -124,7 +125,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     const quiz = currentDialog.quiz;
 
     try {
-      await services.quiz.deleteQuiz(quiz.id);
+      await getQuizService().deleteQuiz(quiz.id);
       void queryClient.invalidateQueries({
         queryKey: ["user-quizzes"],
       });
@@ -138,9 +139,9 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
   const handleDownloadQuiz = async (quiz: QuizMetadata) => {
     try {
-      const fullQuiz = await services.quiz.getQuiz(quiz.id);
+      const fullQuiz = await getQuizService().getQuiz(quiz.id);
       // Create a downloadable version
-      const downloadableQuiz = prepareQuizForDownload(fullQuiz);
+      const downloadableQuiz = await prepareQuizForDownload(fullQuiz);
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(downloadableQuiz, null, 2)], {
           type: "application/json",
@@ -157,13 +158,13 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     }
   };
 
-  const updateQuiz = (quiz: QuizMetadata) => {
+  const updateQuiz = (quiz: QuizBase) => {
     queryClient.setQueryData(
       ["user-quizzes"],
       (old: QuizMetadata[] | undefined) => {
         return old === undefined
           ? []
-          : old.map((q) => (q.id === quiz.id ? quiz : q));
+          : old.map((q) => (q.id === quiz.id ? { ...q, ...quiz } : q));
       },
     );
   };
@@ -254,21 +255,29 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               </CardHeader>
               <CardFooter className="mt-auto flex items-center justify-between">
                 <ViewTransition name="create-quiz">
-                  <Link href="/create-quiz">
-                    <Button size="sm">
-                      Stwórz
-                      <PlusIcon />
-                    </Button>
-                  </Link>
+                  <Button
+                    size="sm"
+                    nativeButton={false}
+                    render={(props) => (
+                      <Link {...props} href="/create-quiz">
+                        Stwórz
+                        <PlusIcon />
+                      </Link>
+                    )}
+                  ></Button>
                 </ViewTransition>
                 <div className="flex gap-1">
                   <ViewTransition name="import-quiz">
-                    <Link href="/import-quiz">
-                      <Button size="sm">
-                        Importuj
-                        <UploadIcon />
-                      </Button>
-                    </Link>
+                    <Button
+                      size="sm"
+                      nativeButton={false}
+                      render={(props) => (
+                        <Link {...props} href="/import-quiz">
+                          Importuj
+                          <UploadIcon />
+                        </Link>
+                      )}
+                    ></Button>
                   </ViewTransition>
                 </div>
               </CardFooter>
@@ -291,19 +300,26 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
                 Wyczyść Filtry <XIcon />
               </Button>
               <ViewTransition name="create-quiz">
-                <Link href="/create-quiz">
-                  <Button>
-                    Stwórz quiz <PlusIcon />
-                  </Button>
-                </Link>
+                <Button
+                  nativeButton={false}
+                  render={(props) => (
+                    <Link {...props} href="/create-quiz">
+                      Stwórz quiz
+                      <PlusIcon />
+                    </Link>
+                  )}
+                ></Button>
               </ViewTransition>
               <ViewTransition name="import-quiz">
-                <Link href="/import-quiz">
-                  <Button>
-                    Importuj
-                    <UploadIcon />
-                  </Button>
-                </Link>
+                <Button
+                  nativeButton={false}
+                  render={(props) => (
+                    <Link {...props} href="/import-quiz">
+                      Importuj
+                      <UploadIcon />
+                    </Link>
+                  )}
+                ></Button>
               </ViewTransition>
             </EmptyContent>
           </Empty>
@@ -315,17 +331,25 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               Nie masz jeszcze żadnych quizów.
             </p>
             <div className="flex flex-row justify-center gap-2">
-              <Link href="/create-quiz">
-                <Button>
-                  Stwórz quiz <PlusIcon />
-                </Button>
-              </Link>
-              <Link href="/import-quiz">
-                <Button>
-                  Importuj
-                  <UploadIcon />
-                </Button>
-              </Link>
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/create-quiz">
+                    Stwórz quiz
+                    <PlusIcon />
+                  </Link>
+                )}
+              ></Button>
+
+              <Button
+                nativeButton={false}
+                render={(props) => (
+                  <Link {...props} href="/import-quiz">
+                    Importuj
+                    <UploadIcon />
+                  </Link>
+                )}
+              ></Button>
             </div>
           </div>
         </ViewTransition>

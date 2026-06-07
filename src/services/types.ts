@@ -1,5 +1,6 @@
 // Re-export types from components
 export type {
+  QuizBase,
   Quiz,
   QuizMetadata,
   SharedQuiz,
@@ -15,8 +16,15 @@ export type {
   UserSettings,
   UserData,
 } from "@/types/user";
-export type { AlertData } from "@/types/alert";
-
+export type {
+  StatsScope,
+  QuizStats,
+  PerQuestionStat,
+  TimelineEntry,
+  SessionEntry,
+  HardestQuestion,
+  HourlyEntry,
+} from "@/types/quiz-stats";
 export interface ApiResponse<T> {
   data: T;
   status: number;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -51,19 +50,11 @@ const setup = async () => {
     await user.type(answers[0], testQuiz.answers[0]);
     await user.type(answers[1], testQuiz.answers[1]);
 
-    // Mark first answer as correct
-    const checkboxes = screen.getAllByRole("checkbox", {
-      name: /oznacz jako poprawną|wielokrotny wybór/i,
+    // Mark first answer as correct (answer correctness toggle is a button)
+    const correctAnswerButtons = screen.getAllByRole("button", {
+      name: /oznacz jako poprawną/i,
     });
-    // Skip the "all questions multiple" checkbox and click first answer checkbox
-    const answerCheckbox = checkboxes.find(
-      (checkbox) =>
-        checkbox.getAttribute("id")?.includes("all-multiple") !== true &&
-        checkbox.getAttribute("id")?.includes("multiple-choice") !== true,
-    );
-    if (answerCheckbox != null) {
-      await user.click(answerCheckbox);
-    }
+    await user.click(correctAnswerButtons[0]);
   };
 
   const submit = async () => {
@@ -126,7 +117,10 @@ describe("CreateQuizPage", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "Tytuł quizu jest wymagany",
       expect.objectContaining({
-        actionButtonStyle: expect.objectContaining({}),
+        actionButtonStyle: expect.objectContaining({}) as unknown as Record<
+          string,
+          unknown
+        >,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();
@@ -152,7 +146,9 @@ describe("CreateQuizPage", () => {
         "Pytanie 1: Pytanie musi zawierać tekst lub zdjęcie",
       ),
       expect.objectContaining({
-        action: expect.objectContaining({ label: "Pokaż" }),
+        action: expect.objectContaining({
+          label: "Pokaż",
+        }) as unknown as Record<string, unknown>,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();
@@ -175,7 +171,9 @@ describe("CreateQuizPage", () => {
         "Pytanie 1, Odpowiedź 1: Odpowiedź musi zawierać tekst lub zdjęcie",
       ),
       expect.objectContaining({
-        action: expect.objectContaining({ label: "Pokaż" }),
+        action: expect.objectContaining({
+          label: "Pokaż",
+        }) as unknown as Record<string, unknown>,
       }),
     );
     expect(toast.success).not.toHaveBeenCalled();

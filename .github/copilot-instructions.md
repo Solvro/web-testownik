@@ -114,14 +114,14 @@ Use **Conventional Commits** via `@solvro/config` commitlint enforcement.
 
 ## Commands
 
-| Task       | Command                                   |
-| ---------- | ----------------------------------------- |
-| Dev server | `npm run dev`                             |
-| Build      | `npm run build`                           |
-| Lint       | `npm run lint` / `npm run lint:fix`       |
-| Format     | `npm run format` / `npm run format:check` |
-| Type check | `npm run typecheck`                       |
-| Tests      | `npm run test` (Vitest)                   |
+| Task       | Command                                    |
+| ---------- | ------------------------------------------ |
+| Dev server | `pnpm run dev`                             |
+| Build      | `pnpm run build`                           |
+| Lint       | `pnpm run lint` / `npm run lint:fix`       |
+| Format     | `pnpm run format` / `npm run format:check` |
+| Type check | `pnpm run typecheck`                       |
+| Tests      | `pnpm run test` (Vitest)                   |
 
 ## Cross-Device Quiz Continuity (PeerJS)
 

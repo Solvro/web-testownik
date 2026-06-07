@@ -4,9 +4,8 @@ import { useDebouncedValue } from "@tanstack/react-pacer";
 import { useQuery } from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
 import Link from "next/link";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
-import { AppContext } from "@/app-context";
 import { Loader } from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +13,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { getQuizService } from "@/services";
 
 interface SearchResult {
   id: string;
   title: string;
-  maintainer: string;
+  creator: string;
   is_anonymous: boolean;
 }
 
@@ -26,7 +26,6 @@ export function SearchCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>): React.ReactNode {
-  const { services } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery] = useDebouncedValue(searchQuery, { wait: 500 });
 
@@ -41,14 +40,12 @@ export function SearchCard({
         return [];
       }
       const data = Object.values(
-        await services.quiz.searchQuizzes(debouncedQuery),
+        await getQuizService().searchQuizzes(debouncedQuery),
       ).flat() as SearchResult[];
 
-      const uniqueData = [...new Set(data.map((item) => item.id))].map((id) =>
+      return [...new Set(data.map((item) => item.id))].map((id) =>
         data.find((item) => item.id === id),
       ) as SearchResult[];
-
-      return uniqueData;
     },
     enabled: debouncedQuery.length > 0,
     staleTime: 1000 * 60 * 5,
@@ -75,7 +72,7 @@ export function SearchCard({
             disabled={isLoading}
             aria-label="Wyszukaj quizy"
           >
-            <SearchIcon className="size-4" />
+            <SearchIcon />
           </Button>
         </div>
         <ScrollArea className="min-h-0 flex-1">
@@ -99,9 +96,7 @@ export function SearchCard({
                             <span className="text-muted-foreground font-normal">
                               {" "}
                               by{" "}
-                              {result.is_anonymous
-                                ? "anonim"
-                                : result.maintainer}
+                              {result.is_anonymous ? "anonim" : result.creator}
                             </span>
                           </div>
                         </Link>

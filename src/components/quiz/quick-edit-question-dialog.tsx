@@ -1,13 +1,11 @@
 "use client";
 
-import { FocusScope } from "@radix-ui/react-focus-scope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { AppContext } from "@/app-context";
 import {
   QuestionFormContent,
   QuestionFormHeader,
@@ -37,6 +35,7 @@ import {
   prepareQuestionForSubmission,
   validateQuestionForm,
 } from "@/lib/schemas/quiz.schema";
+import { getQuizService } from "@/services";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
 import { quizDetailQueryKey } from "./helpers/utils";
@@ -54,9 +53,10 @@ export function QuickEditQuestionDialog({
   question,
   quizId,
 }: QuickEditQuestionDialogProps) {
-  const appContext = useContext(AppContext);
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
+
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
@@ -100,10 +100,7 @@ export function QuickEditQuestionDialog({
   const { isPending: isSaving, mutateAsync: saveQuestion } = useMutation({
     mutationFn: async () => {
       const payload = prepareQuestionForSubmission(formData);
-      return await appContext.services.quiz.updateQuestion(
-        question.id,
-        payload,
-      );
+      return await getQuizService().updateQuestion(question.id, payload);
     },
     onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
@@ -111,7 +108,9 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (oldData) => {
           if (oldData == null) {
-            void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
+            void queryClient.refetchQueries({
+              queryKey: quizDetailQueryKey(quizId),
+            });
             return oldData;
           }
           return {
@@ -131,7 +130,7 @@ export function QuickEditQuestionDialog({
 
   const { isPending: isDeleting, mutateAsync: deleteQuestion } = useMutation({
     mutationFn: async () => {
-      return await appContext.services.quiz.deleteQuestion(question.id);
+      return await getQuizService().deleteQuestion(question.id);
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
@@ -139,7 +138,9 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (oldData) => {
           if (oldData == null) {
-            void queryClient.refetchQueries({ queryKey: ["quiz", quizId] });
+            void queryClient.refetchQueries({
+              queryKey: quizDetailQueryKey(quizId),
+            });
             return oldData;
           }
 
@@ -179,10 +180,11 @@ export function QuickEditQuestionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden px-0 sm:max-w-4xl"
+        className="flex flex-col gap-0 sm:max-w-4xl"
+        data-nested-dialog-open={isAlertDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
-        <DialogHeader className="px-6 pr-10">
+        <DialogHeader className="pr-6">
           <DialogTitle className="sr-only">Edycja pytania</DialogTitle>
           <QuestionFormHeader
             question={formData}
@@ -196,40 +198,43 @@ export function QuickEditQuestionDialog({
           />
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-1">
-          <FocusScope>
-            <QuestionFormContent
-              question={formData}
-              onUpdate={(updates) => {
-                setFormData((previous) => ({ ...previous, ...updates }));
-              }}
-              isImageUploading={isImageUploading}
-              onImageChange={handleImageChange}
-              onUpload={handleUpload}
-            />
-          </FocusScope>
+        <div className="-mx-6 -my-1 flex-1 overflow-y-auto px-6 py-1">
+          <QuestionFormContent
+            question={formData}
+            onUpdate={(updates) => {
+              setFormData((previous) => ({ ...previous, ...updates }));
+            }}
+            isImageUploading={isImageUploading}
+            onImageChange={handleImageChange}
+            onUpload={handleUpload}
+          />
         </div>
 
-        <DialogFooter className="flex items-center justify-between px-6 pt-2 sm:justify-between">
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 />
-                  Usuń pytanie
-                </Button>
-              </AlertDialogTrigger>
+            <AlertDialog
+              open={isAlertDialogOpen}
+              onOpenChange={setIsAlertDialogOpen}
+            >
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 />
+                    Usuń pytanie
+                  </Button>
+                }
+              ></AlertDialogTrigger>
+
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     Czy na pewno chcesz usunąć to pytanie?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tej operacji nie można cofnąć. Pytanie zostanie trwale
-                    usunięte z quizu.
+                    Tej operacji nie można cofnąć.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -245,11 +250,15 @@ export function QuickEditQuestionDialog({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="ghost" asChild>
-              <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-                Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-              </Link>
-            </Button>
+            <Button
+              variant="ghost"
+              nativeButton={false}
+              render={
+                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                  Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
+                </Link>
+              }
+            ></Button>
           </div>
           <div className="flex gap-2">
             <Button

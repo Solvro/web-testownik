@@ -13,16 +13,18 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { API_URL } from "@/lib/api";
 import { PermissionAction } from "@/lib/auth/permissions";
+import { getUserService } from "@/services";
 
 interface NavLinksProps {
   variant?: "desktop" | "mobile";
 }
 
 export function NavLinks({ variant = "desktop" }: NavLinksProps) {
-  const { user, services, checkPermission } = useContext(AppContext);
+  const { user, checkPermission } = useContext(AppContext);
   const isStaff = user?.is_staff ?? false;
 
   const pathname = usePathname();
@@ -35,7 +37,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
     }
     void queryClient.prefetchQuery({
       queryKey: ["grades"],
-      queryFn: async () => services.user.getGrades(),
+      queryFn: async () => getUserService().getGrades(),
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
   };
@@ -73,17 +75,17 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
           }}
           className="text-muted-foreground hover:text-foreground h-auto justify-start p-0 text-left text-base font-normal transition-colors"
         >
-          Zgłoś błąd
+          Prześlij opinię
         </Button>
         {isStaff ? (
-          <a
+          <Link
             href={`${API_URL}/admin/`}
             target="_blank"
             className="text-muted-foreground hover:text-foreground transition-colors"
             rel="noreferrer"
           >
             Panel administratora
-          </a>
+          </Link>
         ) : null}
         <ReportBugDialog
           open={showReportDialog}
@@ -95,43 +97,58 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
 
   return (
     <>
-      <NavigationMenu className="hidden md:flex" viewport={false}>
-        <NavigationMenuList className="gap-1">
+      <NavigationMenu className="hidden md:flex">
+        <NavigationMenuList className="gap-2.5">
           <NavigationMenuItem>
-            <NavigationMenuLink active={isActive("/quizzes")} asChild>
-              <Link href="/quizzes">Twoje quizy</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink active={isActive("/grades")} asChild>
-              <Link href="/grades" onMouseEnter={prefetchGrades}>
-                Oceny
-              </Link>
+            <NavigationMenuLink
+              data-active={isActive("/quizzes")}
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
+              render={<Link href="/quizzes" />}
+              className={navigationMenuTriggerStyle()}
+            >
+              Twoje quizy
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink
+              data-active={isActive("/grades")}
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
+              render={<Link href="/grades" onMouseEnter={prefetchGrades} />}
+              className={navigationMenuTriggerStyle()}
+            >
+              Oceny
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink
+              data-active={showReportDialog}
               onClick={() => {
                 setShowReportDialog(true);
               }}
-              asChild
+              render={
+                <Button
+                  variant="ghost"
+                  className={navigationMenuTriggerStyle()}
+                />
+              }
             >
-              <Button variant="ghost" className="font-normal">
-                Zgłoś błąd
-              </Button>
+              Prześlij opinię
             </NavigationMenuLink>
           </NavigationMenuItem>
           {isStaff ? (
             <NavigationMenuItem>
-              <NavigationMenuLink asChild>
-                <a
-                  href={`${API_URL}/admin/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex"
-                >
-                  Panel administratora
-                </a>
+              <NavigationMenuLink
+                render={
+                  // eslint-disable-next-line jsx-a11y/anchor-has-content
+                  <a
+                    href={`${API_URL}/admin/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+                className={navigationMenuTriggerStyle()}
+              >
+                Panel administratora
               </NavigationMenuLink>
             </NavigationMenuItem>
           ) : null}

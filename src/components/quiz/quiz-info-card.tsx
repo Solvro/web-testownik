@@ -1,18 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
-  Copy,
+  BarChart3Icon,
+  CopyIcon,
   Link2Icon,
-  Loader2,
+  Loader2Icon,
   RotateCcwIcon,
   SearchIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PermissionAction } from "@/lib/auth/permissions";
+import { getQuizService } from "@/services";
 import type { Quiz } from "@/types/quiz";
 
 import type { TimerStore } from "./hooks/use-study-timer";
@@ -93,14 +94,14 @@ export function QuizInfoCard({
   timerStore,
   resetProgress,
 }: QuizInfoCardProps): React.JSX.Element | null {
-  const { checkPermission, services } = useContext(AppContext);
+  const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
-  const router = useRouter();
+  const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
-    mutationFn: async (quizId: string) => services.quiz.copyQuiz(quizId),
+    mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["user-quizzes"] }),
@@ -119,9 +120,8 @@ export function QuizInfoCard({
     return null;
   }
 
-  const openSearchInQuiz = () => {
-    router.push(`/search-in-quiz/${quiz.id}`);
-  };
+  const canEditQuiz = quiz.can_edit === true;
+
   const progressPercentage =
     totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 
@@ -129,8 +129,8 @@ export function QuizInfoCard({
     <Card>
       <CardHeader>
         <CardTitle>{quiz.title}</CardTitle>
-        {quiz.maintainer == null ? null : (
-          <CardDescription>by {quiz.maintainer.full_name}</CardDescription>
+        {quiz.creator == null ? null : (
+          <CardDescription>by {quiz.creator.full_name}</CardDescription>
         )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
@@ -162,81 +162,114 @@ export function QuizInfoCard({
             ["--bar-color" as never]: getProgressColor(progressPercentage),
           }}
           aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
-          className="[&_[data-slot=progress-indicator]]:bg-[var(--bar-color)]"
+          className="**:data-[slot=progress-indicator]:bg-(--bar-color)"
         />
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-2">
             {canSearchInQuiz ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={openSearchInQuiz}
-                    aria-label="Wyszukaj w quizie"
-                  >
-                    <SearchIcon className="size-5" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <ButtonLink
+                      size="icon-sm"
+                      variant="outline"
+                      href={`/search-in-quiz/${quiz.id}`}
+                      aria-label="Wyszukaj w quizie"
+                    >
+                      <SearchIcon className="size-5" />
+                    </ButtonLink>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Wyszukaj w quizie</TooltipContent>
               </Tooltip>
             ) : null}
             {canShare ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={() => {
-                      void navigator.clipboard
-                        .writeText(window.location.href)
-                        .then(() => {
-                          toast.success("Skopiowano link do quizu");
-                        });
-                    }}
-                    aria-label="Skopiuj link do quizu"
-                  >
-                    <Link2Icon className="size-5" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-sm"
+                      variant="outline"
+                      onClick={() => {
+                        void navigator.clipboard
+                          .writeText(window.location.href)
+                          .then(() => {
+                            toast.success("Skopiowano link do quizu");
+                          });
+                      }}
+                      aria-label="Skopiuj link do quizu"
+                    >
+                      <Link2Icon className="size-5" />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Kopiuj link do quizu</TooltipContent>
               </Tooltip>
             ) : null}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  disabled={isCopying}
-                  onClick={() => {
-                    copyQuiz(quiz.id);
-                  }}
-                  aria-label={isCopying ? "Kopiowanie quizu" : "Kopiuj quiz"}
-                >
-                  {isCopying ? (
-                    <Loader2 className="size-5 animate-spin" />
-                  ) : (
-                    <Copy className="size-5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isCopying ? "Kopiowanie..." : "Kopiuj quiz"}
-              </TooltipContent>
-            </Tooltip>
+            {canViewStats ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <ButtonLink
+                      size="icon-sm"
+                      variant="outline"
+                      href={`/quiz/${quiz.id}/stats`}
+                      aria-label="Statystyki quizu"
+                    >
+                      <BarChart3Icon className="size-5" />
+                    </ButtonLink>
+                  }
+                ></TooltipTrigger>
+                <TooltipContent>Statystyki quizu</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {canEditQuiz ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-sm"
+                      variant="outline"
+                      disabled={isCopying}
+                      onClick={() => {
+                        copyQuiz(quiz.id);
+                      }}
+                      aria-label={
+                        isCopying
+                          ? "Kopiowanie quizu"
+                          : "Utwórz kopię quizu i dodaj do mojej biblioteki"
+                      }
+                    >
+                      {isCopying ? (
+                        <Loader2Icon className="size-5 animate-spin" />
+                      ) : (
+                        <CopyIcon className="size-5" />
+                      )}
+                    </Button>
+                  }
+                ></TooltipTrigger>
+                <TooltipContent>
+                  {isCopying
+                    ? "Kopiowanie..."
+                    : "Utwórz kopię quizu i dodaj do mojej biblioteki"}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={resetProgress}
-                disabled={totalQuestions === 0}
-                aria-label="Resetuj postęp"
-              >
-                <RotateCcwIcon className="size-4" /> Reset
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={resetProgress}
+                  disabled={totalQuestions === 0}
+                  aria-label="Resetuj postęp"
+                >
+                  <RotateCcwIcon className="size-4" /> Reset
+                </Button>
+              }
+            ></TooltipTrigger>
             <TooltipContent>Resetuj postęp</TooltipContent>
           </Tooltip>
         </div>

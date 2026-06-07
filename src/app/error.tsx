@@ -37,7 +37,7 @@ export default function Error({
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           <AccordionItem value="error-details" className="border-none">
             <AccordionTrigger className="justify-center gap-2 py-2 hover:no-underline">
               Szczegóły błędu

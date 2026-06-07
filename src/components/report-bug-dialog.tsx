@@ -1,9 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { MessageSquareWarningIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,11 +23,14 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getUserService } from "@/services";
+import type { QuizWithUserProgress } from "@/types/quiz";
 
 interface ReportBugDialogProps {
   open: boolean;
@@ -44,12 +49,21 @@ const DEFAULT_FORM_STATE = {
 
 export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const appContext = useContext(AppContext);
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
 
-  const quizId = pathname.includes("quiz/") ? pathname.split("/").pop() : null;
+  const quizId = /^\/quiz\/([^/]+)/.exec(pathname)?.[1] ?? null;
+  const currentQuiz =
+    quizId == null
+      ? undefined
+      : queryClient.getQueryData<QuizWithUserProgress>(
+          quizDetailQueryKey(quizId),
+        );
+  const canEditCurrentQuiz =
+    currentQuiz != null && (currentQuiz.can_edit ?? false);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -115,7 +129,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       form.diagnostic = JSON.stringify(diagnostics, null, 2);
     }
 
-    appContext.services.user
+    getUserService()
       .sendFeedback({
         ...form,
         sendDiagnostics: form.sendDiagnostics ? "true" : "false",
@@ -134,17 +148,23 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       });
   };
 
+  const reportType = [
+    { label: "Błąd", value: "bug" },
+    { label: "Propozycja", value: "enhancement" },
+    { label: "Pytanie", value: "question" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Zgłoszenie błędu lub sugestia</DialogTitle>
           <DialogDescription>
-            Opisz problem lub propozycję ulepszenia
+            Opisz problem lub propozycję ulepszenia Testownika
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
-          {quizId != null && (
+          {quizId != null && !canEditCurrentQuiz && (
             <Alert
               variant="default"
               className="border-fuchsia-500 bg-fuchsia-50 dark:bg-fuchsia-900/20"
@@ -240,12 +260,14 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               <Label htmlFor="reportType" className="text-sm font-medium">
                 Typ zgłoszenia
               </Label>
+
               <Select
+                items={reportType}
                 value={form.reportType}
                 onValueChange={(value) => {
                   setForm((previous) => ({
                     ...previous,
-                    reportType: value,
+                    reportType: value ?? form.reportType,
                   }));
                 }}
               >
@@ -253,18 +275,22 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bug">Błąd</SelectItem>
-                  <SelectItem value="enhancement">Propozycja</SelectItem>
-                  <SelectItem value="question">Pytanie</SelectItem>
+                  <SelectGroup>
+                    {reportType.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
         <DialogFooter className="pt-6">
-          <DialogClose asChild>
-            <Button variant="outline">Anuluj</Button>
-          </DialogClose>
+          <DialogClose
+            render={<Button variant="outline">Anuluj</Button>}
+          ></DialogClose>
           <Button disabled={isSending} onClick={handleSend}>
             Wyślij formularz
           </Button>

@@ -1,18 +1,23 @@
 import type { Group, User, UserSettings } from "./user";
 
-export interface QuizMetadata {
+export interface QuizBase {
   id: string;
   title: string;
   description: string;
-  maintainer?: User | null;
+  creator?: User | null;
   visibility: AccessLevel;
   allow_anonymous: boolean;
   is_anonymous: boolean;
   version: number;
   can_edit?: boolean;
+}
+
+export interface QuizMetadata extends QuizBase {
+  created_at: string;
+  updated_at: string;
+  last_used_at: string | null;
   preview_question?: Question;
   question_count?: number;
-  has_external_images?: boolean;
 }
 
 export interface Answer {
@@ -32,7 +37,8 @@ export interface Question {
   order: number;
   text: string;
   explanation?: string;
-  multiple: boolean; // Single or multiple choice
+  multiple: boolean;
+  is_ai_generated?: boolean;
   image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
@@ -46,8 +52,9 @@ export interface QuestionWithQuizInfo extends Question {
   quiz_id: string;
 }
 
-export interface Quiz extends QuizMetadata {
+export interface Quiz extends QuizBase {
   questions: Question[];
+  has_external_images?: boolean;
 }
 
 export interface QuizWithUserProgress extends Quiz {
