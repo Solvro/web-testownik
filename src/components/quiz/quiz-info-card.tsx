@@ -10,12 +10,14 @@ import {
   RotateCcwIcon,
   ScanEyeIcon,
   SearchIcon,
+  SettingsIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useContext } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
@@ -56,6 +58,8 @@ interface QuizInfoCardProps {
   isFocusModeActive: boolean;
   toggleFocusMode: () => void;
   onToggleHistory: () => void;
+  isSettingsOpen: boolean;
+  onSettingsOpenChange: (open: boolean) => void;
 }
 
 const getProgressColor = (percentage: number): string => {
@@ -123,6 +127,8 @@ export function QuizInfoCard({
   isFocusModeActive,
   toggleFocusMode,
   onToggleHistory,
+  isSettingsOpen,
+  onSettingsOpenChange,
 }: QuizInfoCardProps): React.JSX.Element | null {
   const { checkPermission } = useContext(AppContext);
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
@@ -177,6 +183,15 @@ export function QuizInfoCard({
               }
             />
             <DropdownMenuContent align="end" className="w-full">
+              <DropdownMenuItem
+                onClick={() => {
+                  onSettingsOpenChange(true);
+                }}
+              >
+                <SettingsIcon />
+                Ustawienia
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               {canViewStats ? (
                 <DropdownMenuItem
                   render={(props) => (
@@ -217,6 +232,11 @@ export function QuizInfoCard({
           </DropdownMenu>
         </CardAction>
       </CardHeader>
+      <QuizSettingsDialog
+        open={isSettingsOpen}
+        onOpenChange={onSettingsOpenChange}
+        quizId={quiz.id}
+      />
       <CardContent className="space-y-2 text-sm">
         <div className="space-y-1">
           <div className="flex justify-between">

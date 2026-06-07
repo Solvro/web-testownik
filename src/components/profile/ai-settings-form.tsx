@@ -96,6 +96,7 @@ function ClientSetupTab({ children, label }: ClientSetupTabProps) {
 
 export function AiSettingsForm({
   settings,
+  disabled = false,
   onSettingChange,
 }: SettingsFormProps) {
   const { checkPermission } = useContext(AppContext);
@@ -128,7 +129,10 @@ export function AiSettingsForm({
           Sztuczna inteligencja
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">
+      <CardContent
+        aria-busy={disabled}
+        className={cn("flex flex-col gap-6", disabled && "animate-pulse")}
+      >
         <div className="flex items-center gap-4">
           <div className="min-w-0">
             <Label
@@ -136,22 +140,22 @@ export function AiSettingsForm({
                 "text-sm font-medium",
                 !hasAiAccess && "text-muted-foreground",
               )}
-              htmlFor="ai-disabled"
+              htmlFor="ai-enabled"
             >
-              Wyłącz funkcje AI
+              Wbudowane AI
             </Label>
             <p className="text-muted-foreground text-xs">
-              Ukryj generowanie quizów, czat AI, podpowiedzi i wszystkie inne
+              Aktywuj generowanie quizów, czat AI, podpowiedzi i wszystkie inne
               wbudowane funkcje AI
             </p>
           </div>
           <Switch
-            id="ai-disabled"
-            checked={settings.ai_disabled}
+            id="ai-enabled"
+            checked={!settings.ai_disabled}
             onCheckedChange={(checked) => {
-              onSettingChange("ai_disabled", checked);
+              onSettingChange("ai_disabled", !checked);
             }}
-            disabled={!hasAiAccess}
+            disabled={disabled || !hasAiAccess}
             className="ml-auto"
           />
         </div>
