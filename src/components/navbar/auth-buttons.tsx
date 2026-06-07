@@ -24,7 +24,11 @@ import {
 import { cn } from "@/lib/utils";
 import { ACCOUNT_TYPE } from "@/types/user";
 
-export function AuthButtons() {
+interface AuthButtonsProps {
+  onNavigate?: () => void;
+}
+
+export function AuthButtons({ onNavigate }: AuthButtonsProps) {
   const { isAuthenticated, user } = useContext(AppContext);
   const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
   const profilePicture = user?.photo;
@@ -47,7 +51,7 @@ export function AuthButtons() {
                 size="icon"
                 className="relative"
                 render={(props) => (
-                  <Link {...props} href="/profile">
+                  <Link {...props} href="/profile" onClick={onNavigate}>
                     <IdCardLanyardIcon />
                     <div className="absolute -top-1 -right-1 size-3 rounded-full bg-amber-500" />
                   </Link>
@@ -60,7 +64,7 @@ export function AuthButtons() {
           </TooltipContent>
         </Tooltip>
 
-        <ButtonLink href={loginHref}>
+        <ButtonLink href={loginHref} onClick={onNavigate}>
           <LogInIcon />
           Zaloguj się
         </ButtonLink>
@@ -75,7 +79,7 @@ export function AuthButtons() {
         className={cn(getAccountLevelCtaClassName(user?.account_level))}
         nativeButton={false}
         render={(props) => (
-          <Link {...props} href="/profile">
+          <Link {...props} href="/profile" onClick={onNavigate}>
             {profilePicture === null ? (
               <span
                 className={cn(
@@ -115,7 +119,7 @@ export function AuthButtons() {
     <Button
       nativeButton={false}
       render={(props) => (
-        <Link {...props} href={loginHref}>
+        <Link {...props} href={loginHref} onClick={onNavigate}>
           <LogInIcon />
           Zaloguj się
         </Link>
