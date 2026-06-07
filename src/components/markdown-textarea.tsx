@@ -1,4 +1,6 @@
+import { sanitizeUrl } from "@braintree/sanitize-url";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
+import isUrl from "is-url-superb";
 import {
   Bold,
   BoldIcon,
@@ -33,10 +35,8 @@ import React, { useRef, useState } from "react";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
+import { toast } from "sonner";
 import { unified } from "unified";
-import { visit } from "unist-util-visit";
-import { string } from "zod";
-import { fr } from "zod/v4/locales";
 
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
@@ -95,6 +95,8 @@ interface TextFragment {
   index: number;
   length: number;
   parent: Parent | null; // A reference to the PharsingParent node, not direct parent
+  nodeType?: string;
+  comesFromType?: string;
 }
 
 function getFragmentsInSelection(
@@ -154,6 +156,7 @@ function getFragmentsInSelection(
           length:
             (node.position?.end.offset ?? 0) -
             (node.position?.start.offset ?? 0),
+          comesFromType: node.type,
         };
         fragments.push(fragment);
         break;
@@ -181,6 +184,7 @@ function splitFragmentAt(
     index: fragment.index,
     length: index - fragment.index,
     parent: fragment.parent,
+    comesFromType: fragment.comesFromType,
   };
   const right: TextFragment = {
     value: fragment.value.slice(index - fragment.index),
@@ -188,6 +192,7 @@ function splitFragmentAt(
     index,
     length: fragment.index + fragment.length - index,
     parent: fragment.parent,
+    comesFromType: fragment.comesFromType,
   };
   return [left, right];
 }
@@ -248,6 +253,29 @@ function splitFragmetsBySelection(
     const index = fragments.indexOf(fragmentInFocus);
     fragments.splice(index, 1, left, right);
   }
+}
+
+function selectFragmentsFromSelection(
+  fragments: TextFragment[],
+  selection: EditorSelection,
+): TextFragment[] {
+  if (fragments.length <= 1) {
+    return fragments;
+  }
+
+  const { anchor, focus } = selection;
+  const selected: TextFragment[] = [];
+
+  for (const fragment of fragments) {
+    if (
+      fragment.index + fragment.length <= focus.offset &&
+      fragment.index >= anchor.offset
+    ) {
+      selected.push(fragment);
+    }
+  }
+
+  return selected;
 }
 
 function applyMarkToFragmentsInSelection(
@@ -419,6 +447,10 @@ function createNodesFromFragments(fragments: TextFragment[]): Node[] {
           children: [],
         };
 
+        if (newNode.type === "inlineCode" || newNode.type === "code") {
+          (newNode as Node as InlineCode).value = fragment.value;
+        }
+
         if (parentNode === null) {
           nodes.push(newNode);
         } else {
@@ -444,6 +476,26 @@ function createNodesFromFragments(fragments: TextFragment[]): Node[] {
   }
 
   return nodes;
+}
+
+function isMultiline(fragments: TextFragment[]): boolean {
+  // Check for multiple parents
+  let index = 1;
+  while (index < fragments.length) {
+    if (fragments[index - 1].parent !== fragments[index].parent) {
+      return true;
+    }
+    index++;
+  }
+
+  // Check for new line characters
+  for (const fragment of fragments) {
+    if (/\n/g.test(fragment.value)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 const boldAction: ToolbarAction = {
@@ -609,6 +661,262 @@ const headingAction = (depth: 1 | 2 | 3): ToolbarAction => {
   };
 };
 
+const linkAction = (text: string, url: string): ToolbarAction => {
+  return {
+    apply: (ast: Root, selection: EditorSelection): Root => {
+      return ast;
+    },
+  };
+};
+
+const quoteAction: ToolbarAction = {
+  apply(ast: Root, selection: EditorSelection): Root {
+    return ast;
+  },
+};
+
+const codeAction: ToolbarAction = {
+  apply(ast: Root, selection: EditorSelection): Root {
+    const replacedIndicesMap = new Map<Parent | null, number[]>();
+    const fragments = getFragmentsInSelection(
+      selection,
+      ast,
+      replacedIndicesMap,
+    );
+
+    splitFragmetsBySelection(fragments, selection);
+
+    const selectedFragments = selectFragmentsFromSelection(
+      fragments,
+      selection,
+    );
+
+    if (selectedFragments.length === 0) return ast;
+
+    const multiline = isMultiline(selectedFragments);
+    const markType = multiline ? "code" : "inlineCode";
+
+    // Remove path — if already wrapped in this mark type, unwrap
+    const remove = shouldRemoveMark(selectedFragments, markType);
+
+    if (remove) {
+      removeMarkFromFragmentsInSelection(fragments, selection, markType);
+      cleanFragments(fragments);
+      sanitizeFragments(fragments);
+      cleanFragments(fragments);
+
+      const grouped = groupFragmentsByParent(fragments);
+      for (const [parent, childFragments] of grouped.entries()) {
+        const newNodes = createNodesFromFragments(childFragments);
+        const indices = replacedIndicesMap.get(parent) ?? [];
+        if (indices.length === 0) continue;
+        parent?.children.splice(
+          Math.min(...indices),
+          indices.length,
+          ...(newNodes as RootContent[]),
+        );
+      }
+
+      return ast;
+    }
+
+    if (multiline) {
+      let text = "";
+      let lastParent: Parent | null = null;
+
+      for (const fragment of selectedFragments) {
+        if (lastParent !== null && fragment.parent !== lastParent) {
+          text += "\n";
+        }
+        text += fragment.value;
+        lastParent = fragment.parent;
+      }
+
+      const codeNode = {
+        type: "code",
+        value: text,
+        lang: null,
+        meta: null,
+      } as unknown as RootContent;
+
+      const rootChildren = ast.children;
+
+      // Find block-level parents of first and last selected fragment
+      function findBlockParent(node: Node): RootContent | null {
+        for (const child of rootChildren) {
+          function contains(n: Node, target: Node): boolean {
+            if (n === target) return true;
+            if ("children" in n)
+              return (n as Parent).children.some((c) => contains(c, target));
+            return false;
+          }
+          if (
+            child === node ||
+            ("children" in child && contains(child, node))
+          ) {
+            return child;
+          }
+        }
+        return null;
+      }
+
+      const firstBlockParent = findBlockParent(
+        selectedFragments[0].parent as unknown as Node,
+      );
+      const lastBlockParent = findBlockParent(
+        selectedFragments.at(-1)!.parent as unknown as Node,
+      );
+
+      if (firstBlockParent === null || lastBlockParent === null) return ast;
+
+      const firstParentIndex = rootChildren.indexOf(firstBlockParent);
+      const lastParentIndex = rootChildren.indexOf(lastBlockParent);
+
+      if (firstParentIndex === -1 || lastParentIndex === -1) return ast;
+
+      // Get ALL inline children of first block before selection
+      // by collecting from the block node directly, not from fragments
+      const selectionStart = selectedFragments[0].index;
+      const selectionEnd =
+        selectedFragments.at(-1)!.index + selectedFragments.at(-1)!.length;
+
+      function getNodesBeforeOffset(
+        parent: RootContent,
+        offset: number,
+      ): RootContent[] {
+        if (!("children" in parent)) return [];
+        const result: RootContent[] = [];
+        for (const child of (parent as Parent).children) {
+          const childEnd = child.position?.end.offset ?? 0;
+          if (childEnd <= offset) {
+            result.push(child as RootContent);
+          } else if ((child.position?.start.offset ?? 0) < offset) {
+            // partially overlapping — take the text portion before offset
+            if (child.type === "text") {
+              const textChild = child as Text;
+              const localEnd = offset - (child.position?.start.offset ?? 0);
+              if (localEnd > 0) {
+                result.push({
+                  type: "text",
+                  value: textChild.value.slice(0, localEnd).trimEnd(),
+                } as unknown as RootContent);
+              }
+            }
+          }
+        }
+        return result;
+      }
+
+      function getNodesAfterOffset(
+        parent: RootContent,
+        offset: number,
+      ): RootContent[] {
+        if (!("children" in parent)) return [];
+        const result: RootContent[] = [];
+        for (const child of (parent as Parent).children) {
+          const childStart = child.position?.start.offset ?? 0;
+          if (childStart >= offset) {
+            result.push(child as RootContent);
+          } else if ((child.position?.end.offset ?? 0) > offset) {
+            // partially overlapping — take the text portion after offset
+            if (child.type === "text") {
+              const textChild = child as Text;
+              const localStart = offset - (child.position?.start.offset ?? 0);
+              const sliced = textChild.value.slice(localStart).trimStart();
+              if (sliced.length > 0) {
+                result.push({
+                  type: "text",
+                  value: sliced,
+                } as unknown as RootContent);
+              }
+            }
+          }
+        }
+        return result;
+      }
+
+      const beforeNodes = getNodesBeforeOffset(
+        firstBlockParent,
+        selectionStart,
+      );
+      const afterNodes = getNodesAfterOffset(lastBlockParent, selectionEnd);
+
+      const replacementNodes: RootContent[] = [];
+
+      if (beforeNodes.length > 0) {
+        replacementNodes.push({
+          type: "paragraph",
+          children: beforeNodes,
+        } as unknown as RootContent);
+      }
+
+      replacementNodes.push(codeNode);
+
+      if (afterNodes.length > 0) {
+        replacementNodes.push({
+          type: "paragraph",
+          children: afterNodes,
+        } as unknown as RootContent);
+      }
+
+      rootChildren.splice(
+        firstParentIndex,
+        lastParentIndex - firstParentIndex + 1,
+        ...replacementNodes,
+      );
+    } else {
+      const text = selectedFragments.map((f) => f.value).join("");
+
+      if (text.length === 0) return ast;
+
+      const codeFragment: TextFragment = {
+        value: text,
+        marks: ["inlineCode"],
+        index: selectedFragments[0].index,
+        length: text.length,
+        parent: selectedFragments[0].parent,
+      };
+
+      const firstIndex = fragments.indexOf(selectedFragments[0]);
+      if (firstIndex === -1) return ast;
+
+      fragments.splice(firstIndex, selectedFragments.length, codeFragment);
+
+      sanitizeFragments(fragments);
+      cleanFragments(fragments);
+
+      const grouped = groupFragmentsByParent(fragments);
+
+      for (const [parent, childFragments] of grouped.entries()) {
+        const newNodes = createNodesFromFragments(childFragments);
+        const indices = replacedIndicesMap.get(parent) ?? [];
+        if (indices.length === 0) continue;
+        parent?.children.splice(
+          Math.min(...indices),
+          indices.length,
+          ...(newNodes as RootContent[]),
+        );
+      }
+    }
+
+    return ast;
+  },
+};
+
+const mathAction: ToolbarAction = {
+  apply(ast: Root, selection: EditorSelection): Root {
+    return ast;
+  },
+};
+
+const listAction = (ordered: boolean): ToolbarAction => {
+  return {
+    apply: (ast: Root, selection: EditorSelection) => {
+      return ast;
+    },
+  };
+};
+
 //endregion
 
 function isStylingMark(node: Node): boolean {
@@ -742,7 +1050,9 @@ function MarkdownTextarea({
     return unified()
       .use(remarkParse)
       .use(remarkMath)
-      .use(remarkStringify)
+      .use(remarkStringify, {
+        unsafe: [],
+      })
       .stringify(ast_);
   };
 
@@ -914,6 +1224,14 @@ function Toolbar({
     };
   }
 
+  function getIconProps(mark: Mark): {
+    strokeWidth: number;
+  } {
+    return {
+      strokeWidth: hasMark(mark, getActive(selection)) ? 3 : 2,
+    };
+  }
+
   return (
     <div className="flex flex-row gap-2">
       {/* Text Group */}
@@ -931,7 +1249,8 @@ function Toolbar({
                 onAction(headingAction(1));
               }}
             >
-              <Heading1Icon /> Tytuł
+              <Heading1Icon {...getIconProps({ type: "heading", depth: 1 })} />{" "}
+              Tytuł
             </DropdownMenuItem>
             <DropdownMenuItem
               {...getDropdownItemProps({ type: "heading", depth: 2 })}
@@ -939,7 +1258,8 @@ function Toolbar({
                 onAction(headingAction(2));
               }}
             >
-              <Heading2Icon /> Podtytuł
+              <Heading2Icon {...getIconProps({ type: "heading", depth: 2 })} />{" "}
+              Podtytuł
             </DropdownMenuItem>
             <DropdownMenuItem
               {...getDropdownItemProps({ type: "heading", depth: 3 })}
@@ -947,7 +1267,8 @@ function Toolbar({
                 onAction(headingAction(3));
               }}
             >
-              <Heading3Icon /> Sekcja
+              <Heading3Icon {...getIconProps({ type: "heading", depth: 3 })} />{" "}
+              Sekcja
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -967,39 +1288,19 @@ function Toolbar({
         >
           <ItalicIcon />
         </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" variant={"outline"}>
-              <LinkIcon />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="gap-2">
-            <PopoverHeader>
-              <PopoverTitle>Link</PopoverTitle>
-              <PopoverDescription>
-                Podaj adres linku oraz tekst jaki będzie wyświetlony.
-              </PopoverDescription>
-            </PopoverHeader>
-            <FieldGroup className="mt-2 flex gap-2">
-              <Field orientation={"horizontal"}>
-                <FieldLabel htmlFor="link-address-input">Adres</FieldLabel>
-                <Input id="link-address-input" placeholder="Adres" />
-              </Field>
-              <Field orientation={"horizontal"}>
-                <FieldLabel htmlFor="link-text-input">Tekst</FieldLabel>
-                <Input id="link-text-input" placeholder="Tekst" />
-              </Field>
-              <Button type="button">Dodaj Link</Button>
-            </FieldGroup>
-          </PopoverContent>
-        </Popover>
+        <LinkActionButton onAction={onAction} />
       </ButtonGroup>
       {/* Blocks Group */}
       <ButtonGroup>
         <Button {...getButtonProps("blockquote")}>
           <QuoteIcon />
         </Button>
-        <Button {...getButtonProps("code", "inlineCode")}>
+        <Button
+          {...getButtonProps("code", "inlineCode")}
+          onClick={(_event) => {
+            onAction(codeAction);
+          }}
+        >
           <CodeIcon />
         </Button>
         <Button {...getButtonProps("math", "inlineMath")}>
@@ -1031,6 +1332,77 @@ function Toolbar({
         <FieldLabel htmlFor="switch-editor-mode">Markdown</FieldLabel>
       </Field>
     </div>
+  );
+}
+
+interface LinkActionButtonProps {
+  onAction: (action: ToolbarAction) => void;
+}
+
+function LinkActionButton({ onAction }: LinkActionButtonProps) {
+  const [url, setUrl] = useState<string>("");
+  const [text, setText] = useState<string>("");
+
+  function createLink(): void {
+    if (isUrl(url)) {
+      onAction(linkAction(text, sanitizeUrl(url)));
+    } else {
+      toast.error("Niewłaściwy link", {
+        description:
+          "Każdy link musi rozpoczynać się z 'https://' lub 'http://'.",
+      });
+    }
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" variant={"outline"}>
+          <LinkIcon />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="gap-2">
+        <PopoverHeader>
+          <PopoverTitle>Link</PopoverTitle>
+          <PopoverDescription>
+            Podaj adres linku oraz tekst jaki będzie wyświetlony.
+          </PopoverDescription>
+        </PopoverHeader>
+        <FieldGroup className="mt-2 flex gap-2">
+          <Field orientation={"horizontal"}>
+            <FieldLabel htmlFor="link-address-input">Adres</FieldLabel>
+            <Input
+              id="link-address-input"
+              placeholder="Adres"
+              value={url}
+              onChange={(event) => {
+                setUrl(event.target.value);
+              }}
+            />
+          </Field>
+          <Field orientation={"horizontal"}>
+            <FieldLabel htmlFor="link-text-input">Tekst</FieldLabel>
+            <Input
+              type="url"
+              id="link-text-input"
+              placeholder="Tekst"
+              value={text}
+              onChange={(event) => {
+                setText(event.target.value);
+              }}
+            />
+          </Field>
+          <Button
+            type="button"
+            onClick={(_event) => {
+              createLink();
+            }}
+          >
+            Dodaj Link
+          </Button>
+        </FieldGroup>
+      </PopoverContent>
+    </Popover>
   );
 }
 
