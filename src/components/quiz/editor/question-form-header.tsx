@@ -30,6 +30,7 @@ interface QuestionFormHeaderProps {
   onUpload: (file: File) => Promise<void>;
   className?: string;
   hideDelete?: boolean;
+  onImageDialogOpenChange?: (open: boolean) => void;
 }
 
 export function QuestionFormHeader({
@@ -41,6 +42,7 @@ export function QuestionFormHeader({
   onUpload,
   className,
   hideDelete = false,
+  onImageDialogOpenChange,
 }: QuestionFormHeaderProps) {
   const [explanationOpen, setExplanationOpen] = useState(false);
   const hasExplanation = Boolean(question.explanation?.trim());
@@ -92,6 +94,7 @@ export function QuestionFormHeader({
                 onImageChange={onImageChange}
                 onUpload={onUpload}
                 isUploading={isImageUploading}
+                onDialogOpenChange={onImageDialogOpenChange}
               />
             }
           ></TooltipTrigger>

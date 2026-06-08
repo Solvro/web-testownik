@@ -10,6 +10,7 @@ export type {
   QuizWithUserProgress,
 } from "@/types/quiz";
 export type {
+  AuthorizedApp,
   User,
   Group,
   GradesData,

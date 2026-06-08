@@ -45,8 +45,19 @@ export interface UserSettings {
   notify_marketing: boolean;
 }
 
+export interface AuthorizedApp {
+  client_id: string;
+  oauth_application_id: string;
+  client_name: string;
+  client_uri: string;
+  logo_uri: string;
+  created: string;
+  scopes: string;
+}
+
 export interface SettingsFormProps {
   settings: UserSettings;
+  disabled?: boolean;
   onSettingChange: <K extends keyof UserSettings>(
     name: K,
     value: UserSettings[K],

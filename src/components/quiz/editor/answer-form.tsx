@@ -29,6 +29,7 @@ interface AnswerFormProps {
   onToggleCorrect: () => void;
   onUploadStart?: () => void;
   onUploadEnd?: () => void;
+  onImageDialogOpenChange?: (open: boolean) => void;
   canDelete: boolean;
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
 }
@@ -41,6 +42,7 @@ export function AnswerForm({
   onToggleCorrect,
   onUploadStart,
   onUploadEnd,
+  onImageDialogOpenChange,
   canDelete,
   onKeyDown,
 }: AnswerFormProps) {
@@ -158,6 +160,7 @@ export function AnswerForm({
                   onUpload={handleUpload}
                   isUploading={isImageUploading}
                   className="mt-0.5"
+                  onDialogOpenChange={onImageDialogOpenChange}
                 />
               }
             ></TooltipTrigger>
@@ -192,6 +195,7 @@ export function AnswerForm({
             onFileDrop={handleFileDrop}
             isUploading={isImageUploading}
             size="small"
+            onDialogOpenChange={onImageDialogOpenChange}
           />
         </div>
       </div>

@@ -2,7 +2,6 @@
 
 import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
-import Link from "next/link";
 import {
   ViewTransition,
   startTransition,
@@ -14,19 +13,30 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { AiChat } from "@/components/ai/ai-chat";
-import { AiExplainCard } from "@/components/ai/ai-explain-card";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
+import { AiExplainCard } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
 import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
+import { useFocusMode } from "@/components/quiz/hooks/use-focus-mode";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
@@ -66,6 +76,19 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     timerStore,
   } = stats;
   const answers = quiz.current_session?.answers ?? [];
+  const {
+    isFocusModeActive,
+    toggleFocusMode,
+    resetInactivityTimer,
+    isFocusAlertOpen,
+    focusAlert,
+    closeFocusAlert,
+    turnOffFocusModeFromAlert,
+    showOnboarding,
+    confirmOnboarding,
+    confirmOnboardingAndHide,
+    cancelOnboarding,
+  } = useFocusMode(timerStore);
   const { isHost: isContinuityHost, peerConnections } = continuity;
   const {
     nextAction,
@@ -86,6 +109,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   } = useExternalImageApproval(quiz);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showAiExplain, setShowAiExplain] = useState(false);
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
 
@@ -108,12 +132,23 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     });
   };
 
+  const handleQuizActivity = (action: () => void) => {
+    resetInactivityTimer();
+    action();
+  };
+
   useKeyShortcuts({
-    nextAction,
-    skipQuestion,
+    nextAction: () => {
+      handleQuizActivity(nextAction);
+    },
+    skipQuestion: () => {
+      handleQuizActivity(skipQuestion);
+    },
     questionChecked,
     isHistoryQuestion,
-    togglePreviousQuestion,
+    togglePreviousQuestion: () => {
+      handleQuizActivity(togglePreviousQuestion);
+    },
   });
 
   useEffect(() => {
@@ -127,9 +162,15 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </p>
             <p>
               Możesz zmienić to w{" "}
-              <Link href="/profile#settings" className="underline">
-                ustawieniach
-              </Link>
+              <button
+                type="button"
+                className="text-foreground underline underline-offset-2"
+                onClick={() => {
+                  setIsSettingsOpen(true);
+                }}
+              >
+                ustawieniach quizu
+              </button>
               .
             </p>
           </div>
@@ -151,6 +192,81 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
           onApprove={approveExternalImages}
         />
       ) : null}
+
+      <AlertDialog
+        open={isFocusAlertOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            closeFocusAlert();
+          }
+        }}
+      >
+        <AlertDialogContent
+          className="border-destructive ring-destructive/20 border ring-5"
+          overlayClassName="after:bg-destructive/10 after:backdrop-blur-sm after:h-full after:w-full after:fixed after:inset-0 after:animate-pulse"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">
+              {focusAlert.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {focusAlert.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogAction
+              variant="secondary"
+              onClick={turnOffFocusModeFromAlert}
+            >
+              Wyłącz tryb skupienia
+            </AlertDialogAction>
+            <AlertDialogAction onClick={closeFocusAlert}>
+              Wracam do nauki
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showOnboarding}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            cancelOnboarding();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Czym jest tryb skupienia?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-1 text-base">
+              Tryb skupienia to funkcja, która pomaga Ci skoncentrować się na
+              quizie.
+              <span className="mt-2 block">
+                <strong>Jak to działa? </strong>
+                Po włączeniu tego trybu, jeśli opuścisz tę kartę lub nie
+                wykonasz żadnej akcji przez 5 minut, timer zostanie
+                automatycznie zatrzymany, a aplikacja odtworzy głośny dźwięk i
+                pokaże powiadomienie przypominające o powrocie do nauki.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              variant="secondary"
+              onClick={confirmOnboardingAndHide}
+              className="sm:mr-auto"
+            >
+              OK, nie pokazuj ponownie
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={cancelOnboarding}>
+              Anuluj
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmOnboarding}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div
@@ -183,6 +299,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   question={currentQuestion}
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
+                    resetInactivityTimer();
+                    // If question is not multiple, unselect everything except the new
                     if (currentQuestion !== null && !currentQuestion.multiple) {
                       setSelectedAnswers(
                         newSelected.length > 0 ? [newSelected[0]] : [],
@@ -191,12 +309,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                       setSelectedAnswers(newSelected);
                     }
                   }}
+                  nextAction={() => {
+                    handleQuizActivity(nextAction);
+                  }}
                   answers={answers}
                   questionChecked={questionChecked}
-                  nextAction={nextAction}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
-                  togglePreviousQuestion={togglePreviousQuestion}
+                  togglePreviousQuestion={() => {
+                    handleQuizActivity(togglePreviousQuestion);
+                  }}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
                   answerHints={answerHints}
@@ -214,17 +336,25 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 totalQuestions={totalQuestions}
                 timerStore={timerStore}
                 resetProgress={resetProgress}
+                isFocusModeActive={isFocusModeActive}
+                toggleFocusMode={toggleFocusMode}
+                onToggleHistory={toggleHistory}
+                isSettingsOpen={isSettingsOpen}
+                onSettingsOpenChange={setIsSettingsOpen}
               />
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
-                onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
                 onExplain={() => {
                   setShowAiExplain(true);
                 }}
+                onOpenChat={() => {
+                  setIsChatOpen(true);
+                }}
                 disabled={isQuizFinished || currentQuestion == null}
                 isExplainOpen={showAiExplain}
+                isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
               />
               {showAi && showAiExplain && currentQuestion != null ? (

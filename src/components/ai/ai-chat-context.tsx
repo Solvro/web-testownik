@@ -2,9 +2,12 @@
 
 import { createContext, useContext } from "react";
 
+import type { Question } from "@/types/quiz";
+
 interface AiChatContextValue {
   quizId: string;
   questionId: string | null;
+  question: Question | null;
   canEdit: boolean;
 }
 
