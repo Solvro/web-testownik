@@ -696,7 +696,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       description: "Tu znajdziesz quizy udostępnione Ci przez innych.",
       icon: <Link2Icon className="size-6" />,
       library: () => {
-        return sortedSharedQuizzes.map((quiz) => ({
+        return filteredSharedQuizzes.map((quiz) => ({
           id: quiz.quiz.id,
           type: "quiz" as const,
         })) as LibraryItem[];
