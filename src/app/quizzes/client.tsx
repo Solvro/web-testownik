@@ -799,7 +799,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   }
 
   return (
-    <Tabs variant="quiz" defaultValue="all">
+    <Tabs variant="quiz" defaultValue="all" orientation="vertical">
       <TabsList>
         {tabsConfig.map((tab) => (
           <TabsTrigger
@@ -818,7 +818,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       {tabsConfig.map((tab) => {
         return (
           <TabsContent key={tab.key} value={tab.key} className="flex-1">
-            <div className="mb-4 flex flex-row gap-4">
+            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col justify-center">
                 <h3 className="text-2xl font-semibold">{tab.titleLabel}</h3>
                 {tab.description === undefined ? null : (
@@ -828,54 +828,56 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
                 )}
               </div>
 
-              {tab.showCreateButton === true ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="outline">
-                        <LayersPlus className="size-5" />
-                        Stwórz
-                      </Button>
-                    }
-                  ></DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
+              <div className="grid grid-cols-2 gap-2">
+                {tab.showCreateButton === true ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
                       render={
-                        <Link href="/create-quiz">
-                          <NotepadTextIcon />
-                          Quiz
-                        </Link>
+                        <Button variant="outline">
+                          <LayersPlus className="size-5" />
+                          Stwórz
+                        </Button>
                       }
-                    ></DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(_event) => {
-                        _event.preventDefault();
-                        setCurrentDialog({
-                          type: "create-folder",
-                          quiz: null,
-                          folderId: null,
-                        });
-                      }}
-                    >
-                      <FolderIcon />
-                      Folder
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
+                    ></DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        render={
+                          <Link href="/create-quiz">
+                            <NotepadTextIcon />
+                            Quiz
+                          </Link>
+                        }
+                      ></DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(_event) => {
+                          _event.preventDefault();
+                          setCurrentDialog({
+                            type: "create-folder",
+                            quiz: null,
+                            folderId: null,
+                          });
+                        }}
+                      >
+                        <FolderIcon />
+                        Folder
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
 
-              {tab.showImportButton === true ? (
-                <Button
-                  variant="outline"
-                  nativeButton={false}
-                  render={(props) => (
-                    <Link {...props} href="/import-quiz">
-                      <ImportIcon className="size-5" />
-                      Importuj
-                    </Link>
-                  )}
-                ></Button>
-              ) : null}
+                {tab.showImportButton === true ? (
+                  <Button
+                    variant="outline"
+                    nativeButton={false}
+                    render={(props) => (
+                      <Link {...props} href="/import-quiz">
+                        <ImportIcon className="size-5" />
+                        Importuj
+                      </Link>
+                    )}
+                  ></Button>
+                ) : null}
+              </div>
 
               {tab.showSort === true ? (
                 <QuizSort
@@ -888,38 +890,40 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               ) : null}
             </div>
 
-            <QuizzesLibrary
-              library={
-                foldersHistory.length === 0
-                  ? tab.library()
-                  : (currentFolderContent?.items ?? [])
-              }
-              userQuizzes={userQuizzes}
-              userFolders={userFolders}
-              foldersHistory={foldersHistory}
-              sortKey={sortKey}
-              isFilterActive={tab.isFilterActive}
-              canSearchInQuizzes={canSearchInQuizzes}
-              handleShareQuiz={handleShareQuiz}
-              handleDeleteQuiz={handleDeleteQuiz}
-              handleDownloadQuiz={handleDownloadQuiz}
-              handleArchiveQuiz={handleArchiveQuiz}
-              handleResetFilters={handleResetFilters}
-              libraryKey={tab.key}
-              onFolderDelete={handleDeleteFolder}
-              onFolderRename={handleRenameFolder}
-              emptyState={tab.emptyState}
-              renderFolders={tab.key === "all" || tab.key === "library"}
-              isQuizDraggable={true}
-              isFolderDraggable={true}
-              handleQuizMoveToFolder={handleQuizMoveToFolder}
-              handleFolderMoveToFolder={handleFolderMoveToFolder}
-              handleNavigateToFolder={handleNavigateToFolder}
-              rootFolderId={rootFolderId ?? ""}
-              handleNavigateToRoot={handleNavigateToRoot}
-              handleNavigateToHistoryIndex={handleNavigateToHistoryIndex}
-              tabLabel={tab.titleLabel}
-            />
+            <div className="w-full">
+              <QuizzesLibrary
+                library={
+                  foldersHistory.length === 0
+                    ? tab.library()
+                    : (currentFolderContent?.items ?? [])
+                }
+                userQuizzes={userQuizzes}
+                userFolders={userFolders}
+                foldersHistory={foldersHistory}
+                sortKey={sortKey}
+                isFilterActive={tab.isFilterActive}
+                canSearchInQuizzes={canSearchInQuizzes}
+                handleShareQuiz={handleShareQuiz}
+                handleDeleteQuiz={handleDeleteQuiz}
+                handleDownloadQuiz={handleDownloadQuiz}
+                handleArchiveQuiz={handleArchiveQuiz}
+                handleResetFilters={handleResetFilters}
+                libraryKey={tab.key}
+                onFolderDelete={handleDeleteFolder}
+                onFolderRename={handleRenameFolder}
+                emptyState={tab.emptyState}
+                renderFolders={tab.key === "all" || tab.key === "library"}
+                isQuizDraggable={true}
+                isFolderDraggable={true}
+                handleQuizMoveToFolder={handleQuizMoveToFolder}
+                handleFolderMoveToFolder={handleFolderMoveToFolder}
+                handleNavigateToFolder={handleNavigateToFolder}
+                rootFolderId={rootFolderId ?? ""}
+                handleNavigateToRoot={handleNavigateToRoot}
+                handleNavigateToHistoryIndex={handleNavigateToHistoryIndex}
+                tabLabel={tab.titleLabel}
+              />
+            </div>
           </TabsContent>
         );
       })}

@@ -11,11 +11,11 @@ const tabsVariants = cva("", {
     variant: {
       default: "flex flex-col gap-2",
       quiz: [
-        "flex flex-row w-full gap-6",
+        "flex flex-col w-full gap-4 md:flex-row md:gap-6",
         // TabsList
-        "**:data-[slot=tabs-list]:border-none **:data-[slot=tabs-list]:flex **:data-[slot=tabs-list]:h-min **:data-[slot=tabs-list]:gap-2 **:data-[slot=tabs-list]:items-stretch **:data-[slot=tabs-list]:flex-col **:data-[slot=tabs-list]:bg-transparent **:data-[slot=tabs-list]:w-64",
+        "**:data-[slot=tabs-list]:border-none **:data-[slot=tabs-list]:flex **:data-[slot=tabs-list]:h-min **:data-[slot=tabs-list]:gap-2 **:data-[slot=tabs-list]:items-stretch **:data-[slot=tabs-list]:flex-col md:**:data-[slot=tabs-list]:flex-col **:data-[slot=tabs-list]:bg-transparent **:data-[slot=tabs-list]:w-full md:**:data-[slot=tabs-list]:w-64 **:data-[slot=tabs-list]:overflow-x-auto md:**:data-[slot=tabs-list]:overflow-x-visible",
         // TabsTrigger
-        "**:data-[slot=tabs-trigger]:gap-2 **:data-[slot=tabs-trigger]:transition-all **:data-[slot=tabs-trigger]:text-base **:data-[slot=tabs-trigger]:px-3 **:data-[slot=tabs-trigger]:py-2.5 **:data-[slot=tabs-trigger]:flex **:data-[slot=tabs-trigger]:justify-start **:data-[slot=tabs-trigger]:border **:data-[slot=tabs-trigger]:border-input **:data-[slot=tabs-trigger]:text-foreground! **:data-[slot=tabs-trigger]:duration-300 **:data-[slot=tabs-trigger]:aria-selected:bg-ring! **:data-[slot=tabs-trigger]:font-light",
+        "**:data-[slot=tabs-trigger]:gap-2 **:data-[slot=tabs-trigger]:transition-all **:data-[slot=tabs-trigger]:text-sm md:**:data-[slot=tabs-trigger]:text-base **:data-[slot=tabs-trigger]:px-3 **:data-[slot=tabs-trigger]:py-2.5 **:data-[slot=tabs-trigger]:flex **:data-[slot=tabs-trigger]:justify-center md:**:data-[slot=tabs-trigger]:justify-start **:data-[slot=tabs-trigger]:border **:data-[slot=tabs-trigger]:border-input **:data-[slot=tabs-trigger]:text-foreground! **:data-[slot=tabs-trigger]:duration-300 **:data-[slot=tabs-trigger]:aria-selected:bg-ring! **:data-[slot=tabs-trigger]:font-light **:data-[slot=tabs-trigger]:flex-1 md:**:data-[slot=tabs-trigger]:flex-initial",
         // Icons inside TabsTrigger
         "[&>svg]:size-6",
       ],

@@ -70,7 +70,7 @@ export function QuizSort({
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
       <ViewTransition>
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex w-full flex-row items-center gap-2 sm:w-auto">
           {isFiltered ? (
             <Tooltip>
               <TooltipTrigger
