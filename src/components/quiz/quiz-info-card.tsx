@@ -11,13 +11,15 @@ import {
   ScanEyeIcon,
   SearchIcon,
   SettingsIcon,
+  ShareIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
+import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
@@ -136,6 +138,7 @@ export function QuizInfoCard({
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const queryClient = useQueryClient();
   const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
     mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
@@ -163,172 +166,192 @@ export function QuizInfoCard({
     totalQuestions > 0 ? (masteredCount / totalQuestions) * 100 : 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{quiz.title}</CardTitle>
-        {quiz.creator == null ? null : (
-          <CardDescription>by {quiz.creator.full_name}</CardDescription>
-        )}
-        <CardAction>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Więcej opcji quizu"
-                >
-                  <MenuIcon />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end" className="w-full">
-              <DropdownMenuItem
-                onClick={() => {
-                  onSettingsOpenChange(true);
-                }}
-              >
-                <SettingsIcon />
-                Ustawienia
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {canViewStats ? (
-                <DropdownMenuItem
-                  render={(props) => (
-                    <Link {...props} href={`/quiz/${quiz.id}/stats`}>
-                      <BarChart3Icon />
-                      Statystyki
-                    </Link>
-                  )}
-                />
-              ) : null}
-              <DropdownMenuItem onClick={onToggleHistory}>
-                <HistoryIcon />
-                Historia odpowiedzi
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleFocusMode}>
-                <FocusModeIcon />
-                {isFocusModeActive ? "Wyłącz tryb skupienia" : "Tryb skupienia"}
-              </DropdownMenuItem>
-              {canEditQuiz ? null : (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    disabled={isCopying}
-                    onClick={() => {
-                      copyQuiz(quiz.id);
-                    }}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>{quiz.title}</CardTitle>
+          {quiz.creator == null ? null : (
+            <CardDescription>by {quiz.creator.full_name}</CardDescription>
+          )}
+          <CardAction>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Więcej opcji quizu"
                   >
-                    {isCopying ? (
-                      <Loader2Icon className="animate-spin" />
-                    ) : (
-                      <CopyIcon />
-                    )}
-                    {isCopying ? "Kopiowanie..." : "Kopiuj do siebie"}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </CardAction>
-      </CardHeader>
-      <QuizSettingsDialog
-        open={isSettingsOpen}
-        onOpenChange={onSettingsOpenChange}
-        quizId={quiz.id}
-      />
-      <CardContent className="space-y-2 text-sm">
-        <div className="space-y-1">
-          <div className="flex justify-between">
-            <span>Udzielone odpowiedzi</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              {correctAnswersCount + wrongAnswersCount}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Opanowane pytania</span>
-            <span className="text-muted-foreground">{masteredCount}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Liczba pytań</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              {totalQuestions}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Czas nauki</span>
-            <StudyTimeDisplay timerStore={timerStore} />
-          </div>
-        </div>
-        <Progress
-          value={progressPercentage}
-          style={{
-            ["--bar-color" as never]: getProgressColor(progressPercentage),
-          }}
-          aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
-          className="**:data-[slot=progress-indicator]:bg-(--bar-color)"
-        />
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex gap-2">
-            {canSearchInQuiz ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <ButtonLink
-                      size="icon-sm"
-                      variant="outline"
-                      href={`/search-in-quiz/${quiz.id}`}
-                      aria-label="Wyszukaj w quizie"
-                    >
-                      <SearchIcon />
-                    </ButtonLink>
-                  }
-                ></TooltipTrigger>
-                <TooltipContent>Wyszukaj w quizie</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {canShare ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      size="icon-sm"
-                      variant="outline"
-                      onClick={() => {
-                        void navigator.clipboard
-                          .writeText(window.location.href)
-                          .then(() => {
-                            toast.success("Skopiowano link do quizu");
-                          });
-                      }}
-                      aria-label="Skopiuj link do quizu"
-                    >
-                      <Link2Icon />
-                    </Button>
-                  }
-                ></TooltipTrigger>
-                <TooltipContent>Kopiuj link do quizu</TooltipContent>
-              </Tooltip>
-            ) : null}
-          </div>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={resetProgress}
-                  disabled={totalQuestions === 0}
-                  aria-label="Resetuj postęp"
+                    <MenuIcon />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-full">
+                <DropdownMenuItem
+                  onClick={() => {
+                    onSettingsOpenChange(true);
+                  }}
                 >
-                  <RotateCcwIcon /> Reset
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>Resetuj postęp</TooltipContent>
-          </Tooltip>
-        </div>
-      </CardContent>
-    </Card>
+                  <SettingsIcon />
+                  Ustawienia
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {canViewStats ? (
+                  <DropdownMenuItem
+                    render={(props) => (
+                      <Link {...props} href={`/quiz/${quiz.id}/stats`}>
+                        <BarChart3Icon />
+                        Statystyki
+                      </Link>
+                    )}
+                  />
+                ) : null}
+                <DropdownMenuItem onClick={onToggleHistory}>
+                  <HistoryIcon />
+                  Historia odpowiedzi
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={toggleFocusMode}>
+                  <FocusModeIcon />
+                  {isFocusModeActive
+                    ? "Wyłącz tryb skupienia"
+                    : "Tryb skupienia"}
+                </DropdownMenuItem>
+                {canEditQuiz ? null : (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={isCopying}
+                      onClick={() => {
+                        copyQuiz(quiz.id);
+                      }}
+                    >
+                      {isCopying ? (
+                        <Loader2Icon className="animate-spin" />
+                      ) : (
+                        <CopyIcon />
+                      )}
+                      {isCopying ? "Kopiowanie..." : "Kopiuj do siebie"}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardAction>
+        </CardHeader>
+        <QuizSettingsDialog
+          open={isSettingsOpen}
+          onOpenChange={onSettingsOpenChange}
+          quizId={quiz.id}
+        />
+        <CardContent className="space-y-2 text-sm">
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span>Udzielone odpowiedzi</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {correctAnswersCount + wrongAnswersCount}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Opanowane pytania</span>
+              <span className="text-muted-foreground">{masteredCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Liczba pytań</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {totalQuestions}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Czas nauki</span>
+              <StudyTimeDisplay timerStore={timerStore} />
+            </div>
+          </div>
+          <Progress
+            value={progressPercentage}
+            style={{
+              ["--bar-color" as never]: getProgressColor(progressPercentage),
+            }}
+            aria-label={`Postęp: ${Math.round(progressPercentage).toString()}% opanowanych pytań`}
+            className="**:data-[slot=progress-indicator]:bg-(--bar-color)"
+          />
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex gap-2">
+              {canSearchInQuiz ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <ButtonLink
+                        size="icon-sm"
+                        variant="outline"
+                        href={`/search-in-quiz/${quiz.id}`}
+                        aria-label="Wyszukaj w quizie"
+                      >
+                        <SearchIcon />
+                      </ButtonLink>
+                    }
+                  ></TooltipTrigger>
+                  <TooltipContent>Wyszukaj w quizie</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {canShare ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        size="icon-sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (canEditQuiz) {
+                            setIsShareDialogOpen(true);
+                            return;
+                          }
+
+                          void navigator.clipboard
+                            .writeText(window.location.href)
+                            .then(() => {
+                              toast.success("Skopiowano link do quizu");
+                            });
+                        }}
+                        aria-label={
+                          canEditQuiz
+                            ? "Udostępnij quiz"
+                            : "Skopiuj link do quizu"
+                        }
+                      >
+                        {canEditQuiz ? <ShareIcon /> : <Link2Icon />}
+                      </Button>
+                    }
+                  ></TooltipTrigger>
+                  <TooltipContent>
+                    {canEditQuiz ? "Udostępnij quiz" : "Kopiuj link do quizu"}
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
+            </div>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={resetProgress}
+                    disabled={totalQuestions === 0}
+                    aria-label="Resetuj postęp"
+                  >
+                    <RotateCcwIcon /> Reset
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Resetuj postęp</TooltipContent>
+            </Tooltip>
+          </div>
+        </CardContent>
+      </Card>
+      <ShareQuizDialog
+        open={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        quiz={quiz}
+      />
+    </>
   );
 }
