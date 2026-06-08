@@ -1,4 +1,4 @@
-import { InfinityIcon, MinusIcon, PlusIcon } from "lucide-react";
+import { InfinityIcon, MinusIcon, PlusIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,10 @@ export function SettingsForm({ settings, onSettingChange }: SettingsFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ustawienia quizów</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <SettingsIcon className="size-5" />
+          Ustawienia quizów
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-2">
