@@ -91,8 +91,13 @@ export function QuizCard({
   const [isPointerDown, setIsPointerDown] = useState<boolean>(false);
   const [isShaking, setIsShaking] = useState<boolean>(false);
 
+  const [useCleanName, setUseCleanName] = useState<boolean>(false);
+  const instanceId = crypto.randomUUID();
+  const cleanName = `quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`;
+  const domName = `${cleanName}-${instanceId}`;
+
   return (
-    <ViewTransition name={`quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`}>
+    <ViewTransition name={useCleanName ? cleanName : domName}>
       <div
         ref={ref}
         onPointerDown={() => {
@@ -125,7 +130,10 @@ export function QuizCard({
             if (isDragging) {
               return;
             }
-            router.push(onOpenPath(quiz));
+            setUseCleanName(true);
+            setTimeout(() => {
+              router.push(onOpenPath(quiz));
+            }, 0);
           }}
           {...props}
         >
