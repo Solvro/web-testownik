@@ -3,8 +3,9 @@
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 
+import { AppContext } from "@/app-context";
 import { AiSettingsForm } from "@/components/profile/ai-settings-form";
 import { AuthorizedAppsList } from "@/components/profile/authorized-apps-list";
 import { NotificationsForm } from "@/components/profile/notifications-form";
@@ -17,7 +18,8 @@ import {
   useUpdateUserSettings,
   useUserSettings,
 } from "@/hooks/use-user-settings";
-import type { UserSettings } from "@/types/user";
+import type { JWTPayload } from "@/lib/auth/types";
+import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 const PROFILE_TABS = [
@@ -39,13 +41,33 @@ function getProfileTabFromQuery(tab: string | null): ProfileTab | null {
   return tab !== null && isProfileTab(tab) ? tab : null;
 }
 
+function getUserProfilePlaceholder(
+  user: JWTPayload | null,
+): UserData | undefined {
+  if (user === null) {
+    return undefined;
+  }
+
+  return {
+    ...user,
+    photo: user.photo ?? "",
+    photo_url: user.photo ?? "",
+    overriden_photo_url: user.photo,
+    hide_profile: false,
+    id: user.user_id,
+  };
+}
+
 export function ProfilePageClient(): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const searchParameters = useSearchParams();
+  const { user } = useContext(AppContext);
   const tabParameter = searchParameters.get(PROFILE_TAB_QUERY_PARAM);
   const activeTab = getProfileTabFromQuery(tabParameter) ?? DEFAULT_PROFILE_TAB;
-  const { data: userData, isPending: isUserDataPending } = useUserProfile();
+  const { data: userData, isPending: isUserDataPending } = useUserProfile({
+    placeholderData: getUserProfilePlaceholder(user),
+  });
   const {
     data: settings = DEFAULT_USER_SETTINGS,
     isPending: areSettingsPending,

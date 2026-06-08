@@ -5,10 +5,13 @@ import type { UserData } from "@/types/user";
 
 export const userProfileQueryKey = ["user-profile"] as const;
 
-export function useUserProfile() {
+export function useUserProfile({
+  placeholderData,
+}: { placeholderData?: UserData } = {}) {
   return useQuery({
     queryKey: userProfileQueryKey,
     queryFn: async () => getUserService().getUserData(),
+    placeholderData,
   });
 }
 
