@@ -19,8 +19,6 @@ import {
 import type { Folder, LibraryItem, QuizMetadata } from "@/types/quiz";
 
 export interface QuizzesLibraryProps {
-  // libraryQuizzes: QuizMetadata[] | SharedQuiz[];
-  // libraryFolders: Folder[];
   library: LibraryItem[];
   userQuizzes: QuizMetadata[];
   userFolders: Folder[];
@@ -54,8 +52,6 @@ export interface QuizzesLibraryProps {
 }
 
 export function QuizzesLibrary({
-  // libraryQuizzes,
-  // libraryFolders,
   library,
   userQuizzes,
   userFolders,

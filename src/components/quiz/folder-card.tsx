@@ -33,18 +33,10 @@ export interface FolderCardProps extends ComponentProps<typeof Card> {
   userQuizzes: QuizMetadata[];
   sortKey: LibrarySortKey;
   showEdit?: boolean;
-  // showShare?: boolean;
-  // showDownload?: boolean;
   showDelete?: boolean;
-  // showSearch?: boolean;
-  // onEditPath?: (quiz: QuizMetadata) => string;
-  // onOpenPath?: (quiz: QuizMetadata) => string;
-  // onSearchPath?: (quiz: QuizMetadata) => string;
-  // onShare?: (folder: Folder) => void;
   onRename?: (folderId: string) => void;
   onDelete?: (folderId: string) => void;
   onOpen?: (folderId: string) => void;
-  // onDownload?: (quiz: QuizMetadata) => void;
   libraryKey: string;
   isDraggable?: boolean;
 }
@@ -54,18 +46,10 @@ export function FolderCard({
   userQuizzes,
   sortKey,
   showEdit,
-  // showShare,
-  // showDownload = true,
   showDelete,
-  // showSearch,
-  // onEditPath = (q) => `/edit-quiz/${q.id}`,
-  // onOpenPath = (q) => `/quiz/${q.id}`,
-  // onSearchPath = (q) => `/search-in-quiz/${q.id}`,
-  // onShare,
   onRename,
   onDelete,
   onOpen,
-  // onDownload,
   className,
   libraryKey,
   isDraggable,
