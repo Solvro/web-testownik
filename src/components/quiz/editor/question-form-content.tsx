@@ -41,6 +41,7 @@ interface QuestionFormContentProps {
   onUploadEnd?: () => void;
   className?: string;
   onImageDialogOpenChange?: (open: boolean) => void;
+  minAnswers?: number;
 }
 
 function createNewAnswer(order: number): AnswerFormData {
@@ -67,6 +68,7 @@ export function QuestionFormContent({
   onUploadEnd,
   className,
   onImageDialogOpenChange,
+  minAnswers = 1,
 }: QuestionFormContentProps) {
   const { handlePaste } = useImagePaste((file: File) => {
     void onUpload(file);
@@ -88,7 +90,7 @@ export function QuestionFormContent({
   }
 
   function removeAnswer(answerId: string) {
-    if (question.answers.length <= 1) {
+    if (question.answers.length <= minAnswers) {
       return;
     }
     const filtered = question.answers.filter((a) => a.id !== answerId);
@@ -318,7 +320,7 @@ export function QuestionFormContent({
               onUploadStart={onUploadStart}
               onUploadEnd={onUploadEnd}
               onImageDialogOpenChange={onImageDialogOpenChange}
-              canDelete={question.answers.length > 1}
+              canDelete={question.answers.length > minAnswers}
               onKeyDown={(event) => {
                 void handleAnswerKeyDown(answer.id, event);
               }}
