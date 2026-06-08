@@ -5,7 +5,7 @@ import type { KeyboardEvent } from "react";
 import { toast } from "sonner";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { OverTypeEditor } from "@/components/overtype-editor";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ImageDropZone, ImagePreview } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/hover-card";
 import { KbdShortcut } from "@/components/ui/kbd-shortcut";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -205,17 +204,17 @@ export function QuestionFormContent({
         label="Upuść zdjęcie do pytania"
       >
         <div className="space-y-2">
-          <MarkdownTextarea
+          <OverTypeEditor
             placeholder="Treść pytania..."
             value={question.text}
-            onChange={(event) => {
-              onUpdate({ text: event.target.value });
+            toolbar={true}
+            onChange={(value) => {
+              onUpdate({ text: value });
             }}
             onPaste={(event) => {
               handlePaste(event);
             }}
-            rows={2}
-            className="resize-none"
+            className="rounded"
           />
           <ImagePreview
             image={question.image}

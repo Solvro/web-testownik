@@ -7,6 +7,9 @@ interface UseOverTypeOptions {
   placeholder?: string;
   theme?: "solar" | "cave" | Theme;
   toolbar?: boolean;
+  autoResize?: boolean;
+  minHeight?: string;
+  maxHeight?: string;
   onChange?: (value: string) => void;
   onPaste?: (event: ClipboardEvent) => void;
 }
@@ -26,9 +29,11 @@ export function useOverType({ ...options }: UseOverTypeOptions) {
       theme: options.theme ?? "solar",
       toolbar: options.toolbar ?? false,
       onChange: options.onChange,
+      minHeight: options.minHeight,
+      maxHeight: options.maxHeight,
+      autoResize: options.autoResize,
     });
 
-    // Custom events
     editorRef.current = instance;
 
     const textarea = instance.textarea;
