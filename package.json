@@ -23,6 +23,7 @@
     "@next/eslint-plugin-next": "^16.1.1"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.82",
     "@ai-sdk/openai": "^3.0.63",
     "@ai-sdk/react": "^3.0.184",
     "@assistant-ui/react": "^0.14.5",

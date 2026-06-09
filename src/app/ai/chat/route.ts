@@ -1,12 +1,13 @@
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
-import type { JSONSchema7, ModelMessage, UIMessage } from "ai";
+import type { JSONSchema7, LanguageModel, ModelMessage, UIMessage } from "ai";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
-import { chatModel } from "@/lib/ai/model";
+import { getChatModelForUser } from "@/lib/ai/model";
+import { isAiModel } from "@/lib/ai/models";
 import type { LabeledImage } from "@/lib/ai/prompts";
 import {
   checkRateLimit,
@@ -65,7 +66,7 @@ const getQuestionSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  if (!env.NEXT_PUBLIC_AI_ENABLED || env.OPENAI_API_KEY === undefined) {
+  if (!env.NEXT_PUBLIC_AI_ENABLED) {
     return new Response("AI is not configured", { status: 503 });
   }
 
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
     images,
     canEdit,
     quizId: rawQuizId,
+    config,
     tools: clientTools,
   } = (await request.json()) as {
     messages: UIMessage[];
@@ -100,13 +102,25 @@ export async function POST(request: Request) {
     images?: LabeledImage[];
     canEdit?: boolean;
     quizId?: string;
+    config?: { modelName?: unknown };
     tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
   };
 
   const quizId = z.uuid().safeParse(rawQuizId).success ? rawQuizId : undefined;
+  const aiModel = isAiModel(config?.modelName) ? config.modelName : undefined;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
+  let model: LanguageModel;
+  try {
+    model = getChatModelForUser({
+      accountLevel: user.account_level,
+      requestedModel: aiModel,
+    });
+  } catch (error) {
+    console.error("Failed to resolve AI chat model", error);
+    return new Response("AI model is not configured", { status: 503 });
+  }
 
   const modelMessages = await convertToModelMessages(messages);
   const imageParts =
@@ -130,7 +144,7 @@ export async function POST(request: Request) {
       : [];
 
   const result = streamText({
-    model: chatModel,
+    model,
     ...(system === undefined ? {} : { system }),
     messages: [...imageContext, ...modelMessages],
     stopWhen: stepCountIs(5),
