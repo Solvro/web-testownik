@@ -1,5 +1,3 @@
-import katex from "katex";
-import "katex/dist/katex.min.css";
 import {
   BoldIcon,
   CodeIcon,
@@ -15,19 +13,20 @@ import {
   PiIcon,
   QuoteIcon,
   SigmaIcon,
+  SquarePenIcon,
 } from "lucide-react";
 import type { OverTypeInstance, Theme } from "overtype";
-import OverType, { markdownActions } from "overtype";
+import { markdownActions } from "overtype";
 import React, { useEffect, useState } from "react";
 
 import { useOverType } from "@/hooks/use-overtype";
 import { cn } from "@/lib/utils";
 
+import { MarkdownRenderer } from "./markdown-renderer";
 import { Button } from "./ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "./ui/button-group";
 import { Input } from "./ui/input";
 import { Kbd } from "./ui/kbd";
-import { Label } from "./ui/label";
 import {
   Popover,
   PopoverContent,
@@ -38,24 +37,57 @@ import {
 } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
+//#region Themes
+const theme: Theme = {
+  name: "default",
+  colors: {
+    bgSecondary: "transparent",
+    text: "var(--foreground)",
+    syntaxMarker: "color-mix(in srgb, var(--foreground) 50%, transparent)",
+    cursor: "var(--app-primary)",
+    selection: "color-mix(in srgb, var(--app-primary) 20%, transparent)",
+    strong: "var(--chart-4)",
+    em: "var(--chart-3)",
+    h1: "var(--chart-4)",
+    h2: "var(--chart-3)",
+    h3: "var(--chart-2)",
+    blockquote: "color-mix(in srgb, var(--foreground) 70%, transparent)",
+    codeBg: "color-mix(in srgb, var(--chart-6) 50%, transparent)",
+    code: "var(--)",
+  },
+};
+//#endregion
+
 interface OverTypeEditorProps {
   value?: string;
   placeholder?: string;
-  theme?: "solar" | "cave" | Theme;
   onChange?: (value: string) => void;
   onPaste?: (event: ClipboardEvent) => void;
+  minHeight?: string;
+  maxHeight?: string;
+  autoResize?: boolean;
   className?: string;
 }
+
+//#region Custom format detection
 
 const isInCodeBlock = (ta: HTMLTextAreaElement): boolean => {
   const value_ = ta.value;
   const cursor = ta.selectionStart;
 
-  // Count how many ``` appear before the cursor
   const before = value_.slice(0, cursor);
   const fencesBefore = (before.match(/^```/gm) ?? []).length;
 
-  // Odd number of opening fences = cursor is inside a code block
+  return fencesBefore % 2 !== 0;
+};
+
+const isInMathBlock = (ta: HTMLTextAreaElement): boolean => {
+  const value_ = ta.value;
+  const cursor = ta.selectionStart;
+
+  const before = value_.slice(0, cursor);
+  const fencesBefore = (before.match(/^\$\$/gm) ?? []).length;
+
   return fencesBefore % 2 !== 0;
 };
 
@@ -82,12 +114,16 @@ const isInInlineMath = (ta: HTMLTextAreaElement): boolean => {
   return false;
 };
 
+//#endregion
+
 function OverTypeEditor({
   value,
   placeholder,
-  theme,
   onChange,
   onPaste,
+  minHeight,
+  maxHeight,
+  autoResize,
   className,
 }: OverTypeEditorProps) {
   const { containerRef, editorRef } = useOverType({
@@ -97,8 +133,12 @@ function OverTypeEditor({
     toolbar: false,
     onChange,
     onPaste,
-    autoResize: true,
+    autoResize,
+    minHeight,
+    maxHeight,
   });
+
+  const [previewOpen, setPreviewOpen] = useState<boolean>(true);
 
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
@@ -115,7 +155,13 @@ function OverTypeEditor({
         formats.push("inlineMath");
       }
 
+      if (isInMathBlock(ta)) {
+        formats.splice(formats.indexOf("inlineMath"), 1);
+        formats.push("blockMath");
+      }
+
       if (isInCodeBlock(ta)) {
+        formats.splice(formats.indexOf("code"), 1);
         formats.push("blockCode");
       }
 
@@ -133,112 +179,147 @@ function OverTypeEditor({
     };
   }, [editorRef, editorRef.current?.textarea]);
 
-  // useEffect(() => {
-  //   const ta = editorRef.current?.textarea;
-  //   if (!ta) return;
+  // Custom styling
+  useEffect(() => {
+    const ta = editorRef.current?.textarea;
+    if (ta === undefined) {
+      return;
+    }
 
-  //   // OverType is NOT Shadow DOM — preview is a regular DOM element
-  //   const wrapper = ta.closest(".overtype-wrapper");
-  //   if (!wrapper) return;
-  //   const preview = wrapper.querySelector(".overtype-preview");
-  //   if (!preview) return;
+    const wrapper = ta.closest(".overtype-wrapper");
+    if (wrapper === null) {
+      return;
+    }
+    const preview = wrapper.querySelector(".overtype-preview");
+    if (preview === null) {
+      return;
+    }
 
-  //   // Inject styles into the document head once
-  //   const styleId = "ot-math-styles";
-  //   if (!document.getElementById(styleId)) {
-  //     const style = document.createElement("style");
-  //     style.id = styleId;
-  //     style.textContent = `
-  //     .ot-math-inline {
-  //       color: red;
-  //       font-style: italic;
-  //     }
-  //     .ot-math-block {
-  //       color: var(--color-indigo-400);
-  //       font-style: italic;
-  //     }
-  //   `;
-  //     document.head.appendChild(style);
-  //   }
+    const styleId = "#ot-math-styles";
+    if (document.querySelector(styleId) === null) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+      .ot-math-inline {
+        color: var(--chart-6);
+        font-style: italic;
+      }
+      .ot-math-block {
+        color: var(--foreground);
+        font-style: italic;
+        background: var(--chart-6) !important;
+      }
+    `;
+      document.head.append(style);
+    }
 
-  //   const processMath = (node: Element) => {
-  //     node.childNodes.forEach((child) => {
-  //       if (child.nodeType !== Node.TEXT_NODE) return;
-  //       const text = child.textContent ?? "";
-  //       if (!text.includes("$")) return;
+    const processMath = (node: Element) => {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.TEXT_NODE) {
+          return;
+        }
+        const text = child.textContent ?? "";
+        if (!text.includes("$")) {
+          return;
+        }
 
-  //       const span = document.createElement("span");
+        const span = document.createElement("span");
+        span.innerHTML = text
+          .replaceAll(
+            /\$\$([^$]+)\$\$/g,
+            '<span class="ot-math-block">$$$$1$$</span>',
+          )
+          .replaceAll(
+            /\$([^$\n]+)\$/g,
+            '<span class="ot-math-inline">$$$1$$</span>',
+          );
 
-  //       span.innerHTML = text
-  //         .replace(/\$\$([^$]+)\$\$/g, (_, math) => {
-  //           try {
-  //             return katex.renderToString(math.trim(), {
-  //               throwOnError: false,
-  //               displayMode: true,
-  //             });
-  //           } catch {
-  //             return `<span class="ot-math-error">$$${math}$$</span>`;
-  //           }
-  //         })
-  //         .replace(/\$([^$\n]+)\$/g, (_, math) => {
-  //           try {
-  //             return katex.renderToString(math.trim(), {
-  //               throwOnError: false,
-  //               displayMode: false,
-  //             });
-  //           } catch {
-  //             return `<span class="ot-math-error">$${math}$</span>`;
-  //           }
-  //         });
+        child.replaceWith(span);
+      });
+    };
 
-  //       child.replaceWith(span);
-  //     });
-  //   };
+    const observer = new MutationObserver(() => {
+      preview.querySelectorAll("div").forEach(processMath);
+    });
 
-  //   let timeout: ReturnType<typeof setTimeout>;
+    observer.observe(preview, { childList: true, subtree: true });
 
-  //   const observer = new MutationObserver(() => {
-  //     clearTimeout(timeout);
-  //     timeout = setTimeout(() => {
-  //       preview.querySelectorAll("div").forEach(processMath);
-  //     }, 150);
-  //   });
-
-  //   observer.observe(preview, { childList: true, subtree: true });
-
-  //   return () => {
-  //     observer.disconnect();
-  //     document.getElementById(styleId)?.remove();
-  //   };
-  // }, [editorRef.current?.textarea]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      observer.disconnect();
+      document.getElementById(styleId)?.remove();
+    };
+  }, [editorRef.current?.textarea]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
       className={cn(
         className,
-        "border-input placeholder:text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 flex field-sizing-content min-h-16 w-full flex-col rounded-md border bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-within:ring-3 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm",
+        "group border-input placeholder:text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 flex field-sizing-content min-h-16 w-full flex-col rounded-md border bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-within:ring-3 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm",
       )}
     >
-      <Toolbar activeFormats={activeFormats} editorRef={editorRef} />
-      <div
-        className="flex-1"
-        ref={containerRef}
-        style={{
-          isolation: "isolate",
-          zIndex: 0,
-          position: "relative",
+      <Toolbar
+        className={cn(
+          "flex items-center gap-1 overflow-hidden transition-all duration-200 ease-in-out",
+          "pointer-events-none max-h-0 -translate-y-2 opacity-0",
+          "group-focus-within:pointer-events-auto group-focus-within:max-h-16 group-focus-within:translate-y-0 group-focus-within:opacity-100",
+        )}
+        activeFormats={activeFormats}
+        editorRef={editorRef}
+        showPreview={(value_: boolean) => {
+          setPreviewOpen(value_);
+          if (!value_) {
+            requestAnimationFrame(() => {
+              const ta = editorRef.current?.textarea;
+              if (ta === undefined) {
+                return;
+              }
+              ta.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+          }
         }}
+        preview={previewOpen}
       />
+
+      <div className={previewOpen ? "hidden" : "inline-block"}>
+        <div
+          id="overtype-editor"
+          className="flex-1"
+          ref={containerRef}
+          style={
+            {
+              "--app-primary": "var(--primary)",
+              isolation: "isolate",
+              zIndex: 0,
+              position: "relative",
+            } as React.CSSProperties
+          }
+        />
+      </div>
+
+      {previewOpen ? (
+        <MarkdownRenderer className="m-4">
+          {editorRef.current?.getValue()}
+        </MarkdownRenderer>
+      ) : null}
     </div>
   );
 }
 
 interface ToolbarProps {
+  showPreview: (value: boolean) => void;
+  preview: boolean;
   activeFormats: Set<string>;
   editorRef: React.RefObject<OverTypeInstance | null>;
+  className?: string;
 }
 
-function Toolbar({ activeFormats, editorRef }: ToolbarProps) {
+function Toolbar({
+  activeFormats,
+  editorRef,
+  showPreview,
+  preview,
+  className,
+}: ToolbarProps) {
   const isActive: (format: string) => boolean = (format: string) =>
     activeFormats.has(format);
 
@@ -247,8 +328,10 @@ function Toolbar({ activeFormats, editorRef }: ToolbarProps) {
     if (ta === undefined) {
       return;
     }
-    (markdownActions[action] as (ta: HTMLTextAreaElement) => void)(ta);
-    ta.focus();
+    if (!preview) {
+      (markdownActions[action] as (ta: HTMLTextAreaElement) => void)(ta);
+      ta.focus();
+    }
   };
 
   function insertInlineMath() {
@@ -288,216 +371,227 @@ function Toolbar({ activeFormats, editorRef }: ToolbarProps) {
   }
 
   return (
-    <ButtonGroup className="flex w-full gap-1">
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("bold") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleBold");
-            }}
-          >
-            <BoldIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          Pogrubienie <Kbd>Ctrl + B</Kbd>
-        </TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("italic") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleItalic");
-            }}
-          >
-            <ItalicIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          Pochylenie <Kbd>Ctrl + I</Kbd>
-        </TooltipContent>
-      </Tooltip>
-      <ButtonGroupSeparator />
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("code") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleCode");
-            }}
-          >
-            <CodeXmlIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Kod w tekście</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("blockCode") ? "default" : "ghost"}
-            onClick={() => {
-              insertBlockCode();
-            }}
-          >
-            <CodeIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Blok kodu</TooltipContent>
-      </Tooltip>
-      <ButtonGroupSeparator />
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("inlineMath") ? "default" : "ghost"}
-            onClick={() => {
-              insertInlineMath();
-            }}
-          >
-            <SigmaIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Wzór w tekście</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={"ghost"}
-            onClick={() => {
-              insertBlockMath();
-            }}
-          >
-            <PiIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Blok wzoru</TooltipContent>
-      </Tooltip>
-      <ButtonGroupSeparator />
-      <LinkButton isActive={isActive} editorRef={editorRef} />
-      <ButtonGroupSeparator />
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("header") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleH1");
-            }}
-          >
-            <Heading1Icon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Tytuł</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("header-2") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleH2");
-            }}
-          >
-            <Heading2Icon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Podtytuł</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("header-3") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleH3");
-            }}
-          >
-            <Heading3Icon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Sekcja</TooltipContent>
-      </Tooltip>
-      <ButtonGroupSeparator />
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("bulletList") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleBulletList");
-            }}
-          >
-            <ListIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Lista nieuporządkowana</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("orderedList") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleNumberedList");
-            }}
-          >
-            <ListOrderedIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Lista uporządkowana</TooltipContent>
-      </Tooltip>
-      <ButtonGroupSeparator />
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            className="aspect-square p-0"
-            size={"sm"}
-            variant={isActive("quote") ? "default" : "ghost"}
-            onClick={() => {
-              apply("toggleQuote");
-            }}
-          >
-            <QuoteIcon />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Cytat</TooltipContent>
-      </Tooltip>
-      <div className="ml-auto">
+    <>
+      {" "}
+      <ButtonGroup className={cn(className)}>
         <Tooltip>
           <TooltipTrigger>
             <Button
               className="aspect-square p-0"
               size={"sm"}
-              variant={"ghost"}
+              variant={isActive("bold") ? "default" : "ghost"}
               onClick={() => {
-                editorRef.current?.showPreviewMode();
+                apply("toggleBold");
               }}
             >
-              <EyeIcon />
+              <BoldIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Tryb podglądu</TooltipContent>
+          <TooltipContent>
+            Pogrubienie <Kbd>Ctrl + B</Kbd>
+          </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("italic") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleItalic");
+              }}
+            >
+              <ItalicIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Pochylenie <Kbd>Ctrl + I</Kbd>
+          </TooltipContent>
+        </Tooltip>
+        <ButtonGroupSeparator />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("code") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleCode");
+              }}
+            >
+              <CodeXmlIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Kod w tekście</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("blockCode") ? "default" : "ghost"}
+              onClick={() => {
+                insertBlockCode();
+              }}
+            >
+              <CodeIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Blok kodu</TooltipContent>
+        </Tooltip>
+        <ButtonGroupSeparator />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("inlineMath") ? "default" : "ghost"}
+              onClick={() => {
+                insertInlineMath();
+              }}
+            >
+              <SigmaIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Wzór w tekście</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("blockMath") ? "default" : "ghost"}
+              onClick={() => {
+                insertBlockMath();
+              }}
+            >
+              <PiIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Blok wzoru</TooltipContent>
+        </Tooltip>
+        <ButtonGroupSeparator />
+        <LinkButton isActive={isActive} editorRef={editorRef} />
+        <ButtonGroupSeparator />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("header") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleH1");
+              }}
+            >
+              <Heading1Icon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Tytuł</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("header-2") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleH2");
+              }}
+            >
+              <Heading2Icon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Podtytuł</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("header-3") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleH3");
+              }}
+            >
+              <Heading3Icon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Sekcja</TooltipContent>
+        </Tooltip>
+        <ButtonGroupSeparator />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("bulletList") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleBulletList");
+              }}
+            >
+              <ListIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Lista nieuporządkowana</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("orderedList") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleNumberedList");
+              }}
+            >
+              <ListOrderedIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Lista uporządkowana</TooltipContent>
+        </Tooltip>
+        <ButtonGroupSeparator />
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              className="aspect-square p-0"
+              size={"sm"}
+              variant={isActive("quote") ? "default" : "ghost"}
+              onClick={() => {
+                apply("toggleQuote");
+              }}
+            >
+              <QuoteIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Cytat</TooltipContent>
+        </Tooltip>
+      </ButtonGroup>
+      <div className="absolute top-2 right-3">
+        <Button
+          size={"sm"}
+          variant={"ghost"}
+          onClick={() => {
+            showPreview(!preview);
+          }}
+        >
+          {preview ? (
+            <span className="inline-flex items-center gap-1 p-1">
+              Edytuj <SquarePenIcon />
+            </span>
+          ) : (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 overflow-hidden p-1 transition-all duration-200 ease-in-out",
+                "max-w-full opacity-100",
+                "not-group-focus-within:max-w-0 not-group-focus-within:p-0 not-group-focus-within:opacity-0",
+              )}
+            >
+              Podgląd <EyeIcon />
+            </span>
+          )}
+        </Button>
       </div>
-    </ButtonGroup>
+    </>
   );
 }
 

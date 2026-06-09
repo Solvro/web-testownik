@@ -207,14 +207,15 @@ export function QuestionFormContent({
           <OverTypeEditor
             placeholder="Treść pytania..."
             value={question.text}
-            toolbar={true}
             onChange={(value) => {
               onUpdate({ text: value });
             }}
             onPaste={(event) => {
               handlePaste(event);
             }}
-            className="rounded"
+            minHeight="100px"
+            autoResize={true}
+            className="min-h-48"
           />
           <ImagePreview
             image={question.image}

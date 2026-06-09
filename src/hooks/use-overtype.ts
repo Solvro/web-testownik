@@ -1,6 +1,7 @@
 import OverType from "overtype";
 import type { OverTypeInstance, Theme } from "overtype";
 import { useEffect, useRef } from "react";
+import { ta } from "zod/v4/locales";
 
 interface UseOverTypeOptions {
   value?: string;
