@@ -1,6 +1,10 @@
 "use client";
 
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
+import {
+  AssistantRuntimeProvider,
+  Suggestions,
+  useAui,
+} from "@assistant-ui/react";
 import {
   AssistantChatTransport,
   useChatRuntime,
@@ -85,24 +89,41 @@ function ChatRuntime({
     [canEdit, quizId],
   );
 
-  const suggestions = useMemo(
-    () => [
-      { prompt: "Wyjaśnij to pytanie" },
-      { prompt: "Podaj wskazówkę do odpowiedzi" },
-      { prompt: "Wygeneruj podobne pytanie treningowe" },
-    ],
-    [],
-  );
+  const suggestions = useMemo(() => {
+    const prompts = [
+      "Wyjaśnij to pytanie",
+      "Podaj wskazówkę do odpowiedzi",
+      "Znajdź podobne pytania w tym quizie",
+      ...(canEdit
+        ? [
+            "Popraw literówki w tym pytaniu",
+            "Wygeneruj 5 podobnych pytań",
+            "Dodaj wyjaśnienie odpowiedzi",
+            "Popraw formatowanie tego pytania",
+            "Uprość te pytanie",
+          ]
+        : []),
+    ] as const;
+    const count = Math.min(prompts.length, Math.random() < 0.5 ? 2 : 3);
+    return prompts
+      .map((prompt) => ({ prompt, order: Math.random() }))
+      .toSorted((a, b) => a.order - b.order)
+      .slice(0, count)
+      .map(({ prompt }) => prompt);
+  }, [canEdit]);
 
-  const runtime = useChatRuntime({ transport, suggestions });
+  const runtime = useChatRuntime({ transport });
+  const aui = useAui({
+    suggestions: Suggestions(suggestions),
+  });
 
   const chatContext = useMemo(
-    () => ({ quizId, questionId: question?.id ?? null, canEdit }),
-    [quizId, question?.id, canEdit],
+    () => ({ quizId, questionId: question?.id ?? null, question, canEdit }),
+    [quizId, question, canEdit],
   );
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
+    <AssistantRuntimeProvider runtime={runtime} aui={aui}>
       <AiChatProvider value={chatContext}>
         <GeneratedQuestionsToolUI />
         <EditQuestionToolUI />
@@ -143,18 +164,6 @@ export function AiChat({
 
   return (
     <>
-      {open ? null : (
-        <button
-          onClick={() => {
-            onOpenChange(true);
-          }}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 fixed right-4 bottom-4 z-40 flex size-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
-          aria-label="Otwórz czat AI"
-        >
-          <BotMessageSquareIcon className="size-5" />
-        </button>
-      )}
-
       {open && mode === "sheet" ? (
         <button
           type="button"
@@ -172,10 +181,10 @@ export function AiChat({
           !open && "pointer-events-none scale-95 opacity-0",
           open && "scale-100 opacity-100",
           mode === "popup" && [
-            "right-4 bottom-4 h-[min(520px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] rounded-2xl border shadow-2xl",
+            "right-4 bottom-4 h-[min(480px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] rounded-2xl border shadow-2xl",
           ],
           mode === "sheet" && [
-            "top-0 right-0 h-dvh w-full border-l shadow-2xl sm:w-105",
+            "right-0 bottom-0 h-dvh w-full border-l shadow-2xl sm:w-105",
           ],
         )}
       >

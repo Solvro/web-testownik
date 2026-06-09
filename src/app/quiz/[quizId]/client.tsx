@@ -2,7 +2,6 @@
 
 import { Icon } from "@iconify/react";
 import { FileQuestionMarkIcon } from "lucide-react";
-import Link from "next/link";
 import {
   ViewTransition,
   startTransition,
@@ -110,6 +109,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   } = useExternalImageApproval(quiz);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showAiExplain, setShowAiExplain] = useState(false);
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
 
@@ -162,9 +162,15 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             </p>
             <p>
               Możesz zmienić to w{" "}
-              <Link href="/profile?tab=settings" className="underline">
-                ustawieniach
-              </Link>
+              <button
+                type="button"
+                className="text-foreground underline underline-offset-2"
+                onClick={() => {
+                  setIsSettingsOpen(true);
+                }}
+              >
+                ustawieniach quizu
+              </button>
               .
             </p>
           </div>
@@ -335,17 +341,23 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 resetProgress={resetProgress}
                 isFocusModeActive={isFocusModeActive}
                 toggleFocusMode={toggleFocusMode}
+                onToggleHistory={toggleHistory}
+                isSettingsOpen={isSettingsOpen}
+                onSettingsOpenChange={setIsSettingsOpen}
               />
               <QuizActionButtons
                 quiz={quiz}
                 question={currentQuestion}
-                onToggleHistory={toggleHistory}
                 onToggleBrainrot={handleToggleBrainrot}
                 onExplain={() => {
                   setShowAiExplain(true);
                 }}
+                onOpenChat={() => {
+                  setIsChatOpen(true);
+                }}
                 disabled={isQuizFinished || currentQuestion == null}
                 isExplainOpen={showAiExplain}
+                isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
               />
               {showAi && showAiExplain && currentQuestion != null ? (

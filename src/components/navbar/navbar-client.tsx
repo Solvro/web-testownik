@@ -16,6 +16,9 @@ import { NavbarActions } from "./navbar-actions";
 export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
   const { isAuthenticated } = useContext(AppContext);
+  const closeMobileMenu = () => {
+    setExpanded(false);
+  };
 
   return (
     <header className="flex flex-col gap-2 py-4">
@@ -38,7 +41,7 @@ export function NavbarClient() {
           }}
         />
       </div>
-      {expanded ? <MobileMenu /> : null}
+      {expanded ? <MobileMenu onNavigate={closeMobileMenu} /> : null}
     </header>
   );
 }

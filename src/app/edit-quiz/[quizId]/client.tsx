@@ -37,6 +37,8 @@ function EditQuizPageContent({
     isError,
   } = useQuiz(quizId, {
     enabled: quizId.trim() !== "",
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const isInvalidQuizId = quizId.trim() === "";
 

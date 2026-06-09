@@ -57,6 +57,7 @@ export interface AuthorizedApp {
 
 export interface SettingsFormProps {
   settings: UserSettings;
+  disabled?: boolean;
   onSettingChange: <K extends keyof UserSettings>(
     name: K,
     value: UserSettings[K],

@@ -23,6 +23,7 @@ export interface ImagePreviewProps {
   isUploading?: boolean;
   size?: "small" | "medium";
   className?: string;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 const RENDERED_HEIGHTS = {
@@ -43,6 +44,7 @@ export function ImagePreview({
   isUploading = false,
   size = "medium",
   className,
+  onDialogOpenChange,
 }: ImagePreviewProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -55,9 +57,14 @@ export function ImagePreview({
     return null;
   }
 
+  function handleDialogOpenChange(open: boolean) {
+    setDialogOpen(open);
+    onDialogOpenChange?.(open);
+  }
+
   const handleOpenDialog = () => {
     if (!disabled && !isUploading) {
-      setDialogOpen(true);
+      handleDialogOpenChange(true);
     }
   };
 
@@ -168,7 +175,7 @@ export function ImagePreview({
 
       <ImageDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         image={image}
         imageUrl={imageUrl}
         imageUploadId={imageUploadId}

@@ -4,7 +4,7 @@ import {
   ensureQuizCurrentQuestion,
 } from "@/lib/session-utils";
 import type { ApiPaginatedResponse } from "@/types/common";
-import type { Question } from "@/types/quiz";
+import type { Answer, Question } from "@/types/quiz";
 import type {
   HardestQuestion,
   HourlyEntry,
@@ -26,6 +26,37 @@ import type {
   SharedQuiz,
   User,
 } from "./types";
+
+type CreateQuestionAnswerData = Pick<
+  Answer,
+  "text" | "is_correct" | "image_url" | "image_upload"
+>;
+
+type CreateQuestionData = Pick<
+  Question,
+  | "text"
+  | "multiple"
+  | "image_url"
+  | "image_upload"
+  | "is_ai_generated"
+  | "explanation"
+> & {
+  answers: CreateQuestionAnswerData[];
+};
+
+function prepareCreateImageFields(
+  data: Pick<Question, "image_url" | "image_upload">,
+) {
+  if (data.image_upload != null && data.image_upload !== "") {
+    return { image_url: null, image_upload: data.image_upload };
+  }
+
+  if (data.image_url != null && data.image_url !== "") {
+    return { image_url: data.image_url, image_upload: null };
+  }
+
+  return { image_url: null, image_upload: null };
+}
 
 /**
  * Service for handling quiz-related API operations
@@ -317,58 +348,60 @@ export class QuizService extends BaseApiService {
 
   async createQuestion(
     quizId: string,
-    data: {
-      text: string;
-      explanation?: string;
-      multiple: boolean;
-      is_ai_generated?: boolean;
-      answers: { text: string; is_correct: boolean }[];
-    },
+    data: CreateQuestionData,
   ): Promise<Question> {
+    const imageFields = prepareCreateImageFields(data);
     const response = await this.post<Question>("questions/", {
       quiz: quizId,
       text: data.text,
       explanation: data.explanation ?? "",
       multiple: data.multiple,
+      ...imageFields,
       question_type: 0,
       is_flashcard: false,
       is_markdown_enabled: true,
       is_ai_generated: data.is_ai_generated ?? false,
-      answers: data.answers.map((a, index) => ({
-        order: index + 1,
-        text: a.text,
-        is_correct: a.is_correct,
-      })),
+      answers: data.answers.map((a, index) => {
+        const answerImageFields = prepareCreateImageFields(a);
+        return {
+          order: index + 1,
+          text: a.text,
+          is_correct: a.is_correct,
+          ...answerImageFields,
+        };
+      }),
     });
     return response.data;
   }
 
   async bulkCreateQuestions(
     quizId: string,
-    questions: {
-      text: string;
-      explanation?: string;
-      multiple: boolean;
-      is_ai_generated?: boolean;
-      answers: { text: string; is_correct: boolean }[];
-    }[],
+    questions: CreateQuestionData[],
   ): Promise<Question[]> {
     const response = await this.post<Question[]>("questions/bulk-create/", {
       quiz: quizId,
-      questions: questions.map((q) => ({
-        text: q.text,
-        explanation: q.explanation ?? "",
-        multiple: q.multiple,
-        question_type: 0,
-        is_flashcard: false,
-        is_markdown_enabled: true,
-        is_ai_generated: q.is_ai_generated ?? false,
-        answers: q.answers.map((a, index) => ({
-          order: index + 1,
-          text: a.text,
-          is_correct: a.is_correct,
-        })),
-      })),
+      questions: questions.map((q) => {
+        const imageFields = prepareCreateImageFields(q);
+        return {
+          text: q.text,
+          explanation: q.explanation ?? "",
+          multiple: q.multiple,
+          ...imageFields,
+          question_type: 0,
+          is_flashcard: false,
+          is_markdown_enabled: true,
+          is_ai_generated: q.is_ai_generated ?? false,
+          answers: q.answers.map((a, index) => {
+            const answerImageFields = prepareCreateImageFields(a);
+            return {
+              order: index + 1,
+              text: a.text,
+              is_correct: a.is_correct,
+              ...answerImageFields,
+            };
+          }),
+        };
+      }),
     });
     return response.data;
   }
