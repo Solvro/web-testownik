@@ -16,17 +16,28 @@ import {
   MinimizeIcon,
   XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import { AppContext } from "@/app-context";
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
+import { AiModelProviderIcon } from "@/components/ai/ai-model-provider-icon";
 import { DisableAiToolUI } from "@/components/ai/tool-ui-disable-ai";
 import { EditQuestionToolUI } from "@/components/ai/tool-ui-edit-question";
 import { GeneratedQuestionsToolUI } from "@/components/ai/tool-ui-question";
+import { ModelSelector } from "@/components/assistant-ui/model-selector";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
+import { useUserSettings } from "@/hooks/use-user-settings";
+import {
+  SELECTABLE_AI_MODEL_OPTIONS,
+  isSelectableAiModel,
+  resolveSelectableAiModel,
+} from "@/lib/ai/models";
+import type { SelectableAiModel } from "@/lib/ai/models";
 import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
+import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
 
 type ChatMode = "popup" | "sheet";
 
@@ -73,7 +84,7 @@ function ChatRuntime({
   useEffect(() => {
     systemRef.current = system;
     imagesRef.current = images;
-  });
+  }, [images, system]);
 
   const transport = useMemo(
     () =>
@@ -144,8 +155,27 @@ export function AiChat({
   userName,
   canEdit = false,
 }: AiChatProps) {
+  const { user } = useContext(AppContext);
   const [mode, setMode] = useState<ChatMode>("popup");
   const [chatKey, setChatKey] = useState(0);
+  const { data: settings = DEFAULT_USER_SETTINGS } = useUserSettings({
+    placeholderData: DEFAULT_USER_SETTINGS,
+  });
+  const canSelectAiModel = user?.account_level === ACCOUNT_LEVEL.GOLD;
+  const defaultAiModel = resolveSelectableAiModel(settings.default_ai_model);
+  const [manualAiModel, setManualAiModel] = useState<SelectableAiModel | null>(
+    null,
+  );
+  const selectedAiModel = manualAiModel ?? defaultAiModel;
+  const modelSelectorOptions = useMemo(
+    () =>
+      SELECTABLE_AI_MODEL_OPTIONS.map((model) => ({
+        id: model.value,
+        name: model.label,
+        icon: <AiModelProviderIcon provider={model.provider} />,
+      })),
+    [],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -196,9 +226,9 @@ export function AiChat({
         >
           <div className="flex items-center gap-2">
             <BotMessageSquareIcon className="text-primary size-4" />
-            <span className="text-sm font-semibold">Asystent AI</span>
+            <span className="truncate text-sm font-semibold">Asystent AI</span>
           </div>
-          <div className="flex items-center gap-0.5">
+          <div className="ml-2 flex min-w-0 items-center gap-0.5">
             <Button
               variant="ghost"
               size="icon-sm"
@@ -246,7 +276,24 @@ export function AiChat({
             userName={userName}
             canEdit={canEdit}
           >
-            <Thread />
+            <Thread
+              composerStart={
+                canSelectAiModel ? (
+                  <ModelSelector
+                    models={modelSelectorOptions}
+                    value={selectedAiModel}
+                    onValueChange={(value) => {
+                      if (isSelectableAiModel(value)) {
+                        setManualAiModel(value);
+                      }
+                    }}
+                    size="sm"
+                    className="max-w-[calc(100vw-7rem)] min-w-0 rounded-full px-2.5 text-xs sm:w-40"
+                    contentClassName="min-w-56"
+                  />
+                ) : null
+              }
+            />
           </ChatRuntime>
         </div>
       </div>

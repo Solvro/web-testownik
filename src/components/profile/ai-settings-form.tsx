@@ -1,8 +1,10 @@
-import { BotIcon, CheckIcon, CopyIcon } from "lucide-react";
+import { BotIcon, CheckIcon, CopyIcon, CrownIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { AiModelProviderIcon } from "@/components/ai/ai-model-provider-icon";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -17,8 +19,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { env } from "@/env";
+import {
+  SELECTABLE_AI_MODEL_OPTIONS,
+  getSelectableAiModelOption,
+  isSelectableAiModel,
+  resolveSelectableAiModel,
+} from "@/lib/ai/models";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { ACCOUNT_LEVEL } from "@/types/user";
 import type { SettingsFormProps } from "@/types/user";
 
 interface CopyableSnippetProps {
@@ -99,11 +108,15 @@ export function AiSettingsForm({
   disabled = false,
   onSettingChange,
 }: SettingsFormProps) {
-  const { checkPermission } = useContext(AppContext);
+  const { checkPermission, user } = useContext(AppContext);
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("general");
 
   const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
+  const canSelectAiModel =
+    hasAiAccess && user?.account_level === ACCOUNT_LEVEL.GOLD;
+  const selectedAiModel = resolveSelectableAiModel(settings.default_ai_model);
+  const selectedAiModelOption = getSelectableAiModelOption(selectedAiModel);
   const mcpEndpoint = `${env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "")}/mcp`;
   const claudeCodeCommand = `claude mcp add --transport http testownik ${mcpEndpoint}`;
 
@@ -159,6 +172,61 @@ export function AiSettingsForm({
             className="ml-auto"
           />
         </div>
+        {canSelectAiModel ? (
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="min-w-0">
+              <Label
+                className="flex items-center gap-2 text-sm font-medium"
+                htmlFor="default-ai-model"
+              >
+                Domyślny model AI
+                <Badge
+                  variant="outline"
+                  className="border-amber-300/60 bg-amber-100/70 text-amber-900 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-200"
+                >
+                  <CrownIcon />
+                  Gold
+                </Badge>
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Model startowy dla czatu AI i wyjaśnień pytań. W czacie możesz
+                zmienić go tymczasowo.
+              </p>
+            </div>
+            <Select
+              disabled={disabled}
+              items={SELECTABLE_AI_MODEL_OPTIONS}
+              value={selectedAiModel}
+              onValueChange={(value) => {
+                if (isSelectableAiModel(value)) {
+                  onSettingChange("default_ai_model", value);
+                }
+              }}
+            >
+              <SelectTrigger
+                id="default-ai-model"
+                aria-label="Wybierz domyślny model AI"
+                className="w-full shrink-0 md:ml-auto md:w-56"
+                disabled={disabled}
+              >
+                <AiModelProviderIcon
+                  provider={selectedAiModelOption.provider}
+                />
+                <span className="truncate">{selectedAiModelOption.label}</span>
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger>
+                <SelectGroup>
+                  {SELECTABLE_AI_MODEL_OPTIONS.map((model) => (
+                    <SelectItem key={model.value} value={model.value}>
+                      <AiModelProviderIcon provider={model.provider} />
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex gap-4">
             <div className="min-w-0">
