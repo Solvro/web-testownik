@@ -79,11 +79,13 @@ export function PwaInstallPrompt({
       return;
     }
 
-    const nextParams = new URLSearchParams(searchParameters.toString());
-    nextParams.delete("install");
+    const nextParameters = new URLSearchParams(searchParameters.toString());
+    nextParameters.delete("install");
 
     const nextUrl =
-      nextParams.size > 0 ? `${pathname}?${nextParams.toString()}` : pathname;
+      nextParameters.size > 0
+        ? `${pathname}?${nextParameters.toString()}`
+        : pathname;
 
     router.replace(nextUrl);
   }, [pathname, router, searchParameters]);
