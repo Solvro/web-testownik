@@ -75,9 +75,17 @@ export function PwaInstallPrompt({
   }, []);
 
   const clearInstallQuery = useCallback(() => {
-    if (searchParameters.get("install") === "true") {
-      router.replace(pathname);
+    if (searchParameters.get("install") !== "true") {
+      return;
     }
+
+    const nextParams = new URLSearchParams(searchParameters.toString());
+    nextParams.delete("install");
+
+    const nextUrl =
+      nextParams.size > 0 ? `${pathname}?${nextParams.toString()}` : pathname;
+
+    router.replace(nextUrl);
   }, [pathname, router, searchParameters]);
 
   const handleInstallClick = useCallback(async () => {
