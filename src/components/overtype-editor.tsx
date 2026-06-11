@@ -243,15 +243,28 @@ function OverTypeEditor({
         }
 
         const span = document.createElement("span");
-        span.innerHTML = text
-          .replaceAll(
-            /\$\$([^$]+)\$\$/g,
-            '<span class="ot-math-block">$$$$1$$</span>',
-          )
-          .replaceAll(
-            /\$([^$\n]+)\$/g,
-            '<span class="ot-math-inline">$$$1$$</span>',
-          );
+        const pattern = /\$\$([^$]+)\$\$|\$([^$\n]+)\$/g;
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+        //eslint-disable-next-line no-cond-assign
+        while ((match = pattern.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            span.append(
+              document.createTextNode(text.slice(lastIndex, match.index)),
+            );
+          }
+          const token = match[0];
+          const mathSpan = document.createElement("span");
+          mathSpan.className = token.startsWith("$$")
+            ? "ot-math-block"
+            : "ot-math-inline";
+          mathSpan.textContent = token;
+          span.append(mathSpan);
+          lastIndex = pattern.lastIndex;
+        }
+        if (lastIndex < text.length) {
+          span.append(document.createTextNode(text.slice(lastIndex)));
+        }
 
         child.replaceWith(span);
       }
