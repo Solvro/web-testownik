@@ -1,6 +1,10 @@
 "use client";
 
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
+import {
+  AssistantRuntimeProvider,
+  Suggestions,
+  useAui,
+} from "@assistant-ui/react";
 import {
   AssistantChatTransport,
   useChatRuntime,
@@ -12,17 +16,28 @@ import {
   MinimizeIcon,
   XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import { AppContext } from "@/app-context";
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
+import { AiModelProviderIcon } from "@/components/ai/ai-model-provider-icon";
 import { DisableAiToolUI } from "@/components/ai/tool-ui-disable-ai";
 import { EditQuestionToolUI } from "@/components/ai/tool-ui-edit-question";
 import { GeneratedQuestionsToolUI } from "@/components/ai/tool-ui-question";
+import { ModelSelector } from "@/components/assistant-ui/model-selector";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
+import { useUserSettings } from "@/hooks/use-user-settings";
+import {
+  SELECTABLE_AI_MODEL_OPTIONS,
+  isSelectableAiModel,
+  resolveSelectableAiModel,
+} from "@/lib/ai/models";
+import type { SelectableAiModel } from "@/lib/ai/models";
 import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
+import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
 
 type ChatMode = "popup" | "sheet";
 
@@ -69,7 +84,7 @@ function ChatRuntime({
   useEffect(() => {
     systemRef.current = system;
     imagesRef.current = images;
-  });
+  }, [images, system]);
 
   const transport = useMemo(
     () =>
@@ -85,24 +100,41 @@ function ChatRuntime({
     [canEdit, quizId],
   );
 
-  const suggestions = useMemo(
-    () => [
-      { prompt: "Wyjaśnij to pytanie" },
-      { prompt: "Podaj wskazówkę do odpowiedzi" },
-      { prompt: "Wygeneruj podobne pytanie treningowe" },
-    ],
-    [],
-  );
+  const suggestions = useMemo(() => {
+    const prompts = [
+      "Wyjaśnij to pytanie",
+      "Podaj wskazówkę do odpowiedzi",
+      "Znajdź podobne pytania w tym quizie",
+      ...(canEdit
+        ? [
+            "Popraw literówki w tym pytaniu",
+            "Wygeneruj 5 podobnych pytań",
+            "Dodaj wyjaśnienie odpowiedzi",
+            "Popraw formatowanie tego pytania",
+            "Uprość te pytanie",
+          ]
+        : []),
+    ] as const;
+    const count = Math.min(prompts.length, Math.random() < 0.5 ? 2 : 3);
+    return prompts
+      .map((prompt) => ({ prompt, order: Math.random() }))
+      .toSorted((a, b) => a.order - b.order)
+      .slice(0, count)
+      .map(({ prompt }) => prompt);
+  }, [canEdit]);
 
-  const runtime = useChatRuntime({ transport, suggestions });
+  const runtime = useChatRuntime({ transport });
+  const aui = useAui({
+    suggestions: Suggestions(suggestions),
+  });
 
   const chatContext = useMemo(
-    () => ({ quizId, questionId: question?.id ?? null, canEdit }),
-    [quizId, question?.id, canEdit],
+    () => ({ quizId, questionId: question?.id ?? null, question, canEdit }),
+    [quizId, question, canEdit],
   );
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
+    <AssistantRuntimeProvider runtime={runtime} aui={aui}>
       <AiChatProvider value={chatContext}>
         <GeneratedQuestionsToolUI />
         <EditQuestionToolUI />
@@ -123,8 +155,27 @@ export function AiChat({
   userName,
   canEdit = false,
 }: AiChatProps) {
+  const { user } = useContext(AppContext);
   const [mode, setMode] = useState<ChatMode>("popup");
   const [chatKey, setChatKey] = useState(0);
+  const { data: settings = DEFAULT_USER_SETTINGS } = useUserSettings({
+    placeholderData: DEFAULT_USER_SETTINGS,
+  });
+  const canSelectAiModel = user?.account_level === ACCOUNT_LEVEL.GOLD;
+  const defaultAiModel = resolveSelectableAiModel(settings.default_ai_model);
+  const [manualAiModel, setManualAiModel] = useState<SelectableAiModel | null>(
+    null,
+  );
+  const selectedAiModel = manualAiModel ?? defaultAiModel;
+  const modelSelectorOptions = useMemo(
+    () =>
+      SELECTABLE_AI_MODEL_OPTIONS.map((model) => ({
+        id: model.value,
+        name: model.label,
+        icon: <AiModelProviderIcon provider={model.provider} />,
+      })),
+    [],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -143,18 +194,6 @@ export function AiChat({
 
   return (
     <>
-      {open ? null : (
-        <button
-          onClick={() => {
-            onOpenChange(true);
-          }}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 fixed right-4 bottom-4 z-40 flex size-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
-          aria-label="Otwórz czat AI"
-        >
-          <BotMessageSquareIcon className="size-5" />
-        </button>
-      )}
-
       {open && mode === "sheet" ? (
         <button
           type="button"
@@ -172,10 +211,10 @@ export function AiChat({
           !open && "pointer-events-none scale-95 opacity-0",
           open && "scale-100 opacity-100",
           mode === "popup" && [
-            "right-4 bottom-4 h-[min(520px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] rounded-2xl border shadow-2xl",
+            "right-4 bottom-4 h-[min(480px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] rounded-2xl border shadow-2xl",
           ],
           mode === "sheet" && [
-            "top-0 right-0 h-dvh w-full border-l shadow-2xl sm:w-105",
+            "right-0 bottom-0 h-dvh w-full border-l shadow-2xl sm:w-105",
           ],
         )}
       >
@@ -187,9 +226,9 @@ export function AiChat({
         >
           <div className="flex items-center gap-2">
             <BotMessageSquareIcon className="text-primary size-4" />
-            <span className="text-sm font-semibold">Asystent AI</span>
+            <span className="truncate text-sm font-semibold">Asystent AI</span>
           </div>
-          <div className="flex items-center gap-0.5">
+          <div className="ml-2 flex min-w-0 items-center gap-0.5">
             <Button
               variant="ghost"
               size="icon-sm"
@@ -237,7 +276,24 @@ export function AiChat({
             userName={userName}
             canEdit={canEdit}
           >
-            <Thread />
+            <Thread
+              composerStart={
+                canSelectAiModel ? (
+                  <ModelSelector
+                    models={modelSelectorOptions}
+                    value={selectedAiModel}
+                    onValueChange={(value) => {
+                      if (isSelectableAiModel(value)) {
+                        setManualAiModel(value);
+                      }
+                    }}
+                    size="sm"
+                    className="max-w-[calc(100vw-7rem)] min-w-0 rounded-full px-2.5 text-xs sm:w-40"
+                    contentClassName="min-w-56"
+                  />
+                ) : null
+              }
+            />
           </ChatRuntime>
         </div>
       </div>

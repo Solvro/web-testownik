@@ -40,28 +40,41 @@ export interface UserSettings {
   wrong_answer_reoccurrences: number;
   max_question_reoccurrences: number | null;
   ai_disabled: boolean;
+  default_ai_model: string | null;
   notify_quiz_shared: boolean;
   notify_bug_reported: boolean;
   notify_marketing: boolean;
 }
 
+export interface AuthorizedApp {
+  client_id: string;
+  oauth_application_id: string;
+  client_name: string;
+  client_uri: string;
+  logo_uri: string;
+  created: string;
+  scopes: string;
+}
+
 export interface SettingsFormProps {
   settings: UserSettings;
+  disabled?: boolean;
   onSettingChange: <K extends keyof UserSettings>(
     name: K,
     value: UserSettings[K],
   ) => void;
 }
 
-export const DEFAULT_USER_SETTINGS = {
+export const DEFAULT_USER_SETTINGS: UserSettings = {
   initial_reoccurrences: 1,
   wrong_answer_reoccurrences: 1,
   max_question_reoccurrences: 5,
   ai_disabled: false,
+  default_ai_model: null,
   notify_quiz_shared: true,
   notify_bug_reported: true,
   notify_marketing: false,
-} as const satisfies UserSettings;
+};
 
 export interface Term {
   id: string;

@@ -21,9 +21,10 @@ import { getUserService } from "@/services";
 
 interface NavLinksProps {
   variant?: "desktop" | "mobile";
+  onNavigate?: () => void;
 }
 
-export function NavLinks({ variant = "desktop" }: NavLinksProps) {
+export function NavLinks({ variant = "desktop", onNavigate }: NavLinksProps) {
   const { user, checkPermission } = useContext(AppContext);
   const isStaff = user?.is_staff ?? false;
 
@@ -49,6 +50,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
       <>
         <Link
           href="/quizzes"
+          onClick={onNavigate}
           className={
             isActive("/quizzes")
               ? "text-foreground text-left font-medium"
@@ -59,6 +61,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
         </Link>
         <Link
           href="/grades"
+          onClick={onNavigate}
           onMouseEnter={prefetchGrades}
           className={
             isActive("/grades")
@@ -81,6 +84,7 @@ export function NavLinks({ variant = "desktop" }: NavLinksProps) {
           <Link
             href={`${API_URL}/admin/`}
             target="_blank"
+            onClick={onNavigate}
             className="text-muted-foreground hover:text-foreground transition-colors"
             rel="noreferrer"
           >

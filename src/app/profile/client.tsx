@@ -2,74 +2,125 @@
 
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useContext, useEffect } from "react";
 
+import { AppContext } from "@/app-context";
 import { AiSettingsForm } from "@/components/profile/ai-settings-form";
+import { AuthorizedAppsList } from "@/components/profile/authorized-apps-list";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { env } from "@/env";
-import { getUserService } from "@/services";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import {
+  useUpdateUserSettings,
+  useUserSettings,
+} from "@/hooks/use-user-settings";
+import type { JWTPayload } from "@/lib/auth/types";
 import type { UserData, UserSettings } from "@/types/user";
 import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
+const PROFILE_TABS = [
+  "account",
+  "settings",
+  "notifications",
+  "authorized-apps",
+] as const;
+const DEFAULT_PROFILE_TAB = "account";
+const PROFILE_TAB_QUERY_PARAM = "tab";
+
+type ProfileTab = (typeof PROFILE_TABS)[number];
+
+function isProfileTab(value: string): value is ProfileTab {
+  return PROFILE_TABS.includes(value as ProfileTab);
+}
+
+function getProfileTabFromQuery(tab: string | null): ProfileTab | null {
+  return tab !== null && isProfileTab(tab) ? tab : null;
+}
+
+function getUserProfilePlaceholder(
+  user: JWTPayload | null,
+): UserData | undefined {
+  if (user === null) {
+    return undefined;
+  }
+
+  return {
+    ...user,
+    photo: user.photo ?? "",
+    photo_url: user.photo ?? "",
+    overriden_photo_url: user.photo,
+    hide_profile: false,
+    id: user.user_id,
+  };
+}
+
 export function ProfilePageClient(): React.JSX.Element {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState<string>("account");
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
+  const router = useRouter();
+  const searchParameters = useSearchParams();
+  const { user } = useContext(AppContext);
+  const tabParameter = searchParameters.get(PROFILE_TAB_QUERY_PARAM);
+  const activeTab = getProfileTabFromQuery(tabParameter) ?? DEFAULT_PROFILE_TAB;
+  const { data: userData, isPending: isUserDataPending } = useUserProfile({
+    placeholderData: getUserProfilePlaceholder(user),
+  });
+  const {
+    data: settings = DEFAULT_USER_SETTINGS,
+    isPending: areSettingsPending,
+    isPlaceholderData: areSettingsPlaceholderData,
+  } = useUserSettings({
+    placeholderData: DEFAULT_USER_SETTINGS,
+  });
+  const updateUserSettings = useUpdateUserSettings();
+  const areSettingsDisabled = areSettingsPending || areSettingsPlaceholderData;
+
+  useEffect(() => {
+    if (
+      tabParameter === null ||
+      getProfileTabFromQuery(tabParameter) !== null
+    ) {
+      return;
+    }
+
+    const nextSearchParameters = new URLSearchParams(searchParameters);
+    nextSearchParameters.delete(PROFILE_TAB_QUERY_PARAM);
+    const queryString = nextSearchParameters.toString();
+
+    router.replace(
+      queryString === "" ? pathname : `${pathname}?${queryString}`,
+    );
+  }, [pathname, router, searchParameters, tabParameter]);
+
+  const handleSettingChange = <K extends keyof UserSettings>(
+    name: K,
+    value: UserSettings[K],
+  ) => {
+    updateUserSettings.mutate({ [name]: value });
+  };
 
   const handleTabSelect = (tabKey: string) => {
     if (tabKey === "privacy-policy") {
       return;
     }
-    setActiveTab(tabKey);
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
-      handleTabSelect(window.location.hash.slice(1));
-      window.history.replaceState(null, "", pathname);
+    if (!isProfileTab(tabKey)) {
+      return;
     }
 
-    const userService = getUserService();
-
-    // Fetch user data
-    userService
-      .getUserData()
-      .then((data) => {
-        setUserData(data);
-      })
-      .catch((error: unknown) => {
-        console.error("Error fetching user data:", error);
-      });
-
-    // Fetch settings data
-    userService
-      .getUserSettings()
-      .then((data) => {
-        setSettings(data);
-      })
-      .catch((error: unknown) => {
-        console.error("Error fetching settings:", error);
-      });
-  }, [pathname]);
-
-  const handleSettingChange = async (
-    name: keyof UserSettings,
-    value: boolean | number | null,
-  ) => {
-    setSettings({ ...settings, [name]: value });
-    try {
-      await getUserService().updateUserSettings({ [name]: value });
-    } catch (error) {
-      console.error("Error updating settings:", error);
-      toast.error("Wystąpił błąd podczas aktualizacji ustawień.");
-      setSettings(settings); // Revert to previous settings on error
+    const nextSearchParameters = new URLSearchParams(searchParameters);
+    if (tabKey === DEFAULT_PROFILE_TAB) {
+      nextSearchParameters.delete(PROFILE_TAB_QUERY_PARAM);
+    } else {
+      nextSearchParameters.set(PROFILE_TAB_QUERY_PARAM, tabKey);
     }
+    const queryString = nextSearchParameters.toString();
+
+    router.push(queryString === "" ? pathname : `${pathname}?${queryString}`, {
+      scroll: false,
+    });
   };
 
   return (
@@ -79,7 +130,7 @@ export function ProfilePageClient(): React.JSX.Element {
         onValueChange={handleTabSelect}
         className="grid items-start gap-2 md:grid-cols-[220px_1fr] md:gap-6"
       >
-        <TabsList className="flex md:h-auto md:w-full md:flex-col">
+        <TabsList className="flex max-w-full justify-start overflow-x-auto overflow-y-hidden md:h-auto md:w-full md:flex-col">
           <TabsTrigger value="account" className="md:w-full md:justify-start">
             Konto
           </TabsTrigger>
@@ -93,6 +144,12 @@ export function ProfilePageClient(): React.JSX.Element {
             Powiadomienia
           </TabsTrigger>
           <TabsTrigger
+            value="authorized-apps"
+            className="md:w-full md:justify-start"
+          >
+            Integracje
+          </TabsTrigger>
+          <TabsTrigger
             value="privacy-policy"
             className="hidden md:inline-flex md:w-full md:justify-start"
             nativeButton={false}
@@ -104,23 +161,24 @@ export function ProfilePageClient(): React.JSX.Element {
             )}
           ></TabsTrigger>
         </TabsList>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
             <ProfileDetails
-              userData={userData}
-              loading={userData == null}
-              setUserData={setUserData}
+              userData={userData ?? null}
+              loading={isUserDataPending || userData == null}
             />
           </TabsContent>
           <TabsContent value="settings" className="space-y-6 md:mt-0">
             <SettingsForm
               settings={settings}
               onSettingChange={handleSettingChange}
+              disabled={areSettingsDisabled}
             />
             {env.NEXT_PUBLIC_AI_ENABLED ? (
               <AiSettingsForm
                 settings={settings}
                 onSettingChange={handleSettingChange}
+                disabled={areSettingsDisabled}
               />
             ) : null}
           </TabsContent>
@@ -128,7 +186,11 @@ export function ProfilePageClient(): React.JSX.Element {
             <NotificationsForm
               settings={settings}
               onSettingChange={handleSettingChange}
+              disabled={areSettingsDisabled}
             />
+          </TabsContent>
+          <TabsContent value="authorized-apps" className="space-y-6 md:mt-0">
+            <AuthorizedAppsList />
           </TabsContent>
         </div>
       </Tabs>

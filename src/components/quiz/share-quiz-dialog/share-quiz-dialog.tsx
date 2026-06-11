@@ -390,10 +390,7 @@ export function ShareQuizDialog({
         </DialogHeader>
         {canShareQuiz ? (
           <div className="space-y-4">
-            <Popover
-              open={open ? searchQuery.length > 0 : undefined}
-              modal={false}
-            >
+            <Popover open={open ? searchQuery.length > 0 : false} modal={false}>
               <PopoverTrigger
                 nativeButton={false}
                 render={

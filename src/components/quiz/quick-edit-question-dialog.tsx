@@ -45,6 +45,10 @@ interface QuickEditQuestionDialogProps {
   onOpenChange: (open: boolean) => void;
   question: Question;
   quizId: string;
+  onSaveDraft?: (question: Question) => void;
+  hideDelete?: boolean;
+  hideFullEditor?: boolean;
+  minAnswers?: number;
 }
 
 export function QuickEditQuestionDialog({
@@ -52,11 +56,16 @@ export function QuickEditQuestionDialog({
   onOpenChange,
   question,
   quizId,
+  onSaveDraft,
+  hideDelete = false,
+  hideFullEditor = false,
+  minAnswers = 1,
 }: QuickEditQuestionDialogProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
 
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [isImageEditDialogOpen, setIsImageEditDialogOpen] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
@@ -121,7 +130,7 @@ export function QuickEditQuestionDialog({
           };
         },
       );
-      onOpenChange(false);
+      handleOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się zaktualizować pytania");
@@ -159,7 +168,7 @@ export function QuickEditQuestionDialog({
           };
         },
       );
-      onOpenChange(false);
+      handleOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się usunąć pytania");
@@ -174,14 +183,37 @@ export function QuickEditQuestionDialog({
       return;
     }
 
+    if (validation.data.answers.length < minAnswers) {
+      toast.error(
+        `Pytanie musi mieć przynajmniej ${minAnswers.toString()} odpowiedzi`,
+      );
+      return;
+    }
+
+    if (onSaveDraft !== undefined) {
+      onSaveDraft(validation.data);
+      handleOpenChange(false);
+      return;
+    }
+
     await saveQuestion();
   };
 
+  function handleOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      setIsAlertDialogOpen(false);
+      setIsImageEditDialogOpen(false);
+    }
+  }
+
+  const isNestedDialogOpen = isAlertDialogOpen || isImageEditDialogOpen;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="flex flex-col gap-0 sm:max-w-4xl"
-        data-nested-dialog-open={isAlertDialogOpen ? "" : undefined}
+        data-nested-dialog-open={isNestedDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="pr-6">
@@ -194,6 +226,7 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
+            onImageDialogOpenChange={setIsImageEditDialogOpen}
             hideDelete
           />
         </DialogHeader>
@@ -207,64 +240,70 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
+            onImageDialogOpenChange={setIsImageEditDialogOpen}
+            minAnswers={minAnswers}
           />
         </div>
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2">
-            <AlertDialog
-              open={isAlertDialogOpen}
-              onOpenChange={setIsAlertDialogOpen}
-            >
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 />
-                    Usuń pytanie
-                  </Button>
-                }
-              ></AlertDialogTrigger>
+            {hideDelete ? null : (
+              <AlertDialog
+                open={isAlertDialogOpen}
+                onOpenChange={setIsAlertDialogOpen}
+              >
+                <AlertDialogTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 />
+                      Usuń pytanie
+                    </Button>
+                  }
+                ></AlertDialogTrigger>
 
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Czy na pewno chcesz usunąć to pytanie?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tej operacji nie można cofnąć.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={async () => {
-                      await deleteQuestion();
-                    }}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? "Usuwanie..." : "Usuń"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button
-              variant="ghost"
-              nativeButton={false}
-              render={
-                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-                  Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-                </Link>
-              }
-            ></Button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Czy na pewno chcesz usunąć to pytanie?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tej operacji nie można cofnąć.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        await deleteQuestion();
+                      }}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Usuwanie..." : "Usuń"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {hideFullEditor ? null : (
+              <Button
+                variant="ghost"
+                nativeButton={false}
+                render={
+                  <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                    Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
+                  </Link>
+                }
+              ></Button>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => {
-                onOpenChange(false);
+                handleOpenChange(false);
               }}
             >
               Anuluj
