@@ -214,8 +214,8 @@ export function QuestionFormContent({
               handlePaste(event);
             }}
             minHeight="100px"
+            className="min-h-8"
             autoResize={true}
-            className="min-h-48"
           />
           <ImagePreview
             image={question.image}

@@ -1,7 +1,7 @@
+// eslint-disable-next-line import/no-named-as-default
 import OverType from "overtype";
 import type { OverTypeInstance, Theme } from "overtype";
 import { useEffect, useRef } from "react";
-import { ta } from "zod/v4/locales";
 
 interface UseOverTypeOptions {
   value?: string;
@@ -12,7 +12,8 @@ interface UseOverTypeOptions {
   minHeight?: string;
   maxHeight?: string;
   onChange?: (value: string) => void;
-  onPaste?: (event: ClipboardEvent) => void;
+  onPaste?: (event: React.ClipboardEvent) => void;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 export function useOverType({ ...options }: UseOverTypeOptions) {
@@ -40,11 +41,23 @@ export function useOverType({ ...options }: UseOverTypeOptions) {
     const textarea = instance.textarea;
 
     if (options.onPaste !== undefined) {
-      textarea.addEventListener("paste", options.onPaste);
+      textarea.addEventListener(
+        "paste",
+        options.onPaste as unknown as EventListener,
+      );
+    }
+    if (options.onKeyDown !== undefined) {
+      textarea.addEventListener(
+        "keydown",
+        options.onKeyDown as unknown as EventListener,
+      );
     }
     return () => {
       if (options.onPaste !== undefined) {
-        textarea.removeEventListener("paste", options.onPaste);
+        textarea.removeEventListener(
+          "paste",
+          options.onPaste as unknown as EventListener,
+        );
       }
       instance.destroy();
     };
