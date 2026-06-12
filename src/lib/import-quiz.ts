@@ -625,8 +625,8 @@ export const useImportQuiz = () => {
 
       case "legacy": {
         if (files !== null && files.length > 0) {
-          const fileOld = files[0];
-          setFileNameLegacy(fileOld.name);
+          const fileLegacy = files[0];
+          setFileNameLegacy(fileLegacy.name);
           setFileNameInput(null);
           setDirectoryName(null);
           setDirectoryFiles([]);
@@ -832,6 +832,7 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
+            multiple: q.answers.filter((a) => a.is_correct).length > 1,
           };
         }),
       } as Quiz;
