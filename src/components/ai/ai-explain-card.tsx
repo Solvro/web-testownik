@@ -95,7 +95,7 @@ export function AiExplainCard({
   onAnswerHints,
 }: AiExplainCardProps) {
   const startedRef = useRef(false);
-  // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
+
   const previousQuestionId = useRef(question.id);
   const lastHintsRef = useRef<string>("");
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
@@ -180,13 +180,11 @@ export function AiExplainCard({
   }, [question.id, onClose]);
   /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
   useEffect(() => {
     if (!startedRef.current) {
       startCompletion();
     }
   }, [startCompletion]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
 
   useEffect(() => {
     if (retryAfter === null || retryAfter <= 0) {

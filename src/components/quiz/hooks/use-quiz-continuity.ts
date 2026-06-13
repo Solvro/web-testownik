@@ -395,7 +395,6 @@ export function useQuizContinuity({
     peerConnectionsRef.current = peerConnections;
     isMountedRef.current = true;
 
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-live-state-to-parent
     init();
 
     const interval = setInterval(pingPeers, PING_INTERVAL);

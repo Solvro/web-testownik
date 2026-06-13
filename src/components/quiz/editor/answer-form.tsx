@@ -12,7 +12,6 @@ import {
 } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,

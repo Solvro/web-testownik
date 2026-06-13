@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 import { MarkdownRenderer } from "./markdown-renderer";
 import { Button } from "./ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "./ui/button-group";
+import { ButtonGroupSeparator } from "./ui/button-group";
 import {
   Dialog,
   DialogContent,

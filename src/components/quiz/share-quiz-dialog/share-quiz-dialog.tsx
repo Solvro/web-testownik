@@ -92,7 +92,6 @@ export function ShareQuizDialog({
     initialData: [],
   });
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
@@ -100,7 +99,6 @@ export function ShareQuizDialog({
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
-  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
   const loading = isSharedDataLoading || isUserGroupsLoading;
 
@@ -132,13 +130,12 @@ export function ShareQuizDialog({
             ],
       );
 
-      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setUsersWithAccess(foundUsers);
-      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
+
       setInitialUsersWithAccess(foundUsers);
-      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
+
       setGroupsWithAccess(foundGroups);
-      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
+
       setInitialGroupsWithAccess(foundGroups);
     }
   }, [sharedData]);
