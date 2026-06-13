@@ -70,7 +70,7 @@ const theme: Theme = {
     h3: "var(--chart-2)",
     blockquote: "color-mix(in srgb, var(--foreground) 70%, transparent)",
     codeBg: "color-mix(in srgb, var(--chart-6) 50%, transparent)",
-    code: "var(--)",
+    code: "var(--foreground)",
   },
 };
 //#endregion
