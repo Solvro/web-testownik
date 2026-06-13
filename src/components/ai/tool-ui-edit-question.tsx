@@ -572,6 +572,7 @@ function ToolErrorCard({ label }: { label: string }) {
   );
 }
 
+//eslint-disable-next-line @typescript-eslint/no-deprecated
 export const EditQuestionToolUI = makeAssistantToolUI<EditedQuestion, string>({
   toolName: "edit_question",
   render: ({ args, status }) => {

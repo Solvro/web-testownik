@@ -219,6 +219,7 @@ function AssistantMessage() {
         >
           {/* eslint-disable-next-line @typescript-eslint/promise-function-async */}
           {({ part, children }) => {
+            //eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (part.type) {
               case "group-chainOfThought": {
                 return <div data-slot="aui_chain-of-thought">{children}</div>;

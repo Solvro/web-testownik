@@ -652,7 +652,7 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
     </div>
   );
 }
-
+//eslint-disable-next-line @typescript-eslint/no-deprecated
 export const GeneratedQuestionsToolUI = makeAssistantToolUI<
   GeneratedQuestionsArguments,
   string
