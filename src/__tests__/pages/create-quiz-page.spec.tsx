@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import assert from "node:assert";
@@ -13,6 +13,24 @@ import type { Quiz } from "@/types/quiz";
 
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
+}));
+
+vi.mock("@/components/overtype-editor", () => ({
+  OverTypeEditor: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value?: string;
+    onChange?: (value: string) => void;
+    placeholder?: string;
+  }) => (
+    <textarea
+      placeholder={placeholder}
+      value={value ?? ""}
+      onChange={(event) => onChange?.(event.target.value)}
+    />
+  ),
 }));
 
 const testQuiz = {
@@ -42,7 +60,6 @@ const setup = async () => {
       testQuiz.description,
     );
 
-    // Questions are always visible in the restored design
     const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
     await user.type(questionTextareas[0], testQuiz.questions[0]);
 
@@ -50,7 +67,6 @@ const setup = async () => {
     await user.type(answers[0], testQuiz.answers[0]);
     await user.type(answers[1], testQuiz.answers[1]);
 
-    // Mark first answer as correct (answer correctness toggle is a button)
     const correctAnswerButtons = screen.getAllByRole("button", {
       name: /oznacz jako poprawną/i,
     });
@@ -193,15 +209,18 @@ describe("CreateQuizPage", () => {
     await fillFields();
     await addQuestion();
 
-    // Wait for the second question's content to be visible
-    const questionTextareas =
-      await screen.findAllByPlaceholderText(/treść pytania/i);
-    expect(questionTextareas).toHaveLength(2);
-    await user.type(questionTextareas[1], testQuiz.questions[1]);
+    const questionItems = await screen.findAllByTestId("question-item");
+    expect(questionItems).toHaveLength(2);
+    const newQuestion = questionItems[1];
 
-    const answerFields = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
-    await user.type(answerFields[2], testQuiz.answers[2]);
-    await user.type(answerFields[3], testQuiz.answers[3]);
+    const questionTextarea =
+      within(newQuestion).getByPlaceholderText(/treść pytania/i);
+    await user.type(questionTextarea, testQuiz.questions[1]);
+
+    const answerFields =
+      within(newQuestion).getAllByPlaceholderText(/Odpowiedź \d/i);
+    await user.type(answerFields[0], testQuiz.answers[2]);
+    await user.type(answerFields[1], testQuiz.answers[3]);
 
     await submit();
 

@@ -418,203 +418,227 @@ function Toolbar({
 
   return (
     <div className="relative">
-      <ButtonGroup
+      <div
         role="toolbar"
         aria-label="Formatowanie tekstu"
         className={cn(className, "not-lg:hidden")}
       >
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("bold") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleBold");
-              }}
-            >
-              <BoldIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("bold") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleBold");
+                }}
+              >
+                <BoldIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>
             Pogrubienie <Kbd>Ctrl + B</Kbd>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("italic") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleItalic");
-              }}
-            >
-              <ItalicIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("italic") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleItalic");
+                }}
+              >
+                <ItalicIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>
             Pochylenie <Kbd>Ctrl + I</Kbd>
           </TooltipContent>
         </Tooltip>
         <ButtonGroupSeparator />
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("code") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleCode");
-              }}
-            >
-              <CodeXmlIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("code") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleCode");
+                }}
+              >
+                <CodeXmlIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Kod w tekście</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("blockCode") ? "default" : "ghost"}
-              onClick={() => {
-                insertBlockCode();
-              }}
-            >
-              <CodeIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("blockCode") ? "default" : "ghost"}
+                onClick={() => {
+                  insertBlockCode();
+                }}
+              >
+                <CodeIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Blok kodu</TooltipContent>
         </Tooltip>
         <ButtonGroupSeparator />
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("inlineMath") ? "default" : "ghost"}
-              onClick={() => {
-                insertInlineMath();
-              }}
-            >
-              <SigmaIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("inlineMath") ? "default" : "ghost"}
+                onClick={() => {
+                  insertInlineMath();
+                }}
+              >
+                <SigmaIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Wzór w tekście</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("blockMath") ? "default" : "ghost"}
-              onClick={() => {
-                insertBlockMath();
-              }}
-            >
-              <PiIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("blockMath") ? "default" : "ghost"}
+                onClick={() => {
+                  insertBlockMath();
+                }}
+              >
+                <PiIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Blok wzoru</TooltipContent>
         </Tooltip>
         <ButtonGroupSeparator />
         <LinkButton isActive={isActive} editorRef={editorRef} />
         <ButtonGroupSeparator />
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("header") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleH1");
-              }}
-            >
-              <Heading1Icon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("header") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleH1");
+                }}
+              >
+                <Heading1Icon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Tytuł</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("header-2") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleH2");
-              }}
-            >
-              <Heading2Icon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("header-2") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleH2");
+                }}
+              >
+                <Heading2Icon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Podtytuł</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("header-3") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleH3");
-              }}
-            >
-              <Heading3Icon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("header-3") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleH3");
+                }}
+              >
+                <Heading3Icon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Sekcja</TooltipContent>
         </Tooltip>
         <ButtonGroupSeparator />
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("bullet-list") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleBulletList");
-              }}
-            >
-              <ListIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("bullet-list") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleBulletList");
+                }}
+              >
+                <ListIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Lista nieuporządkowana</TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("numbered-list") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleNumberedList");
-              }}
-            >
-              <ListOrderedIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("numbered-list") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleNumberedList");
+                }}
+              >
+                <ListOrderedIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Lista uporządkowana</TooltipContent>
         </Tooltip>
         <ButtonGroupSeparator />
         <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("quote") ? "default" : "ghost"}
-              onClick={() => {
-                apply("toggleQuote");
-              }}
-            >
-              <QuoteIcon />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                className="aspect-square p-0"
+                size={"sm"}
+                variant={isActive("quote") ? "default" : "ghost"}
+                onClick={() => {
+                  apply("toggleQuote");
+                }}
+              >
+                <QuoteIcon />
+              </Button>
+            }
+          ></TooltipTrigger>
           <TooltipContent>Cytat</TooltipContent>
         </Tooltip>
-      </ButtonGroup>
+      </div>
       <div className={cn(className, "inline-flex gap-2 lg:hidden")}>
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger
@@ -767,6 +791,7 @@ function Toolbar({
       </div>
       <div className="absolute top-0 right-0 mx-2 my-1">
         <Button
+          id="toggle-edit"
           size={"sm"}
           variant={"ghost"}
           onClick={() => {
@@ -824,22 +849,27 @@ function LinkButton({ isActive, editorRef }: LinkButtonProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              className="aspect-square p-0"
-              size={"sm"}
-              variant={isActive("link") ? "default" : "ghost"}
-            >
-              <LinkIcon />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            Link <Kbd>Ctrl + K</Kbd>
-          </TooltipContent>
-        </Tooltip>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={
+                <Button
+                  className="aspect-square p-0"
+                  size="sm"
+                  variant={isActive("link") ? "default" : "ghost"}
+                >
+                  <LinkIcon />
+                </Button>
+              }
+            />
+          }
+        />
+        <TooltipContent>
+          Link <Kbd>Ctrl + K</Kbd>
+        </TooltipContent>
+      </Tooltip>
+
       <PopoverContent>
         <PopoverHeader>
           <PopoverTitle>Adres URL</PopoverTitle>
