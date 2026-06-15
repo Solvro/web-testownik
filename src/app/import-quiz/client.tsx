@@ -98,12 +98,12 @@ function ImportQuizPageContent(): React.JSX.Element {
     // States
     uploadType,
     fileNameInput,
-    fileNameOld,
+    fileNameLegacy,
     error,
     errorDetail,
     loading,
     fileInputRef,
-    fileOldRef,
+    fileLegacyRef,
     directoryInputRef,
     directoryName,
     quizTitle,
@@ -329,7 +329,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                     <Label htmlFor="file-old-input">Plik zip z pytaniami</Label>
                     <div
                       className="hover:bg-muted/40 dark:bg-input/30 bg-input border-border dark:hover:bg-input/40 relative cursor-pointer rounded-md border p-4 text-center text-sm shadow-xs transition"
-                      onClick={() => fileOldRef.current?.click()}
+                      onClick={() => fileLegacyRef.current?.click()}
                       onDrop={handleFileDrop}
                       onDragOver={handleDragOverFile}
                       onDragLeave={handleDragLeave}
@@ -337,7 +337,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                       tabIndex={0}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
-                          fileOldRef.current?.click();
+                          fileLegacyRef.current?.click();
                           event.preventDefault();
                         }
                       }}
@@ -346,11 +346,11 @@ function ImportQuizPageContent(): React.JSX.Element {
                         id="file-old-input"
                         type="file"
                         accept=".zip"
-                        ref={fileOldRef}
+                        ref={fileLegacyRef}
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-                      {fileNameOld === null ? (
+                      {fileNameLegacy === null ? (
                         <div className="space-y-1">
                           <FolderArchiveIcon className="mx-auto size-6" />
                           <p>Wybierz plik...</p>
@@ -358,7 +358,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                       ) : (
                         <div className="space-y-1">
                           <FolderOpenIcon className="mx-auto size-6" />
-                          <p className="break-all">{fileNameOld}</p>
+                          <p className="break-all">{fileNameLegacy}</p>
                         </div>
                       )}
                     </div>
