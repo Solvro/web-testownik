@@ -289,6 +289,10 @@ export class BaseApiService {
 
   private async ensureFreshToken(): Promise<void> {
     const token = this.getAccessToken();
+    if (token === null && BaseApiService.refreshPromise !== null) {
+      await BaseApiService.refreshPromise;
+      return;
+    }
     if (token !== null && isTokenExpired(token)) {
       await this.queueTokenRefresh();
     }
