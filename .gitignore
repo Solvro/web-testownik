@@ -29,3 +29,7 @@ coverage
 /tsconfig.tsbuildinfo
 .env
 next-env.d.ts
+
+# Serwist
+public/sw*
+public/swe-worker*

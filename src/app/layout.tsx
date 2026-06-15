@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
@@ -8,6 +8,7 @@ import { AppFooter } from "@/components/app-footer";
 import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
 import { Navbar } from "@/components/navbar";
+import { PwaInstallAlert } from "@/components/pwa-install-alert";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
@@ -72,6 +73,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#1A2856",
+  colorScheme: "dark light",
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -110,6 +116,7 @@ export default async function RootLayout({
               <ErrorHandler />
               <GuestAlert />
               <Alerts />
+              <PwaInstallAlert />
             </Suspense>
             <main>{children}</main>
           </div>
