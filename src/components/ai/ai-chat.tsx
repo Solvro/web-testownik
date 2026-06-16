@@ -34,7 +34,6 @@ import {
   resolveSelectableAiModel,
 } from "@/lib/ai/models";
 import type { SelectableAiModel } from "@/lib/ai/models";
-import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
@@ -69,30 +68,27 @@ function ChatRuntime({
   canEdit: boolean;
   children: React.ReactNode;
 }) {
-  const system = useMemo(
-    () => buildChatSystemPrompt(quiz, question, questions, userName, canEdit),
-    [quiz, question, questions, userName, canEdit],
+  const routeContext = useMemo(
+    () => ({
+      quiz,
+      question,
+      questions,
+      userName,
+    }),
+    [quiz, question, questions, userName],
   );
 
-  const images = useMemo(
-    () => (question === null ? [] : collectQuestionImages(question)),
-    [question],
-  );
-
-  const systemRef = useRef(system);
-  const imagesRef = useRef(images);
+  const routeContextRef = useRef(routeContext);
   useEffect(() => {
-    systemRef.current = system;
-    imagesRef.current = images;
-  }, [images, system]);
+    routeContextRef.current = routeContext;
+  }, [routeContext]);
 
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: "/ai/chat",
         body: () => ({
-          system: systemRef.current,
-          images: imagesRef.current,
+          ...routeContextRef.current,
           canEdit,
           quizId,
         }),

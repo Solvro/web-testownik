@@ -8,7 +8,7 @@ import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { getChatModelForUser } from "@/lib/ai/model";
 import { isAiModel } from "@/lib/ai/models";
-import type { LabeledImage } from "@/lib/ai/prompts";
+import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
@@ -18,6 +18,7 @@ import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import type { Question } from "@/types/quiz";
 
 export const maxDuration = 60;
 
@@ -90,16 +91,20 @@ export async function POST(request: Request) {
 
   const {
     messages,
-    system,
-    images,
+    quiz: requestQuiz,
+    question: requestQuestion,
+    questions: requestQuestions,
+    userName,
     canEdit,
     quizId: rawQuizId,
     config,
     tools: clientTools,
   } = (await request.json()) as {
     messages: UIMessage[];
-    system?: string;
-    images?: LabeledImage[];
+    quiz?: { title: string; description: string };
+    question?: Question | null;
+    questions?: Question[];
+    userName?: string;
     canEdit?: boolean;
     quizId?: string;
     config?: { modelName?: unknown };
@@ -123,10 +128,19 @@ export async function POST(request: Request) {
   }
 
   const modelMessages = await convertToModelMessages(messages);
+  const chatQuestion = requestQuestion ?? null;
+  const chatQuestions = requestQuestions ?? [];
+  const system = buildChatSystemPrompt(
+    requestQuiz ?? { title: "Quiz", description: "" },
+    chatQuestion,
+    chatQuestions,
+    userName,
+    canEdit,
+  );
   const imageParts =
-    images !== undefined && images.length > 0
-      ? await resolveImages(images)
-      : [];
+    chatQuestion === null
+      ? []
+      : await resolveImages(collectQuestionImages(chatQuestion));
 
   const imageContext: ModelMessage[] =
     imageParts.length > 0
@@ -145,7 +159,7 @@ export async function POST(request: Request) {
 
   const result = streamText({
     model,
-    ...(system === undefined ? {} : { system }),
+    system,
     messages: [...imageContext, ...modelMessages],
     stopWhen: stepCountIs(5),
     tools: {

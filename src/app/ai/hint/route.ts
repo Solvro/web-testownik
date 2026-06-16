@@ -4,8 +4,8 @@ import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { chatModel } from "@/lib/ai/model";
 import {
-  buildQuestionExplanationSystemPrompt,
-  buildQuestionExplanationUserPrompt,
+  buildQuestionHintSystemPrompt,
+  buildQuestionHintUserPrompt,
   collectQuestionImages,
 } from "@/lib/ai/prompts";
 import {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return new Response("AI features require a full account", { status: 403 });
   }
 
-  const rateLimitResult = checkRateLimit(user.user_id, "ai-explain", {
+  const rateLimitResult = checkRateLimit(user.user_id, "ai-hint", {
     limit: env.AI_EXPLAIN_RATE_LIMIT,
     window: env.AI_EXPLAIN_RATE_WINDOW,
   });
@@ -51,11 +51,11 @@ export async function POST(request: Request) {
   }
 
   const imageParts = await resolveImages(collectQuestionImages(question));
-  const prompt = buildQuestionExplanationUserPrompt(question);
+  const prompt = buildQuestionHintUserPrompt(question);
 
   const result = streamText({
     model: chatModel,
-    system: buildQuestionExplanationSystemPrompt(question),
+    system: buildQuestionHintSystemPrompt(question),
     prompt:
       imageParts.length > 0
         ? [

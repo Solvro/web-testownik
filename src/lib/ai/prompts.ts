@@ -76,7 +76,9 @@ Zasady:
   return prompt;
 }
 
-export function buildExplainCheckedPrompt(question: Question): string {
+export function buildQuestionExplanationSystemPrompt(
+  question: Question,
+): string {
   return String.raw`Wyjaśnij poniższe pytanie quizowe i wytłumacz, dlaczego podane odpowiedzi są poprawne lub niepoprawne.
 Bądź zwięzły, ale dokładny. Używaj formatowania Markdown.
 Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
@@ -89,7 +91,7 @@ Odpowiedzi:
 ${formatAnswers(question)}`;
 }
 
-export function buildExplainUncheckedPrompt(question: Question): string {
+export function buildQuestionHintSystemPrompt(question: Question): string {
   const answerCount = question.answers.length;
   const hintLines = question.answers
     .map(
@@ -131,6 +133,14 @@ Zasady:
 - Odpowiedz TYLKO tagami XML, bez żadnego dodatkowego tekstu`;
 }
 
+export function buildQuestionExplanationUserPrompt(question: Question): string {
+  return `Wyjaśnij aktualne pytanie nr ${question.order.toString()}.`;
+}
+
+export function buildQuestionHintUserPrompt(question: Question): string {
+  return `Potrzebuję wskazówki do aktualnego pytania nr ${question.order.toString()}.`;
+}
+
 export interface LabeledImage {
   label: string;
   url: string;
@@ -150,12 +160,4 @@ export function collectQuestionImages(question: Question): LabeledImage[] {
     }
   }
   return images;
-}
-
-export function buildExplainCheckedUserMessage(question: Question): string {
-  return `Wyjaśnij aktualne pytanie nr ${question.order.toString()}.`;
-}
-
-export function buildExplainUncheckedUserMessage(question: Question): string {
-  return `Potrzebuję wskazówki do aktualnego pytania nr ${question.order.toString()}.`;
 }
