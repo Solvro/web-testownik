@@ -321,7 +321,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   }}
                   isHistoryQuestion={isHistoryQuestion}
                   canGoBack={canGoBack}
-                  answerHints={answerHints}
+                  answerHints={questionChecked ? [] : answerHints}
                 />
               )}
             </ViewTransition>
@@ -356,6 +356,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isExplainOpen={showAiExplain}
                 isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
+                questionChecked={questionChecked}
               />
               {showAi && showAiExplain && currentQuestion != null ? (
                 <AiExplainCard
