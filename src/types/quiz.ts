@@ -4,6 +4,7 @@ export interface QuizBase {
   id: string;
   title: string;
   description: string;
+  folder: Folder | null;
   creator?: User | null;
   visibility: AccessLevel;
   allow_anonymous: boolean;
@@ -30,6 +31,42 @@ export interface Answer {
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
   image_width?: number | null; // Read-only (Display)
   image_height?: number | null; // Read-only (Display)
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  created_at?: string | null;
+  parent?: string | null;
+  quizzes: string[];
+  subfolders: string[];
+  folder_type: "regular" | "archive";
+}
+
+export interface Library {
+  path: [
+    {
+      id: string;
+      name: string;
+    },
+  ];
+  items: LibraryItem[];
+}
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  type: "folder" | "quiz";
+  owner: {
+    id: string;
+    full_name: string;
+    student_number: string;
+    photo: string;
+    account_type: string;
+    account_level: string;
+  };
+  can_edit: boolean;
+  created_at: string;
 }
 
 export interface Question {

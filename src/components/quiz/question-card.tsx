@@ -1,7 +1,7 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { RotateCcwIcon, SparklesIcon, Undo2 } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition, useEffect } from "react";
+import { ViewTransition, useEffect, useState } from "react";
 import { SiGithub } from "react-icons/si";
 
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
@@ -26,10 +26,14 @@ import {
 } from "@/components/ui/tooltip";
 import { getQuestionAnsweredCount } from "@/lib/session-utils";
 import { cn } from "@/lib/utils";
-import type { AnswerRecord, Question } from "@/types/quiz";
+import type {
+  AnswerRecord,
+  Question,
+  QuizWithUserProgress,
+} from "@/types/quiz";
 
 interface QuestionCardProps {
-  quizId: string;
+  quiz: QuizWithUserProgress;
   question: Question | null;
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
@@ -45,7 +49,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
-  quizId,
+  quiz,
   question,
   selectedAnswers,
   setSelectedAnswers,
@@ -59,6 +63,9 @@ export function QuestionCard({
   isHistoryQuestion,
   answerHints = [],
 }: QuestionCardProps) {
+  const [isRestartTransitionActive, setIsRestartTransitionActive] =
+    useState(false);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAnswerClick = (answerId: string) => {
     if (questionChecked) {
@@ -127,8 +134,23 @@ export function QuestionCard({
               autoplay
             />
             <div className="flex justify-center">
-              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-                <Button variant="outline" onClick={restartQuiz}>
+              <ViewTransition
+                name={
+                  isRestartTransitionActive
+                    ? `quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`
+                    : ""
+                }
+                default="h-full"
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsRestartTransitionActive(true);
+                    setTimeout(() => {
+                      restartQuiz?.();
+                    }, 0);
+                  }}
+                >
                   <RotateCcwIcon />
                   Uruchom ponownie quiz
                 </Button>
@@ -350,13 +372,11 @@ export function QuestionCard({
                   <TooltipContent>Poprzednie pytanie</TooltipContent>
                 </Tooltip>
               ) : null}
-              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-                {questionChecked ? (
-                  <Button onClick={nextAction}>Następne pytanie</Button>
-                ) : (
-                  <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
-                )}
-              </ViewTransition>
+              {questionChecked ? (
+                <Button onClick={nextAction}>Następne pytanie</Button>
+              ) : (
+                <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+              )}
             </>
           )}
         </div>

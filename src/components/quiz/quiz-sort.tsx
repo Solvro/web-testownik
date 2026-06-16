@@ -8,8 +8,11 @@ import {
   SearchIcon,
   X as XIcon,
 } from "lucide-react";
-import { ViewTransition, useState } from "react";
+import type { ReactNode } from "react";
+import { ViewTransition } from "react";
 
+import { DEFAULT_LIBRARY_SORT_KEY } from "@/components/quiz/library-sort";
+import type { LibrarySortKey } from "@/components/quiz/library-sort";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,127 +30,47 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { QuizMetadata, SharedQuiz } from "@/types/quiz";
 
 interface Option {
+  key: LibrarySortKey;
   label: string;
-  icon: React.ReactNode;
-  comparator: (
-    a: QuizMetadata | SharedQuiz,
-    b: QuizMetadata | SharedQuiz,
-  ) => number;
+  icon: ReactNode;
 }
 
 interface QuizSortProps {
-  onSortChange: (
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ) => number,
-  ) => void;
-  onNameFilterChange: (value: string) => void;
+  sortKey: LibrarySortKey;
+  onSortKeyChange: (value: LibrarySortKey) => void;
+  searchValue: string;
+  onSearchValueChange: (value: string) => void;
   onResetFilters: () => void;
 }
 
-const defaultComparator = (
-  _a: QuizMetadata | SharedQuiz,
-  _b: QuizMetadata | SharedQuiz,
-): number => {
-  return 0;
-};
-
-const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
-  return "quiz" in quiz ? quiz.quiz.title : quiz.title;
-};
-
-const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
-  const dateString = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
-  return new Date(dateString);
-};
-
-const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
-  const dateString: string | null =
-    "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
-  return new Date(dateString ?? 0); // Return earliest date if last_used_at is null
-};
-
-const sortingOptions: Record<string, Option> = {
-  ascending: {
-    label: "A → Z",
-    icon: <ArrowDownAZIcon />,
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ): number => {
-      return getTitle(a).localeCompare(getTitle(b));
-    },
-  },
-  descending: {
-    label: "Z → A",
-    icon: <ArrowDownZAIcon />,
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ): number => {
-      return getTitle(b).localeCompare(getTitle(a));
-    },
-  },
-  lastest: {
-    label: "Najnowsze",
-    icon: <CalendarArrowDownIcon />,
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ): number => {
-      return getCreationDate(b).getTime() - getCreationDate(a).getTime();
-    },
-  },
-  oldest: {
-    label: "Najstarsze",
-    icon: <CalendarArrowUpIcon />,
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ): number => {
-      return getCreationDate(a).getTime() - getCreationDate(b).getTime();
-    },
-  },
-  lastUsed: {
-    label: "Ostatnio używane",
-    icon: <HistoryIcon />,
-    comparator: (
-      a: QuizMetadata | SharedQuiz,
-      b: QuizMetadata | SharedQuiz,
-    ): number => {
-      return getLastUsedDate(b).getTime() - getLastUsedDate(a).getTime();
-    },
-  },
-};
+const sortingOptions: Option[] = [
+  { key: "name-asc", label: "A → Z", icon: <ArrowDownAZIcon /> },
+  { key: "name-desc", label: "Z → A", icon: <ArrowDownZAIcon /> },
+  { key: "newest", label: "Najnowsze", icon: <CalendarArrowDownIcon /> },
+  { key: "oldest", label: "Najstarsze", icon: <CalendarArrowUpIcon /> },
+  { key: "last-used", label: "Ostatnio używane", icon: <HistoryIcon /> },
+];
 
 export function QuizSort({
-  onSortChange,
-  onNameFilterChange,
+  sortKey,
+  onSortKeyChange,
+  searchValue,
+  onSearchValueChange,
   onResetFilters,
 }: QuizSortProps) {
-  const [selectedOption, setSelectedOption] = useState<Option | null>(
-    sortingOptions.lastUsed,
-  );
-  const [searchValue, setSearchValue] = useState<string>("");
+  const selectedOption =
+    sortingOptions.find((option) => option.key === sortKey) ??
+    sortingOptions.find((option) => option.key === DEFAULT_LIBRARY_SORT_KEY) ??
+    sortingOptions[0];
 
-  const isFiltered =
-    selectedOption !== sortingOptions.lastUsed || searchValue !== "";
-
-  const handleClearFilters = () => {
-    setSelectedOption(null);
-    setSearchValue("");
-    onNameFilterChange("");
-    onSortChange(defaultComparator);
-  };
+  const isFiltered = sortKey !== DEFAULT_LIBRARY_SORT_KEY || searchValue !== "";
 
   return (
     <div className="flex flex-1 flex-row items-center justify-end gap-2">
-      <ViewTransition name="quiz-info">
-        <div className="flex flex-row items-center gap-2">
+      <ViewTransition>
+        <div className="flex w-full flex-row items-center gap-2 sm:w-auto">
           {isFiltered ? (
             <Tooltip>
               <TooltipTrigger
@@ -155,10 +78,7 @@ export function QuizSort({
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => {
-                      onResetFilters();
-                      handleClearFilters();
-                    }}
+                    onClick={onResetFilters}
                     aria-label="Wyczyść filtry"
                   >
                     <XIcon />
@@ -173,8 +93,7 @@ export function QuizSort({
               placeholder="Wyszukaj quiz"
               value={searchValue}
               onChange={(event) => {
-                setSearchValue(event.target.value);
-                onNameFilterChange(event.target.value);
+                onSearchValueChange(event.target.value);
               }}
             />
             <InputGroupAddon>
@@ -191,8 +110,9 @@ export function QuizSort({
                         variant="outline"
                         size="icon"
                         aria-label="Sortuj quizy"
+                        className="bg-ring!"
                       >
-                        {selectedOption === null ? (
+                        {selectedOption.key === DEFAULT_LIBRARY_SORT_KEY ? (
                           <ArrowDownUpIcon />
                         ) : (
                           selectedOption.icon
@@ -204,13 +124,12 @@ export function QuizSort({
               ></TooltipTrigger>
               <TooltipContent>Sortuj</TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end">
-              {Object.values(sortingOptions).map((option) => (
+            <DropdownMenuContent className="w-full" align="end">
+              {sortingOptions.map((option) => (
                 <DropdownMenuItem
-                  key={option.label}
+                  key={option.key}
                   onClick={() => {
-                    setSelectedOption(option);
-                    onSortChange(option.comparator);
+                    onSortKeyChange(option.key);
                   }}
                   className="flex w-auto justify-between"
                 >

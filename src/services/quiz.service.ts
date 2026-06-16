@@ -227,6 +227,27 @@ export class QuizService extends BaseApiService {
   }
 
   /**
+   * Move quiz to folder
+   */
+  async moveQuizToFolder(quizId: string, folderId: string): Promise<Quiz> {
+    const response = await this.post<Quiz>(`quizzes/${quizId}/move/`, {
+      folder_id: folderId,
+    });
+    return response.data;
+  }
+
+  /**
+   * Move quiz to archive
+   */
+  async archiveQuiz(quizId: string): Promise<Quiz> {
+    const response = await this.post<Quiz>(
+      `quizzes/${quizId}/move-to-archive/`,
+      quizId,
+    );
+    return response.data;
+  }
+
+  /**
    * Delete quiz progress, guaranteed to strictly return the server's newly created session
    * or a local fallback.
    */

@@ -46,6 +46,7 @@ export function migrateLegacyQuiz(
     id: quizId,
     title: legacy.title || "Untitled Quiz",
     description: legacy.description ?? "",
+    folder: null,
     questions,
     version: 1,
     visibility: AccessLevel.PRIVATE,

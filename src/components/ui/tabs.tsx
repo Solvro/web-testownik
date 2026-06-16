@@ -6,19 +6,38 @@ import type { VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+const tabsVariants = cva("", {
+  variants: {
+    variant: {
+      default: "flex flex-col gap-2",
+      quiz: [
+        "flex flex-col w-full gap-4 md:flex-row md:gap-6",
+        // TabsList
+        "**:data-[slot=tabs-list]:border-none **:data-[slot=tabs-list]:flex **:data-[slot=tabs-list]:h-min **:data-[slot=tabs-list]:gap-2 **:data-[slot=tabs-list]:items-stretch **:data-[slot=tabs-list]:flex-col md:**:data-[slot=tabs-list]:flex-col **:data-[slot=tabs-list]:bg-transparent **:data-[slot=tabs-list]:w-full md:**:data-[slot=tabs-list]:w-64 **:data-[slot=tabs-list]:overflow-x-auto md:**:data-[slot=tabs-list]:overflow-x-visible",
+        // TabsTrigger
+        "**:data-[slot=tabs-trigger]:gap-2 **:data-[slot=tabs-trigger]:transition-all **:data-[slot=tabs-trigger]:text-sm md:**:data-[slot=tabs-trigger]:text-base **:data-[slot=tabs-trigger]:px-3 **:data-[slot=tabs-trigger]:py-2.5 **:data-[slot=tabs-trigger]:flex **:data-[slot=tabs-trigger]:justify-center md:**:data-[slot=tabs-trigger]:justify-start **:data-[slot=tabs-trigger]:border **:data-[slot=tabs-trigger]:border-input **:data-[slot=tabs-trigger]:text-foreground! **:data-[slot=tabs-trigger]:duration-300 **:data-[slot=tabs-trigger]:aria-selected:bg-ring! **:data-[slot=tabs-trigger]:font-light **:data-[slot=tabs-trigger]:flex-1 md:**:data-[slot=tabs-trigger]:flex-initial",
+        // Icons inside TabsTrigger
+        "[&>svg]:size-6",
+      ],
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
 function Tabs({
   className,
   orientation = "horizontal",
+  variant = "default",
   ...props
-}: TabsPrimitive.Root.Props) {
+}: TabsPrimitive.Root.Props & VariantProps<typeof tabsVariants>) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      className={cn(
-        "group/tabs flex gap-2 data-horizontal:flex-col",
-        className,
-      )}
+      data-variant={variant}
+      className={cn(tabsVariants({ variant }), className)}
       {...props}
     />
   );
@@ -80,5 +99,13 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  // eslint-disable-next-line react-refresh/only-export-components
+  tabsListVariants,
+  // eslint-disable-next-line react-refresh/only-export-components
+  tabsVariants,
+};
