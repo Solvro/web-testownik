@@ -27,8 +27,8 @@ import {
 } from "@/lib/ai/models";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import { ACCOUNT_LEVEL } from "@/types/user";
 import type { SettingsFormProps } from "@/types/user";
+import { ACCOUNT_LEVEL } from "@/types/user";
 
 interface CopyableSnippetProps {
   copiedKey: string | null;
@@ -189,8 +189,7 @@ export function AiSettingsForm({
                 </Badge>
               </Label>
               <p className="text-muted-foreground text-xs">
-                Model startowy dla czatu AI i wyjaśnień pytań. W czacie możesz
-                zmienić go tymczasowo.
+                Model startowy dla AI. W czacie możesz zmienić go tymczasowo.
               </p>
             </div>
             <Select
@@ -209,16 +208,27 @@ export function AiSettingsForm({
                 className="w-full shrink-0 md:ml-auto md:w-56"
                 disabled={disabled}
               >
-                <AiModelProviderIcon
-                  provider={selectedAiModelOption.provider}
-                />
-                <span className="truncate">{selectedAiModelOption.label}</span>
+                <SelectValue>
+                  <AiModelProviderIcon
+                    provider={selectedAiModelOption.provider}
+                  />
+                  <span className="truncate">
+                    {selectedAiModelOption.label}
+                  </span>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent alignItemWithTrigger>
                 <SelectGroup>
                   {SELECTABLE_AI_MODEL_OPTIONS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      <AiModelProviderIcon provider={model.provider} />
+                    <SelectItem
+                      key={model.value}
+                      value={model.value}
+                      className="*:data-[slot=select-item-text]:gap-1.5"
+                    >
+                      <AiModelProviderIcon
+                        provider={model.provider}
+                        className="my-auto"
+                      />
                       {model.label}
                     </SelectItem>
                   ))}

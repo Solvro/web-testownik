@@ -34,7 +34,6 @@ import {
   resolveSelectableAiModel,
 } from "@/lib/ai/models";
 import type { SelectableAiModel } from "@/lib/ai/models";
-import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
@@ -69,35 +68,50 @@ function ChatRuntime({
   canEdit: boolean;
   children: React.ReactNode;
 }) {
-  const system = useMemo(
-    () => buildChatSystemPrompt(quiz, question, questions, userName, canEdit),
-    [quiz, question, questions, userName, canEdit],
+  const routeContext = useMemo(
+    () => ({
+      quiz,
+      question,
+      questions,
+      userName,
+    }),
+    [quiz, question, questions, userName],
   );
 
-  const images = useMemo(
-    () => (question === null ? [] : collectQuestionImages(question)),
-    [question],
-  );
-
-  const systemRef = useRef(system);
-  const imagesRef = useRef(images);
+  const routeContextRef = useRef(routeContext);
   useEffect(() => {
-    systemRef.current = system;
-    imagesRef.current = images;
-  }, [images, system]);
+    routeContextRef.current = routeContext;
+  }, [routeContext]);
+  const lastSubmittedQuestionRef = useRef<{
+    id: string;
+    order: number;
+  } | null>(null);
 
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: "/ai/chat",
-        body: () => ({
-          system: systemRef.current,
-          images: imagesRef.current,
-          canEdit,
-          quizId,
-        }),
+        body: () => {
+          const currentQuestion = routeContextRef.current.question;
+          const previousQuestion = lastSubmittedQuestionRef.current;
+          lastSubmittedQuestionRef.current =
+            currentQuestion === null
+              ? null
+              : { id: currentQuestion.id, order: currentQuestion.order };
+
+          return {
+            ...routeContextRef.current,
+            canEdit,
+            questionContextChange:
+              previousQuestion !== null &&
+              currentQuestion !== null &&
+              previousQuestion.id !== currentQuestion.id
+                ? { previousQuestionOrder: previousQuestion.order }
+                : undefined,
+          };
+        },
       }),
-    [canEdit, quizId],
+    [canEdit],
   );
 
   const suggestions = useMemo(() => {

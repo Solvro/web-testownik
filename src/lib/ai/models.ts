@@ -13,7 +13,6 @@ export type SelectableAiModel =
   | typeof AI_MODEL.GPT_54_MINI
   | typeof AI_MODEL.GPT_55
   | typeof AI_MODEL.GPT_54
-  | typeof AI_MODEL.CLAUDE_FABLE_5
   | typeof AI_MODEL.CLAUDE_OPUS_4_8
   | typeof AI_MODEL.CLAUDE_SONNET_4_6
   | typeof AI_MODEL.CLAUDE_HAIKU_4_5;
@@ -43,11 +42,6 @@ export const SELECTABLE_AI_MODEL_OPTIONS = [
     value: AI_MODEL.GPT_54,
     label: "GPT-5.4",
     provider: "OpenAI",
-  },
-  {
-    value: AI_MODEL.CLAUDE_FABLE_5,
-    label: "Claude Fable 5",
-    provider: "Anthropic",
   },
   {
     value: AI_MODEL.CLAUDE_OPUS_4_8,

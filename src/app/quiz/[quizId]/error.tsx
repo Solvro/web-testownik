@@ -1,24 +1,30 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircleIcon,
   HomeIcon,
+  LibraryIcon,
   LockIcon,
   LogInIcon,
   RefreshCwIcon,
+  RotateCcwIcon,
+  Trash2Icon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext } from "react";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -27,6 +33,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { getQuizService } from "@/services";
 import { ACCOUNT_TYPE } from "@/types/user";
 
 export default function QuizError({
@@ -39,6 +47,76 @@ export default function QuizError({
   const { isAuthenticated, user } = useContext(AppContext);
   const isGuest = user?.account_type === ACCOUNT_TYPE.GUEST;
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const pathParts = pathname.split("/").filter(Boolean);
+  const quizId = pathParts[0] === "quiz" ? pathParts[1] : undefined;
+  const canRestoreDeletedQuiz =
+    isAuthenticated &&
+    !isGuest &&
+    quizId !== undefined &&
+    error.message.includes("restore");
+
+  const { mutate: restoreQuiz, isPending: isRestoring } = useMutation({
+    mutationFn: async () => {
+      if (quizId === undefined) {
+        throw new Error("Nieprawidłowy identyfikator quizu.");
+      }
+      await getQuizService().restoreQuiz(quizId);
+    },
+    onSuccess: async () => {
+      if (quizId !== undefined) {
+        await queryClient.refetchQueries({
+          queryKey: quizDetailQueryKey(quizId),
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+      toast.success("Quiz został przywrócony.");
+      reset();
+    },
+    onError: (restoreError) => {
+      toast.error("Nie udało się przywrócić quizu.", {
+        description:
+          restoreError instanceof Error ? restoreError.message : undefined,
+      });
+    },
+  });
+
+  if (error.message.includes("deleted")) {
+    return (
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Trash2Icon className="text-muted-foreground" />
+          </EmptyMedia>
+          <EmptyTitle>Quiz został usunięty</EmptyTitle>
+          <EmptyDescription>
+            Ten quiz został przeniesiony do kosza i nie jest już dostępny.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <div className="flex justify-center gap-2">
+            {isAuthenticated && !isGuest ? (
+              <ButtonLink href="/quizzes" variant="outline">
+                <LibraryIcon />
+                Moje quizy
+              </ButtonLink>
+            ) : null}
+            {canRestoreDeletedQuiz ? (
+              <Button
+                onClick={() => {
+                  restoreQuiz();
+                }}
+                disabled={isRestoring}
+              >
+                {isRestoring ? <Spinner /> : <RotateCcwIcon />}
+                Przywróć quiz
+              </Button>
+            ) : null}
+          </div>
+        </EmptyContent>
+      </Empty>
+    );
+  }
 
   if (error.message.includes("403") || error.message.includes("401")) {
     const is401 = error.message.includes("401");

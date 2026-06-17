@@ -127,6 +127,10 @@ export class QuizService extends BaseApiService {
     await this.delete(`quizzes/${quizId}/`);
   }
 
+  async restoreQuiz(quizId: string): Promise<void> {
+    await this.post<{ status: string }>(`quizzes/${quizId}/restore/`);
+  }
+
   /**
    * Get shared quizzes
    */

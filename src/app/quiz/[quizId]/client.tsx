@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { AiChat } from "@/components/ai/ai-chat";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
-import { AiExplainCard } from "@/components/ai/ai-explain-card";
+import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
@@ -124,6 +124,12 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setShowAiExplain(false);
     setAnswerHints([]);
   }, [currentQuestion?.id]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+
+  /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+  useEffect(() => {
+    setShowAiExplain(false);
+  }, [questionChecked]);
   /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
 
   const handleToggleBrainrot = () => {
@@ -356,17 +362,27 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isExplainOpen={showAiExplain}
                 isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
+                questionChecked={questionChecked}
               />
               {showAi && showAiExplain && currentQuestion != null ? (
-                <AiExplainCard
-                  question={currentQuestion}
-                  questionChecked={questionChecked}
-                  onClose={() => {
-                    setShowAiExplain(false);
-                    setAnswerHints([]);
-                  }}
-                  onAnswerHints={setAnswerHints}
-                />
+                questionChecked ? (
+                  <AiExplanationCard
+                    question={currentQuestion}
+                    onClose={() => {
+                      setShowAiExplain(false);
+                      setAnswerHints([]);
+                    }}
+                  />
+                ) : (
+                  <AiHintCard
+                    question={currentQuestion}
+                    onClose={() => {
+                      setShowAiExplain(false);
+                      setAnswerHints([]);
+                    }}
+                    onAnswerHints={setAnswerHints}
+                  />
+                )
               ) : null}
             </div>
           </ViewTransition>
