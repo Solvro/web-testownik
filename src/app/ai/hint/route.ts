@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
   const result = streamText({
     model: chatModel,
-    system: buildQuestionHintSystemPrompt(question),
+    system: buildQuestionHintSystemPrompt(),
     prompt:
       imageParts.length > 0
         ? [

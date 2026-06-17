@@ -82,18 +82,36 @@ function ChatRuntime({
   useEffect(() => {
     routeContextRef.current = routeContext;
   }, [routeContext]);
+  const lastSubmittedQuestionRef = useRef<{
+    id: string;
+    order: number;
+  } | null>(null);
 
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: "/ai/chat",
-        body: () => ({
-          ...routeContextRef.current,
-          canEdit,
-          quizId,
-        }),
+        body: () => {
+          const currentQuestion = routeContextRef.current.question;
+          const previousQuestion = lastSubmittedQuestionRef.current;
+          lastSubmittedQuestionRef.current =
+            currentQuestion === null
+              ? null
+              : { id: currentQuestion.id, order: currentQuestion.order };
+
+          return {
+            ...routeContextRef.current,
+            canEdit,
+            questionContextChange:
+              previousQuestion !== null &&
+              currentQuestion !== null &&
+              previousQuestion.id !== currentQuestion.id
+                ? { previousQuestionOrder: previousQuestion.order }
+                : undefined,
+          };
+        },
       }),
-    [canEdit, quizId],
+    [canEdit],
   );
 
   const suggestions = useMemo(() => {

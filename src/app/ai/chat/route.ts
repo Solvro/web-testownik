@@ -1,21 +1,23 @@
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import type { JSONSchema7, LanguageModel, ModelMessage, UIMessage } from "ai";
-import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
 import { getChatModelForUser } from "@/lib/ai/model";
 import { isAiModel } from "@/lib/ai/models";
-import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
+import {
+  CURRENT_QUESTION_CONTEXT_MARKER,
+  buildChatSystemPrompt,
+  buildCurrentQuestionContextPrompt,
+  collectQuestionImages,
+} from "@/lib/ai/prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
   createRateLimitHeaders,
 } from "@/lib/ai/rate-limit";
-import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES } from "@/lib/auth/constants";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import type { Question } from "@/types/quiz";
@@ -66,6 +68,48 @@ const getQuestionSchema = z.object({
     .describe("Numer pytania w quizie (1-indexed)"),
 });
 
+const listQuestionsSchema = z.object({
+  query: z
+    .string()
+    .optional()
+    .describe("Opcjonalna fraza do filtrowania listy pytań po treści"),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Maksymalna liczba pytań do zwrócenia. Domyślnie 50."),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Liczba pasujących pytań do pominięcia przy stronicowaniu"),
+});
+
+function truncateQuestionPreview(text: string): string {
+  return text.length > 180 ? `${text.slice(0, 180)}…` : text;
+}
+
+function getModelMessageText(message: ModelMessage): string {
+  if (typeof message.content === "string") {
+    return message.content;
+  }
+
+  if (!Array.isArray(message.content)) {
+    return "";
+  }
+
+  return message.content
+    .map((part) => (part.type === "text" ? part.text : ""))
+    .join("\n");
+}
+
+function isCurrentQuestionContextMessage(message: ModelMessage): boolean {
+  return getModelMessageText(message).includes(CURRENT_QUESTION_CONTEXT_MARKER);
+}
+
 export async function POST(request: Request) {
   if (!env.NEXT_PUBLIC_AI_ENABLED) {
     return new Response("AI is not configured", { status: 503 });
@@ -96,7 +140,7 @@ export async function POST(request: Request) {
     questions: requestQuestions,
     userName,
     canEdit,
-    quizId: rawQuizId,
+    questionContextChange,
     config,
     tools: clientTools,
   } = (await request.json()) as {
@@ -106,16 +150,15 @@ export async function POST(request: Request) {
     questions?: Question[];
     userName?: string;
     canEdit?: boolean;
-    quizId?: string;
+    questionContextChange?: {
+      previousQuestionOrder?: number | null;
+    };
     config?: { modelName?: unknown };
     tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
   };
 
-  const quizId = z.uuid().safeParse(rawQuizId).success ? rawQuizId : undefined;
   const aiModel = isAiModel(config?.modelName) ? config.modelName : undefined;
 
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   let model: LanguageModel;
   try {
     model = getChatModelForUser({
@@ -132,8 +175,7 @@ export async function POST(request: Request) {
   const chatQuestions = requestQuestions ?? [];
   const system = buildChatSystemPrompt(
     requestQuiz ?? { title: "Quiz", description: "" },
-    chatQuestion,
-    chatQuestions,
+    chatQuestions.length,
     userName,
     canEdit,
   );
@@ -142,25 +184,40 @@ export async function POST(request: Request) {
       ? []
       : await resolveImages(collectQuestionImages(chatQuestion));
 
-  const imageContext: ModelMessage[] =
-    imageParts.length > 0
-      ? [
+  const currentQuestionContext: ModelMessage[] =
+    chatQuestion === null
+      ? []
+      : [
           {
             role: "user" as const,
-            content: imageParts,
-          },
-          {
-            role: "assistant" as const,
             content:
-              "Widzę obrazki z pytania. Uwzględnię je w moich odpowiedziach.",
+              imageParts.length > 0
+                ? [
+                    {
+                      type: "text" as const,
+                      text: buildCurrentQuestionContextPrompt(chatQuestion, {
+                        questionChanged: questionContextChange !== undefined,
+                        previousQuestionOrder:
+                          questionContextChange?.previousQuestionOrder,
+                      }),
+                    },
+                    ...imageParts,
+                  ]
+                : buildCurrentQuestionContextPrompt(chatQuestion, {
+                    questionChanged: questionContextChange !== undefined,
+                    previousQuestionOrder:
+                      questionContextChange?.previousQuestionOrder,
+                  }),
           },
-        ]
-      : [];
+        ];
+  const messagesWithoutQuestionContext = modelMessages.filter(
+    (message) => !isCurrentQuestionContextMessage(message),
+  );
 
   const result = streamText({
     model,
     system,
-    messages: [...imageContext, ...modelMessages],
+    messages: [...currentQuestionContext, ...messagesWithoutQuestionContext],
     stopWhen: stepCountIs(5),
     tools: {
       ...frontendTools(clientTools ?? {}),
@@ -179,71 +236,66 @@ export async function POST(request: Request) {
           return JSON.stringify(arguments_);
         },
       },
-      ...(quizId === undefined || accessToken === undefined
-        ? {}
-        : {
-            get_question: {
-              description:
-                "Pobierz pełne szczegóły konkretnego pytania z quizu (treść, odpowiedzi, wyjaśnienie). Użyj tego, gdy użytkownik pyta o konkretne pytanie z quizu (np. 'pokaż pytanie 5', 'wyjaśnij pytanie nr 12').",
-              inputSchema: getQuestionSchema,
-              execute: async (
-                arguments_: z.infer<typeof getQuestionSchema>,
-              ) => {
-                try {
-                  const response = await fetch(
-                    `${API_URL}/quizzes/${quizId}/`,
-                    {
-                      headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        "Content-Type": "application/json",
-                      },
-                    },
-                  );
-                  if (!response.ok) {
-                    return JSON.stringify({
-                      error: "Nie udało się pobrać quizu",
-                    });
-                  }
-                  const quiz = (await response.json()) as {
-                    questions: {
-                      id: string;
-                      order: number;
-                      text: string;
-                      explanation?: string | null;
-                      multiple: boolean;
-                      answers: {
-                        text: string;
-                        is_correct: boolean;
-                        order: number;
-                      }[];
-                    }[];
-                  };
-                  const question = quiz.questions.find(
-                    (q) => q.order === arguments_.question_order,
-                  );
-                  if (question === undefined) {
-                    return JSON.stringify({
-                      error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${quiz.questions.length.toString()} pytań.`,
-                    });
-                  }
-                  return JSON.stringify({
-                    order: question.order,
-                    text: question.text,
-                    explanation: question.explanation ?? null,
-                    multiple: question.multiple,
-                    answers: question.answers.map((a) => ({
-                      text: a.text,
-                      is_correct: a.is_correct,
-                    })),
-                  });
-                } catch {
-                  return JSON.stringify({
-                    error: "Błąd podczas pobierania pytania",
-                  });
-                }
-              },
-            },
-          }),
+      list_questions: {
+        description:
+          "Pobierz listę pytań z quizu jako krótkie podglądy. Użyj tego, gdy użytkownik prosi o listę pytań, przegląd quizu, wyszukanie podobnych pytań lub potrzebujesz kontekstu z wielu pytań.",
+        inputSchema: listQuestionsSchema,
+        execute: (arguments_: z.infer<typeof listQuestionsSchema>) => {
+          const query = arguments_.query?.trim().toLowerCase() ?? "";
+          const matchingQuestions = chatQuestions
+            .toSorted((a, b) => a.order - b.order)
+            .filter((q) =>
+              query === "" ? true : q.text.toLowerCase().includes(query),
+            );
+          const limit = arguments_.limit ?? 50;
+          const offset = arguments_.offset ?? 0;
+          const page = matchingQuestions.slice(offset, offset + limit);
+          const nextOffset =
+            offset + limit < matchingQuestions.length ? offset + limit : null;
+
+          return JSON.stringify({
+            total: chatQuestions.length,
+            matched: matchingQuestions.length,
+            returned: page.length,
+            offset,
+            next_offset: nextOffset,
+            questions: page.map((q) => ({
+              order: q.order,
+              text: truncateQuestionPreview(q.text),
+              answer_count: q.answers.length,
+              multiple: q.multiple,
+              has_explanation:
+                q.explanation !== undefined && q.explanation.trim() !== "",
+            })),
+          });
+        },
+      },
+      get_question: {
+        description:
+          "Pobierz pełne szczegóły konkretnego pytania z quizu (treść, odpowiedzi, wyjaśnienie). Użyj tego, gdy użytkownik pyta o konkretne pytanie z quizu (np. 'pokaż pytanie 5', 'wyjaśnij pytanie nr 12').",
+        inputSchema: getQuestionSchema,
+        execute: (arguments_: z.infer<typeof getQuestionSchema>) => {
+          const question = chatQuestions.find(
+            (q) => q.order === arguments_.question_order,
+          );
+          if (question === undefined) {
+            return JSON.stringify({
+              error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${chatQuestions.length.toString()} pytań.`,
+            });
+          }
+
+          return JSON.stringify({
+            order: question.order,
+            text: question.text,
+            explanation: question.explanation ?? null,
+            multiple: question.multiple,
+            answers: question.answers.map((a) => ({
+              text: a.text,
+              is_correct: a.is_correct,
+            })),
+          });
+        },
+      },
       ...(canEdit === true
         ? {
             edit_question: {
