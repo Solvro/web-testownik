@@ -37,6 +37,8 @@ interface ReportBugDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const DEFAULT_FORM_STATE = {
   name: "",
   email: "",
@@ -70,6 +72,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
     if (!form.name.trim()) {
       errors.name = "Podaj swoje imię.";
+    }
+    if (form.email.trim() && !EMAIL_REGEX.test(form.email.trim())) {
+      errors.email = "Podaj poprawny adres e-mail.";
     }
     if (!form.title.trim()) {
       errors.title = "Podaj tytuł zgłoszenia.";
@@ -202,11 +207,16 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               </Label>
               <Input
                 id="email"
+                type="email"
                 disabled={isSending}
                 placeholder="jan.kowalski@solvro.pl"
                 value={form.email}
                 onChange={handleChange}
+                aria-invalid={Boolean(formErrors.email)}
               />
+              {formErrors.email ? (
+                <p className="text-destructive text-xs">{formErrors.email}</p>
+              ) : null}
             </div>
           </div>
           <div className="space-y-2">

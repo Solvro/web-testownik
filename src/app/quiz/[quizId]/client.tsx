@@ -249,10 +249,17 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               quizie.
               <span className="mt-2 block">
                 <strong>Jak to działa? </strong>
-                Po włączeniu tego trybu, jeśli opuścisz tę kartę lub nie
-                wykonasz żadnej akcji przez 5 minut, timer zostanie
-                automatycznie zatrzymany, a aplikacja odtworzy głośny dźwięk i
-                pokaże powiadomienie przypominające o powrocie do nauki.
+                Po włączeniu tego trybu, jeśli opuścisz tę kartę, przełączysz
+                się do innego okna lub aplikacji albo nie wykonasz żadnej akcji
+                przez 5 minut, timer zostanie automatycznie zatrzymany, a
+                aplikacja odtworzy głośny dźwięk i pokaże powiadomienie
+                przypominające o powrocie do nauki.
+              </span>
+              <span className="mt-2 block text-sm">
+                Na niektórych urządzeniach i przeglądarkach, zwłaszcza na
+                iPhonie i iPadzie, system może zablokować automatyczne
+                odtworzenie dźwięku. Powiadomienie nadal się pokaże, ale dźwięk
+                trybu skupienia może nie zawsze zadziałać.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
