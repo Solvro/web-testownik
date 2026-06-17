@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
@@ -169,7 +170,15 @@ export function QuizInfoCard({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{quiz.title}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2 pr-2">
+            <span className="min-w-0 break-words">{quiz.title}</span>
+            {isFocusModeActive ? (
+              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <ScanEyeIcon />
+                Tryb skupienia
+              </Badge>
+            ) : null}
+          </CardTitle>
           {quiz.creator == null ? null : (
             <CardDescription>by {quiz.creator.full_name}</CardDescription>
           )}

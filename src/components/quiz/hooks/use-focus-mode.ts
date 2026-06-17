@@ -10,9 +10,10 @@ const FOCUS_ALERT_CONTENT = {
     message:
       "Minęło 5 minut bez żadnej akcji. Timer został zatrzymany - wróć do nauki!",
   },
-  tabLeft: {
-    title: "Opuszczono kartę z quizem.",
-    message: "Timer został zatrzymany - skup się na nauce!",
+  focusLeft: {
+    title: "Opuszczono quiz.",
+    message:
+      "Timer został zatrzymany - wróć do okna z quizem, żeby kontynuować naukę.",
   },
 } as const;
 
@@ -59,6 +60,23 @@ function playFocusAlertSound(audioRef: { current: HTMLAudioElement | null }) {
   void audio.play().catch(console.error);
 }
 
+function triggerFocusAlert(
+  type: FocusAlertType,
+  timerStore: TimerStore,
+  isAlertOpenRef: { current: boolean },
+  audioRef: { current: HTMLAudioElement | null },
+  showFocusAlert: (type: FocusAlertType) => void,
+) {
+  if (isAlertOpenRef.current) {
+    return;
+  }
+
+  isAlertOpenRef.current = true;
+  timerStore.pause();
+  playFocusAlertSound(audioRef);
+  showFocusAlert(type);
+}
+
 function startInactivityCountdown(
   timerStore: TimerStore,
   inactivityTimerRef: { current: NodeJS.Timeout | null },
@@ -70,13 +88,13 @@ function startInactivityCountdown(
 
   inactivityTimerRef.current = setTimeout(
     () => {
-      if (isAlertOpenRef.current) {
-        return;
-      }
-      isAlertOpenRef.current = true;
-      timerStore.pause();
-      playFocusAlertSound(audioRef);
-      showFocusAlert("inactivity");
+      triggerFocusAlert(
+        "inactivity",
+        timerStore,
+        isAlertOpenRef,
+        audioRef,
+        showFocusAlert,
+      );
     },
     5 * 60 * 1000,
   );
@@ -176,22 +194,28 @@ export function useFocusMode(timerStore: TimerStore) {
       showFocusAlert,
     );
 
+    const handleFocusLoss = () => {
+      triggerFocusAlert(
+        "focusLeft",
+        timerStore,
+        isAlertOpenRef,
+        audioRef,
+        showFocusAlert,
+      );
+    };
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        if (isAlertOpenRef.current) {
-          return;
-        }
-        isAlertOpenRef.current = true;
-        timerStore.pause();
-        playFocusAlertSound(audioRef);
-        showFocusAlert("tabLeft");
+        handleFocusLoss();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleFocusLoss);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleFocusLoss);
       clearInactivityCountdown(inactivityTimerRef);
     };
   }, [isFocusModeActive, timerStore]);
