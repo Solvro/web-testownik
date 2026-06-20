@@ -35,6 +35,10 @@ interface QuizActionButtonsProps {
   isChatOpen?: boolean;
   aiDisabled?: boolean;
   questionChecked?: boolean;
+  onQuestionDeleted?: (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => void;
 }
 
 export function QuizActionButtons({
@@ -48,6 +52,7 @@ export function QuizActionButtons({
   isChatOpen = false,
   aiDisabled = false,
   questionChecked = false,
+  onQuestionDeleted,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
@@ -235,6 +240,7 @@ export function QuizActionButtons({
           onOpenChange={setIsEditOpen}
           question={question}
           quizId={quiz.id}
+          onQuestionDeleted={onQuestionDeleted}
           key={question.id}
         />
       )}

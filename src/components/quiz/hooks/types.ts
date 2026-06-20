@@ -39,6 +39,10 @@ export interface UseQuizLogicResult {
     skipQuestion: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
+    onQuestionDeleted: (
+      deletedQuestionId: string,
+      newCurrentQuestionId: string | null,
+    ) => void;
     toggleHistory: () => void;
     toggleBrainrot: () => void;
     togglePreviousQuestion: () => void;

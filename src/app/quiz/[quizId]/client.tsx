@@ -95,6 +95,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     skipQuestion,
     resetProgress,
     setSelectedAnswers,
+    onQuestionDeleted,
     toggleHistory,
     toggleBrainrot,
     togglePreviousQuestion,
@@ -370,6 +371,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
                 questionChecked={questionChecked}
+                onQuestionDeleted={onQuestionDeleted}
               />
               {showAi && showAiExplain && currentQuestion != null ? (
                 questionChecked ? (
