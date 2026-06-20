@@ -38,7 +38,10 @@ import {
 import { getQuizService } from "@/services";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
-import { quizDetailQueryKey } from "./helpers/utils";
+import {
+  quizDetailQueryKey,
+  removeQuestionFromQuizCache,
+} from "./helpers/utils";
 
 interface QuickEditQuestionDialogProps {
   open: boolean;
@@ -46,6 +49,10 @@ interface QuickEditQuestionDialogProps {
   question: Question;
   quizId: string;
   onSaveDraft?: (question: Question) => void;
+  onQuestionDeleted?: (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => void;
   hideDelete?: boolean;
   hideFullEditor?: boolean;
   minAnswers?: number;
@@ -57,6 +64,7 @@ export function QuickEditQuestionDialog({
   question,
   quizId,
   onSaveDraft,
+  onQuestionDeleted,
   hideDelete = false,
   hideFullEditor = false,
   minAnswers = 1,
@@ -143,31 +151,22 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
-      queryClient.setQueryData<QuizWithUserProgress>(
-        quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
+      const queryKey = quizDetailQueryKey(quizId);
+      queryClient.setQueryData<QuizWithUserProgress>(queryKey, (oldData) => {
+        if (oldData == null) {
+          void queryClient.refetchQueries({
+            queryKey,
+          });
+          return oldData;
+        }
 
-          return {
-            ...oldData,
-            questions: oldData.questions.filter((q) => q.id !== question.id),
-            current_session:
-              oldData.current_session == null
-                ? null
-                : {
-                    ...oldData.current_session,
-                    ...(newCurrentQuestionId == null
-                      ? {}
-                      : { current_question: newCurrentQuestionId }),
-                  },
-          };
-        },
-      );
+        return removeQuestionFromQuizCache({
+          quiz: oldData,
+          deletedQuestionId: question.id,
+          newCurrentQuestionId,
+        });
+      });
+      onQuestionDeleted?.(question.id, newCurrentQuestionId);
       handleOpenChange(false);
     },
     onError: () => {

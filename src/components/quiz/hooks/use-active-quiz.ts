@@ -180,6 +180,40 @@ export function useActiveQuiz(quizId: string) {
     setClient(INITIAL_CLIENT_STATE);
   };
 
+  const replaceCurrentQuestionAfterDeletion = (
+    preferredNextId: string | null,
+  ): Question | null => {
+    let replacementQuestion: Question | null = null;
+
+    updateServerCache((previous) => {
+      if (previous.current_session == null) {
+        return previous;
+      }
+
+      replacementQuestion =
+        preferredNextId == null
+          ? null
+          : (previous.questions.find((q) => q.id === preferredNextId) ?? null);
+
+      replacementQuestion ??= pickNextQuestion({
+        questions: previous.questions,
+        answers: previous.current_session.answers,
+        settings: userSettings,
+      });
+
+      return {
+        ...previous,
+        current_session: {
+          ...previous.current_session,
+          current_question: replacementQuestion?.id ?? null,
+        },
+      };
+    });
+
+    setClient(INITIAL_CLIENT_STATE);
+    return replacementQuestion;
+  };
+
   return {
     quiz,
     userSettings,
@@ -196,6 +230,7 @@ export function useActiveQuiz(quizId: string) {
       advanceQuestion,
       applyLoadedProgress,
       resetProgress,
+      replaceCurrentQuestionAfterDeletion,
     },
   };
 }
