@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -280,6 +281,7 @@ function AiCardShell({
           </div>
         )}
         {children}
+        <AiDisclaimer className="mt-4 border-t pt-2" />
       </CardContent>
     </Card>
   );

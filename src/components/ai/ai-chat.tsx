@@ -9,6 +9,7 @@ import {
   AssistantChatTransport,
   useChatRuntime,
 } from "@assistant-ui/react-ai-sdk";
+import type { UIMessage } from "ai";
 import {
   BotMessageSquareIcon,
   BrushCleaningIcon,
@@ -28,6 +29,7 @@ import { ModelSelector } from "@/components/assistant-ui/model-selector";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
   SELECTABLE_AI_MODEL_OPTIONS,
   isSelectableAiModel,
@@ -49,6 +51,31 @@ interface AiChatProps {
   questions: Question[];
   userName?: string;
   canEdit?: boolean;
+}
+
+function getSubmittedUserMessageId({
+  trigger,
+  messageId,
+  messages,
+}: {
+  trigger: "submit-message" | "regenerate-message";
+  messageId: string | undefined;
+  messages: UIMessage[];
+}): string | null {
+  if (trigger !== "submit-message") {
+    return null;
+  }
+
+  if (
+    messageId !== undefined &&
+    messages.some(
+      (message) => message.id === messageId && message.role === "user",
+    )
+  ) {
+    return messageId;
+  }
+
+  return messages.findLast((message) => message.role === "user")?.id ?? null;
 }
 
 function ChatRuntime({
@@ -82,32 +109,62 @@ function ChatRuntime({
   useEffect(() => {
     routeContextRef.current = routeContext;
   }, [routeContext]);
-  const lastSubmittedQuestionRef = useRef<{
-    id: string;
-    order: number;
-  } | null>(null);
+  const questionContextSnapshotsRef = useRef(
+    new Map<string, QuestionContextSnapshot>(),
+  );
 
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: "/ai/chat",
-        body: () => {
+        body: () => ({
+          ...routeContextRef.current,
+          canEdit,
+        }),
+        prepareSendMessagesRequest: (options) => {
+          const messageIds = new Set(
+            options.messages.map((message) => message.id),
+          );
+          for (const messageId of questionContextSnapshotsRef.current.keys()) {
+            if (!messageIds.has(messageId)) {
+              questionContextSnapshotsRef.current.delete(messageId);
+            }
+          }
+
+          const submittedUserMessageId = getSubmittedUserMessageId(options);
           const currentQuestion = routeContextRef.current.question;
-          const previousQuestion = lastSubmittedQuestionRef.current;
-          lastSubmittedQuestionRef.current =
-            currentQuestion === null
-              ? null
-              : { id: currentQuestion.id, order: currentQuestion.order };
+          if (submittedUserMessageId !== null) {
+            if (currentQuestion === null) {
+              questionContextSnapshotsRef.current.delete(
+                submittedUserMessageId,
+              );
+            } else {
+              questionContextSnapshotsRef.current.set(submittedUserMessageId, {
+                messageId: submittedUserMessageId,
+                questionId: currentQuestion.id,
+              });
+            }
+          }
+
+          const questionContextSnapshots = options.messages
+            .map((message) =>
+              questionContextSnapshotsRef.current.get(message.id),
+            )
+            .filter(
+              (snapshot): snapshot is QuestionContextSnapshot =>
+                snapshot !== undefined,
+            );
 
           return {
-            ...routeContextRef.current,
-            canEdit,
-            questionContextChange:
-              previousQuestion !== null &&
-              currentQuestion !== null &&
-              previousQuestion.id !== currentQuestion.id
-                ? { previousQuestionOrder: previousQuestion.order }
-                : undefined,
+            body: {
+              ...options.body,
+              id: options.id,
+              messages: options.messages,
+              trigger: options.trigger,
+              messageId: options.messageId,
+              metadata: options.requestMetadata,
+              questionContextSnapshots,
+            },
           };
         },
       }),

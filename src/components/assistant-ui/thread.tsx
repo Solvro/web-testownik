@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
 import {
   Reasoning,
@@ -497,7 +498,10 @@ export function Thread({ composerStart }: ThreadProps) {
 
           <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer bg-background sticky bottom-0 mt-auto flex flex-col gap-4 overflow-visible rounded-t-(--composer-radius) pb-4 md:pb-6">
             <ThreadScrollToBottom />
-            <Composer footerStart={composerStart} />
+            <div className="flex flex-col gap-1.5">
+              <Composer footerStart={composerStart} />
+              <AiDisclaimer className="px-1" />
+            </div>
           </ThreadPrimitive.ViewportFooter>
         </div>
       </ThreadPrimitive.Viewport>
