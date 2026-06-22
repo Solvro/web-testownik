@@ -89,7 +89,13 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     confirmOnboardingAndHide,
     cancelOnboarding,
   } = useFocusMode(timerStore);
-  const { isHost: isContinuityHost, peerConnections } = continuity;
+  const {
+    disconnect: disconnectContinuity,
+    isDisconnected: isContinuityDisconnected,
+    isHost: isContinuityHost,
+    peerConnections,
+    reconnect: reconnectContinuity,
+  } = continuity;
   const {
     nextAction,
     skipQuestion,
@@ -137,6 +143,16 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     startTransition(() => {
       toggleBrainrot();
     });
+  };
+
+  const handleDisconnectContinuity = () => {
+    disconnectContinuity();
+    toast.success("Continuity rozłączone w tej karcie");
+  };
+
+  const handleReconnectContinuity = () => {
+    reconnectContinuity();
+    toast.success("Continuity włączone dla tego quizu");
   };
 
   const handleQuizActivity = (action: () => void) => {
@@ -353,6 +369,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isFocusModeActive={isFocusModeActive}
                 toggleFocusMode={toggleFocusMode}
                 onToggleHistory={toggleHistory}
+                isContinuityDisconnected={isContinuityDisconnected}
+                onReconnectContinuity={handleReconnectContinuity}
                 isSettingsOpen={isSettingsOpen}
                 onSettingsOpenChange={setIsSettingsOpen}
               />
@@ -409,6 +427,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       <ContinuityDialog
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
+        onDisconnectContinuity={handleDisconnectContinuity}
       />
 
       {showAi ? (

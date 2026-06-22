@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import { CrownIcon } from "lucide-react";
+import { CrownIcon, UnplugIcon } from "lucide-react";
 import type { DataConnection } from "peerjs";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface PeerConnectionWithMetadata extends DataConnection {
 interface ContinuityDialogProps {
   peerConnections: PeerConnectionWithMetadata[];
   isContinuityHost: boolean;
+  onDisconnectContinuity: () => void;
 }
 
 const getIconByDevice = (type: string) => {
@@ -49,6 +50,7 @@ const getIconByDevice = (type: string) => {
 export function ContinuityDialog({
   peerConnections,
   isContinuityHost,
+  onDisconnectContinuity,
 }: ContinuityDialogProps) {
   const connectedDevices = peerConnections
     // not sure if that's neccesary
@@ -103,6 +105,16 @@ export function ContinuityDialog({
           autoplay
         />
         <DialogFooter>
+          {peerConnections.length === 0 ? null : (
+            <DialogClose
+              render={
+                <Button variant="destructive" onClick={onDisconnectContinuity}>
+                  <UnplugIcon />
+                  Rozłącz
+                </Button>
+              }
+            ></DialogClose>
+          )}
           <DialogClose
             render={<Button variant="outline">Zamknij</Button>}
           ></DialogClose>

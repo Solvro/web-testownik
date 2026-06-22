@@ -31,8 +31,11 @@ export interface UseQuizLogicResult {
     timerStore: TimerStore;
   };
   continuity: {
+    isDisconnected: boolean;
     isHost: boolean;
     peerConnections: DataConnection[];
+    disconnect: () => void;
+    reconnect: () => void;
   };
   actions: {
     nextAction: () => void;

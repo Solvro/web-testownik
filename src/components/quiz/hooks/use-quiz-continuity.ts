@@ -1,6 +1,6 @@
 import { Peer } from "peerjs";
 import type { DataConnection } from "peerjs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { env } from "@/env";
 import type { AnswerRecord, Question, QuizSession } from "@/types/quiz";
@@ -9,6 +9,8 @@ import { getDeviceFriendlyName, getDeviceType } from "../helpers/device-utils";
 
 const PING_INTERVAL = 5000;
 const PING_TIMEOUT = 15_000;
+const DISCONNECT_SESSION_STORAGE_KEY_PREFIX = "quiz-continuity-disconnected";
+const DISCONNECT_SESSION_STORAGE_EVENT = "quiz-continuity-disconnect-change";
 
 const TURN_USERNAME = env.NEXT_PUBLIC_TURN_USERNAME;
 const TURN_CREDENTIAL = env.NEXT_PUBLIC_TURN_CREDENTIAL;
@@ -103,6 +105,23 @@ interface UseQuizContinuityOptions {
   onResetProgress: (session: QuizSession) => void;
 }
 
+const subscribeToDisconnectPreference = (
+  onStoreChange: () => void,
+): (() => void) => {
+  window.addEventListener(DISCONNECT_SESSION_STORAGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener(DISCONNECT_SESSION_STORAGE_EVENT, onStoreChange);
+  };
+};
+
+const emitDisconnectPreferenceChange = () => {
+  window.dispatchEvent(new Event(DISCONNECT_SESSION_STORAGE_EVENT));
+};
+
+const getStoredDisconnectPreference = (storageKey: string | null): boolean =>
+  storageKey == null ? false : sessionStorage.getItem(storageKey) === "true";
+
 export function useQuizContinuity({
   enabled,
   quizId,
@@ -119,27 +138,56 @@ export function useQuizContinuity({
   const peerConnectionsRef = useRef<DataConnection[]>([]);
   const isInitializingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const isDisconnectedRef = useRef(false);
+  const isShuttingDownRef = useRef(false);
+  const disconnectStorageKey =
+    userId == null
+      ? null
+      : `${DISCONNECT_SESSION_STORAGE_KEY_PREFIX}:${quizId}:${userId}`;
+  const isDisconnected = useSyncExternalStore(
+    subscribeToDisconnectPreference,
+    () => getStoredDisconnectPreference(disconnectStorageKey),
+    () => false,
+  );
 
   const gracefulClose = () => {
+    isShuttingDownRef.current = true;
+    for (const conn of peerConnectionsRef.current) {
+      conn.close();
+    }
+    peerConnectionsRef.current = [];
+    setPeerConnections([]);
+    setIsHost(false);
+    isInitializingRef.current = false;
     if (peerRef.current != null && !peerRef.current.destroyed) {
       peerRef.current.destroy();
     }
+    peerRef.current = null;
+    setTimeout(() => {
+      isShuttingDownRef.current = false;
+    }, 0);
   };
 
   // util
   const send = (conn: DataConnection, data: PeerMessage) => {
-    if (conn.open) {
+    if (!isDisconnectedRef.current && conn.open) {
       void conn.send(data);
     }
   };
 
   const broadcast = (data: PeerMessage) => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     for (const c of peerConnectionsRef.current) {
       send(c, data);
     }
   };
 
   const broadcastExcept = (except: DataConnection, data: PeerMessage) => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     for (const c of peerConnectionsRef.current) {
       if (c !== except) {
         send(c, data);
@@ -148,6 +196,9 @@ export function useQuizContinuity({
   };
 
   const initialSync = (conn: DataConnection) => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     const {
       question,
       answers,
@@ -171,10 +222,19 @@ export function useQuizContinuity({
   const connectToPeer = async (peer: Peer, peerId: string) => {
     return new Promise<DataConnection>((resolve, reject) => {
       function doConnect() {
+        if (isDisconnectedRef.current) {
+          reject(new Error("Continuity is disconnected for this quiz."));
+          return;
+        }
         const conn = peer.connect(peerId, {
           metadata: { device: getDeviceFriendlyName(), type: getDeviceType() },
         });
         conn.on("open", () => {
+          if (isDisconnectedRef.current) {
+            conn.close();
+            reject(new Error("Continuity is disconnected for this quiz."));
+            return;
+          }
           setPeerConnections((p) => {
             const next = [...p, conn];
             peerConnectionsRef.current = next;
@@ -194,6 +254,9 @@ export function useQuizContinuity({
   };
 
   const handleClientData = (data: PeerMessage) => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     switch (data.type) {
       case "initial_sync": {
         onInitialSync({
@@ -234,6 +297,9 @@ export function useQuizContinuity({
   };
 
   const handleHostData = (conn: DataConnection, data: PeerMessage) => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     switch (data.type) {
       case "question_update": {
         onQuestionUpdate(data.question, data.selectedAnswers);
@@ -266,7 +332,11 @@ export function useQuizContinuity({
   };
 
   function init() {
-    if (isInitializingRef.current || !isMountedRef.current) {
+    if (
+      isDisconnectedRef.current ||
+      isInitializingRef.current ||
+      !isMountedRef.current
+    ) {
       return;
     }
     isInitializingRef.current = true;
@@ -280,7 +350,7 @@ export function useQuizContinuity({
     try {
       const hostPeer = new Peer(baseId, { config: RTC_CONFIG });
       hostPeer.on("open", () => {
-        if (!isMountedRef.current) {
+        if (isDisconnectedRef.current || !isMountedRef.current) {
           hostPeer.destroy();
           return;
         }
@@ -294,7 +364,7 @@ export function useQuizContinuity({
         if (peerError.type === "unavailable-id") {
           const clientPeer = new Peer({ config: RTC_CONFIG });
           clientPeer.on("open", () => {
-            if (!isMountedRef.current) {
+            if (isDisconnectedRef.current || !isMountedRef.current) {
               clientPeer.destroy();
               return;
             }
@@ -335,6 +405,13 @@ export function useQuizContinuity({
       peerConnectionsRef.current = next;
       return next;
     });
+    if (
+      isDisconnectedRef.current ||
+      isShuttingDownRef.current ||
+      !isMountedRef.current
+    ) {
+      return;
+    }
     if (!isHost && peerRef.current != null && !peerRef.current.destroyed) {
       connectToPeer(peerRef.current, conn.peer)
         .then((c) => {
@@ -351,6 +428,10 @@ export function useQuizContinuity({
   }
 
   function handleHostConnection(conn: DataConnection) {
+    if (isDisconnectedRef.current) {
+      conn.close();
+      return;
+    }
     setPeerConnections((p) => {
       const next = [...p, conn];
       peerConnectionsRef.current = next;
@@ -368,6 +449,9 @@ export function useQuizContinuity({
   }
 
   const pingPeers = () => {
+    if (isDisconnectedRef.current) {
+      return;
+    }
     for (const conn of peerConnectionsRef.current) {
       if (!conn.open) {
         continue;
@@ -385,15 +469,18 @@ export function useQuizContinuity({
   };
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    if (userId == null) {
-      return;
-    }
-    // Initialize ref with current state on (re)enable
-    peerConnectionsRef.current = peerConnections;
+    isDisconnectedRef.current = isDisconnected;
+  }, [isDisconnected]);
+
+  useEffect(() => {
     isMountedRef.current = true;
+
+    if (!enabled || userId == null || isDisconnected) {
+      return () => {
+        isMountedRef.current = false;
+        gracefulClose();
+      };
+    }
 
     // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-live-state-to-parent
     init();
@@ -405,13 +492,29 @@ export function useQuizContinuity({
       gracefulClose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
+  }, [enabled, userId, isDisconnected]);
 
   return {
+    isDisconnected,
     isHost,
     peerConnections,
     broadcast,
     broadcastExcept,
+    disconnect: () => {
+      if (disconnectStorageKey != null) {
+        sessionStorage.setItem(disconnectStorageKey, "true");
+      }
+      isDisconnectedRef.current = true;
+      emitDisconnectPreferenceChange();
+      gracefulClose();
+    },
+    reconnect: () => {
+      if (disconnectStorageKey != null) {
+        sessionStorage.removeItem(disconnectStorageKey);
+      }
+      isDisconnectedRef.current = false;
+      emitDisconnectPreferenceChange();
+    },
     sendAnswerChecked: (nextQuestion: Question | null) => {
       broadcast({ type: "answer_checked", nextQuestion });
     },

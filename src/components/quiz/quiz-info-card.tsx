@@ -7,6 +7,7 @@ import {
   Link2Icon,
   Loader2Icon,
   MenuIcon,
+  PlugIcon,
   RotateCcwIcon,
   ScanEyeIcon,
   SearchIcon,
@@ -61,6 +62,8 @@ interface QuizInfoCardProps {
   isFocusModeActive: boolean;
   toggleFocusMode: () => void;
   onToggleHistory: () => void;
+  isContinuityDisconnected: boolean;
+  onReconnectContinuity: () => void;
   isSettingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
 }
@@ -130,6 +133,8 @@ export function QuizInfoCard({
   isFocusModeActive,
   toggleFocusMode,
   onToggleHistory,
+  isContinuityDisconnected,
+  onReconnectContinuity,
   isSettingsOpen,
   onSettingsOpenChange,
 }: QuizInfoCardProps): React.JSX.Element | null {
@@ -137,6 +142,7 @@ export function QuizInfoCard({
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
+  const canUseContinuity = checkPermission(PermissionAction.QUIZ_CONTINUITY);
   const queryClient = useQueryClient();
   const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
@@ -225,6 +231,12 @@ export function QuizInfoCard({
                     ? "Wyłącz tryb skupienia"
                     : "Tryb skupienia"}
                 </DropdownMenuItem>
+                {canUseContinuity && isContinuityDisconnected ? (
+                  <DropdownMenuItem onClick={onReconnectContinuity}>
+                    <PlugIcon />
+                    Włącz Continuity
+                  </DropdownMenuItem>
+                ) : null}
                 {canEditQuiz ? null : (
                   <>
                     <DropdownMenuSeparator />
