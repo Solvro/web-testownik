@@ -1,5 +1,5 @@
 import type { ClientState } from "@/components/quiz/hooks/types";
-import type { QuizWithUserProgress } from "@/types/quiz";
+import type { Question, Quiz, QuizWithUserProgress } from "@/types/quiz";
 
 export const INITIAL_CLIENT_STATE: ClientState = {
   selectedAnswers: [],
@@ -27,6 +27,28 @@ export function isCurrentSessionQuestion(
   return quiz.current_session?.current_question === questionId;
 }
 
+export function replaceQuestionInQuiz<TQuiz extends Quiz>(
+  quiz: TQuiz,
+  updatedQuestion: Question,
+): TQuiz {
+  return {
+    ...quiz,
+    questions: quiz.questions.map((q) =>
+      q.id === updatedQuestion.id ? updatedQuestion : q,
+    ),
+  };
+}
+
+export function removeQuestionFromQuiz<TQuiz extends Quiz>(
+  quiz: TQuiz,
+  deletedQuestionId: string,
+): TQuiz {
+  return {
+    ...quiz,
+    questions: quiz.questions.filter((q) => q.id !== deletedQuestionId),
+  };
+}
+
 export function removeQuestionFromQuizCache({
   quiz,
   deletedQuestionId,
@@ -40,10 +62,10 @@ export function removeQuestionFromQuizCache({
     quiz,
     deletedQuestionId,
   );
+  const quizWithoutQuestion = removeQuestionFromQuiz(quiz, deletedQuestionId);
 
   return {
-    ...quiz,
-    questions: quiz.questions.filter((q) => q.id !== deletedQuestionId),
+    ...quizWithoutQuestion,
     current_session:
       quiz.current_session == null
         ? null

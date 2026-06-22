@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -36,11 +37,14 @@ import {
   validateQuestionForm,
 } from "@/lib/schemas/quiz.schema";
 import { getQuizService } from "@/services";
-import type { Question, QuizWithUserProgress } from "@/types/quiz";
+import type { Question, Quiz, QuizWithUserProgress } from "@/types/quiz";
 
 import {
   quizDetailQueryKey,
+  quizQueryKey,
+  removeQuestionFromQuiz,
   removeQuestionFromQuizCache,
+  replaceQuestionInQuiz,
 } from "./helpers/utils";
 
 interface QuickEditQuestionDialogProps {
@@ -56,6 +60,21 @@ interface QuickEditQuestionDialogProps {
   hideDelete?: boolean;
   hideFullEditor?: boolean;
   minAnswers?: number;
+}
+
+function updateCachedQuiz<TQuiz extends Quiz>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  updater: (quiz: TQuiz) => TQuiz,
+) {
+  queryClient.setQueryData<TQuiz>(queryKey, (oldData) => {
+    if (oldData == null) {
+      void queryClient.refetchQueries({ queryKey });
+      return oldData;
+    }
+
+    return updater(oldData);
+  });
 }
 
 export function QuickEditQuestionDialog({
@@ -121,22 +140,13 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
-      queryClient.setQueryData<QuizWithUserProgress>(
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        replaceQuestionInQuiz(quiz, updatedQuestion),
+      );
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
         quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
-          return {
-            ...oldData,
-            questions: oldData.questions.map((q) =>
-              q.id === question.id ? updatedQuestion : q,
-            ),
-          };
-        },
+        (quiz) => replaceQuestionInQuiz(quiz, updatedQuestion),
       );
       handleOpenChange(false);
     },
@@ -151,21 +161,19 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
-      const queryKey = quizDetailQueryKey(quizId);
-      queryClient.setQueryData<QuizWithUserProgress>(queryKey, (oldData) => {
-        if (oldData == null) {
-          void queryClient.refetchQueries({
-            queryKey,
-          });
-          return oldData;
-        }
-
-        return removeQuestionFromQuizCache({
-          quiz: oldData,
-          deletedQuestionId: question.id,
-          newCurrentQuestionId,
-        });
-      });
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        removeQuestionFromQuiz(quiz, question.id),
+      );
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
+        quizDetailQueryKey(quizId),
+        (quiz) =>
+          removeQuestionFromQuizCache({
+            quiz,
+            deletedQuestionId: question.id,
+            newCurrentQuestionId,
+          }),
+      );
       onQuestionDeleted?.(question.id, newCurrentQuestionId);
       handleOpenChange(false);
     },

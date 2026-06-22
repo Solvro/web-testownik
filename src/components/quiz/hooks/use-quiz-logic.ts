@@ -293,8 +293,11 @@ export function useQuizLogic({
       timerStore,
     },
     continuity: {
+      isDisconnected: continuity.isDisconnected,
       isHost: continuity.isHost,
       peerConnections: continuity.peerConnections,
+      disconnect: continuity.disconnect,
+      reconnect: continuity.reconnect,
     },
     actions: {
       nextAction,

@@ -1,18 +1,15 @@
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
-import { convertToModelMessages, stepCountIs, streamText } from "ai";
-import type { JSONSchema7, LanguageModel, ModelMessage, UIMessage } from "ai";
+import { stepCountIs, streamText } from "ai";
+import type { JSONSchema7, LanguageModel, UIMessage } from "ai";
 import { z } from "zod";
 
 import { env } from "@/env";
+import { buildChatModelMessages } from "@/lib/ai/chat-messages";
+import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import { resolveImages } from "@/lib/ai/images";
 import { getChatModelForUser } from "@/lib/ai/model";
 import { isAiModel } from "@/lib/ai/models";
-import {
-  CURRENT_QUESTION_CONTEXT_MARKER,
-  buildChatSystemPrompt,
-  buildCurrentQuestionContextPrompt,
-  collectQuestionImages,
-} from "@/lib/ai/prompts";
+import { buildChatSystemPrompt } from "@/lib/ai/prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
@@ -92,24 +89,6 @@ function truncateQuestionPreview(text: string): string {
   return text.length > 180 ? `${text.slice(0, 180)}…` : text;
 }
 
-function getModelMessageText(message: ModelMessage): string {
-  if (typeof message.content === "string") {
-    return message.content;
-  }
-
-  if (!Array.isArray(message.content)) {
-    return "";
-  }
-
-  return message.content
-    .map((part) => (part.type === "text" ? part.text : ""))
-    .join("\n");
-}
-
-function isCurrentQuestionContextMessage(message: ModelMessage): boolean {
-  return getModelMessageText(message).includes(CURRENT_QUESTION_CONTEXT_MARKER);
-}
-
 export async function POST(request: Request) {
   if (!env.NEXT_PUBLIC_AI_ENABLED) {
     return new Response("AI is not configured", { status: 503 });
@@ -141,6 +120,7 @@ export async function POST(request: Request) {
     userName,
     canEdit,
     questionContextChange,
+    questionContextSnapshots,
     config,
     tools: clientTools,
   } = (await request.json()) as {
@@ -153,6 +133,7 @@ export async function POST(request: Request) {
     questionContextChange?: {
       previousQuestionOrder?: number | null;
     };
+    questionContextSnapshots?: QuestionContextSnapshot[];
     config?: { modelName?: unknown };
     tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
   };
@@ -170,54 +151,27 @@ export async function POST(request: Request) {
     return new Response("AI model is not configured", { status: 503 });
   }
 
-  const modelMessages = await convertToModelMessages(messages);
   const chatQuestion = requestQuestion ?? null;
   const chatQuestions = requestQuestions ?? [];
+  const modelMessages = await buildChatModelMessages({
+    messages,
+    chatQuestion,
+    chatQuestions,
+    questionContextSnapshots,
+    legacyQuestionContextChange: questionContextChange,
+    resolveQuestionImages: resolveImages,
+  });
   const system = buildChatSystemPrompt(
     requestQuiz ?? { title: "Quiz", description: "" },
     chatQuestions.length,
     userName,
     canEdit,
   );
-  const imageParts =
-    chatQuestion === null
-      ? []
-      : await resolveImages(collectQuestionImages(chatQuestion));
-
-  const currentQuestionContext: ModelMessage[] =
-    chatQuestion === null
-      ? []
-      : [
-          {
-            role: "user" as const,
-            content:
-              imageParts.length > 0
-                ? [
-                    {
-                      type: "text" as const,
-                      text: buildCurrentQuestionContextPrompt(chatQuestion, {
-                        questionChanged: questionContextChange !== undefined,
-                        previousQuestionOrder:
-                          questionContextChange?.previousQuestionOrder,
-                      }),
-                    },
-                    ...imageParts,
-                  ]
-                : buildCurrentQuestionContextPrompt(chatQuestion, {
-                    questionChanged: questionContextChange !== undefined,
-                    previousQuestionOrder:
-                      questionContextChange?.previousQuestionOrder,
-                  }),
-          },
-        ];
-  const messagesWithoutQuestionContext = modelMessages.filter(
-    (message) => !isCurrentQuestionContextMessage(message),
-  );
 
   const result = streamText({
     model,
     system,
-    messages: [...currentQuestionContext, ...messagesWithoutQuestionContext],
+    messages: modelMessages,
     stopWhen: stepCountIs(5),
     tools: {
       ...frontendTools(clientTools ?? {}),
