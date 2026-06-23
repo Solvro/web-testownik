@@ -14,6 +14,7 @@ import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { resolveSelectableAiModel } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
@@ -87,10 +88,12 @@ interface CompletionState {
 /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
 function useQuestionCompletion({
   api,
+  defaultAiModel,
   question,
   onClose,
 }: {
   api: string;
+  defaultAiModel?: string | null;
   question: Question;
   onClose: () => void;
 }): CompletionState {
@@ -141,8 +144,15 @@ function useQuestionCompletion({
   const startCompletion = useCallback(() => {
     setRetryAfter(null);
     startedRef.current = true;
-    void complete("generate", { body: { question } });
-  }, [complete, question]);
+    void complete("generate", {
+      body: {
+        question,
+        config: {
+          modelName: resolveSelectableAiModel(defaultAiModel),
+        },
+      },
+    });
+  }, [complete, defaultAiModel, question]);
 
   const handleStart = useCallback(() => {
     if (retryAfter !== null && retryAfter > 0) {
@@ -288,12 +298,14 @@ function AiCardShell({
 }
 
 interface AiHintCardProps {
+  defaultAiModel?: string | null;
   question: Question;
   onClose: () => void;
   onAnswerHints?: (hints: AnswerHint[]) => void;
 }
 
 export function AiHintCard({
+  defaultAiModel,
   question,
   onClose,
   onAnswerHints,
@@ -303,6 +315,7 @@ export function AiHintCard({
   const { completion, isLoading, error, retryAfter, handleStart, stop } =
     useQuestionCompletion({
       api: "/ai/hint",
+      defaultAiModel,
       question,
       onClose,
     });
@@ -378,17 +391,20 @@ export function AiHintCard({
 }
 
 interface AiExplanationCardProps {
+  defaultAiModel?: string | null;
   question: Question;
   onClose: () => void;
 }
 
 export function AiExplanationCard({
+  defaultAiModel,
   question,
   onClose,
 }: AiExplanationCardProps) {
   const { completion, isLoading, error, retryAfter, handleStart, stop } =
     useQuestionCompletion({
       api: "/ai/explain",
+      defaultAiModel,
       question,
       onClose,
     });

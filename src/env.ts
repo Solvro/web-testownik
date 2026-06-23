@@ -8,6 +8,7 @@ export const env = createEnv({
     INTERNAL_API_KEY: z.string().min(1).optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
+    XAI_API_KEY: z.string().min(1).optional(),
     AI_CHAT_RATE_LIMIT: z.coerce.number().default(10),
     AI_CHAT_RATE_WINDOW: z.coerce.number().default(60),
     AI_EXPLAIN_RATE_LIMIT: z.coerce.number().default(15),

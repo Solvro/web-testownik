@@ -1,5 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
+import { xai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 import "server-only";
 
@@ -17,7 +18,7 @@ import type { AiModel } from "./models";
 
 interface ResolveChatModelOptions {
   accountLevel?: AccountLevel | null;
-  requestedModel?: AiModel | null;
+  requestedModel?: string | null;
 }
 
 export function resolveAiModelPreference({
@@ -43,6 +44,12 @@ function assertProviderConfigured(model: AiModel) {
       }
       break;
     }
+    case AI_MODEL.GROK_43: {
+      if (env.XAI_API_KEY === undefined) {
+        throw new Error("xAI is not configured");
+      }
+      break;
+    }
     case AI_MODEL.CLAUDE_FABLE_5:
     case AI_MODEL.CLAUDE_OPUS_4_8:
     case AI_MODEL.CLAUDE_SONNET_4_6:
@@ -54,8 +61,6 @@ function assertProviderConfigured(model: AiModel) {
     }
   }
 }
-
-export const chatModel = openai(DEFAULT_AI_MODEL);
 
 export function getChatModelForUser(
   options: ResolveChatModelOptions,
@@ -69,6 +74,9 @@ export function getChatModelForUser(
     case AI_MODEL.GPT_54_MINI:
     case AI_MODEL.GPT_55: {
       return openai(selectedModel);
+    }
+    case AI_MODEL.GROK_43: {
+      return xai(selectedModel);
     }
     case AI_MODEL.CLAUDE_FABLE_5:
     case AI_MODEL.CLAUDE_OPUS_4_8:
