@@ -2,6 +2,7 @@ export const AI_MODEL = {
   GPT_54: "gpt-5.4",
   GPT_54_MINI: "gpt-5.4-mini",
   GPT_55: "gpt-5.5",
+  GROK_43: "grok-4.3",
   CLAUDE_FABLE_5: "claude-fable-5",
   CLAUDE_OPUS_4_8: "claude-opus-4-8",
   CLAUDE_SONNET_4_6: "claude-sonnet-4-6",
@@ -13,10 +14,11 @@ export type SelectableAiModel =
   | typeof AI_MODEL.GPT_54_MINI
   | typeof AI_MODEL.GPT_55
   | typeof AI_MODEL.GPT_54
+  | typeof AI_MODEL.GROK_43
   | typeof AI_MODEL.CLAUDE_OPUS_4_8
   | typeof AI_MODEL.CLAUDE_SONNET_4_6
   | typeof AI_MODEL.CLAUDE_HAIKU_4_5;
-export type AiModelProvider = "Anthropic" | "OpenAI";
+export type AiModelProvider = "Anthropic" | "OpenAI" | "xAI";
 
 export interface AiModelOption {
   label: string;
@@ -42,6 +44,11 @@ export const SELECTABLE_AI_MODEL_OPTIONS = [
     value: AI_MODEL.GPT_54,
     label: "GPT-5.4",
     provider: "OpenAI",
+  },
+  {
+    value: AI_MODEL.GROK_43,
+    label: "Grok 4.3",
+    provider: "xAI",
   },
   {
     value: AI_MODEL.CLAUDE_OPUS_4_8,
