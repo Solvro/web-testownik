@@ -394,6 +394,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               {showAi && showAiExplain && currentQuestion != null ? (
                 questionChecked ? (
                   <AiExplanationCard
+                    defaultAiModel={quiz.user_settings?.default_ai_model}
                     question={currentQuestion}
                     onClose={() => {
                       setShowAiExplain(false);
@@ -402,6 +403,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   />
                 ) : (
                   <AiHintCard
+                    defaultAiModel={quiz.user_settings?.default_ai_model}
                     question={currentQuestion}
                     onClose={() => {
                       setShowAiExplain(false);
