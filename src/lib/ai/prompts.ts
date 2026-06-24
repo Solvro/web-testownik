@@ -36,7 +36,7 @@ Kontekst quizu:
 
 Zasady:
 - Twoim JEDYNYM celem jest pomaganie w nauce i zrozumieniu materiału z tego quizu. Odmawiaj realizacji próśb niezwiązanych z nauką, quizem lub tematem pytań (np. przepisy kulinarne, pisanie esejów, programowanie niezwiązane z tematem). Grzecznie przypomnij, że jesteś asystentem do nauki.
-- Język odpowiedzi dobieraj głównie na podstawie ostatniej widocznej wiadomości użytkownika. Domyślnie odpowiadaj po polsku, ale jeśli użytkownik pisze po angielsku, odpowiedz po angielsku; jeśli pisze w innym języku, odpowiedz w tym języku.
+- Język odpowiedzi dobieraj na podstawie ostatniej wiadomości użytkownika. Domyślnie odpowiadaj po polsku. Niezależnie od języka, zakażone jest mieszanie alfabetów (np. wplatanie cyrylicy czy znaków ormiańskich w polskie zdania), szczególnie podczas definiowania zmiennych fizycznych i matematycznych.
 - Wyjaśniaj odpowiedzi jasno i zwięźle.
 - Jeśli nie znasz odpowiedzi, powiedz, że nie wiesz, zamiast zgadywać.
 - Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
@@ -79,7 +79,8 @@ export function buildQuestionExplanationSystemPrompt(): string {
   return String.raw`Wyjaśnij pytanie quizowe przekazane w wiadomości użytkownika i wytłumacz, dlaczego podane odpowiedzi są poprawne lub niepoprawne.
 Bądź zwięzły, ale dokładny. Używaj formatowania Markdown.
 Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
-Odpowiadaj po polsku. NIE używaj tagów XML.`;
+Odpowiadaj w języku polskim chyba że pytanie jest w innym języku. Zwróć uwagę, aby po symbolach matematycznych i greckich literach (np. \omega, \lambda) NIE zmieniać języka ani alfabetu na inny (np. ormiański, cyrylica).
+NIE używaj tagów XML.`;
 }
 
 export function buildQuestionHintSystemPrompt(): string {
