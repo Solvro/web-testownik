@@ -8,12 +8,7 @@ import { env } from "@/env";
 import { ACCOUNT_LEVEL } from "@/types/user";
 import type { AccountLevel } from "@/types/user";
 
-import {
-  AI_MODEL,
-  DEFAULT_AI_MODEL,
-  DEFAULT_SELECTABLE_AI_MODEL,
-  isSelectableAiModel,
-} from "./models";
+import { AI_MODEL, resolveSelectableAiModelForAccountLevel } from "./models";
 import type { AiModel } from "./models";
 
 interface ResolveChatModelOptions {
@@ -26,12 +21,13 @@ export function resolveAiModelPreference({
   requestedModel,
 }: ResolveChatModelOptions): AiModel {
   if (accountLevel !== ACCOUNT_LEVEL.GOLD) {
-    return DEFAULT_AI_MODEL;
+    return resolveSelectableAiModelForAccountLevel(
+      requestedModel,
+      accountLevel,
+    );
   }
 
-  return isSelectableAiModel(requestedModel)
-    ? requestedModel
-    : DEFAULT_SELECTABLE_AI_MODEL;
+  return resolveSelectableAiModelForAccountLevel(requestedModel, accountLevel);
 }
 
 function assertProviderConfigured(model: AiModel) {

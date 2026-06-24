@@ -31,14 +31,14 @@ import { Button } from "@/components/ui/button";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
-  SELECTABLE_AI_MODEL_OPTIONS,
-  isSelectableAiModel,
-  resolveSelectableAiModel,
+  getSelectableAiModelOptionsForAccountLevel,
+  isSelectableAiModelForAccountLevel,
+  resolveSelectableAiModelForAccountLevel,
 } from "@/lib/ai/models";
 import type { SelectableAiModel } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
-import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 type ChatMode = "popup" | "sheet";
 
@@ -232,20 +232,32 @@ export function AiChat({
   const { data: settings = DEFAULT_USER_SETTINGS } = useUserSettings({
     placeholderData: DEFAULT_USER_SETTINGS,
   });
-  const canSelectAiModel = user?.account_level === ACCOUNT_LEVEL.GOLD;
-  const defaultAiModel = resolveSelectableAiModel(settings.default_ai_model);
+  const accountLevel = user?.account_level ?? null;
+  const selectableAiModelOptions = useMemo(
+    () => getSelectableAiModelOptionsForAccountLevel(accountLevel),
+    [accountLevel],
+  );
+  const canSelectAiModel = selectableAiModelOptions.length > 1;
+  const defaultAiModel = resolveSelectableAiModelForAccountLevel(
+    settings.default_ai_model,
+    accountLevel,
+  );
   const [manualAiModel, setManualAiModel] = useState<SelectableAiModel | null>(
     null,
   );
-  const selectedAiModel = manualAiModel ?? defaultAiModel;
+  const selectedAiModel =
+    manualAiModel !== null &&
+    isSelectableAiModelForAccountLevel(manualAiModel, accountLevel)
+      ? manualAiModel
+      : defaultAiModel;
   const modelSelectorOptions = useMemo(
     () =>
-      SELECTABLE_AI_MODEL_OPTIONS.map((model) => ({
+      selectableAiModelOptions.map((model) => ({
         id: model.value,
         name: model.label,
         icon: <AiModelProviderIcon provider={model.provider} />,
       })),
-    [],
+    [selectableAiModelOptions],
   );
 
   useEffect(() => {
@@ -354,7 +366,9 @@ export function AiChat({
                     models={modelSelectorOptions}
                     value={selectedAiModel}
                     onValueChange={(value) => {
-                      if (isSelectableAiModel(value)) {
+                      if (
+                        isSelectableAiModelForAccountLevel(value, accountLevel)
+                      ) {
                         setManualAiModel(value);
                       }
                     }}
