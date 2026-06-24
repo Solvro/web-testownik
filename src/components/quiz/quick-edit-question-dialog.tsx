@@ -69,7 +69,7 @@ function updateCachedQuiz<TQuiz extends Quiz>(
 ) {
   queryClient.setQueryData<TQuiz>(queryKey, (oldData) => {
     if (oldData == null) {
-      void queryClient.refetchQueries({ queryKey });
+      void queryClient.refetchQueries({ queryKey, exact: true });
       return oldData;
     }
 
