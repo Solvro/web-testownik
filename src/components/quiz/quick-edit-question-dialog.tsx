@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -91,9 +91,6 @@ export function QuickEditQuestionDialog({
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
 
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
-  const [isImageEditDialogOpen, setIsImageEditDialogOpen] = useState(false);
-
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
 
@@ -148,7 +145,7 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (quiz) => replaceQuestionInQuiz(quiz, updatedQuestion),
       );
-      handleOpenChange(false);
+      onOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się zaktualizować pytania");
@@ -175,7 +172,7 @@ export function QuickEditQuestionDialog({
           }),
       );
       onQuestionDeleted?.(question.id, newCurrentQuestionId);
-      handleOpenChange(false);
+      onOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się usunąć pytania");
@@ -199,28 +196,17 @@ export function QuickEditQuestionDialog({
 
     if (onSaveDraft !== undefined) {
       onSaveDraft(validation.data);
-      handleOpenChange(false);
+      onOpenChange(false);
       return;
     }
 
     await saveQuestion();
   };
 
-  function handleOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      setIsAlertDialogOpen(false);
-      setIsImageEditDialogOpen(false);
-    }
-  }
-
-  const isNestedDialogOpen = isAlertDialogOpen || isImageEditDialogOpen;
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex flex-col gap-0 sm:max-w-4xl"
-        data-nested-dialog-open={isNestedDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="pr-6">
@@ -233,7 +219,6 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
-            onImageDialogOpenChange={setIsImageEditDialogOpen}
             hideDelete
           />
         </DialogHeader>
@@ -247,7 +232,6 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
-            onImageDialogOpenChange={setIsImageEditDialogOpen}
             minAnswers={minAnswers}
           />
         </div>
@@ -255,10 +239,7 @@ export function QuickEditQuestionDialog({
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2">
             {hideDelete ? null : (
-              <AlertDialog
-                open={isAlertDialogOpen}
-                onOpenChange={setIsAlertDialogOpen}
-              >
+              <AlertDialog>
                 <AlertDialogTrigger
                   render={
                     <Button
@@ -310,7 +291,7 @@ export function QuickEditQuestionDialog({
             <Button
               variant="outline"
               onClick={() => {
-                handleOpenChange(false);
+                onOpenChange(false);
               }}
             >
               Anuluj
