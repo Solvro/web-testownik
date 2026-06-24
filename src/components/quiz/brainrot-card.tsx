@@ -54,7 +54,7 @@ export function BrainrotCard(): React.JSX.Element {
                     aria-label="Wybierz film: Brainrot memes"
                     onClick={() => {
                       handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=9q6eL3iSATM&t=756s",
+                        "https://www.youtube.com/watch?v=vY4nBa_JWrM&t=6s&cc_load_policy=3",
                       );
                     }}
                   >
@@ -74,7 +74,7 @@ export function BrainrotCard(): React.JSX.Element {
                     aria-label="Wybierz film: Minecraft parkour"
                     onClick={() => {
                       handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=vrcSq1-r25U&list=PLmSs-0cFIbfVWhkZx0i4UMiZdr2C0Z8w7",
+                        "https://www.youtube.com/watch?v=vrcSq1-r25U",
                       );
                     }}
                   >
