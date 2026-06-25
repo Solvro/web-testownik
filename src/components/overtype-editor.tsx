@@ -78,7 +78,7 @@ const theme: Theme = {
 interface OverTypeEditorProps {
   value?: string;
   placeholder?: string;
-  onChange?: (value: string) => void;
+  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onPaste?: (event: React.ClipboardEvent) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   minHeight?: string;
@@ -149,7 +149,6 @@ function OverTypeEditor({
     value,
     placeholder,
     theme,
-    toolbar: false,
     onChange,
     onPaste,
     onKeyDown,
@@ -162,6 +161,7 @@ function OverTypeEditor({
 
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
+  // Custom format detection
   useEffect(() => {
     const ta = editorRef.current?.textarea;
     if (ta === undefined) {
@@ -188,12 +188,12 @@ function OverTypeEditor({
       setActiveFormats(new Set(formats));
     };
 
-    ta.addEventListener("selectionchange", update);
+    ta.addEventListener("select", update);
     ta.addEventListener("keyup", update);
     ta.addEventListener("mouseup", update);
 
     return () => {
-      ta.removeEventListener("selectionchange", update);
+      ta.removeEventListener("select", update);
       ta.removeEventListener("keyup", update);
       ta.removeEventListener("mouseup", update);
     };
@@ -284,7 +284,11 @@ function OverTypeEditor({
     };
   }, [editorRef.current?.textarea]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isEmpty: boolean = editorRef.current?.getValue() === "";
+  const editorValue = editorRef.current?.getValue();
+  const displayValue =
+    editorRef.current === null ? (value ?? "") : (editorValue ?? "");
+
+  const isEmpty: boolean = displayValue === "";
 
   return (
     <div
@@ -339,9 +343,7 @@ function OverTypeEditor({
             isEmpty ? "text-muted-foreground" : "",
           )}
         >
-          {isEmpty
-            ? (placeholder ?? "")
-            : (editorRef.current?.getValue() ?? "")}
+          {isEmpty ? (placeholder ?? "") : displayValue}
         </MarkdownRenderer>
       ) : null}
     </div>

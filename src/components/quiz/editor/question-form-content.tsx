@@ -211,8 +211,8 @@ export function QuestionFormContent({
           <OverTypeEditor
             placeholder="Treść pytania..."
             value={question.text}
-            onChange={(value) => {
-              onUpdate({ text: value });
+            onChange={(event) => {
+              onUpdate({ text: event.target.value });
             }}
             onPaste={(event) => {
               handlePaste(event);

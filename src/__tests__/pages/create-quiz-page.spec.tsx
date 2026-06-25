@@ -22,13 +22,13 @@ vi.mock("@/components/overtype-editor", () => ({
     placeholder,
   }: {
     value?: string;
-    onChange?: (value: string) => void;
+    onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     placeholder?: string;
   }) => (
     <textarea
       placeholder={placeholder}
       value={value ?? ""}
-      onChange={(event) => onChange?.(event.target.value)}
+      onChange={(event) => onChange?.(event)}
     />
   ),
 }));
