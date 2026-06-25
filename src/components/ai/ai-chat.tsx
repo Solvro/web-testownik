@@ -9,6 +9,7 @@ import {
   AssistantChatTransport,
   useChatRuntime,
 } from "@assistant-ui/react-ai-sdk";
+import type { UIMessage } from "ai";
 import {
   BotMessageSquareIcon,
   BrushCleaningIcon,
@@ -28,16 +29,16 @@ import { ModelSelector } from "@/components/assistant-ui/model-selector";
 import { Thread } from "@/components/assistant-ui/thread";
 import { Button } from "@/components/ui/button";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
-  SELECTABLE_AI_MODEL_OPTIONS,
-  isSelectableAiModel,
-  resolveSelectableAiModel,
+  getSelectableAiModelOptionsForAccountLevel,
+  isSelectableAiModelForAccountLevel,
+  resolveSelectableAiModelForAccountLevel,
 } from "@/lib/ai/models";
 import type { SelectableAiModel } from "@/lib/ai/models";
-import { buildChatSystemPrompt, collectQuestionImages } from "@/lib/ai/prompts";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
-import { ACCOUNT_LEVEL, DEFAULT_USER_SETTINGS } from "@/types/user";
+import { DEFAULT_USER_SETTINGS } from "@/types/user";
 
 type ChatMode = "popup" | "sheet";
 
@@ -50,6 +51,31 @@ interface AiChatProps {
   questions: Question[];
   userName?: string;
   canEdit?: boolean;
+}
+
+function getSubmittedUserMessageId({
+  trigger,
+  messageId,
+  messages,
+}: {
+  trigger: "submit-message" | "regenerate-message";
+  messageId: string | undefined;
+  messages: UIMessage[];
+}): string | null {
+  if (trigger !== "submit-message") {
+    return null;
+  }
+
+  if (
+    messageId !== undefined &&
+    messages.some(
+      (message) => message.id === messageId && message.role === "user",
+    )
+  ) {
+    return messageId;
+  }
+
+  return messages.findLast((message) => message.role === "user")?.id ?? null;
 }
 
 function ChatRuntime({
@@ -69,35 +95,80 @@ function ChatRuntime({
   canEdit: boolean;
   children: React.ReactNode;
 }) {
-  const system = useMemo(
-    () => buildChatSystemPrompt(quiz, question, questions, userName, canEdit),
-    [quiz, question, questions, userName, canEdit],
+  const routeContext = useMemo(
+    () => ({
+      quiz,
+      question,
+      questions,
+      userName,
+    }),
+    [quiz, question, questions, userName],
   );
 
-  const images = useMemo(
-    () => (question === null ? [] : collectQuestionImages(question)),
-    [question],
-  );
-
-  const systemRef = useRef(system);
-  const imagesRef = useRef(images);
+  const routeContextRef = useRef(routeContext);
   useEffect(() => {
-    systemRef.current = system;
-    imagesRef.current = images;
-  }, [images, system]);
+    routeContextRef.current = routeContext;
+  }, [routeContext]);
+  const questionContextSnapshotsRef = useRef(
+    new Map<string, QuestionContextSnapshot>(),
+  );
 
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: "/ai/chat",
         body: () => ({
-          system: systemRef.current,
-          images: imagesRef.current,
+          ...routeContextRef.current,
           canEdit,
-          quizId,
         }),
+        prepareSendMessagesRequest: (options) => {
+          const messageIds = new Set(
+            options.messages.map((message) => message.id),
+          );
+          for (const messageId of questionContextSnapshotsRef.current.keys()) {
+            if (!messageIds.has(messageId)) {
+              questionContextSnapshotsRef.current.delete(messageId);
+            }
+          }
+
+          const submittedUserMessageId = getSubmittedUserMessageId(options);
+          const currentQuestion = routeContextRef.current.question;
+          if (submittedUserMessageId !== null) {
+            if (currentQuestion === null) {
+              questionContextSnapshotsRef.current.delete(
+                submittedUserMessageId,
+              );
+            } else {
+              questionContextSnapshotsRef.current.set(submittedUserMessageId, {
+                messageId: submittedUserMessageId,
+                questionId: currentQuestion.id,
+              });
+            }
+          }
+
+          const questionContextSnapshots = options.messages
+            .map((message) =>
+              questionContextSnapshotsRef.current.get(message.id),
+            )
+            .filter(
+              (snapshot): snapshot is QuestionContextSnapshot =>
+                snapshot !== undefined,
+            );
+
+          return {
+            body: {
+              ...options.body,
+              id: options.id,
+              messages: options.messages,
+              trigger: options.trigger,
+              messageId: options.messageId,
+              metadata: options.requestMetadata,
+              questionContextSnapshots,
+            },
+          };
+        },
       }),
-    [canEdit, quizId],
+    [canEdit],
   );
 
   const suggestions = useMemo(() => {
@@ -161,20 +232,32 @@ export function AiChat({
   const { data: settings = DEFAULT_USER_SETTINGS } = useUserSettings({
     placeholderData: DEFAULT_USER_SETTINGS,
   });
-  const canSelectAiModel = user?.account_level === ACCOUNT_LEVEL.GOLD;
-  const defaultAiModel = resolveSelectableAiModel(settings.default_ai_model);
+  const accountLevel = user?.account_level ?? null;
+  const selectableAiModelOptions = useMemo(
+    () => getSelectableAiModelOptionsForAccountLevel(accountLevel),
+    [accountLevel],
+  );
+  const canSelectAiModel = selectableAiModelOptions.length > 1;
+  const defaultAiModel = resolveSelectableAiModelForAccountLevel(
+    settings.default_ai_model,
+    accountLevel,
+  );
   const [manualAiModel, setManualAiModel] = useState<SelectableAiModel | null>(
     null,
   );
-  const selectedAiModel = manualAiModel ?? defaultAiModel;
+  const selectedAiModel =
+    manualAiModel !== null &&
+    isSelectableAiModelForAccountLevel(manualAiModel, accountLevel)
+      ? manualAiModel
+      : defaultAiModel;
   const modelSelectorOptions = useMemo(
     () =>
-      SELECTABLE_AI_MODEL_OPTIONS.map((model) => ({
+      selectableAiModelOptions.map((model) => ({
         id: model.value,
         name: model.label,
         icon: <AiModelProviderIcon provider={model.provider} />,
       })),
-    [],
+    [selectableAiModelOptions],
   );
 
   useEffect(() => {
@@ -283,7 +366,9 @@ export function AiChat({
                     models={modelSelectorOptions}
                     value={selectedAiModel}
                     onValueChange={(value) => {
-                      if (isSelectableAiModel(value)) {
+                      if (
+                        isSelectableAiModelForAccountLevel(value, accountLevel)
+                      ) {
                         setManualAiModel(value);
                       }
                     }}

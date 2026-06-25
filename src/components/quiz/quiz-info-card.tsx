@@ -7,6 +7,7 @@ import {
   Link2Icon,
   Loader2Icon,
   MenuIcon,
+  PlugIcon,
   RotateCcwIcon,
   ScanEyeIcon,
   SearchIcon,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +62,8 @@ interface QuizInfoCardProps {
   isFocusModeActive: boolean;
   toggleFocusMode: () => void;
   onToggleHistory: () => void;
+  isContinuityDisconnected: boolean;
+  onReconnectContinuity: () => void;
   isSettingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
 }
@@ -129,6 +133,8 @@ export function QuizInfoCard({
   isFocusModeActive,
   toggleFocusMode,
   onToggleHistory,
+  isContinuityDisconnected,
+  onReconnectContinuity,
   isSettingsOpen,
   onSettingsOpenChange,
 }: QuizInfoCardProps): React.JSX.Element | null {
@@ -136,6 +142,7 @@ export function QuizInfoCard({
   const canShare = checkPermission(PermissionAction.SHARE_QUIZZES);
   const canSearchInQuiz = checkPermission(PermissionAction.SEARCH_IN_QUIZ);
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
+  const canUseContinuity = checkPermission(PermissionAction.QUIZ_CONTINUITY);
   const queryClient = useQueryClient();
   const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
@@ -169,7 +176,15 @@ export function QuizInfoCard({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{quiz.title}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2 pr-2">
+            <span className="min-w-0 break-words">{quiz.title}</span>
+            {isFocusModeActive ? (
+              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <ScanEyeIcon />
+                Tryb skupienia
+              </Badge>
+            ) : null}
+          </CardTitle>
           {quiz.creator == null ? null : (
             <CardDescription>by {quiz.creator.full_name}</CardDescription>
           )}
@@ -216,6 +231,12 @@ export function QuizInfoCard({
                     ? "Wyłącz tryb skupienia"
                     : "Tryb skupienia"}
                 </DropdownMenuItem>
+                {canUseContinuity && isContinuityDisconnected ? (
+                  <DropdownMenuItem onClick={onReconnectContinuity}>
+                    <PlugIcon />
+                    Włącz Continuity
+                  </DropdownMenuItem>
+                ) : null}
                 {canEditQuiz ? null : (
                   <>
                     <DropdownMenuSeparator />

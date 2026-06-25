@@ -1,5 +1,6 @@
 "use client";
 
+import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -36,9 +37,15 @@ import {
   validateQuestionForm,
 } from "@/lib/schemas/quiz.schema";
 import { getQuizService } from "@/services";
-import type { Question, QuizWithUserProgress } from "@/types/quiz";
+import type { Question, Quiz, QuizWithUserProgress } from "@/types/quiz";
 
-import { quizDetailQueryKey } from "./helpers/utils";
+import {
+  quizDetailQueryKey,
+  quizQueryKey,
+  removeQuestionFromQuiz,
+  removeQuestionFromQuizCache,
+  replaceQuestionInQuiz,
+} from "./helpers/utils";
 
 interface QuickEditQuestionDialogProps {
   open: boolean;
@@ -46,9 +53,28 @@ interface QuickEditQuestionDialogProps {
   question: Question;
   quizId: string;
   onSaveDraft?: (question: Question) => void;
+  onQuestionDeleted?: (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => void;
   hideDelete?: boolean;
   hideFullEditor?: boolean;
   minAnswers?: number;
+}
+
+function updateCachedQuiz<TQuiz extends Quiz>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  updater: (quiz: TQuiz) => TQuiz,
+) {
+  queryClient.setQueryData<TQuiz>(queryKey, (oldData) => {
+    if (oldData == null) {
+      void queryClient.refetchQueries({ queryKey, exact: true });
+      return oldData;
+    }
+
+    return updater(oldData);
+  });
 }
 
 export function QuickEditQuestionDialog({
@@ -57,15 +83,13 @@ export function QuickEditQuestionDialog({
   question,
   quizId,
   onSaveDraft,
+  onQuestionDeleted,
   hideDelete = false,
   hideFullEditor = false,
   minAnswers = 1,
 }: QuickEditQuestionDialogProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
-
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
-  const [isImageEditDialogOpen, setIsImageEditDialogOpen] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
@@ -113,24 +137,15 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
-      queryClient.setQueryData<QuizWithUserProgress>(
-        quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
-          return {
-            ...oldData,
-            questions: oldData.questions.map((q) =>
-              q.id === question.id ? updatedQuestion : q,
-            ),
-          };
-        },
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        replaceQuestionInQuiz(quiz, updatedQuestion),
       );
-      handleOpenChange(false);
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
+        quizDetailQueryKey(quizId),
+        (quiz) => replaceQuestionInQuiz(quiz, updatedQuestion),
+      );
+      onOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się zaktualizować pytania");
@@ -143,32 +158,21 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
-      queryClient.setQueryData<QuizWithUserProgress>(
-        quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
-
-          return {
-            ...oldData,
-            questions: oldData.questions.filter((q) => q.id !== question.id),
-            current_session:
-              oldData.current_session == null
-                ? null
-                : {
-                    ...oldData.current_session,
-                    ...(newCurrentQuestionId == null
-                      ? {}
-                      : { current_question: newCurrentQuestionId }),
-                  },
-          };
-        },
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        removeQuestionFromQuiz(quiz, question.id),
       );
-      handleOpenChange(false);
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
+        quizDetailQueryKey(quizId),
+        (quiz) =>
+          removeQuestionFromQuizCache({
+            quiz,
+            deletedQuestionId: question.id,
+            newCurrentQuestionId,
+          }),
+      );
+      onQuestionDeleted?.(question.id, newCurrentQuestionId);
+      onOpenChange(false);
     },
     onError: () => {
       toast.error("Nie udało się usunąć pytania");
@@ -192,28 +196,17 @@ export function QuickEditQuestionDialog({
 
     if (onSaveDraft !== undefined) {
       onSaveDraft(validation.data);
-      handleOpenChange(false);
+      onOpenChange(false);
       return;
     }
 
     await saveQuestion();
   };
 
-  function handleOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      setIsAlertDialogOpen(false);
-      setIsImageEditDialogOpen(false);
-    }
-  }
-
-  const isNestedDialogOpen = isAlertDialogOpen || isImageEditDialogOpen;
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex flex-col gap-0 sm:max-w-4xl"
-        data-nested-dialog-open={isNestedDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="pr-6">
@@ -226,7 +219,6 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
-            onImageDialogOpenChange={setIsImageEditDialogOpen}
             hideDelete
           />
         </DialogHeader>
@@ -240,7 +232,6 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
-            onImageDialogOpenChange={setIsImageEditDialogOpen}
             minAnswers={minAnswers}
           />
         </div>
@@ -248,10 +239,7 @@ export function QuickEditQuestionDialog({
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2">
             {hideDelete ? null : (
-              <AlertDialog
-                open={isAlertDialogOpen}
-                onOpenChange={setIsAlertDialogOpen}
-              >
+              <AlertDialog>
                 <AlertDialogTrigger
                   render={
                     <Button
@@ -303,7 +291,7 @@ export function QuickEditQuestionDialog({
             <Button
               variant="outline"
               onClick={() => {
-                handleOpenChange(false);
+                onOpenChange(false);
               }}
             >
               Anuluj

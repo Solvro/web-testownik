@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { AppContext } from "@/app-context";
 import { AiChat } from "@/components/ai/ai-chat";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
-import { AiExplainCard } from "@/components/ai/ai-explain-card";
+import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
 import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
@@ -89,12 +89,19 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     confirmOnboardingAndHide,
     cancelOnboarding,
   } = useFocusMode(timerStore);
-  const { isHost: isContinuityHost, peerConnections } = continuity;
+  const {
+    disconnect: disconnectContinuity,
+    isDisconnected: isContinuityDisconnected,
+    isHost: isContinuityHost,
+    peerConnections,
+    reconnect: reconnectContinuity,
+  } = continuity;
   const {
     nextAction,
     skipQuestion,
     resetProgress,
     setSelectedAnswers,
+    onQuestionDeleted,
     toggleHistory,
     toggleBrainrot,
     togglePreviousQuestion,
@@ -124,10 +131,26 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     setAnswerHints([]);
   }, [currentQuestion?.id]);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+  useEffect(() => {
+    setShowAiExplain(false);
+  }, [questionChecked]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
+
   const handleToggleBrainrot = () => {
     startTransition(() => {
       toggleBrainrot();
     });
+  };
+
+  const handleDisconnectContinuity = () => {
+    disconnectContinuity();
+    toast.success("Continuity rozłączone w tej karcie");
+  };
+
+  const handleReconnectContinuity = () => {
+    reconnectContinuity();
+    toast.success("Continuity włączone dla tego quizu");
   };
 
   const handleQuizActivity = (action: () => void) => {
@@ -241,10 +264,17 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
               quizie.
               <span className="mt-2 block">
                 <strong>Jak to działa? </strong>
-                Po włączeniu tego trybu, jeśli opuścisz tę kartę lub nie
-                wykonasz żadnej akcji przez 5 minut, timer zostanie
-                automatycznie zatrzymany, a aplikacja odtworzy głośny dźwięk i
-                pokaże powiadomienie przypominające o powrocie do nauki.
+                Po włączeniu tego trybu, jeśli opuścisz tę kartę, przełączysz
+                się do innego okna lub aplikacji albo nie wykonasz żadnej akcji
+                przez 5 minut, timer zostanie automatycznie zatrzymany, a
+                aplikacja odtworzy głośny dźwięk i pokaże powiadomienie
+                przypominające o powrocie do nauki.
+              </span>
+              <span className="mt-2 block text-sm">
+                Na niektórych urządzeniach i przeglądarkach, zwłaszcza na
+                iPhonie i iPadzie, system może zablokować automatyczne
+                odtworzenie dźwięku. Powiadomienie nadal się pokaże, ale dźwięk
+                trybu skupienia może nie zawsze zadziałać.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -337,6 +367,8 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isFocusModeActive={isFocusModeActive}
                 toggleFocusMode={toggleFocusMode}
                 onToggleHistory={toggleHistory}
+                isContinuityDisconnected={isContinuityDisconnected}
+                onReconnectContinuity={handleReconnectContinuity}
                 isSettingsOpen={isSettingsOpen}
                 onSettingsOpenChange={setIsSettingsOpen}
               />
@@ -354,17 +386,30 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 isExplainOpen={showAiExplain}
                 isChatOpen={isChatOpen}
                 aiDisabled={!showAi}
+                questionChecked={questionChecked}
+                onQuestionDeleted={onQuestionDeleted}
               />
               {showAi && showAiExplain && currentQuestion != null ? (
-                <AiExplainCard
-                  question={currentQuestion}
-                  questionChecked={questionChecked}
-                  onClose={() => {
-                    setShowAiExplain(false);
-                    setAnswerHints([]);
-                  }}
-                  onAnswerHints={setAnswerHints}
-                />
+                questionChecked ? (
+                  <AiExplanationCard
+                    defaultAiModel={quiz.user_settings?.default_ai_model}
+                    question={currentQuestion}
+                    onClose={() => {
+                      setShowAiExplain(false);
+                      setAnswerHints([]);
+                    }}
+                  />
+                ) : (
+                  <AiHintCard
+                    defaultAiModel={quiz.user_settings?.default_ai_model}
+                    question={currentQuestion}
+                    onClose={() => {
+                      setShowAiExplain(false);
+                      setAnswerHints([]);
+                    }}
+                    onAnswerHints={setAnswerHints}
+                  />
+                )
               ) : null}
             </div>
           </ViewTransition>
@@ -382,6 +427,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
       <ContinuityDialog
         peerConnections={peerConnections}
         isContinuityHost={isContinuityHost}
+        onDisconnectContinuity={handleDisconnectContinuity}
       />
 
       {showAi ? (

@@ -1,4 +1,10 @@
-import { BotIcon, CheckIcon, CopyIcon, CrownIcon } from "lucide-react";
+import {
+  BadgeCheckIcon,
+  BotIcon,
+  CheckIcon,
+  CopyIcon,
+  CrownIcon,
+} from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,15 +26,16 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { env } from "@/env";
 import {
-  SELECTABLE_AI_MODEL_OPTIONS,
+  canSelectAiModelForAccountLevel,
   getSelectableAiModelOption,
-  isSelectableAiModel,
-  resolveSelectableAiModel,
+  getSelectableAiModelOptionsForAccountLevel,
+  isSelectableAiModelForAccountLevel,
+  resolveSelectableAiModelForAccountLevel,
 } from "@/lib/ai/models";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import { ACCOUNT_LEVEL } from "@/types/user";
 import type { SettingsFormProps } from "@/types/user";
+import { ACCOUNT_LEVEL } from "@/types/user";
 
 interface CopyableSnippetProps {
   copiedKey: string | null;
@@ -114,9 +121,16 @@ export function AiSettingsForm({
 
   const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
   const canSelectAiModel =
-    hasAiAccess && user?.account_level === ACCOUNT_LEVEL.GOLD;
-  const selectedAiModel = resolveSelectableAiModel(settings.default_ai_model);
+    hasAiAccess && canSelectAiModelForAccountLevel(user?.account_level);
+  const selectableAiModelOptions = getSelectableAiModelOptionsForAccountLevel(
+    user?.account_level,
+  );
+  const selectedAiModel = resolveSelectableAiModelForAccountLevel(
+    settings.default_ai_model,
+    user?.account_level,
+  );
   const selectedAiModelOption = getSelectableAiModelOption(selectedAiModel);
+  const isGold = user?.account_level === ACCOUNT_LEVEL.GOLD;
   const mcpEndpoint = `${env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "")}/mcp`;
   const claudeCodeCommand = `claude mcp add --transport http testownik ${mcpEndpoint}`;
 
@@ -182,23 +196,28 @@ export function AiSettingsForm({
                 Domyślny model AI
                 <Badge
                   variant="outline"
-                  className="border-amber-300/60 bg-amber-100/70 text-amber-900 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-200"
+                  className={
+                    isGold
+                      ? "border-amber-300/60 bg-amber-100/70 text-amber-900 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-200"
+                      : "border-slate-300/80 bg-slate-100/80 text-slate-800 dark:border-slate-200/30 dark:bg-slate-200/15 dark:text-slate-200"
+                  }
                 >
-                  <CrownIcon />
-                  Gold
+                  {isGold ? <CrownIcon /> : <BadgeCheckIcon />}
+                  {isGold ? "Gold" : "Silver"}
                 </Badge>
               </Label>
               <p className="text-muted-foreground text-xs">
-                Model startowy dla czatu AI i wyjaśnień pytań. W czacie możesz
-                zmienić go tymczasowo.
+                Model startowy dla AI. W czacie możesz zmienić go tymczasowo.
               </p>
             </div>
             <Select
               disabled={disabled}
-              items={SELECTABLE_AI_MODEL_OPTIONS}
+              items={selectableAiModelOptions}
               value={selectedAiModel}
               onValueChange={(value) => {
-                if (isSelectableAiModel(value)) {
+                if (
+                  isSelectableAiModelForAccountLevel(value, user?.account_level)
+                ) {
                   onSettingChange("default_ai_model", value);
                 }
               }}
@@ -209,16 +228,27 @@ export function AiSettingsForm({
                 className="w-full shrink-0 md:ml-auto md:w-56"
                 disabled={disabled}
               >
-                <AiModelProviderIcon
-                  provider={selectedAiModelOption.provider}
-                />
-                <span className="truncate">{selectedAiModelOption.label}</span>
+                <SelectValue>
+                  <AiModelProviderIcon
+                    provider={selectedAiModelOption.provider}
+                  />
+                  <span className="truncate">
+                    {selectedAiModelOption.label}
+                  </span>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent alignItemWithTrigger>
                 <SelectGroup>
-                  {SELECTABLE_AI_MODEL_OPTIONS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      <AiModelProviderIcon provider={model.provider} />
+                  {selectableAiModelOptions.map((model) => (
+                    <SelectItem
+                      key={model.value}
+                      value={model.value}
+                      className="*:data-[slot=select-item-text]:gap-1.5"
+                    >
+                      <AiModelProviderIcon
+                        provider={model.provider}
+                        className="my-auto"
+                      />
                       {model.label}
                     </SelectItem>
                   ))}

@@ -232,6 +232,24 @@ export function useQuizLogic({
     continuity.sendResetProgress(session);
   };
 
+  const handleQuestionDeleted = (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => {
+    if (historyQuestionId === deletedQuestionId) {
+      setHistoryQuestionId(null);
+    }
+
+    if (currentQuestionRef.current?.id !== deletedQuestionId) {
+      return;
+    }
+
+    const nextQuestion =
+      sessionActions.replaceCurrentQuestionAfterDeletion(newCurrentQuestionId);
+    nextQuestionRef.current = null;
+    continuity.sendQuestionUpdate(nextQuestion, []);
+  };
+
   const historyQuestion =
     historyQuestionId == null
       ? null
@@ -275,8 +293,11 @@ export function useQuizLogic({
       timerStore,
     },
     continuity: {
+      isDisconnected: continuity.isDisconnected,
       isHost: continuity.isHost,
       peerConnections: continuity.peerConnections,
+      disconnect: continuity.disconnect,
+      reconnect: continuity.reconnect,
     },
     actions: {
       nextAction,
@@ -289,6 +310,7 @@ export function useQuizLogic({
           continuity.sendQuestionUpdate(currentQuestion, ans);
         }
       },
+      onQuestionDeleted: handleQuestionDeleted,
       toggleHistory: () => {
         setShowHistory((h) => !h);
       },

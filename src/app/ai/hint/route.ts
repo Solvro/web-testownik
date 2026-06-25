@@ -6,8 +6,8 @@ import { resolveImages } from "@/lib/ai/images";
 import { getChatModelForUser } from "@/lib/ai/model";
 import { isAiModel } from "@/lib/ai/models";
 import {
-  buildQuestionExplanationSystemPrompt,
-  buildQuestionExplanationUserPrompt,
+  buildQuestionHintSystemPrompt,
+  buildQuestionHintUserPrompt,
   collectQuestionImages,
 } from "@/lib/ai/prompts";
 import {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return new Response("AI features require a full account", { status: 403 });
   }
 
-  const rateLimitResult = checkRateLimit(user.user_id, "ai-explain", {
+  const rateLimitResult = checkRateLimit(user.user_id, "ai-hint", {
     limit: env.AI_EXPLAIN_RATE_LIMIT,
     window: env.AI_EXPLAIN_RATE_WINDOW,
   });
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   }
 
   const imageParts = await resolveImages(collectQuestionImages(question));
-  const prompt = buildQuestionExplanationUserPrompt(question);
+  const prompt = buildQuestionHintUserPrompt(question);
 
   let model: LanguageModel;
   try {
@@ -64,13 +64,13 @@ export async function POST(request: Request) {
       requestedModel: aiModel,
     });
   } catch (error) {
-    console.error("Failed to resolve AI explanation model", error);
+    console.error("Failed to resolve AI hint model", error);
     return new Response("AI model is not configured", { status: 503 });
   }
 
   const result = streamText({
     model,
-    system: buildQuestionExplanationSystemPrompt(),
+    system: buildQuestionHintSystemPrompt(),
     prompt:
       imageParts.length > 0
         ? [

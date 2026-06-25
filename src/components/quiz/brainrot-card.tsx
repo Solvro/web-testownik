@@ -13,15 +13,31 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+const DEFAULT_BRAINROT_VIDEO_ID = "zZ7AimPACzc";
+const BRAINROT_RANDOM_START_MAX_SECONDS = 907;
+
+function getBrainrotVideoUrl(videoId: string): string {
+  const startSeconds = Math.floor(
+    Math.random() * (BRAINROT_RANDOM_START_MAX_SECONDS + 1),
+  );
+  const url = new URL("https://www.youtube.com/watch");
+
+  url.searchParams.set("v", videoId);
+  url.searchParams.set("t", `${String(startSeconds)}s`);
+  url.searchParams.set("cc_load_policy", "3");
+
+  return url.toString();
+}
+
 export function BrainrotCard(): React.JSX.Element {
   // Subway Surfers is default video
   const [brainrotVideo, setBrainrotVideo] = React.useState(
-    "https://www.youtube.com/watch?v=zZ7AimPACzc",
+    getBrainrotVideoUrl(DEFAULT_BRAINROT_VIDEO_ID),
   );
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(true);
 
-  const handleBrainrotVideoChange = (video: string) => {
-    setBrainrotVideo(video);
+  const handleBrainrotVideoChange = (videoId: string) => {
+    setBrainrotVideo(getBrainrotVideoUrl(videoId));
     setIsVideoPlaying(true);
   };
 
@@ -53,9 +69,7 @@ export function BrainrotCard(): React.JSX.Element {
                     size="icon"
                     aria-label="Wybierz film: Brainrot memes"
                     onClick={() => {
-                      handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=9q6eL3iSATM&t=756s",
-                      );
+                      handleBrainrotVideoChange("vY4nBa_JWrM");
                     }}
                   >
                     <ShuffleIcon />
@@ -73,9 +87,7 @@ export function BrainrotCard(): React.JSX.Element {
                     size="icon"
                     aria-label="Wybierz film: Minecraft parkour"
                     onClick={() => {
-                      handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=vrcSq1-r25U&list=PLmSs-0cFIbfVWhkZx0i4UMiZdr2C0Z8w7",
-                      );
+                      handleBrainrotVideoChange("vrcSq1-r25U");
                     }}
                   >
                     <BoxIcon />
@@ -93,9 +105,7 @@ export function BrainrotCard(): React.JSX.Element {
                     size="icon"
                     aria-label="Wybierz film: Mydełka"
                     onClick={() => {
-                      handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=IiEVXWIIr0k",
-                      );
+                      handleBrainrotVideoChange("IiEVXWIIr0k");
                     }}
                   >
                     <BubblesIcon />
@@ -113,9 +123,7 @@ export function BrainrotCard(): React.JSX.Element {
                     size="icon"
                     aria-label="Wybierz film: Subway Surfers"
                     onClick={() => {
-                      handleBrainrotVideoChange(
-                        "https://www.youtube.com/watch?v=zZ7AimPACzc",
-                      );
+                      handleBrainrotVideoChange(DEFAULT_BRAINROT_VIDEO_ID);
                     }}
                   >
                     <SprayCanIcon />

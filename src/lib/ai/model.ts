@@ -1,5 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
+import { xai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 import "server-only";
 
@@ -7,17 +8,12 @@ import { env } from "@/env";
 import { ACCOUNT_LEVEL } from "@/types/user";
 import type { AccountLevel } from "@/types/user";
 
-import {
-  AI_MODEL,
-  DEFAULT_AI_MODEL,
-  DEFAULT_SELECTABLE_AI_MODEL,
-  isSelectableAiModel,
-} from "./models";
+import { AI_MODEL, resolveSelectableAiModelForAccountLevel } from "./models";
 import type { AiModel } from "./models";
 
 interface ResolveChatModelOptions {
   accountLevel?: AccountLevel | null;
-  requestedModel?: AiModel | null;
+  requestedModel?: string | null;
 }
 
 export function resolveAiModelPreference({
@@ -25,12 +21,13 @@ export function resolveAiModelPreference({
   requestedModel,
 }: ResolveChatModelOptions): AiModel {
   if (accountLevel !== ACCOUNT_LEVEL.GOLD) {
-    return DEFAULT_AI_MODEL;
+    return resolveSelectableAiModelForAccountLevel(
+      requestedModel,
+      accountLevel,
+    );
   }
 
-  return isSelectableAiModel(requestedModel)
-    ? requestedModel
-    : DEFAULT_SELECTABLE_AI_MODEL;
+  return resolveSelectableAiModelForAccountLevel(requestedModel, accountLevel);
 }
 
 function assertProviderConfigured(model: AiModel) {
@@ -40,6 +37,12 @@ function assertProviderConfigured(model: AiModel) {
     case AI_MODEL.GPT_55: {
       if (env.OPENAI_API_KEY === undefined) {
         throw new Error("OpenAI is not configured");
+      }
+      break;
+    }
+    case AI_MODEL.GROK_43: {
+      if (env.XAI_API_KEY === undefined) {
+        throw new Error("xAI is not configured");
       }
       break;
     }
@@ -55,8 +58,6 @@ function assertProviderConfigured(model: AiModel) {
   }
 }
 
-export const chatModel = openai(DEFAULT_AI_MODEL);
-
 export function getChatModelForUser(
   options: ResolveChatModelOptions,
 ): LanguageModel {
@@ -69,6 +70,9 @@ export function getChatModelForUser(
     case AI_MODEL.GPT_54_MINI:
     case AI_MODEL.GPT_55: {
       return openai(selectedModel);
+    }
+    case AI_MODEL.GROK_43: {
+      return xai(selectedModel);
     }
     case AI_MODEL.CLAUDE_FABLE_5:
     case AI_MODEL.CLAUDE_OPUS_4_8:

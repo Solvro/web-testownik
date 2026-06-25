@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition, useState } from "react";
+import type { MouseEvent } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -25,6 +26,20 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { QuizMetadata } from "@/types/quiz";
+
+function shouldShowOpenLoading(event: MouseEvent<HTMLAnchorElement>): boolean {
+  const target = event.currentTarget.getAttribute("target");
+
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey &&
+    (target == null || target === "" || target === "_self")
+  );
+}
 
 export interface QuizCardProps extends React.ComponentProps<typeof Card> {
   quiz: QuizMetadata;
@@ -93,8 +108,10 @@ export function QuizCard({
                   <Link
                     {...rendererProps}
                     href={onOpenPath(quiz)}
-                    onClick={() => {
-                      setIsLoading(true);
+                    onClick={(event) => {
+                      if (shouldShowOpenLoading(event)) {
+                        setIsLoading(true);
+                      }
                     }}
                   >
                     Otwórz

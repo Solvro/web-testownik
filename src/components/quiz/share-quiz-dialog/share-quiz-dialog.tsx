@@ -374,6 +374,12 @@ export function ShareQuizDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save quiz settings:", error);
+      toast.error("Nie udało się zapisać ustawień udostępniania.", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Spróbuj ponownie za chwilę.",
+      });
     } finally {
       setIsSaving(false);
     }

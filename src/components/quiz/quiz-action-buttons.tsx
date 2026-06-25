@@ -34,6 +34,11 @@ interface QuizActionButtonsProps {
   isExplainOpen?: boolean;
   isChatOpen?: boolean;
   aiDisabled?: boolean;
+  questionChecked?: boolean;
+  onQuestionDeleted?: (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => void;
 }
 
 export function QuizActionButtons({
@@ -46,6 +51,8 @@ export function QuizActionButtons({
   isExplainOpen = false,
   isChatOpen = false,
   aiDisabled = false,
+  questionChecked = false,
+  onQuestionDeleted,
 }: QuizActionButtonsProps) {
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
@@ -79,6 +86,7 @@ export function QuizActionButtons({
   };
 
   const canUseAi = !aiDisabled && checkPermission(PermissionAction.AI_FEATURES);
+  const explainLabel = questionChecked ? "Wyjaśnij pytanie" : "Podpowiedz";
 
   const handleOpenChatGPT = () => {
     if (question == null) {
@@ -110,13 +118,13 @@ export function QuizActionButtons({
                   size="icon"
                   onClick={onExplain}
                   disabled={!canUseQuestion || isExplainOpen}
-                  aria-label="Wyjaśnij pytanie"
+                  aria-label={explainLabel}
                 >
                   <SparklesIcon />
                 </Button>
               }
             ></TooltipTrigger>
-            <TooltipContent>Wyjaśnij pytanie</TooltipContent>
+            <TooltipContent>{explainLabel}</TooltipContent>
           </Tooltip>
         ) : (
           <Tooltip>
@@ -232,6 +240,7 @@ export function QuizActionButtons({
           onOpenChange={setIsEditOpen}
           question={question}
           quizId={quiz.id}
+          onQuestionDeleted={onQuestionDeleted}
           key={question.id}
         />
       )}

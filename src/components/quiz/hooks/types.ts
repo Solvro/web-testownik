@@ -31,14 +31,21 @@ export interface UseQuizLogicResult {
     timerStore: TimerStore;
   };
   continuity: {
+    isDisconnected: boolean;
     isHost: boolean;
     peerConnections: DataConnection[];
+    disconnect: () => void;
+    reconnect: () => void;
   };
   actions: {
     nextAction: () => void;
     skipQuestion: () => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
+    onQuestionDeleted: (
+      deletedQuestionId: string,
+      newCurrentQuestionId: string | null,
+    ) => void;
     toggleHistory: () => void;
     toggleBrainrot: () => void;
     togglePreviousQuestion: () => void;

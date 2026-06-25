@@ -163,7 +163,7 @@ export function QuestionCard({
                   aria-label="Otwórz repozytorium Testownik na GitHubie i zostaw gwiazdkę"
                 >
                   <SiGithub className="size-4" />
-                  Wesprzyj nas gwiazdką
+                  Wbij nam gwiazdkę
                 </Link>
               )}
               className="group w-full"
