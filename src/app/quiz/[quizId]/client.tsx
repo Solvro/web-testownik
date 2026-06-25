@@ -126,12 +126,10 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     hasAiAccess &&
     !(quiz.user_settings?.ai_disabled ?? false);
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
   useEffect(() => {
     setShowAiExplain(false);
     setAnswerHints([]);
   }, [currentQuestion?.id]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
 
   /* eslint-disable react-you-might-not-need-an-effect/no-adjust-state-on-prop-change */
   useEffect(() => {

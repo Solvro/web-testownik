@@ -3,6 +3,7 @@
 import { CheckIcon, Trash2 } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
+import { OverTypeEditor } from "@/components/overtype-editor";
 import {
   ImageButton,
   ImageDropZone,
@@ -11,7 +12,6 @@ import {
 } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -133,7 +133,7 @@ export function AnswerForm({
             </TooltipContent>
           </Tooltip>
 
-          <Textarea
+          <OverTypeEditor
             placeholder={`Odpowiedź ${String(answer.order)}...`}
             value={answer.text}
             onChange={(event) => {
@@ -143,8 +143,9 @@ export function AnswerForm({
               handlePaste(event);
             }}
             onKeyDown={onKeyDown}
-            className="min-h-8 flex-1 resize-none"
-            rows={1}
+            className="min-h-8 flex-1"
+            minHeight="100px"
+            autoResize={true}
           />
 
           <Tooltip>
