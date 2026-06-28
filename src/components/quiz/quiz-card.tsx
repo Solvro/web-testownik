@@ -79,29 +79,33 @@ export function QuizCard({
 }: QuizCardProps) {
   const router = useRouter();
 
-  const { ref, isDragging } = useDraggable({
-    id: quiz.id,
-    disabled: !isDraggable || quiz.folder?.folder_type === "archive",
-    data: {
-      quizId: quiz.id,
-      type: "quiz",
-    },
-  });
-
   const [isPointerDown, setIsPointerDown] = useState<boolean>(false);
   const [isShaking, setIsShaking] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [useCleanName, setUseCleanName] = useState<boolean>(false);
   const instanceId = crypto.randomUUID();
   const cleanName = `quiz-open-${quiz.id}-${quiz.folder?.id ?? ""}`;
   const domName = `${cleanName}-${instanceId}`;
 
+  const { ref, isDragging } = useDraggable({
+    id: quiz.id,
+    disabled:
+      !isDraggable || quiz.folder?.folder_type === "archive" || isLoading,
+    data: {
+      quizId: quiz.id,
+      type: "quiz",
+    },
+  });
+
   return (
     <ViewTransition name={useCleanName ? cleanName : domName}>
       <div
         ref={ref}
         onPointerDown={() => {
-          setIsPointerDown(true);
+          if (!isLoading) {
+            setIsPointerDown(true);
+          }
         }}
         onPointerUp={() => {
           setIsPointerDown(false);
@@ -117,19 +121,24 @@ export function QuizCard({
             }, 400);
           }
         }}
-        className={cn("h-full w-full", isDragging && "opacity-50")}
+        className={cn(
+          "h-full w-full",
+          (isDragging || isLoading) && "opacity-50",
+        )}
       >
         <Card
           variant="gradient"
           className={cn(
-            "hover:ring-ring relative flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 transition-all select-none hover:ring-2",
+            "relative flex h-full cursor-pointer flex-row justify-between gap-0 px-6 py-5 transition-all select-none",
             isShaking && "animate-shake",
+            isLoading ? "pointer-events-none" : "hover:ring-ring hover:ring-2",
             className,
           )}
           onClick={() => {
-            if (isDragging) {
+            if (isDragging || isLoading) {
               return;
             }
+            setIsLoading(true);
             setUseCleanName(true);
             setTimeout(() => {
               router.push(onOpenPath(quiz));
@@ -137,6 +146,28 @@ export function QuizCard({
           }}
           {...props}
         >
+          {isLoading ? (
+            <>
+              {/* 1. Efekt krążącej kreski po ringu */}
+              <div className="pointer-events-none absolute inset-0 z-20">
+                <svg className="absolute inset-0 h-full w-full rounded-xl">
+                  <rect
+                    x="1.5"
+                    y="1.5"
+                    width="calc(100% - 3px)"
+                    height="calc(100% - 3px)"
+                    rx="12"
+                    pathLength="100"
+                    className="stroke-primary animate-card-loop fill-none stroke-[3px] [stroke-dasharray:30_70]"
+                  />
+                </svg>
+              </div>
+
+              {/* 2. Subtelne rozmycie i przyciemnienie karty */}
+              <div className="bg-background/20 pointer-events-none absolute inset-0 z-10 rounded-xl backdrop-blur-[0.5px]" />
+            </>
+          ) : null}
+
           <div className="flex w-full gap-2">
             <div className="bg-accent flex aspect-square size-14 items-center justify-center rounded-lg">
               {quiz.folder?.folder_type === "archive" ? (
@@ -209,6 +240,7 @@ export function QuizCard({
                   }
                 ></DropdownMenuTrigger>
                 <DropdownMenuContent className="w-full">
+                  {/* ... reszta menu bez zmian ... */}
                   {Boolean(showEdit) && (
                     <DropdownMenuItem
                       render={
