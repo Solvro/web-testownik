@@ -29,6 +29,7 @@ const makeQuiz = (currentQuestion: string | null): QuizWithUserProgress => ({
   id: "quiz-1",
   title: "Quiz",
   description: "",
+  folder: null,
   visibility: AccessLevel.PRIVATE,
   allow_anonymous: false,
   is_anonymous: false,

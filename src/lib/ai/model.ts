@@ -72,12 +72,14 @@ export function getChatModelForUser(
       return openai(selectedModel);
     }
     case AI_MODEL.GROK_43: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
       return xai(selectedModel);
     }
     case AI_MODEL.CLAUDE_FABLE_5:
     case AI_MODEL.CLAUDE_OPUS_4_8:
     case AI_MODEL.CLAUDE_SONNET_4_6:
     case AI_MODEL.CLAUDE_HAIKU_4_5: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
       return anthropic(selectedModel);
     }
   }

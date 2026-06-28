@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { AccessLevel } from "@/types/quiz";
-import type { Folder, Question, Quiz } from "@/types/quiz";
+import type { Question, Quiz } from "@/types/quiz";
 
 import {
   countDataUrlImages,

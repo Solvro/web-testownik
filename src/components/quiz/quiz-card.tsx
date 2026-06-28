@@ -37,20 +37,6 @@ import { cn } from "@/lib/utils";
 import type { QuizMetadata } from "@/types/quiz";
 import { AccessLevel } from "@/types/quiz";
 
-function shouldShowOpenLoading(event: MouseEvent<HTMLAnchorElement>): boolean {
-  const target = event.currentTarget.getAttribute("target");
-
-  return (
-    !event.defaultPrevented &&
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey &&
-    (target == null || target === "" || target === "_self")
-  );
-}
-
 export interface QuizCardProps extends ComponentProps<typeof Card> {
   quiz: QuizMetadata;
   showEdit?: boolean;
@@ -271,8 +257,8 @@ export function QuizCard({
               </DropdownMenu>
             </span>
           </div>
-        </CardFooter>
-      </Card>
+        </Card>
+      </div>
     </ViewTransition>
   );
 }
