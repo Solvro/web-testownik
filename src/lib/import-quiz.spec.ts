@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { AccessLevel } from "@/types/quiz";
-import type { Question, Quiz } from "@/types/quiz";
+import type { Folder, Question, Quiz } from "@/types/quiz";
 
 import {
   countDataUrlImages,
@@ -191,6 +191,7 @@ describe("uploadDataUrlImages", () => {
       id: "quiz-1",
       title: "Test Quiz",
       description: "Description",
+      folder: null,
       version: 1,
       visibility: AccessLevel.PRIVATE,
       allow_anonymous: false,
@@ -238,6 +239,7 @@ describe("uploadDataUrlImages", () => {
       id: "quiz-1",
       title: "Test Quiz",
       description: "Description",
+      folder: null,
       version: 1,
       visibility: AccessLevel.PRIVATE,
       allow_anonymous: false,
@@ -285,6 +287,7 @@ describe("uploadDataUrlImages", () => {
       id: "quiz-1",
       title: "Test Quiz",
       description: "Description",
+      folder: null,
       version: 1,
       visibility: AccessLevel.PRIVATE,
       allow_anonymous: false,
@@ -328,6 +331,7 @@ describe("uploadDataUrlImages", () => {
       id: "quiz-1",
       title: "Test Quiz",
       description: "Description",
+      folder: null,
       version: 1,
       visibility: AccessLevel.PRIVATE,
       allow_anonymous: false,
