@@ -317,8 +317,6 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     [searchRegex, sortedArchivedQuizzes],
   );
 
-  const libraryItems: LibraryItem[] = currentFolderContent?.items ?? [];
-
   if (typeof document !== "undefined") {
     document.title = "Twoje quizy - Testownik Solvro";
   }
@@ -666,7 +664,20 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       titleLabel: "Moja biblioteka",
       icon: <LibraryIcon className="size-6" />,
       library: () => {
-        return libraryItems;
+        // Exclude archived and shared
+        return (library?.items ?? [])
+          .filter(
+            (quiz) =>
+              !filteredSharedQuizzes.some(
+                (sharedQuiz) => sharedQuiz.id === quiz.id,
+              ),
+          )
+          .filter(
+            (quiz) =>
+              !filteredArchivedQuizzes.some(
+                (archivedQuiz) => archivedQuiz.id === quiz.id,
+              ),
+          );
       },
       isFilterActive:
         searchValue.trim().length > 0 &&
