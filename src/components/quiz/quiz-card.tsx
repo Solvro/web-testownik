@@ -148,7 +148,6 @@ export function QuizCard({
         >
           {isLoading ? (
             <>
-              {/* 1. Efekt krążącej kreski po ringu */}
               <div className="pointer-events-none absolute inset-0 z-20">
                 <svg className="absolute inset-0 h-full w-full rounded-xl">
                   <rect
@@ -163,7 +162,6 @@ export function QuizCard({
                 </svg>
               </div>
 
-              {/* 2. Subtelne rozmycie i przyciemnienie karty */}
               <div className="bg-background/20 pointer-events-none absolute inset-0 z-10 rounded-xl backdrop-blur-[0.5px]" />
             </>
           ) : null}
