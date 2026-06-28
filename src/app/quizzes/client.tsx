@@ -345,13 +345,32 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   };
 
   const handleArchiveQuiz = async (quiz: QuizMetadata) => {
+    const currentFolderQueryKey = ["folder-library", activeFolderId];
+
     try {
+      queryClient.setQueryData(currentFolderQueryKey, (oldData: Library) => {
+        return {
+          ...oldData,
+          items: oldData.items.filter(
+            (item: LibraryItem) =>
+              !(item.type === "quiz" && item.id === quiz.id),
+          ),
+        };
+      });
+
       await getQuizService().archiveQuiz(quiz.id);
+
       void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+
       toast.success("Quiz został zarchiwizowany");
     } catch (error_) {
       console.error("Błd podczas archiwizacji quizu:", error_);
       toast.error("Nie udało się zarchiwizować quizu");
+
+      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
     }
   };
 
@@ -371,16 +390,17 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
       await getQuizService().moveQuizToFolder(quizId, folderId);
 
+      void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
 
       toast.success("Przeniesiono quiz do folderu");
     } catch (error_) {
       console.error("Błąd podczas przenoszenia quizu:", error_);
       toast.error("Nie udało się zapisać zmian w folderze.");
 
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
     }
   };
 
@@ -409,14 +429,14 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
 
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
 
       toast.success("Przeniesiono folder do folderu");
     } catch (error_) {
       console.error("Błąd podczas przenoszenia folderu:", error_);
       toast.error("Nie udało się zapisać zmian w folderze.");
 
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
     }
   };
 
