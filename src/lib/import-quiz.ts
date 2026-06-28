@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import JSZip from "jszip";
 import type React from "react";
 import { useRef, useState } from "react";
@@ -439,6 +440,7 @@ export const useImportQuiz = () => {
   const monacoEditorRef = useRef<JsonCodeEditor | null>(null);
   const [legacyContent, setLegacyContent] = useState<string>("");
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const queryClient = useQueryClient();
 
   const [uploadProgress, setUploadProgress] = useState<{
     current: number;
@@ -758,6 +760,11 @@ export const useImportQuiz = () => {
 
       setQuiz(result);
       setErrorDetail(null);
+
+      void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+      void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
     } catch (importError) {
       console.error("Błąd importowania quizu:", importError);
       const detail =
@@ -1023,6 +1030,11 @@ export const useImportQuiz = () => {
 
           const importedQuiz = await getQuizService().createQuiz(quizData);
           setQuiz(importedQuiz);
+
+          void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
+          void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
+          void queryClient.invalidateQueries({ queryKey: ["user-library"] });
+          void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
         } catch (error_) {
           setErrorAndNotify(
             "Wystąpił błąd podczas przetwarzania plików.",
