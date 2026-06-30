@@ -2,6 +2,7 @@ import { ChevronDownIcon } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 import { GradeDistributionChart } from "./grade-distribution-chart";
 import type { CourseView } from "./grade-utils";
-import { fmtNumber, fmtSigned } from "./grade-utils";
+import { fmtNumber, fmtSigned, formatGradeDate } from "./grade-utils";
 
 type GradeBadgeProps = Omit<ComponentPropsWithoutRef<"span">, "color"> & {
   symbol: string;
@@ -83,6 +84,21 @@ function PartialGradeBadge({ sub }: { sub: CourseView["subs"][number] }) {
   );
 }
 
+function courseMeta(course: CourseView) {
+  return [course.code, ...course.courseTypeNames].join(" · ");
+}
+
+function NewGradePill({ timestamp }: { timestamp: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={<Badge variant="destructive">Nowa</Badge>}
+      ></TooltipTrigger>
+      <TooltipContent>Dodano {formatGradeDate(timestamp)}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function CourseRow({
   course,
   expanded,
@@ -110,11 +126,14 @@ export function CourseRow({
     >
       <CollapsibleTrigger className="hover:bg-primary/5 flex w-full cursor-pointer items-center gap-1 rounded-xl px-2 py-2 text-left transition-colors focus-visible:outline-none sm:gap-3 sm:px-3 sm:py-3">
         <div className="min-w-0 flex-1">
-          <div className="text-sm leading-snug font-semibold break-words">
-            {course.name}
+          <div className="flex flex-wrap items-center gap-x-2 text-sm leading-snug font-semibold">
+            <span className="wrap-break-word">{course.name}</span>
+            {hero?.isNew === true && hero.timestamp != null ? (
+              <NewGradePill timestamp={hero.timestamp} />
+            ) : null}
           </div>
           <div className="text-muted-foreground mt-0.5 truncate text-xs tabular-nums">
-            {course.code}
+            {courseMeta(course)}
           </div>
         </div>
         <div className="text-muted-foreground w-8 shrink-0 text-center text-sm font-semibold tabular-nums sm:w-16">
@@ -138,11 +157,8 @@ export function CourseRow({
         {hasMainDetails ? (
           <div className="grid grid-cols-1 items-end gap-5 py-3.5 md:grid-cols-[1.35fr_1fr]">
             <div>
-              <div className="text-muted-foreground mb-2 flex justify-between text-xs">
+              <div className="text-muted-foreground mb-2 flex justify-start text-xs">
                 <span>Rozkład w grupie - {hero.reportType}</span>
-                <span className="text-foreground font-semibold">
-                  Twoja: {hero.symbol}
-                </span>
               </div>
               <GradeDistributionChart
                 distribution={hero.distribution}
@@ -175,6 +191,13 @@ export function CourseRow({
                   <span className="text-right font-medium">{hero.issuer}</span>
                 </div>
               )}
+              {hero.timestamp != null && (
+                <div className="flex justify-between gap-3.5 text-xs">
+                  <span className="text-right font-medium tabular-nums">
+                    {formatGradeDate(hero.timestamp)}
+                  </span>
+                </div>
+              )}
               {hero.counts ? (
                 <div className="bg-primary/15 text-primary inline-flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-xs font-semibold">
                   ● Liczy się do średniej
@@ -197,16 +220,25 @@ export function CourseRow({
             {course.subs.map((sub) => (
               <div key={sub.key} className="flex items-center gap-3 py-2">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">
-                    {sub.typeLabel}
+                  <div className="flex min-w-0 items-center gap-x-2">
+                    <div className="truncate text-sm font-medium">
+                      {sub.typeLabel}
+                    </div>
+                    {sub.isNew && sub.timestamp != null ? (
+                      <NewGradePill timestamp={sub.timestamp} />
+                    ) : null}
                   </div>
-                  <div className="text-muted-foreground mt-px truncate text-xs">
-                    {[sub.issuer, sub.counts ? "Liczy się" : "Nie liczy się"]
+                  <div className="text-muted-foreground text-xs md:mt-px">
+                    {[
+                      sub.issuer,
+                      sub.timestamp != null && formatGradeDate(sub.timestamp),
+                      sub.counts ? "Liczy się" : "Nie liczy się",
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                   </div>
                 </div>
-                <div className="hidden w-30 sm:block">
+                <div className="w-20 shrink-0 sm:w-30">
                   <GradeDistributionChart
                     distribution={sub.distribution}
                     yourValue={sub.value}

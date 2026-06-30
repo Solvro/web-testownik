@@ -87,6 +87,50 @@ function gradeLabel(grade: Grade) {
   return grade.value_symbol ?? grade.value?.toLocaleString("pl-PL") ?? "-";
 }
 
+function parseGradeDate(value: string) {
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T00:00:00`
+    : value.replace(" ", "T");
+  const date = new Date(normalized);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatGradeDate(value: string) {
+  const date = parseGradeDate(value);
+
+  if (date == null) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pl-PL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function gradeTimestamp(grade: Grade | null) {
+  if (grade?.date_modified != null) {
+    return grade.date_modified;
+  }
+
+  return null;
+}
+
+function isNewGrade(timestamp: string | null) {
+  if (timestamp == null) {
+    return false;
+  }
+
+  const date = parseGradeDate(timestamp);
+  if (date == null) {
+    return false;
+  }
+
+  const age = Date.now() - date.getTime();
+  return age >= 0 && age <= 24 * 60 * 60 * 1000;
+}
+
 function classTypeLabel(classType: CourseClassType | null | undefined) {
   if (classType == null) {
     return null;
@@ -182,6 +226,8 @@ export interface ReportView {
   typeLabel: string;
   reportType: string;
   issuer: string | null;
+  timestamp: string | null;
+  isNew: boolean;
   groupAverage: number | null;
   groupDelta: number | null;
   distribution: DistributionEntry[];
@@ -191,6 +237,8 @@ export interface CourseView {
   id: string;
   name: string;
   code: string;
+  courseTypeNames: string[];
+  courseTypeSymbols: string[];
   ects: number;
   passed: boolean;
   hero: ReportView | null;
@@ -225,6 +273,7 @@ function buildReportView(report: GradeReport, key: string): ReportView {
     report.class_type_id == null
       ? (report.type_description ?? report.type_id ?? "Zaliczenie")
       : (classLabel ?? report.class_type_id);
+  const timestamp = gradeTimestamp(grade);
   return {
     key,
     value,
@@ -235,6 +284,8 @@ function buildReportView(report: GradeReport, key: string): ReportView {
     typeLabel,
     reportType: report.type_description ?? report.type_id ?? "Zaliczenie",
     issuer: grade == null ? null : issuerLabel(grade.modification_author),
+    timestamp,
+    isNew: isNewGrade(timestamp),
     groupAverage,
     groupDelta,
     distribution,
@@ -243,6 +294,7 @@ function buildReportView(report: GradeReport, key: string): ReportView {
 
 function directGradeView(grade: Grade, code: string): ReportView {
   const value = grade.value ?? numericGradeValue(grade.value_symbol);
+  const timestamp = gradeTimestamp(grade);
   return {
     key: `${code}-direct`,
     value,
@@ -253,6 +305,8 @@ function directGradeView(grade: Grade, code: string): ReportView {
     typeLabel: "Ocena końcowa",
     reportType: "Ocena końcowa",
     issuer: issuerLabel(grade.modification_author),
+    timestamp,
+    isNew: isNewGrade(timestamp),
     groupAverage: null,
     groupDelta: null,
     distribution: [],
@@ -287,11 +341,18 @@ export function buildCourseView(course: Course): CourseView {
 
   const subs = reportViews.filter((view) => view !== hero);
   const mainValue = hero?.value ?? course.weighted_average ?? null;
+  const classTypes = course.class_types ?? [];
 
   return {
     id: course.course_id,
     name: course.course_name,
     code: course.course_id,
+    courseTypeNames: classTypes
+      .map((classType) => classTypeLabel(classType))
+      .filter((label): label is string => label != null && label.length > 0),
+    courseTypeSymbols: classTypes
+      .map((classType) => classType.id)
+      .filter((label) => label.length > 0),
     ects: course.ects,
     passed: course.passing_status === "passed",
     hero,

@@ -1,5 +1,6 @@
 "use client";
 
+import type { BarShapeProps } from "recharts";
 import {
   Bar,
   BarChart,
@@ -8,7 +9,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { BarShapeProps } from "recharts";
 
 import type { ChartConfig } from "@/components/ui/chart";
 import {
@@ -16,6 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 import type { DistributionEntry } from "./grade-utils";
@@ -41,6 +42,7 @@ export function GradeDistributionChart({
   yourValue: number | null;
   mini?: boolean;
 }) {
+  const isMobile = useIsMobile();
   if (distribution.length === 0) {
     if (mini) {
       return null;
@@ -91,8 +93,9 @@ export function GradeDistributionChart({
         />
         <YAxis hide domain={[0, "dataMax"]} />
         <ChartTooltip
+          wrapperStyle={{ zIndex: 50 }}
           cursor={false}
-          allowEscapeViewBox={{ x: true, y: true }}
+          allowEscapeViewBox={{ x: !isMobile, y: true }}
           content={
             <ChartTooltipContent
               labelFormatter={(_, payload) => {
@@ -101,7 +104,7 @@ export function GradeDistributionChart({
               }}
               formatter={(value) => (
                 <span className="text-muted-foreground flex w-full justify-between gap-3">
-                  <span>Udział w grupie</span>
+                  <span className="text-nowrap">Udział w grupie</span>
                   <span className="text-foreground font-medium tabular-nums">
                     {Number(value).toLocaleString("pl-PL", {
                       maximumFractionDigits: 1,
