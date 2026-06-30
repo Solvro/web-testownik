@@ -117,6 +117,129 @@ describe("GradesPage", () => {
     expect(await screen.findByText(/błąd/i)).toBeVisible();
   });
 
+  it("should display when a grade was added", async () => {
+    const { user } = await setup();
+
+    const gradesList = await findGradesList();
+    await user.click(
+      await within(gradesList).findByText(mockCourses[2].course_name),
+    );
+
+    expect(await within(gradesList).findByText(/10 cze 2025/i)).toBeVisible();
+  });
+
+  it("should use date_modified as the added date", async () => {
+    server.use(
+      http.get("*/grades/", () =>
+        HttpResponse.json({
+          terms: [mockTerms[0]],
+          courses: [
+            {
+              ...mockCourses[0],
+              grades: [
+                {
+                  ...mockCourses[0].grades[0],
+                  date_modified: "2025-01-20T10:15:00",
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+    const { user } = await setup();
+
+    const gradesList = await findGradesList();
+    await user.click(
+      await within(gradesList).findByText(mockCourses[0].course_name),
+    );
+
+    expect(await within(gradesList).findByText(/20 sty 2025/i)).toBeVisible();
+  });
+
+  it("should mark grades added in the last 24 hours as new", async () => {
+    const recentDate = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    server.use(
+      http.get("*/grades/", () =>
+        HttpResponse.json({
+          terms: [mockTerms[0]],
+          courses: [
+            {
+              ...mockCourses[0],
+              grades: [
+                {
+                  ...mockCourses[0].grades[0],
+                  date_modified: recentDate,
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+    const { user } = await setup();
+
+    const gradesList = await findGradesList();
+    const newPill = await within(gradesList).findByText("Nowa");
+
+    expect(newPill).toBeVisible();
+
+    await user.hover(newPill);
+    expect(await screen.findByText(/dodano/i)).toBeVisible();
+  });
+
+  it("should display course type full name in list and symbol in simulator", async () => {
+    const course = {
+      ...mockCourses[0],
+      class_types: [{ id: "W", name_pl: "Wykład", name_en: "Lecture" }],
+      reports: [
+        {
+          id: "report-1",
+          type_id: "partial",
+          type_description: "Zaliczenie",
+          scope: "course_unit",
+          class_type_id: "L",
+          class_type: {
+            id: "L",
+            name_pl: "Laboratorium",
+            name_en: "Laboratory",
+          },
+          course_unit: {
+            id: "unit-1",
+            course_id: mockCourses[0].course_id,
+            course_name: null,
+            term_id: mockTerms[0].id,
+            classtype_id: "L",
+          },
+          grades_distribution: [],
+          grades: [mockCourses[0].grades[0]],
+        },
+      ],
+    };
+    server.use(
+      http.get("*/grades/", () =>
+        HttpResponse.json({
+          terms: [mockTerms[0]],
+          courses: [course],
+        }),
+      ),
+    );
+    await setup();
+
+    const gradesList = await findGradesList();
+    expect(
+      await within(gradesList).findByText(/math101 · Wykład/i),
+    ).toBeVisible();
+    expect(
+      within(gradesList).queryByText("Laboratorium"),
+    ).not.toBeInTheDocument();
+
+    const simulator = screen.getByRole("region", {
+      name: /symulator średniej/i,
+    });
+    expect(within(simulator).getByText("W · 5 ECTS")).toBeVisible();
+  });
+
   it("should correctly calculate average grade", async () => {
     server.use(
       http.get("*/grades/", () =>

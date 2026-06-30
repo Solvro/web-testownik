@@ -104,6 +104,7 @@ export interface Course {
   course_id: string;
   course_name: string;
   ects: number;
+  class_types?: CourseClassType[];
   grades?: Grade[];
   reports?: GradeReport[];
   term_id: string;
@@ -124,6 +125,7 @@ export interface Grade {
   course_unit_id?: string | null;
   class_type_id?: string | null;
   class_type?: CourseClassType | null;
+  date_modified?: string | null;
   modification_author?: GradeIssuer | null;
 }
 
