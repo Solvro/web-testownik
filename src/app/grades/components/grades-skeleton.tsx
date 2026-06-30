@@ -14,6 +14,7 @@ const SIMULATOR_ROWS = [
   { key: "s1", title: "w-4/5" },
   { key: "s2", title: "w-2/3" },
   { key: "s3", title: "w-11/12" },
+  { key: "s4", title: "w-6/10" },
 ];
 
 const GRADE_OPTIONS = ["g1", "g2", "g3", "g4", "g5", "g6"];
@@ -205,7 +206,7 @@ export function GradesSkeleton() {
                 <Skeleton className="mt-1 h-3 w-12" />
               </div>
             </div>
-            <div className="px-3.5 pt-1.5 pb-2">
+            <div className="px-3.5 pt-1.5 pb-2 sm:max-h-72 sm:overflow-y-auto">
               {SIMULATOR_ROWS.map((row) => (
                 <SimulatorRowSkeleton key={row.key} title={row.title} />
               ))}
