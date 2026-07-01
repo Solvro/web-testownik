@@ -12,6 +12,20 @@ import type { DecorationName } from "./wrapped.config";
 const WIDTH = 1080;
 const HEIGHT = 1920;
 const PAD = 96;
+const OPENMOJI_BASE =
+  "https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@15.0.0/color/svg/";
+const SUMMER_SHARE_STICKERS = [
+  { code: "2600", x: WIDTH - 122, y: 382, size: 152, rotation: 0.08 },
+  { code: "1F3D6", x: 106, y: 600, size: 90, rotation: -0.22 },
+  { code: "1F366", x: 94, y: 1642, size: 88, rotation: -0.18 },
+  { code: "1F33A", x: 128, y: HEIGHT - 112, size: 70, rotation: -0.34 },
+  { code: "1F334", x: WIDTH - 108, y: HEIGHT - 124, size: 150, rotation: 0.04 },
+] as const;
+const SUMMER_SHARE_SPARKLES = [
+  { x: 388, y: 612, size: 38, rotation: -0.14 },
+  { x: 558, y: 544, size: 32, rotation: 0.08 },
+  { x: 828, y: 620, size: 30, rotation: 0.16 },
+] as const;
 
 /** Colours the share card is drawn with (matches the current theme). */
 export interface ShareTheme {
@@ -163,11 +177,185 @@ function drawStar(
   context.restore();
 }
 
-function drawShareDecorations(
+async function loadCanvasImage(
+  source: string,
+): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    const timeout = window.setTimeout(() => {
+      resolve(null);
+    }, 2500);
+
+    image.crossOrigin = "anonymous";
+    image.addEventListener("load", () => {
+      window.clearTimeout(timeout);
+      resolve(image);
+    });
+    image.addEventListener("error", () => {
+      window.clearTimeout(timeout);
+      resolve(null);
+    });
+    image.src = source;
+  });
+}
+
+function drawImageSticker(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  size: number,
+  rotation: number,
+): void {
+  context.save();
+  context.translate(x, y);
+  context.rotate(rotation);
+  context.shadowColor = "rgba(0,0,0,.16)";
+  context.shadowBlur = 16;
+  context.shadowOffsetY = 8;
+  context.drawImage(image, -size / 2, -size / 2, size, size);
+  context.restore();
+}
+
+function drawSummerFallback(
   context: CanvasRenderingContext2D,
   theme: ShareTheme,
 ): void {
+  const outline = "#0b0d12";
+  const yellow = isDark(theme.bg) ? theme.accent : "#ffe14d";
+
+  context.save();
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = outline;
+  context.lineWidth = 7;
+
+  // Sun, low left.
+  context.save();
+  context.translate(170, HEIGHT - 210);
+  for (let index = 0; index < 12; index++) {
+    const angle = (index * Math.PI * 2) / 12;
+    context.beginPath();
+    context.moveTo(Math.cos(angle) * 58, Math.sin(angle) * 58);
+    context.lineTo(Math.cos(angle) * 86, Math.sin(angle) * 86);
+    context.stroke();
+  }
+  context.fillStyle = yellow;
+  context.beginPath();
+  context.arc(0, 0, 54, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.restore();
+
+  // Flower, upper left.
+  context.save();
+  context.translate(160, 650);
+  context.fillStyle = "#ff8fb0";
+  for (let index = 0; index < 5; index++) {
+    const angle = (index * Math.PI * 2) / 5;
+    context.save();
+    context.rotate(angle);
+    context.beginPath();
+    context.ellipse(0, -34, 18, 30, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+  context.fillStyle = "#ffe14d";
+  context.beginPath();
+  context.arc(0, 0, 20, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.restore();
+
+  // Drink, low right.
+  context.save();
+  context.translate(WIDTH - 170, HEIGHT - 315);
+  context.rotate(-0.12);
+  context.fillStyle = withAlpha("#ffd23f", 0.84);
+  context.beginPath();
+  context.moveTo(-44, -48);
+  context.lineTo(44, -48);
+  context.lineTo(24, 58);
+  context.lineTo(-24, 58);
+  context.closePath();
+  context.fill();
+  context.stroke();
+  context.beginPath();
+  context.moveTo(0, 58);
+  context.lineTo(0, 106);
+  context.moveTo(-42, 106);
+  context.lineTo(42, 106);
+  context.stroke();
+  context.restore();
+
+  context.restore();
+}
+
+async function drawSummerShareDecorations(
+  context: CanvasRenderingContext2D,
+  theme: ShareTheme,
+): Promise<void> {
+  const images = await Promise.all(
+    SUMMER_SHARE_STICKERS.map(async (sticker) => {
+      return loadCanvasImage(`${OPENMOJI_BASE}${sticker.code}.svg`);
+    }),
+  );
+
+  context.save();
+  let drewAny = false;
+  for (const [index, image] of images.entries()) {
+    if (image === null) {
+      continue;
+    }
+    const sticker = SUMMER_SHARE_STICKERS[index];
+    drawImageSticker(
+      context,
+      image,
+      sticker.x,
+      sticker.y,
+      sticker.size,
+      sticker.rotation,
+    );
+    drewAny = true;
+  }
+
+  const sparkleImages = await Promise.all(
+    SUMMER_SHARE_SPARKLES.map(async () => {
+      return loadCanvasImage(`${OPENMOJI_BASE}2728.svg`);
+    }),
+  );
+  for (const [index, image] of sparkleImages.entries()) {
+    if (image === null) {
+      continue;
+    }
+    const sparkle = SUMMER_SHARE_SPARKLES[index];
+    drawImageSticker(
+      context,
+      image,
+      sparkle.x,
+      sparkle.y,
+      sparkle.size,
+      sparkle.rotation,
+    );
+    drewAny = true;
+  }
+  context.restore();
+
+  if (!drewAny) {
+    drawSummerFallback(context, theme);
+  }
+}
+
+async function drawShareDecorations(
+  context: CanvasRenderingContext2D,
+  theme: ShareTheme,
+): Promise<void> {
   if (theme.decoration === "none") {
+    return;
+  }
+  if (theme.decoration === "summer") {
+    await drawSummerShareDecorations(context, theme);
     return;
   }
 
@@ -242,39 +430,6 @@ function drawShareDecorations(
       }
       break;
     }
-    case "summer": {
-      const sun = context.createRadialGradient(
-        WIDTH - 150,
-        HEIGHT - 210,
-        20,
-        WIDTH - 150,
-        HEIGHT - 210,
-        160,
-      );
-      sun.addColorStop(0, withAlpha(theme.accent, 0.5));
-      sun.addColorStop(1, withAlpha(theme.accent, 0));
-      context.fillStyle = sun;
-      context.beginPath();
-      context.arc(WIDTH - 150, HEIGHT - 210, 160, 0, Math.PI * 2);
-      context.fill();
-
-      context.strokeStyle = withAlpha(theme.fg, 0.22);
-      context.lineWidth = 10;
-      for (let index = 0; index < 3; index++) {
-        context.beginPath();
-        context.moveTo(80, HEIGHT - 260 + index * 34);
-        context.bezierCurveTo(
-          230,
-          HEIGHT - 310 + index * 34,
-          330,
-          HEIGHT - 210 + index * 34,
-          490,
-          HEIGHT - 260 + index * 34,
-        );
-        context.stroke();
-      }
-      break;
-    }
     case "wrapped":
     case "blobs": {
       const blobColors =
@@ -336,7 +491,7 @@ export async function generateShareImage(
   // Background.
   context.fillStyle = bg;
   context.fillRect(0, 0, WIDTH, HEIGHT);
-  drawShareDecorations(context, theme);
+  await drawShareDecorations(context, theme);
 
   // Header.
   context.textBaseline = "alphabetic";
@@ -399,9 +554,13 @@ export async function generateShareImage(
   context.textAlign = "left";
 
   return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob);
-    }, "image/png");
+    try {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, "image/png");
+    } catch {
+      resolve(null);
+    }
   });
 }
 
@@ -409,18 +568,15 @@ function shareText(data: WrappedStoryData): string {
   const hours = Math.floor(data.study_time.total_minutes / 60);
   if (data.is_global === true) {
     return (
-      `Testownik Wrapped: ${String(hours)} godz nauki, ` +
-      `${formatValue(data.volume.total_answers, "int")} pytań, ` +
-      `${String(data.accuracy.percent)}% skuteczności w całym semestrze.`
+      `Testownik Wrapped: ${String(hours)} godz nauki i ` +
+      `${formatValue(data.volume.total_answers, "int")} pytań.`
     );
   }
 
   return (
     `Mój Testownik Wrapped: ${String(hours)} godz nauki, ` +
-    `${formatValue(data.volume.total_answers, "int")} pytań, ` +
-    `${String(data.accuracy.percent)}% skuteczności. Top ${String(
-      data.rank.top_percent,
-    )}%!`
+    `${formatValue(data.volume.total_answers, "int")} pytań.` +
+    `Top ${String(data.rank.top_percent)}%!`
   );
 }
 

@@ -134,6 +134,7 @@
 
 /* Smooth palette transitions between slides. */
 .wrapped-stage {
+  overscroll-behavior: none;
   transition:
     background-color 0.45s ease,
     color 0.45s ease;
