@@ -63,19 +63,19 @@ function summaryValueStyle(item: SummaryItem): CSSProperties {
   const compact = item.compact === true || length > 16;
   const fontSize =
     length >= 34
-      ? "13px"
+      ? "clamp(11px, 1.8dvh, 13px)"
       : length >= 26
-        ? "14px"
+        ? "clamp(12px, 1.95dvh, 14px)"
         : length >= 20
-          ? "15px"
+          ? "clamp(13px, 2.1dvh, 15px)"
           : compact
-            ? "17px"
-            : "26px";
+            ? "clamp(13px, 2.25dvh, 17px)"
+            : "clamp(20px, 3.2dvh, 26px)";
 
   return {
     fontFamily: FD,
     fontSize,
-    lineHeight: compact ? 1.08 : 1,
+    lineHeight: compact ? 1.04 : 0.98,
     color: item.highlight ? HL : "currentColor",
     overflow: "hidden",
     display: "-webkit-box",
@@ -271,7 +271,7 @@ function TimeSlide({ data }: SlideProps) {
         }}
       >
         <span style={{ fontFamily: FD, fontSize: "26px", lineHeight: 1 }}>
-          ≈ {data.study_time.total_minutes / 20}
+          ≈ {Math.round(data.study_time.total_minutes / 20)}
         </span>
         <span
           style={{
@@ -1328,31 +1328,14 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
         textAlign: "left",
       }}
     >
-      <div
-        style={{
-          animation: "wr-rise .5s .05s both",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          fontFamily: FM,
-          fontSize: "12px",
-          letterSpacing: ".18em",
-          textTransform: "uppercase",
-          color: HL,
-          marginBottom: "8px",
-          fontWeight: 600,
-        }}
-      >
-        <span style={{ fontWeight: 700 }}>Testownik</span>
-        <span>· Wrapped {data.season.year_label}</span>
-      </div>
       <h2
         style={{
           animation: "wr-rise .5s .12s both",
           fontFamily: FD,
-          fontSize: "clamp(40px,12vw,56px)",
+          fontSize: "clamp(34px, 7dvh, 54px)",
+          lineHeight: 0.96,
           letterSpacing: ".005em",
-          margin: "0 0 20px",
+          margin: "0 0 clamp(10px, 1.8dvh, 20px)",
           textTransform: "uppercase",
         }}
       >
@@ -1373,15 +1356,18 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
         {summary.map((s) => (
           <div
             key={s.label}
-            style={{ background: "var(--slide-bg, #15171c)", padding: "16px" }}
+            style={{
+              background: "var(--slide-bg, #15171c)",
+              padding: "clamp(9px, 1.7dvh, 16px)",
+            }}
           >
             <div style={summaryValueStyle(s)}>{s.val}</div>
             <div
               style={{
                 fontFamily: FM,
-                fontSize: "11px",
+                fontSize: "clamp(9px, 1.5dvh, 11px)",
                 color: muted(62),
-                marginTop: "5px",
+                marginTop: "clamp(2px, .6dvh, 5px)",
               }}
             >
               {s.label}
@@ -1394,7 +1380,7 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           animation: "wr-rise .5s .4s both",
           display: "flex",
           gap: "10px",
-          marginTop: "24px",
+          marginTop: "clamp(12px, 2.3dvh, 24px)",
           pointerEvents: "auto",
         }}
       >
@@ -1403,13 +1389,13 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           onClick={onShare}
           style={{
             flex: 1,
-            height: "46px",
+            height: "clamp(38px, 5.4dvh, 46px)",
             border: "none",
             borderRadius: "12px",
             background: HL,
             color: "var(--slide-bg, #15171c)",
             fontFamily: FM,
-            fontSize: "15px",
+            fontSize: "clamp(13px, 1.9dvh, 15px)",
             fontWeight: 700,
             cursor: "pointer",
           }}
@@ -1421,13 +1407,13 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           onClick={onRestart}
           style={{
             flex: 1,
-            height: "46px",
+            height: "clamp(38px, 5.4dvh, 46px)",
             borderRadius: "12px",
             background: "transparent",
             border: "1.5px solid currentColor",
             color: "currentColor",
             fontFamily: FM,
-            fontSize: "15px",
+            fontSize: "clamp(13px, 1.9dvh, 15px)",
             fontWeight: 600,
             cursor: "pointer",
           }}
@@ -1440,7 +1426,7 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           animation: "wr-rise .5s .5s both",
           display: "flex",
           gap: "10px",
-          marginTop: "10px",
+          marginTop: "clamp(6px, 1.2dvh, 10px)",
           pointerEvents: "auto",
         }}
       >
@@ -1450,7 +1436,7 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           rel="noreferrer"
           style={{
             flex: 1,
-            height: "42px",
+            height: "clamp(34px, 4.8dvh, 42px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1460,7 +1446,7 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
             border: `1.5px solid ${muted(35)}`,
             color: "currentColor",
             fontFamily: FM,
-            fontSize: "13px",
+            fontSize: "clamp(11px, 1.65dvh, 13px)",
             fontWeight: 600,
             textDecoration: "none",
           }}
@@ -1474,13 +1460,13 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
           }}
           style={{
             flex: 1,
-            height: "42px",
+            height: "clamp(34px, 4.8dvh, 42px)",
             borderRadius: "12px",
             background: "transparent",
             border: `1.5px solid ${muted(35)}`,
             color: "currentColor",
             fontFamily: FM,
-            fontSize: "13px",
+            fontSize: "clamp(11px, 1.65dvh, 13px)",
             fontWeight: 600,
             cursor: "pointer",
           }}
