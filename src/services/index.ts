@@ -4,6 +4,7 @@ import { FolderService } from "@/services/folder.service";
 import { ImageService } from "./image.service";
 import { QuizService } from "./quiz.service";
 import { UserService } from "./user.service";
+import { WrappedService } from "./wrapped.service";
 
 /**
  * Service registry for managing all API services
@@ -13,6 +14,7 @@ export class ServiceRegistry {
   private folderService: FolderService;
   private userService: UserService;
   private imageService: ImageService;
+  private wrappedService: WrappedService;
 
   constructor(
     baseURL: string,
@@ -27,6 +29,11 @@ export class ServiceRegistry {
     );
     this.userService = new UserService(baseURL, defaultHeaders, accessToken);
     this.imageService = new ImageService(baseURL, defaultHeaders, accessToken);
+    this.wrappedService = new WrappedService(
+      baseURL,
+      defaultHeaders,
+      accessToken,
+    );
   }
 
   /**
@@ -55,6 +62,13 @@ export class ServiceRegistry {
    */
   get image(): ImageService {
     return this.imageService;
+  }
+
+  /**
+   * Get the wrapped service
+   */
+  get wrapped(): WrappedService {
+    return this.wrappedService;
   }
 }
 
@@ -108,4 +122,11 @@ export function getUserService(): UserService {
  */
 export function getImageService(): ImageService {
   return getServices().image;
+}
+
+/**
+ * Get wrapped service directly
+ */
+export function getWrappedService(): WrappedService {
+  return getServices().wrapped;
 }
