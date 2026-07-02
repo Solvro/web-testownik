@@ -12,6 +12,7 @@ const GUEST_EXCLUDED_ROUTES = [
   "/oauth",
   "/login-otp",
   "/privacy-policy",
+  "/wrapped",
 ];
 
 export function useAutoGuest(user: JWTPayload | null) {
