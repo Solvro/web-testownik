@@ -853,7 +853,7 @@ function HardestSlide({ data }: SlideProps) {
         aria-hidden
         style={{
           position: "absolute",
-          bottom: "10%",
+          bottom: "-2%",
           left: "-3%",
           transform: "rotate(6deg)",
           pointerEvents: "none",

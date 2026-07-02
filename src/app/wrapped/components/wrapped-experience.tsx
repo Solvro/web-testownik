@@ -1,14 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { LogInIcon, SparklesIcon } from "lucide-react";
+import { LogInIcon } from "lucide-react";
 import Image from "next/image";
 import { useContext, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import Logo from "@/assets/logo.svg";
-import { AppLogo } from "@/components/app-logo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";

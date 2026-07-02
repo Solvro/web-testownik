@@ -10,6 +10,7 @@ import { shareWrapped } from "../share-image";
 import type { ShareTheme } from "../share-image";
 import { SLIDE_REGISTRY } from "../slides";
 import { isDark, slideColors } from "../theme";
+import { useImmersiveThemeColor } from "../use-immersive-theme-color";
 import { useWrappedPlayer } from "../use-wrapped-player";
 import type { WrappedSettings } from "../wrapped.config";
 import { DEFAULT_DURATION, PALETTES, resolveSlides } from "../wrapped.config";
@@ -60,6 +61,10 @@ function StoryPlayer({
   const slideId = slides[index].id;
   const Slide = SLIDE_REGISTRY[slideId];
   const isEdgeSlide = index === 0 || index === count - 1;
+
+  // Edge slides render as a card over the app background, so the browser
+  // bars should keep their default tint there.
+  useImmersiveThemeColor(isEdgeSlide ? null : colors.bg);
 
   const onShare = () => {
     if (sharing.current) {
