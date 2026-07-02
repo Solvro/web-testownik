@@ -1,5 +1,10 @@
 import { BaseApiService } from "./base-api.service";
-import type { GradesData, UserData, UserSettings } from "./types";
+import type {
+  AuthorizedApp,
+  GradesData,
+  UserData,
+  UserSettings,
+} from "./types";
 
 /**
  * Service for handling user-related API operations
@@ -45,6 +50,21 @@ export class UserService extends BaseApiService {
   async getGrades(): Promise<GradesData> {
     const response = await this.get<GradesData>("grades/");
     return response.data;
+  }
+
+  /**
+   * Get OAuth applications authorized by the current user
+   */
+  async getAuthorizedApps(): Promise<AuthorizedApp[]> {
+    const response = await this.get<AuthorizedApp[]>("oauth/authorized-apps/");
+    return response.data;
+  }
+
+  /**
+   * Revoke an OAuth application's tokens
+   */
+  async deleteAuthorizedApp(clientId: string): Promise<void> {
+    await this.delete(`oauth/authorized-apps/${encodeURIComponent(clientId)}/`);
   }
 
   /**

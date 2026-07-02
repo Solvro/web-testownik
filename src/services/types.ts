@@ -10,6 +10,7 @@ export type {
   QuizWithUserProgress,
 } from "@/types/quiz";
 export type {
+  AuthorizedApp,
   User,
   Group,
   GradesData,
@@ -25,6 +26,20 @@ export type {
   HardestQuestion,
   HourlyEntry,
 } from "@/types/quiz-stats";
+export type {
+  WrappedData,
+  WrappedStoryData,
+  WrappedSeason,
+  WrappedStudyTime,
+  WrappedVolume,
+  WrappedAccuracy,
+  WrappedRhythm,
+  WrappedPersona,
+  WrappedTopQuiz,
+  WrappedHardestQuestion,
+  WrappedCreatorImpact,
+  WrappedRank,
+} from "@/types/wrapped";
 export interface ApiResponse<T> {
   data: T;
   status: number;

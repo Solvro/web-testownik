@@ -7,6 +7,7 @@ import { AppContext } from "@/app-context";
 import { AppLogo } from "@/components/app-logo";
 import { AuthButtons } from "@/components/navbar/auth-buttons";
 import { LogoutButton } from "@/components/navbar/logout-button";
+import { cn } from "@/lib/utils";
 
 import { MobileMenu } from "./mobile-menu";
 import { MobileMenuButton } from "./mobile-menu-button";
@@ -16,9 +17,17 @@ import { NavbarActions } from "./navbar-actions";
 export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
   const { isAuthenticated } = useContext(AppContext);
+  const closeMobileMenu = () => {
+    setExpanded(false);
+  };
 
   return (
-    <header className="flex flex-col gap-2 py-4">
+    <header
+      className={cn(
+        "flex flex-col gap-2 py-4",
+        expanded && "bg-background z-50 -mx-4 px-4",
+      )}
+    >
       <div className="flex items-center justify-between gap-4 sm:px-4">
         <nav className="flex items-center gap-6">
           <Link href="/">
@@ -38,7 +47,7 @@ export function NavbarClient() {
           }}
         />
       </div>
-      {expanded ? <MobileMenu /> : null}
+      {expanded ? <MobileMenu onNavigate={closeMobileMenu} /> : null}
     </header>
   );
 }

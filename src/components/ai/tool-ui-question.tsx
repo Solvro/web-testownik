@@ -8,17 +8,20 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   LoaderCircleIcon,
+  PencilIcon,
   PlusIcon,
   SparklesIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { useAiChatContext } from "@/components/ai/ai-chat-context";
+import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
+import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,33 +31,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getQuizService } from "@/services";
 import type { Question, QuizWithUserProgress } from "@/types/quiz";
 
-const questionPayloadSchema = z.object({
-  text: z.string().min(1),
-  explanation: z.string().optional(),
-  multiple: z.boolean(),
-  answers: z
-    .array(
-      z.object({
-        text: z.string().min(1),
-        is_correct: z.boolean(),
-      }),
-    )
-    .min(2),
-});
+interface ImageFields {
+  image?: string | null;
+  image_url?: string | null;
+  image_upload?: string | null;
+}
 
 interface GeneratedAnswer {
   text?: string;
   is_correct?: boolean;
+  image?: string | null;
+  image_url?: string | null;
+  image_upload?: string | null;
 }
 
 interface GeneratedQuestion {
   text?: string;
   answers?: GeneratedAnswer[];
   explanation?: string;
+  image?: string | null;
+  image_url?: string | null;
+  image_upload?: string | null;
 }
 
 interface GeneratedQuestionsArguments {
@@ -69,29 +75,131 @@ function AnswerSkeleton() {
   );
 }
 
-function isQuestionComplete(question: GeneratedQuestion | undefined): boolean {
-  if (question === undefined) {
-    return false;
-  }
+function getImageSource(item: ImageFields): string | null {
+  return item.image ?? item.image_url ?? null;
+}
+
+function hasImageValue(item: ImageFields): boolean {
   return (
-    question.text !== undefined &&
-    question.text !== "" &&
-    question.answers !== undefined &&
-    question.answers.length >= 2 &&
-    question.answers.every(
-      (a) =>
-        a.text !== undefined && a.text !== "" && a.is_correct !== undefined,
-    )
+    (item.image != null && item.image !== "") ||
+    (item.image_url != null && item.image_url !== "") ||
+    (item.image_upload != null && item.image_upload !== "")
   );
+}
+
+function getDraftId(ids: Map<number, string>, index: number): string {
+  const existingId = ids.get(index);
+  if (existingId !== undefined) {
+    return existingId;
+  }
+  const id = crypto.randomUUID();
+  ids.set(index, id);
+  return id;
+}
+
+function createDraftAnswer(
+  answerIds: Map<number, string>,
+  index: number,
+): Question["answers"][number] {
+  return {
+    id: getDraftId(answerIds, index),
+    order: index + 1,
+    text: "",
+    is_correct: false,
+    image: null,
+    image_url: null,
+    image_upload: null,
+    image_width: null,
+    image_height: null,
+  };
+}
+
+const questionPayloadSchema = z
+  .object({
+    text: z.string(),
+    explanation: z.string().optional(),
+    image: z.string().nullable().optional(),
+    image_url: z.string().nullable().optional(),
+    image_upload: z.string().nullable().optional(),
+    answers: z
+      .array(
+        z.object({
+          order: z.number(),
+          text: z.string(),
+          is_correct: z.boolean(),
+          image: z.string().nullable().optional(),
+          image_url: z.string().nullable().optional(),
+          image_upload: z.string().nullable().optional(),
+        }),
+      )
+      .min(2),
+  })
+  .refine((question) => question.text.trim() !== "" || hasImageValue(question))
+  .refine((question) =>
+    question.answers.every(
+      (answer) => answer.text.trim() !== "" || hasImageValue(answer),
+    ),
+  )
+  .transform((question) => {
+    const answers = question.answers.toSorted((a, b) => a.order - b.order);
+    return {
+      text: question.text,
+      explanation: question.explanation ?? "",
+      multiple: answers.filter((answer) => answer.is_correct).length > 1,
+      is_ai_generated: true,
+      image_url: question.image_url,
+      image_upload: question.image_upload,
+      answers: answers.map((answer) => ({
+        text: answer.text,
+        is_correct: answer.is_correct,
+        image_url: answer.image_url,
+        image_upload: answer.image_upload,
+      })),
+    };
+  });
+
+function toQuestionDraft(
+  question: GeneratedQuestion,
+  questionId = crypto.randomUUID(),
+  answerIds = new Map<number, string>(),
+): Question {
+  const answers = (question.answers ?? []).map((answer, index) => ({
+    ...createDraftAnswer(answerIds, index),
+    ...answer,
+    order: index + 1,
+    text: answer.text ?? "",
+    is_correct: answer.is_correct ?? false,
+  }));
+
+  return {
+    id: questionId,
+    order: 1,
+    text: question.text ?? "",
+    explanation: question.explanation ?? "",
+    multiple: answers.filter((answer) => answer.is_correct).length > 1,
+    is_ai_generated: true,
+    image: question.image ?? question.image_url ?? null,
+    image_url: question.image_url ?? null,
+    image_upload: question.image_upload ?? null,
+    image_width: null,
+    image_height: null,
+    answers,
+  };
+}
+
+function isQuestionComplete(question: Question): boolean {
+  return questionPayloadSchema.safeParse(question).success;
+}
+
+function toCreatePayload(question: Question) {
+  return questionPayloadSchema.parse(question);
 }
 
 function QuestionCard({
   question,
-  isComplete,
   isBulkSaved,
 }: {
   question: GeneratedQuestion;
-  isComplete: boolean;
   isBulkSaved: boolean;
 }) {
   const { quizId, canEdit } = useAiChatContext();
@@ -99,34 +207,31 @@ function QuestionCard({
   const [showExplanation, setShowExplanation] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [checked, setChecked] = useState(false);
-  const [saved, setSaved] = useState(isBulkSaved);
+  const [individuallySaved, setIndividuallySaved] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editedQuestion, setEditedQuestion] = useState<Question | null>(null);
+  const draftQuestionId = useMemo(() => crypto.randomUUID(), []);
+  const draftAnswerIds = useMemo(() => new Map<number, string>(), []);
 
-  const answers = question.answers ?? [];
+  const visibleQuestion =
+    editedQuestion ??
+    toQuestionDraft(question, draftQuestionId, draftAnswerIds);
+  const saved = isBulkSaved || individuallySaved;
+  const answers = visibleQuestion.answers.toSorted((a, b) => a.order - b.order);
+  const isComplete = isQuestionComplete(visibleQuestion);
   const isMultiple =
-    isComplete && answers.filter((a) => a.is_correct === true).length > 1;
-
-  if (isBulkSaved && !saved) {
-    setSaved(true);
-  }
+    isComplete && answers.filter((answer) => answer.is_correct).length > 1;
+  const hasExplanation = Boolean(visibleQuestion.explanation?.trim());
 
   const { isPending: isSaving, mutateAsync: saveToQuiz } = useMutation({
     mutationFn: async () => {
-      const payload = questionPayloadSchema.parse({
-        text: question.text,
-        explanation: question.explanation,
-        multiple: isMultiple,
-        answers: answers.map((a) => ({
-          text: a.text,
-          is_correct: a.is_correct,
-        })),
-      });
-      return await getQuizService().createQuestion(quizId, {
-        ...payload,
-        is_ai_generated: true,
-      });
+      return await getQuizService().createQuestion(
+        quizId,
+        toCreatePayload(visibleQuestion),
+      );
     },
     onSuccess: (newQuestion: Question) => {
-      setSaved(true);
+      setIndividuallySaved(true);
       toast.success("Pytanie dodane do quizu");
       queryClient.setQueryData<QuizWithUserProgress>(
         quizDetailQueryKey(quizId),
@@ -203,16 +308,27 @@ function QuestionCard({
             </Badge>
           )}
         </div>
-        {question.text !== undefined && question.text !== "" ? (
+        {visibleQuestion.text === "" ? null : (
           <CardDescription className="text-foreground mt-1.5 overflow-y-auto text-sm leading-snug font-medium">
-            <MarkdownRenderer>{question.text}</MarkdownRenderer>
+            <MarkdownRenderer>{visibleQuestion.text}</MarkdownRenderer>
           </CardDescription>
+        )}
+        {hasImageValue(visibleQuestion) ? (
+          <ImageLoad
+            url={getImageSource(visibleQuestion)}
+            alt={
+              visibleQuestion.text === ""
+                ? "Obrazek pytania"
+                : visibleQuestion.text
+            }
+            className="mx-auto mt-3 max-h-48 rounded border object-contain"
+          />
         ) : null}
       </CardHeader>
       <CardContent className="space-y-1.5 pt-0">
         {hasAnswers
           ? answers.map((answer, index) => {
-              if (answer.text === undefined || answer.text === "") {
+              if (answer.text === "" && !hasImageValue(answer)) {
                 return null;
               }
               const isSelected = selectedAnswers.includes(index);
@@ -229,13 +345,24 @@ function QuestionCard({
                     computeAnswerVariant(
                       isSelected,
                       checked,
-                      answer.is_correct ?? false,
+                      answer.is_correct,
                     ),
                   )}
                 >
-                  <MarkdownRenderer className="pointer-events-none w-full text-sm">
-                    {answer.text}
-                  </MarkdownRenderer>
+                  {answer.text === "" ? null : (
+                    <MarkdownRenderer className="pointer-events-none w-full text-sm">
+                      {answer.text}
+                    </MarkdownRenderer>
+                  )}
+                  {hasImageValue(answer) ? (
+                    <ImageLoad
+                      url={getImageSource(answer)}
+                      alt={
+                        answer.text === "" ? "Obrazek odpowiedzi" : answer.text
+                      }
+                      className="mx-auto mt-2 max-h-32 rounded object-contain"
+                    />
+                  ) : null}
                 </button>
               );
             })
@@ -246,11 +373,10 @@ function QuestionCard({
         {checked ? (
           <div className="pt-1 text-sm">
             {selectedAnswers.every(
-              (index) => answers[index]?.is_correct === true,
+              (index) => answers[index]?.is_correct ?? false,
             ) &&
             answers.every(
-              (a, index) =>
-                a.is_correct !== true || selectedAnswers.includes(index),
+              (a, index) => !a.is_correct || selectedAnswers.includes(index),
             ) ? (
               <p className="font-medium text-green-600 dark:text-green-400">
                 Poprawna odpowiedź!
@@ -274,11 +400,13 @@ function QuestionCard({
           </Button>
         ) : null}
 
-        {checked && isComplete && question.explanation !== undefined ? (
+        {checked && isComplete && hasExplanation ? (
           <div className="pt-1">
             {showExplanation ? (
               <div className="bg-muted/40 rounded-lg border p-3 text-xs">
-                <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
+                <MarkdownRenderer>
+                  {visibleQuestion.explanation}
+                </MarkdownRenderer>
               </div>
             ) : (
               <Button
@@ -296,32 +424,71 @@ function QuestionCard({
         ) : null}
 
         {isComplete && hasAnswers && canEdit ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 w-full"
-            onClick={() => {
-              void saveToQuiz();
-            }}
-            disabled={isSaving || saved}
-          >
-            {isSaving ? (
-              <>
-                <LoaderCircleIcon className="size-3.5 animate-spin" />
-                Dodawanie...
-              </>
-            ) : saved ? (
-              <>
-                <CheckIcon className="size-3.5" />
-                Dodano do quizu
-              </>
-            ) : (
-              <>
-                <PlusIcon className="size-3.5" />
-                Dodaj do quizu
-              </>
+          <div className="mt-2 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-w-0 flex-1"
+              onClick={() => {
+                void saveToQuiz();
+              }}
+              disabled={isSaving || saved}
+            >
+              {isSaving ? (
+                <>
+                  <LoaderCircleIcon className="animate-spin" />
+                  Dodawanie...
+                </>
+              ) : saved ? (
+                <>
+                  <CheckIcon />
+                  Dodano do quizu
+                </>
+              ) : (
+                <>
+                  <PlusIcon />
+                  Dodaj do quizu
+                </>
+              )}
+            </Button>
+            {saved ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => {
+                        setEditOpen(true);
+                      }}
+                      aria-label="Edytuj przed dodaniem"
+                    >
+                      <PencilIcon />
+                    </Button>
+                  }
+                ></TooltipTrigger>
+                <TooltipContent>Edytuj przed dodaniem</TooltipContent>
+              </Tooltip>
             )}
-          </Button>
+          </div>
+        ) : null}
+
+        {editOpen ? (
+          <QuickEditQuestionDialog
+            open
+            onOpenChange={setEditOpen}
+            question={visibleQuestion}
+            quizId={quizId}
+            onSaveDraft={(updatedQuestion) => {
+              setEditedQuestion(updatedQuestion);
+              setSelectedAnswers([]);
+              setChecked(false);
+              setShowExplanation(false);
+            }}
+            hideDelete
+            hideFullEditor
+            minAnswers={2}
+          />
         ) : null}
       </CardContent>
     </Card>
@@ -367,29 +534,20 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
 
   const isToolComplete = status === "complete";
   const visibleQuestions = questions.filter(
-    (q) => q.text !== undefined && q.text !== "",
+    (question) =>
+      (question.text !== undefined && question.text !== "") ||
+      hasImageValue(question),
   );
   const count = visibleQuestions.length;
   const showNav = count > 1;
 
-  const savablePayloads = (() => {
-    if (!isToolComplete || isBulkSaved) {
-      return [];
-    }
-    return visibleQuestions.flatMap((q) => {
-      const result = questionPayloadSchema.safeParse({
-        text: q.text,
-        explanation: q.explanation,
-        multiple:
-          (q.answers ?? []).filter((a) => a.is_correct === true).length > 1,
-        answers: (q.answers ?? []).map((a) => ({
-          text: a.text,
-          is_correct: a.is_correct,
-        })),
-      });
-      return result.success ? [result.data] : [];
-    });
-  })();
+  const savablePayloads =
+    isToolComplete && !isBulkSaved
+      ? visibleQuestions
+          .map((question) => toQuestionDraft(question))
+          .filter((question) => isQuestionComplete(question))
+          .map((question) => toCreatePayload(question))
+      : [];
 
   const handleSaveAll = async () => {
     if (savablePayloads.length === 0) {
@@ -434,11 +592,7 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
           key={`question-${index.toString()}`}
           className={showNav && index !== activeIndex ? "hidden" : undefined}
         >
-          <QuestionCard
-            question={question}
-            isComplete={isQuestionComplete(question)}
-            isBulkSaved={isBulkSaved}
-          />
+          <QuestionCard question={question} isBulkSaved={isBulkSaved} />
         </div>
       ))}
 

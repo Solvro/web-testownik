@@ -1,0 +1,197 @@
+/* Testownik Wrapped — animation keyframes + scoped base styles.
+   Keyframe names are prefixed `wr-` to avoid colliding with Tailwind utilities. */
+
+@keyframes wr-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes wr-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wr-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes wr-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes wr-bub {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes wr-blink {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes wr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wr-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wr-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-12px) rotate(var(--r, 0deg));
+  }
+}
+@keyframes wr-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes wr-drift {
+  from {
+    transform: translateY(-30px) rotate(0deg);
+  }
+  to {
+    transform: translateY(40px) rotate(180deg);
+  }
+}
+
+/* Base styles, scoped to the Wrapped root. */
+.wrapped-root {
+  --font-display: var(--font-wrapped-display), "Anton", system-ui, sans-serif;
+  --font-sans: var(--font-wrapped-sans), "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--font-sans);
+  /* Story taps shouldn't zoom, select text, or pop the callout menu. */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.wrapped-root * {
+  box-sizing: border-box;
+}
+
+/* Centred phone-sized shell (desktop). */
+.wrapped-shell-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.wrapped-shell {
+  position: relative;
+  width: min(468px, 100%);
+  height: min(900px, calc(100dvh - 8rem));
+  display: flex;
+  flex-direction: column;
+}
+
+/* Smooth palette transitions between slides. */
+.wrapped-stage {
+  overscroll-behavior: none;
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease;
+}
+
+.wrapped-empty-stage {
+  width: 100%;
+}
+
+/* Mobile: middle story slides use the immersive fixed overlay. Intro/outro use
+   `.is-edge` to pull into a card, and the no-activity state uses its own card
+   class so it does not trap the rest of the app behind it. */
+@media (max-width: 640px) {
+  .wrapped-shell {
+    width: 100%;
+    height: auto;
+  }
+  .wrapped-stage {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 50 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition:
+      top 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+      left 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+      right 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+      bottom 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+      border-radius 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+      background-color 0.45s ease,
+      color 0.45s ease;
+  }
+  .wrapped-stage.is-edge {
+    top: 4.75rem !important;
+    left: 0.75rem !important;
+    z-index: 10 !important;
+    right: 0.75rem !important;
+    bottom: 0.75rem !important;
+    border-radius: 22px !important;
+    box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.5) !important;
+  }
+  .wrapped-empty-stage {
+    width: calc(100% - 1.5rem);
+    min-height: min(620px, calc(100dvh - 7rem)) !important;
+    margin: 0.75rem auto 1rem;
+    border-radius: 22px !important;
+  }
+}
+
+/* Respect reduced-motion: kill entrance + decorative animation, show final state. */
+@media (prefers-reduced-motion: reduce) {
+  .wrapped-root [style*="animation"],
+  .wrapped-root [data-wr-anim] {
+    animation: none !important;
+  }
+}

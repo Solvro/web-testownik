@@ -1,4 +1,4 @@
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, BellIcon } from "lucide-react";
 import { useContext } from "react";
 
 import { AppContext } from "@/app-context";
@@ -13,6 +13,7 @@ import type { SettingsFormProps } from "@/types/user";
 
 export function NotificationsForm({
   settings,
+  disabled = false,
   onSettingChange,
 }: SettingsFormProps) {
   const { user, checkPermission } = useContext(AppContext);
@@ -35,12 +36,18 @@ export function NotificationsForm({
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Powiadomienia</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BellIcon className="size-5" />
+            Powiadomienia
+          </CardTitle>
           <p className="text-muted-foreground text-xs">
             Wybierz, które powiadomienia chcesz otrzymywać
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent
+          aria-busy={disabled}
+          className={cn("space-y-6", disabled && "animate-pulse")}
+        >
           <div className="flex items-center gap-4">
             <div>
               <Label
@@ -62,7 +69,7 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_quiz_shared", checked);
               }}
-              disabled={!canManageNotifications}
+              disabled={disabled || !canManageNotifications}
               className="ml-auto"
             />
           </div>
@@ -87,7 +94,7 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_bug_reported", checked);
               }}
-              disabled={!canManageNotifications}
+              disabled={disabled || !canManageNotifications}
               className="ml-auto"
             />
           </div>
@@ -113,7 +120,7 @@ export function NotificationsForm({
               onCheckedChange={(checked) => {
                 onSettingChange("notify_marketing", checked);
               }}
-              disabled={!canManageNotifications}
+              disabled={disabled || !canManageNotifications}
               className="ml-auto"
             />
           </div>

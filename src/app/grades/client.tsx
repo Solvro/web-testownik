@@ -1,13 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircleIcon, NotebookPenIcon } from "lucide-react";
+import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useContext, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { CourseTypeBadge } from "@/components/course-type-badge";
-import { Loader } from "@/components/loader";
 import {
   Alert,
   AlertAction,
@@ -15,43 +13,26 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Toggle } from "@/components/ui/toggle";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PermissionAction } from "@/lib/auth/permissions";
-import { cn } from "@/lib/utils";
 import { getUserService } from "@/services";
 import { ACCOUNT_TYPE } from "@/types/user";
-import type { Course } from "@/types/user";
+import type { Term } from "@/types/user";
+
+import { AverageSimulator } from "./components/average-simulator";
+import {
+  buildCourseView,
+  earnedEcts,
+  termGradeOptions,
+  totalEcts,
+  weightedAverage,
+} from "./components/grade-utils";
+import { GradesHeader } from "./components/grades-header";
+import { GradesList } from "./components/grades-list";
+import { GradesSkeleton } from "./components/grades-skeleton";
+import { MultiTermCalculator } from "./components/multi-term-calculator";
+import { SummaryStats } from "./components/summary-stats";
 
 function GradesContent() {
   const { checkPermission, user } = useContext(AppContext);
@@ -66,80 +47,38 @@ function GradesContent() {
     enabled: checkPermission(PermissionAction.VIEW_GRADES),
   });
 
-  const terms = gradesData?.terms ?? [];
-  const termsItems =
-    gradesData?.terms.map((item) => ({
-      label: item.name,
-      value: item.id,
-    })) ?? [];
-  const courses = gradesData?.courses ?? [];
-
   const [selectedTerm, setSelectedTerm] = useState<string>("");
-  const [editing, setEditing] = useState(false);
-  const [editedGrades, setEditedGrades] = useState<
-    Record<string, number | string>
-  >({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [whatIf, setWhatIf] = useState<Record<string, number>>({});
+  const [selectedTerms, setSelectedTerms] = useState<Record<string, boolean>>(
+    {},
+  );
 
-  if (selectedTerm === "" && terms.length > 0) {
-    const currentTermId =
-      terms.find(
-        (term) =>
-          new Date() >= new Date(term.start_date) &&
-          new Date() <= new Date(term.finish_date),
-      )?.id ??
-      terms.toSorted(
-        (a, b) =>
-          new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
-      )[0].id;
+  const terms = gradesData?.terms ?? [];
+  const courses = gradesData?.courses ?? [];
+  const orderedTerms = terms.toSorted(
+    (a, b) =>
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
+  );
+
+  const currentTermId =
+    orderedTerms.find(
+      (term) =>
+        new Date() >= new Date(term.start_date) &&
+        new Date() <= new Date(term.finish_date),
+    )?.id ?? orderedTerms.at(-1)?.id;
+  if (selectedTerm === "" && currentTermId != null) {
+    const currentIndex = orderedTerms.findIndex(
+      (term) => term.id === currentTermId,
+    );
+    const previousId =
+      currentIndex > 0 ? orderedTerms.at(currentIndex - 1)?.id : null;
     setSelectedTerm(currentTermId);
+    setSelectedTerms({
+      [currentTermId]: true,
+      ...(previousId == null ? {} : { [previousId]: true }),
+    });
   }
-
-  const calculateAverage = (filteredCourses: Course[]) => {
-    const sum = filteredCourses.reduce((accumulator, course) => {
-      const courseSum =
-        course.grades.reduce((courseAccumulator, grade) => {
-          const gradeValue = editedGrades[course.course_id] ?? grade.value;
-          if (typeof gradeValue === "string") {
-            return courseAccumulator;
-          }
-          return (
-            courseAccumulator +
-            (grade.counts_into_average ? gradeValue * course.ects : 0)
-          );
-        }, 0) +
-        (editing &&
-        typeof editedGrades[course.course_id] === "number" &&
-        course.grades.length === 0
-          ? (editedGrades[course.course_id] as number) * course.ects
-          : 0);
-      return accumulator + courseSum;
-    }, 0);
-
-    const totalWeight = filteredCourses.reduce((accumulator, course) => {
-      const courseWeight =
-        course.grades.reduce(
-          (courseAccumulator, grade) =>
-            courseAccumulator + (grade.counts_into_average ? course.ects : 0),
-          0,
-        ) +
-        (editing &&
-        typeof editedGrades[course.course_id] === "number" &&
-        course.grades.length === 0
-          ? course.ects
-          : 0);
-      return accumulator + courseWeight;
-    }, 0);
-
-    if (totalWeight === 0) {
-      return "-";
-    }
-
-    return (sum / totalWeight).toFixed(3);
-  };
-
-  const filteredCourses = selectedTerm
-    ? courses.filter((course) => course.term_id === selectedTerm)
-    : courses;
 
   if (!checkPermission(PermissionAction.VIEW_GRADES)) {
     return (
@@ -161,6 +100,7 @@ function GradesContent() {
       </Card>
     );
   }
+
   if (error != null) {
     return (
       <Alert variant="destructive">
@@ -183,179 +123,171 @@ function GradesContent() {
   }
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-1">
-              <CardTitle>Oceny</CardTitle>
-              <CardDescription>
-                Dzięki tej zakładce możesz szybko policzyć swoją średnią ważoną
-                według ECTS
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 pb-8 text-center">
-            <p>Ładowanie ocen...</p>
-            <Loader size={15} />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <GradesSkeleton />;
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1">
-            <CardTitle>Oceny</CardTitle>
-            <CardDescription>
-              Dzięki tej zakładce możesz szybko policzyć swoją średnią ważoną
-              według ECTS
-            </CardDescription>
-          </div>
-          <div>
-            <Label htmlFor="term-select" className="sr-only">
-              Semestr
-            </Label>
+  const courseViews = courses.map((course) => buildCourseView(course));
+  const coursesByTerm = (termId: string) =>
+    courseViews.filter((_, index) => courses[index].term_id === termId);
 
-            <Select
-              items={termsItems}
-              value={selectedTerm}
-              onValueChange={(value) => {
-                setSelectedTerm(value ?? "");
-                setEditing(false);
-                setEditedGrades({});
-              }}
-              disabled={terms.length === 0}
-            >
-              <SelectTrigger
-                className="w-full sm:w-60"
-                aria-label="Wybierz semestr"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {terms.map((term) => (
-                    <SelectItem key={term.id} value={term.id}>
-                      {term.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">Przedmiot</TableHead>
-                <TableHead className="font-semibold">ECTS</TableHead>
-                <TableHead className="font-semibold">Ocena</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCourses.map((course) => {
-                const passState = course.passing_status;
-                return (
-                  <TableRow key={course.course_id} className="h-12">
-                    <TableCell className="space-x-2 font-medium wrap-break-word whitespace-normal">
-                      <span>{course.course_name}</span>
-                      <CourseTypeBadge courseId={course.course_id} />
-                    </TableCell>
-                    <TableCell>{course.ects}</TableCell>
-                    <TableCell
-                      className={cn(
-                        "w-20",
-                        passState === "passed"
-                          ? "text-green-600 dark:text-green-400"
-                          : passState === "failed"
-                            ? "text-destructive"
-                            : "",
-                      )}
-                    >
-                      {editing ? (
-                        <Input
-                          type="number"
-                          step={0.5}
-                          min={2}
-                          max={5.5}
-                          className="h-7 w-16"
-                          value={
-                            editedGrades[course.course_id] ??
-                            course.grades.map((g) => g.value).join("; ")
-                          }
-                          onChange={(event) => {
-                            setEditedGrades((previous) => ({
-                              ...previous,
-                              [course.course_id]:
-                                Number.parseFloat(event.target.value) ||
-                                event.target.value,
-                            }));
-                          }}
-                        />
-                      ) : (
-                        <span>
-                          {course.grades
-                            .map((g) => g.value_symbol)
-                            .join("; ") || "-"}
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell className="font-semibold">Średnia</TableCell>
-                <TableCell></TableCell>
-                <TableCell id="average" className="font-semibold">
-                  {calculateAverage(filteredCourses) || "-"}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
-        <div className="flex justify-end">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Toggle
-                  className={
-                    editing
-                      ? "bg-yellow-500 text-white hover:bg-yellow-600 hover:text-white dark:bg-yellow-600 dark:hover:bg-yellow-700"
-                      : ""
+  const termCourses = coursesByTerm(selectedTerm);
+
+  const realAverage = weightedAverage(termCourses);
+  const passedCount = termCourses.filter((course) => course.passed).length;
+  const ectsTotal = totalEcts(termCourses);
+  const ectsEarned = earnedEcts(termCourses);
+  const simulatorGrades = termGradeOptions(termCourses);
+
+  const currentIndex = orderedTerms.findIndex(
+    (term) => term.id === selectedTerm,
+  );
+  const previousTerm: Term | null =
+    currentIndex > 0 ? orderedTerms[currentIndex - 1] : null;
+  const previousAverage =
+    previousTerm == null
+      ? null
+      : weightedAverage(coursesByTerm(previousTerm.id));
+  const averageDelta =
+    realAverage != null && previousAverage != null
+      ? realAverage - previousAverage
+      : null;
+
+  let projectedSum = 0;
+  let projectedWeight = 0;
+  const overrideOf = (id: string): number | undefined => whatIf[id];
+  for (const course of termCourses) {
+    const overridden = overrideOf(course.id);
+    const current = overridden ?? course.mainValue;
+    const counts =
+      overridden == null ? course.counts && course.mainValue != null : true;
+    if (current != null && counts) {
+      projectedSum += current * course.ects;
+      projectedWeight += course.ects;
+    }
+  }
+  const projected =
+    projectedWeight === 0 ? null : projectedSum / projectedWeight;
+  const projectedDelta =
+    projected != null && realAverage != null ? projected - realAverage : null;
+
+  const termChips = orderedTerms.toReversed().map((term) => {
+    const termCourseViews = coursesByTerm(term.id);
+    return {
+      id: term.id,
+      name: term.name,
+      average: weightedAverage(termCourseViews),
+      ects: totalEcts(termCourseViews),
+      selected: selectedTerms[term.id] ?? false,
+    };
+  });
+  const combinedCourses = courseViews.filter(
+    (_, index) => selectedTerms[courses[index].term_id],
+  );
+  const combinedAverage = weightedAverage(combinedCourses);
+  const combinedEcts = totalEcts(combinedCourses);
+  const combinedCount = Object.values(selectedTerms).filter(Boolean).length;
+  const allTermsSelected =
+    termChips.length > 0 && termChips.every((chip) => chip.selected);
+
+  const termOptions = orderedTerms.toReversed().map((term) => ({
+    id: term.id,
+    name: term.name,
+    average: weightedAverage(coursesByTerm(term.id)),
+    current: term.id === selectedTerm,
+  }));
+
+  return (
+    <div className="pb-4">
+      <GradesHeader
+        termOptions={termOptions}
+        disabled={terms.length === 0}
+        onSelectTerm={(id) => {
+          setSelectedTerm(id);
+          setWhatIf({});
+          setExpanded({});
+        }}
+      />
+
+      <div className="mt-3 sm:mt-6">
+        <SummaryStats
+          average={realAverage}
+          averageDelta={averageDelta}
+          previousTermName={
+            averageDelta == null ? null : (previousTerm?.name ?? null)
+          }
+          passedCount={passedCount}
+          courseCount={termCourses.length}
+          ectsEarned={ectsEarned}
+          ectsTotal={ectsTotal}
+        />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 sm:mt-5 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
+        <GradesList
+          courses={termCourses}
+          expanded={expanded}
+          onToggle={(id, open) => {
+            setExpanded((previous) => ({ ...previous, [id]: open }));
+          }}
+        />
+
+        <Tabs defaultValue="simulator" className="gap-3">
+          <TabsList className="w-full">
+            <TabsTrigger value="simulator">Symulator</TabsTrigger>
+            <TabsTrigger value="terms">Wiele semestrów</TabsTrigger>
+          </TabsList>
+          <TabsContent value="simulator">
+            <AverageSimulator
+              courses={termCourses}
+              grades={simulatorGrades}
+              whatIf={whatIf}
+              realAverage={realAverage}
+              projected={projected}
+              projectedDelta={projectedDelta}
+              onSetGrade={(courseId, value) => {
+                setWhatIf((previous) => {
+                  if (value == null) {
+                    return Object.fromEntries(
+                      Object.entries(previous).filter(
+                        ([id]) => id !== courseId,
+                      ),
+                    );
                   }
-                  pressed={editing}
-                  onPressedChange={(pressed) => {
-                    setEditing(pressed);
-                    if (!pressed) {
-                      setEditedGrades({});
-                    }
-                  }}
-                >
-                  <span>Tryb edycji</span>
-                  <NotebookPenIcon />
-                </Toggle>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>
-              {editing
-                ? "Tryb edycji (oceny nie są zapisywane, służy do podglądu średniej)"
-                : "Włącz tryb edycji, aby sprawdzić średnią z wybranymi ocenami"}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </CardContent>
-    </Card>
+                  return { ...previous, [courseId]: value };
+                });
+              }}
+              onReset={() => {
+                setWhatIf({});
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="terms">
+            <MultiTermCalculator
+              chips={termChips}
+              combinedAverage={combinedAverage}
+              combinedEcts={combinedEcts}
+              combinedCount={combinedCount}
+              allSelected={allTermsSelected}
+              onToggleTerm={(id) => {
+                setSelectedTerms((previous) => ({
+                  ...previous,
+                  [id]: !previous[id],
+                }));
+              }}
+              onToggleAll={() => {
+                setSelectedTerms(
+                  allTermsSelected
+                    ? {}
+                    : Object.fromEntries(
+                        orderedTerms.map((term) => [term.id, true]),
+                      ),
+                );
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }
 

@@ -425,7 +425,7 @@ export const extractImagesToUpload = (
 export const useImportQuiz = () => {
   const [uploadType, setUploadType] = useState<UploadType>("legacy");
   const [fileNameInput, setFileNameInput] = useState<string | null>(null);
-  const [fileNameOld, setFileNameOld] = useState<string | null>(null);
+  const [fileNameLegacy, setFileNameLegacy] = useState<string | null>(null);
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [directoryFiles, setDirectoryFiles] = useState<File[]>([]);
   const [quizTitle, setQuizTitle] = useState<string>("");
@@ -434,7 +434,7 @@ export const useImportQuiz = () => {
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileOldRef = useRef<HTMLInputElement>(null);
+  const fileLegacyRef = useRef<HTMLInputElement>(null);
   const directoryInputRef = useRef<HTMLInputElement>(null);
   const monacoEditorRef = useRef<JsonCodeEditor | null>(null);
   const [legacyContent, setLegacyContent] = useState<string>("");
@@ -456,10 +456,10 @@ export const useImportQuiz = () => {
       const directoryPath = filesArray[0].webkitRelativePath.split("/")[0];
       setDirectoryName(directoryPath);
       setDirectoryFiles(filesArray);
-      setFileNameOld(null);
+      setFileNameLegacy(null);
       setFileNameInput(null);
-      if (fileOldRef.current !== null) {
-        fileOldRef.current.value = "";
+      if (fileLegacyRef.current !== null) {
+        fileLegacyRef.current.value = "";
       }
     } else {
       setDirectoryName(null);
@@ -477,15 +477,15 @@ export const useImportQuiz = () => {
           if (fileInputRef.current !== null) {
             fileInputRef.current.files = event.dataTransfer.files;
           }
-          setFileNameOld(null);
+          setFileNameLegacy(null);
           setFileNameInput(file.name);
           break;
         }
         case "legacy": {
-          if (fileOldRef.current !== null) {
-            fileOldRef.current.files = event.dataTransfer.files;
+          if (fileLegacyRef.current !== null) {
+            fileLegacyRef.current.files = event.dataTransfer.files;
           }
-          setFileNameOld(file.name);
+          setFileNameLegacy(file.name);
           setFileNameInput(null);
 
           break;
@@ -596,7 +596,7 @@ export const useImportQuiz = () => {
         await readDirectoryRecursively(reader);
         setDirectoryFiles(files);
         setDirectoryName(directory.name);
-        setFileNameOld(null);
+        setFileNameLegacy(null);
         if (fileInputRef.current !== null) {
           fileInputRef.current.value = "";
         }
@@ -616,7 +616,7 @@ export const useImportQuiz = () => {
           setFileNameInput(null);
         } else {
           setFileNameInput(fileInput.name);
-          setFileNameOld(null);
+          setFileNameLegacy(null);
           setDirectoryName(null);
           setError(null);
         }
@@ -625,8 +625,8 @@ export const useImportQuiz = () => {
 
       case "legacy": {
         if (files !== null && files.length > 0) {
-          const fileOld = files[0];
-          setFileNameOld(fileOld.name);
+          const fileLegacy = files[0];
+          setFileNameLegacy(fileLegacy.name);
           setFileNameInput(null);
           setDirectoryName(null);
           setDirectoryFiles([]);
@@ -634,7 +634,7 @@ export const useImportQuiz = () => {
             directoryInputRef.current.value = "";
           }
         } else {
-          setFileNameOld(null);
+          setFileNameLegacy(null);
         }
         break;
       }
@@ -736,10 +736,10 @@ export const useImportQuiz = () => {
   }> => {
     if (directoryFiles.length > 0) {
       return processDirectory(directoryFiles);
-    } else if (fileOldRef.current?.files?.[0] === undefined) {
+    } else if (fileLegacyRef.current?.files?.[0] === undefined) {
       throw new Error("Nie wybrano pliku ani folderu.");
     } else {
-      return processZip(fileOldRef.current.files[0]);
+      return processZip(fileLegacyRef.current.files[0]);
     }
   };
 
@@ -832,6 +832,7 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
+            multiple: q.answers.filter((a) => a.is_correct).length > 1,
           };
         }),
       } as Quiz;
@@ -911,7 +912,7 @@ export const useImportQuiz = () => {
         break;
       }
       case "legacy": {
-        if (fileNameOld == null && directoryName == null) {
+        if (fileNameLegacy == null && directoryName == null) {
           setErrorAndNotify("Nie wybrano pliku ani folderu.");
           setLoading(false);
           return;
@@ -1055,11 +1056,11 @@ export const useImportQuiz = () => {
     // States
     uploadType,
     fileNameInput,
-    fileNameOld,
+    fileNameLegacy,
     error,
     loading,
     fileInputRef,
-    fileOldRef,
+    fileLegacyRef,
     directoryInputRef,
     directoryName,
     quizTitle,

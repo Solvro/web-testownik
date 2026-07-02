@@ -7,12 +7,48 @@ import {
 } from "@assistant-ui/react-markdown";
 import type { CodeHeaderProps } from "@assistant-ui/react-markdown";
 import "@assistant-ui/react-markdown/styles/dot.css";
+import "katex/dist/katex.min.css";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { memo, useState } from "react";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
+
+const markdownRemarkPlugins = [remarkGfm, remarkMath];
+const markdownRehypePlugins = [rehypeKatex];
+
+const codeSpanOrBlockPattern =
+  /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*(?:`|$))/g;
+const displayMathPattern = /\\\[([\s\S]*?)\\\]/g;
+const inlineMathPattern = /\\\(([\s\S]*?)\\\)/g;
+
+function normalizeLatexMathDelimiters(text: string) {
+  let result = "";
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(codeSpanOrBlockPattern)) {
+    const matchIndex = match.index;
+    result += normalizeLatexMathSegment(text.slice(lastIndex, matchIndex));
+    result += match[0];
+    lastIndex = matchIndex + match[0].length;
+  }
+
+  result += normalizeLatexMathSegment(text.slice(lastIndex));
+  return result;
+}
+
+function normalizeLatexMathSegment(text: string) {
+  return text
+    .replaceAll(displayMathPattern, (_match: string, math: string) => {
+      return `\n$$\n${math.trim()}\n$$\n`;
+    })
+    .replaceAll(inlineMathPattern, (_match: string, math: string) => {
+      return `$${math.trim()}$`;
+    });
+}
 
 const useCopyToClipboard = ({
   copiedDuration = 3000,
@@ -252,7 +288,9 @@ const defaultComponents = memoizeMarkdownComponents({
 function MarkdownTextImpl() {
   return (
     <MarkdownTextPrimitive
-      remarkPlugins={[remarkGfm]}
+      preprocess={normalizeLatexMathDelimiters}
+      remarkPlugins={markdownRemarkPlugins}
+      rehypePlugins={markdownRehypePlugins}
       className="aui-md"
       components={defaultComponents}
     />

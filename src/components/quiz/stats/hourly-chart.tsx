@@ -48,7 +48,7 @@ export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
   return (
     <ChartCard
       title="Aktywność w ciągu doby"
-      description="Sesje wg godziny (czas serwera, UTC)"
+      description="Sesje wg godziny"
       scope={scope}
       onScopeChange={setScope}
       canViewAll={canViewAll}
@@ -56,10 +56,7 @@ export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
     >
-      <ChartContainer
-        config={chartConfig}
-        className="max-h-[350px] min-h-[250px]"
-      >
+      <ChartContainer config={chartConfig} className="max-h-87.5 min-h-62.5">
         <RadarChart data={chartData} accessibilityLayer>
           <ChartTooltip content={<ChartTooltipContent />} />
           <PolarAngleAxis

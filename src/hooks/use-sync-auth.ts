@@ -1,15 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { decodeAccessToken } from "@/lib/auth/jwt-utils";
 import type { JWTPayload } from "@/lib/auth/types";
 import { AUTH_COOKIE_NAMES, getCookie } from "@/lib/cookies";
 import { getQueryClient } from "@/lib/query-client";
+import { getUserService } from "@/services";
 
 export function useSyncAuth(initialUser: JWTPayload | null) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     initialUser !== null,
   );
   const [user, setUser] = useState<JWTPayload | null>(initialUser);
+  const isAuthenticatedRef = useRef(initialUser !== null);
+  const userRef = useRef<JWTPayload | null>(initialUser);
+
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+    userRef.current = user;
+  }, [isAuthenticated, user]);
 
   const readToken = useCallback((): {
     hasToken: boolean;
@@ -21,20 +29,23 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
     return { hasToken, payload };
   }, []);
 
-  const syncAuthFromCookies = useCallback(() => {
-    const { hasToken, payload } = readToken();
+  const applyAuthenticatedPayload = useCallback((payload: JWTPayload) => {
+    isAuthenticatedRef.current = true;
+    userRef.current = payload;
 
-    if (hasToken && payload !== null) {
-      setIsAuthenticated(true);
-      setUser((previousUser) => {
-        if (previousUser !== null && previousUser.user_id !== payload.user_id) {
-          const queryClient = getQueryClient();
-          void queryClient.resetQueries();
-        }
-        return payload;
-      });
-      return;
-    }
+    setIsAuthenticated(true);
+    setUser((previousUser) => {
+      if (previousUser !== null && previousUser.user_id !== payload.user_id) {
+        const queryClient = getQueryClient();
+        void queryClient.resetQueries();
+      }
+      return payload;
+    });
+  }, []);
+
+  const clearAuthenticatedPayload = useCallback(() => {
+    userRef.current = null;
+    isAuthenticatedRef.current = false;
 
     setUser(null);
     setIsAuthenticated((previousIsAuthenticated) => {
@@ -44,22 +55,48 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
       }
       return false;
     });
-  }, [readToken]);
+  }, []);
+
+  const syncAuthFromCookies = useCallback(async () => {
+    const { hasToken, payload } = readToken();
+
+    if (hasToken && payload !== null) {
+      applyAuthenticatedPayload(payload);
+      return;
+    }
+
+    const hadAuthenticatedSession =
+      isAuthenticatedRef.current || userRef.current !== null;
+
+    if (hadAuthenticatedSession) {
+      const refreshed = await getUserService().refreshToken();
+
+      if (refreshed) {
+        const latest = readToken();
+        if (latest.hasToken && latest.payload !== null) {
+          applyAuthenticatedPayload(latest.payload);
+          return;
+        }
+      }
+    }
+
+    clearAuthenticatedPayload();
+  }, [applyAuthenticatedPayload, clearAuthenticatedPayload, readToken]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    syncAuthFromCookies();
+    void syncAuthFromCookies();
 
     const handleFocus = () => {
-      syncAuthFromCookies();
+      void syncAuthFromCookies();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        syncAuthFromCookies();
+        void syncAuthFromCookies();
       }
     };
 
@@ -72,7 +109,7 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
       );
 
       if (authCookieChanged) {
-        syncAuthFromCookies();
+        void syncAuthFromCookies();
       }
     };
 

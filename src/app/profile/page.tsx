@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { ProfilePageClient } from "./client";
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function ProfilePage() {
-  return <ProfilePageClient />;
+  return (
+    <Suspense>
+      <ProfilePageClient />
+    </Suspense>
+  );
 }

@@ -117,13 +117,6 @@ export function QuestionQuizCard({
             Po użyciu twojego pierwszego quizu pojawią się tutaj pytania.
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-full opacity-0 transition-opacity hover:opacity-100">
-          <iframe
-            src="https://pointerpointer.com"
-            className="h-full w-full rounded-lg"
-            title="Pointer Pointer Game"
-          ></iframe>
-        </CardContent>
       </Card>
     );
   }

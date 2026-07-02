@@ -377,6 +377,12 @@ export function ShareQuizDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save quiz settings:", error);
+      toast.error("Nie udało się zapisać ustawień udostępniania.", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Spróbuj ponownie za chwilę.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -390,10 +396,7 @@ export function ShareQuizDialog({
         </DialogHeader>
         {canShareQuiz ? (
           <div className="space-y-4">
-            <Popover
-              open={open ? searchQuery.length > 0 : undefined}
-              modal={false}
-            >
+            <Popover open={open ? searchQuery.length > 0 : false} modal={false}>
               <PopoverTrigger
                 nativeButton={false}
                 render={

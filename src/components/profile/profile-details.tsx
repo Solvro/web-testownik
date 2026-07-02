@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useUpdateUserProfile } from "@/hooks/use-user-profile";
 import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
@@ -29,15 +30,11 @@ import type { UserData } from "@/types/user";
 interface ProfileDetailsProps {
   userData: UserData | null;
   loading: boolean;
-  setUserData: (data: UserData) => void;
 }
 
-export function ProfileDetails({
-  userData,
-  loading,
-  setUserData,
-}: ProfileDetailsProps) {
+export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
   const router = useRouter();
+  const updateUserProfile = useUpdateUserProfile();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
 
@@ -56,37 +53,35 @@ export function ProfileDetails({
 
   const handleSavePhoto = () => {
     handleCloseDialog();
-    getUserService()
-      .updateUserProfile({
+    updateUserProfile.mutate(
+      {
         overriden_photo_url:
           selectedPhoto === userData?.photo_url ? null : selectedPhoto,
-      })
-      .then(async () => {
-        if (userData !== null) {
-          setUserData({ ...userData, photo: selectedPhoto });
+      },
+      {
+        onSuccess: async () => {
           // Refresh token to get updated user data (avatar) in the token payload
           await getUserService().refreshToken();
           router.refresh();
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Error saving photo:", error);
-        toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
-      });
+        },
+        onError: (error: unknown) => {
+          console.error("Error saving photo:", error);
+          toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
+        },
+      },
+    );
   };
 
   const handleHideProfile = (hide: boolean) => {
-    getUserService()
-      .updateUserProfile({ hide_profile: hide })
-      .then(() => {
-        if (userData !== null) {
-          setUserData({ ...userData, hide_profile: hide });
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Error saving photo:", error);
-        toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
-      });
+    updateUserProfile.mutate(
+      { hide_profile: hide },
+      {
+        onError: (error: unknown) => {
+          console.error("Error saving profile visibility:", error);
+          toast.error("Wystąpił błąd podczas zapisywania ustawień profilu.");
+        },
+      },
+    );
   };
 
   const avatarOptions = [
@@ -232,6 +227,7 @@ export function ProfileDetails({
                 id="hide-profile"
                 checked={userData?.hide_profile ?? false}
                 onCheckedChange={handleHideProfile}
+                disabled={updateUserProfile.isPending}
                 className="ml-auto"
               />
             </div>
@@ -316,7 +312,12 @@ export function ProfileDetails({
             <Button variant="outline" onClick={handleCloseDialog}>
               Anuluj
             </Button>
-            <Button onClick={handleSavePhoto}>Zapisz</Button>
+            <Button
+              onClick={handleSavePhoto}
+              disabled={updateUserProfile.isPending}
+            >
+              Zapisz
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -36,15 +37,44 @@ import {
   validateQuestionForm,
 } from "@/lib/schemas/quiz.schema";
 import { getQuizService } from "@/services";
-import type { Question, QuizWithUserProgress } from "@/types/quiz";
+import type { Question, Quiz, QuizWithUserProgress } from "@/types/quiz";
 
-import { quizDetailQueryKey } from "./helpers/utils";
+import {
+  quizDetailQueryKey,
+  quizQueryKey,
+  removeQuestionFromQuiz,
+  removeQuestionFromQuizCache,
+  replaceQuestionInQuiz,
+} from "./helpers/utils";
 
 interface QuickEditQuestionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   question: Question;
   quizId: string;
+  onSaveDraft?: (question: Question) => void;
+  onQuestionDeleted?: (
+    deletedQuestionId: string,
+    newCurrentQuestionId: string | null,
+  ) => void;
+  hideDelete?: boolean;
+  hideFullEditor?: boolean;
+  minAnswers?: number;
+}
+
+function updateCachedQuiz<TQuiz extends Quiz>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  updater: (quiz: TQuiz) => TQuiz,
+) {
+  queryClient.setQueryData<TQuiz>(queryKey, (oldData) => {
+    if (oldData == null) {
+      void queryClient.refetchQueries({ queryKey, exact: true });
+      return oldData;
+    }
+
+    return updater(oldData);
+  });
 }
 
 export function QuickEditQuestionDialog({
@@ -52,11 +82,14 @@ export function QuickEditQuestionDialog({
   onOpenChange,
   question,
   quizId,
+  onSaveDraft,
+  onQuestionDeleted,
+  hideDelete = false,
+  hideFullEditor = false,
+  minAnswers = 1,
 }: QuickEditQuestionDialogProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(question);
-
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
   const { upload } = useImageUpload();
@@ -104,22 +137,13 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (updatedQuestion) => {
       toast.success("Pytanie zaktualizowane");
-      queryClient.setQueryData<QuizWithUserProgress>(
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        replaceQuestionInQuiz(quiz, updatedQuestion),
+      );
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
         quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
-          return {
-            ...oldData,
-            questions: oldData.questions.map((q) =>
-              q.id === question.id ? updatedQuestion : q,
-            ),
-          };
-        },
+        (quiz) => replaceQuestionInQuiz(quiz, updatedQuestion),
       );
       onOpenChange(false);
     },
@@ -134,31 +158,20 @@ export function QuickEditQuestionDialog({
     },
     onSuccess: (newCurrentQuestionId) => {
       toast.success("Pytanie usunięte");
-      queryClient.setQueryData<QuizWithUserProgress>(
-        quizDetailQueryKey(quizId),
-        (oldData) => {
-          if (oldData == null) {
-            void queryClient.refetchQueries({
-              queryKey: quizDetailQueryKey(quizId),
-            });
-            return oldData;
-          }
-
-          return {
-            ...oldData,
-            questions: oldData.questions.filter((q) => q.id !== question.id),
-            current_session:
-              oldData.current_session == null
-                ? null
-                : {
-                    ...oldData.current_session,
-                    ...(newCurrentQuestionId == null
-                      ? {}
-                      : { current_question: newCurrentQuestionId }),
-                  },
-          };
-        },
+      updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
+        removeQuestionFromQuiz(quiz, question.id),
       );
+      updateCachedQuiz<QuizWithUserProgress>(
+        queryClient,
+        quizDetailQueryKey(quizId),
+        (quiz) =>
+          removeQuestionFromQuizCache({
+            quiz,
+            deletedQuestionId: question.id,
+            newCurrentQuestionId,
+          }),
+      );
+      onQuestionDeleted?.(question.id, newCurrentQuestionId);
       onOpenChange(false);
     },
     onError: () => {
@@ -174,6 +187,19 @@ export function QuickEditQuestionDialog({
       return;
     }
 
+    if (validation.data.answers.length < minAnswers) {
+      toast.error(
+        `Pytanie musi mieć przynajmniej ${minAnswers.toString()} odpowiedzi`,
+      );
+      return;
+    }
+
+    if (onSaveDraft !== undefined) {
+      onSaveDraft(validation.data);
+      onOpenChange(false);
+      return;
+    }
+
     await saveQuestion();
   };
 
@@ -181,7 +207,6 @@ export function QuickEditQuestionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex flex-col gap-0 sm:max-w-4xl"
-        data-nested-dialog-open={isAlertDialogOpen ? "" : undefined}
         aria-describedby={undefined}
       >
         <DialogHeader className="pr-6">
@@ -207,58 +232,60 @@ export function QuickEditQuestionDialog({
             isImageUploading={isImageUploading}
             onImageChange={handleImageChange}
             onUpload={handleUpload}
+            minAnswers={minAnswers}
           />
         </div>
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2">
-            <AlertDialog
-              open={isAlertDialogOpen}
-              onOpenChange={setIsAlertDialogOpen}
-            >
-              <AlertDialogTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 />
-                    Usuń pytanie
-                  </Button>
-                }
-              ></AlertDialogTrigger>
+            {hideDelete ? null : (
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 />
+                      Usuń pytanie
+                    </Button>
+                  }
+                ></AlertDialogTrigger>
 
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Czy na pewno chcesz usunąć to pytanie?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tej operacji nie można cofnąć.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={async () => {
-                      await deleteQuestion();
-                    }}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? "Usuwanie..." : "Usuń"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button
-              variant="ghost"
-              nativeButton={false}
-              render={
-                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-                  Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-                </Link>
-              }
-            ></Button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Czy na pewno chcesz usunąć to pytanie?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tej operacji nie można cofnąć.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        await deleteQuestion();
+                      }}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Usuwanie..." : "Usuń"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {hideFullEditor ? null : (
+              <Button
+                variant="ghost"
+                nativeButton={false}
+                render={
+                  <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                    Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
+                  </Link>
+                }
+              ></Button>
+            )}
           </div>
           <div className="flex gap-2">
             <Button

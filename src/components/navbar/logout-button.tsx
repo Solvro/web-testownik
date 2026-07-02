@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 
-export function LogoutButton() {
+interface LogoutButtonProps {
+  onLogout?: () => void;
+}
+
+export function LogoutButton({ onLogout }: LogoutButtonProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const handleLogout = async () => {
+    onLogout?.();
+
     // Call server route to clear cookies
     await fetch("/auth/logout", { method: "POST" });
 

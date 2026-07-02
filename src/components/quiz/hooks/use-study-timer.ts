@@ -7,6 +7,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 function createTimerStore(initial: number) {
   let studyTime = initial;
   let startTime = Date.now() - initial * 1000;
+  let isPaused = false;
   const listeners = new Set<() => void>();
 
   const notifyListeners = () => {
@@ -31,7 +32,25 @@ function createTimerStore(initial: number) {
     setStartTime(time: number) {
       startTime = time;
     },
+    pause() {
+      if (isPaused) {
+        return;
+      }
+      isPaused = true;
+      notifyListeners();
+    },
+    resume() {
+      if (!isPaused) {
+        return;
+      }
+      startTime = Date.now() - studyTime * 1000;
+      isPaused = false;
+      notifyListeners();
+    },
     tick() {
+      if (isPaused) {
+        return;
+      }
       const newTime = Math.floor((Date.now() - startTime) / 1000);
       if (newTime !== studyTime) {
         studyTime = newTime;

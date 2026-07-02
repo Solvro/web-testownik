@@ -62,6 +62,26 @@ export default function PrivacyPolicyPage() {
             rozwiązań);
           </li>
           <li>
+            Treści tworzone i udostępniane w Serwisie, w tym quizy, pytania,
+            odpowiedzi, wyjaśnienia oraz obrazy dodane do pytań lub odpowiedzi;
+          </li>
+          <li>
+            Treści przekazywane do funkcji sztucznej inteligencji, w tym
+            wiadomości czatu AI, prompty, wybrane fragmenty quizów, pytania,
+            odpowiedzi, obrazy z pytań oraz odpowiedzi wygenerowane przez AI;
+          </li>
+          <li>
+            Dane związane z integracjami zewnętrznymi i MCP, w tym informacje o
+            połączonych aplikacjach, zakresie udzielonych uprawnień, tokenach
+            autoryzacyjnych oraz żądaniach wykonywanych przez klienta MCP w
+            imieniu Użytkownika;
+          </li>
+          <li>
+            Informacje o korzystaniu z funkcji AI, w tym liczba i czas zapytań
+            wykorzystywane do limitowania nadużyć i zapewnienia dostępności
+            usługi;
+          </li>
+          <li>
             Adres IP oraz dane techniczne urządzenia (typ przeglądarki, system
             operacyjny, logi serwera).
           </li>
@@ -97,6 +117,29 @@ export default function PrivacyPolicyPage() {
             (podstawa prawna: <strong>art. 6 ust. 1 lit. f RODO</strong>);
           </li>
           <li>
+            <strong>Funkcje sztucznej inteligencji:</strong> w celu
+            udostępniania czatu AI, podpowiedzi, wyjaśnień pytań, generowania
+            pytań treningowych oraz proponowania edycji quizów. W tym celu do
+            modelu AI mogą być przekazywane treści niezbędne do udzielenia
+            odpowiedzi, np. wiadomość Użytkownika, kontekst quizu, treść
+            pytania, odpowiedzi, wyjaśnienia i powiązane obrazy (podstawa
+            prawna: <strong>art. 6 ust. 1 lit. b RODO</strong> – świadczenie
+            funkcji dostępnych w Serwisie oraz{" "}
+            <strong>art. 6 ust. 1 lit. f RODO</strong> – prawnie uzasadniony
+            interes Administratora polegający na rozwoju i zabezpieczeniu
+            Serwisu);
+          </li>
+          <li>
+            <strong>Integracje MCP i OAuth:</strong> w celu umożliwienia
+            Użytkownikowi połączenia Serwisu z zewnętrznym klientem MCP lub inną
+            aplikacją, autoryzowania dostępu do wybranych danych i wykonywania
+            działań w Serwisie zgodnie z zakresem udzielonych uprawnień
+            (podstawa prawna: <strong>art. 6 ust. 1 lit. b RODO</strong> –
+            świadczenie funkcji integracji oraz{" "}
+            <strong>art. 6 ust. 1 lit. f RODO</strong> – bezpieczeństwo i
+            rozliczalność dostępu);
+          </li>
+          <li>
             <strong>Bezpieczeństwo:</strong> w celu zapewnienia bezpieczeństwa
             sesji, wykrywania nadużyć oraz tworzenia kopii zapasowych (podstawa
             prawna: <strong>art. 6 ust. 1 lit. f RODO</strong>).
@@ -116,6 +159,22 @@ export default function PrivacyPolicyPage() {
           3. Logi systemowe oraz dane analityczne przechowywane są przez okres
           ograniczony, niezbędny do celów technicznych i statystycznych.
         </p>
+        <p>
+          4. Dane przetwarzane w ramach funkcji AI są przechowywane przez okres
+          niezbędny do świadczenia tych funkcji, obsługi historii rozmowy w
+          interfejsie, limitowania zapytań, bezpieczeństwa i rozpatrywania
+          zgłoszeń. Dostawcy modeli AI mogą przechowywać dane przekazane przez
+          API zgodnie z własnymi zasadami retencji, zależnymi m.in. od dostawcy,
+          rodzaju usługi, planu, regionu, ustawień konta, wymogów bezpieczeństwa
+          i obowiązków prawnych.
+        </p>
+        <p>
+          5. Dane związane z autoryzacją integracji MCP i OAuth przetwarzane są
+          przez czas utrzymywania połączenia z daną aplikacją oraz przez okres
+          niezbędny do zapewnienia bezpieczeństwa, audytu i rozpatrywania
+          zgłoszeń. Użytkownik może odłączyć połączone aplikacje w ustawieniach
+          profilu.
+        </p>
 
         <h2 id="odbiorcy-danych">V. Odbiorcy danych</h2>
         <p>
@@ -127,8 +186,85 @@ export default function PrivacyPolicyPage() {
           2. Serwis korzysta z zewnętrznego uwierzytelniania (USOS/Solvro Auth),
           co wiąże się z wymianą niezbędnych tokenów autoryzacyjnych.
         </p>
+        <p>
+          3. W celu obsługi funkcji sztucznej inteligencji Serwis korzysta z
+          zewnętrznych dostawców modeli AI. W zależności od konfiguracji Serwisu
+          dostawcą może być w szczególności OpenAI, Google, Anthropic lub inny
+          dostawca modeli językowych. Do dostawcy przekazywane są wyłącznie dane
+          potrzebne do wykonania wybranej funkcji AI.
+        </p>
+        <p>
+          4. Zasady wykorzystywania danych do trenowania modeli, okresy retencji
+          oraz możliwość wglądu człowieka w dane zależą od konkretnego dostawcy,
+          planu i ustawień usługi. Informacje o zasadach dostawców znajdują się
+          m.in. w dokumentacji{" "}
+          <a
+            href="https://openai.com/enterprise-privacy/"
+            rel="noreferrer"
+            target="_blank"
+          >
+            OpenAI
+          </a>
+          ,{" "}
+          <a
+            href="https://ai.google.dev/gemini-api/terms"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Google Gemini API
+          </a>{" "}
+          oraz{" "}
+          <a
+            href="https://privacy.claude.com/en/collections/10663361-commercial-customers"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Anthropic
+          </a>
+          .
+        </p>
+        <p>
+          5. Serwis może udostępniać dane zewnętrznym aplikacjom połączonym
+          przez Użytkownika za pomocą OAuth lub MCP, wyłącznie w zakresie
+          uprawnień zaakceptowanych przez Użytkownika. Dotyczy to np. klientów
+          MCP takich jak Claude Code, Claude Desktop, VS Code lub innych
+          kompatybilnych narzędzi. Po przekazaniu danych do takiego klienta ich
+          dalsze przetwarzanie może podlegać zasadom prywatności i ustawieniom
+          tego klienta oraz powiązanego dostawcy AI.
+        </p>
+        <p>
+          6. Korzystanie z dostawców zewnętrznych, w tym dostawców modeli AI i
+          klientów MCP, może wiązać się z przekazywaniem danych poza Europejski
+          Obszar Gospodarczy. W takim przypadku Administrator stosuje
+          zabezpieczenia wymagane przez przepisy o ochronie danych osobowych.
+        </p>
 
-        <h2 id="pliki-cookies">VI. Pliki Cookies i Logi Serwera</h2>
+        <h2 id="funkcje-ai">
+          VI. Kontrola nad funkcjami AI i integracjami MCP
+        </h2>
+        <p>
+          1. Korzystanie z funkcji AI jest dobrowolne. Użytkownik może wyłączyć
+          funkcje AI w ustawieniach profilu lub przez potwierdzenie propozycji
+          wyłączenia wyświetlonej przez asystenta AI.
+        </p>
+        <p>
+          2. Funkcje AI nie są wykorzystywane do zautomatyzowanego podejmowania
+          decyzji wywołujących wobec Użytkownika skutki prawne lub podobnie
+          istotnie na niego wpływających w rozumieniu RODO.
+        </p>
+        <p>
+          3. Korzystanie z MCP jest dobrowolne i wymaga autoryzacji przez
+          Użytkownika. Klient MCP może uzyskać dostęp do danych wskazanych w
+          ekranie autoryzacji, np. profilu, quizów lub sesji nauki, oraz
+          wykonywać działania zgodnie z zaakceptowanymi uprawnieniami.
+        </p>
+        <p>
+          4. Połączone aplikacje MCP i OAuth można odłączyć w zakładce
+          integracji w profilu. Odłączenie aplikacji cofa jej dalszy dostęp do
+          danych Użytkownika w Serwisie.
+        </p>
+
+        <h2 id="pliki-cookies">VII. Pliki Cookies i Logi Serwera</h2>
         <p>1. Serwis wykorzystuje pliki cookies (ciasteczka) w celu:</p>
         <ul>
           <li>Utrzymania sesji użytkownika po zalogowaniu;</li>
@@ -140,7 +276,7 @@ export default function PrivacyPolicyPage() {
           cookies w swojej przeglądarce internetowej.
         </p>
 
-        <h2 id="prawa-uzytkownikow">VII. Prawa Użytkownika</h2>
+        <h2 id="prawa-uzytkownikow">VIII. Prawa Użytkownika</h2>
         <p>Użytkownikowi przysługuje prawo do:</p>
         <ul>
           <li>Dostępu do swoich danych oraz otrzymania ich kopii;</li>
@@ -156,7 +292,7 @@ export default function PrivacyPolicyPage() {
           <li>Wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</li>
         </ul>
 
-        <h2 id="kontakt">VIII. Kontakt</h2>
+        <h2 id="kontakt">IX. Kontakt</h2>
         <p>
           Wszelkie pytania oraz żądania dotyczące danych osobowych można
           kierować na adres e-mail:{" "}
@@ -169,7 +305,7 @@ export default function PrivacyPolicyPage() {
           .
         </p>
 
-        <h2 id="zmiany">IX. Zmiany Polityki Prywatności</h2>
+        <h2 id="zmiany">X. Zmiany Polityki Prywatności</h2>
         <p>
           1. Administrator zastrzega sobie prawo do zmiany Polityki Prywatności.
           Wszelkie zmiany będą publikowane na stronie Serwisu.

@@ -1,13 +1,27 @@
 "use client";
 
 import { distance } from "fastest-levenshtein";
-import { AlertCircleIcon } from "lucide-react";
-import { useState } from "react";
+import { AlertCircleIcon, PencilLineIcon } from "lucide-react";
+import { useContext, useState } from "react";
 import type { ReactNode } from "react";
 
+import { AppContext } from "@/app-context";
+import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useQuiz } from "@/hooks/use-quiz";
 
 interface SearchInQuizPageClientProps {
@@ -42,7 +56,11 @@ const highlightMatch = (text: string, q: string): ReactNode => {
 };
 
 function SearchInQuizPageContent({ quizId }: { quizId: string }) {
+  const { user } = useContext(AppContext);
   const [query, setQuery] = useState<string>("");
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null,
+  );
   const {
     data: quiz,
     isLoading,
@@ -153,6 +171,13 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
       .toSorted((a, b) => a.relevance - b.relevance);
   })();
 
+  const canEditQuiz =
+    quiz != null &&
+    ((quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id);
+  const editingQuestion =
+    quiz?.questions.find((question) => question.id === editingQuestionId) ??
+    null;
+
   if (isLoading) {
     return <div className="text-center">Ładowanie...</div>;
   }
@@ -204,6 +229,27 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
                     />
                   )}
                 </CardTitle>
+                {canEditQuiz ? (
+                  <CardAction>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => {
+                              setEditingQuestionId(q.id);
+                            }}
+                            aria-label="Edytuj lub usuń pytanie"
+                          >
+                            <PencilLineIcon />
+                          </Button>
+                        }
+                      ></TooltipTrigger>
+                      <TooltipContent>Edytuj lub usuń pytanie</TooltipContent>
+                    </Tooltip>
+                  </CardAction>
+                ) : null}
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 text-sm">
@@ -237,6 +283,22 @@ function SearchInQuizPageContent({ quizId }: { quizId: string }) {
           <AlertCircleIcon />
           <AlertTitle>Brak wyników dla podanego zapytania.</AlertTitle>
         </Alert>
+      )}
+      {editingQuestion == null ? null : (
+        <QuickEditQuestionDialog
+          key={editingQuestion.id}
+          open={editingQuestionId != null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingQuestionId(null);
+            }
+          }}
+          question={editingQuestion}
+          quizId={quizId}
+          onQuestionDeleted={() => {
+            setEditingQuestionId(null);
+          }}
+        />
       )}
     </div>
   );

@@ -25,7 +25,9 @@ import {
   RefreshCwIcon,
   SquareIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
 import {
   Reasoning,
@@ -370,7 +372,11 @@ function ComposerAction() {
   );
 }
 
-function Composer() {
+interface ComposerProps {
+  footerStart?: ReactNode;
+}
+
+function Composer({ footerStart }: ComposerProps) {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <div
@@ -385,7 +391,10 @@ function Composer() {
           autoFocus
           aria-label="Message input"
         />
-        <ComposerAction />
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">{footerStart}</div>
+          <ComposerAction />
+        </div>
       </div>
     </ComposerPrimitive.Root>
   );
@@ -454,7 +463,11 @@ function ThreadWelcome() {
   );
 }
 
-export function Thread() {
+interface ThreadProps {
+  composerStart?: ReactNode;
+}
+
+export function Thread({ composerStart }: ThreadProps) {
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root bg-background @container flex h-full flex-col"
@@ -485,7 +498,10 @@ export function Thread() {
 
           <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer bg-background sticky bottom-0 mt-auto flex flex-col gap-4 overflow-visible rounded-t-(--composer-radius) pb-4 md:pb-6">
             <ThreadScrollToBottom />
-            <Composer />
+            <div className="flex flex-col gap-1.5">
+              <Composer footerStart={composerStart} />
+              <AiDisclaimer className="px-1" />
+            </div>
           </ThreadPrimitive.ViewportFooter>
         </div>
       </ThreadPrimitive.Viewport>

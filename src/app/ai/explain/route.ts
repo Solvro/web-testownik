@@ -1,9 +1,15 @@
 import { streamText } from "ai";
+import type { LanguageModel } from "ai";
 
 import { env } from "@/env";
 import { resolveImages } from "@/lib/ai/images";
-import { chatModel } from "@/lib/ai/model";
-import type { LabeledImage } from "@/lib/ai/prompts";
+import { getChatModelForUser } from "@/lib/ai/model";
+import { isAiModel } from "@/lib/ai/models";
+import {
+  buildQuestionExplanationSystemPrompt,
+  buildQuestionExplanationUserPrompt,
+  collectQuestionImages,
+} from "@/lib/ai/prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
@@ -11,11 +17,12 @@ import {
 } from "@/lib/ai/rate-limit";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import type { Question } from "@/types/quiz";
 
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
-  if (!env.NEXT_PUBLIC_AI_ENABLED || env.OPENAI_API_KEY === undefined) {
+  if (!env.NEXT_PUBLIC_AI_ENABLED) {
     return new Response("AI is not configured", { status: 503 });
   }
 
@@ -37,20 +44,33 @@ export async function POST(request: Request) {
     return createRateLimitExceededResponse(rateLimitResult);
   }
 
-  const { system, prompt, images } = (await request.json()) as {
-    system: string;
-    prompt: string;
-    images?: LabeledImage[];
+  const { question, config } = (await request.json()) as {
+    question?: Question;
+    config?: { modelName?: unknown };
   };
 
-  const imageParts =
-    images !== undefined && images.length > 0
-      ? await resolveImages(images)
-      : [];
+  if (question === undefined) {
+    return new Response("Missing question", { status: 400 });
+  }
+
+  const imageParts = await resolveImages(collectQuestionImages(question));
+  const prompt = buildQuestionExplanationUserPrompt(question);
+
+  let model: LanguageModel;
+  try {
+    const aiModel = isAiModel(config?.modelName) ? config.modelName : undefined;
+    model = getChatModelForUser({
+      accountLevel: user.account_level,
+      requestedModel: aiModel,
+    });
+  } catch (error) {
+    console.error("Failed to resolve AI explanation model", error);
+    return new Response("AI model is not configured", { status: 503 });
+  }
 
   const result = streamText({
-    model: chatModel,
-    system,
+    model,
+    system: buildQuestionExplanationSystemPrompt(),
     prompt:
       imageParts.length > 0
         ? [
