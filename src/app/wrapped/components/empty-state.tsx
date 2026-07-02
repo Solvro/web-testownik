@@ -68,15 +68,7 @@ export function WrappedEmptyState({
       >
         {isGlobal
           ? "W tym semestrze nie ma jeszcze aktywności, z której można złożyć globalne Wrapped."
-          : "Dla tego semestru nie mamy danych do Twojego Wrapped, więc nie da się go już wygenerować za ten okres. Korzystaj z Testownika w następnym semestrze, a wtedy przygotujemy podsumowanie."}
-        {isGlobal ? null : (
-          <>
-            {" "}
-            <b style={{ color: "#fff" }}>
-              Bez aktywności w danym semestrze nie mamy z czego go złożyć.
-            </b>
-          </>
-        )}
+          : "Nie rozwiązywałeś żadnych quizów w tym semestrze, więc nie ma z czego złożyć Wrapped. Wróć tu po sesji w następnym."}
       </p>
       <div style={{ marginTop: "30px", alignSelf: "center" }}>
         <Link
