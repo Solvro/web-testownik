@@ -144,7 +144,10 @@ export class BaseApiService {
       let response = await fetch(fullURL, requestOptions);
 
       if (response.status === 503) {
-        window.dispatchEvent(new Event("backend-maintenance"));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("backend-maintenance"));
+        }
+        return new Promise(() => {});
       }
 
       if (response.status === 401) {

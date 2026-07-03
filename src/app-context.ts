@@ -9,6 +9,5 @@ export const AppContext = createContext<AppContextType>({
   user: null,
   checkPermission: () => false,
   isMaintenance: false,
-  //eslint-disable-next-line @typescript-eslint/no-empty-function
-  setIsMaintenance: () => {},
+  setIsMaintenance: () => undefined,
 });
