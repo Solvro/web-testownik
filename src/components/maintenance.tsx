@@ -15,23 +15,29 @@ function MaintenanceOverlay() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
         const response = await fetch(`${API_URL}/status/`);
         if (response.status !== 503) {
           window.location.reload();
         }
-      } catch (error) {}
-    }, 30000);
-    return () => clearInterval(interval);
+      } catch {}
+    }, 30_000);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   return (
     <div className="flex h-full w-full items-center justify-center p-5">
-      <Card variant="gradient" className="max-w-full w-2xl text-center p-8">
+      <Card variant="gradient" className="w-2xl max-w-full p-8 text-center">
         <CardHeader className="justify-items-center gap-2">
-          <WrenchIcon className="mb-2 h-11 w-11 text-muted-foreground" />
-          <CardTitle className="text-lg">Testownik jest w trakcie przerwy technicznej.</CardTitle>
-          <CardDescription className="text-md">Wrócimy wkrótce!</CardDescription>
+          <WrenchIcon className="text-muted-foreground mb-2 h-11 w-11" />
+          <CardTitle className="text-lg">
+            Testownik jest w trakcie przerwy technicznej.
+          </CardTitle>
+          <CardDescription className="text-md">
+            Wrócimy wkrótce!
+          </CardDescription>
         </CardHeader>
       </Card>
     </div>
