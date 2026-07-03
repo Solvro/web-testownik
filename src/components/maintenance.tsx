@@ -5,12 +5,11 @@ import { useContext, useEffect } from "react";
 
 import { AppContext } from "@/app-context";
 import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 function MaintenanceOverlay() {
   useEffect(() => {
@@ -27,16 +26,14 @@ function MaintenanceOverlay() {
   }, []);
 
   return (
-    <div className="flex h-full w-full items-center justify-center p-4">
-      <Empty className="border-none shadow-none">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <WrenchIcon className="text-muted-foreground" />
-          </EmptyMedia>
-          <EmptyTitle>Testownik jest w trakcie przerwy technicznej</EmptyTitle>
-          <EmptyDescription>Wrócimy wkrótce!</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+    <div className="flex h-full w-full items-center justify-center p-5">
+      <Card variant="gradient" className="max-w-full w-2xl text-center p-8">
+        <CardHeader className="justify-items-center gap-2">
+          <WrenchIcon className="mb-2 h-11 w-11 text-muted-foreground" />
+          <CardTitle className="text-lg">Testownik jest w trakcie przerwy technicznej.</CardTitle>
+          <CardDescription className="text-md">Wrócimy wkrótce!</CardDescription>
+        </CardHeader>
+      </Card>
     </div>
   );
 }
