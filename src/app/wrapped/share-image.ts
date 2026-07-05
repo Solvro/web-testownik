@@ -539,7 +539,7 @@ export async function generateShareImage(
     /\/$/,
     "",
   );
-  const link = `${host}${wrappedPath(data)}`;
+  const link = `${host}/wrapped`;
   context.font = `700 38px ${sans}`;
   const pillW = context.measureText(link).width + 96;
   const pillH = 92;
@@ -620,7 +620,7 @@ export async function shareWrapped(
     }
     downloadBlob(blob, "testownik-wrapped.png");
     void copyLink(textWithLink);
-    toast.success("Zapisano obrazek — link do Wrapped skopiowany!");
+    toast.success("Zapisano obrazek - link do Wrapped skopiowany!");
     return;
   }
 

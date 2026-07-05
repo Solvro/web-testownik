@@ -152,7 +152,8 @@ function WrappedLogin({
 
 export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
   const { checkPermission, user } = useContext(AppContext);
-  const canViewWrapped = checkPermission(PermissionAction.VIEW_WRAPPED);
+  const canViewWrapped =
+    checkPermission(PermissionAction.VIEW_WRAPPED) || mode === "global";
 
   // Theme settings: defaults < easter-egg (temporary React state).
   const [easterSettings, setEasterSettings] =
@@ -196,7 +197,7 @@ export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
     return (
       <WrappedLogin
         isGuest={user?.account_type === ACCOUNT_TYPE.GUEST}
-        isGlobal={mode === "global"}
+        isGlobal={false}
       />
     );
   }
