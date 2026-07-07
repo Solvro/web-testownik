@@ -13,6 +13,7 @@ import { MobileMenu } from "./mobile-menu";
 import { MobileMenuButton } from "./mobile-menu-button";
 import { NavLinks } from "./nav-links";
 import { NavbarActions } from "./navbar-actions";
+import { WrappedButton } from "./wrapped-button";
 
 export function NavbarClient() {
   const [expanded, setExpanded] = useState(false);
@@ -36,6 +37,7 @@ export function NavbarClient() {
           <NavLinks variant="desktop" />
         </nav>
         <div className="hidden items-center gap-2 md:flex">
+          <WrappedButton />
           <AuthButtons />
           <NavbarActions />
           {isAuthenticated ? <LogoutButton /> : null}
