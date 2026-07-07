@@ -266,6 +266,18 @@ export const WRAPPED_DEFAULTS: WrappedSettings = {
   progress: "bars",
 };
 
+// --- Navbar promo button ---------------------------------------------------
+
+/**
+ * The navbar "Wrapped" button is shown until this moment (local time).
+ * After it passes the button disappears; the /wrapped page itself stays up.
+ */
+export const WRAPPED_PROMO_ENDS_AT = new Date("2026-08-01T00:00:00");
+
+export function isWrappedPromoActive(now: Date = new Date()): boolean {
+  return now < WRAPPED_PROMO_ENDS_AT;
+}
+
 // --- Logo easter egg -------------------------------------------------------
 
 /** Clicks on the logo (in a row) that trigger a random theme. */

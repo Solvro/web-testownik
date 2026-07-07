@@ -8,6 +8,7 @@ import { AuthButtons } from "./auth-buttons";
 import { LogoutButton } from "./logout-button";
 import { NavLinks } from "./nav-links";
 import { NavbarActions } from "./navbar-actions";
+import { WrappedButton } from "./wrapped-button";
 
 interface MobileMenuProps {
   onNavigate?: () => void;
@@ -20,6 +21,7 @@ export function MobileMenu({ onNavigate }: MobileMenuProps) {
     <nav className="flex flex-col gap-2 border-t pt-2 md:hidden">
       <NavLinks variant="mobile" onNavigate={onNavigate} />
       <div className="flex flex-wrap gap-2 pt-2">
+        <WrappedButton onNavigate={onNavigate} />
         <AuthButtons onNavigate={onNavigate} />
         <NavbarActions />
         {isAuthenticated ? <LogoutButton onLogout={onNavigate} /> : null}
