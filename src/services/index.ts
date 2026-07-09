@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/api";
+import { FolderService } from "@/services/folder.service";
 
 import { ImageService } from "./image.service";
 import { QuizService } from "./quiz.service";
@@ -10,6 +11,7 @@ import { WrappedService } from "./wrapped.service";
  */
 export class ServiceRegistry {
   private quizService: QuizService;
+  private folderService: FolderService;
   private userService: UserService;
   private imageService: ImageService;
   private wrappedService: WrappedService;
@@ -20,6 +22,11 @@ export class ServiceRegistry {
     accessToken?: string,
   ) {
     this.quizService = new QuizService(baseURL, defaultHeaders, accessToken);
+    this.folderService = new FolderService(
+      baseURL,
+      defaultHeaders,
+      accessToken,
+    );
     this.userService = new UserService(baseURL, defaultHeaders, accessToken);
     this.imageService = new ImageService(baseURL, defaultHeaders, accessToken);
     this.wrappedService = new WrappedService(
@@ -34,6 +41,13 @@ export class ServiceRegistry {
    */
   get quiz(): QuizService {
     return this.quizService;
+  }
+
+  /**
+   * Get the folder service
+   */
+  get folder(): FolderService {
+    return this.folderService;
   }
 
   /**
@@ -87,6 +101,13 @@ export function getServices(): ServiceRegistry {
  */
 export function getQuizService(): QuizService {
   return getServices().quiz;
+}
+
+/**
+ * Get folder service directly
+ */
+export function getFolderService(): FolderService {
+  return getServices().folder;
 }
 
 /**
