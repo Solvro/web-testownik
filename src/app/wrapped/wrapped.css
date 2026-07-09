@@ -144,6 +144,15 @@
   width: 100%;
 }
 
+/* Applied to <body> while the fullscreen story is active so the Safari
+   toolbar tint (sampled from the body colour) fades in step with the stage.
+   The layout's gradient background-image would paint over the synced
+   background-color, so it is suppressed here. */
+body.wrapped-immersive-body {
+  background-image: none !important;
+  transition: background-color 0.45s ease;
+}
+
 /* Mobile: middle story slides use the immersive fixed overlay. Intro/outro use
    `.is-edge` to pull into a card, and the no-activity state uses its own card
    class so it does not trap the rest of the app behind it. */
@@ -154,10 +163,10 @@
   }
   .wrapped-stage {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 50 !important;
     margin: 0 !important;
     border-radius: 0 !important;
@@ -171,12 +180,19 @@
       background-color 0.45s ease,
       color 0.45s ease;
   }
+  @supports (-webkit-touch-callout: none) {
+    .wrapped-stage:not(.is-edge) {
+      /* iOS Safari tint workaround: leave tiny body-sampled strips. */
+      top: 6px;
+      bottom: 5px;
+    }
+  }
   .wrapped-stage.is-edge {
-    top: 4.75rem !important;
-    left: 0.75rem !important;
+    top: 4.75rem;
+    left: 0.75rem;
     z-index: 10 !important;
-    right: 0.75rem !important;
-    bottom: 0.75rem !important;
+    right: 0.75rem;
+    bottom: 0.75rem;
     border-radius: 22px !important;
     box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.5) !important;
   }

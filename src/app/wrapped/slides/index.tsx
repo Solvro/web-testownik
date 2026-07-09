@@ -5,6 +5,7 @@
    Fast-refresh's "only export components" rule doesn't apply to this pattern. */
 /* eslint-disable react-refresh/only-export-components */
 import formbricks from "@formbricks/js";
+import Link from "next/link";
 import type { CSSProperties, ComponentType } from "react";
 import { SiGithub } from "react-icons/si";
 
@@ -853,7 +854,7 @@ function HardestSlide({ data }: SlideProps) {
         aria-hidden
         style={{
           position: "absolute",
-          bottom: "10%",
+          bottom: "-2%",
           left: "-3%",
           transform: "rotate(6deg)",
           pointerEvents: "none",
@@ -1402,24 +1403,47 @@ function OutroSlide({ data, onShare, onRestart }: SlideProps) {
         >
           Udostępnij
         </button>
-        <button
-          type="button"
-          onClick={onRestart}
-          style={{
-            flex: 1,
-            height: "clamp(38px, 5.4dvh, 46px)",
-            borderRadius: "12px",
-            background: "transparent",
-            border: "1.5px solid currentColor",
-            color: "currentColor",
-            fontFamily: FM,
-            fontSize: "clamp(13px, 1.9dvh, 15px)",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Od nowa
-        </button>
+        {global ? (
+          <Link
+            href="/wrapped"
+            style={{
+              flex: 1,
+              height: "clamp(38px, 5.4dvh, 46px)",
+              borderRadius: "12px",
+              background: "transparent",
+              border: "1.5px solid currentColor",
+              color: "currentColor",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: FM,
+              fontSize: "clamp(13px, 1.9dvh, 15px)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Moje Wrapped
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onRestart}
+            style={{
+              flex: 1,
+              height: "clamp(38px, 5.4dvh, 46px)",
+              borderRadius: "12px",
+              background: "transparent",
+              border: "1.5px solid currentColor",
+              color: "currentColor",
+              fontFamily: FM,
+              fontSize: "clamp(13px, 1.9dvh, 15px)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Od nowa
+          </button>
+        )}
       </div>
       <div
         style={{

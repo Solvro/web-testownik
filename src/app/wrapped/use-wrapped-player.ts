@@ -14,6 +14,21 @@ function clampIndex(index: number, count: number): number {
   return Math.max(0, Math.min(max, index));
 }
 
+const INTERACTIVE_KEYBOARD_TARGET =
+  'a[href], button, input, select, textarea, [contenteditable="true"], [role="button"], [role="checkbox"], [role="combobox"], [role="radio"], [role="searchbox"], [role="switch"], [role="textbox"]';
+
+function hasInteractiveKeyboardTarget(event: KeyboardEvent): boolean {
+  return event.composedPath().some((target) => {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    return (
+      target.isContentEditable || target.matches(INTERACTIVE_KEYBOARD_TARGET)
+    );
+  });
+}
+
 interface UseWrappedPlayerOptions {
   count: number;
   getDuration: (index: number) => number;
@@ -150,6 +165,13 @@ export function useWrappedPlayer({
   // Keyboard control.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (
+        hasInteractiveKeyboardTarget(event) ||
+        document.querySelector('[role="dialog"]') !== null
+      ) {
+        return;
+      }
+
       if (
         event.key === "ArrowRight" ||
         event.key === " " ||

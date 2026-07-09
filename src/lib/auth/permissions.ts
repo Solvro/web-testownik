@@ -22,6 +22,8 @@ export enum PermissionAction {
   AI_FEATURES = "ai_features",
   // Viewing quiz statistics
   VIEW_QUIZ_STATS = "view_quiz_stats",
+  // Viewing Testownik Wrapped summaries
+  VIEW_WRAPPED = "view_wrapped",
 }
 
 export const PERMISSIONS_BY_ROLE: Record<
@@ -42,6 +44,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.QUIZ_CONTINUITY,
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
+    PermissionAction.VIEW_WRAPPED,
   ],
   [ACCOUNT_TYPE.STUDENT]: [
     PermissionAction.BROWSE_PUBLIC_QUIZZES,
@@ -54,6 +57,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.QUIZ_CONTINUITY,
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
+    PermissionAction.VIEW_WRAPPED,
   ],
   [ACCOUNT_TYPE.LECTURER]: [
     PermissionAction.VIEW_SHARED_QUIZZES,
@@ -64,6 +68,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.QUIZ_CONTINUITY,
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
+    PermissionAction.VIEW_WRAPPED,
   ],
 };
 
