@@ -28,14 +28,14 @@ function MaintenanceOverlay() {
   }, []);
 
   return (
-    <div className="flex h-full w-full items-center justify-center p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <Card variant="gradient" className="w-2xl max-w-full p-8 text-center">
         <CardHeader className="justify-items-center gap-2">
           <WrenchIcon className="text-muted-foreground mb-2 h-11 w-11" />
           <CardTitle className="text-lg">
             Testownik jest w trakcie przerwy technicznej.
           </CardTitle>
-          <CardDescription className="text-md">
+          <CardDescription className="text-base">
             Wrócimy wkrótce!
           </CardDescription>
         </CardHeader>
