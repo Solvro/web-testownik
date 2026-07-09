@@ -9,5 +9,7 @@ export const AppContext = createContext<AppContextType>({
   user: null,
   checkPermission: () => false,
   isMaintenance: false,
-  setIsMaintenance: () => undefined,
+  setIsMaintenance: () => {
+    void 0;
+  },
 });

@@ -147,7 +147,9 @@ export class BaseApiService {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("backend-maintenance"));
         }
-        return new Promise(() => {});
+        return await new Promise(() => {
+          void 0;
+        });
       }
 
       if (response.status === 401) {
