@@ -214,13 +214,14 @@ export class BaseApiService {
       if (error instanceof TypeError && typeof window !== "undefined") {
         const errorMessage = error.message.toLowerCase();
 
-        if (
-          errorMessage.includes("fetch") ||
-          errorMessage.includes("network") ||
-          errorMessage.includes("load failed")
-        ) {
-          window.dispatchEvent(new Event("backend-maintenance"));
+        const isNetworkError =
+          errorMessage === "failed to fetch" ||
+          errorMessage === "fetch failed" ||
+          errorMessage === "load failed" ||
+          errorMessage.includes("network error");
 
+        if (isNetworkError) {
+          window.dispatchEvent(new Event("backend-maintenance"));
           return await new Promise<never>(() => {
             /* empty */
           });
