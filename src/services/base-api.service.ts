@@ -143,12 +143,10 @@ export class BaseApiService {
     try {
       let response = await fetch(fullURL, requestOptions);
 
-      if (response.status === 503) {
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("backend-maintenance"));
-        }
-        return await new Promise(() => {
-          void 0;
+      if (response.status === 503 && typeof window !== "undefined") {
+        window.dispatchEvent(new Event("backend-maintenance"));
+        return await new Promise<never>(() => {
+          /* empty */
         });
       }
 
@@ -212,6 +210,23 @@ export class BaseApiService {
       const data = (await response.json()) as T;
       return this.handleResponse(response, data);
     } catch (error) {
+      // Catch refused connection
+      if (error instanceof TypeError && typeof window !== "undefined") {
+        const errorMessage = error.message.toLowerCase();
+
+        if (
+          errorMessage.includes("fetch") ||
+          errorMessage.includes("network") ||
+          errorMessage.includes("load failed")
+        ) {
+          window.dispatchEvent(new Event("backend-maintenance"));
+
+          return await new Promise<never>(() => {
+            /* empty */
+          });
+        }
+      }
+
       const apiError = this.handleError(error);
       throw new Error(apiError.message);
     }
