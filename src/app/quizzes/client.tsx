@@ -190,9 +190,27 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   const archiveFolder = folders.find(
     (folder) => folder.folder_type === "archive",
   );
-  const archivedQuizzes = userQuizzes.filter((quiz) =>
-    (archiveFolder?.quizzes ?? []).includes(quiz.id),
-  );
+
+  const { data: archiveFolderContent, isLoading: isLoadingArchiveContent } =
+    useQuery({
+      queryKey: ["folder-library", archiveFolder?.id],
+      queryFn: async () => {
+        if (archiveFolder?.id == null) {
+          throw new Error("Brak folderu archiwum!");
+        }
+
+        return getFolderService().getLibraryById(archiveFolder.id);
+      },
+      enabled: Boolean(archiveFolder?.id),
+      refetchOnWindowFocus: false,
+    });
+
+  const archivedQuizzes: LibraryItem[] = useMemo(() => {
+    if (archiveFolderContent?.items == null) {
+      return [];
+    }
+    return archiveFolderContent.items;
+  }, [archiveFolderContent]);
 
   // Exclude displaying root and archive folder
   const userFolders = folders.filter((folder) => {
@@ -211,7 +229,8 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     isLoadingSharedQuizzes ||
     isLoadingUserFolders ||
     isLoadingUserLibrary ||
-    isLoadingContents;
+    isLoadingContents ||
+    isLoadingArchiveContent;
   const error =
     userQuizzesError ??
     sharedQuizzesError ??
@@ -260,7 +279,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     [sharedQuizzes, sortKey],
   );
 
-  const sortedArchivedQuizzes: QuizMetadata[] = useMemo(
+  const sortedArchivedQuizzes: LibraryItem[] = useMemo(
     () =>
       archivedQuizzes.toSorted((left, right) =>
         compareQuizzesByLibrarySort(left, right, sortKey),
@@ -309,10 +328,10 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     [searchRegex, sortedSharedQuizzes],
   );
 
-  const filteredArchivedQuizzes: QuizMetadata[] = useMemo(
+  const filteredArchivedQuizzes: LibraryItem[] = useMemo(
     () =>
       sortedArchivedQuizzes.filter(
-        (quiz) => searchRegex?.test(quiz.title) ?? true,
+        (quiz) => searchRegex?.test(quiz.name) ?? true,
       ),
     [searchRegex, sortedArchivedQuizzes],
   );
@@ -343,32 +362,20 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
   };
 
   const handleArchiveQuiz = async (quiz: QuizMetadata) => {
-    const currentFolderQueryKey = ["folder-library", activeFolderId];
-
     try {
-      queryClient.setQueryData(currentFolderQueryKey, (oldData: Library) => {
-        return {
-          ...oldData,
-          items: oldData.items.filter(
-            (item: LibraryItem) =>
-              !(item.type === "quiz" && item.id === quiz.id),
-          ),
-        };
-      });
-
       await getQuizService().archiveQuiz(quiz.id);
 
       void queryClient.invalidateQueries({ queryKey: ["user-quizzes"] });
       void queryClient.invalidateQueries({ queryKey: ["user-folders"] });
       void queryClient.invalidateQueries({ queryKey: ["user-library"] });
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
 
       toast.success("Quiz został zarchiwizowany");
     } catch (error_) {
       console.error("Błd podczas archiwizacji quizu:", error_);
       toast.error("Nie udało się zarchiwizować quizu");
 
-      void queryClient.invalidateQueries({ queryKey: currentFolderQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["folder-library"] });
     }
   };
 

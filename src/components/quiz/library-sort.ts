@@ -1,4 +1,9 @@
-import type { Folder, QuizMetadata, SharedQuiz } from "@/types/quiz";
+import type {
+  Folder,
+  LibraryItem,
+  QuizMetadata,
+  SharedQuiz,
+} from "@/types/quiz";
 
 export type LibrarySortKey =
   | "name-asc"
@@ -14,20 +19,48 @@ const collator = new Intl.Collator("pl-PL", {
   sensitivity: "base",
 });
 
-const getQuizTitle = (quiz: QuizMetadata | SharedQuiz): string => {
-  return "quiz" in quiz ? quiz.quiz.title : quiz.title;
+const getQuizTitle = (
+  quiz: QuizMetadata | SharedQuiz | LibraryItem,
+): string => {
+  if ("quiz" in quiz) {
+    return quiz.quiz.title;
+  } else if ("title" in quiz) {
+    return quiz.title;
+  } else if ("name" in quiz) {
+    return quiz.name;
+  }
+  return "Unknown";
 };
 
-const getQuizCreatedAt = (quiz: QuizMetadata | SharedQuiz): number => {
-  return new Date(
-    "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at,
-  ).getTime();
+const getQuizCreatedAt = (
+  quiz: QuizMetadata | SharedQuiz | LibraryItem,
+): number => {
+  let dateString: string | null | undefined = null;
+
+  if ("quiz" in quiz) {
+    dateString = quiz.quiz.created_at;
+  } else if ("created_at" in quiz && !("type" in quiz)) {
+    dateString = quiz.created_at;
+  }
+
+  return new Date(dateString ?? 0).getTime();
 };
 
-const getQuizLastUsedAt = (quiz: QuizMetadata | SharedQuiz): number => {
-  const lastUsedAt =
-    "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
-  return new Date(lastUsedAt ?? 0).getTime();
+const getQuizLastUsedAt = (
+  quiz: QuizMetadata | SharedQuiz | LibraryItem,
+): number => {
+  let dateString: string | null | undefined = null;
+
+  if ("quiz" in quiz) {
+    dateString = quiz.quiz.last_used_at;
+  }
+  if ("last_used_at" in quiz) {
+    dateString = quiz.last_used_at;
+  } else if ("created_at" in quiz) {
+    dateString = quiz.created_at;
+  }
+
+  return new Date(dateString ?? 0).getTime();
 };
 
 const getFolderName = (folder: Folder): string => folder.name;
@@ -65,8 +98,8 @@ const compareBySortKey = (
 };
 
 export function compareQuizzesByLibrarySort(
-  left: QuizMetadata | SharedQuiz,
-  right: QuizMetadata | SharedQuiz,
+  left: QuizMetadata | SharedQuiz | LibraryItem,
+  right: QuizMetadata | SharedQuiz | LibraryItem,
   key: LibrarySortKey,
 ): number {
   return compareBySortKey(
