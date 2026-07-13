@@ -322,7 +322,7 @@ function OverTypeEditor({
 
       <div className={previewOpen ? "hidden" : "inline-block"}>
         <div
-          id="overtype-editor"
+          data-slot="overtype-editor"
           className="flex-1"
           ref={containerRef}
           style={
@@ -339,7 +339,7 @@ function OverTypeEditor({
       {previewOpen ? (
         <MarkdownRenderer
           className={cn(
-            "min-h- mx-4 my-2 min-h-[1.5rem]",
+            "mx-4 my-2 min-h-6",
             isEmpty ? "text-muted-foreground" : "",
           )}
         >
