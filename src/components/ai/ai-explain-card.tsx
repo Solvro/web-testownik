@@ -168,11 +168,13 @@ function useQuestionCompletion({
     }
   }, [question.id, onClose]);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
   useEffect(() => {
     if (!startedRef.current) {
       startCompletion();
     }
   }, [startCompletion]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
 
   useEffect(() => {
     if (retryAfter === null || retryAfter <= 0) {

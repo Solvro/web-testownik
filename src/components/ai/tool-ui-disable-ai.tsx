@@ -85,7 +85,6 @@ function DisableAiCard({ reason }: { reason: string }) {
   );
 }
 
-//eslint-disable-next-line @typescript-eslint/no-deprecated
 export const DisableAiToolUI = makeAssistantToolUI<{ reason: string }, string>({
   toolName: "disable_ai",
   render: ({ args }) => {

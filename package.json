@@ -94,8 +94,8 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.1",
-    "@commitlint/config-conventional": "^21.0.2",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@next/eslint-plugin-next": "^16.1.1",
     "@solvro/config": "^2.3.3",
     "@tailwindcss/typography": "^0.5.19",

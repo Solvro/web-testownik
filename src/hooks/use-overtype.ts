@@ -37,9 +37,10 @@ export function useOverType({ ...options }: UseOverTypeOptions) {
       return;
     }
 
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     const nextValue = options.value ?? "";
     const currentValue = instance.getValue();
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
+
     if (currentValue === nextValue) {
       return;
     }

@@ -92,6 +92,7 @@ export function ShareQuizDialog({
     initialData: [],
   });
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
     queryFn: async () =>
@@ -99,6 +100,7 @@ export function ShareQuizDialog({
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
   const loading = isSharedDataLoading || isUserGroupsLoading;
 
@@ -130,17 +132,16 @@ export function ShareQuizDialog({
             ],
       );
 
+      /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
       setUsersWithAccess(foundUsers);
-
       setInitialUsersWithAccess(foundUsers);
-
       setGroupsWithAccess(foundGroups);
-
       setInitialGroupsWithAccess(foundGroups);
+      /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
     }
   }, [sharedData]);
 
-  // TODO: switch to uding tanstack query for search as well
+  // TODO: switch to using tanstack query for search as well
   const handleSearch = async (query: string) => {
     setSearchResultsLoading(true);
     try {
