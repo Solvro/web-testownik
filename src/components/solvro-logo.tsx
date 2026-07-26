@@ -8,6 +8,8 @@ interface SolvroLogoProps {
   className?: string;
 }
 
+const SOLVRO_LOGO_ASPECT_RATIO = 109.695 / 140.014_01;
+
 export function SolvroLogo({
   width = 40,
   height,
@@ -18,8 +20,8 @@ export function SolvroLogo({
       src="/solvro_mono.svg"
       alt="Logo"
       width={width}
-      height={height ?? width * 0.8}
-      className={cn("invert dark:invert-0", className)}
+      height={height ?? width * SOLVRO_LOGO_ASPECT_RATIO}
+      className={cn("h-auto invert dark:invert-0", className)}
     />
   );
 }

@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         hostname: s3Url.hostname,
         port: s3Url.port,
       },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
     ],
   },
 };
