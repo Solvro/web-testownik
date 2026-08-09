@@ -2,7 +2,7 @@
 
 import { useLayoutEffect } from "react";
 
-import { HERO_PROGRESS_EVENT, HERO_PROGRESS_PROPERTY } from "../hero-progress";
+import { publishHeroProgress } from "../hero-progress";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 function clamp(value: number, minimum = 0, maximum = 1): number {
@@ -36,8 +36,7 @@ export function useHeroProgress(
       const progress = prefersReducedMotion
         ? 1
         : clamp(-hero.getBoundingClientRect().top / travel);
-      hero.style.setProperty(HERO_PROGRESS_PROPERTY, progress.toFixed(4));
-      window.dispatchEvent(new Event(HERO_PROGRESS_EVENT));
+      publishHeroProgress(hero, progress);
     };
 
     const schedule = (): void => {

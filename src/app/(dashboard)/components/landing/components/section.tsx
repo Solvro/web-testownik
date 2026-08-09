@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const landingSectionVariants = cva(
-  "mx-auto w-[calc(100%-2rem)] sm:w-[min(100%-3rem,88rem)]",
+  "mx-auto w-[calc(100%-2rem)] sm:w-[min(100%-3rem,96rem)]",
   {
     variants: {
       padding: {
@@ -44,15 +44,18 @@ export function LandingSection({
   children,
   className,
   padding,
+  showPlaceholder = true,
   ...props
 }: ComponentProps<"section"> &
-  VariantProps<typeof landingSectionVariants>): React.JSX.Element {
+  VariantProps<typeof landingSectionVariants> & {
+    showPlaceholder?: boolean;
+  }): React.JSX.Element {
   return (
     <section
       className={cn(landingSectionVariants({ padding }), "relative", className)}
       {...props}
     >
-      <PlaceholderWatermark />
+      {showPlaceholder ? <PlaceholderWatermark /> : null}
       {children}
     </section>
   );

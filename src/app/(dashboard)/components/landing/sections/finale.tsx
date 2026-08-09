@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 import { LandingButton, LandingButtonLink } from "../components/landing-button";
 import { ParticleLogo } from "../components/particle-logo";
-import { Eyebrow } from "../components/typography";
 import { monoLabelVariants } from "../components/typography-variants";
 
 /** Faint graph paper that fades out towards the edges. */
@@ -28,8 +27,8 @@ export function Finale({
     // The closing section is the dark surface in both themes, so it opts into
     // the dark token set rather than hard-coding colours.
     <section
-      id="finale"
-      className="dark bg-background text-foreground relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-8 pt-28 pb-8 text-center"
+      id="footer"
+      className="dark bg-background text-foreground relative flex min-h-[100svh] scroll-mt-4 flex-col items-center justify-center overflow-hidden px-8 pt-28 pb-8 text-center"
     >
       <div
         aria-hidden="true"
@@ -37,8 +36,6 @@ export function Finale({
         style={gridBackdropStyle}
       />
       <ParticleLogo className="absolute inset-0" />
-
-      <Eyebrow className="relative">TWOJA NASTĘPNA SESJA</Eyebrow>
 
       {/*
        * The wordmark is the particle simulation itself — icon and lettering are

@@ -279,7 +279,7 @@ export function createBubble(
 
   let contentDirty = false;
   let contentReady = false;
-  let wake = () => {};
+  let wake = (): void => {};
 
   if (htmlInCanvas) {
     paintable.onpaint = () => {
@@ -589,8 +589,24 @@ export function createBubble(
     raf = requestAnimationFrame(frame);
   }
 
-  wake = start;
-  start();
+  function needsAnimation(): boolean {
+    return (
+      hasPointer ||
+      presenceTarget > 0.004 ||
+      presence > 0.004 ||
+      contentDirty ||
+      Math.abs(renderedSize - config.size) > 0.05 ||
+      Math.abs(renderedTrail - config.trail) > 0.05
+    );
+  }
+
+  function wakeIfNeeded(): void {
+    if (needsAnimation()) {
+      start();
+    }
+  }
+
+  wake = wakeIfNeeded;
 
   function onPointerMove(event: PointerEvent) {
     pointerClientX = event.clientX;
@@ -629,7 +645,7 @@ export function createBubble(
       targetX = pointerClientX - pointerBounds.left;
       targetY = pointerClientY - pointerBounds.top;
     }
-    start();
+    wakeIfNeeded();
   }
 
   /*
@@ -652,31 +668,33 @@ export function createBubble(
 
   function onMotionChange() {
     reducedMotion = motionQuery.matches;
-    start();
+    wakeIfNeeded();
   }
   motionQuery.addEventListener("change", onMotionChange);
 
   const observer = new ResizeObserver(() => {
     syncCanvasSize();
-    start();
+    wakeIfNeeded();
   });
   observer.observe(output);
   observer.observe(content);
 
   const intersection = new IntersectionObserver((entries) => {
     visible = entries[entries.length - 1]?.isIntersecting ?? true;
-    if (visible) start();
+    if (visible) {
+      wakeIfNeeded();
+    }
   });
   intersection.observe(output);
 
   return {
     setOptions(next) {
       Object.assign(config, next);
-      start();
+      wakeIfNeeded();
     },
     resize() {
       syncCanvasSize();
-      start();
+      wakeIfNeeded();
     },
     destroy() {
       destroyed = true;

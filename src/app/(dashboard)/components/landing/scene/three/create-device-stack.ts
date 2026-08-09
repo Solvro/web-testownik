@@ -1,7 +1,7 @@
 import { Group, MathUtils } from "three";
 import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
-import { HERO_PROGRESS_EVENT, readHeroProgress } from "../../hero-progress";
+import { getHeroProgress, HERO_PROGRESS_EVENT } from "../../hero-progress";
 import { SATELLITE_POSES, createChoreography } from "./choreography";
 import { createTabletContactShadow } from "./contact-shadow";
 import {
@@ -191,7 +191,7 @@ export async function createDeviceStack({
 
   // --- Frame loop ---------------------------------------------------------
   const currentScrollProgress = (): number =>
-    MathUtils.clamp(readHeroProgress(canvas), 0, 1);
+    MathUtils.clamp(getHeroProgress(), 0, 1);
 
   const progressForFrame = (): number => {
     const target = currentScrollProgress();
@@ -219,6 +219,13 @@ export async function createDeviceStack({
     return target * easedTime;
   };
 
+  let lastLaptopOpacity = "";
+  let lastTabletOpacity = "";
+  let lastPhoneOpacity = "";
+  let lastLaptopInteractive: boolean | null = null;
+  let lastTabletInteractive: boolean | null = null;
+  let lastPhoneInteractive: boolean | null = null;
+
   function render(): void {
     frame = 0;
     if (disposed) {
@@ -235,23 +242,45 @@ export async function createDeviceStack({
 
     if (laptopScreen !== null) {
       const visibility = screenFacing(laptopScreen, camera, 0.06, 0.26);
-      hosts.laptop.style.opacity = visibility.toFixed(3);
+      const opacity = visibility.toFixed(3);
+      if (opacity !== lastLaptopOpacity) {
+        hosts.laptop.style.opacity = opacity;
+        lastLaptopOpacity = opacity;
+      }
       // Facing the camera is not enough: for the first half of the hinge travel
       // the panel is still physically behind the lid. Keeping the host inert
       // stops controls firing "through" a closed MacBook.
       const isInteractive =
         progressMode === "scroll" && opening > 0.25 && visibility > 0.5;
-      hosts.laptop.style.pointerEvents = isInteractive ? "auto" : "none";
-      hosts.laptop.inert = !isInteractive;
+      if (isInteractive !== lastLaptopInteractive) {
+        hosts.laptop.style.pointerEvents = isInteractive ? "auto" : "none";
+        hosts.laptop.inert = !isInteractive;
+        lastLaptopInteractive = isInteractive;
+      }
     }
 
-    for (const { object, host } of [
-      { object: tablet.object, host: hosts.tablet },
-      { object: phone.object, host: hosts.phone },
-    ]) {
-      const visibility = screenFacing(object, camera, 0.04, 0.2);
-      host.style.opacity = visibility.toFixed(3);
-      host.style.pointerEvents = visibility > 0.88 ? "auto" : "none";
+    const tabletVisibility = screenFacing(tablet.object, camera, 0.04, 0.2);
+    const tabletOpacity = tabletVisibility.toFixed(3);
+    if (tabletOpacity !== lastTabletOpacity) {
+      hosts.tablet.style.opacity = tabletOpacity;
+      lastTabletOpacity = tabletOpacity;
+    }
+    const tabletInteractive = tabletVisibility > 0.88;
+    if (tabletInteractive !== lastTabletInteractive) {
+      hosts.tablet.style.pointerEvents = tabletInteractive ? "auto" : "none";
+      lastTabletInteractive = tabletInteractive;
+    }
+
+    const phoneVisibility = screenFacing(phone.object, camera, 0.04, 0.2);
+    const phoneOpacity = phoneVisibility.toFixed(3);
+    if (phoneOpacity !== lastPhoneOpacity) {
+      hosts.phone.style.opacity = phoneOpacity;
+      lastPhoneOpacity = phoneOpacity;
+    }
+    const phoneInteractive = phoneVisibility > 0.88;
+    if (phoneInteractive !== lastPhoneInteractive) {
+      hosts.phone.style.pointerEvents = phoneInteractive ? "auto" : "none";
+      lastPhoneInteractive = phoneInteractive;
     }
 
     stage.render();
@@ -291,7 +320,6 @@ export async function createDeviceStack({
 
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
-  window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", schedule, { passive: true });
   window.addEventListener(HERO_PROGRESS_EVENT, schedule);
 
@@ -405,7 +433,6 @@ export async function createDeviceStack({
     dispose() {
       visibilityObserver.disconnect();
       resizeObserver.disconnect();
-      window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       window.removeEventListener(HERO_PROGRESS_EVENT, schedule);
       teardown();

@@ -510,7 +510,7 @@ export function createGlass(
   function reprojectPointer() {
     if (!hasPointer) return;
     [targetX, targetY] = mapViewportPoint(pointerClientX, pointerClientY);
-    start();
+    wakeIfNeeded();
   }
 
   function halfExtents(): [number, number] {
@@ -631,8 +631,19 @@ export function createGlass(
     raf = requestAnimationFrame(frame);
   }
 
-  wake = start;
-  start();
+  function needsAnimation(): boolean {
+    return (
+      hasPointer || presenceTarget > 0.004 || presence > 0.004 || contentDirty
+    );
+  }
+
+  function wakeIfNeeded(): void {
+    if (needsAnimation()) {
+      start();
+    }
+  }
+
+  wake = wakeIfNeeded;
 
   function onPointerMove(event: PointerEvent) {
     pointerClientX = event.clientX;
@@ -672,32 +683,33 @@ export function createGlass(
 
   function onMotionChange() {
     reducedMotion = motionQuery.matches;
-    start();
+    wakeIfNeeded();
   }
   motionQuery.addEventListener("change", onMotionChange);
 
   const observer = new ResizeObserver(() => {
     syncCanvasSize();
     reprojectPointer();
-    start();
   });
   observer.observe(output);
   observer.observe(content);
 
   const intersection = new IntersectionObserver((entries) => {
     visible = entries[entries.length - 1]?.isIntersecting ?? true;
-    if (visible) start();
+    if (visible) {
+      wakeIfNeeded();
+    }
   });
   intersection.observe(output);
 
   return {
     setOptions(next) {
       Object.assign(config, next);
-      start();
+      wakeIfNeeded();
     },
     resize() {
       syncCanvasSize();
-      start();
+      wakeIfNeeded();
     },
     destroy() {
       destroyed = true;
@@ -724,11 +736,19 @@ export interface GlassProps extends GlassOptions {
   children: ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /** When false the magnifier is not initialized until enabled again. */
+  enabled?: boolean;
 }
 
 const emptySubscribe = () => () => {};
 
-export function Glass({ children, className, style, ...options }: GlassProps) {
+export function Glass({
+  children,
+  className,
+  style,
+  enabled = true,
+  ...options
+}: GlassProps) {
   const sourceRef = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLCanvasElement>(null);
@@ -746,9 +766,15 @@ export function Glass({ children, className, style, ...options }: GlassProps) {
     supportsHtmlInCanvas,
     () => false,
   );
-  const native = supported && !failed;
+  const native = enabled && supported && !failed;
 
   useEffect(() => {
+    if (!enabled) {
+      instanceRef.current?.destroy();
+      instanceRef.current = null;
+      return;
+    }
+
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
@@ -788,7 +814,7 @@ export function Glass({ children, className, style, ...options }: GlassProps) {
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [initialOptions, native]);
+  }, [enabled, initialOptions, native]);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);

@@ -229,7 +229,7 @@ function AiCardShell({
     >
       <CardHeader className="pb-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="text-foreground flex items-center gap-2 text-sm font-medium">
             <div className="bg-primary/10 flex size-6 items-center justify-center rounded-full">
               <SparklesIcon
                 className={cn(
@@ -302,6 +302,65 @@ interface AiHintCardProps {
   question: Question;
   onClose: () => void;
   onAnswerHints?: (hints: AnswerHint[]) => void;
+  /**
+   * Landing / marketing preview — skips `/ai/hint` and renders this payload.
+   */
+  preview?: {
+    generalHint: string;
+    answerHints: AnswerHint[];
+  };
+}
+
+function AiHintCardPreview({
+  preview,
+  onClose,
+  onAnswerHints,
+}: {
+  preview: { generalHint: string; answerHints: AnswerHint[] };
+  onClose: () => void;
+  onAnswerHints?: (hints: AnswerHint[]) => void;
+}): React.JSX.Element {
+  const [isLoading, setIsLoading] = useState(true);
+  const [runId, setRunId] = useState(0);
+  const hintsKey = JSON.stringify(preview.answerHints);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = window.setTimeout(() => {
+      setIsLoading(false);
+      onAnswerHints?.(preview.answerHints);
+    }, 520);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [hintsKey, onAnswerHints, preview.answerHints, runId]);
+
+  return (
+    <AiCardShell
+      title="Wskazówka AI"
+      isLoading={isLoading}
+      error={undefined}
+      errorMessage={undefined}
+      retryAfter={null}
+      onRetry={() => {
+        setRunId((current) => current + 1);
+      }}
+      onStop={() => {
+        setIsLoading(false);
+      }}
+      onClose={onClose}
+      emphasized
+    >
+      {isLoading ? <LoadingDots /> : null}
+      {isLoading ? null : (
+        <div className="text-foreground text-sm">
+          <MarkdownRenderer className="text-foreground prose-strong:text-foreground">
+            {preview.generalHint}
+          </MarkdownRenderer>
+        </div>
+      )}
+    </AiCardShell>
+  );
 }
 
 export function AiHintCard({
@@ -309,7 +368,39 @@ export function AiHintCard({
   question,
   onClose,
   onAnswerHints,
+  preview,
 }: AiHintCardProps) {
+  if (preview !== undefined) {
+    return (
+      <AiHintCardPreview
+        preview={preview}
+        onClose={onClose}
+        onAnswerHints={onAnswerHints}
+      />
+    );
+  }
+
+  return (
+    <AiHintCardLive
+      defaultAiModel={defaultAiModel}
+      question={question}
+      onClose={onClose}
+      onAnswerHints={onAnswerHints}
+    />
+  );
+}
+
+function AiHintCardLive({
+  defaultAiModel,
+  question,
+  onClose,
+  onAnswerHints,
+}: {
+  defaultAiModel?: string | null;
+  question: Question;
+  onClose: () => void;
+  onAnswerHints?: (hints: AnswerHint[]) => void;
+}): React.JSX.Element {
   const lastHintsRef = useRef<string>("");
   /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { completion, isLoading, error, retryAfter, handleStart, stop } =
@@ -325,9 +416,9 @@ export function AiHintCard({
   useEffect(() => {
     if (completion !== "" && onAnswerHints !== undefined) {
       const { answerHints } = parseHints(completion);
-      const hintsKey = JSON.stringify(answerHints);
-      if (answerHints.length > 0 && hintsKey !== lastHintsRef.current) {
-        lastHintsRef.current = hintsKey;
+      const nextHintsKey = JSON.stringify(answerHints);
+      if (answerHints.length > 0 && nextHintsKey !== lastHintsRef.current) {
+        lastHintsRef.current = nextHintsKey;
         onAnswerHints(answerHints);
       }
     }
@@ -372,8 +463,10 @@ export function AiHintCard({
       ) : null}
 
       {displayContent === null ? null : (
-        <div className="text-sm">
-          <MarkdownRenderer>{displayContent}</MarkdownRenderer>
+        <div className="text-foreground text-sm">
+          <MarkdownRenderer className="text-foreground prose-strong:text-foreground">
+            {displayContent}
+          </MarkdownRenderer>
         </div>
       )}
 
@@ -394,13 +487,85 @@ interface AiExplanationCardProps {
   defaultAiModel?: string | null;
   question: Question;
   onClose: () => void;
+  /** Landing / marketing preview — skips `/ai/explain`. */
+  preview?: string;
+}
+
+function AiExplanationCardPreview({
+  preview,
+  onClose,
+}: {
+  preview: string;
+  onClose: () => void;
+}): React.JSX.Element {
+  const [isLoading, setIsLoading] = useState(true);
+  const [runId, setRunId] = useState(0);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 520);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [preview, runId]);
+
+  return (
+    <AiCardShell
+      title="Wyjaśnienie AI"
+      isLoading={isLoading}
+      error={undefined}
+      errorMessage={undefined}
+      retryAfter={null}
+      onRetry={() => {
+        setRunId((current) => current + 1);
+      }}
+      onStop={() => {
+        setIsLoading(false);
+      }}
+      onClose={onClose}
+    >
+      {isLoading ? <LoadingDots /> : null}
+      {isLoading ? null : (
+        <div className="text-foreground text-sm">
+          <MarkdownRenderer className="text-foreground prose-strong:text-foreground">
+            {preview}
+          </MarkdownRenderer>
+        </div>
+      )}
+    </AiCardShell>
+  );
 }
 
 export function AiExplanationCard({
   defaultAiModel,
   question,
   onClose,
+  preview,
 }: AiExplanationCardProps) {
+  if (preview !== undefined) {
+    return <AiExplanationCardPreview preview={preview} onClose={onClose} />;
+  }
+
+  return (
+    <AiExplanationCardLive
+      defaultAiModel={defaultAiModel}
+      question={question}
+      onClose={onClose}
+    />
+  );
+}
+
+function AiExplanationCardLive({
+  defaultAiModel,
+  question,
+  onClose,
+}: {
+  defaultAiModel?: string | null;
+  question: Question;
+  onClose: () => void;
+}): React.JSX.Element {
   const { completion, isLoading, error, retryAfter, handleStart, stop } =
     useQuestionCompletion({
       api: "/ai/explain",
@@ -432,8 +597,10 @@ export function AiExplanationCard({
       ) : null}
 
       {displayContent === "" ? null : (
-        <div className="text-sm">
-          <MarkdownRenderer>{displayContent}</MarkdownRenderer>
+        <div className="text-foreground text-sm">
+          <MarkdownRenderer className="text-foreground prose-strong:text-foreground">
+            {displayContent}
+          </MarkdownRenderer>
         </div>
       )}
     </AiCardShell>

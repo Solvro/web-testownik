@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useSyncExternalStore } from "react";
 
 import { Bubble } from "@/components/canvasui/canvas-bubble";
 
@@ -8,6 +9,10 @@ import {
   useHasFinePointer,
   usePrefersReducedMotion,
 } from "../hooks/use-prefers-reduced-motion";
+import {
+  getSatelliteHovered,
+  subscribeSatelliteHover,
+} from "../satellite-hover";
 
 /**
  * CanvasUI's droplet lens over the hero header and copy.
@@ -24,16 +29,18 @@ import {
 export function HeroBubble({
   children,
   className,
-  compact = false,
 }: {
   children: ReactNode;
   className?: string;
-  /** Shrinks the droplet while a device screen is hovered, so it stops covering the UI. */
-  compact?: boolean;
 }): React.JSX.Element {
   const hasFinePointer = useHasFinePointer();
   const prefersReducedMotion = usePrefersReducedMotion();
   const isEnabled = hasFinePointer && !prefersReducedMotion;
+  const compact = useSyncExternalStore(
+    subscribeSatelliteHover,
+    getSatelliteHovered,
+    () => false,
+  );
 
   return (
     <Bubble
