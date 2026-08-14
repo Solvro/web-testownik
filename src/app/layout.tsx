@@ -107,12 +107,12 @@ export default async function RootLayout({
             id="container"
           >
             <Navbar />
-            <Suspense>
-              <ErrorHandler />
-              <GuestAlert />
-              <Alerts />
-            </Suspense>
             <MaintenanceWrapper>
+              <Suspense>
+                <ErrorHandler />
+                <GuestAlert />
+                <Alerts />
+              </Suspense>
               <main>{children}</main>
             </MaintenanceWrapper>
           </div>
