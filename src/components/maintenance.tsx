@@ -4,13 +4,14 @@ import { ConstructionIcon } from "lucide-react";
 import { useContext, useEffect } from "react";
 
 import { AppContext } from "@/app-context";
-import { Button } from "./ui/button";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+
+import { Button } from "./ui/button";
 
 function MaintenanceOverlay() {
   useEffect(() => {
