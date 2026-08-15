@@ -1,6 +1,3 @@
-import { BarChart3, Bot, GraduationCap, Share2 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-
 import { TEAM_SIZE } from "./team-data";
 
 /**
@@ -10,13 +7,6 @@ import { TEAM_SIZE } from "./team-data";
 
 export interface TimelineEntry {
   date: string;
-  title: string;
-  text: string;
-}
-
-export interface Capability {
-  icon: LucideIcon;
-  tag: string;
   title: string;
   text: string;
 }
@@ -50,32 +40,5 @@ export const STORY: readonly TimelineEntry[] = [
     date: "DZISIAJ",
     title: `${TEAM_SIZE.toString()} osób i wciąż otwarty kod.`,
     text: "Quizy bez rejestracji, współdzielenie, synchronizacja, statystyki, oceny z USOS i funkcje AI działają jako jeden produkt.",
-  },
-];
-
-export const CAPABILITIES: readonly Capability[] = [
-  {
-    icon: BarChart3,
-    tag: "STATYSTYKI QUIZU",
-    title: "Wiesz, co naprawdę umiesz.",
-    text: "Wyniki sesji, czas nauki, aktywność w ciągu doby i pytania, na których najczęściej się mylisz.",
-  },
-  {
-    icon: GraduationCap,
-    tag: "OCENY + USOS",
-    title: "Średnia bez arkusza.",
-    text: "Semestry, ECTS i symulator „co jeśli” liczą prognozę na żywo na prawdziwych danych.",
-  },
-  {
-    icon: Share2,
-    tag: "WSPÓŁDZIELENIE",
-    title: "Jeden quiz dla całej grupy.",
-    text: "Wyślij link, pozwól czytać albo edytować i nie rozsyłaj kolejnych wersji tego samego pliku.",
-  },
-  {
-    icon: Bot,
-    tag: "ASYSTENT AI",
-    title: "Pomoc zna aktywne pytanie.",
-    text: "Wyjaśnienia, wskazówki i poprawki pracują w kontekście quizu, a nie w pustym oknie czatu.",
   },
 ];

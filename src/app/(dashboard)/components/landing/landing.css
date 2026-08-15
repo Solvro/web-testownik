@@ -48,7 +48,8 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * an explicit background or transparent pixels become black.
  */
 .lp-bubble-capture > canvas > div,
-.lp-bubble-capture > div:not([class]) {
+.lp-bubble-capture > div:not([class]),
+.lp-bubble-capture > div {
   background:
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px),
@@ -181,4 +182,92 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   content: "";
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+/* TOC section peek — arrive soft, leave with a quick pop. */
+@keyframes lp-toc-preview-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.4rem) scale(0.94);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes lp-toc-preview-boom {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.42);
+    filter: blur(7px);
+  }
+}
+
+@keyframes lp-toc-preview-burst {
+  0% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.55);
+  }
+}
+
+.lp-toc-preview-in {
+  animation: lp-toc-preview-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lp-toc-preview-boom {
+  animation: lp-toc-preview-boom 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  pointer-events: none;
+}
+
+.lp-toc-preview-boom::before,
+.lp-toc-preview-boom::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 118%;
+  height: 118%;
+  border: 1.5px solid color-mix(in oklab, var(--foreground) 28%, transparent);
+  border-radius: 0.9rem;
+  content: "";
+  pointer-events: none;
+  animation: lp-toc-preview-burst 360ms cubic-bezier(0.15, 0.85, 0.25, 1) both;
+}
+
+.lp-toc-preview-boom::after {
+  width: 136%;
+  height: 136%;
+  border-color: color-mix(in oklab, var(--primary) 35%, transparent);
+  animation-delay: 40ms;
+}
+
+.lp-toc-preview-stage {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-toc-preview-in,
+  .lp-toc-preview-boom,
+  .lp-toc-preview-boom::before,
+  .lp-toc-preview-boom::after {
+    animation: none;
+  }
 }

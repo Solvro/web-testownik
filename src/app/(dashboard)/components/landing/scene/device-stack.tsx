@@ -34,6 +34,7 @@ export function DeviceStack({
   laptopContent,
   tabletContent,
   phoneContent,
+  onHostsAttached,
 }: {
   className?: string;
   /** Capture harness: hold the still cover and hide every live surface. */
@@ -42,13 +43,15 @@ export function DeviceStack({
   laptopContent: ReactNode;
   tabletContent: ReactNode;
   phoneContent: ReactNode;
+  /** Called once CSS3DRenderer has attached the portal hosts. */
+  onHostsAttached?: () => void;
 }): React.JSX.Element {
   const containerReference = useRef<HTMLDivElement>(null);
   const canvasReference = useRef<HTMLCanvasElement>(null);
+  const coverReference = useRef<HTMLDivElement>(null);
   const [hosts, setHosts] = useState<DeviceStackHosts | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
-  const [coverRect, setCoverRect] = useState<React.CSSProperties | null>(null);
 
   // The cover is a still of this very model, laid out by the same solver the
   // camera uses, so the hand-off to the live scene is a pure cross-fade with
@@ -60,17 +63,16 @@ export function DeviceStack({
     }
 
     const place = (): void => {
+      const cover = coverReference.current;
       const { width, height } = container.getBoundingClientRect();
-      if (width === 0 || height === 0) {
+      if (cover === null || width === 0 || height === 0) {
         return;
       }
       const rect = laptopScreenRect(width, height);
-      setCoverRect({
-        left: `${(rect.left + rect.width / 2).toFixed(2)}px`,
-        top: `${rect.top.toFixed(2)}px`,
-        width: `${rect.width.toFixed(2)}px`,
-        height: `${rect.height.toFixed(2)}px`,
-      });
+      cover.style.left = `${(rect.left + rect.width / 2).toFixed(2)}px`;
+      cover.style.top = `${rect.top.toFixed(2)}px`;
+      cover.style.width = `${rect.width.toFixed(2)}px`;
+      cover.style.height = `${rect.height.toFixed(2)}px`;
     };
 
     const observer = new ResizeObserver(place);
@@ -113,6 +115,7 @@ export function DeviceStack({
           signal: controller.signal,
           onHostsAttached: () => {
             setHosts(screenHosts);
+            onHostsAttached?.();
           },
           onReady: () => {
             setIsReady(true);
@@ -166,7 +169,7 @@ export function DeviceStack({
       tablet.remove();
       phone.remove();
     };
-  }, [pixelRatio]);
+  }, [onHostsAttached, pixelRatio]);
 
   return (
     <div
@@ -191,8 +194,8 @@ export function DeviceStack({
        * closed pose, the field of view or the framing constants change.
        */}
       <div
+        ref={coverReference}
         aria-hidden="true"
-        style={coverRect ?? undefined}
         className={cn(
           "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[63.42%] w-[89.35cqh] -translate-x-1/2",
           "bg-[url(/models/testownik-device-stack-cover-light-v8.webp)] bg-size-[100%_100%]",

@@ -22,7 +22,7 @@ export function Team({
   return (
     <section
       id="team"
-      className="bg-secondary w-full px-4 py-16 sm:px-[max(1.5rem,calc((100vw-88rem)/2))]"
+      className="bg-background w-full scroll-mt-4 px-4 py-16 sm:px-[max(1.5rem,calc((100vw-96rem)/2))]"
     >
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)] lg:items-end">
         <div>

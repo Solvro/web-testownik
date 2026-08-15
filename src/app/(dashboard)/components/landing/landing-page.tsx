@@ -9,10 +9,9 @@ import { useGuestStart } from "./hooks/use-guest-start";
 import { useHeroProgress } from "./hooks/use-hero-progress";
 import { landingFontVariables } from "./landing-fonts";
 import "./landing.css";
-import { Capabilities } from "./sections/capabilities";
 import { Finale } from "./sections/finale";
 import { Hero } from "./sections/hero";
-import { Manifesto } from "./sections/manifesto";
+import { LandingTableOfContents } from "./sections/landing-table-of-contents";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
 import { Timeline } from "./sections/timeline";
@@ -46,14 +45,13 @@ export function LandingPage({
         landingFontVariables,
       )}
     >
+      <LandingTableOfContents />
       <Hero
         heroReference={heroReference}
         isStarting={isStarting}
         onStart={start}
       />
-      <Manifesto />
       <ProductShowcase />
-      <Capabilities />
       <Timeline />
       <Team contributors={contributors} />
       <Finale isStarting={isStarting} onStart={start} />

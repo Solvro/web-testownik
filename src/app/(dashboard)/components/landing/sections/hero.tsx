@@ -1,14 +1,12 @@
 "use client";
 
-import { ArrowRight, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import { HeroBubble } from "../components/hero-bubble";
-import { LandingButton } from "../components/landing-button";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS } from "../hero-progress";
 import { DeviceScene } from "../scene/device-scene";
@@ -25,11 +23,6 @@ const copyStyle: CSSProperties = {
   transform: `translateY(calc(${HERO_PROGRESS} * -4rem))`,
 };
 
-const actionStyle: CSSProperties = {
-  opacity: `clamp(0, calc(${HERO_PROGRESS} * 4 - 2.4), 1)`,
-  transform: `translateY(calc((1 - ${HERO_PROGRESS}) * 2rem))`,
-};
-
 const progressBarStyle: CSSProperties = {
   transform: `scaleX(${HERO_PROGRESS})`,
 };
@@ -43,14 +36,11 @@ export function Hero({
   isStarting: boolean;
   onStart: () => void;
 }): React.JSX.Element {
-  // Hovering a device shrinks the droplet so it stops fighting the UI the
-  // visitor is reading through it.
-  const [isSatelliteHovered, setIsSatelliteHovered] = useState(false);
-
   return (
     <section
+      id="start"
       ref={heroReference}
-      className="relative h-[270vh] min-h-[145rem] [--landing-hero-progress:0] sm:h-[300vh] sm:min-h-[190rem]"
+      className="relative h-[270vh] min-h-[145rem] scroll-mt-4 [--landing-hero-progress:0] sm:h-[300vh] sm:min-h-[190rem]"
     >
       <div className="sticky top-0 h-[100svh] min-h-[38rem] overflow-hidden sm:min-h-[42rem]">
         {/*
@@ -58,22 +48,10 @@ export function Hero({
          * above the header it refracts while the whole bubble still stays
          * beneath the device layer.
          */}
-        <HeroBubble
-          compact={isSatelliteHovered}
-          className="lp-bubble-capture absolute! inset-0 z-1"
-        >
+        <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">
           <LandingNav isStarting={isStarting} onStart={onStart} />
 
           <div className="absolute inset-x-0 top-[4.5rem] bottom-0 sm:top-[5.3rem]">
-            <span
-              aria-hidden="true"
-              className="border-primary/30 pointer-events-none absolute -top-100 -right-64 z-[-1] size-[52rem] rounded-full border"
-            />
-            <span
-              aria-hidden="true"
-              className="border-primary/30 pointer-events-none absolute -bottom-120 -left-88 z-[-1] size-[58rem] rounded-full border"
-            />
-
             <div
               style={copyStyle}
               className="absolute top-6 left-4 z-10 max-w-[calc(100vw-2rem)] sm:top-[clamp(2rem,5vh,4rem)] sm:left-[clamp(1.5rem,4vw,4.5rem)] sm:max-w-[min(64rem,82vw)]"
@@ -105,7 +83,7 @@ export function Hero({
             </div>
 
             <a
-              href="#product"
+              href="#features"
               className={cn(
                 "text-muted-foreground absolute right-8 bottom-[1.15rem] z-20 hidden items-center gap-[0.45rem] rounded-xs text-[0.66rem] font-bold tracking-[0.1em] uppercase sm:flex",
                 FOCUS_RING,
@@ -127,7 +105,7 @@ export function Hero({
          * stays sharp and the droplet passes underneath.
          */}
         <div className="pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30">
-          <DeviceScene onSatelliteHoverChange={setIsSatelliteHovered} />
+          <DeviceScene />
         </div>
       </div>
     </section>
