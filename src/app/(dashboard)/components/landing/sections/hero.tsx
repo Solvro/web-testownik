@@ -1,13 +1,12 @@
 "use client";
 
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import { HeroBubble } from "../components/hero-bubble";
-import { LandingButton } from "../components/landing-button";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS } from "../hero-progress";
 import { DeviceScene } from "../scene/device-scene";
@@ -22,11 +21,6 @@ import { LandingNav } from "./landing-nav";
 const copyStyle: CSSProperties = {
   opacity: `clamp(0, calc(1 - ${HERO_PROGRESS} * 3.8), 1)`,
   transform: `translateY(calc(${HERO_PROGRESS} * -4rem))`,
-};
-
-const actionStyle: CSSProperties = {
-  opacity: `clamp(0, calc(${HERO_PROGRESS} * 4 - 2.4), 1)`,
-  transform: `translateY(calc((1 - ${HERO_PROGRESS}) * 2rem))`,
 };
 
 const progressBarStyle: CSSProperties = {

@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { HERO_PROGRESS } from "../hero-progress";
 import { wordmarkDark, wordmarkLight } from "../logos";
 import { setSatelliteHovered } from "../satellite-hover";
-import { DeviceStack } from "./device-stack";
 import type { DeviceQuizControls } from "./device-screen-content";
+import { DeviceStack } from "./device-stack";
 import { SCENE_CLASS } from "./scene-classes";
 
 type DeviceScreenModule = typeof import("./device-screen-content");
@@ -65,104 +65,103 @@ function useQuizPreviewState(): DeviceQuizControls {
   };
 }
 
-const DeviceSceneBackdrop = memo(
-  function DeviceSceneBackdrop(): React.JSX.Element {
-    return (
-      <>
-        <div
-          aria-hidden="true"
-          style={glowStyle}
-          className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] sm:block"
-        />
-        <div
-          aria-hidden="true"
-          style={openLogoStyle}
-          className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 hidden w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms] sm:block"
-        >
-          <Image
-            src={wordmarkLight}
-            alt=""
-            className="block h-auto w-full dark:hidden"
-          />
-          <Image
-            src={wordmarkDark}
-            alt=""
-            className="hidden h-auto w-full dark:block"
-          />
-        </div>
-      </>
-    );
-  },
-);
-
-const InteractiveDeviceStack = memo(function InteractiveDeviceStack({
-  captureLoadingCover,
-  capturePixelRatio,
-}: {
-  captureLoadingCover?: boolean;
-  capturePixelRatio?: number;
-}): React.JSX.Element {
-  const [hostsAttached, setHostsAttached] = useState(false);
-  const screens = useDeviceScreenModule(hostsAttached);
-  const quiz = useQuizPreviewState();
-
-  const handleHostsAttached = useCallback((): void => {
-    setHostsAttached(true);
-  }, []);
-
+const DeviceSceneBackdrop = memo((): React.JSX.Element => {
   return (
-    <DeviceStack
-      coverOnly={captureLoadingCover}
-      pixelRatio={capturePixelRatio}
-      onHostsAttached={handleHostsAttached}
-      laptopContent={
-        screens === null ? null : <screens.DeviceLaptopScreen {...quiz} />
-      }
-      tabletContent={screens === null ? null : <screens.DeviceTabletScreen />}
-      phoneContent={
-        screens === null ? null : <screens.DevicePhoneScreen {...quiz} />
-      }
-    />
+    <>
+      <div
+        aria-hidden="true"
+        style={glowStyle}
+        className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] sm:block"
+      />
+      <div
+        aria-hidden="true"
+        style={openLogoStyle}
+        className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 hidden w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms] sm:block"
+      >
+        <Image
+          src={wordmarkLight}
+          alt=""
+          className="block h-auto w-full dark:hidden"
+        />
+        <Image
+          src={wordmarkDark}
+          alt=""
+          className="hidden h-auto w-full dark:block"
+        />
+      </div>
+    </>
   );
 });
+DeviceSceneBackdrop.displayName = "DeviceSceneBackdrop";
 
-const MobilePhonePreview = memo(
-  function MobilePhonePreview(): React.JSX.Element {
-    const screens = useDeviceScreenModule(true);
+const InteractiveDeviceStack = memo(
+  ({
+    captureLoadingCover,
+    capturePixelRatio,
+  }: {
+    captureLoadingCover?: boolean;
+    capturePixelRatio?: number;
+  }): React.JSX.Element => {
+    const [hostsAttached, setHostsAttached] = useState(false);
+    const screens = useDeviceScreenModule(hostsAttached);
     const quiz = useQuizPreviewState();
 
+    const handleHostsAttached = useCallback((): void => {
+      setHostsAttached(true);
+    }, []);
+
     return (
-      <div
-        style={mobilePhoneStyle}
-        className={cn(
-          SCENE_CLASS.mobilePhone,
-          "pointer-events-auto absolute top-1/2 left-1/2 z-7 block h-[868px] w-[428px] sm:hidden",
-        )}
-      >
-        <div className="device device-iphone-14-pro">
-          <div className="device-frame">
-            <div
-              className={cn(
-                "device-screen bg-background overflow-hidden",
-                "[&>*]:size-full",
-              )}
-            >
-              {screens === null ? null : (
-                <screens.DevicePhoneScreen {...quiz} />
-              )}
-            </div>
-          </div>
-          <div className="device-stripe" />
-          <div className="device-header" />
-          <div className="device-sensors" />
-          <div className="device-btns" />
-          <div className="device-power" />
-          <div className="device-home" />
-        </div>
-      </div>
+      <DeviceStack
+        coverOnly={captureLoadingCover}
+        pixelRatio={capturePixelRatio}
+        onHostsAttached={handleHostsAttached}
+        laptopContent={
+          screens === null ? null : <screens.DeviceLaptopScreen {...quiz} />
+        }
+        tabletContent={screens === null ? null : <screens.DeviceTabletScreen />}
+        phoneContent={
+          screens === null ? null : <screens.DevicePhoneScreen {...quiz} />
+        }
+      />
     );
   },
 );
+InteractiveDeviceStack.displayName = "InteractiveDeviceStack";
+
+const MobilePhonePreview = memo((): React.JSX.Element => {
+  const screens = useDeviceScreenModule(true);
+  const quiz = useQuizPreviewState();
+
+  return (
+    <div
+      style={mobilePhoneStyle}
+      className={cn(
+        SCENE_CLASS.mobilePhone,
+        "pointer-events-auto absolute top-1/2 left-1/2 z-7 block h-[868px] w-[428px] sm:hidden",
+      )}
+    >
+      <div className="device device-iphone-14-pro">
+        <div className="device-frame">
+          <div
+            className={cn(
+              "device-screen bg-background overflow-hidden",
+              "[&>*]:size-full",
+            )}
+          >
+            {screens === null ? null : <screens.DevicePhoneScreen {...quiz} />}
+          </div>
+        </div>
+        <div className="device-stripe" />
+        <div className="device-header" />
+        <div className="device-sensors" />
+        <div className="device-btns" />
+        <div className="device-power" />
+        <div className="device-home" />
+      </div>
+    </div>
+  );
+});
+MobilePhonePreview.displayName = "MobilePhonePreview";
 
 /**
  * The hero's device composition: a MacBook that opens on scroll with an iPad

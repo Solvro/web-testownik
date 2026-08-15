@@ -1,5 +1,5 @@
-import { Group, Vector3 } from "three";
-import type { Mesh, Object3D } from "three";
+import { Vector3 } from "three";
+import type { Group, Mesh, Object3D } from "three";
 import { USDLoader } from "three/examples/jsm/loaders/USDLoader.js";
 
 import {
@@ -27,19 +27,6 @@ export interface DeviceModels {
   laptop: Object3D;
   tablet: Group;
   phone: Group;
-}
-
-function isolateProduct(root: Object3D, productName: string): Group {
-  root.updateMatrixWorld(true);
-  const product = root.getObjectByName(productName);
-  if (product === undefined) {
-    throw new Error(`Apple product part ${productName} was not found.`);
-  }
-
-  const isolated = new Group();
-  isolated.attach(product);
-  disposeObject(root);
-  return isolated;
 }
 
 /**

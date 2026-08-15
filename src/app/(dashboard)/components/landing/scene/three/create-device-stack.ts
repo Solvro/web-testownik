@@ -1,7 +1,7 @@
 import { Group, MathUtils } from "three";
 import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
-import { getHeroProgress, HERO_PROGRESS_EVENT } from "../../hero-progress";
+import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
 import { SATELLITE_POSES, createChoreography } from "./choreography";
 import { createTabletContactShadow } from "./contact-shadow";
 import {
@@ -28,6 +28,9 @@ import { createStage } from "./stage";
 
 /** Synthetic pivot the lid is re-parented onto, measured from the model. */
 const HINGE_POSITION = { x: 0, y: -0.09, z: -10.78 } as const;
+
+const getCurrentScrollProgress = (): number =>
+  MathUtils.clamp(getHeroProgress(), 0, 1);
 
 /**
  * Logical widths of the DOM surfaces mapped onto each display. Heights follow
@@ -190,11 +193,8 @@ export async function createDeviceStack({
   });
 
   // --- Frame loop ---------------------------------------------------------
-  const currentScrollProgress = (): number =>
-    MathUtils.clamp(getHeroProgress(), 0, 1);
-
   const progressForFrame = (): number => {
-    const target = currentScrollProgress();
+    const target = getCurrentScrollProgress();
     if (progressMode === "loading") {
       return 0;
     }
@@ -398,7 +398,7 @@ export async function createDeviceStack({
     if (stableSurfaceFrames >= 2) {
       readinessFrame = 0;
       if (!disposed) {
-        const targetProgress = currentScrollProgress();
+        const targetProgress = getCurrentScrollProgress();
         const shouldCatchUp =
           targetProgress > CATCH_UP_THRESHOLD &&
           !window.matchMedia("(prefers-reduced-motion: reduce)").matches;

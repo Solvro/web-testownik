@@ -10,11 +10,8 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  AiExplanationCard,
-  AiHintCard,
-  type AnswerHint,
-} from "@/components/ai/ai-explain-card";
+import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
+import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector";
 import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list";
@@ -716,7 +713,7 @@ export function QuizDemo(): React.JSX.Element {
           isHistoryQuestion={false}
           answerHints={answerHints}
         />
-        {aiOpen && staticAi !== undefined ? (
+        {aiOpen ? (
           checked ? (
             <AiExplanationCard
               question={question}

@@ -76,23 +76,23 @@ function MemberPortrait({
   member: TeamMember;
 }): React.JSX.Element {
   const fallbackUrl = memberUiAvatarUrl(member.name);
-  const [src, setSrc] = useState(imageUrl ?? fallbackUrl);
+  const [source, setSource] = useState(imageUrl ?? fallbackUrl);
 
   useEffect(() => {
-    setSrc(imageUrl ?? fallbackUrl);
+    setSource(imageUrl ?? fallbackUrl);
   }, [fallbackUrl, imageUrl]);
 
   return (
     <Image
-      src={src}
+      src={source}
       width={MEMBER_PORTRAIT_SIZE}
       height={MEMBER_PORTRAIT_SIZE}
       alt=""
       unoptimized
       className="size-full object-cover"
       onError={() => {
-        if (src !== fallbackUrl) {
-          setSrc(fallbackUrl);
+        if (source !== fallbackUrl) {
+          setSource(fallbackUrl);
         }
       }}
     />

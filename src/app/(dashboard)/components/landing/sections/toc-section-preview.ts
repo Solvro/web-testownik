@@ -66,9 +66,6 @@ function snapshotCanvases(source: HTMLElement, clone: HTMLElement): void {
 
   for (const [index, sourceCanvas] of sourceCanvases.entries()) {
     const target = cloneCanvases[index];
-    if (target === undefined) {
-      continue;
-    }
 
     const width = Math.max(
       1,
@@ -167,12 +164,15 @@ export function invalidateTocSectionPreviews(): void {
 /** Warm peeks one section at a time during idle so the main thread stays free. */
 export function warmTocSectionPreviews(sectionIds: readonly string[]): void {
   let index = 0;
+  const requestIdleCallback = Reflect.get(window, "requestIdleCallback") as
+    | ((callback: IdleRequestCallback, options?: IdleRequestOptions) => number)
+    | undefined;
 
   const step = (): void => {
     while (index < sectionIds.length) {
       const sectionId = sectionIds[index];
       index += 1;
-      if (sectionId === undefined || previewCache.has(sectionId)) {
+      if (previewCache.has(sectionId)) {
         continue;
       }
       getTocSectionPreview(sectionId);
@@ -183,16 +183,16 @@ export function warmTocSectionPreviews(sectionIds: readonly string[]): void {
       return;
     }
 
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(step, { timeout: 1200 });
+    if (requestIdleCallback !== undefined) {
+      requestIdleCallback(step, { timeout: 1200 });
       return;
     }
-    window.setTimeout(step, 180);
+    globalThis.setTimeout(step, 180);
   };
 
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(step, { timeout: 1600 });
+  if (requestIdleCallback !== undefined) {
+    requestIdleCallback(step, { timeout: 1600 });
     return;
   }
-  window.setTimeout(step, 500);
+  globalThis.setTimeout(step, 500);
 }

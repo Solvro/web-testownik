@@ -91,7 +91,6 @@ export function Timeline(): React.JSX.Element {
       }
       observer.disconnect();
     };
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state -- scroll fill + IO reveal
   }, []);
 
   return (

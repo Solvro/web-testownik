@@ -13,12 +13,12 @@ import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import {
-  getTocSectionPreview,
-  invalidateTocSectionPreviews,
   TOC_PREVIEW_GAP,
   TOC_PREVIEW_INNER_HEIGHT,
   TOC_PREVIEW_INNER_WIDTH,
   TOC_PREVIEW_WIDTH,
+  getTocSectionPreview,
+  invalidateTocSectionPreviews,
   warmTocSectionPreviews,
 } from "./toc-section-preview";
 
@@ -358,7 +358,7 @@ export function LandingTableOfContents(): React.JSX.Element {
 
     return () => {
       if (stage.parentElement === mount) {
-        mount.removeChild(stage);
+        stage.remove();
       }
     };
   }, [previewId]);
@@ -374,7 +374,7 @@ export function LandingTableOfContents(): React.JSX.Element {
         return;
       }
       const navigation = navigationReference.current;
-      if (navigation !== null && navigation.contains(target)) {
+      if (navigation?.contains(target) === true) {
         return;
       }
       if (
@@ -497,63 +497,62 @@ export function LandingTableOfContents(): React.JSX.Element {
         })}
       </ol>
 
-      {portalReady &&
-        previewsEnabled &&
-        previewMounted &&
-        createPortal(
-          <div
-            aria-hidden="true"
-            data-landing-toc-preview=""
-            onPointerEnter={() => {
-              if (!previewBooming) {
-                clearPreviewTimers();
-              }
-            }}
-            onPointerLeave={scheduleHidePreview}
-            className="pointer-events-none fixed z-[120]"
-            style={{
-              top: previewTop,
-              left: previewLeft,
-              width: TOC_PREVIEW_WIDTH,
-              transform: "translateY(-50%)",
-              pointerEvents: previewBooming ? "none" : "auto",
-            }}
-          >
+      {portalReady && previewsEnabled && previewMounted
+        ? createPortal(
             <div
-              className={cn(
-                "relative",
-                previewBooming ? "lp-toc-preview-boom" : "lp-toc-preview-in",
-              )}
+              aria-hidden="true"
+              data-landing-toc-preview=""
+              onPointerEnter={() => {
+                if (!previewBooming) {
+                  clearPreviewTimers();
+                }
+              }}
+              onPointerLeave={scheduleHidePreview}
+              className="pointer-events-none fixed z-[120]"
+              style={{
+                top: previewTop,
+                left: previewLeft,
+                width: TOC_PREVIEW_WIDTH,
+                transform: "translateY(-50%)",
+                pointerEvents: previewBooming ? "none" : "auto",
+              }}
             >
-              <div className="border-border bg-background relative rounded-xl border p-2 shadow-[0_18px_50px_-28px_oklch(0_0_0/0.55)]">
-                <span className="border-border bg-background absolute top-1/2 -left-[6px] size-2.5 -translate-y-1/2 rotate-45 border-t border-l" />
-                <div
-                  className="border-border bg-muted/30 relative overflow-hidden rounded-lg border"
-                  style={{
-                    width: TOC_PREVIEW_INNER_WIDTH,
-                    height: TOC_PREVIEW_INNER_HEIGHT,
-                  }}
-                >
+              <div
+                className={cn(
+                  "relative",
+                  previewBooming ? "lp-toc-preview-boom" : "lp-toc-preview-in",
+                )}
+              >
+                <div className="border-border bg-background relative rounded-xl border p-2 shadow-[0_18px_50px_-28px_oklch(0_0_0/0.55)]">
+                  <span className="border-border bg-background absolute top-1/2 -left-[6px] size-2.5 -translate-y-1/2 rotate-45 border-t border-l" />
                   <div
-                    ref={previewMountReference}
-                    className="absolute top-0 left-0 origin-top-left"
-                  />
-                </div>
-                <div className="mt-2 flex items-center gap-2 px-0.5">
-                  <span className="font-landing-mono text-muted-foreground text-[0.62rem] tabular-nums">
-                    {previewIndex >= 0
-                      ? String(previewIndex + 1).padStart(2, "0")
-                      : "00"}
-                  </span>
-                  <span className="font-landing text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
-                    {previewSection?.label ?? ""}
-                  </span>
+                    className="border-border bg-muted/30 relative overflow-hidden rounded-lg border"
+                    style={{
+                      width: TOC_PREVIEW_INNER_WIDTH,
+                      height: TOC_PREVIEW_INNER_HEIGHT,
+                    }}
+                  >
+                    <div
+                      ref={previewMountReference}
+                      className="absolute top-0 left-0 origin-top-left"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 px-0.5">
+                    <span className="font-landing-mono text-muted-foreground text-[0.62rem] tabular-nums">
+                      {previewIndex >= 0
+                        ? String(previewIndex + 1).padStart(2, "0")
+                        : "00"}
+                    </span>
+                    <span className="font-landing text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
+                      {previewSection.label}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+            </div>,
+            document.body,
+          )
+        : null}
     </nav>
   );
 }
