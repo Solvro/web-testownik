@@ -16,7 +16,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 const hankenGrotesk = Hanken_Grotesk({
-  weight: ["100", "300", "400"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -32,11 +31,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: env.NEXT_PUBLIC_SITE_URL,
   },
+  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   robots: "index, follow",
-  ...(process.env.COOLIFY_URL != null &&
-    process.env.COOLIFY_URL !== "" && {
-      metadataBase: new URL(process.env.COOLIFY_URL),
-    }),
   openGraph: {
     title: "Testownik Solvro - Twoje narzędzie do nauki",
     description:

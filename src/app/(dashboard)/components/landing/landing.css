@@ -1,0 +1,273 @@
+@import "devices.css/dist/devices.min.css";
+
+/*
+ * Rules for elements outside the landing's JSX and DOM created by CanvasUI,
+ * CSS3DRenderer, and devices.css. Everything rendered by React stays in
+ * Tailwind utilities.
+ */
+
+body:has([data-landing-page]) {
+  background: var(--background);
+  scrollbar-color: var(--primary) var(--background);
+  scrollbar-width: thin;
+}
+
+body:has([data-landing-page])::-webkit-scrollbar {
+  width: 0.48rem;
+}
+
+body:has([data-landing-page])::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+body:has([data-landing-page])::-webkit-scrollbar-thumb {
+  border: 2px solid var(--background);
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+body:has([data-landing-page]) #container {
+  max-width: none;
+  gap: 0;
+  padding: 0;
+}
+
+body:has([data-landing-page]) #container > main {
+  width: 100%;
+}
+
+body:has([data-landing-page]) #container > [data-app-navbar],
+body:has([data-landing-page]) [data-app-footer],
+body:has([data-landing-page]) #container > [role="alert"],
+body:has([data-landing-page]) #container > [data-sonner-toaster] {
+  display: none;
+}
+
+/*
+ * CanvasUI samples RGB and discards alpha, so the captured Bubble subtree needs
+ * an explicit background or transparent pixels become black.
+ */
+.lp-bubble-capture > canvas > div,
+.lp-bubble-capture > div:not([class]),
+.lp-bubble-capture > div {
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px),
+    var(--background) !important;
+  background-size: 5rem 5rem !important;
+}
+
+.lp-bubble-capture > canvas:last-of-type {
+  z-index: 80;
+}
+
+/* CanvasUI appends Glass's output canvas after the content it refracts. */
+.lp-device-glass > canvas:last-child {
+  z-index: 4;
+}
+
+/*
+ * devices.css frames keep their native pixel dimensions. Scale the complete
+ * frame instead of resizing its box.
+ */
+.lp-mobile-phone .device {
+  transform: scale(0.62);
+  transform-origin: 50% 50%;
+}
+
+.lp-screen-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms linear;
+}
+
+[data-model-ready="true"] .lp-screen-layer {
+  opacity: 1;
+}
+
+[data-cover-only="true"] .lp-screen-layer {
+  opacity: 0 !important;
+}
+
+.lp-screen-laptop,
+.lp-screen-tablet,
+.lp-screen-phone {
+  overflow: hidden;
+  background: var(--background);
+  backface-visibility: hidden;
+  pointer-events: auto;
+}
+
+.lp-screen-laptop > *,
+.lp-screen-tablet > *,
+.lp-screen-phone > * {
+  width: 100%;
+  height: 100%;
+}
+
+.lp-screen-laptop {
+  border-radius: 1rem 1rem 0 0;
+}
+
+.lp-screen-laptop[inert],
+.lp-screen-laptop[inert] * {
+  pointer-events: none !important;
+}
+
+/* MacBook notch and camera. */
+.lp-screen-laptop::after {
+  position: absolute;
+  z-index: 30;
+  top: -1px;
+  left: 50%;
+  width: 116px;
+  height: 20px;
+  border-radius: 0 0 8px 8px;
+  background: oklch(0.025 0 0);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.lp-screen-laptop::before {
+  position: absolute;
+  z-index: 31;
+  top: 8px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 42% 38%,
+    oklch(0.34 0.03 255),
+    oklch(0.07 0.015 255) 48%,
+    oklch(0.015 0 0) 72%
+  );
+  box-shadow: 0 0 0 1px oklch(1 0 0 / 5%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.lp-screen-tablet,
+.lp-screen-phone {
+  transition: opacity 120ms linear;
+}
+
+.lp-screen-tablet {
+  border-radius: 1.15rem;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 38%);
+}
+
+.lp-screen-phone {
+  border-radius: 3.35rem;
+  box-shadow: inset 0 0 0 2px rgb(0 0 0 / 48%);
+}
+
+/* iPhone Dynamic Island. */
+.lp-screen-phone::after {
+  position: absolute;
+  z-index: 20;
+  top: 13px;
+  left: 50%;
+  width: 104px;
+  height: 36px;
+  border-radius: 999px;
+  background: oklch(0.08 0 0);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 5%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* TOC section peek — arrive soft, leave with a quick pop. */
+@keyframes lp-toc-preview-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.4rem) scale(0.94);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes lp-toc-preview-boom {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.42);
+    filter: blur(7px);
+  }
+}
+
+@keyframes lp-toc-preview-burst {
+  0% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.55);
+  }
+}
+
+.lp-toc-preview-in {
+  animation: lp-toc-preview-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lp-toc-preview-boom {
+  animation: lp-toc-preview-boom 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  pointer-events: none;
+}
+
+.lp-toc-preview-boom::before,
+.lp-toc-preview-boom::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 118%;
+  height: 118%;
+  border: 1.5px solid color-mix(in oklab, var(--foreground) 28%, transparent);
+  border-radius: 0.9rem;
+  content: "";
+  pointer-events: none;
+  animation: lp-toc-preview-burst 360ms cubic-bezier(0.15, 0.85, 0.25, 1) both;
+}
+
+.lp-toc-preview-boom::after {
+  width: 136%;
+  height: 136%;
+  border-color: color-mix(in oklab, var(--primary) 35%, transparent);
+  animation-delay: 40ms;
+}
+
+.lp-toc-preview-stage {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-toc-preview-in,
+  .lp-toc-preview-boom,
+  .lp-toc-preview-boom::before,
+  .lp-toc-preview-boom::after {
+    animation: none;
+  }
+}
