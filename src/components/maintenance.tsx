@@ -19,7 +19,7 @@ function MaintenanceOverlay() {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
         const response = await fetch(`${API_URL}/status/`);
-        if (response.status !== 503) {
+        if (response.ok) {
           window.location.reload();
         }
       } catch {

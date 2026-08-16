@@ -116,6 +116,18 @@ export class BaseApiService {
   }
 
   /**
+   * Intercept 503 responses and halt execution
+   */
+  private async checkMaintenance(response: Response): Promise<void> {
+    if (response.status === 503 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("backend-maintenance"));
+      return await new Promise<never>(() => {
+        /* empty */
+      });
+    }
+  }
+
+  /**
    * Make HTTP request with fetch
    */
   private async makeRequest<T>(
@@ -143,12 +155,7 @@ export class BaseApiService {
     try {
       let response = await fetch(fullURL, requestOptions);
 
-      if (response.status === 503 && typeof window !== "undefined") {
-        window.dispatchEvent(new Event("backend-maintenance"));
-        return await new Promise<never>(() => {
-          /* empty */
-        });
-      }
+      await this.checkMaintenance(response);
 
       if (response.status === 401) {
         const refreshed = await this.queueTokenRefresh();
@@ -159,6 +166,7 @@ export class BaseApiService {
             ...headers,
           };
           response = await fetch(fullURL, requestOptions);
+          await this.checkMaintenance(response);
         }
       }
 
