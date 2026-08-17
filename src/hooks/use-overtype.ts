@@ -1,5 +1,3 @@
-"use client";
-
 // eslint-disable-next-line import/no-named-as-default
 import OverType from "overtype";
 import type { OverTypeInstance, Theme } from "overtype";
