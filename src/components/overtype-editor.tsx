@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ALargeSmallIcon,
   BoldIcon,
@@ -176,12 +178,18 @@ function OverTypeEditor({
       }
 
       if (isInMathBlock(ta)) {
-        formats.splice(formats.indexOf("inlineMath"), 1);
+        const inlineIndex = formats.indexOf("inlineMath");
+        if (inlineIndex !== -1) {
+          formats.splice(inlineIndex, 1);
+        }
         formats.push("blockMath");
       }
 
       if (isInCodeBlock(ta)) {
-        formats.splice(formats.indexOf("code"), 1);
+        const codeIndex = formats.indexOf("code");
+        if (codeIndex !== -1) {
+          formats.splice(codeIndex, 1);
+        }
         formats.push("blockCode");
       }
 
