@@ -6,6 +6,13 @@ export const ACCOUNT_TYPE = {
 } as const;
 
 export type AccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
+export const ACCOUNT_TYPES = Object.values(ACCOUNT_TYPE) as AccountType[];
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  [ACCOUNT_TYPE.GUEST]: "Gość",
+  [ACCOUNT_TYPE.EMAIL]: "Konto e-mail",
+  [ACCOUNT_TYPE.STUDENT]: "Student",
+  [ACCOUNT_TYPE.LECTURER]: "Wykładowca",
+};
 
 export const ACCOUNT_LEVEL = {
   BASIC: "basic",
@@ -14,6 +21,12 @@ export const ACCOUNT_LEVEL = {
 } as const;
 
 export type AccountLevel = (typeof ACCOUNT_LEVEL)[keyof typeof ACCOUNT_LEVEL];
+export const ACCOUNT_LEVELS = Object.values(ACCOUNT_LEVEL) as AccountLevel[];
+export const ACCOUNT_LEVEL_LABELS: Record<AccountLevel, string> = {
+  [ACCOUNT_LEVEL.BASIC]: "Basic",
+  [ACCOUNT_LEVEL.SILVER]: "Silver",
+  [ACCOUNT_LEVEL.GOLD]: "Gold",
+};
 
 export interface User {
   id: string;
