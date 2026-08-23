@@ -2,12 +2,17 @@ import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    window.innerWidth < MOBILE_BREAKPOINT,
-  );
+export function useIsMobile({
+  hydrationSafe = false,
+}: { hydrationSafe?: boolean } = {}) {
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(() => {
+    if (typeof window === "undefined" || hydrationSafe) {
+      return;
+    }
+    return window.innerWidth < MOBILE_BREAKPOINT;
+  });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const mql = window.matchMedia(
       `(max-width: ${String(MOBILE_BREAKPOINT - 1)}px)`,
     );
@@ -15,6 +20,7 @@ export function useIsMobile() {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
     mql.addEventListener("change", onChange);
+    hydrationSafe && onChange();
     return () => {
       mql.removeEventListener("change", onChange);
     };

@@ -11,7 +11,12 @@ import { AuthorizedAppsList } from "@/components/profile/authorized-apps-list";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
 import { SettingsForm } from "@/components/profile/settings-form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ResponsiveTabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { env } from "@/env";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import {
@@ -125,33 +130,19 @@ export function ProfilePageClient(): React.JSX.Element {
 
   return (
     <div>
-      <Tabs
+      <ResponsiveTabs
         value={activeTab}
         onValueChange={handleTabSelect}
         className="grid items-start gap-2 md:grid-cols-[220px_1fr] md:gap-6"
       >
-        <TabsList className="flex max-w-full justify-start overflow-x-auto overflow-y-hidden md:h-auto md:w-full md:flex-col">
-          <TabsTrigger value="account" className="md:w-full md:justify-start">
-            Konto
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="md:w-full md:justify-start">
-            Ustawienia
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="md:w-full md:justify-start"
-          >
-            Powiadomienia
-          </TabsTrigger>
-          <TabsTrigger
-            value="authorized-apps"
-            className="md:w-full md:justify-start"
-          >
-            Integracje
-          </TabsTrigger>
+        <TabsList className="flex max-w-full justify-start overflow-x-auto overflow-y-hidden md:w-full">
+          <TabsTrigger value="account">Konto</TabsTrigger>
+          <TabsTrigger value="settings">Ustawienia</TabsTrigger>
+          <TabsTrigger value="notifications">Powiadomienia</TabsTrigger>
+          <TabsTrigger value="authorized-apps">Integracje</TabsTrigger>
           <TabsTrigger
             value="privacy-policy"
-            className="hidden md:inline-flex md:w-full md:justify-start"
+            className="hidden md:inline-flex"
             nativeButton={false}
             render={(props) => (
               <Link {...props} href="/privacy-policy" target="_blank">
@@ -159,7 +150,7 @@ export function ProfilePageClient(): React.JSX.Element {
                 <SquareArrowOutUpRightIcon />
               </Link>
             )}
-          ></TabsTrigger>
+          />
         </TabsList>
         <div className="min-w-0 space-y-6">
           <TabsContent value="account" className="space-y-6 md:mt-0">
@@ -167,6 +158,11 @@ export function ProfilePageClient(): React.JSX.Element {
               userData={userData ?? null}
               loading={isUserDataPending || userData == null}
             />
+            <div className="w-full text-center md:hidden">
+              <Link href="/privacy-policy" className="text-sm underline">
+                Polityka prywatności
+              </Link>
+            </div>
           </TabsContent>
           <TabsContent value="settings" className="space-y-6 md:mt-0">
             <SettingsForm
@@ -193,7 +189,7 @@ export function ProfilePageClient(): React.JSX.Element {
             <AuthorizedAppsList />
           </TabsContent>
         </div>
-      </Tabs>
+      </ResponsiveTabs>
     </div>
   );
 }
