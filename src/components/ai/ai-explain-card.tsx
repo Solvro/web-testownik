@@ -1,20 +1,30 @@
 "use client";
 
-import { useCompletion } from "@ai-sdk/react";
 import {
   AlertCircleIcon,
+  Clock3Icon,
+  LifeBuoyIcon,
   RefreshCwIcon,
   SparklesIcon,
   SquareIcon,
   XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { AiModelProviderIcon } from "@/components/ai/ai-model-provider-icon";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { resolveSelectableAiModel } from "@/lib/ai/models";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useAIModels } from "@/hooks/use-ai-models";
+import { useQuestionCompletion } from "@/hooks/use-question-completion";
+import { getAiModelMetadata } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/quiz";
 
@@ -65,136 +75,16 @@ function parseHints(text: string): {
 
 function LoadingDots() {
   return (
-    <div className="flex items-center gap-2 py-3">
+    <div className="flex items-center gap-2 py-1">
       <span className="text-muted-foreground text-xs">Myślę</span>
       <span className="flex gap-1">
-        <span className="bg-primary/50 size-1.5 animate-bounce rounded-full" />
-        <span className="bg-primary/50 size-1.5 animate-bounce rounded-full [animation-delay:150ms]" />
-        <span className="bg-primary/50 size-1.5 animate-bounce rounded-full [animation-delay:300ms]" />
+        <span className="bg-primary/50 size-1.5 animate-pulse rounded-full" />
+        <span className="bg-primary/50 size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
+        <span className="bg-primary/50 size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
       </span>
     </div>
   );
 }
-
-interface CompletionState {
-  completion: string;
-  isLoading: boolean;
-  error: Error | undefined;
-  retryAfter: number | null;
-  handleStart: () => void;
-  stop: () => void;
-}
-
-/* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
-function useQuestionCompletion({
-  api,
-  defaultAiModel,
-  question,
-  onClose,
-}: {
-  api: string;
-  defaultAiModel?: string | null;
-  question: Question;
-  onClose: () => void;
-}): CompletionState {
-  const startedRef = useRef(false);
-  const previousQuestionId = useRef(question.id);
-  const [retryAfter, setRetryAfter] = useState<number | null>(null);
-
-  const fetchWithRateLimitHandling = useCallback<typeof fetch>(
-    async (input, init) => {
-      const response = await fetch(input, init);
-      if (response.status !== 429) {
-        return response;
-      }
-
-      const retryAfterHeader = response.headers.get("Retry-After");
-      const parsedRetryAfter =
-        retryAfterHeader === null
-          ? null
-          : Number.parseInt(retryAfterHeader, 10);
-      const nextRetryAfter =
-        parsedRetryAfter === null || Number.isNaN(parsedRetryAfter)
-          ? 60
-          : Math.max(1, parsedRetryAfter);
-
-      setRetryAfter(nextRetryAfter);
-
-      return new Response(
-        `Osiągnięto limit zapytań AI. Spróbuj ponownie za ${nextRetryAfter.toString()} s.`,
-        {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        },
-      );
-    },
-    [],
-  );
-
-  const { completion, isLoading, error, complete, stop } = useCompletion({
-    api,
-    streamProtocol: "text",
-    fetch: fetchWithRateLimitHandling,
-    onError: () => {
-      startedRef.current = false;
-    },
-  });
-
-  const startCompletion = useCallback(() => {
-    setRetryAfter(null);
-    startedRef.current = true;
-    void complete("generate", {
-      body: {
-        question,
-        config: {
-          modelName: resolveSelectableAiModel(defaultAiModel),
-        },
-      },
-    });
-  }, [complete, defaultAiModel, question]);
-
-  const handleStart = useCallback(() => {
-    if (retryAfter !== null && retryAfter > 0) {
-      return;
-    }
-    startCompletion();
-  }, [retryAfter, startCompletion]);
-
-  useEffect(() => {
-    if (previousQuestionId.current !== question.id) {
-      previousQuestionId.current = question.id;
-      onClose();
-    }
-  }, [question.id, onClose]);
-
-  /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
-  useEffect(() => {
-    if (!startedRef.current) {
-      startCompletion();
-    }
-  }, [startCompletion]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
-
-  useEffect(() => {
-    if (retryAfter === null || retryAfter <= 0) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setRetryAfter((current) =>
-        current === null || current <= 1 ? 0 : current - 1,
-      );
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [retryAfter]);
-
-  return { completion, isLoading, error, retryAfter, handleStart, stop };
-}
-/* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
 function AiCardShell({
   title,
@@ -207,18 +97,41 @@ function AiCardShell({
   onClose,
   children,
   emphasized = false,
+  retryDisabled = false,
+  cooldown = false,
+  model,
+  fallback,
 }: {
   title: string;
   isLoading: boolean;
   error: Error | undefined;
   errorMessage: string | undefined;
   retryAfter: number | null;
+  retryDisabled?: boolean;
+  cooldown?: boolean;
+  model: string | null;
+  fallback: boolean;
   onRetry: () => void;
   onStop: () => void;
   onClose: () => void;
   children: React.ReactNode;
   emphasized?: boolean;
 }) {
+  const retryBlocked = retryDisabled || (retryAfter !== null && retryAfter > 0);
+  const { data: aiModels } = useAIModels();
+  const modelMetadata =
+    model === null
+      ? null
+      : getAiModelMetadata(
+          [
+            ...(aiModels?.models ?? []),
+            ...(aiModels?.fallback_model === null ||
+            aiModels?.fallback_model === undefined
+              ? []
+              : [aiModels.fallback_model]),
+          ],
+          model,
+        );
   return (
     <Card
       className={cn(
@@ -229,7 +142,7 @@ function AiCardShell({
     >
       <CardHeader className="pb-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium">
             <div className="bg-primary/10 flex size-6 items-center justify-center rounded-full">
               <SparklesIcon
                 className={cn(
@@ -238,31 +151,75 @@ function AiCardShell({
                 )}
               />
             </div>
-            {title}
+            <span>{title}</span>
+            {model === null ? null : (
+              <Badge variant="secondary" className="max-w-44 font-normal">
+                {modelMetadata === null ? null : (
+                  <AiModelProviderIcon
+                    provider={modelMetadata.provider}
+                    className="size-3"
+                  />
+                )}
+                <span className="truncate">
+                  {modelMetadata?.label ?? model}
+                </span>
+              </Badge>
+            )}
+            {model !== null && fallback ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label="Model zapasowy"
+                      className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex size-6 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2"
+                    />
+                  }
+                >
+                  <LifeBuoyIcon className="size-3.5" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  Model zapasowy używany po wykorzystaniu głównej puli.
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
           <div className="flex items-center gap-1">
             {isLoading ? (
               <Button
                 variant="ghost"
                 size="icon-sm"
+                className="size-10 sm:size-8"
                 onClick={onStop}
                 aria-label="Zatrzymaj"
               >
                 <SquareIcon className="size-3 fill-current" />
               </Button>
             ) : (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={onRetry}
-                aria-label="Wygeneruj ponownie"
-              >
-                <RefreshCwIcon className="size-3.5" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={retryBlocked ? undefined : onRetry}
+                      aria-disabled={retryBlocked}
+                      aria-label="Wygeneruj ponownie"
+                      className="size-10 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:size-8"
+                    />
+                  }
+                >
+                  <RefreshCwIcon className="size-3.5" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {retryBlocked ? errorMessage : "Wygeneruj ponownie"}
+                </TooltipContent>
+              </Tooltip>
             )}
             <Button
               variant="ghost"
               size="icon-sm"
+              className="size-10 sm:size-8"
               onClick={onClose}
               aria-label="Zamknij"
             >
@@ -273,21 +230,19 @@ function AiCardShell({
       </CardHeader>
       <CardContent>
         {error === undefined ? null : (
-          <div className="flex items-center gap-3 py-2">
-            <AlertCircleIcon className="text-destructive size-4 shrink-0" />
-            <span className="text-muted-foreground text-xs">
-              {errorMessage}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRetry}
-              disabled={retryAfter !== null && retryAfter > 0}
-              className="ml-auto"
-            >
-              <RefreshCwIcon className="size-3" />
-              Ponów
-            </Button>
+          <div
+            role="status"
+            className={cn(
+              "flex items-center gap-2.5 py-2 text-xs",
+              cooldown ? "text-muted-foreground" : "text-destructive",
+            )}
+          >
+            {cooldown ? (
+              <Clock3Icon className="size-4 shrink-0" />
+            ) : (
+              <AlertCircleIcon className="size-4 shrink-0" />
+            )}
+            <span className="font-medium tabular-nums">{errorMessage}</span>
           </div>
         )}
         {children}
@@ -312,16 +267,26 @@ export function AiHintCard({
 }: AiHintCardProps) {
   const lastHintsRef = useRef<string>("");
   /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
-  const { completion, isLoading, error, retryAfter, handleStart, stop } =
-    useQuestionCompletion({
-      api: "/ai/hint",
-      defaultAiModel,
-      question,
-      onClose,
-    });
+  const {
+    completion,
+    isLoading,
+    error,
+    retryAfter,
+    quotaResetAt,
+    quotaResetLabel,
+    fallbackModel,
+    servedModel,
+    handleStart,
+    stop,
+  } = useQuestionCompletion({
+    api: "/ai/hint",
+    defaultAiModel,
+    question,
+    onClose,
+  });
   /* eslint-enable react-you-might-not-need-an-effect/no-event-handler */
 
-  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent, react-you-might-not-need-an-effect/no-pass-live-state-to-parent */
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
   useEffect(() => {
     if (completion !== "" && onAnswerHints !== undefined) {
       const { answerHints } = parseHints(completion);
@@ -332,7 +297,13 @@ export function AiHintCard({
       }
     }
   }, [completion, onAnswerHints]);
-  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent, react-you-might-not-need-an-effect/no-pass-live-state-to-parent */
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-pass-data-to-parent */
+
+  const handleRegenerate = () => {
+    lastHintsRef.current = "";
+    onAnswerHints?.([]);
+    handleStart();
+  };
 
   const { displayContent, hasAnswerHintsOnly } = useMemo(() => {
     const { generalHint, answerHints } = parseHints(completion);
@@ -346,11 +317,13 @@ export function AiHintCard({
   }, [completion]);
 
   const errorMessage =
-    retryAfter === null
-      ? (error?.message ?? "Nie udało się wygenerować wskazówki.")
-      : retryAfter > 0
-        ? `Osiągnięto limit podpowiedzi AI. Spróbuj ponownie za ${retryAfter.toString()} s.`
-        : "Limit podpowiedzi AI minął. Możesz spróbować ponownie.";
+    quotaResetAt === null
+      ? retryAfter === null
+        ? (error?.message ?? "Nie udało się wygenerować wskazówki.")
+        : retryAfter > 0
+          ? `Osiągnięto limit podpowiedzi AI. Spróbuj ponownie za ${retryAfter.toString()} s.`
+          : "Limit podpowiedzi AI minął. Możesz spróbować ponownie."
+      : `Następna próba: ${quotaResetLabel ?? "wkrótce"}.`;
 
   return (
     <AiCardShell
@@ -359,7 +332,11 @@ export function AiHintCard({
       error={error}
       errorMessage={errorMessage}
       retryAfter={retryAfter}
-      onRetry={handleStart}
+      retryDisabled={quotaResetAt !== null}
+      cooldown={quotaResetAt !== null || retryAfter !== null}
+      model={servedModel}
+      fallback={fallbackModel !== null}
+      onRetry={handleRegenerate}
       onStop={stop}
       onClose={onClose}
       emphasized
@@ -381,7 +358,7 @@ export function AiHintCard({
         <div className="flex items-center gap-2 py-1">
           <span className="text-muted-foreground text-xs">
             {isLoading
-              ? "Generuję wskazówki do odpowiedzi..."
+              ? "Generuję wskazówki do odpowiedzi…"
               : "Wskazówki zostały dodane pod odpowiedziami."}
           </span>
         </div>
@@ -401,20 +378,32 @@ export function AiExplanationCard({
   question,
   onClose,
 }: AiExplanationCardProps) {
-  const { completion, isLoading, error, retryAfter, handleStart, stop } =
-    useQuestionCompletion({
-      api: "/ai/explain",
-      defaultAiModel,
-      question,
-      onClose,
-    });
+  const {
+    completion,
+    isLoading,
+    error,
+    retryAfter,
+    quotaResetAt,
+    quotaResetLabel,
+    servedModel,
+    fallbackModel,
+    handleStart,
+    stop,
+  } = useQuestionCompletion({
+    api: "/ai/explain",
+    defaultAiModel,
+    question,
+    onClose,
+  });
   const displayContent = completion.trim();
   const errorMessage =
-    retryAfter === null
-      ? (error?.message ?? "Nie udało się wygenerować wyjaśnienia.")
-      : retryAfter > 0
-        ? `Osiągnięto limit wyjaśnień AI. Spróbuj ponownie za ${retryAfter.toString()} s.`
-        : "Limit wyjaśnień AI minął. Możesz spróbować ponownie.";
+    quotaResetAt === null
+      ? retryAfter === null
+        ? (error?.message ?? "Nie udało się wygenerować wyjaśnienia.")
+        : retryAfter > 0
+          ? `Osiągnięto limit wyjaśnień AI. Spróbuj ponownie za ${retryAfter.toString()} s.`
+          : "Limit wyjaśnień AI minął. Możesz spróbować ponownie."
+      : `Następna próba: ${quotaResetLabel ?? "wkrótce"}.`;
 
   return (
     <AiCardShell
@@ -423,6 +412,10 @@ export function AiExplanationCard({
       error={error}
       errorMessage={errorMessage}
       retryAfter={retryAfter}
+      retryDisabled={quotaResetAt !== null}
+      cooldown={quotaResetAt !== null || retryAfter !== null}
+      model={servedModel}
+      fallback={fallbackModel !== null}
       onRetry={handleStart}
       onStop={stop}
       onClose={onClose}

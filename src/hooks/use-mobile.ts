@@ -24,7 +24,7 @@ export function useIsMobile({
     return () => {
       mql.removeEventListener("change", onChange);
     };
-  }, []);
+  }, [hydrationSafe]);
 
   return Boolean(isMobile);
 }
