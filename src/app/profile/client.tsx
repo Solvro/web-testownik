@@ -7,6 +7,7 @@ import { useContext, useEffect } from "react";
 
 import { AppContext } from "@/app-context";
 import { AiSettingsForm } from "@/components/profile/ai-settings-form";
+import { AIUsageCard } from "@/components/profile/ai-usage-card";
 import { AuthorizedAppsList } from "@/components/profile/authorized-apps-list";
 import { NotificationsForm } from "@/components/profile/notifications-form";
 import { ProfileDetails } from "@/components/profile/profile-details";
@@ -82,6 +83,8 @@ export function ProfilePageClient(): React.JSX.Element {
   });
   const updateUserSettings = useUpdateUserSettings();
   const areSettingsDisabled = areSettingsPending || areSettingsPlaceholderData;
+  const showAIUsageCard =
+    env.NEXT_PUBLIC_AI_ENABLED && !areSettingsDisabled && !settings.ai_disabled;
 
   useEffect(() => {
     if (
@@ -158,6 +161,7 @@ export function ProfilePageClient(): React.JSX.Element {
               userData={userData ?? null}
               loading={isUserDataPending || userData == null}
             />
+            {showAIUsageCard ? <AIUsageCard /> : null}
             <div className="w-full text-center md:hidden">
               <Link href="/privacy-policy" className="text-sm underline">
                 Polityka prywatności

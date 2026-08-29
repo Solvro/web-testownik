@@ -20,8 +20,5 @@
     "hooks": "@/hooks"
   },
   "menuColor": "default",
-  "menuAccent": "subtle",
-  "registries": {
-    "@assistant-ui": "https://r.assistant-ui.com/{name}.json"
-  }
+  "menuAccent": "subtle"
 }
