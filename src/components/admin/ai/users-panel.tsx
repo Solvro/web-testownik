@@ -497,7 +497,7 @@ function OverrideEditor({
       });
       setRemoveOpen(false);
       void queryClient.invalidateQueries({ queryKey: keys.usersRoot });
-      toast.success("Wyjątek usunięty — konto dziedziczy macierz");
+      toast.success("Wyjątek usunięty, konto używa normalnych limitów");
     },
     onError: () => toast.error("Nie udało się usunąć wyjątku"),
   });

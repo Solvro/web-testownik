@@ -38,7 +38,7 @@ export function AverageSimulator({
           <div>
             <div className="text-base font-bold">Symulator średniej</div>
             <p className="text-muted-foreground mt-1 max-w-50 text-xs leading-snug">
-              Klikaj oceny - realne wyniki zostają, prognoza liczy się na żywo.
+              Oceny nie zmienią się w USOSie, kliknij dwukrotnie żeby zresetować
             </p>
           </div>
           <div className="text-right">
@@ -47,12 +47,12 @@ export function AverageSimulator({
               className="text-3xl leading-none font-extrabold tabular-nums"
               style={{ color: gradeColor(projected).fg }}
             >
-              {fmtNumber(projected)}
+              {fmtNumber(projected, 3)}
             </div>
             <div className="text-primary mt-1 text-xs font-bold tabular-nums">
               {projectedDelta == null || Math.abs(projectedDelta) < 1e-9
-                ? "±0,00"
-                : fmtSigned(projectedDelta)}
+                ? "±0,000"
+                : fmtSigned(projectedDelta, 3)}
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@ export function AverageSimulator({
           <span className="text-muted-foreground text-xs">
             realna średnia{" "}
             <b className="text-foreground tabular-nums">
-              {fmtNumber(realAverage)}
+              {fmtNumber(realAverage, 3)}
             </b>
           </span>
           <Button variant="outline" size="sm" onClick={onReset}>
