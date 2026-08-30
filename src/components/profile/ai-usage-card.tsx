@@ -217,8 +217,7 @@ export function AIUsageCard() {
           <Alert variant="destructive">
             <AlertCircleIcon />
             <AlertTitle>Nie udało się pobrać limitów</AlertTitle>
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Dane nie zostały ukryte — spróbuj ponownie lub odśwież profil.
+            <AlertDescription className="flex justify-end">
               <Button
                 size="sm"
                 variant="outline"

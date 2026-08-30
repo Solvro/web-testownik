@@ -299,7 +299,7 @@ export async function POST(request: Request) {
         tools: {
           generate_practice_questions: {
             description:
-              "Wygeneruj pytania quizowe do ćwiczeń, aby student mógł sprawdzić swoją wiedzę. Użyj tego, gdy student prosi o pytanie ćwiczeniowe, podobne pytanie lub chce się sprawdzić. Zawsze generuj pytania przez to narzędzie — jedno lub wiele.",
+              "Wygeneruj pytania quizowe do ćwiczeń, aby student mógł sprawdzić swoją wiedzę. Użyj tego, gdy student prosi o pytanie ćwiczeniowe, podobne pytanie lub chce się sprawdzić. Zawsze generuj pytania przez to narzędzie - jedno lub wiele.",
             inputSchema: z.object({
               questions: z
                 .array(practiceQuestionSchema)
