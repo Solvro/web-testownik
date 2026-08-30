@@ -255,8 +255,12 @@ describe("GradesPage", () => {
     expect(await within(gradesList).findByText("Matematyka")).toBeVisible();
     expect(await within(gradesList).findByText("Informatyka")).toBeVisible();
 
+    const averageSummary = screen.getByText("Średnia ważona").parentElement;
+    if (averageSummary == null) {
+      throw new Error("Nie znaleziono podsumowania średniej ważonej");
+    }
     expect(
-      screen.getByText(
+      within(averageSummary).getByText(
         formatAverage(mockCourses.filter((c) => c.term_id === "term1")),
       ),
     ).toBeVisible();
@@ -318,7 +322,7 @@ describe("GradesPage", () => {
       name: /symulator średniej/i,
     });
     await user.click(within(simulator).getByRole("button", { name: "4,0" }));
-    expect(within(simulator).getByText("4,00")).toBeVisible();
+    expect(within(simulator).getByText("4,000")).toBeVisible();
   });
 
   it("should update courses when switching terms", async () => {
