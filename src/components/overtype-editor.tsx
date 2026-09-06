@@ -3,7 +3,6 @@
 import {
   ALargeSmallIcon,
   BoldIcon,
-  CheckIcon,
   CodeIcon,
   CodeXmlIcon,
   EyeIcon,
@@ -17,35 +16,20 @@ import {
   PiIcon,
   QuoteIcon,
   SigmaIcon,
-  SquarePenIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { OverTypeInstance, Theme } from "overtype";
 import { markdownActions } from "overtype";
-import React, { useEffect, useState } from "react";
+import { useId, useState } from "react";
+import type { ClipboardEvent, RefObject } from "react";
 
 import { useOverType } from "@/hooks/use-overtype";
 import { cn } from "@/lib/utils";
 
 import { MarkdownRenderer } from "./markdown-renderer";
 import { Button } from "./ui/button";
-import { ButtonGroupSeparator } from "./ui/button-group";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import { Kbd } from "./ui/kbd";
+import { Label } from "./ui/label";
 import {
   Popover,
   PopoverContent,
@@ -54,89 +38,307 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "./ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-//#region Themes
 const theme: Theme = {
   name: "default",
   colors: {
+    bgPrimary: "transparent",
     bgSecondary: "transparent",
     text: "var(--foreground)",
-    syntaxMarker: "color-mix(in srgb, var(--foreground) 50%, transparent)",
-    cursor: "var(--app-primary)",
-    selection: "color-mix(in srgb, var(--app-primary) 20%, transparent)",
-    strong: "var(--chart-4)",
-    em: "var(--chart-3)",
-    h1: "var(--chart-4)",
-    h2: "var(--chart-3)",
-    h3: "var(--chart-2)",
-    blockquote: "color-mix(in srgb, var(--foreground) 70%, transparent)",
-    codeBg: "color-mix(in srgb, var(--chart-6) 50%, transparent)",
+    placeholder: "var(--muted-foreground)",
+    syntaxMarker: "var(--muted-foreground)",
+    cursor: "var(--primary)",
+    selection: "color-mix(in srgb, var(--primary) 20%, transparent)",
+    strong: "var(--foreground)",
+    em: "var(--foreground)",
+    h1: "var(--foreground)",
+    h2: "var(--foreground)",
+    h3: "var(--foreground)",
+    blockquote: "var(--muted-foreground)",
+    codeBg: "var(--muted)",
     code: "var(--foreground)",
   },
 };
-//#endregion
 
 interface OverTypeEditorProps {
-  value?: string;
+  value: string;
+  onChange: (value: string) => void;
   placeholder?: string;
-  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onPaste?: (event: React.ClipboardEvent) => void;
-  onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onPaste?: (event: ClipboardEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
   minHeight?: string;
   maxHeight?: string;
   autoResize?: boolean;
   className?: string;
 }
 
-//#region Custom format detection
+interface FormatAction {
+  label: string;
+  icon: LucideIcon;
+  apply: (textarea: HTMLTextAreaElement) => void;
+}
 
-const isInCodeBlock = (ta: HTMLTextAreaElement): boolean => {
-  const value_ = ta.value;
-  const cursor = ta.selectionStart;
+const formatGroups: { label: string; actions: FormatAction[] }[] = [
+  {
+    label: "Tekst",
+    actions: [
+      {
+        label: "Pogrubienie",
+        icon: BoldIcon,
+        apply: (ta) => {
+          markdownActions.toggleBold(ta);
+        },
+      },
+      {
+        label: "Kursywa",
+        icon: ItalicIcon,
+        apply: (ta) => {
+          markdownActions.toggleItalic(ta);
+        },
+      },
+      {
+        label: "Kod w tekście",
+        icon: CodeXmlIcon,
+        apply: (ta) => {
+          markdownActions.toggleCode(ta);
+        },
+      },
+      {
+        label: "Blok kodu",
+        icon: CodeIcon,
+        apply: (ta) => {
+          markdownActions.applyCustomFormat(ta, {
+            prefix: "\n```\n",
+            suffix: "\n```\n",
+          });
+        },
+      },
+    ],
+  },
+  {
+    label: "Matematyka",
+    actions: [
+      {
+        label: "Wzór w tekście",
+        icon: SigmaIcon,
+        apply: (ta) => {
+          markdownActions.applyCustomFormat(ta, { prefix: "$", suffix: "$" });
+        },
+      },
+      {
+        label: "Blok wzoru",
+        icon: PiIcon,
+        apply: (ta) => {
+          markdownActions.applyCustomFormat(ta, {
+            prefix: "\n$$\n",
+            suffix: "\n$$\n",
+          });
+        },
+      },
+    ],
+  },
+  {
+    label: "Struktura",
+    actions: [
+      {
+        label: "Nagłówek 1",
+        icon: Heading1Icon,
+        apply: (ta) => {
+          markdownActions.toggleH1(ta);
+        },
+      },
+      {
+        label: "Nagłówek 2",
+        icon: Heading2Icon,
+        apply: (ta) => {
+          markdownActions.toggleH2(ta);
+        },
+      },
+      {
+        label: "Nagłówek 3",
+        icon: Heading3Icon,
+        apply: (ta) => {
+          markdownActions.toggleH3(ta);
+        },
+      },
+      {
+        label: "Cytat",
+        icon: QuoteIcon,
+        apply: (ta) => {
+          markdownActions.toggleQuote(ta);
+        },
+      },
+      {
+        label: "Lista punktowana",
+        icon: ListIcon,
+        apply: (ta) => {
+          markdownActions.toggleBulletList(ta);
+        },
+      },
+      {
+        label: "Lista numerowana",
+        icon: ListOrderedIcon,
+        apply: (ta) => {
+          markdownActions.toggleNumberedList(ta);
+        },
+      },
+    ],
+  },
+];
 
-  const before = value_.slice(0, cursor);
-  const fencesBefore = (before.match(/^```/gm) ?? []).length;
+function FormattingPopover({
+  editorRef,
+  fieldLabel,
+}: {
+  editorRef: RefObject<OverTypeInstance | null>;
+  fieldLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const [urlError, setUrlError] = useState("");
+  const urlId = useId();
 
-  return fencesBefore % 2 !== 0;
-};
-
-const isInMathBlock = (ta: HTMLTextAreaElement): boolean => {
-  const value_ = ta.value;
-  const cursor = ta.selectionStart;
-
-  const before = value_.slice(0, cursor);
-  const fencesBefore = (before.match(/^\$\$/gm) ?? []).length;
-
-  return fencesBefore % 2 !== 0;
-};
-
-const isInInlineMath = (ta: HTMLTextAreaElement): boolean => {
-  const { selectionStart, selectionEnd, value } = ta;
-  const lookBehind = Math.max(0, selectionStart - 10);
-  const lookAhead = Math.min(value.length, selectionEnd + 10);
-  const surrounding = value.slice(lookBehind, lookAhead);
-  if (surrounding.includes("$")) {
-    const beforeCursor = value.slice(
-      Math.max(0, selectionStart - 100),
-      selectionStart,
-    );
-    const afterCursor = value.slice(
-      selectionEnd,
-      Math.min(value.length, selectionEnd + 100),
-    );
-    const lastOpenInlineMath = beforeCursor.lastIndexOf("$");
-    const nextCloseInlineMath = afterCursor.indexOf("$");
-    if (lastOpenInlineMath !== -1 && nextCloseInlineMath !== -1) {
-      return true;
+  function apply(action: FormatAction["apply"]) {
+    const ta = editorRef.current?.textarea;
+    if (ta === undefined) {
+      return;
     }
+    action(ta);
+    setOpen(false);
+    setUrl("");
+    setUrlError("");
+    // Keep typing at the selection after choosing a format with mouse or keyboard.
+    requestAnimationFrame(() => {
+      ta.focus();
+    });
   }
-  return false;
-};
 
-//#endregion
+  function insertLink() {
+    const trimmedUrl = url.trim();
+    try {
+      const parsed = new URL(trimmedUrl);
+      if (!["https:", "http:", "mailto:"].includes(parsed.protocol)) {
+        throw new Error("Unsupported protocol");
+      }
+    } catch {
+      setUrlError("Podaj poprawny adres https://, http:// lub mailto:.");
+      return;
+    }
+    apply((ta) => {
+      markdownActions.insertLink(ta, { url: trimmedUrl });
+    });
+  }
 
-function OverTypeEditor({
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setUrl("");
+          setUrlError("");
+        }
+      }}
+    >
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label={`Formatowanie: ${fieldLabel}`}
+            title="Formatowanie tekstu"
+          >
+            <ALargeSmallIcon className="size-4" />
+          </Button>
+        }
+      />
+      <PopoverContent
+        align="end"
+        className="max-h-(--available-height) w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto"
+        finalFocus={(closeType) =>
+          closeType === "keyboard" ? editorRef.current?.textarea : false
+        }
+      >
+        <PopoverHeader>
+          <PopoverTitle>Formatowanie tekstu</PopoverTitle>
+          <PopoverDescription>
+            Zaznacz tekst, aby zmienić jego format.
+          </PopoverDescription>
+        </PopoverHeader>
+        {formatGroups.map((group) => (
+          <div key={group.label} className="space-y-1">
+            <p className="text-muted-foreground text-xs font-medium">
+              {group.label}
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {group.actions.map(({ label, icon: Icon, apply: action }) => (
+                <Button
+                  key={label}
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 justify-start"
+                  onClick={() => {
+                    apply(action);
+                  }}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div className="border-border space-y-2 border-t pt-3">
+          <Label htmlFor={urlId}>Link</Label>
+          <div className="flex gap-2">
+            <Input
+              id={urlId}
+              type="url"
+              value={url}
+              placeholder="https://example.com"
+              aria-invalid={urlError !== ""}
+              aria-describedby={urlError === "" ? undefined : `${urlId}-error`}
+              onChange={(event) => {
+                setUrl(event.target.value);
+                setUrlError("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  insertLink();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label="Wstaw link"
+              disabled={url.trim() === ""}
+              onClick={insertLink}
+            >
+              <LinkIcon className="size-4" />
+            </Button>
+          </div>
+          {urlError === "" ? null : (
+            <p
+              id={`${urlId}-error`}
+              role="alert"
+              className="text-destructive text-xs"
+            >
+              {urlError}
+            </p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function OverTypeEditor({
   value,
   placeholder,
   onChange,
@@ -150,812 +352,63 @@ function OverTypeEditor({
   const { containerRef, editorRef } = useOverType({
     value,
     placeholder,
-    theme,
     onChange,
-    onPaste,
-    onKeyDown,
-    autoResize,
+    theme,
     minHeight,
     maxHeight,
+    autoResize,
+    onKeyDown,
   });
-
-  const [previewOpen, setPreviewOpen] = useState<boolean>(true);
-
-  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
-
-  // Custom format detection
-  useEffect(() => {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-
-    const update = () => {
-      const formats = markdownActions.getActiveFormats(ta);
-
-      if (isInInlineMath(ta)) {
-        formats.push("inlineMath");
-      }
-
-      if (isInMathBlock(ta)) {
-        const inlineIndex = formats.indexOf("inlineMath");
-        if (inlineIndex !== -1) {
-          formats.splice(inlineIndex, 1);
-        }
-        formats.push("blockMath");
-      }
-
-      if (isInCodeBlock(ta)) {
-        const codeIndex = formats.indexOf("code");
-        if (codeIndex !== -1) {
-          formats.splice(codeIndex, 1);
-        }
-        formats.push("blockCode");
-      }
-
-      setActiveFormats(new Set(formats));
-    };
-
-    ta.addEventListener("select", update);
-    ta.addEventListener("keyup", update);
-    ta.addEventListener("mouseup", update);
-
-    return () => {
-      ta.removeEventListener("select", update);
-      ta.removeEventListener("keyup", update);
-      ta.removeEventListener("mouseup", update);
-    };
-  }, [editorRef, editorRef.current?.textarea]);
-
-  // Custom styling
-  useEffect(() => {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-
-    const wrapper = ta.closest(".overtype-wrapper");
-    if (wrapper === null) {
-      return;
-    }
-    const preview = wrapper.querySelector(".overtype-preview");
-    if (preview === null) {
-      return;
-    }
-
-    const styleId = "#ot-math-styles";
-    if (document.querySelector(styleId) === null) {
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = `
-      .ot-math-inline {
-        color: var(--chart-6);
-        font-style: italic;
-      }
-      .ot-math-block {
-        color: var(--chart-6);
-        font-style: italic;
-      }
-    `;
-      document.head.append(style);
-    }
-
-    const processMath = (node: Element) => {
-      for (const child of node.childNodes) {
-        if (child.nodeType !== Node.TEXT_NODE) {
-          return;
-        }
-        const text = child.textContent ?? "";
-        if (!text.includes("$")) {
-          return;
-        }
-
-        const span = document.createElement("span");
-        const pattern = /\$\$([^$]+)\$\$|\$([^$\n]+)\$/g;
-        let lastIndex = 0;
-        let match: RegExpExecArray | null;
-        //eslint-disable-next-line no-cond-assign
-        while ((match = pattern.exec(text)) !== null) {
-          if (match.index > lastIndex) {
-            span.append(
-              document.createTextNode(text.slice(lastIndex, match.index)),
-            );
-          }
-          const token = match[0];
-          const mathSpan = document.createElement("span");
-          mathSpan.className = token.startsWith("$$")
-            ? "ot-math-block"
-            : "ot-math-inline";
-          mathSpan.textContent = token;
-          span.append(mathSpan);
-          lastIndex = pattern.lastIndex;
-        }
-        if (lastIndex < text.length) {
-          span.append(document.createTextNode(text.slice(lastIndex)));
-        }
-
-        child.replaceWith(span);
-      }
-    };
-
-    const observer = new MutationObserver(() => {
-      for (const div of preview.querySelectorAll("div")) {
-        processMath(div);
-      }
-    });
-
-    observer.observe(preview, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-      document.querySelector(styleId)?.remove();
-    };
-  }, [editorRef.current?.textarea]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const editorValue = editorRef.current?.getValue();
-  const displayValue =
-    editorRef.current === null ? (value ?? "") : (editorValue ?? "");
-
-  const isEmpty: boolean = displayValue === "";
+  const fieldLabel = placeholder ?? "Treść Markdown";
 
   return (
     <div
       className={cn(
+        "border-input dark:bg-input/30 focus-within:border-ring focus-within:ring-ring/50 flex min-w-0 rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-3",
         className,
-        "group border-input placeholder:text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 flex field-sizing-content w-full flex-col rounded-md border bg-transparent text-base shadow-xs transition-[color,box-shadow] outline-none focus-within:ring-3 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm",
       )}
     >
-      <Toolbar
-        className={cn(
-          "mx-2 flex items-center gap-1 overflow-hidden transition-all duration-200 ease-in-out",
-          "pointer-events-none max-h-0 -translate-y-2 opacity-0",
-          "group-focus-within:pointer-events-auto group-focus-within:my-1 group-focus-within:max-h-16 group-focus-within:translate-y-0 group-focus-within:opacity-100",
-        )}
-        activeFormats={activeFormats}
-        editorRef={editorRef}
-        showPreview={(value_: boolean) => {
-          setPreviewOpen(value_);
-          if (!value_) {
-            requestAnimationFrame(() => {
-              const ta = editorRef.current?.textarea;
-              if (ta === undefined) {
-                return;
-              }
-              ta.dispatchEvent(new Event("input", { bubbles: true }));
-            });
-          }
-        }}
-        preview={previewOpen}
-      />
-
-      <div className={previewOpen ? "hidden" : "inline-block"}>
+      <div className="min-w-0 flex-1" onPaste={onPaste}>
         <div
-          data-slot="overtype-editor"
-          className="flex-1"
           ref={containerRef}
-          style={
-            {
-              "--app-primary": "var(--primary)",
-              isolation: "isolate",
-              zIndex: 0,
-              position: "relative",
-            } as React.CSSProperties
-          }
+          data-slot="overtype-editor"
+          className="[&_.ot-math]:text-primary relative isolate z-0"
         />
       </div>
-
-      {previewOpen ? (
-        <MarkdownRenderer
-          className={cn(
-            "mx-4 my-2 min-h-6",
-            isEmpty ? "text-muted-foreground" : "",
-          )}
-        >
-          {isEmpty ? (placeholder ?? "") : displayValue}
-        </MarkdownRenderer>
-      ) : null}
+      <div className="text-muted-foreground flex shrink-0 items-start gap-0.5 p-1">
+        <FormattingPopover editorRef={editorRef} fieldLabel={fieldLabel} />
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Podgląd: ${fieldLabel}`}
+                title="Podgląd Markdown"
+              >
+                <EyeIcon className="size-4" />
+              </Button>
+            }
+          />
+          <PopoverContent
+            align="end"
+            className="max-h-(--available-height) w-96 max-w-[calc(100vw-2rem)] overflow-y-auto"
+            initialFocus={false}
+          >
+            <PopoverHeader>
+              <PopoverTitle>Podgląd</PopoverTitle>
+            </PopoverHeader>
+            {value.trim() === "" ? (
+              <p className="text-muted-foreground text-sm">
+                Zacznij pisać, aby zobaczyć podgląd.
+              </p>
+            ) : (
+              <MarkdownRenderer>{value}</MarkdownRenderer>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
-
-interface ToolbarProps {
-  showPreview: (value: boolean) => void;
-  preview: boolean;
-  activeFormats: Set<string>;
-  editorRef: React.RefObject<OverTypeInstance | null>;
-  className?: string;
-}
-
-function Toolbar({
-  activeFormats,
-  editorRef,
-  showPreview,
-  preview,
-  className,
-}: ToolbarProps) {
-  const isActive: (format: string) => boolean = (format: string) =>
-    activeFormats.has(format);
-
-  const apply = (action: keyof typeof markdownActions) => {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    if (!preview) {
-      (markdownActions[action] as (ta: HTMLTextAreaElement) => void)(ta);
-      ta.focus();
-    }
-  };
-
-  function insertInlineMath() {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    markdownActions.applyCustomFormat(ta, {
-      prefix: "$",
-      suffix: "$",
-    });
-    ta.focus();
-  }
-
-  function insertBlockMath() {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    markdownActions.applyCustomFormat(ta, {
-      prefix: "\n$$\n",
-      suffix: "\n$$\n",
-    });
-    ta.focus();
-  }
-
-  function insertBlockCode() {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    markdownActions.applyCustomFormat(ta, {
-      prefix: "\n```\n",
-      suffix: "\n```\n",
-    });
-    ta.focus();
-  }
-
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-
-  return (
-    <div className="relative">
-      <div
-        role="toolbar"
-        aria-label="Formatowanie tekstu"
-        className={cn(className, "not-lg:hidden")}
-      >
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("bold") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleBold");
-                }}
-              >
-                <BoldIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>
-            Pogrubienie <Kbd>Ctrl + B</Kbd>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("italic") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleItalic");
-                }}
-              >
-                <ItalicIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>
-            Pochylenie <Kbd>Ctrl + I</Kbd>
-          </TooltipContent>
-        </Tooltip>
-        <ButtonGroupSeparator />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("code") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleCode");
-                }}
-              >
-                <CodeXmlIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Kod w tekście</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("blockCode") ? "default" : "ghost"}
-                onClick={() => {
-                  insertBlockCode();
-                }}
-              >
-                <CodeIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Blok kodu</TooltipContent>
-        </Tooltip>
-        <ButtonGroupSeparator />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("inlineMath") ? "default" : "ghost"}
-                onClick={() => {
-                  insertInlineMath();
-                }}
-              >
-                <SigmaIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Wzór w tekście</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("blockMath") ? "default" : "ghost"}
-                onClick={() => {
-                  insertBlockMath();
-                }}
-              >
-                <PiIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Blok wzoru</TooltipContent>
-        </Tooltip>
-        <ButtonGroupSeparator />
-        <LinkButton isActive={isActive} editorRef={editorRef} />
-        <ButtonGroupSeparator />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("header") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleH1");
-                }}
-              >
-                <Heading1Icon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Tytuł</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("header-2") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleH2");
-                }}
-              >
-                <Heading2Icon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Podtytuł</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("header-3") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleH3");
-                }}
-              >
-                <Heading3Icon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Sekcja</TooltipContent>
-        </Tooltip>
-        <ButtonGroupSeparator />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("bullet-list") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleBulletList");
-                }}
-              >
-                <ListIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Lista nieuporządkowana</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("numbered-list") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleNumberedList");
-                }}
-              >
-                <ListOrderedIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Lista uporządkowana</TooltipContent>
-        </Tooltip>
-        <ButtonGroupSeparator />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                className="aspect-square p-0"
-                size={"sm"}
-                variant={isActive("quote") ? "default" : "ghost"}
-                onClick={() => {
-                  apply("toggleQuote");
-                }}
-              >
-                <QuoteIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Cytat</TooltipContent>
-        </Tooltip>
-      </div>
-      <div className={cn(className, "inline-flex gap-2 lg:hidden")}>
-        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-          <DropdownMenuTrigger
-            render={
-              <Button variant={"ghost"} size={"sm"}>
-                <ALargeSmallIcon />
-              </Button>
-            }
-          ></DropdownMenuTrigger>
-          <DropdownMenuContent className="w-min px-2">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Formatowanie</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleBold");
-                }}
-              >
-                <BoldIcon />
-                Pogrubienie
-                {isActive("bold") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleItalic");
-                }}
-              >
-                <ItalicIcon />
-                Pochylenie
-                {isActive("italic") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Kod</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleCode");
-                }}
-              >
-                <CodeXmlIcon />W tekście
-                {isActive("code") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  insertBlockCode();
-                }}
-              >
-                <CodeIcon />
-                Blok
-                {isActive("blockCode") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Matematyka</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  insertInlineMath();
-                }}
-              >
-                <SigmaIcon />W tekście
-                {isActive("inlineMath") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  insertBlockMath();
-                }}
-              >
-                <PiIcon />
-                Blok
-                {isActive("blockMath") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Link</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  setDialogOpen(true);
-                  setDropdownOpen(false);
-                }}
-              >
-                <LinkIcon />
-                Link
-                {isActive("link") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Nagłówki</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleH1");
-                }}
-              >
-                <Heading1Icon />
-                Tytuł
-                {isActive("header") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleH2");
-                }}
-              >
-                <Heading2Icon />
-                Podtytuł
-                {isActive("header-2") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleH3");
-                }}
-              >
-                <Heading3Icon />
-                Sekcja
-                {isActive("header-3") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Listy</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleBulletList");
-                }}
-              >
-                <ListIcon />
-                Nieuporządkowana
-                {isActive("bullet-list") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleNumberedList");
-                }}
-              >
-                <ListOrderedIcon />
-                Uporządkowana
-                {isActive("numbered-list") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Cytat</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  apply("toggleQuote");
-                }}
-              >
-                <QuoteIcon />
-                Cytat
-                {isActive("quote") && <CheckIcon className="ml-auto" />}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="absolute top-0 right-0 mx-2 my-1">
-        <Button
-          id="toggle-edit"
-          size={"sm"}
-          variant={"ghost"}
-          onClick={() => {
-            showPreview(!preview);
-          }}
-        >
-          {preview ? (
-            <span className="inline-flex items-center gap-2 md:p-1">
-              <span className="not-md:hidden">Edytuj</span> <SquarePenIcon />
-            </span>
-          ) : (
-            <span
-              className={cn(
-                "inline-flex items-center gap-2 overflow-hidden transition-all duration-200 ease-in-out md:p-1",
-                "max-w-full opacity-100",
-                "not-group-focus-within:max-w-0 not-group-focus-within:p-0 not-group-focus-within:opacity-0",
-              )}
-            >
-              <span className="not-md:hidden">Podgląd</span> <EyeIcon />
-            </span>
-          )}
-        </Button>
-      </div>
-      <LinkDialogMobile
-        editorRef={editorRef}
-        open={dialogOpen}
-        setOpen={setDialogOpen}
-      />
-    </div>
-  );
-}
-
-interface LinkButtonProps {
-  isActive: (format: string) => boolean;
-  editorRef: React.RefObject<OverTypeInstance | null>;
-}
-
-function LinkButton({ isActive, editorRef }: LinkButtonProps) {
-  const [url, setUrl] = useState<string>("");
-  const [open, setOpen] = useState<boolean>(false);
-
-  function insertLink() {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    if (url !== "") {
-      markdownActions.insertLink(ta, { url });
-      setOpen(false);
-      requestAnimationFrame(() => {
-        ta.focus();
-      });
-    }
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <PopoverTrigger
-              render={
-                <Button
-                  className="aspect-square p-0"
-                  size="sm"
-                  variant={isActive("link") ? "default" : "ghost"}
-                >
-                  <LinkIcon />
-                </Button>
-              }
-            />
-          }
-        />
-        <TooltipContent>
-          Link <Kbd>Ctrl + K</Kbd>
-        </TooltipContent>
-      </Tooltip>
-
-      <PopoverContent>
-        <PopoverHeader>
-          <PopoverTitle>Adres URL</PopoverTitle>
-          <PopoverDescription>Podaj adres URL linku</PopoverDescription>
-        </PopoverHeader>
-        <Input
-          id="url-input"
-          type="url"
-          placeholder="https://www.example.com"
-          value={url}
-          onChange={(event) => {
-            setUrl(event.target.value);
-          }}
-        />
-        <Button
-          onClick={() => {
-            insertLink();
-            setUrl("");
-          }}
-        >
-          Dodaj link
-        </Button>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-interface LinkDialogMobileProps {
-  editorRef: React.RefObject<OverTypeInstance | null>;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-}
-
-function LinkDialogMobile({ editorRef, open, setOpen }: LinkDialogMobileProps) {
-  const [url, setUrl] = useState<string>("");
-
-  function insertLink() {
-    const ta = editorRef.current?.textarea;
-    if (ta === undefined) {
-      return;
-    }
-    if (url !== "") {
-      markdownActions.insertLink(ta, { url });
-      setOpen(false);
-      requestAnimationFrame(() => {
-        ta.focus();
-      });
-    }
-  }
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Adres URL</DialogTitle>
-          <DialogDescription>Podaj adres URL linku</DialogDescription>
-        </DialogHeader>
-        <Input
-          id="url-input"
-          type="url"
-          placeholder="https://www.example.com"
-          value={url}
-          onChange={(event) => {
-            setUrl(event.target.value);
-          }}
-        />
-        <Button
-          onClick={() => {
-            insertLink();
-            setUrl("");
-          }}
-        >
-          Dodaj link
-        </Button>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export { OverTypeEditor };

@@ -1,7 +1,6 @@
 "use client";
 
 import { CircleHelp, InfoIcon } from "lucide-react";
-import type { KeyboardEvent } from "react";
 import { toast } from "sonner";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -119,10 +118,7 @@ export function QuestionFormContent({
     await onUpload(file);
   }
 
-  async function handleAnswerKeyDown(
-    answerId: string,
-    event: KeyboardEvent<HTMLTextAreaElement>,
-  ) {
+  async function handleAnswerKeyDown(answerId: string, event: KeyboardEvent) {
     if (
       (event.ctrlKey || event.metaKey) &&
       event.shiftKey &&
@@ -211,13 +207,13 @@ export function QuestionFormContent({
           <OverTypeEditor
             placeholder="Treść pytania..."
             value={question.text}
-            onChange={(event) => {
-              onUpdate({ text: event.target.value });
+            onChange={(text) => {
+              onUpdate({ text });
             }}
             onPaste={(event) => {
               handlePaste(event);
             }}
-            minHeight="100px"
+            minHeight="72px"
             className="min-h-8"
             autoResize={true}
           />

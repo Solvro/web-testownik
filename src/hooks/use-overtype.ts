@@ -1,108 +1,145 @@
+"use client";
+
 // eslint-disable-next-line import/no-named-as-default
 import OverType from "overtype";
-import type { OverTypeInstance, Theme } from "overtype";
+import type { Options, OverTypeInstance, Theme } from "overtype";
 import { useEffect, useRef } from "react";
 
 interface UseOverTypeOptions {
-  value?: string;
+  value: string;
+  onChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
   placeholder?: string;
-  theme?: "solar" | "cave" | Theme;
-  toolbar?: boolean;
-  autoResize?: boolean;
+  theme?: Theme;
   minHeight?: string;
   maxHeight?: string;
-  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onPaste?: (event: React.ClipboardEvent) => void;
-  onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  autoResize?: boolean;
 }
 
-export function useOverType({ ...options }: UseOverTypeOptions) {
+// Run once per OverType render, without observing or reinserting our own changes.
+function highlightMath(preview: HTMLElement) {
+  const walker = document.createTreeWalker(preview, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walker.nextNode() !== null) {
+    const node = walker.currentNode as Text;
+    if (
+      node.data.includes("$") &&
+      node.parentElement?.closest("code, pre, .code-block, .inline-code") ==
+        null
+    ) {
+      nodes.push(node);
+    }
+  }
+  for (const node of nodes) {
+    const matches = [...node.data.matchAll(/\$\$[^$]+\$\$|\$[^$\n]+\$/g)];
+    if (matches.length === 0) {
+      continue;
+    }
+    const fragment = document.createDocumentFragment();
+    let offset = 0;
+    for (const match of matches) {
+      fragment.append(node.data.slice(offset, match.index));
+      const span = document.createElement("span");
+      span.className = "ot-math";
+      span.textContent = match[0];
+      fragment.append(span);
+      offset = match.index + match[0].length;
+    }
+    fragment.append(node.data.slice(offset));
+    node.replaceWith(fragment);
+  }
+}
+
+export function useOverType(options: UseOverTypeOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<OverTypeInstance | null>(null);
-
-  const syncingFromPropsRef = useRef(false);
   const onChangeRef = useRef(options.onChange);
-  const onPasteRef = useRef(options.onPaste);
   const onKeyDownRef = useRef(options.onKeyDown);
+  const syncingFromPropsRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = options.onChange;
-    onPasteRef.current = options.onPaste;
     onKeyDownRef.current = options.onKeyDown;
-  }, [options.onChange, options.onPaste, options.onKeyDown]);
-
-  useEffect(() => {
-    const instance = editorRef.current;
-    if (instance === null) {
-      return;
-    }
-
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
-    const nextValue = options.value ?? "";
-    const currentValue = instance.getValue();
-
-    if (currentValue === nextValue) {
-      return;
-    }
-
-    syncingFromPropsRef.current = true;
-    instance.setValue(nextValue);
-    syncingFromPropsRef.current = false;
-  }, [options.value]);
+  }, [options.onChange, options.onKeyDown]);
 
   useEffect(() => {
     if (containerRef.current === null) {
       return;
     }
-
-    const [instance] = new OverType(containerRef.current, {
-      value: options.value ?? "",
+    // OverType 2.4 supports onRender, but omits it from its Options declaration.
+    const editorOptions: Options & {
+      onRender: (preview: HTMLElement) => void;
+    } = {
+      value: options.value,
       placeholder: options.placeholder,
-      theme: options.theme ?? "solar",
-      toolbar: options.toolbar ?? false,
-      minHeight: options.minHeight,
+      theme: options.theme,
+      toolbar: false,
+      minHeight: options.minHeight ?? "40px",
       maxHeight: options.maxHeight,
-      autoResize: options.autoResize,
-    });
-
+      autoResize: options.autoResize ?? true,
+      padding: "8px 10px",
+      lineHeight: 1.5,
+      mobile: { fontSize: "16px", padding: "8px 10px", lineHeight: 1.5 },
+      textareaProps: {
+        rows: 1,
+        "aria-label": options.placeholder ?? "Treść Markdown",
+      },
+      onRender: highlightMath,
+      onKeydown: (event) => {
+        onKeyDownRef.current?.(event);
+      },
+      onChange: (nextValue) => {
+        // Ignore constructor notifications and controlled prop synchronization.
+        if (editorRef.current !== null && !syncingFromPropsRef.current) {
+          onChangeRef.current(nextValue);
+        }
+      },
+    };
+    const [instance] = new OverType(containerRef.current, editorOptions);
+    // The library imposes a 60px CSS minimum even when minHeight is smaller.
+    instance.wrapper.style.setProperty(
+      "min-height",
+      options.minHeight ?? "40px",
+      "important",
+    );
     editorRef.current = instance;
-
-    const handleInput = (event: Event) => {
-      if (syncingFromPropsRef.current) {
-        return;
-      }
-      const target = event.target as HTMLTextAreaElement | null;
-      if (target === null) {
-        return;
-      }
-      onChangeRef.current?.({
-        target,
-        currentTarget: target,
-      } as React.ChangeEvent<HTMLTextAreaElement>);
-    };
-
-    const handlePaste = (event: Event) => {
-      onPasteRef.current?.(event as unknown as React.ClipboardEvent);
-    };
-
-    const handleKeyDown = (event: Event) => {
-      onKeyDownRef.current?.(
-        event as unknown as React.KeyboardEvent<HTMLTextAreaElement>,
-      );
-    };
-
-    const textarea = instance.textarea;
-    textarea.addEventListener("input", handleInput);
-    textarea.addEventListener("paste", handlePaste);
-    textarea.addEventListener("keydown", handleKeyDown);
-
     return () => {
-      textarea.removeEventListener("input", handleInput);
-      textarea.removeEventListener("paste", handlePaste);
-      textarea.removeEventListener("keydown", handleKeyDown);
+      editorRef.current = null;
       instance.destroy();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Create one editor per mounted field; synchronize mutable props below.
+
+  useEffect(() => {
+    const instance = editorRef.current;
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler -- Synchronize the controlled value with the external editor, without emitting a user change.
+    if (instance === null || instance.getValue() === options.value) {
+      return;
+    }
+    syncingFromPropsRef.current = true;
+    try {
+      instance.setValue(options.value);
+    } finally {
+      syncingFromPropsRef.current = false;
+    }
+  }, [options.value]);
+
+  useEffect(() => {
+    const instance = editorRef.current;
+    if (instance !== null) {
+      instance.options.placeholder = options.placeholder ?? "";
+      instance.textarea.placeholder = options.placeholder ?? "";
+      instance.textarea.setAttribute(
+        "aria-label",
+        options.placeholder ?? "Treść Markdown",
+      );
+      const placeholder = instance.wrapper.querySelector(
+        ".overtype-placeholder",
+      );
+      if (placeholder !== null) {
+        placeholder.textContent = options.placeholder ?? "";
+      }
+    }
+  }, [options.placeholder]);
 
   return { containerRef, editorRef };
 }

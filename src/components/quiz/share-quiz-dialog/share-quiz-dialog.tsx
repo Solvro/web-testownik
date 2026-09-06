@@ -132,16 +132,18 @@ export function ShareQuizDialog({
             ],
       );
 
-      /* eslint-disable react-you-might-not-need-an-effect/no-derived-state */
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialUsersWithAccess(foundUsers);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setGroupsWithAccess(foundGroups);
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
       setInitialGroupsWithAccess(foundGroups);
-      /* eslint-enable react-you-might-not-need-an-effect/no-derived-state */
     }
   }, [sharedData]);
 
-  // TODO: switch to using tanstack query for search as well
+  // TODO: switch to uding tanstack query for search as well
   const handleSearch = async (query: string) => {
     setSearchResultsLoading(true);
     try {
