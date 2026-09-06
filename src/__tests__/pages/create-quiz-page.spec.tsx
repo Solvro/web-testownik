@@ -33,21 +33,20 @@ const setup = async () => {
   );
 
   const fillFields = async () => {
-    await user.type(
-      screen.getByPlaceholderText(/podaj tytuł quizu/i),
-      testQuiz.title,
-    );
-    await user.type(
-      screen.getByPlaceholderText(/podaj opis quizu/i),
-      testQuiz.description,
-    );
-
     const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
-    await user.type(questionTextareas[0], testQuiz.questions[0]);
-
     const answers = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
-    await user.type(answers[0], testQuiz.answers[0]);
-    await user.type(answers[1], testQuiz.answers[1]);
+    const fields: [HTMLElement, string][] = [
+      [screen.getByPlaceholderText(/podaj tytuł quizu/i), testQuiz.title],
+      [screen.getByPlaceholderText(/podaj opis quizu/i), testQuiz.description],
+      [questionTextareas[0], testQuiz.questions[0]],
+      [answers[0], testQuiz.answers[0]],
+      [answers[1], testQuiz.answers[1]],
+    ];
+    // Paste fixtures in submission tests; editor tests cover individual keystrokes.
+    for (const [field, text] of fields) {
+      await user.click(field);
+      await user.paste(text);
+    }
 
     const correctAnswerButtons = screen.getAllByRole("button", {
       name: /oznacz jako poprawną/i,
