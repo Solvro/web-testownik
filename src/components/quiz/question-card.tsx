@@ -300,7 +300,7 @@ export function QuestionCard({
                   <div className="overflow-hidden">
                     <div className="border-primary/10 bg-primary/5 flex items-start gap-2 rounded-lg border px-3 py-2">
                       <SparklesIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
-                      <MarkdownRenderer className="text-primary/80 text-xs leading-relaxed">
+                      <MarkdownRenderer className="text-primary text-xs leading-relaxed">
                         {hint?.hint ?? ""}
                       </MarkdownRenderer>
                     </div>

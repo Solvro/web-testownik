@@ -4,6 +4,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 function Tabs({
@@ -15,8 +16,31 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
+      orientation={orientation}
+      className={cn("flex gap-2 data-horizontal:flex-col", className)}
+      {...props}
+    />
+  );
+}
+
+function ResponsiveTabs({
+  className,
+  ...props
+}: Omit<TabsPrimitive.Root.Props, "orientation">) {
+  const isMobile = useIsMobile({ hydrationSafe: true });
+
+  return (
+    <Tabs
+      data-responsive-tabs=""
+      orientation={isMobile ? "horizontal" : "vertical"}
       className={cn(
-        "group/tabs flex gap-2 data-horizontal:flex-col",
+        "flex-col md:flex-row",
+        "*:data-[slot=tabs-list]:h-9! *:data-[slot=tabs-list]:w-fit! *:data-[slot=tabs-list]:flex-row!",
+        "md:*:data-[slot=tabs-list]:h-fit! md:*:data-[slot=tabs-list]:w-full! md:*:data-[slot=tabs-list]:flex-col!",
+        "[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]]:w-auto! [&>[data-slot=tabs-list]>[data-slot=tabs-trigger]]:justify-center!",
+        "md:[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]]:w-full! md:[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]]:justify-start!",
+        "[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:inset-[auto_0_-5px]! [&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:h-0.5! [&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:w-auto!",
+        "md:[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:inset-[0_-0.25rem_0_auto]! md:[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:h-auto! md:[&>[data-slot=tabs-list]>[data-slot=tabs-trigger]::after]:w-0.5!",
         className,
       )}
       {...props}
@@ -25,7 +49,7 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-9 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
+  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground data-horizontal:h-9 data-vertical:h-fit data-vertical:flex-col data-[variant=line]:rounded-none",
   {
     variants: {
       variant: {
@@ -59,10 +83,10 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "text-foreground/60 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:text-muted-foreground dark:hover:text-foreground relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "text-foreground/60 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:text-muted-foreground dark:hover:text-foreground relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none data-vertical:w-full data-vertical:justify-start [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent dark:group-data-[variant=line]/tabs-list:data-active:border-transparent dark:group-data-[variant=line]/tabs-list:data-active:bg-transparent",
         "data-active:bg-background data-active:text-foreground dark:data-active:border-input dark:data-active:bg-input/30 dark:data-active:text-foreground",
-        "after:bg-foreground after:absolute after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
+        "after:bg-foreground after:absolute after:opacity-0 after:transition-opacity group-data-[variant=line]/tabs-list:data-active:after:opacity-100 data-horizontal:after:inset-x-0 data-horizontal:after:bottom-[-5px] data-horizontal:after:h-0.5 data-vertical:after:inset-y-0 data-vertical:after:-right-1 data-vertical:after:w-0.5",
         className,
       )}
       {...props}
@@ -80,5 +104,6 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   );
 }
 
+export { Tabs, ResponsiveTabs, TabsList, TabsTrigger, TabsContent };
 // eslint-disable-next-line react-refresh/only-export-components
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export { tabsListVariants };

@@ -1,16 +1,10 @@
-import {
-  BadgeCheckIcon,
-  BotIcon,
-  CheckIcon,
-  CopyIcon,
-  CrownIcon,
-} from "lucide-react";
+import { BotIcon, CheckIcon, CopyIcon, RefreshCwIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
+import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AiModelProviderIcon } from "@/components/ai/ai-model-provider-icon";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -22,19 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { env } from "@/env";
+import { useAIModels } from "@/hooks/use-ai-models";
 import {
-  canSelectAiModelForAccountLevel,
-  getSelectableAiModelOption,
-  getSelectableAiModelOptionsForAccountLevel,
-  isSelectableAiModelForAccountLevel,
-  resolveSelectableAiModelForAccountLevel,
+  getAiModelMetadata,
+  getAiModelOptions,
+  resolvePreferredAiModel,
 } from "@/lib/ai/models";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import type { SettingsFormProps } from "@/types/user";
+import type { AccountLevel, SettingsFormProps } from "@/types/user";
 import { ACCOUNT_LEVEL } from "@/types/user";
 
 interface CopyableSnippetProps {
@@ -97,10 +91,13 @@ interface ClientSetupTabProps {
 
 const MCP_CLIENTS = [
   { label: "Ogólne", value: "general" },
+  { label: "ChatGPT Desktop", value: "chatgpt-desktop" },
+  { label: "Codex CLI", value: "codex-cli" },
   { label: "Claude Code", value: "claude-code" },
   { label: "Claude Desktop", value: "claude-desktop" },
   { label: "VS Code", value: "vscode" },
 ] as const;
+const SYSTEM_DEFAULT_MODEL = "__system_default__";
 
 function ClientSetupTab({ children, label }: ClientSetupTabProps) {
   return (
@@ -110,29 +107,97 @@ function ClientSetupTab({ children, label }: ClientSetupTabProps) {
   );
 }
 
+function DefaultModelSettingDetails({
+  accountLevel,
+}: {
+  accountLevel: AccountLevel;
+}) {
+  return (
+    <div className="min-w-0">
+      <Label
+        className="flex items-center gap-2 text-sm font-medium"
+        htmlFor="default-ai-model"
+      >
+        Model startowy AI
+        <AccountLevelBadge accountLevel={accountLevel} />
+      </Label>
+      <p className="text-muted-foreground text-xs">
+        Domyślny systemu automatycznie śledzi ustawienie administratora. W
+        czacie możesz zmienić model tymczasowo.
+      </p>
+    </div>
+  );
+}
+
+function DefaultModelSettingLoading({
+  accountLevel,
+}: {
+  accountLevel: AccountLevel;
+}) {
+  return (
+    <div
+      role="status"
+      aria-label="Ładowanie dostępnych modeli AI"
+      className="flex flex-col gap-3 md:flex-row md:items-center"
+    >
+      <DefaultModelSettingDetails accountLevel={accountLevel} />
+      <div
+        aria-hidden="true"
+        className="border-input bg-muted/20 flex h-10 w-full shrink-0 items-center gap-2 rounded-md border px-3 md:ml-auto md:w-56"
+      >
+        <Skeleton className="size-4 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-28 max-w-[70%]" />
+      </div>
+    </div>
+  );
+}
+
 export function AiSettingsForm({
   settings,
   disabled = false,
   onSettingChange,
 }: SettingsFormProps) {
   const { checkPermission, user } = useContext(AppContext);
+  const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
+  const aiModelsQuery = useAIModels(hasAiAccess);
+  const { data: aiModels } = aiModelsQuery;
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("general");
 
-  const hasAiAccess = checkPermission(PermissionAction.AI_FEATURES);
+  const availableModels = aiModels?.models ?? [];
+  const canSetDefaultAiModel =
+    user?.account_level === ACCOUNT_LEVEL.SILVER ||
+    user?.account_level === ACCOUNT_LEVEL.GOLD;
   const canSelectAiModel =
-    hasAiAccess && canSelectAiModelForAccountLevel(user?.account_level);
-  const selectableAiModelOptions = getSelectableAiModelOptionsForAccountLevel(
-    user?.account_level,
+    hasAiAccess && canSetDefaultAiModel && availableModels.length > 1;
+  const aiModelOptions = getAiModelOptions(availableModels);
+  const systemDefaultModel = getAiModelMetadata(
+    availableModels,
+    aiModels?.default_model,
   );
-  const selectedAiModel = resolveSelectableAiModelForAccountLevel(
+  const selectedAiModel = resolvePreferredAiModel(
     settings.default_ai_model,
-    user?.account_level,
+    availableModels,
+    aiModels?.default_model ?? null,
   );
-  const selectedAiModelOption = getSelectableAiModelOption(selectedAiModel);
-  const isGold = user?.account_level === ACCOUNT_LEVEL.GOLD;
+  const selectedAiModelOption =
+    selectedAiModel === null
+      ? null
+      : getAiModelMetadata(availableModels, selectedAiModel);
+  const modelPreferenceOptions = [
+    {
+      value: SYSTEM_DEFAULT_MODEL,
+      label:
+        systemDefaultModel === null
+          ? "Domyślny"
+          : `Domyślny · ${systemDefaultModel.label}`,
+    },
+    ...aiModelOptions,
+  ];
   const mcpEndpoint = `${env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "")}/mcp`;
   const claudeCodeCommand = `claude mcp add --transport http testownik ${mcpEndpoint}`;
+  const codexCliAddCommand = `codex mcp add testownik --url ${mcpEndpoint}`;
+  const codexCliLoginCommand = "codex mcp login testownik";
 
   const copyCommand = async (command: string, label: string) => {
     try {
@@ -186,38 +251,43 @@ export function AiSettingsForm({
             className="ml-auto"
           />
         </div>
-        {canSelectAiModel ? (
+        {hasAiAccess && canSetDefaultAiModel && aiModelsQuery.isPending ? (
+          <DefaultModelSettingLoading accountLevel={user.account_level} />
+        ) : null}
+        {hasAiAccess && aiModelsQuery.isError ? (
+          <div
+            role="alert"
+            className="border-destructive/40 bg-destructive/5 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+          >
+            <p className="text-destructive text-sm">
+              Nie udało się pobrać dostępnych modeli.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void aiModelsQuery.refetch()}
+            >
+              <RefreshCwIcon /> Spróbuj ponownie
+            </Button>
+          </div>
+        ) : null}
+        {aiModelsQuery.isSuccess &&
+        canSelectAiModel &&
+        selectedAiModel !== null &&
+        selectedAiModelOption !== null ? (
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="min-w-0">
-              <Label
-                className="flex items-center gap-2 text-sm font-medium"
-                htmlFor="default-ai-model"
-              >
-                Domyślny model AI
-                <Badge
-                  variant="outline"
-                  className={
-                    isGold
-                      ? "border-amber-300/60 bg-amber-100/70 text-amber-900 dark:border-amber-300/30 dark:bg-amber-300/15 dark:text-amber-200"
-                      : "border-slate-300/80 bg-slate-100/80 text-slate-800 dark:border-slate-200/30 dark:bg-slate-200/15 dark:text-slate-200"
-                  }
-                >
-                  {isGold ? <CrownIcon /> : <BadgeCheckIcon />}
-                  {isGold ? "Gold" : "Silver"}
-                </Badge>
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Model startowy dla AI. W czacie możesz zmienić go tymczasowo.
-              </p>
-            </div>
+            <DefaultModelSettingDetails accountLevel={user.account_level} />
             <Select
               disabled={disabled}
-              items={selectableAiModelOptions}
-              value={selectedAiModel}
+              items={modelPreferenceOptions}
+              value={settings.default_ai_model ?? SYSTEM_DEFAULT_MODEL}
               onValueChange={(value) => {
-                if (
-                  isSelectableAiModelForAccountLevel(value, user?.account_level)
-                ) {
+                if (value === SYSTEM_DEFAULT_MODEL) {
+                  onSettingChange("default_ai_model", null);
+                  return;
+                }
+                if (availableModels.some((model) => model.model === value)) {
                   onSettingChange("default_ai_model", value);
                 }
               }}
@@ -233,13 +303,34 @@ export function AiSettingsForm({
                     provider={selectedAiModelOption.provider}
                   />
                   <span className="truncate">
-                    {selectedAiModelOption.label}
+                    {settings.default_ai_model === null
+                      ? `Domyślny · ${selectedAiModelOption.label}`
+                      : selectedAiModelOption.label}
                   </span>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent alignItemWithTrigger>
+              <SelectContent
+                alignItemWithTrigger
+                className="w-full min-w-(--anchor-width)"
+              >
                 <SelectGroup>
-                  {selectableAiModelOptions.map((model) => (
+                  <SelectItem
+                    value={SYSTEM_DEFAULT_MODEL}
+                    className="*:data-[slot=select-item-text]:gap-1.5"
+                  >
+                    {systemDefaultModel === null ? (
+                      "Domyślny"
+                    ) : (
+                      <>
+                        <AiModelProviderIcon
+                          provider={systemDefaultModel.provider}
+                          className="my-auto"
+                        />
+                        Domyślny · {systemDefaultModel.label}
+                      </>
+                    )}
+                  </SelectItem>
+                  {aiModelOptions.map((model) => (
                     <SelectItem
                       key={model.value}
                       value={model.value}
@@ -321,6 +412,55 @@ export function AiSettingsForm({
               <SetupStep title="Logowanie">
                 Po dodaniu serwera klient powinien uruchomić logowanie do
                 Testownika przy pierwszym połączeniu.
+              </SetupStep>
+            </ClientSetupTab>
+            <ClientSetupTab label="chatgpt-desktop">
+              <SetupStep title="Dodaj serwer">
+                W ChatGPT Desktop otwórz Settings → MCP servers, wybierz Add
+                server, wpisz nazwę Testownik i wybierz Streamable HTTP.
+              </SetupStep>
+              <CopyableSnippet
+                copiedKey={copiedCommand}
+                label="Adres serwera"
+                onCopy={(value, key) => {
+                  void copyCommand(value, key);
+                }}
+                value={mcpEndpoint}
+              />
+              <SetupStep title="Połącz konto">
+                Zapisz serwer, wybierz Restart, a następnie Authenticate, żeby
+                zalogować się do Testownika. Jeśli serwer został już dodany w
+                Codex CLI, wystarczy ponownie uruchomić aplikację.
+              </SetupStep>
+            </ClientSetupTab>
+            <ClientSetupTab label="codex-cli">
+              <SetupStep title="Dodaj serwer">
+                Uruchom polecenie w terminalu. Codex zapisze zdalny serwer MCP
+                we współdzielonej konfiguracji.
+              </SetupStep>
+              <CopyableSnippet
+                copiedKey={copiedCommand}
+                label="Dodaj Testownik"
+                onCopy={(value, key) => {
+                  void copyCommand(value, key);
+                }}
+                value={codexCliAddCommand}
+              />
+              <SetupStep title="Zaloguj się">
+                Uruchom drugie polecenie i dokończ logowanie w przeglądarce.
+              </SetupStep>
+              <CopyableSnippet
+                copiedKey={copiedCommand}
+                label="Połącz konto"
+                onCopy={(value, key) => {
+                  void copyCommand(value, key);
+                }}
+                value={codexCliLoginCommand}
+              />
+              <SetupStep title="Sprawdź połączenie">
+                Użyj <code className="text-foreground">codex mcp list</code> w
+                terminalu albo <code className="text-foreground">/mcp</code> w
+                interfejsie Codex, żeby zobaczyć aktywne serwery.
               </SetupStep>
             </ClientSetupTab>
             <ClientSetupTab label="claude-code">
