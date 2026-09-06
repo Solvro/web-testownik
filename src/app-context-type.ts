@@ -6,6 +6,4 @@ export interface AppContextType {
   isAuthenticated: boolean;
   user: JWTPayload | null;
   checkPermission: (action: PermissionAction) => boolean;
-  isMaintenance: boolean;
-  setIsMaintenance: (value: boolean) => void;
 }

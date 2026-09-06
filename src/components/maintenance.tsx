@@ -1,9 +1,8 @@
 "use client";
 
 import { ConstructionIcon } from "lucide-react";
-import { useContext, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import { AppContext } from "@/app-context";
 import {
   Empty,
   EmptyDescription,
@@ -73,8 +72,19 @@ export function MaintenanceWrapper({
 }: {
   children: React.ReactNode;
 }): React.ReactNode {
-  const context = useContext(AppContext);
-  if (context.isMaintenance) {
+  const [isMaintenance, setIsMaintenance] = useState(false);
+
+  useEffect(() => {
+    const handleMaintenance = () => {
+      setIsMaintenance(true);
+    };
+    window.addEventListener("backend-maintenance", handleMaintenance);
+    return () => {
+      window.removeEventListener("backend-maintenance", handleMaintenance);
+    };
+  }, []);
+
+  if (isMaintenance) {
     return <MaintenanceOverlay />;
   }
   return children;
