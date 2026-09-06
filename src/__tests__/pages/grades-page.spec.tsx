@@ -111,9 +111,7 @@ describe("GradesPage", () => {
   });
 
   it("should show error if api request fails", async () => {
-    server.use(
-      http.get("*/grades/", () => new HttpResponse(null, { status: 500 })),
-    );
+    server.use(http.get("*/grades/", () => HttpResponse.error()));
     await setup();
 
     expect(await screen.findByText(/błąd/i)).toBeVisible();

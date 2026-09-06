@@ -218,24 +218,6 @@ export class BaseApiService {
       const data = (await response.json()) as T;
       return this.handleResponse(response, data);
     } catch (error) {
-      // Catch refused connection
-      if (error instanceof TypeError && typeof window !== "undefined") {
-        const errorMessage = error.message.toLowerCase();
-
-        const isNetworkError =
-          errorMessage === "failed to fetch" ||
-          errorMessage === "fetch failed" ||
-          errorMessage === "load failed" ||
-          errorMessage.includes("network error");
-
-        if (isNetworkError) {
-          window.dispatchEvent(new Event("backend-maintenance"));
-          return await new Promise<never>(() => {
-            /* empty */
-          });
-        }
-      }
-
       const apiError = this.handleError(error);
       throw new Error(apiError.message);
     }

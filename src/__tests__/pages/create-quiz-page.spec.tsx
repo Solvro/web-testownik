@@ -112,7 +112,9 @@ describe("CreateQuizPage", () => {
   it("should show error if request fails", async () => {
     const { fillFields, submit } = await setup();
     server.use(
-      http.post("*/quizzes/", () => new HttpResponse(null, { status: 500 })),
+      http.post("*/quizzes/", () => {
+        return HttpResponse.error();
+      }),
     );
 
     await fillFields();

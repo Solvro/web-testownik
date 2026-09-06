@@ -259,9 +259,7 @@ describe("ImportQuizPage", () => {
   });
 
   it("should show error on API error", async () => {
-    server.use(
-      http.post("*/quizzes/", () => new HttpResponse(null, { status: 500 })),
-    );
+    server.use(http.post("*/quizzes/", () => HttpResponse.error()));
     const { clickImport, inputJson, switchToJson } = await setup();
 
     await switchToJson();
