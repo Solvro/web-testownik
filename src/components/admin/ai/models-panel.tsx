@@ -50,8 +50,8 @@ import { invalidateAIModels } from "@/hooks/use-ai-models";
 import { invalidateAIUsage } from "@/hooks/use-ai-usage";
 import { getUserService } from "@/services";
 import type { AIModelRow } from "@/types/ai-admin";
-import { ACCOUNT_LEVELS, ACCOUNT_LEVEL_LABELS } from "@/types/user";
 import type { AccountLevel } from "@/types/user";
+import { ACCOUNT_LEVELS, ACCOUNT_LEVEL_LABELS } from "@/types/user";
 
 import {
   aiModelIdentitySchema,
@@ -65,8 +65,8 @@ import {
   QueryError,
   SectionHeading,
 } from "./shared";
-import { SortableModelRow } from "./sortable-model-row";
 import type { ModelReorderOperation } from "./sortable-model-row";
+import { SortableModelRow } from "./sortable-model-row";
 
 const providers = [
   { label: "OpenAI", value: "openai" },
@@ -295,30 +295,25 @@ function ModelsForm({
 
       <Card className="py-0">
         <CardContent className="p-0">
-          <Table className="min-w-[1060px] table-fixed">
+          <Table className="table-fixed">
             <TableHeader className="bg-muted/40">
               <TableRow className="hover:bg-muted/40">
-                <TableHead className="w-20 px-2">Kolejność</TableHead>
-                <TableHead className="w-[240px] px-3">Model</TableHead>
-                <TableHead className="w-[110px] border-l px-3">
-                  Dostawca
+                <TableHead className="w-10 px-2">
+                  {" "}
+                  <span className="sr-only">Kolejnoßç</span>
                 </TableHead>
-                <TableHead className="w-[120px] border-l px-3">
-                  Dostęp od
-                </TableHead>
-                <TableHead className="w-[100px] border-l px-3">
-                  Input ×
-                </TableHead>
-                <TableHead className="w-[100px] border-l px-3">
-                  Output ×
-                </TableHead>
-                <TableHead className="w-[130px] border-l px-3">
+                <TableHead className="w-50 px-3">Model</TableHead>
+                <TableHead className="w-25 border-l px-3">Dostawca</TableHead>
+                <TableHead className="w-25 border-l px-3">Dostęp od</TableHead>
+                <TableHead className="w-25 border-l px-3">Input ×</TableHead>
+                <TableHead className="w-25 border-l px-3">Output ×</TableHead>
+                <TableHead className="w-30 border-l px-3">
                   Cache read ×
                 </TableHead>
-                <TableHead className="w-[130px] border-l px-3">
+                <TableHead className="w-30 border-l px-3">
                   Cache write ×
                 </TableHead>
-                <TableHead className="w-[72px] border-l px-2 text-center">
+                <TableHead className="w-18 border-l px-2 text-center">
                   Aktywny
                 </TableHead>
                 <TableHead className="w-12 border-l px-2">
@@ -410,7 +405,7 @@ function ModelsForm({
                                   aria-invalid={field.meta.isInvalid}
                                   type="number"
                                   min="0"
-                                  step="0.000001"
+                                  step="0.01"
                                   value={field.value}
                                   onBlur={field.handleBlur}
                                   onChange={(event) => {
