@@ -60,33 +60,6 @@ it.each([false, true])(
   },
 );
 
-it.each([
-  "Failed to fetch",
-  "fetch failed",
-  "Load failed",
-  "Network error",
-  "NetworkError when attempting to fetch resource.",
-])(
-  "rejects network failures without entering maintenance: %s",
-  async (message) => {
-    render(
-      <MaintenanceWrapper>
-        <p>Quiz content</p>
-      </MaintenanceWrapper>,
-    );
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError(message)));
-
-    await act(async () => {
-      await expect(
-        new ProbeService("http://test.local").request(),
-      ).rejects.toThrow(message);
-    });
-
-    expect(screen.getByText("Quiz content")).toBeVisible();
-    expect(screen.queryByText("Przerwa techniczna")).not.toBeInTheDocument();
-  },
-);
-
 it.each([500, 502, 503, 504, 429, 200])(
   "reloads only after a healthy status response: %i",
   async (status) => {

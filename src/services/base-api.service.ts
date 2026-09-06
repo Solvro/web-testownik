@@ -218,6 +218,7 @@ export class BaseApiService {
       const data = (await response.json()) as T;
       return this.handleResponse(response, data);
     } catch (error) {
+      // Network failures can mean the user is offline; only HTTP 503 triggers maintenance.
       const apiError = this.handleError(error);
       throw new Error(apiError.message);
     }
