@@ -24,10 +24,11 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",
-    "@ai-sdk/openai": "^3.0.63",
+    "@ai-sdk/openai": "^3.0.109",
     "@ai-sdk/react": "^3.0.184",
     "@ai-sdk/xai": "^3.0.96",
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^2.2.0",
     "@base-ui/react": "^1.2.0",
     "@formbricks/js": "^4.3.0",
     "@iconify/react": "^6.0.2",

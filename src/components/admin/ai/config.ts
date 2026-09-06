@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type {
   AIAccountLimitRow,
   AIModelRow,
@@ -12,6 +14,11 @@ export {
   ACCOUNT_TYPES as accountTypes,
   ACCOUNT_TYPE_LABELS as accountTypeLabels,
 } from "@/types/user";
+
+export const aiModelIdentitySchema = z.object({
+  model: z.string().trim().min(1, "Wpisz identyfikator.").max(100),
+  label: z.string().trim().min(1, "Wpisz nazwę.").max(100),
+});
 
 export const aiAdminKeys = {
   permissions: ["ai-admin-permissions"] as const,
@@ -48,9 +55,11 @@ function normalizeDecimal(value: string) {
 export function normalizeModelRows(rows: AIModelRow[]) {
   return rows.map((row) => ({
     ...row,
+    original_model: row.original_model ?? row.model,
     input_weight: normalizeDecimal(row.input_weight),
     output_weight: normalizeDecimal(row.output_weight),
-    cached_weight: normalizeDecimal(row.cached_weight),
+    cache_read_weight: normalizeDecimal(row.cache_read_weight),
+    cache_write_weight: normalizeDecimal(row.cache_write_weight),
   }));
 }
 
