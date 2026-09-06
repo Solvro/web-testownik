@@ -72,7 +72,7 @@ export function StatisticsPanel({ canManage }: { canManage: boolean }) {
   const totalTokens =
     Number(data.totals.input_tokens ?? 0) +
     Number(data.totals.output_tokens ?? 0) +
-    Number(data.totals.cached_tokens ?? 0);
+    Number(data.totals.cache_read_tokens ?? 0);
   const events = Number(data.totals.events ?? 0);
   const problemEvents =
     Number(data.totals.aborted ?? 0) + Number(data.totals.errors ?? 0);
@@ -105,7 +105,7 @@ export function StatisticsPanel({ canManage }: { canManage: boolean }) {
           <Metric
             label="Przetworzone tokeny"
             value={formatNumber(totalTokens)}
-            detail={`${formatNumber(data.totals.cached_tokens)} z cache`}
+            detail={`${formatNumber(data.totals.cache_read_tokens)} z cache`}
           />
           <Metric
             label="Udane zakończenia"

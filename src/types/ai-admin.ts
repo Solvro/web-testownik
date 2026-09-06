@@ -50,13 +50,16 @@ export interface AIAdminUser {
 }
 
 export interface AIModelRow {
+  original_model?: string;
+  order?: number;
   model: string;
   label: string;
   provider: AiModelProvider;
   minimum_account_level: AccountLevel;
   input_weight: string;
   output_weight: string;
-  cached_weight: string;
+  cache_read_weight: string;
+  cache_write_weight: string;
   active: boolean;
 }
 

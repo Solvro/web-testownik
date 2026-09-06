@@ -46,7 +46,8 @@ export interface UsageReportPayload {
   model: string;
   input_tokens?: number;
   output_tokens?: number;
-  cached_tokens?: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
   request_id: string;
   conversation_id?: string;
   quiz_id?: string;
@@ -65,6 +66,7 @@ interface TokenUsage {
   inputTokenDetails?: {
     noCacheTokens?: number;
     cacheReadTokens?: number;
+    cacheWriteTokens?: number;
   };
 }
 
@@ -84,7 +86,8 @@ type UsageReportBase = Omit<
   | "request_id"
   | "input_tokens"
   | "output_tokens"
-  | "cached_tokens"
+  | "cache_read_tokens"
+  | "cache_write_tokens"
   | "aborted"
   | "finish_reason"
   | "error"
@@ -92,11 +95,18 @@ type UsageReportBase = Omit<
 >;
 
 function usageTokens(usage: TokenUsage) {
+  const cacheReadTokens = usage.inputTokenDetails?.cacheReadTokens ?? 0;
+  const cacheWriteTokens = usage.inputTokenDetails?.cacheWriteTokens ?? 0;
   return {
     input_tokens:
-      usage.inputTokenDetails?.noCacheTokens ?? usage.inputTokens ?? 0,
+      usage.inputTokenDetails?.noCacheTokens ??
+      Math.max(
+        0,
+        (usage.inputTokens ?? 0) - cacheReadTokens - cacheWriteTokens,
+      ),
     output_tokens: usage.outputTokens ?? 0,
-    cached_tokens: usage.inputTokenDetails?.cacheReadTokens ?? 0,
+    cache_read_tokens: cacheReadTokens,
+    cache_write_tokens: cacheWriteTokens,
   };
 }
 
@@ -157,10 +167,18 @@ export function buildUsageCallbacks({
           return {
             input_tokens: sum.input_tokens + current.input_tokens,
             output_tokens: sum.output_tokens + current.output_tokens,
-            cached_tokens: sum.cached_tokens + current.cached_tokens,
+            cache_read_tokens:
+              sum.cache_read_tokens + current.cache_read_tokens,
+            cache_write_tokens:
+              sum.cache_write_tokens + current.cache_write_tokens,
           };
         },
-        { input_tokens: 0, output_tokens: 0, cached_tokens: 0 },
+        {
+          input_tokens: 0,
+          output_tokens: 0,
+          cache_read_tokens: 0,
+          cache_write_tokens: 0,
+        },
       );
       scheduleOnce(() => ({
         ...payload,
