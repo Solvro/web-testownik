@@ -1,9 +1,10 @@
 "use client";
 
+import { reorder } from "@atlaskit/pragmatic-drag-and-drop/reorder";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -52,13 +53,20 @@ import type { AIModelRow } from "@/types/ai-admin";
 import { ACCOUNT_LEVELS, ACCOUNT_LEVEL_LABELS } from "@/types/user";
 import type { AccountLevel } from "@/types/user";
 
-import { aiAdminKeys as keys, normalizeModelRows } from "./config";
+import {
+  aiModelIdentitySchema,
+  aiAdminKeys as keys,
+  normalizeModelRows,
+} from "./config";
+import { ModelIdentityEditor } from "./model-identity-editor";
 import {
   AdminLoading,
   FormSaveBar,
   QueryError,
   SectionHeading,
 } from "./shared";
+import { SortableModelRow } from "./sortable-model-row";
+import type { ModelReorderOperation } from "./sortable-model-row";
 
 const providers = [
   { label: "OpenAI", value: "openai" },
@@ -78,17 +86,32 @@ const weightSchema = z
   )
   .transform(String);
 
-const modelSchema = z.object({
-  model: z.string().trim().min(1, "Wpisz identyfikator.").max(100),
-  label: z.string().trim().min(1, "Wpisz nazwę.").max(100),
+const modelSchema = aiModelIdentitySchema.extend({
+  original_model: z.string().optional(),
+  order: z.number().int().nonnegative().optional(),
   provider: z.enum(["openai", "anthropic", "xai"]),
   minimum_account_level: z.enum(["basic", "silver", "gold"]),
   input_weight: weightSchema,
   output_weight: weightSchema,
-  cached_weight: weightSchema,
+  cache_read_weight: weightSchema,
+  cache_write_weight: weightSchema,
   active: z.boolean(),
 });
-const modelsFormSchema = z.object({ rows: z.array(modelSchema) });
+const modelsFormSchema = z.object({
+  rows: z.array(modelSchema).superRefine((rows, context) => {
+    const seen = new Set<string>();
+    for (const [index, row] of rows.entries()) {
+      if (seen.has(row.model)) {
+        context.addIssue({
+          code: "custom",
+          message: "Identyfikatory modeli muszą być unikalne.",
+          path: [index, "model"],
+        });
+      }
+      seen.add(row.model);
+    }
+  }),
+});
 
 const newModelDefaults: AIModelRow = {
   model: "",
@@ -97,19 +120,16 @@ const newModelDefaults: AIModelRow = {
   minimum_account_level: "basic" as const,
   input_weight: "1",
   output_weight: "1",
-  cached_weight: "0",
-  active: false,
+  cache_read_weight: "0",
+  cache_write_weight: "1",
+  active: true,
 };
 
 function mergeModelRow(rows: AIModelRow[], row: AIModelRow) {
   return normalizeModelRows([
     ...rows.filter((current) => current.model !== row.model),
     row,
-  ]).toSorted(
-    (left, right) =>
-      left.provider.localeCompare(right.provider) ||
-      left.model.localeCompare(right.model),
-  );
+  ]);
 }
 
 export function ModelsPanel({
@@ -158,6 +178,8 @@ function ModelsForm({
 }) {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
+  const listId = useId();
+  const [reorderAnnouncement, setReorderAnnouncement] = useState("");
   const defaultValues = useMemo(() => ({ rows: initialRows }), [initialRows]);
   const form = useForm({
     defaultValues,
@@ -165,13 +187,14 @@ function ModelsForm({
     onSubmit: async ({ schemaOutputs, formApi }) => {
       try {
         const rows = await getUserService().updateAIAdminModels(
-          schemaOutputs[0].rows,
+          schemaOutputs[0].rows.map((row, order) => ({ ...row, order })),
         );
         const normalizedRows = normalizeModelRows(rows);
         queryClient.setQueryData(keys.models, normalizedRows);
         formApi.reset({ rows: normalizedRows });
         void invalidateAIModels(queryClient);
         void invalidateAIUsage(queryClient);
+        void queryClient.invalidateQueries({ queryKey: keys.settings });
         toast.success("Modele zostały zapisane");
       } catch (error) {
         toast.error("Nie udało się zapisać modeli");
@@ -179,15 +202,44 @@ function ModelsForm({
       }
     },
   });
+  const moveModel = useCallback(
+    (sourceId: string, targetId: string, operation: ModelReorderOperation) => {
+      const rows = form.state.values.rows;
+      const startIndex = rows.findIndex(
+        (row) => (row.original_model ?? row.model) === sourceId,
+      );
+      const targetIndex = rows.findIndex(
+        (row) => (row.original_model ?? row.model) === targetId,
+      );
+      if (startIndex === -1 || targetIndex === -1) {
+        return;
+      }
+      const insertionIndex =
+        targetIndex + (operation === "reorder-after" ? 1 : 0);
+      const finishIndex =
+        insertionIndex > startIndex ? insertionIndex - 1 : insertionIndex;
+      if (finishIndex === startIndex) {
+        return;
+      }
+      form.setFieldValue(
+        "rows",
+        reorder({ list: rows, startIndex, finishIndex }),
+      );
+      setReorderAnnouncement(
+        `${rows[startIndex].label}: miejsce ${(finishIndex + 1).toString()} z ${rows.length.toString()}.`,
+      );
+    },
+    [form],
+  );
   const deleteModel = useMutation({
     mutationFn: async (model: string) =>
       getUserService().deleteAIAdminModel(model),
     onSuccess: (_, deletedModel) => {
       const savedRows = form.defaultValues.rows.filter(
-        (row) => row.model !== deletedModel,
+        (row) => (row.original_model ?? row.model) !== deletedModel,
       );
       const draftRows = form.state.values.rows.filter(
-        (row) => row.model !== deletedModel,
+        (row) => (row.original_model ?? row.model) !== deletedModel,
       );
       const wasDirty = !form.state.isDefaultValue;
       queryClient.setQueryData(keys.models, savedRows);
@@ -243,9 +295,10 @@ function ModelsForm({
 
       <Card className="py-0">
         <CardContent className="p-0">
-          <Table className="min-w-[880px] table-fixed">
+          <Table className="min-w-[1060px] table-fixed">
             <TableHeader className="bg-muted/40">
               <TableRow className="hover:bg-muted/40">
+                <TableHead className="w-20 px-2">Kolejność</TableHead>
                 <TableHead className="w-[240px] px-3">Model</TableHead>
                 <TableHead className="w-[110px] border-l px-3">
                   Dostawca
@@ -254,13 +307,16 @@ function ModelsForm({
                   Dostęp od
                 </TableHead>
                 <TableHead className="w-[100px] border-l px-3">
-                  Wejście ×
+                  Input ×
                 </TableHead>
                 <TableHead className="w-[100px] border-l px-3">
-                  Wyjście ×
+                  Output ×
                 </TableHead>
-                <TableHead className="w-[100px] border-l px-3">
-                  Cache ×
+                <TableHead className="w-[130px] border-l px-3">
+                  Cache read ×
+                </TableHead>
+                <TableHead className="w-[130px] border-l px-3">
+                  Cache write ×
                 </TableHead>
                 <TableHead className="w-[72px] border-l px-2 text-center">
                   Aktywny
@@ -274,34 +330,41 @@ function ModelsForm({
               <form.Subscribe selector={(state) => state.values.rows}>
                 {(rows) =>
                   rows.map((row, index) => (
-                    <TableRow key={row.model}>
-                      <TableCell className="min-w-0 px-3 py-2 whitespace-normal">
-                        <form.Field
-                          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- TanStack Form array paths require a numeric index.
-                          name={`rows[${index}].label`}
-                        >
-                          {(field) => (
-                            <>
-                              <Input
-                                aria-label={`${row.model}: nazwa`}
-                                aria-invalid={field.meta.isInvalid}
-                                value={field.value}
-                                onBlur={field.handleBlur}
-                                onChange={(event) => {
-                                  field.handleChange(event.target.value);
-                                }}
-                                className="hover:border-input focus:border-input h-8 border-transparent bg-transparent px-2 text-sm font-medium shadow-none"
-                              />
-                              <FieldError
-                                className="px-2 text-[10px]"
-                                errors={field.errors}
-                              />
-                            </>
-                          )}
-                        </form.Field>
-                        <p className="text-muted-foreground truncate px-2 text-xs">
-                          {row.model}
-                        </p>
+                    <SortableModelRow
+                      key={row.original_model ?? row.model}
+                      modelId={row.original_model ?? row.model}
+                      label={row.label}
+                      modelCode={row.model}
+                      listId={listId}
+                      previousId={
+                        index > 0
+                          ? (rows[index - 1].original_model ??
+                            rows[index - 1].model)
+                          : undefined
+                      }
+                      nextId={
+                        index < rows.length - 1
+                          ? (rows[index + 1].original_model ??
+                            rows[index + 1].model)
+                          : undefined
+                      }
+                      onMove={moveModel}
+                    >
+                      <TableCell className="min-w-0 px-3 py-3 whitespace-normal">
+                        <ModelIdentityEditor
+                          label={row.label}
+                          model={row.model}
+                          otherModelCodes={rows
+                            .filter((_, rowIndex) => rowIndex !== index)
+                            .map((model) => model.model)}
+                          onApply={(identity) => {
+                            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- TanStack Form array paths require a numeric index.
+                            form.setFieldValue(`rows[${index}]`, {
+                              ...row,
+                              ...identity,
+                            });
+                          }}
+                        />
                       </TableCell>
                       <TableCell className="border-l px-2">
                         <Badge
@@ -331,7 +394,8 @@ function ModelsForm({
                         [
                           "input_weight",
                           "output_weight",
-                          "cached_weight",
+                          "cache_read_weight",
+                          "cache_write_weight",
                         ] as const
                       ).map((fieldName) => (
                         <TableCell key={fieldName} className="border-l px-2">
@@ -346,7 +410,7 @@ function ModelsForm({
                                   aria-invalid={field.meta.isInvalid}
                                   type="number"
                                   min="0"
-                                  step="0.01"
+                                  step="0.000001"
                                   value={field.value}
                                   onBlur={field.handleBlur}
                                   onChange={(event) => {
@@ -386,15 +450,18 @@ function ModelsForm({
                           disabled={deleteModel.isPending}
                           pending={
                             deleteModel.isPending
-                              ? deleteModel.variables === row.model
+                              ? deleteModel.variables ===
+                                (row.original_model ?? row.model)
                               : false
                           }
                           onDelete={async (model) => {
-                            await deleteModel.mutateAsync(model);
+                            await deleteModel.mutateAsync(
+                              row.original_model ?? model,
+                            );
                           }}
                         />
                       </TableCell>
-                    </TableRow>
+                    </SortableModelRow>
                   ))
                 }
               </form.Subscribe>
@@ -403,6 +470,9 @@ function ModelsForm({
         </CardContent>
       </Card>
 
+      <p role="status" aria-live="polite" className="sr-only">
+        {reorderAnnouncement}
+      </p>
       <FormSaveBar form={form} onDirtyChange={onDirtyChange} />
     </div>
   );
@@ -609,38 +679,45 @@ function CreateModelForm({
                 </Field>
               )}
             </form.Field>
-            {(["input_weight", "output_weight", "cached_weight"] as const).map(
-              (name) => (
-                <form.Field key={name} name={name}>
-                  {(field) => (
-                    <Field data-invalid={field.meta.isInvalid}>
-                      <FieldLabel htmlFor={`new-model-${name}`}>
-                        {name === "input_weight"
-                          ? "Waga wejścia"
-                          : name === "output_weight"
-                            ? "Waga wyjścia"
-                            : "Waga cache"}
-                      </FieldLabel>
-                      <Input
-                        id={`new-model-${name}`}
-                        name={name}
-                        autoComplete="off"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={field.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => {
-                          field.handleChange(event.target.value);
-                        }}
-                        aria-invalid={field.meta.isInvalid}
-                      />
-                      <FieldError errors={field.errors} />
-                    </Field>
-                  )}
-                </form.Field>
-              ),
-            )}
+            {(
+              [
+                "input_weight",
+                "output_weight",
+                "cache_read_weight",
+                "cache_write_weight",
+              ] as const
+            ).map((name) => (
+              <form.Field key={name} name={name}>
+                {(field) => (
+                  <Field data-invalid={field.meta.isInvalid}>
+                    <FieldLabel htmlFor={`new-model-${name}`}>
+                      {name === "input_weight"
+                        ? "Input weight"
+                        : name === "output_weight"
+                          ? "Output weight"
+                          : name === "cache_read_weight"
+                            ? "Cache read weight"
+                            : "Cache write weight"}
+                    </FieldLabel>
+                    <Input
+                      id={`new-model-${name}`}
+                      name={name}
+                      autoComplete="off"
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      value={field.value}
+                      onBlur={field.handleBlur}
+                      onChange={(event) => {
+                        field.handleChange(event.target.value);
+                      }}
+                      aria-invalid={field.meta.isInvalid}
+                    />
+                    <FieldError errors={field.errors} />
+                  </Field>
+                )}
+              </form.Field>
+            ))}
             <form.Field name="active">
               {(field) => (
                 <Field

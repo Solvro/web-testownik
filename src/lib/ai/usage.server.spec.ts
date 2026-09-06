@@ -150,3 +150,97 @@ describe("AI usage server pipeline", () => {
     );
   });
 });
+
+describe("cache token accounting", () => {
+  beforeEach(() => {
+    afterCallbacks.length = 0;
+    vi.restoreAllMocks();
+  });
+
+  it.each([true, false])(
+    "charges disjoint input/read/write tokens (details: %s)",
+    async (hasNoCache) => {
+      const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(jsonResponse({}, 201));
+      const callbacks = buildUsageCallbacks({
+        payload: { user_id: "user-1", scope: "chat", model: "cache-model" },
+        requestId: "cache-request",
+        startedAt: Date.now(),
+      });
+      callbacks.onFinish({
+        totalUsage: {
+          inputTokens: 340,
+          outputTokens: 10,
+          inputTokenDetails: {
+            noCacheTokens: hasNoCache ? 100 : undefined,
+            cacheReadTokens: 200,
+            cacheWriteTokens: 40,
+          },
+        },
+        finishReason: "stop",
+      });
+      for (const callback of afterCallbacks) {
+        await callback();
+      }
+      expect(
+        parsedRequestBody(fetchMock.mock.calls[0]?.[1]?.body),
+      ).toMatchObject({
+        input_tokens: 100,
+        output_tokens: 10,
+        cache_read_tokens: 200,
+        cache_write_tokens: 40,
+      });
+    },
+  );
+
+  it("sums cache writes from completed steps on abort without a second report", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({}, 201));
+    const callbacks = buildUsageCallbacks({
+      payload: { user_id: "user-1", scope: "chat", model: "cache-model" },
+      requestId: "abort-cache",
+      startedAt: Date.now(),
+    });
+    callbacks.onAbort({
+      steps: [
+        {
+          usage: {
+            inputTokens: 150,
+            outputTokens: 3,
+            inputTokenDetails: {
+              noCacheTokens: 100,
+              cacheReadTokens: 30,
+              cacheWriteTokens: 20,
+            },
+          },
+        },
+        {
+          usage: {
+            inputTokens: 90,
+            outputTokens: 2,
+            inputTokenDetails: { cacheReadTokens: 50, cacheWriteTokens: 10 },
+          },
+        },
+      ],
+    });
+    callbacks.onFinish({
+      totalUsage: { inputTokens: 999 },
+      finishReason: "stop",
+    });
+    for (const callback of afterCallbacks) {
+      await callback();
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(parsedRequestBody(fetchMock.mock.calls[0]?.[1]?.body)).toMatchObject(
+      {
+        input_tokens: 130,
+        output_tokens: 5,
+        cache_read_tokens: 80,
+        cache_write_tokens: 30,
+        aborted: true,
+      },
+    );
+  });
+});
