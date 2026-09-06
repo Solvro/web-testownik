@@ -20,7 +20,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { OverTypeInstance, Theme } from "overtype";
 import { markdownActions } from "overtype";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { ClipboardEvent, RefObject } from "react";
 
 import { useOverType } from "@/hooks/use-overtype";
@@ -49,11 +49,11 @@ const theme: Theme = {
     syntaxMarker: "var(--muted-foreground)",
     cursor: "var(--primary)",
     selection: "color-mix(in srgb, var(--primary) 20%, transparent)",
-    strong: "var(--foreground)",
-    em: "var(--foreground)",
-    h1: "var(--foreground)",
-    h2: "var(--foreground)",
-    h3: "var(--foreground)",
+    strong: "var(--chart-4)",
+    em: "var(--chart-3)",
+    h1: "var(--chart-4)",
+    h2: "var(--chart-3)",
+    h3: "var(--chart-2)",
     blockquote: "var(--muted-foreground)",
     codeBg: "var(--muted)",
     code: "var(--foreground)",
@@ -189,9 +189,13 @@ const formatGroups: { label: string; actions: FormatAction[] }[] = [
 function FormattingPopover({
   editorRef,
   fieldLabel,
+  ownerId,
+  linkOnly = false,
 }: {
   editorRef: RefObject<OverTypeInstance | null>;
   fieldLabel: string;
+  ownerId: string;
+  linkOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -246,15 +250,22 @@ function FormattingPopover({
             type="button"
             size="icon-sm"
             variant="ghost"
-            aria-label={`Formatowanie: ${fieldLabel}`}
+            aria-label={
+              linkOnly ? `Link: ${fieldLabel}` : `Formatowanie: ${fieldLabel}`
+            }
             title="Formatowanie tekstu"
           >
-            <ALargeSmallIcon className="size-4" />
+            {linkOnly ? (
+              <LinkIcon className="size-4" />
+            ) : (
+              <ALargeSmallIcon className="size-4" />
+            )}
           </Button>
         }
       />
       <PopoverContent
-        align="end"
+        align="start"
+        data-editor-owner={ownerId}
         className="max-h-(--available-height) w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto"
         finalFocus={(closeType) =>
           closeType === "keyboard" ? editorRef.current?.textarea : false
@@ -266,7 +277,7 @@ function FormattingPopover({
             Zaznacz tekst, aby zmienić jego format.
           </PopoverDescription>
         </PopoverHeader>
-        {formatGroups.map((group) => (
+        {(linkOnly ? [] : formatGroups).map((group) => (
           <div key={group.label} className="space-y-1">
             <p className="text-muted-foreground text-xs font-medium">
               {group.label}
@@ -360,55 +371,133 @@ export function OverTypeEditor({
     onKeyDown,
   });
   const fieldLabel = placeholder ?? "Treść Markdown";
+  const [editing, setEditing] = useState(false);
+  const previewRef = useRef<HTMLButtonElement>(null);
+  const ownerId = useId();
+  const showPreview = !editing && value.trim() !== "";
+
+  function startEditing() {
+    setEditing(true);
+    requestAnimationFrame(() => {
+      const textarea = editorRef.current?.textarea;
+      if (textarea !== undefined) {
+        textarea.focus();
+        textarea.setSelectionRange(
+          textarea.value.length,
+          textarea.value.length,
+        );
+        // Recalculate the editor height after revealing its mounted container.
+        editorRef.current?.setValue(textarea.value);
+      }
+    });
+  }
+
+  function apply(action: FormatAction["apply"]) {
+    const textarea = editorRef.current?.textarea;
+    if (textarea !== undefined) {
+      action(textarea);
+      textarea.focus();
+    }
+  }
 
   return (
     <div
       className={cn(
-        "border-input dark:bg-input/30 focus-within:border-ring focus-within:ring-ring/50 flex min-w-0 rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-3",
+        "border-input dark:bg-input/30 focus-within:border-ring focus-within:ring-ring/50 min-w-0 rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-3",
         className,
       )}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        // Formatting popovers belong to this editor even though they use a portal.
+        if (
+          next instanceof Element &&
+          (event.currentTarget.contains(next) ||
+            next.closest<HTMLElement>("[data-editor-owner]")?.dataset
+              .editorOwner === ownerId)
+        ) {
+          return;
+        }
+        setEditing(false);
+      }}
     >
-      <div className="min-w-0 flex-1" onPaste={onPaste}>
+      {editing ? (
+        <div className="border-border flex items-center gap-1 border-b px-2 py-1">
+          <div className="hidden flex-wrap items-center gap-1 lg:flex">
+            {formatGroups.map((group) => (
+              <div key={group.label} className="flex items-center gap-0.5">
+                {group.actions.map(({ label, icon: Icon, apply: action }) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={label}
+                    title={label}
+                    onClick={() => {
+                      apply(action);
+                    }}
+                  >
+                    <Icon className="size-4" />
+                  </Button>
+                ))}
+              </div>
+            ))}
+            <FormattingPopover
+              editorRef={editorRef}
+              fieldLabel={fieldLabel}
+              ownerId={ownerId}
+              linkOnly
+            />
+          </div>
+          <div className="lg:hidden">
+            <FormattingPopover
+              editorRef={editorRef}
+              fieldLabel={fieldLabel}
+              ownerId={ownerId}
+            />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="ml-auto"
+            onClick={() => {
+              setEditing(false);
+              requestAnimationFrame(() => {
+                previewRef.current?.focus();
+              });
+            }}
+          >
+            <EyeIcon className="size-4" />
+            Podgląd
+          </Button>
+        </div>
+      ) : null}
+      <div
+        hidden={showPreview}
+        onPaste={onPaste}
+        onFocus={() => {
+          setEditing(true);
+        }}
+      >
         <div
           ref={containerRef}
           data-slot="overtype-editor"
           className="[&_.ot-math]:text-primary relative isolate z-0"
         />
       </div>
-      <div className="text-muted-foreground flex shrink-0 items-start gap-0.5 p-1">
-        <FormattingPopover editorRef={editorRef} fieldLabel={fieldLabel} />
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={`Podgląd: ${fieldLabel}`}
-                title="Podgląd Markdown"
-              >
-                <EyeIcon className="size-4" />
-              </Button>
-            }
+      {showPreview ? (
+        <div className="relative cursor-text px-4 py-2">
+          <MarkdownRenderer>{value}</MarkdownRenderer>
+          <button
+            ref={previewRef}
+            type="button"
+            aria-label={`Edytuj: ${fieldLabel}`}
+            className="absolute inset-0 cursor-text rounded-md outline-none"
+            onClick={startEditing}
           />
-          <PopoverContent
-            align="end"
-            className="max-h-(--available-height) w-96 max-w-[calc(100vw-2rem)] overflow-y-auto"
-            initialFocus={false}
-          >
-            <PopoverHeader>
-              <PopoverTitle>Podgląd</PopoverTitle>
-            </PopoverHeader>
-            {value.trim() === "" ? (
-              <p className="text-muted-foreground text-sm">
-                Zacznij pisać, aby zobaczyć podgląd.
-              </p>
-            ) : (
-              <MarkdownRenderer>{value}</MarkdownRenderer>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -25,7 +25,7 @@ function Editor({ initialValue = "" }: { initialValue?: string }) {
   );
 }
 
-it("lets users type immediately and keeps editing available after blur", async () => {
+it("reveals editing on click and returns to rendered content after blur", async () => {
   const user = userEvent.setup();
   render(
     <>
@@ -34,8 +34,16 @@ it("lets users type immediately and keeps editing available after blur", async (
     </>,
   );
   const textarea = screen.getByRole("textbox", { name: "Odpowiedź 1" });
+  expect(
+    screen.queryByRole("button", { name: "Pogrubienie" }),
+  ).not.toBeInTheDocument();
   await user.type(textarea, "Róża");
+  expect(screen.getByRole("button", { name: "Pogrubienie" })).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Next field" }));
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(screen.getByText("Róża", { selector: ".prose p" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Edytuj: Odpowiedź 1" }));
+  await waitFor(() => expect(textarea).toHaveFocus());
   await user.type(textarea, " i tulipan");
   expect(textarea).toHaveValue("Róża i tulipan");
   expect(
@@ -44,17 +52,17 @@ it("lets users type immediately and keeps editing available after blur", async (
 });
 
 it("keeps the preview and textarea synchronized after parent-driven updates", async () => {
-  const user = userEvent.setup();
   const onChange = vi.fn();
   const { rerender } = render(
     <OverTypeEditor value="Old content" onChange={onChange} />,
   );
-  await user.click(screen.getByRole("button", { name: /podgląd:/i }));
   expect(
     await screen.findByText("Old content", { selector: ".prose p" }),
   ).toBeVisible();
   rerender(<OverTypeEditor value="New content" onChange={onChange} />);
-  expect(screen.getByRole("textbox")).toHaveValue("New content");
+  expect(screen.getByRole("textbox", { hidden: true })).toHaveValue(
+    "New content",
+  );
   expect(
     screen.getByText("New content", { selector: ".prose p" }),
   ).toBeVisible();
@@ -64,10 +72,10 @@ it("keeps the preview and textarea synchronized after parent-driven updates", as
 it("applies formatting to selected text and returns focus to the editor", async () => {
   const user = userEvent.setup();
   render(<Editor initialValue="Róża" />);
+  await user.click(screen.getByRole("button", { name: "Edytuj: Odpowiedź 1" }));
   const textarea = screen.getByRole<HTMLTextAreaElement>("textbox");
-  textarea.focus();
+  await waitFor(() => expect(textarea).toHaveFocus());
   textarea.setSelectionRange(0, 4);
-  await user.click(screen.getByRole("button", { name: /formatowanie:/i }));
   await user.click(screen.getByRole("button", { name: "Pogrubienie" }));
   expect(textarea).toHaveValue("**Róża**");
   await waitFor(() => expect(textarea).toHaveFocus());
@@ -86,8 +94,10 @@ it("keeps existing editors intact when another editor unmounts in Strict Mode", 
       <OverTypeEditor value="**Text** $y$" onChange={onChange} />
     </StrictMode>,
   );
-  expect(screen.getAllByRole("textbox")).toHaveLength(1);
-  expect(screen.getByRole("textbox")).toHaveValue("**Text** $y$");
+  expect(screen.getAllByRole("textbox", { hidden: true })).toHaveLength(1);
+  expect(screen.getByRole("textbox", { hidden: true })).toHaveValue(
+    "**Text** $y$",
+  );
   expect(container.querySelector(".ot-math")?.textContent).toBe("$y$");
   expect(onChange).not.toHaveBeenCalled();
 });
@@ -112,4 +122,32 @@ it("forwards real clipboard and keyboard events to the quiz form", () => {
   fireEvent.keyDown(textarea, { key: "v", ctrlKey: true, shiftKey: true });
   expect(onPaste).toHaveBeenCalledTimes(1);
   expect(onKeyDown).toHaveBeenCalledTimes(1);
+});
+
+it("supports keyboard entry and keeps editing open while using a portaled link form", async () => {
+  const user = userEvent.setup();
+  render(
+    <>
+      <Editor initialValue="Róża" />
+      <button type="button">Next field</button>
+    </>,
+  );
+  await user.tab();
+  expect(
+    screen.getByRole("button", { name: "Edytuj: Odpowiedź 1" }),
+  ).toHaveFocus();
+  await user.keyboard("{Enter}");
+  const textarea = screen.getByRole("textbox", { name: "Odpowiedź 1" });
+  await waitFor(() => expect(textarea).toHaveFocus());
+  await user.click(screen.getByRole("button", { name: "Link: Odpowiedź 1" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "Link" }),
+    "https://example.com",
+  );
+  expect(textarea).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Wstaw link" }));
+  await waitFor(() => expect(textarea).toHaveFocus());
+  expect(textarea).toHaveValue("Róża[](https://example.com)");
+  await user.click(screen.getByRole("button", { name: "Podgląd" }));
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
 });
