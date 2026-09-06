@@ -1,6 +1,5 @@
 import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateUserProfile } from "@/hooks/use-user-profile";
 import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
@@ -141,16 +141,47 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
     <div className="space-y-2">
       <Card>
         {loading ? (
-          <CardContent className="flex flex-col items-center gap-6 py-10">
-            <div className="flex justify-center">
-              <span className="border-border size-10 animate-spin rounded-full border-4 border-t-transparent" />
+          <CardContent
+            className="flex flex-col items-center space-y-4 text-center"
+            role="status"
+            aria-label="Ładowanie profilu"
+          >
+            <Skeleton className="size-24 rounded-full" />
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-5 w-24" />
+            <div className="flex justify-center gap-2">
+              <Skeleton className="h-5 w-20 rounded-md" />
+              <Skeleton className="h-5 w-16 rounded-md" />
             </div>
-            <div className="bg-muted h-6 w-40 animate-pulse rounded" />
-            <div className="bg-muted h-5 w-32 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
             <div className="bg-border h-px w-full" />
-            <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-28 animate-pulse rounded" />
+            <div className="w-full space-y-2 text-sm">
+              <h5 className="text-muted-foreground font-medium">
+                Prywatne dane:
+              </h5>
+              <div className="space-y-2">
+                <Skeleton className="mx-auto h-5 w-28" />
+                <Skeleton className="mx-auto h-5 w-44 max-w-full" />
+              </div>
+            </div>
+            <div className="bg-border h-px w-full" />
+            <div className="flex w-full items-center gap-4 text-left">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">Ukryj profil</p>
+                <p className="text-muted-foreground text-xs">
+                  Nie będzie cię można znaleźć w wyszukiwarce po imieniu i
+                  nazwisku, nie będziesz wyświetlany w rankingach.
+                </p>
+              </div>
+              <Switch disabled className="ml-auto" />
+            </div>
+            <div className="bg-border h-px w-full" />
+            <p className="text-muted-foreground max-w-prose text-xs">
+              Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami
+              pod adresem:{" "}
+              <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
+                kn.solvro@pwr.edu.pl
+              </a>
+            </p>
           </CardContent>
         ) : (
           <CardContent className="flex flex-col items-center space-y-4 text-center">
@@ -242,11 +273,6 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
           </CardContent>
         )}
       </Card>
-      <div className="w-full text-center md:hidden">
-        <Link href="/privacy-policy" className="text-sm underline">
-          Polityka prywatności
-        </Link>
-      </div>
       <Dialog
         open={showDialog}
         onOpenChange={(open) => {

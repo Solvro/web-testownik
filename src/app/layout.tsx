@@ -7,6 +7,7 @@ import { Alerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
 import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
+import { MaintenanceWrapper } from "@/components/maintenance";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
@@ -106,12 +107,14 @@ export default async function RootLayout({
             id="container"
           >
             <Navbar />
-            <Suspense>
-              <ErrorHandler />
-              <GuestAlert />
-              <Alerts />
-            </Suspense>
-            <main>{children}</main>
+            <MaintenanceWrapper>
+              <Suspense>
+                <ErrorHandler />
+                <GuestAlert />
+                <Alerts />
+              </Suspense>
+              <main>{children}</main>
+            </MaintenanceWrapper>
           </div>
           <Toaster richColors />
           <AppFooter />

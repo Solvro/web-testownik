@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable react-refresh/only-export-components */
-import { makeAssistantToolUI } from "@assistant-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BanIcon, CheckIcon, LoaderCircleIcon, PowerIcon } from "lucide-react";
 import { useState } from "react";
@@ -19,7 +17,14 @@ import { getUserService } from "@/services";
 
 import { useAiChatContext } from "./ai-chat-context";
 
-function DisableAiCard({ reason }: { reason: string }) {
+export function DisableAiTool({ input }: { input: unknown }) {
+  const reason =
+    typeof input === "object" &&
+    input !== null &&
+    "reason" in input &&
+    typeof input.reason === "string"
+      ? input.reason
+      : "Wyłączenie funkcji AI wymaga potwierdzenia.";
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
   const { quizId } = useAiChatContext();
   const queryClient = useQueryClient();
@@ -84,10 +89,3 @@ function DisableAiCard({ reason }: { reason: string }) {
     </Card>
   );
 }
-
-export const DisableAiToolUI = makeAssistantToolUI<{ reason: string }, string>({
-  toolName: "disable_ai",
-  render: ({ args }) => {
-    return <DisableAiCard reason={args.reason} />;
-  },
-});

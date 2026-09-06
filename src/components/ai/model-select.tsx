@@ -1,7 +1,5 @@
 "use client";
 
-import { useAui } from "@assistant-ui/react";
-import { memo, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -20,48 +18,28 @@ export interface ModelOption {
   disabled?: boolean;
 }
 
-export interface ModelSelectorProps {
+export interface ModelSelectProps {
   models: ModelOption[];
-  value?: string;
-  onValueChange?: (value: string) => void;
-  defaultValue?: string;
+  value: string;
+  onValueChange: (value: string) => void;
   size?: "default" | "sm";
   disabled?: boolean;
   contentClassName?: string;
   className?: string;
+  ariaLabel?: string;
 }
 
-function ModelSelectorImplementation({
-  value: controlledValue,
-  onValueChange: controlledOnValueChange,
-  defaultValue,
+export function ModelSelect({
+  value,
+  onValueChange,
   models,
   size,
   disabled,
   contentClassName,
   className,
-}: ModelSelectorProps) {
-  const isControlled = controlledValue !== undefined;
-  const [internalValue, setInternalValue] = useState(
-    () => defaultValue ?? models.at(0)?.id ?? "",
-  );
-  const value = isControlled ? controlledValue : internalValue;
-  const onValueChange = controlledOnValueChange ?? setInternalValue;
-  const api = useAui();
+  ariaLabel = "Wybierz model AI",
+}: ModelSelectProps) {
   const selectedModel = models.find((model) => model.id === value);
-  const handleValueChange = (nextValue: string | null) => {
-    if (nextValue !== null) {
-      onValueChange(nextValue);
-    }
-  };
-
-  useEffect(() => {
-    const config = { config: { modelName: value } };
-
-    return api.modelContext().register({
-      getModelContext: () => config,
-    });
-  }, [api, value]);
 
   return (
     <Select
@@ -71,13 +49,17 @@ function ModelSelectorImplementation({
         disabled: model.disabled,
       }))}
       value={value}
-      onValueChange={handleValueChange}
+      onValueChange={(nextValue) => {
+        if (nextValue !== null) {
+          onValueChange(nextValue);
+        }
+      }}
       disabled={disabled}
     >
       <SelectTrigger
-        aria-label="Wybierz model AI"
+        aria-label={ariaLabel}
         size={size}
-        className={cn("aui-model-selector-trigger", className)}
+        className={className}
         title={selectedModel?.name}
       >
         {selectedModel?.icon === undefined ? null : (
@@ -116,9 +98,3 @@ function ModelSelectorImplementation({
     </Select>
   );
 }
-
-const ModelSelector = memo(ModelSelectorImplementation);
-
-ModelSelector.displayName = "ModelSelector";
-
-export { ModelSelector };
