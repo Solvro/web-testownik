@@ -24,7 +24,7 @@ export function AppContextProvider({
   useGuestQuizMigration(user);
 
   const checkPermission = (action: PermissionAction) =>
-    hasPermission(user?.account_type, action);
+    hasPermission(user?.account_type, action, user?.account_level);
 
   const context: AppContextType = {
     isAuthenticated,

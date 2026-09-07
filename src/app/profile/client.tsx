@@ -56,9 +56,8 @@ function getUserProfilePlaceholder(
 
   return {
     ...user,
-    photo: user.photo ?? "",
-    photo_url: user.photo ?? "",
-    overriden_photo_url: user.photo,
+    photo: user.photo ?? null,
+    has_custom_photo: false,
     hide_profile: false,
     id: user.user_id,
   };
