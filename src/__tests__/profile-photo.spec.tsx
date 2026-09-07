@@ -46,7 +46,9 @@ const profile: UserData = {
   account_level: "basic",
 };
 
-function setup(userData = profile) {
+const goldProfile: UserData = { ...profile, account_level: "gold" };
+
+function setup(userData: UserData = goldProfile) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -71,6 +73,84 @@ afterEach(() => {
 });
 
 describe("profile photo editor", () => {
+  it.each(["basic", "silver"] as const)(
+    "lets %s users pick a predefined avatar but not upload a file",
+    async (accountLevel) => {
+      const fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: vi
+          .fn()
+          .mockResolvedValue(new Blob(["preset-image"], { type: "image/png" })),
+      });
+      vi.stubGlobal("fetch", fetch);
+      mocks.upload.mockResolvedValue({ ...profile, has_custom_photo: true });
+      const { onClose } = setup({ ...profile, account_level: accountLevel });
+      expect(screen.queryByLabelText("Wybierz plik")).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /^Awatar / })).toHaveLength(
+        8,
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Awatar 2" }));
+      expect(screen.getByRole("button", { name: "Awatar 2" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+      );
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalledOnce();
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.dicebear.com/9.x/adventurer/png?seed=Anna+Nowak+2",
+      );
+      const uploaded = mocks.upload.mock.calls[0][0] as File;
+      expect(uploaded).toBeInstanceOf(File);
+      expect(uploaded.name).toBe("avatar.png");
+      expect(uploaded.type).toBe("image/png");
+      expect(uploaded.size).toBe(12);
+    },
+  );
+
+  it("keeps a failed preset selection available for retry without uploading a URL", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    const { onClose } = setup(profile);
+    await userEvent.click(screen.getByRole("button", { name: "Awatar 1" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nie udało się zapisać",
+    );
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Awatar 1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    ).toBeEnabled();
+  });
+
+  it("lets Gold users switch between a preset and the same personal file", async () => {
+    setup();
+    const user = userEvent.setup();
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    await user.upload(screen.getByLabelText("Wybierz plik"), file);
+    await user.click(screen.getByRole("button", { name: "Awatar 1" }));
+    expect(mocks.revokePreview).toHaveBeenCalledWith("blob:photo-preview");
+    await user.upload(screen.getByLabelText("Wybierz plik"), file);
+    expect(screen.getByRole("button", { name: "Awatar 1" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    mocks.upload.mockResolvedValue(profile);
+    await user.click(screen.getByRole("button", { name: "Zapisz zdjęcie" }));
+    await waitFor(() => {
+      expect(mocks.upload).toHaveBeenCalledWith(file);
+    });
+  });
+
   it("uploads a file, updates the profile cache, refreshes the avatar and releases the preview", async () => {
     const updated = {
       ...profile,
