@@ -37,10 +37,10 @@ export interface User {
   account_level?: AccountLevel;
 }
 
-export interface UserData extends User {
+export interface UserData extends Omit<User, "photo"> {
+  photo: string | null;
   email: string | null;
-  photo_url: string;
-  overriden_photo_url: string | null;
+  has_custom_photo: boolean;
   is_superuser: boolean;
   is_staff: boolean;
   hide_profile: boolean;

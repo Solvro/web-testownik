@@ -269,6 +269,9 @@ export class BaseApiService {
           }
           return false;
         }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth-token-refreshed"));
+        }
         return true;
       } catch {
         return false;

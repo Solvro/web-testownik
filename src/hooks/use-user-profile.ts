@@ -5,6 +5,20 @@ import type { UserData } from "@/types/user";
 
 export const userProfileQueryKey = ["user-profile"] as const;
 
+export function useUpdateProfilePhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File | null) =>
+      file === null
+        ? getUserService().deleteProfilePhoto()
+        : getUserService().uploadProfilePhoto(file),
+    onSuccess: (updatedUserData) => {
+      queryClient.setQueryData<UserData>(userProfileQueryKey, updatedUserData);
+    },
+  });
+}
+
 export function useUserProfile({
   placeholderData,
 }: { placeholderData?: UserData } = {}) {

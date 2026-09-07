@@ -162,6 +162,20 @@ export class UserService extends BaseApiService {
     return response.data;
   }
 
+  async uploadProfilePhoto(file: File): Promise<UserData> {
+    const response = await this.uploadFile<UserData>(
+      "user/photo/",
+      file,
+      "photo",
+    );
+    return response.data;
+  }
+
+  async deleteProfilePhoto(): Promise<UserData> {
+    const response = await this.delete<UserData>("user/photo/");
+    return response.data;
+  }
+
   /**
    * Update user profile
    */
