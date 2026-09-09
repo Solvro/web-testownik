@@ -136,7 +136,7 @@ export function FolderCard({
               <CardTitle className="w-full overflow-hidden text-left text-ellipsis whitespace-nowrap">
                 {folder.name}
               </CardTitle>
-              <CardDescription className="flex items-start gap-0">
+              <CardDescription className="flex items-center gap-0">
                 {folder.quizzes.length}{" "}
                 {quizForms[quizFormat] || quizForms.many}
                 {folder.subfolders.length > 0 && (
@@ -169,7 +169,7 @@ export function FolderCard({
                 <DropdownMenuTrigger
                   nativeButton={false}
                   render={
-                    <EllipsisVerticalIcon className="data-popup-open:bg-ring h-10 cursor-pointer rounded-md" />
+                    <EllipsisVerticalIcon className="dark:data-popup-open:bg-ring data-popup-open:bg-ring/30 h-10 cursor-pointer rounded-md" />
                   }
                 ></DropdownMenuTrigger>
                 <DropdownMenuContent className="w-full">

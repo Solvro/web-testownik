@@ -110,7 +110,6 @@ export function QuizSort({
                         variant="outline"
                         size="icon"
                         aria-label="Sortuj quizy"
-                        className="bg-ring!"
                       >
                         {selectedOption.key === DEFAULT_LIBRARY_SORT_KEY ? (
                           <ArrowDownUpIcon />
