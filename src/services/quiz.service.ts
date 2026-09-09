@@ -246,7 +246,6 @@ export class QuizService extends BaseApiService {
   async archiveQuiz(quizId: string): Promise<Quiz> {
     const response = await this.post<Quiz>(
       `quizzes/${quizId}/move-to-archive/`,
-      quizId,
     );
     return response.data;
   }
