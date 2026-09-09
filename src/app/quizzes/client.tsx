@@ -651,7 +651,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     {
       key: "all",
       titleLabel: "Wszystkie",
-      icon: <SettingsIcon className="size-6" />,
+      icon: <SettingsIcon className="size-5" />,
       library: () => {
         const items: LibraryItem[] = [...(library?.items ?? [])];
         const archivedQuizItems = filteredArchivedQuizzes.map((quiz) => ({
@@ -672,7 +672,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     {
       key: "library",
       titleLabel: "Moja biblioteka",
-      icon: <LibraryIcon className="size-6" />,
+      icon: <LibraryIcon className="size-5" />,
       library: () => {
         // Exclude archived and shared
         return (library?.items ?? [])
@@ -701,8 +701,8 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     {
       key: "public",
       titleLabel: "Publiczne",
-      description: "Tu znajdziesz Twoje publiczne quizy.",
-      icon: <MessageCircleQuestionMarkIcon className="size-6" />,
+      description: "Twoje publiczne quizy.",
+      icon: <MessageCircleQuestionMarkIcon className="size-5" />,
       library: () => {
         return filteredPublicQuizzes.map((quiz) => ({
           id: quiz.id,
@@ -731,8 +731,8 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     {
       key: "shared",
       titleLabel: "Udostępnione dla mnie",
-      description: "Tu znajdziesz quizy udostępnione Ci przez innych.",
-      icon: <Link2Icon className="size-6" />,
+      description: "Quizy udostępnione przez innych.",
+      icon: <Link2Icon className="size-5" />,
       library: () => {
         return filteredSharedQuizzes.map((quiz) => ({
           id: quiz.quiz.id,
@@ -762,7 +762,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
       key: "archive",
       titleLabel: "Archiwum",
       description: "Zarchiwizowane quizy",
-      icon: <ArchiveIcon className="size-6" />,
+      icon: <ArchiveIcon className="size-5" />,
       library: () => {
         return filteredArchivedQuizzes.map((quiz) => ({
           id: quiz.id,
@@ -789,9 +789,8 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     {
       key: "trash",
       titleLabel: "Ostatnio usunięte",
-      description:
-        "Usunięte quizy będą przechowywane przez 30 dni, a po tym czasie zostaną trwale skasowane.",
-      icon: <MessageCircleXIcon className="size-6" />,
+      description: "Usunięte quizy znikają na stałe po 30 dniach.",
+      icon: <MessageCircleXIcon className="size-5" />,
       library: () => {
         return [];
       },
@@ -848,7 +847,7 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
             }}
           >
             {tab.icon}
-            {tab.titleLabel}
+            <span className="text-sm">{tab.titleLabel}</span>
           </TabsTrigger>
         ))}
       </TabsList>
@@ -1089,6 +1088,17 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
             <DialogTitle>Stwórz nowy folder</DialogTitle>
           </DialogHeader>
           <div className="flex gap-2">
+            <Input
+              type="text"
+              value={newFolderInput}
+              onChange={(_event) => {
+                const value = _event.target.value;
+                setNewFolderInput(value);
+              }}
+              aria-invalid={newFolderInput.trim().length <= 0}
+              placeholder="Nowy folder"
+              className="bg-background/30! flex flex-1"
+            />
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -1109,17 +1119,6 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
               ></TooltipTrigger>
               <TooltipContent>Stwórz nowy folder</TooltipContent>
             </Tooltip>
-            <Input
-              type="text"
-              value={newFolderInput}
-              onChange={(_event) => {
-                const value = _event.target.value;
-                setNewFolderInput(value);
-              }}
-              aria-invalid={newFolderInput.trim().length <= 0}
-              placeholder="Nowy folder"
-              className="flex flex-1"
-            />
           </div>
         </DialogContent>
       </Dialog>
