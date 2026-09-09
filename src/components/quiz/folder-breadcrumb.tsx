@@ -88,19 +88,18 @@ export function FolderBreadcrumb({
 
         {foldersHistory.length > 0 && <BreadcrumbSeparator />}
 
-        {foldersHistory.map((folder, index) => {
-          return (
-            <div key={folder.id} className="flex items-center gap-2">
-              <DroppableBreadcrumbItem
-                folder={folder}
-                index={index}
-                isLast={index === foldersHistory.length - 1}
-                handleNavigateToHistoryIndex={handleNavigateToHistoryIndex}
-              />
-              {index < foldersHistory.length - 1 && <BreadcrumbSeparator />}
-            </div>
-          );
-        })}
+        {foldersHistory.flatMap((folder, index) => [
+          <DroppableBreadcrumbItem
+            key={folder.id}
+            folder={folder}
+            index={index}
+            isLast={index === foldersHistory.length - 1}
+            handleNavigateToHistoryIndex={handleNavigateToHistoryIndex}
+          />,
+          index < foldersHistory.length - 1 ? (
+            <BreadcrumbSeparator key={`${folder.id}-sep`} />
+          ) : null,
+        ])}
       </BreadcrumbList>
     </Breadcrumb>
   );
