@@ -44,12 +44,10 @@ export interface Folder {
 }
 
 export interface Library {
-  path: [
-    {
-      id: string;
-      name: string;
-    },
-  ];
+  path: {
+    id: string;
+    name: string;
+  }[];
   items: LibraryItem[];
 }
 
