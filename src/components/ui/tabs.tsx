@@ -39,7 +39,11 @@ function Tabs({
       data-orientation={orientation}
       data-variant={variant}
       orientation={orientation}
-      className={cn(tabsVariants({ variant }), "flex gap-2 data-horizontal:flex-col", className)}
+      className={cn(
+        tabsVariants({ variant }),
+        "flex gap-2 data-horizontal:flex-col",
+        className,
+      )}
       {...props}
     />
   );
