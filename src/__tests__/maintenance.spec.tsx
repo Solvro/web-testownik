@@ -60,6 +60,18 @@ it.each([false, true])(
   },
 );
 
+it("keeps the server-side 503 response on the existing error path", async () => {
+  vi.stubGlobal("window", null);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })),
+  );
+
+  await expect(new ProbeService("http://test.local").request()).rejects.toThrow(
+    "503",
+  );
+});
+
 it.each([500, 502, 503, 504, 429, 200])(
   "reloads only after a healthy status response: %i",
   async (status) => {
