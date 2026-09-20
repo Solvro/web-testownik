@@ -1,7 +1,14 @@
+import {
+  ImagePlusIcon,
+  LockKeyholeIcon,
+  RotateCcwIcon,
+  UploadIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AccountLevelBadge } from "@/components/account-level-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useUpdateProfilePhoto } from "@/hooks/use-user-profile";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import {
@@ -23,6 +28,7 @@ import {
 import { cn, getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
 import type { UserData } from "@/types/user";
+import { ACCOUNT_LEVEL } from "@/types/user";
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
@@ -43,11 +49,13 @@ export function ProfilePhotoDialog({
   const router = useRouter();
   const mutation = useUpdateProfilePhoto();
   const fileInput = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
   const [file, setFile] = useState<File | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [preview, setPreview] = useState<string>();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const canUpload = hasPermission(
     userData.account_type,
     PermissionAction.UPLOAD_PROFILE_PHOTO,
@@ -65,6 +73,36 @@ export function ProfilePhotoDialog({
       URL.revokeObjectURL(url);
     };
   }, [file]);
+
+  const selectFiles = (files: File[]) => {
+    if (saving || !canUpload || files.length === 0) {
+      return;
+    }
+    setError(null);
+    if (fileInput.current !== null) {
+      fileInput.current.value = "";
+    }
+    const selected = files[0];
+    if (files.length !== 1) {
+      setFile(null);
+      setSelectedAvatar(null);
+      setError("Wybierz jedno zdjęcie profilowe.");
+      return;
+    }
+    if (
+      !ACCEPTED_TYPES.includes(selected.type) ||
+      selected.size > MAX_PHOTO_SIZE
+    ) {
+      setFile(null);
+      setSelectedAvatar(null);
+      setError(
+        "Wybierz plik JPEG, PNG, GIF, WebP lub AVIF o rozmiarze do 10 MB.",
+      );
+      return;
+    }
+    setFile(selected);
+    setSelectedAvatar(null);
+  };
 
   const save = async (selection: File | string | null) => {
     if (saving) {
@@ -117,106 +155,177 @@ export function ProfilePhotoDialog({
       }}
     >
       <DialogContent
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md"
+        className="max-h-[calc(100dvh-2rem)] gap-6 overflow-y-auto sm:max-w-lg"
         showCloseButton={!saving}
       >
-        <DialogHeader>
+        <DialogHeader className="pr-6">
           <DialogTitle>Zmień zdjęcie profilowe</DialogTitle>
           <DialogDescription>
             {canUpload
-              ? "Wybierz gotowy awatar, wgraj własne zdjęcie lub przywróć zdjęcie przypisane do konta."
-              : "Wybierz gotowy awatar lub przywróć zdjęcie przypisane do konta."}
+              ? "Wybierz gotowy awatar lub dodaj własne zdjęcie."
+              : "Wybierz gotowy awatar dla swojego profilu."}
           </DialogDescription>
         </DialogHeader>
-        <Avatar className="mx-auto size-24">
-          <AvatarImage
-            src={
-              selectedAvatar ??
-              (file === null ? (userData.photo ?? undefined) : preview)
-            }
-            alt="Podgląd zdjęcia profilowego"
-          />
-          <AvatarFallback>{getInitials(userData.full_name)}</AvatarFallback>
-        </Avatar>
-        <div
-          role="group"
-          aria-label="Gotowe awatary"
-          className="grid grid-cols-4 justify-items-center gap-3"
-        >
-          {avatarOptions.map((url, index) => (
-            <Button
-              key={url}
-              variant="ghost"
-              className={cn(
-                "size-12 rounded-full p-0 sm:size-16",
-                selectedAvatar === url && "ring-primary ring-2",
-              )}
-              aria-label={`Awatar ${String(index + 1)}`}
-              aria-pressed={selectedAvatar === url}
-              disabled={saving}
-              onClick={() => {
-                setSelectedAvatar(url);
-                setFile(null);
-                if (fileInput.current !== null) {
-                  fileInput.current.value = "";
-                }
-                setError(null);
-              }}
-            >
-              <Avatar className="size-12 sm:size-16">
-                <AvatarImage src={url} alt="" />
-                <AvatarFallback>
-                  {getInitials(userData.full_name)}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          ))}
-        </div>
-        {canUpload ? (
-          <div className="space-y-2">
-            <Label htmlFor="profile-photo">Wybierz plik</Label>
-            <Input
-              ref={fileInput}
-              id="profile-photo"
-              type="file"
-              accept={ACCEPTED_TYPES.join(",")}
-              disabled={saving}
-              aria-describedby="profile-photo-hint profile-photo-error"
-              aria-invalid={error !== null}
-              onChange={(event) => {
-                const selected = event.target.files?.[0];
-                setError(null);
-                if (selected === undefined) {
-                  return;
-                }
-                if (
-                  !ACCEPTED_TYPES.includes(selected.type) ||
-                  selected.size > MAX_PHOTO_SIZE
-                ) {
-                  setFile(null);
-                  setSelectedAvatar(null);
-                  event.target.value = "";
-                  setError(
-                    "Wybierz plik JPEG, PNG, GIF, WebP lub AVIF o rozmiarze do 10 MB.",
-                  );
-                  return;
-                }
-                setFile(selected);
-                setSelectedAvatar(null);
-              }}
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar className="size-16 shrink-0">
+            <AvatarImage
+              src={
+                selectedAvatar ??
+                (file === null ? (userData.photo ?? undefined) : preview)
+              }
+              alt="Podgląd zdjęcia profilowego"
             />
-            <p
-              id="profile-photo-hint"
-              className="text-muted-foreground text-sm"
-            >
-              JPEG, PNG, GIF, WebP lub AVIF. Maksymalnie 10 MB.
+            <AvatarFallback>{getInitials(userData.full_name)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 space-y-1">
+            <p className="truncate font-medium">
+              {file?.name ??
+                (selectedAvatar === null ? "Aktualne zdjęcie" : "Nowy awatar")}
+            </p>
+            <p className="text-muted-foreground text-sm">
+              {file !== null || selectedAvatar !== null
+                ? "Podgląd — zmiany zatwierdzisz poniżej."
+                : "Tak widzą Cię inni użytkownicy."}
             </p>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            Własne zdjęcia możesz wgrywać z kontem Gold.
-          </p>
-        )}
+        </div>
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium">Gotowe awatary</h3>
+          <div
+            role="group"
+            aria-label="Gotowe awatary"
+            className="grid grid-cols-4 justify-items-center gap-3 sm:grid-cols-8 sm:gap-2"
+          >
+            {avatarOptions.map((url, index) => (
+              <Button
+                key={url}
+                variant="ghost"
+                className={cn(
+                  "ring-offset-popover size-12 rounded-full p-0 ring-offset-2",
+                  selectedAvatar === url && "ring-primary ring-2",
+                )}
+                aria-label={`Awatar ${String(index + 1)}`}
+                aria-pressed={selectedAvatar === url}
+                disabled={saving}
+                onClick={() => {
+                  setSelectedAvatar(url);
+                  setFile(null);
+                  if (fileInput.current !== null) {
+                    fileInput.current.value = "";
+                  }
+                  setError(null);
+                }}
+              >
+                <Avatar className="size-12">
+                  <AvatarImage src={url} alt="" />
+                  <AvatarFallback>
+                    {getInitials(userData.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            ))}
+          </div>
+        </div>
+        <section aria-label="Własne zdjęcie" className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium">Własne zdjęcie</h3>
+            <AccountLevelBadge accountLevel={ACCOUNT_LEVEL.GOLD} />
+          </div>
+          {canUpload ? (
+            <>
+              <input
+                ref={fileInput}
+                id="profile-photo"
+                type="file"
+                className="hidden"
+                aria-label="Wybierz plik"
+                accept={ACCEPTED_TYPES.join(",")}
+                disabled={saving}
+                aria-describedby={
+                  error === null
+                    ? "profile-photo-hint"
+                    : "profile-photo-hint profile-photo-error"
+                }
+                aria-invalid={error !== null}
+                onChange={(event) => {
+                  selectFiles([...(event.target.files ?? [])]);
+                }}
+              />
+              <button
+                type="button"
+                aria-label={
+                  file === null ? "Dodaj własne zdjęcie" : "Zmień wybrany plik"
+                }
+                aria-describedby={
+                  error === null
+                    ? "profile-photo-hint"
+                    : "profile-photo-hint profile-photo-error"
+                }
+                disabled={saving}
+                data-dragging={dragging || undefined}
+                className={cn(
+                  "border-border text-muted-foreground hover:border-primary/60 hover:bg-muted/40 focus-visible:ring-ring flex w-full flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                  dragging && "border-primary bg-primary/10 text-primary",
+                )}
+                onClick={() => fileInput.current?.click()}
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  if (!saving && event.dataTransfer.types.includes("Files")) {
+                    dragDepth.current += 1;
+                    setDragging(true);
+                  }
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = saving ? "none" : "copy";
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  dragDepth.current = Math.max(0, dragDepth.current - 1);
+                  if (dragDepth.current === 0) {
+                    setDragging(false);
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  dragDepth.current = 0;
+                  setDragging(false);
+                  selectFiles([...event.dataTransfer.files]);
+                }}
+              >
+                {file === null ? (
+                  <UploadIcon className="size-6" aria-hidden />
+                ) : (
+                  <ImagePlusIcon className="size-6" aria-hidden />
+                )}
+                <span className="text-foreground text-sm font-medium">
+                  {dragging
+                    ? "Upuść zdjęcie tutaj"
+                    : file === null
+                      ? "Przeciągnij zdjęcie tutaj"
+                      : "Przeciągnij inne zdjęcie tutaj"}
+                </span>
+                <span className="text-sm">
+                  lub{" "}
+                  <span className="text-primary underline underline-offset-4">
+                    wybierz plik
+                  </span>
+                </span>
+              </button>
+              <p
+                id="profile-photo-hint"
+                className="text-muted-foreground text-center text-xs"
+              >
+                JPEG, PNG, GIF, WebP, AVIF · do 10 MB
+              </p>
+            </>
+          ) : (
+            <div className="text-muted-foreground bg-muted/40 flex items-center gap-3 rounded-lg p-4 text-sm">
+              <LockKeyholeIcon className="size-5 shrink-0" aria-hidden />
+              <p>Wgrywanie własnych zdjęć jest dostępne z kontem Gold.</p>
+            </div>
+          )}
+        </section>
         {error === null ? null : (
           <p
             id="profile-photo-error"
@@ -226,29 +335,42 @@ export function ProfilePhotoDialog({
             {error}
           </p>
         )}
-        {userData.has_custom_photo ? (
-          <Button
-            variant="outline"
-            disabled={saving}
-            onClick={() => {
-              void save(null);
-            }}
-          >
-            Przywróć domyślne zdjęcie
-          </Button>
-        ) : null}
-        <DialogFooter>
-          <Button variant="outline" disabled={saving} onClick={onClose}>
-            Anuluj
-          </Button>
-          <Button
-            disabled={(file === null && selectedAvatar === null) || saving}
-            onClick={() => {
-              void save(selectedAvatar ?? file);
-            }}
-          >
-            {saving ? "Zapisywanie…" : "Zapisz zdjęcie"}
-          </Button>
+        <DialogFooter className="flex-row flex-wrap items-center border-t pt-4 sm:justify-between">
+          {userData.has_custom_photo ? (
+            <Button
+              variant="ghost"
+              className="text-muted-foreground mr-auto text-sm"
+              aria-label="Przywróć domyślne zdjęcie"
+              title="Przywróć domyślne zdjęcie"
+              disabled={saving}
+              onClick={() => {
+                void save(null);
+              }}
+            >
+              <RotateCcwIcon aria-hidden />
+              Przywróć
+            </Button>
+          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="text-sm"
+              disabled={saving}
+              onClick={onClose}
+            >
+              Anuluj
+            </Button>
+            <Button
+              className="text-sm"
+              aria-label={saving ? "Zapisywanie zdjęcia" : "Zapisz zdjęcie"}
+              disabled={(file === null && selectedAvatar === null) || saving}
+              onClick={() => {
+                void save(selectedAvatar ?? file);
+              }}
+            >
+              {saving ? "Zapisywanie…" : "Zapisz"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
   refreshToken: vi.fn(),
   refresh: vi.fn(),
+  createPreview: vi.fn(() => "blob:photo-preview"),
   revokePreview: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
@@ -64,7 +65,7 @@ function setup(userData: UserData = goldProfile) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.refreshToken.mockResolvedValue(true);
-  URL.createObjectURL = vi.fn(() => "blob:photo-preview");
+  URL.createObjectURL = mocks.createPreview;
   URL.revokeObjectURL = mocks.revokePreview;
 });
 afterEach(() => {
@@ -86,6 +87,10 @@ describe("profile photo editor", () => {
       mocks.upload.mockResolvedValue({ ...profile, has_custom_photo: true });
       const { onClose } = setup({ ...profile, account_level: accountLevel });
       expect(screen.queryByLabelText("Wybierz plik")).not.toBeInTheDocument();
+      expect(screen.getByText("Gold", { exact: true })).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Dodaj własne zdjęcie" }),
+      ).not.toBeInTheDocument();
       expect(screen.getAllByRole("button", { name: /^Awatar / })).toHaveLength(
         8,
       );
@@ -151,6 +156,102 @@ describe("profile photo editor", () => {
     });
   });
 
+  it("opens the file picker from the upload area", async () => {
+    setup();
+    const click = vi.spyOn(screen.getByLabelText("Wybierz plik"), "click");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Dodaj własne zdjęcie" }),
+    );
+    expect(click).toHaveBeenCalledOnce();
+    click.mockRestore();
+  });
+
+  it("highlights nested drag targets and uploads the dropped image", async () => {
+    mocks.upload.mockResolvedValue(profile);
+    setup();
+    const dropzone = screen.getByRole("button", {
+      name: "Dodaj własne zdjęcie",
+    });
+    const file = new File(["photo"], "dropped-photo.png", {
+      type: "image/png",
+    });
+    const dataTransfer = { files: [file], types: ["Files"] };
+    fireEvent.dragEnter(dropzone, { dataTransfer });
+    expect(dropzone).toHaveAttribute("data-dragging", "true");
+    const label = screen.getByText("Upuść zdjęcie tutaj");
+    fireEvent.dragEnter(label, { dataTransfer });
+    fireEvent.dragLeave(label, { dataTransfer });
+    expect(dropzone).toHaveAttribute("data-dragging", "true");
+    fireEvent.drop(dropzone, { dataTransfer });
+    expect(dropzone).not.toHaveAttribute("data-dragging");
+    expect(screen.getByText(file.name)).toBeInTheDocument();
+    expect(mocks.createPreview).toHaveBeenCalledWith(file);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(mocks.upload).toHaveBeenCalledWith(file);
+  });
+
+  it("clears the drop highlight when files leave and ignores text drags", () => {
+    setup();
+    const dropzone = screen.getByRole("button", {
+      name: "Dodaj własne zdjęcie",
+    });
+    fireEvent.dragEnter(dropzone, { dataTransfer: { types: ["text/plain"] } });
+    expect(dropzone).not.toHaveAttribute("data-dragging");
+    fireEvent.dragEnter(dropzone, { dataTransfer: { types: ["Files"] } });
+    fireEvent.dragLeave(dropzone);
+    expect(dropzone).not.toHaveAttribute("data-dragging");
+  });
+
+  it("rejects multiple, unsupported and oversized dropped files", () => {
+    setup();
+    const dropzone = screen.getByRole("button", {
+      name: "Dodaj własne zdjęcie",
+    });
+    const photo = new File(["photo"], "photo.png", { type: "image/png" });
+    for (const files of [
+      [photo, photo],
+      [new File(["svg"], "photo.svg", { type: "image/svg+xml" })],
+      [
+        new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.png", {
+          type: "image/png",
+        }),
+      ],
+    ]) {
+      fireEvent.drop(dropzone, { dataTransfer: { files } });
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+      ).toBeDisabled();
+    }
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.createPreview).not.toHaveBeenCalled();
+  });
+
+  it("does not replace the selection while saving", async () => {
+    mocks.upload.mockReturnValue(
+      new Promise(() => {
+        // Keep the upload pending while testing the disabled controls.
+      }),
+    );
+    setup();
+    const photo = new File(["photo"], "photo.png", { type: "image/png" });
+    const other = new File(["other"], "other.png", { type: "image/png" });
+    const dropzone = screen.getByRole("button", {
+      name: "Dodaj własne zdjęcie",
+    });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [photo] } });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(dropzone).toBeDisabled();
+    fireEvent.drop(dropzone, { dataTransfer: { files: [other] } });
+    expect(screen.getByText(photo.name)).toBeInTheDocument();
+    expect(screen.queryByText(other.name)).not.toBeInTheDocument();
+    expect(mocks.upload).toHaveBeenCalledExactlyOnceWith(photo);
+  });
+
   it("uploads a file, updates the profile cache, refreshes the avatar and releases the preview", async () => {
     const updated = {
       ...profile,
@@ -177,6 +278,11 @@ describe("profile photo editor", () => {
   it("restores the account photo and updates has_custom_photo", async () => {
     mocks.remove.mockResolvedValue(profile);
     const { client, onClose } = setup({ ...profile, has_custom_photo: true });
+    expect(
+      screen
+        .getByRole("button", { name: "Przywróć domyślne zdjęcie" })
+        .closest('[data-slot="dialog-footer"]'),
+    ).toContainElement(screen.getByRole("button", { name: "Zapisz zdjęcie" }));
     await userEvent.click(
       screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
     );
