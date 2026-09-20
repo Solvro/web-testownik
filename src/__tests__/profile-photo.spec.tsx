@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { webcrypto } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
@@ -64,6 +65,7 @@ function setup(userData: UserData = goldProfile) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("crypto", webcrypto);
   mocks.refreshToken.mockResolvedValue(true);
   URL.createObjectURL = mocks.createPreview;
   URL.revokeObjectURL = mocks.revokePreview;
@@ -74,6 +76,114 @@ afterEach(() => {
 });
 
 describe("profile photo editor", () => {
+  it.each(["basic", "silver", "gold"] as const)(
+    "offers Gravatar in the same eight-avatar grid for %s users",
+    async (accountLevel) => {
+      const fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: vi
+          .fn()
+          .mockResolvedValue(
+            new Blob(["gravatar-image"], { type: "image/jpeg" }),
+          ),
+      });
+      vi.stubGlobal("fetch", fetch);
+      mocks.upload.mockResolvedValue(profile);
+      const { onClose } = setup({
+        ...profile,
+        account_level: accountLevel,
+        email: " MyEmailAddress@example.com ",
+      });
+      const gravatar = await screen.findByRole("button", { name: "Gravatar" });
+      expect(
+        screen.getAllByRole("button", { name: /^(Awatar |Gravatar$)/ }),
+      ).toHaveLength(8);
+      expect(
+        screen.queryByRole("button", { name: "Awatar 6" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("group", { name: "Gotowe awatary" }),
+      ).toContainElement(gravatar);
+      await userEvent.click(gravatar);
+      expect(gravatar).toHaveAttribute("aria-pressed", "true");
+      expect(fetch).not.toHaveBeenCalled();
+      expect(mocks.upload).not.toHaveBeenCalled();
+      await userEvent.click(
+        screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+      );
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalledOnce();
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        "https://gravatar.com/avatar/84059b07d4be67b806386c0aad8070a23f18836bbaae342275dc0a83414c32ee?s=256&d=identicon&r=g",
+      );
+      const uploaded = mocks.upload.mock.calls[0][0] as File;
+      expect(uploaded).toBeInstanceOf(File);
+      expect(uploaded.name).toBe("avatar.jpg");
+      expect(uploaded.type).toBe("image/jpeg");
+      expect(uploaded.size).toBe(14);
+    },
+  );
+
+  it("keeps Gravatar selected after a failed download and allows retry", async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({
+        ok: true,
+        blob: vi
+          .fn()
+          .mockResolvedValue(new Blob(["gravatar"], { type: "image/png" })),
+      });
+    vi.stubGlobal("fetch", fetch);
+    mocks.upload.mockResolvedValue(profile);
+    const { onClose } = setup();
+    const gravatar = await screen.findByRole("button", { name: "Gravatar" });
+    await userEvent.click(gravatar);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nie udało się zapisać zdjęcia",
+    );
+    expect(gravatar).toHaveAttribute("aria-pressed", "true");
+    expect(onClose).not.toHaveBeenCalled();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("switches between Gravatar and DiceBear using the same selection state", async () => {
+    setup();
+    const gravatar = await screen.findByRole("button", { name: "Gravatar" });
+    await userEvent.click(gravatar);
+    await userEvent.click(screen.getByRole("button", { name: "Awatar 1" }));
+    expect(gravatar).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(gravatar);
+    expect(gravatar).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Awatar 1" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it.each([null, "", "   "])(
+    "keeps initials as the eighth option without an email (%s)",
+    (email) => {
+      setup({ ...profile, email });
+      expect(
+        screen.queryByRole("button", { name: "Gravatar" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Awatar 8" }),
+      ).toBeInTheDocument();
+    },
+  );
+
   it.each(["basic", "silver"] as const)(
     "lets %s users pick a predefined avatar but not upload a file",
     async (accountLevel) => {

@@ -6,13 +6,21 @@ const AVATAR_STYLES = [
   ["adventurer", " 3"],
   ["dylan", ""],
   ["micah", ""],
-  ["micah", " 2"],
+  ["micah", " 2"], // Gravatar slot; this style is only the fallback when no email is known.
   ["shapes", ""],
   ["initials", ""],
 ] as const;
 
-export function getProfileAvatarOptions(fullName: string) {
-  return AVATAR_STYLES.map(([style, suffix]) => {
+const GRAVATAR_SLOT = 5;
+
+export function getProfileAvatarOptions(
+  fullName: string,
+  gravatarUrl: string | null,
+) {
+  return AVATAR_STYLES.map(([style, suffix], index) => {
+    if (index === GRAVATAR_SLOT && gravatarUrl !== null) {
+      return gravatarUrl;
+    }
     const parameters = new URLSearchParams({
       seed: `${fullName || "default"}${suffix}`,
     });
@@ -26,5 +34,24 @@ export async function fetchProfileAvatar(url: string): Promise<File> {
     throw new Error("Could not download the selected avatar");
   }
   const image = await response.blob();
-  return new File([image], "avatar.png", { type: "image/png" });
+  const extension =
+    image.type === "image/jpeg" ? "jpg" : image.type.split("/").at(1);
+  return new File([image], `avatar.${extension ?? "png"}`, {
+    type: image.type,
+  });
+}
+
+export async function getGravatarUrl(email: string): Promise<string | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail.length === 0) {
+    return null;
+  }
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(normalizedEmail),
+  );
+  const hash = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return `https://gravatar.com/avatar/${hash}?s=256&d=identicon&r=g`;
 }

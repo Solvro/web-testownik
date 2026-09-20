@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   ImagePlusIcon,
   LockKeyholeIcon,
@@ -14,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -23,6 +23,7 @@ import { useUpdateProfilePhoto } from "@/hooks/use-user-profile";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import {
   fetchProfileAvatar,
+  getGravatarUrl,
   getProfileAvatarOptions,
 } from "@/lib/profile-avatars";
 import { cn, getInitials } from "@/lib/utils";
@@ -50,29 +51,39 @@ export function ProfilePhotoDialog({
   const mutation = useUpdateProfilePhoto();
   const fileInput = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
-  const [file, setFile] = useState<File | null>(null);
+  const [upload, setUpload] = useState<{
+    file: File;
+    previewUrl: string;
+  } | null>(null);
+  const file = upload?.file ?? null;
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string>();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const { data: gravatarUrl = null } = useQuery({
+    queryKey: ["profile-gravatar", userData.email],
+    queryFn: async () => await getGravatarUrl(userData.email ?? ""),
+    staleTime: Infinity,
+    retry: false,
+  });
   const canUpload = hasPermission(
     userData.account_type,
     PermissionAction.UPLOAD_PROFILE_PHOTO,
     userData.account_level,
   );
-  const avatarOptions = getProfileAvatarOptions(userData.full_name);
+  const avatarOptions = getProfileAvatarOptions(
+    userData.full_name,
+    gravatarUrl,
+  );
 
   useEffect(() => {
-    if (file === null) {
+    if (upload === null) {
       return;
     }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
     return () => {
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(upload.previewUrl);
     };
-  }, [file]);
+  }, [upload]);
 
   const selectFiles = (files: File[]) => {
     if (saving || !canUpload || files.length === 0) {
@@ -84,7 +95,7 @@ export function ProfilePhotoDialog({
     }
     const selected = files[0];
     if (files.length !== 1) {
-      setFile(null);
+      setUpload(null);
       setSelectedAvatar(null);
       setError("Wybierz jedno zdjęcie profilowe.");
       return;
@@ -93,14 +104,14 @@ export function ProfilePhotoDialog({
       !ACCEPTED_TYPES.includes(selected.type) ||
       selected.size > MAX_PHOTO_SIZE
     ) {
-      setFile(null);
+      setUpload(null);
       setSelectedAvatar(null);
       setError(
         "Wybierz plik JPEG, PNG, GIF, WebP lub AVIF o rozmiarze do 10 MB.",
       );
       return;
     }
-    setFile(selected);
+    setUpload({ file: selected, previewUrl: URL.createObjectURL(selected) });
     setSelectedAvatar(null);
   };
 
@@ -158,24 +169,23 @@ export function ProfilePhotoDialog({
         className="max-h-[calc(100dvh-2rem)] gap-6 overflow-y-auto sm:max-w-lg"
         showCloseButton={!saving}
       >
-        <DialogHeader className="pr-6">
+        <DialogHeader>
           <DialogTitle>Zmień zdjęcie profilowe</DialogTitle>
-          <DialogDescription>
-            {canUpload
-              ? "Wybierz gotowy awatar lub dodaj własne zdjęcie."
-              : "Wybierz gotowy awatar dla swojego profilu."}
-          </DialogDescription>
         </DialogHeader>
         <div className="flex min-w-0 items-center gap-4">
           <Avatar className="size-16 shrink-0">
             <AvatarImage
               src={
                 selectedAvatar ??
-                (file === null ? (userData.photo ?? undefined) : preview)
+                upload?.previewUrl ??
+                userData.photo ??
+                undefined
               }
               alt="Podgląd zdjęcia profilowego"
             />
-            <AvatarFallback>{getInitials(userData.full_name)}</AvatarFallback>
+            <AvatarFallback className="text-2xl">
+              {getInitials(userData.full_name)}
+            </AvatarFallback>
           </Avatar>
           <div className="min-w-0 space-y-1">
             <p className="truncate font-medium">
@@ -184,7 +194,7 @@ export function ProfilePhotoDialog({
             </p>
             <p className="text-muted-foreground text-sm">
               {file !== null || selectedAvatar !== null
-                ? "Podgląd — zmiany zatwierdzisz poniżej."
+                ? "Podgląd - zmiany zatwierdzisz poniżej."
                 : "Tak widzą Cię inni użytkownicy."}
             </p>
           </div>
@@ -204,12 +214,17 @@ export function ProfilePhotoDialog({
                   "ring-offset-popover size-12 rounded-full p-0 ring-offset-2",
                   selectedAvatar === url && "ring-primary ring-2",
                 )}
-                aria-label={`Awatar ${String(index + 1)}`}
+                aria-label={
+                  url === gravatarUrl
+                    ? "Gravatar"
+                    : `Awatar ${String(index + 1)}`
+                }
+                title={url === gravatarUrl ? "Gravatar" : undefined}
                 aria-pressed={selectedAvatar === url}
                 disabled={saving}
                 onClick={() => {
                   setSelectedAvatar(url);
-                  setFile(null);
+                  setUpload(null);
                   if (fileInput.current !== null) {
                     fileInput.current.value = "";
                   }
@@ -339,29 +354,22 @@ export function ProfilePhotoDialog({
           {userData.has_custom_photo ? (
             <Button
               variant="ghost"
-              className="text-muted-foreground mr-auto text-sm"
+              className="mr-auto"
               aria-label="Przywróć domyślne zdjęcie"
-              title="Przywróć domyślne zdjęcie"
               disabled={saving}
               onClick={() => {
                 void save(null);
               }}
             >
               <RotateCcwIcon aria-hidden />
-              Przywróć
+              Reset
             </Button>
           ) : null}
           <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="text-sm"
-              disabled={saving}
-              onClick={onClose}
-            >
+            <Button variant="outline" disabled={saving} onClick={onClose}>
               Anuluj
             </Button>
             <Button
-              className="text-sm"
               aria-label={saving ? "Zapisywanie zdjęcia" : "Zapisz zdjęcie"}
               disabled={(file === null && selectedAvatar === null) || saving}
               onClick={() => {
