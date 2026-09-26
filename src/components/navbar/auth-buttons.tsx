@@ -102,7 +102,10 @@ export function AuthButtons({ onNavigate }: AuthButtonsProps) {
                     className="user-avatar"
                     alt="Zdjęcie profilowe użytkownika"
                   />
-                  <AvatarFallback delay={600} className="bg-transparent">
+                  <AvatarFallback
+                    delay={600}
+                    className="bg-transparent text-current"
+                  >
                     <CircleUserRoundIcon className="size-6" />
                   </AvatarFallback>
                 </Avatar>
