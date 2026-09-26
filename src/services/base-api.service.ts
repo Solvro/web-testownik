@@ -119,9 +119,14 @@ export class BaseApiService {
    * Intercept 503 responses and halt execution
    */
   private async checkMaintenance(response: Response): Promise<void> {
-    if (response.status === 503 && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("backend-maintenance"));
-      return await new Promise<never>(() => {
+    const runtimeWindow = (globalThis as { window?: Window | null }).window;
+    if (
+      response.status === 503 &&
+      runtimeWindow !== undefined &&
+      runtimeWindow !== null
+    ) {
+      runtimeWindow.dispatchEvent(new Event("backend-maintenance"));
+      await new Promise<never>(() => {
         /* empty */
       });
     }
