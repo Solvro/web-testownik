@@ -52,6 +52,7 @@ export function ProfilePhotoDialog({
   } | null>(null);
   const file = upload?.file ?? null;
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [resetSelected, setResetSelected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -85,6 +86,7 @@ export function ProfilePhotoDialog({
       return;
     }
     setError(null);
+    setResetSelected(false);
     if (fileInput.current !== null) {
       fileInput.current.value = "";
     }
@@ -171,10 +173,12 @@ export function ProfilePhotoDialog({
           <Avatar className="size-16 shrink-0">
             <AvatarImage
               src={
-                selectedAvatar ??
-                upload?.previewUrl ??
-                userData.photo ??
-                undefined
+                resetSelected
+                  ? (userData.default_photo ?? undefined)
+                  : (selectedAvatar ??
+                    upload?.previewUrl ??
+                    userData.photo ??
+                    undefined)
               }
               alt="Podgląd zdjęcia profilowego"
             />
@@ -184,11 +188,15 @@ export function ProfilePhotoDialog({
           </Avatar>
           <div className="min-w-0 space-y-1">
             <p className="truncate font-medium">
-              {file?.name ??
-                (selectedAvatar === null ? "Aktualne zdjęcie" : "Nowy awatar")}
+              {resetSelected
+                ? "Domyślne zdjęcie"
+                : (file?.name ??
+                  (selectedAvatar === null
+                    ? "Aktualne zdjęcie"
+                    : "Nowy awatar"))}
             </p>
             <p className="text-muted-foreground text-sm">
-              {file !== null || selectedAvatar !== null
+              {resetSelected || file !== null || selectedAvatar !== null
                 ? "Podgląd - zmiany zatwierdzisz poniżej."
                 : "Tak widzą Cię inni użytkownicy."}
             </p>
@@ -219,6 +227,7 @@ export function ProfilePhotoDialog({
                 disabled={saving}
                 onClick={() => {
                   setSelectedAvatar(url);
+                  setResetSelected(false);
                   setUpload(null);
                   if (fileInput.current !== null) {
                     fileInput.current.value = "";
@@ -344,9 +353,16 @@ export function ProfilePhotoDialog({
               variant="ghost"
               className="mr-auto"
               aria-label="Przywróć domyślne zdjęcie"
+              aria-pressed={resetSelected}
               disabled={saving}
               onClick={() => {
-                void save(null);
+                setResetSelected(true);
+                setSelectedAvatar(null);
+                setUpload(null);
+                setError(null);
+                if (fileInput.current !== null) {
+                  fileInput.current.value = "";
+                }
               }}
             >
               <RotateCcwIcon aria-hidden />
@@ -359,9 +375,12 @@ export function ProfilePhotoDialog({
             </Button>
             <Button
               aria-label={saving ? "Zapisywanie zdjęcia" : "Zapisz zdjęcie"}
-              disabled={(file === null && selectedAvatar === null) || saving}
+              disabled={
+                (!resetSelected && file === null && selectedAvatar === null) ||
+                saving
+              }
               onClick={() => {
-                void save(selectedAvatar ?? file);
+                void save(resetSelected ? null : (selectedAvatar ?? file));
               }}
             >
               {saving ? "Zapisywanie…" : "Zapisz"}

@@ -39,6 +39,7 @@ export interface User {
 
 export interface UserData extends Omit<User, "photo"> {
   photo: string | null;
+  default_photo?: string | null;
   email: string | null;
   has_custom_photo: boolean;
   is_superuser: boolean;

@@ -417,7 +417,7 @@ describe("profile photo editor", () => {
     expect(mocks.revokePreview).toHaveBeenCalledWith("blob:photo-preview");
   });
 
-  it("restores the account photo and updates has_custom_photo", async () => {
+  it("previews reset without persisting until Save, then updates has_custom_photo", async () => {
     mocks.remove.mockResolvedValue(profile);
     const { client, onClose } = setup({ ...profile, has_custom_photo: true });
     expect(
@@ -428,11 +428,128 @@ describe("profile photo editor", () => {
     await userEvent.click(
       screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
     );
+    expect(mocks.remove).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText("Domyślne zdjęcie")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
     await waitFor(() => {
       expect(onClose).toHaveBeenCalledOnce();
     });
     expect(mocks.remove).toHaveBeenCalledOnce();
     expect(client.getQueryData(userProfileQueryKey)).toEqual(profile);
+  });
+
+  it("loads the original avatar URL into the preview when reset is selected", async () => {
+    const imageSource = vi.spyOn(HTMLImageElement.prototype, "src", "set");
+    try {
+      setup({
+        ...profile,
+        photo: "https://test.local/custom.jpg",
+        default_photo: "https://test.local/original.jpg",
+        has_custom_photo: true,
+      });
+      await userEvent.click(
+        screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
+      );
+      await waitFor(() => {
+        expect(imageSource).toHaveBeenCalledWith(
+          "https://test.local/original.jpg",
+        );
+      });
+      expect(mocks.remove).not.toHaveBeenCalled();
+    } finally {
+      imageSource.mockRestore();
+    }
+  });
+
+  it("cancels a pending reset without changing the saved photo", async () => {
+    const { onClose } = setup({ ...profile, has_custom_photo: true });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Anuluj" }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(mocks.remove).not.toHaveBeenCalled();
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("replaces a pending reset with a preset", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: vi
+          .fn()
+          .mockResolvedValue(new Blob(["preset"], { type: "image/png" })),
+      }),
+    );
+    mocks.upload.mockResolvedValue(profile);
+    setup({ ...profile, has_custom_photo: true });
+    const reset = screen.getByRole("button", {
+      name: "Przywróć domyślne zdjęcie",
+    });
+    await userEvent.click(reset);
+    await userEvent.click(screen.getByRole("button", { name: "Awatar 1" }));
+    expect(reset).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    await waitFor(() => {
+      expect(mocks.upload).toHaveBeenCalledOnce();
+    });
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("clears an upload on reset and allows choosing the same file afterward", async () => {
+    mocks.upload.mockResolvedValue(profile);
+    setup({ ...uploadProfile, has_custom_photo: true });
+    const photo = new File(["photo"], "photo.png", { type: "image/png" });
+    const reset = screen.getByRole("button", {
+      name: "Przywróć domyślne zdjęcie",
+    });
+    await userEvent.upload(screen.getByLabelText("Wybierz plik"), photo);
+    await userEvent.click(reset);
+    expect(mocks.revokePreview).toHaveBeenCalledWith("blob:photo-preview");
+    expect(screen.queryByText(photo.name)).not.toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText("Wybierz plik"), photo);
+    expect(reset).toHaveAttribute("aria-pressed", "false");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(mocks.upload).toHaveBeenCalledWith(photo);
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it("keeps reset selected after a failed save so it can be retried", async () => {
+    mocks.remove
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue(profile);
+    const { onClose } = setup({ ...profile, has_custom_photo: true });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Nie udało się zapisać zdjęcia",
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Przywróć domyślne zdjęcie" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+    expect(mocks.remove).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the selected file and dialog open when the upload fails", async () => {
