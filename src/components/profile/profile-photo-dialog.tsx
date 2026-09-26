@@ -1,10 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ImagePlusIcon,
-  LockKeyholeIcon,
-  RotateCcwIcon,
-  UploadIcon,
-} from "lucide-react";
+import { ImagePlusIcon, RotateCcwIcon, UploadIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -241,106 +236,99 @@ export function ProfilePhotoDialog({
             ))}
           </div>
         </div>
-        <section aria-label="Własne zdjęcie" className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium">Własne zdjęcie</h3>
-            <AccountLevelBadge accountLevel={ACCOUNT_LEVEL.GOLD} />
-          </div>
-          {canUpload ? (
-            <>
-              <input
-                ref={fileInput}
-                id="profile-photo"
-                type="file"
-                className="hidden"
-                aria-label="Wybierz plik"
-                accept={ACCEPTED_TYPES.join(",")}
-                disabled={saving}
-                aria-describedby={
-                  error === null
-                    ? "profile-photo-hint"
-                    : "profile-photo-hint profile-photo-error"
-                }
-                aria-invalid={error !== null}
-                onChange={(event) => {
-                  selectFiles([...(event.target.files ?? [])]);
-                }}
-              />
-              <button
-                type="button"
-                aria-label={
-                  file === null ? "Dodaj własne zdjęcie" : "Zmień wybrany plik"
-                }
-                aria-describedby={
-                  error === null
-                    ? "profile-photo-hint"
-                    : "profile-photo-hint profile-photo-error"
-                }
-                disabled={saving}
-                data-dragging={dragging || undefined}
-                className={cn(
-                  "border-border text-muted-foreground hover:border-primary/60 hover:bg-muted/40 focus-visible:ring-ring flex w-full flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                  dragging && "border-primary bg-primary/10 text-primary",
-                )}
-                onClick={() => fileInput.current?.click()}
-                onDragEnter={(event) => {
-                  event.preventDefault();
-                  if (!saving && event.dataTransfer.types.includes("Files")) {
-                    dragDepth.current += 1;
-                    setDragging(true);
-                  }
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = saving ? "none" : "copy";
-                }}
-                onDragLeave={(event) => {
-                  event.preventDefault();
-                  dragDepth.current = Math.max(0, dragDepth.current - 1);
-                  if (dragDepth.current === 0) {
-                    setDragging(false);
-                  }
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  dragDepth.current = 0;
-                  setDragging(false);
-                  selectFiles([...event.dataTransfer.files]);
-                }}
-              >
-                {file === null ? (
-                  <UploadIcon className="size-6" aria-hidden />
-                ) : (
-                  <ImagePlusIcon className="size-6" aria-hidden />
-                )}
-                <span className="text-foreground text-sm font-medium">
-                  {dragging
-                    ? "Upuść zdjęcie tutaj"
-                    : file === null
-                      ? "Przeciągnij zdjęcie tutaj"
-                      : "Przeciągnij inne zdjęcie tutaj"}
-                </span>
-                <span className="text-sm">
-                  lub{" "}
-                  <span className="text-primary underline underline-offset-4">
-                    wybierz plik
-                  </span>
-                </span>
-              </button>
-              <p
-                id="profile-photo-hint"
-                className="text-muted-foreground text-center text-xs"
-              >
-                JPEG, PNG, GIF, WebP, AVIF · do 10 MB
-              </p>
-            </>
-          ) : (
-            <div className="text-muted-foreground bg-muted/40 flex items-center gap-3 rounded-lg p-4 text-sm">
-              <LockKeyholeIcon className="size-5 shrink-0" aria-hidden />
-              <p>Wgrywanie własnych zdjęć jest dostępne z kontem Gold.</p>
+        {canUpload ? (
+          <section aria-label="Własne zdjęcie" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium">Własne zdjęcie</h3>
+              <AccountLevelBadge accountLevel={ACCOUNT_LEVEL.GOLD} />
             </div>
-          )}
-        </section>
+            <input
+              ref={fileInput}
+              id="profile-photo"
+              type="file"
+              className="hidden"
+              aria-label="Wybierz plik"
+              accept={ACCEPTED_TYPES.join(",")}
+              disabled={saving}
+              aria-describedby={
+                error === null
+                  ? "profile-photo-hint"
+                  : "profile-photo-hint profile-photo-error"
+              }
+              aria-invalid={error !== null}
+              onChange={(event) => {
+                selectFiles([...(event.target.files ?? [])]);
+              }}
+            />
+            <button
+              type="button"
+              aria-label={
+                file === null ? "Dodaj własne zdjęcie" : "Zmień wybrany plik"
+              }
+              aria-describedby={
+                error === null
+                  ? "profile-photo-hint"
+                  : "profile-photo-hint profile-photo-error"
+              }
+              disabled={saving}
+              data-dragging={dragging || undefined}
+              className={cn(
+                "border-border text-muted-foreground hover:border-primary/60 hover:bg-muted/40 focus-visible:ring-ring flex w-full flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                dragging && "border-primary bg-primary/10 text-primary",
+              )}
+              onClick={() => fileInput.current?.click()}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                if (!saving && event.dataTransfer.types.includes("Files")) {
+                  dragDepth.current += 1;
+                  setDragging(true);
+                }
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = saving ? "none" : "copy";
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                dragDepth.current = Math.max(0, dragDepth.current - 1);
+                if (dragDepth.current === 0) {
+                  setDragging(false);
+                }
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dragDepth.current = 0;
+                setDragging(false);
+                selectFiles([...event.dataTransfer.files]);
+              }}
+            >
+              {file === null ? (
+                <UploadIcon className="size-6" aria-hidden />
+              ) : (
+                <ImagePlusIcon className="size-6" aria-hidden />
+              )}
+              <span className="text-foreground text-sm font-medium">
+                {dragging
+                  ? "Upuść zdjęcie tutaj"
+                  : file === null
+                    ? "Przeciągnij zdjęcie tutaj"
+                    : "Przeciągnij inne zdjęcie tutaj"}
+              </span>
+              <span className="text-sm">
+                lub{" "}
+                <span className="text-primary underline underline-offset-4">
+                  wybierz plik
+                </span>
+              </span>
+            </button>
+            <p
+              id="profile-photo-hint"
+              className="text-muted-foreground text-center text-xs"
+            >
+              JPEG, PNG, GIF, WebP, AVIF · do 10 MB
+            </p>
+          </section>
+        ) : null}
         {error === null ? null : (
           <p
             id="profile-photo-error"

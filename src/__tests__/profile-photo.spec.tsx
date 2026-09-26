@@ -12,6 +12,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
 import { userProfileQueryKey } from "@/hooks/use-user-profile";
+import {
+  ACCOUNT_LEVEL_REQUIREMENTS,
+  PermissionAction,
+  hasPermission,
+} from "@/lib/auth/permissions";
 import { UserService } from "@/services/user.service";
 import type { UserData } from "@/types/user";
 
@@ -48,9 +53,22 @@ const profile: UserData = {
   account_level: "basic",
 };
 
-const goldProfile: UserData = { ...profile, account_level: "gold" };
+const uploadProfile: UserData = {
+  ...profile,
+  account_level:
+    ACCOUNT_LEVEL_REQUIREMENTS[PermissionAction.UPLOAD_PROFILE_PHOTO]?.[0] ??
+    "gold",
+};
+const levelsWithoutUpload = (["basic", "silver", "gold"] as const).filter(
+  (level) =>
+    !hasPermission(
+      profile.account_type,
+      PermissionAction.UPLOAD_PROFILE_PHOTO,
+      level,
+    ),
+);
 
-function setup(userData: UserData = goldProfile) {
+function setup(userData: UserData = uploadProfile) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -184,7 +202,7 @@ describe("profile photo editor", () => {
     },
   );
 
-  it.each(["basic", "silver"] as const)(
+  it.each(levelsWithoutUpload)(
     "lets %s users pick a predefined avatar but not upload a file",
     async (accountLevel) => {
       const fetch = vi.fn().mockResolvedValue({
@@ -197,7 +215,17 @@ describe("profile photo editor", () => {
       mocks.upload.mockResolvedValue({ ...profile, has_custom_photo: true });
       const { onClose } = setup({ ...profile, account_level: accountLevel });
       expect(screen.queryByLabelText("Wybierz plik")).not.toBeInTheDocument();
-      expect(screen.getByText("Gold", { exact: true })).toBeInTheDocument();
+      expect(
+        screen.queryByRole("region", { name: "Własne zdjęcie" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Gold", { exact: true }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(
+          "Wgrywanie własnych zdjęć jest dostępne z kontem Gold.",
+        ),
+      ).not.toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "Dodaj własne zdjęcie" }),
       ).not.toBeInTheDocument();
@@ -247,8 +275,12 @@ describe("profile photo editor", () => {
     ).toBeEnabled();
   });
 
-  it("lets Gold users switch between a preset and the same personal file", async () => {
+  it("lets users with upload permission switch between a preset and the same personal file", async () => {
     setup();
+    expect(
+      screen.getByRole("region", { name: "Własne zdjęcie" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Gold", { exact: true })).toBeInTheDocument();
     const user = userEvent.setup();
     const file = new File(["photo"], "photo.png", { type: "image/png" });
     await user.upload(screen.getByLabelText("Wybierz plik"), file);
