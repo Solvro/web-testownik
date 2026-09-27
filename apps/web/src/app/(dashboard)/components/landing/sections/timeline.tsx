@@ -12,7 +12,7 @@ import { DisplayHeading } from "../components/typography";
 import { SOLVRO_PORTFOLIO_URL, STORY } from "../landing-content";
 
 const MARKER_OFFSET = 12;
-const REVEAL_TAIL = 24;
+const REVEAL_TAIL = 16;
 const TYPE_START = 420;
 const TYPE_STEP = 28;
 const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
@@ -217,7 +217,7 @@ export function Timeline(): React.JSX.Element {
         </Link>
       </header>
 
-      <div ref={trackReference} className="relative pb-12">
+      <div ref={trackReference} className="relative ml-2 pb-12 sm:ml-4 lg:ml-0">
         <div
           ref={railReference}
           aria-hidden="true"

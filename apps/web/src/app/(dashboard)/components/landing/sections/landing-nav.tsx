@@ -9,12 +9,14 @@ import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import { LandingButton } from "../components/landing-button";
+import { LANDING_SECTIONS } from "../landing-sections";
 import { wordmarkDark, wordmarkLight } from "../logos";
 
 const SECTION_LINKS = [
-  { href: "#features", label: "Produkt" },
-  { href: "#story", label: "Historia" },
-  { href: "#team", label: "Zespół" },
+  ...LANDING_SECTIONS.map(({ id, navLabel }) => ({
+    href: `#${id}`,
+    label: navLabel,
+  })),
   { href: "/login?redirect=%2Fquizzes", label: "Zaloguj" },
 ];
 

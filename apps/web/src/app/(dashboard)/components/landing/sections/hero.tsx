@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
@@ -9,8 +10,9 @@ import { FOCUS_RING } from "../components/focus";
 import { HeroBubble } from "../components/hero-bubble";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS } from "../hero-progress";
+import { wordmarkDark, wordmarkLight } from "../logos";
 import { DeviceScene } from "../scene/device-scene";
-import { HeroBadges } from "./hero-badges";
+import { HeroBadges, MobileHeroBadges } from "./hero-badges";
 import { LandingNav } from "./landing-nav";
 
 /**
@@ -27,6 +29,11 @@ const progressBarStyle: CSSProperties = {
   transform: `scaleX(${HERO_PROGRESS})`,
 };
 
+const openLogoStyle: CSSProperties = {
+  opacity: `clamp(0, calc((${HERO_PROGRESS} - 0.6) * 6), 1)`,
+  transform: `translate(-50%, calc((1 - ${HERO_PROGRESS}) * 1.5rem)) scale(calc(0.96 + ${HERO_PROGRESS} * 0.04))`,
+};
+
 export function Hero({
   heroReference,
   isStarting,
@@ -40,9 +47,52 @@ export function Hero({
     <section
       id="start"
       ref={heroReference}
-      className="relative h-[270vh] min-h-[145rem] scroll-mt-4 [--landing-hero-progress:0] sm:h-[300vh] sm:min-h-[190rem]"
+      className="relative scroll-mt-4 [--landing-hero-progress:0] lg:h-[300vh] lg:min-h-[190rem]"
     >
-      <div className="sticky top-0 h-[100svh] min-h-[38rem] overflow-hidden sm:min-h-[42rem]">
+      <div className="lp-mobile-hero relative px-4 pt-[6.5rem] pb-8 lg:hidden">
+        <LandingNav isStarting={isStarting} onStart={onStart} />
+        <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
+        <h1 className="mt-3 max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight">
+          Zapomnij o{" "}
+          <em className="text-primary not-italic">problemach z nauką</em>
+        </h1>
+        <p className="text-muted-foreground mt-4 max-w-[28rem] text-sm leading-relaxed">
+          Twórz i rozwiązuj quizy, śledź postępy i ucz się razem ze znajomymi.
+        </p>
+        <div className="relative mx-auto mt-8 aspect-[983/550] w-full max-w-[40rem]">
+          <Image
+            src="/models/testownik-device-stack-cover-light-v8.webp"
+            alt="MacBook, iPad ze statystykami i iPhone z quizem — podgląd Testownika na trzech urządzeniach"
+            fill
+            sizes="(max-width: 1023px) min(100vw - 2rem, 40rem), 1px"
+            className="object-cover dark:hidden"
+            priority
+          />
+          <Image
+            src="/models/testownik-device-stack-cover-dark-v8.webp"
+            alt="MacBook, iPad ze statystykami i iPhone z quizem — podgląd Testownika na trzech urządzeniach"
+            fill
+            sizes="(max-width: 1023px) min(100vw - 2rem, 40rem), 1px"
+            className="hidden object-cover dark:block"
+          />
+          <MobileHeroBadges />
+        </div>
+        <a
+          href="#features"
+          className={cn(
+            "text-muted-foreground mt-6 ml-auto flex w-fit items-center gap-[0.45rem] rounded-xs text-[0.66rem] font-bold tracking-[0.1em] uppercase",
+            FOCUS_RING,
+          )}
+        >
+          <ChevronDown
+            aria-hidden="true"
+            className="animate-lp-nudge size-4 motion-reduce:animate-none"
+          />
+          Poznaj produkt
+        </a>
+      </div>
+
+      <div className="sticky top-0 hidden h-[100svh] min-h-[42rem] overflow-hidden lg:block">
         {/*
          * The Bubble is its own stacking context (z-1) so the droplet can paint
          * above the header it refracts while the whole bubble still stays
@@ -67,6 +117,23 @@ export function Hero({
             </div>
 
             <HeroBadges />
+
+            <div
+              aria-hidden="true"
+              style={openLogoStyle}
+              className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
+            >
+              <Image
+                src={wordmarkLight}
+                alt=""
+                className="block h-auto w-full dark:hidden"
+              />
+              <Image
+                src={wordmarkDark}
+                alt=""
+                className="hidden h-auto w-full dark:block"
+              />
+            </div>
 
             <div
               aria-hidden="true"

@@ -81,6 +81,7 @@ interface StudyBadge {
   id: string;
   icon: LucideIcon;
   className: string;
+  mobileClassName: string;
   rotation: string;
 }
 
@@ -89,27 +90,53 @@ const STUDY_BADGES: StudyBadge[] = [
     id: "notebook",
     icon: NotebookPenIcon,
     className: "top-[24%] right-[20%] hidden xl:grid",
+    mobileClassName: "-top-2 left-0 hidden rotate-[7deg] sm:grid",
     rotation: "7deg",
   },
   {
     id: "flask",
     icon: TestTubeDiagonalIcon,
     className: "top-[38%] right-[10%]",
+    mobileClassName: "-top-5 right-0 rotate-[-6deg]",
     rotation: "-6deg",
   },
   {
     id: "books",
     icon: BookMarkedIcon,
     className: "bottom-[25%] left-[12%]",
+    mobileClassName: "-bottom-5 left-0 rotate-[-8deg]",
     rotation: "-8deg",
   },
   {
     id: "cap",
     icon: GraduationCap,
     className: "bottom-[38%] left-[20%] hidden xl:grid",
+    mobileClassName: "right-[7%] -bottom-5 hidden rotate-[6deg] sm:grid",
     rotation: "6deg",
   },
 ];
+
+export function MobileHeroBadges(): React.JSX.Element {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-10"
+    >
+      {STUDY_BADGES.map(({ id, icon: Icon, mobileClassName }) => (
+        <span
+          key={id}
+          className={cn(
+            "border-border bg-card/90 absolute grid size-10 place-items-center rounded-xl border shadow-lg sm:size-12",
+            "[&_svg]:text-primary [&_svg]:size-5 sm:[&_svg]:size-6",
+            mobileClassName,
+          )}
+        >
+          <Icon />
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function HeroBadges(): React.JSX.Element {
   return (

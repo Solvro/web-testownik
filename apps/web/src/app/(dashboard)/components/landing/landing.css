@@ -1,8 +1,6 @@
-@import "devices.css/dist/devices.min.css";
-
 /*
  * Rules for elements outside the landing's JSX and DOM created by CanvasUI,
- * CSS3DRenderer, and devices.css. Everything rendered by React stays in
+ * and CSS3DRenderer. Everything rendered by React stays in
  * Tailwind utilities.
  */
 
@@ -44,9 +42,10 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * CanvasUI samples RGB and discards alpha, so the captured Bubble subtree needs
- * an explicit background or transparent pixels become black.
+ * Share the hero grid with the mobile still. CanvasUI samples RGB and discards
+ * alpha, so its captured subtree needs this opaque background.
  */
+.lp-mobile-hero,
 .lp-bubble-capture > canvas > div,
 .lp-bubble-capture > div:not([class]),
 .lp-bubble-capture > div {
@@ -64,15 +63,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 /* CanvasUI appends Glass's output canvas after the content it refracts. */
 .lp-device-glass > canvas:last-child {
   z-index: 4;
-}
-
-/*
- * devices.css frames keep their native pixel dimensions. Scale the complete
- * frame instead of resizing its box.
- */
-.lp-mobile-phone .device {
-  transform: scale(0.62);
-  transform-origin: 50% 50%;
 }
 
 .lp-screen-layer {

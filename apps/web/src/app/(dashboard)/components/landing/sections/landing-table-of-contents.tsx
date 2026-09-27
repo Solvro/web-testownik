@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
+import { LANDING_SECTIONS } from "../landing-sections";
 import {
   TOC_PREVIEW_GAP,
   TOC_PREVIEW_INNER_HEIGHT,
@@ -21,14 +22,7 @@ import {
   invalidateTocSectionPreviews,
 } from "./toc-section-preview";
 
-const SECTIONS = [
-  { id: "start", label: "Na początek" },
-  { id: "features", label: "Zobacz w praktyce" },
-  { id: "faq", label: "Pytania i odpowiedzi" },
-  { id: "story", label: "Nasza historia" },
-  { id: "team", label: "Poznaj zespół" },
-  { id: "footer", label: "Zacznij korzystać" },
-] as const;
+const SECTIONS = LANDING_SECTIONS;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
