@@ -349,7 +349,7 @@ export function StatsDemo(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="bg-background text-foreground flex h-full min-h-[32rem] min-w-0 flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem]">
+    <div className="bg-background text-foreground flex h-[min(70svh,32rem)] min-h-80 min-w-0 flex-col overflow-hidden rounded-3xl border shadow-xl shadow-black/5 sm:h-full sm:min-h-140">
       <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
         <strong className="block truncate text-sm sm:text-base">
           Statystyki: {QUIZ_TITLE}
@@ -359,7 +359,7 @@ export function StatsDemo(): React.JSX.Element {
         </span>
       </header>
 
-      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-3 sm:p-5 [&_[data-slot=card]]:min-w-0 [&_[data-slot=chart]]:max-w-full">
+      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-1 sm:p-5 [&_[data-slot=card]]:min-w-0 [&_[data-slot=chart]]:max-w-full">
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
           <StatsInfoCard
             quiz={METADATA}

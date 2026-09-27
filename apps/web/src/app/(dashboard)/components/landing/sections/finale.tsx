@@ -28,14 +28,14 @@ export function Finale({
     // the dark token set rather than hard-coding colours.
     <section
       id="footer"
-      className="dark bg-background text-foreground relative flex min-h-[100svh] scroll-mt-4 flex-col items-center justify-center overflow-hidden px-8 pt-28 pb-8 text-center"
+      className="dark bg-background text-foreground relative flex scroll-mt-4 flex-col items-center justify-start overflow-hidden px-8 pt-8 pb-8 text-center sm:justify-center sm:pt-28 md:min-h-[100svh]"
     >
       <div
         aria-hidden="true"
         className="absolute inset-0"
         style={gridBackdropStyle}
       />
-      <ParticleLogo className="absolute inset-0" />
+      <ParticleLogo className="absolute inset-x-0 top-8 h-[42.73vw] sm:inset-0 sm:h-auto" />
 
       {/*
        * The wordmark is the particle simulation itself — icon and lettering are
@@ -45,7 +45,7 @@ export function Finale({
       <div
         role="img"
         aria-label="Testownik"
-        className="pointer-events-none relative mt-16 aspect-[2.2] w-[94vw] sm:mt-[clamp(2rem,6vh,4.5rem)] sm:aspect-[3.4] sm:w-[min(92vw,82rem)]"
+        className="pointer-events-none relative aspect-[2.2] w-[94vw] sm:mt-[clamp(2rem,6vh,4.5rem)] sm:aspect-[3.4] sm:w-[min(92vw,82rem)]"
       />
 
       <p className="text-muted-foreground relative mt-8 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-10 sm:mt-[clamp(3rem,7vh,5rem)]">

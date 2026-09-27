@@ -298,6 +298,9 @@ function TeamDirectory({
       const clone = original.cloneNode(true) as HTMLElement;
       clone.dataset.carouselClone = "";
       clone.setAttribute("aria-hidden", "true");
+      if (clone.matches("a[href]")) {
+        clone.tabIndex = -1;
+      }
       if (index === 0) {
         clone.dataset.carouselLoopStart = "";
       }
@@ -318,18 +321,21 @@ function TeamDirectory({
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (prefersReducedMotion) {
-      return;
-    }
-
     const scrollSpeed = 160;
     const stopEasingDuration = 550;
     const startEasingDuration = 650;
 
     let loopPoint = 0;
     let isHovered = false;
+    let isInteracting = false;
+    let pauseUntil = 0;
+    let pointerId = -1;
+    let pointerStartX = 0;
+    let pointerStartScroll = 0;
+    let isDragging = false;
+    let suppressClick = false;
     let isVisible = false;
-    let currentSpeed = scrollSpeed;
+    let currentSpeed = prefersReducedMotion ? 0 : scrollSpeed;
     let scrollPosition = carousel.scrollLeft;
     let previousTime = 0;
     let animationFrameId = 0;
@@ -367,15 +373,75 @@ function TeamDirectory({
     };
     const handlePointerLeave = () => {
       scrollPosition = carousel.scrollLeft;
-      isHovered = false;
+      if (!isInteracting) {
+        isHovered = false;
+      }
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        pointerId !== -1 ||
+        (event.pointerType === "mouse" && event.button !== 0)
+      ) {
+        return;
+      }
+      pointerId = event.pointerId;
+      pointerStartX = event.clientX;
+      pointerStartScroll = carousel.scrollLeft;
+      isInteracting = true;
+      isDragging = false;
+      suppressClick = false;
+      currentSpeed = 0;
+      scrollPosition = carousel.scrollLeft;
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== pointerId || event.pointerType !== "mouse") {
+        return;
+      }
+      const distance = pointerStartX - event.clientX;
+      if (!isDragging && Math.abs(distance) > 5) {
+        isDragging = true;
+        carousel.setPointerCapture(event.pointerId);
+      }
+      if (isDragging) {
+        scrollPosition = wrapScroll(pointerStartScroll + distance);
+        carousel.scrollLeft = scrollPosition;
+      }
+    };
+    const handlePointerEnd = (event: PointerEvent) => {
+      if (event.pointerId !== pointerId) {
+        return;
+      }
+      if (carousel.hasPointerCapture(event.pointerId)) {
+        carousel.releasePointerCapture(event.pointerId);
+      }
+      suppressClick = isDragging;
+      pointerId = -1;
+      isInteracting = false;
+      isHovered = event.pointerType === "mouse" && carousel.matches(":hover");
+      pauseUntil = performance.now() + 1500;
+    };
+    const handleClick = (event: MouseEvent) => {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressClick = false;
+      }
+    };
+    const preventNativeDrag = (event: DragEvent) => {
+      event.preventDefault();
     };
     const handleManualScrollStart = () => {
       currentSpeed = 0;
       scrollPosition = carousel.scrollLeft;
+      pauseUntil = performance.now() + 1500;
     };
     const handleScroll = () => {
-      if (isHovered && currentSpeed === 0) {
-        scrollPosition = carousel.scrollLeft;
+      if (currentSpeed === 0) {
+        scrollPosition = wrapScroll(carousel.scrollLeft);
+        if (scrollPosition !== carousel.scrollLeft) {
+          carousel.scrollLeft = scrollPosition;
+        }
+        pauseUntil = performance.now() + 1500;
       }
     };
 
@@ -388,14 +454,13 @@ function TeamDirectory({
       const elapsed = Math.min(time - previousTime, 64);
       previousTime = time;
       const elapsedSeconds = elapsed / 1000;
-      const targetSpeed = isHovered ? 0 : scrollSpeed;
-      const easingDuration = isHovered
-        ? stopEasingDuration
-        : startEasingDuration;
+      const paused = isHovered || isInteracting || time < pauseUntil;
+      const targetSpeed = paused ? 0 : scrollSpeed;
+      const easingDuration = paused ? stopEasingDuration : startEasingDuration;
       const easing = 1 - Math.exp(-elapsed / easingDuration);
 
       currentSpeed += (targetSpeed - currentSpeed) * easing;
-      if (isHovered && currentSpeed < 1) {
+      if (paused && currentSpeed < 1) {
         currentSpeed = 0;
       }
 
@@ -430,9 +495,17 @@ function TeamDirectory({
     updateLoopPoint();
     const resizeObserver = new ResizeObserver(updateLoopPoint);
     resizeObserver.observe(carousel);
-    intersectionObserver.observe(carousel);
+    if (!prefersReducedMotion) {
+      intersectionObserver.observe(carousel);
+    }
     carousel.addEventListener("pointerenter", handlePointerEnter);
     carousel.addEventListener("pointerleave", handlePointerLeave);
+    carousel.addEventListener("pointerdown", handlePointerDown);
+    carousel.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
+    carousel.addEventListener("click", handleClick, true);
+    carousel.addEventListener("dragstart", preventNativeDrag);
     carousel.addEventListener("wheel", handleManualScrollStart, {
       passive: true,
     });
@@ -444,6 +517,12 @@ function TeamDirectory({
       resizeObserver.disconnect();
       carousel.removeEventListener("pointerenter", handlePointerEnter);
       carousel.removeEventListener("pointerleave", handlePointerLeave);
+      carousel.removeEventListener("pointerdown", handlePointerDown);
+      carousel.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
+      carousel.removeEventListener("click", handleClick, true);
+      carousel.removeEventListener("dragstart", preventNativeDrag);
       carousel.removeEventListener("wheel", handleManualScrollStart);
       carousel.removeEventListener("scroll", handleScroll);
     };
@@ -458,7 +537,7 @@ function TeamDirectory({
       <div
         ref={carouselRef}
         aria-label="Zespół Testownika"
-        className="mt-5 flex gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-5 flex cursor-grab gap-3 overflow-x-auto overscroll-x-contain pb-3 select-none [scrollbar-width:none] active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
       >
         {ACTIVE_MEMBERS.map((member) => (
           <MemberCredit
