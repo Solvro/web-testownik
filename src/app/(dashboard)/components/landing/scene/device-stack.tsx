@@ -21,7 +21,7 @@ const MIN_SCENE_WIDTH = `(min-width: ${String(BREAKPOINT.sm)}px)`;
  * The component owns three things and nothing else: the canvas, the DOM hosts
  * the live UI is portalled into, and the still cover shown while the model
  * loads. All the three.js work lives in `three/create-device-stack.ts`, which
- * is imported dynamically so neither three nor the 6 MB of USDZ reaches a
+ * is imported dynamically so neither three nor the device models reach a
  * visitor who never sees the scene.
  *
  * The hosts are created imperatively because `CSS3DRenderer` reparents them

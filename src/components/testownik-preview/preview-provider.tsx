@@ -7,22 +7,21 @@ import type { ReactNode } from "react";
 import { quizStatsKeys } from "@/hooks/use-quiz-stats";
 
 import {
-  PREVIEW_HARDEST,
   PREVIEW_HOURLY,
   PREVIEW_QUIZ_ID,
-  PREVIEW_QUIZ_METADATA,
   PREVIEW_SESSIONS,
-  PREVIEW_STATS,
   PREVIEW_TIMELINE,
 } from "./preview-fixtures";
 
 /**
- * Seeds a throwaway query cache with the landing fixtures.
+ * Seeds a throwaway query cache with a small sample of the landing fixtures.
  *
  * The stats components on the marketing page are the same ones the app renders;
  * they fetch through react-query. Pre-filling the cache lets them mount and
  * render their real markup without a request, an API base URL or a session —
- * so the landing page shows the product rather than a drawing of it.
+ * so the landing page shows the product rather than a drawing of it. The iPad
+ * cannot switch scope, so only the visible queries and a few representative
+ * points are retained.
  */
 function createPreviewClient(): QueryClient {
   const client = new QueryClient({
@@ -40,20 +39,18 @@ function createPreviewClient(): QueryClient {
   });
 
   const id = PREVIEW_QUIZ_ID;
-  client.setQueryData(quizStatsKeys.metadata(id), PREVIEW_QUIZ_METADATA);
-  for (const scope of ["me", "all"] as const) {
-    client.setQueryData(
-      quizStatsKeys.aggregated(id, scope),
-      PREVIEW_STATS[scope],
-    );
-    client.setQueryData(
-      quizStatsKeys.timeline(id, scope, 30),
-      PREVIEW_TIMELINE,
-    );
-    client.setQueryData(quizStatsKeys.hourly(id, scope), PREVIEW_HOURLY);
-    client.setQueryData(quizStatsKeys.hardest(id, scope, 10), PREVIEW_HARDEST);
-  }
-  client.setQueryData(quizStatsKeys.sessions(id, "me", 30), PREVIEW_SESSIONS);
+  client.setQueryData(
+    quizStatsKeys.timeline(id, "me", 30),
+    PREVIEW_TIMELINE.slice(-7),
+  );
+  client.setQueryData(
+    quizStatsKeys.sessions(id, "me", 30),
+    PREVIEW_SESSIONS.slice(-4),
+  );
+  client.setQueryData(
+    quizStatsKeys.hourly(id, "me"),
+    PREVIEW_HOURLY.filter(({ hour }) => hour % 3 === 0),
+  );
 
   return client;
 }

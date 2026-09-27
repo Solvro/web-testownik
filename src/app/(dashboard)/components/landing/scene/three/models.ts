@@ -16,9 +16,9 @@ import {
  * Pencil, the iPhone Pro Max — so only the named product is kept.
  */
 const DEVICES = {
-  laptop: { url: "/models/macbook-pro-14-space-black.usdz" },
-  tablet: { url: "/models/ipad-pro-space-black.usdz" },
-  phone: { url: "/models/iphone-17-pro-e-sim.usdz" },
+  laptop: { url: "/models/macbook.usdz" },
+  tablet: { url: "/models/ipad.usdz" },
+  phone: { url: "/models/iphone.usdz" },
 } as const;
 
 export const DISPLAY_ASSEMBLY_NAME = "RcexTyyhpuJYATQ";
@@ -27,31 +27,6 @@ export interface DeviceModels {
   laptop: Object3D;
   tablet: Group;
   phone: Group;
-}
-
-/**
- * Apple's public iPhone AR file ships in Cosmic Orange. Only the orange
- * anodised shell materials are re-toned to Testownik's deep navy; glass,
- * cameras, controls and the screen are left alone.
- */
-function retoneShell(phone: Object3D): void {
-  phone.traverse((object) => {
-    if (!isMesh(object)) {
-      return;
-    }
-
-    for (const material of materialsOf(object)) {
-      if (!isStandardMaterial(material)) {
-        continue;
-      }
-      const { color } = material;
-      if (color.r > color.g * 2 && color.r > color.b * 1.6) {
-        color.set(0x22_35_5d);
-        material.roughness = Math.max(material.roughness, 0.32);
-        material.needsUpdate = true;
-      }
-    }
-  });
 }
 
 /** Turns a lit display panel into inert black glass for the DOM screen to sit on. */
@@ -158,16 +133,6 @@ export async function loadDeviceModels(): Promise<DeviceModels> {
     tablet,
     phone,
   };
-
-  retoneShell(models.phone);
-  for (const product of [models.laptop, models.tablet, models.phone]) {
-    product.traverse((object) => {
-      if (isMesh(object)) {
-        object.castShadow = true;
-        object.receiveShadow = true;
-      }
-    });
-  }
 
   return models;
 }

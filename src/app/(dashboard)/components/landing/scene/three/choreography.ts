@@ -1,11 +1,5 @@
 import { Euler, MathUtils, Quaternion, Vector3 } from "three";
-import type {
-  Group,
-  Material,
-  Object3D,
-  PerspectiveCamera,
-  Scene,
-} from "three";
+import type { Group, Object3D, PerspectiveCamera, Scene } from "three";
 
 import { SCENE_WIDTH } from "../../breakpoints";
 import { LID_TRAVEL_DEGREES, frameLaptop } from "../laptop-framing";
@@ -155,7 +149,6 @@ export function createChoreography({
   lidPivot,
   tablet,
   phone,
-  contactShadow,
 }: {
   scene: Scene;
   camera: PerspectiveCamera;
@@ -163,8 +156,6 @@ export function createChoreography({
   lidPivot: Group;
   tablet: { rig: Group; attachment: SatelliteAttachment };
   phone: { rig: Group; attachment: SatelliteAttachment };
-  /** Fades out as the iPad lifts off the lid. */
-  contactShadow: Material & { opacity: number };
 }): Choreography {
   const satellites = [
     createSatellite(tablet.rig, tablet.attachment, SATELLITE_POSES.tablet),
@@ -181,8 +172,6 @@ export function createChoreography({
       const opening = smoothstep(0.3, 0.82, progress);
       const settle = smoothstep(0.78, 0.96, progress);
       const exit = keepSatellites ? 0 : smoothstep(0.06, 0.34, progress);
-
-      contactShadow.opacity = 0.34 * (1 - smoothstep(0.04, 0.32, progress));
 
       const fieldOfView = isCompact ? 34 : 30;
       if (camera.fov !== fieldOfView) {

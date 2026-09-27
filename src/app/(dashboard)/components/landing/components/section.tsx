@@ -9,8 +9,8 @@ const landingSectionVariants = cva(
   {
     variants: {
       padding: {
-        default: "py-24 sm:py-36",
-        showcase: "pt-12 pb-24 sm:pb-36",
+        default: "py-12 sm:py-20",
+        showcase: "pt-12 pb-12 sm:pb-20",
         none: "",
       },
     },

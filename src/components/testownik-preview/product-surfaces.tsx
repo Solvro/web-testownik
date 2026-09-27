@@ -23,12 +23,6 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { useStudyTimer } from "@/components/quiz/hooks/use-study-timer";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
-import { HourlyChart } from "@/components/quiz/stats/hourly-chart";
-import { ScoreChart } from "@/components/quiz/stats/score-chart";
-import { SessionsChart } from "@/components/quiz/stats/sessions-chart";
-import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
-import { StatsTable } from "@/components/quiz/stats/stats-table";
-import { StudyTimeChart } from "@/components/quiz/stats/study-time-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -47,19 +41,15 @@ import {
   PREVIEW_QUESTION,
   PREVIEW_QUIZ,
   PREVIEW_QUIZ_ID,
-  PREVIEW_QUIZ_METADATA,
 } from "./preview-fixtures";
 import { PREVIEW_COURSE_VIEWS, PREVIEW_GRADE_SUMMARY } from "./preview-grades";
-import { PreviewDataProvider } from "./preview-provider";
 
 /**
  * Every surface below mounts the component the app itself renders. Nothing here
- * re-implements product UI: the quiz is `QuestionCard`, the stats use the real
- * cards reading a seeded query cache, the grades run through the real
- * `buildCourseView`. What this module supplies is only the state and fixtures
- * those components would normally get from the API — plus a container and a
- * type scale, since the same components have to fit a 940px laptop panel, a
- * 720px tablet and a 390px phone.
+ * re-implements product UI: the quiz is `QuestionCard`, and the grades run
+ * through the real `buildCourseView`. What this module supplies is only the
+ * state and fixtures those components would normally get from the API — plus
+ * a container and a type scale for the device screens.
  */
 
 /**
@@ -150,67 +140,6 @@ export function QuizPreviewSurface({
         answerHints={withHint ? PREVIEW_ANSWER_HINTS : []}
       />
     </div>
-  );
-}
-
-export function StatsPreviewSurface({
-  density = "full",
-  className,
-}: PreviewSurfaceProps): React.JSX.Element {
-  const isCompact = density === "compact";
-
-  if (isCompact) {
-    return (
-      <PreviewDataProvider>
-        <div
-          className={cn(
-            SURFACE,
-            "grid size-full grid-cols-2 grid-rows-2 gap-2 overflow-hidden p-2 text-[0.68em]",
-            "[&_[data-slot=card]]:h-full [&_[data-slot=card]]:min-h-0 [&_[data-slot=card]]:gap-1.5 [&_[data-slot=card]]:overflow-hidden [&_[data-slot=card]]:py-2.5",
-            "[&_[data-slot=card-action]]:hidden [&_[data-slot=card-description]]:hidden",
-            "[&_[data-slot=card-content]]:flex [&_[data-slot=card-content]]:min-h-0 [&_[data-slot=card-content]]:flex-1 [&_[data-slot=card-content]]:px-2.5 [&_[data-slot=card-header]]:px-2.5",
-            "[&_[data-slot=card-content]>div]:size-full [&_[data-slot=card-content]>div>div]:size-full",
-            "[&_[data-slot=chart]]:aspect-auto! [&_[data-slot=chart]]:h-full! [&_[data-slot=chart]]:min-h-0! [&_[data-slot=chart]]:w-full!",
-            className,
-          )}
-        >
-          <SessionsChart
-            quizId={PREVIEW_QUIZ_ID}
-            canViewAll={false}
-            animated={false}
-          />
-          <ScoreChart
-            quizId={PREVIEW_QUIZ_ID}
-            canViewAll={false}
-            animated={false}
-          />
-          <StudyTimeChart
-            quizId={PREVIEW_QUIZ_ID}
-            canViewAll={false}
-            animated={false}
-          />
-          <HourlyChart
-            quizId={PREVIEW_QUIZ_ID}
-            canViewAll={false}
-            animated={false}
-          />
-        </div>
-      </PreviewDataProvider>
-    );
-  }
-
-  return (
-    <PreviewDataProvider>
-      <div className={cn(SURFACE, "grid gap-3", className)}>
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-3">
-          <StatsInfoCard
-            quiz={PREVIEW_QUIZ_METADATA}
-            lastActivityAt={PREVIEW_QUIZ_METADATA.last_used_at}
-          />
-          <StatsTable quizId={PREVIEW_QUIZ_ID} canViewAll />
-        </div>
-      </div>
-    </PreviewDataProvider>
   );
 }
 

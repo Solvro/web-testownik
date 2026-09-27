@@ -3,7 +3,6 @@ import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js"
 
 import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
 import { SATELLITE_POSES, createChoreography } from "./choreography";
-import { createTabletContactShadow } from "./contact-shadow";
 import {
   DISPLAY_ASSEMBLY_NAME,
   disposeModels,
@@ -23,7 +22,7 @@ import { createStage } from "./stage";
  *
  * Everything three.js lives behind this one entry point, which the React
  * wrapper imports dynamically — that is what keeps three, the loaders and the
- * 6 MB of USDZ off the initial bundle and away from phones entirely.
+ * device model downloads off the initial bundle and away from phones entirely.
  */
 
 /** Synthetic pivot the lid is re-parented onto, measured from the model. */
@@ -164,12 +163,6 @@ export async function createDeviceStack({
     orientation: "landscape",
   });
 
-  const contactShadow = createTabletContactShadow({
-    tablet: models.tablet,
-    screenObject: tablet.object,
-    screenHeightPx: Number.parseFloat(hosts.tablet.style.height),
-  });
-
   const phoneRig = new Group();
   const phone = attachSatelliteScreen({
     scene,
@@ -189,7 +182,6 @@ export async function createDeviceStack({
     lidPivot,
     tablet: { rig: tabletRig, attachment: tablet },
     phone: { rig: phoneRig, attachment: phone },
-    contactShadow,
   });
 
   // --- Frame loop ---------------------------------------------------------
@@ -330,70 +322,19 @@ export async function createDeviceStack({
   // its hosts. ResponsiveContainer otherwise observes a detached 0 × 0 node.
   onHostsAttached();
 
-  const getSurfaceSignature = (): string | null => {
-    if (
-      hosts.laptop.childElementCount === 0 ||
-      hosts.phone.childElementCount === 0
-    ) {
-      return null;
-    }
-
-    const charts = [
-      ...hosts.tablet.querySelectorAll<SVGSVGElement>("svg.recharts-surface"),
-    ];
-    if (charts.length !== 4) {
-      return null;
-    }
-
-    const chartSignatures = charts.map((chart) => {
-      const responsiveContainer = chart.closest<HTMLElement>(
-        ".recharts-responsive-container",
-      );
-      if (responsiveContainer === null) {
-        return null;
-      }
-
-      const containerWidth = responsiveContainer.clientWidth;
-      const containerHeight = responsiveContainer.clientHeight;
-      const { width: renderedWidth, height: renderedHeight } =
-        chart.viewBox.baseVal;
-      const hasFinalDimensions =
-        containerWidth > 0 &&
-        containerHeight > 0 &&
-        Math.abs(renderedWidth - containerWidth) <= 1 &&
-        Math.abs(renderedHeight - containerHeight) <= 1;
-      const hasChartGeometry =
-        chart.querySelectorAll(
-          ".recharts-layer path, .recharts-layer rect, .recharts-layer polygon",
-        ).length > 0;
-
-      if (!hasFinalDimensions || !hasChartGeometry) {
-        return null;
-      }
-
-      return `${String(containerWidth)}x${String(containerHeight)}:${chart.innerHTML}`;
-    });
-
-    return chartSignatures.includes(null) ? null : chartSignatures.join("|");
-  };
-
-  // Recharts initially paints at its fallback 320 × 200 size and then responds
-  // to the real card measurement. A fixed two-frame delay can expose that
-  // intermediate layout. Reveal only after the complete, correctly measured
-  // SVG output is unchanged across two composited frames.
-  let previousSurfaceSignature: string | null = null;
+  // The iPad starts with a still preview; its charts load after interaction.
+  // The cover only needs the three portal surfaces to have mounted.
   let stableSurfaceFrames = 0;
 
   const revealWhenSurfacesAreStable = (): void => {
     render();
 
-    const signature = getSurfaceSignature();
-    if (signature !== null && signature === previousSurfaceSignature) {
-      stableSurfaceFrames += 1;
-    } else {
-      stableSurfaceFrames = 0;
-    }
-    previousSurfaceSignature = signature;
+    stableSurfaceFrames =
+      hosts.laptop.childElementCount > 0 &&
+      hosts.tablet.childElementCount > 0 &&
+      hosts.phone.childElementCount > 0
+        ? stableSurfaceFrames + 1
+        : 0;
 
     if (stableSurfaceFrames >= 2) {
       readinessFrame = 0;

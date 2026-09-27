@@ -25,6 +25,7 @@ import {
 const SECTIONS = [
   { id: "start", label: "Na początek" },
   { id: "features", label: "Zobacz w praktyce" },
+  { id: "faq", label: "Pytania i odpowiedzi" },
   { id: "story", label: "Nasza historia" },
   { id: "team", label: "Poznaj zespół" },
   { id: "footer", label: "Zacznij korzystać" },
@@ -285,12 +286,15 @@ export function LandingTableOfContents(): React.JSX.Element {
         event.clientX <= bounds.right &&
         event.clientY >= bounds.top &&
         event.clientY <= bounds.bottom;
+      const isOverPreview =
+        event.target instanceof Element &&
+        event.target.closest("[data-landing-toc-preview]") !== null;
       const isNearNavigation =
         event.clientX <= POINTER_REVEAL_WIDTH &&
         event.clientY >= bounds.top - POINTER_REVEAL_PADDING &&
         event.clientY <= bounds.bottom + POINTER_REVEAL_PADDING;
 
-      if (isOverNavigation) {
+      if (isOverNavigation || isOverPreview) {
         isPointerOverNavigation = true;
         clearHideTimer();
         setIsVisible(true);
@@ -433,6 +437,7 @@ export function LandingTableOfContents(): React.JSX.Element {
   const previewMounted =
     previewSection !== null && previewSection !== undefined;
   const previewBooming = previewMotion === "out";
+  const previewActive = previewMounted && !previewBooming;
 
   return (
     <nav
@@ -442,6 +447,7 @@ export function LandingTableOfContents(): React.JSX.Element {
       className={cn(
         "group/toc fixed top-1/2 left-0 z-[100] w-11 -translate-y-1/2 py-1.5",
         "transition-[width,opacity,transform] duration-300 ease-out hover:w-48 has-[:focus-visible]:w-48 motion-reduce:transition-none",
+        previewActive && "w-48",
         isVisible === true
           ? "translate-x-0 opacity-100"
           : "pointer-events-none -translate-x-2 opacity-0",
@@ -450,6 +456,7 @@ export function LandingTableOfContents(): React.JSX.Element {
       <ol>
         {SECTIONS.map((section, index) => {
           const isActive = section.id === activeId;
+          const isPreviewActive = previewActive && section.id === previewId;
 
           return (
             <li key={section.id}>
@@ -474,7 +481,13 @@ export function LandingTableOfContents(): React.JSX.Element {
                   isActive && "text-foreground font-bold",
                 )}
               >
-                <span className="group-hover/link:bg-background/70 group-focus-visible/link:bg-background/70 flex w-fit max-w-full items-center justify-start gap-0 rounded-r-sm py-0.5 pr-1.5 pl-1 transition-[gap,background-color] duration-200 group-hover/link:gap-2 group-hover/link:backdrop-blur-[6px] group-focus-visible/link:gap-2 group-focus-visible/link:backdrop-blur-[6px] motion-reduce:transition-none">
+                <span
+                  className={cn(
+                    "group-hover/link:bg-background/70 group-focus-visible/link:bg-background/70 flex w-fit max-w-full items-center justify-start gap-0 rounded-r-sm py-0.5 pr-1.5 pl-1 transition-[gap,background-color] duration-200 group-hover/link:gap-2 group-hover/link:backdrop-blur-[6px] group-focus-visible/link:gap-2 group-focus-visible/link:backdrop-blur-[6px] motion-reduce:transition-none",
+                    isPreviewActive &&
+                      "bg-background/70 gap-2 backdrop-blur-[6px]",
+                  )}
+                >
                   <span
                     aria-hidden="true"
                     className={cn(
@@ -482,12 +495,26 @@ export function LandingTableOfContents(): React.JSX.Element {
                       isActive
                         ? "bg-primary w-7 opacity-80 group-hover/link:w-9 group-hover/link:opacity-100 group-focus-visible/link:w-9 group-focus-visible/link:opacity-100"
                         : "bg-foreground group-focus-visible/link:bg-primary group-hover/link:bg-primary w-3 opacity-15 group-hover/link:w-8 group-hover/link:opacity-80 group-focus-visible/link:w-8 group-focus-visible/link:opacity-80",
+                      isPreviewActive &&
+                        (isActive
+                          ? "w-9 opacity-100"
+                          : "bg-primary w-8 opacity-80"),
                     )}
                   />
-                  <span className="font-landing-mono w-0 overflow-hidden text-[0.58rem] tabular-nums opacity-0 transition-[width,opacity] duration-200 group-hover/link:w-4 group-hover/link:opacity-45 group-focus-visible/link:w-4 group-focus-visible/link:opacity-45 motion-reduce:transition-none">
+                  <span
+                    className={cn(
+                      "font-landing-mono w-0 overflow-hidden text-[0.58rem] tabular-nums opacity-0 transition-[width,opacity] duration-200 group-hover/link:w-4 group-hover/link:opacity-45 group-focus-visible/link:w-4 group-focus-visible/link:opacity-45 motion-reduce:transition-none",
+                      isPreviewActive && "w-4 opacity-45",
+                    )}
+                  >
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <span className="max-w-0 -translate-x-2 overflow-hidden text-left whitespace-nowrap opacity-0 transition-[max-width,opacity,transform] duration-200 group-hover/link:max-w-32 group-hover/link:translate-x-0 group-hover/link:opacity-100 group-focus-visible/link:max-w-32 group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 motion-reduce:transition-none">
+                  <span
+                    className={cn(
+                      "max-w-0 -translate-x-2 overflow-hidden text-left whitespace-nowrap opacity-0 transition-[max-width,opacity,transform] duration-200 group-hover/link:max-w-32 group-hover/link:translate-x-0 group-hover/link:opacity-100 group-focus-visible/link:max-w-32 group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 motion-reduce:transition-none",
+                      isPreviewActive && "max-w-32 translate-x-0 opacity-100",
+                    )}
+                  >
                     {section.label}
                   </span>
                 </span>
