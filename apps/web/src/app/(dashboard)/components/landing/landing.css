@@ -258,11 +258,51 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   color: var(--foreground);
 }
 
+@keyframes lp-story-date-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lp-story-description-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.lp-story-date {
+  animation: lp-story-date-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lp-story-description {
+  animation: lp-story-description-in 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lp-toc-preview-in,
   .lp-toc-preview-boom,
   .lp-toc-preview-boom::before,
   .lp-toc-preview-boom::after {
     animation: none;
+  }
+
+  .lp-story-date,
+  .lp-story-description {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }
