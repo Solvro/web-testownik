@@ -1,0 +1,36 @@
+"use client";
+
+import type { ReactNode } from "react";
+
+import { AppContext } from "@/app-context";
+import type { AppContextType } from "@/app-context-type";
+import { useAutoGuest } from "@/hooks/use-auto-guest";
+import { useGuestQuizMigration } from "@/hooks/use-guest-quiz-migration";
+import { useSyncAuth } from "@/hooks/use-sync-auth";
+import type { JWTPayload } from "@/lib/auth/types";
+
+import { hasPermission } from "./lib/auth/permissions";
+import type { PermissionAction } from "./lib/auth/permissions";
+
+export function AppContextProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode;
+  initialUser: JWTPayload | null;
+}) {
+  const { isAuthenticated, user } = useSyncAuth(initialUser);
+  useAutoGuest(user);
+  useGuestQuizMigration(user);
+
+  const checkPermission = (action: PermissionAction) =>
+    hasPermission(user?.account_type, action, user?.account_level);
+
+  const context: AppContextType = {
+    isAuthenticated,
+    user,
+    checkPermission,
+  };
+
+  return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
+}
