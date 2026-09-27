@@ -9,6 +9,7 @@ const currentQuiz: Quiz = {
   id: "quiz-1",
   title: "Current quiz",
   description: "desc",
+  folder: null,
   version: 1,
   visibility: 0,
   allow_anonymous: false,
