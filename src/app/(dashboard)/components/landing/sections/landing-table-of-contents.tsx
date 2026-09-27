@@ -19,7 +19,6 @@ import {
   TOC_PREVIEW_WIDTH,
   getTocSectionPreview,
   invalidateTocSectionPreviews,
-  warmTocSectionPreviews,
 } from "./toc-section-preview";
 
 const SECTIONS = [
@@ -234,6 +233,8 @@ export function LandingTableOfContents(): React.JSX.Element {
 
       hideTimer = window.setTimeout(() => {
         setIsVisible(false);
+        clearPreviewTimers();
+        finishHidePreview();
         hideTimer = 0;
       }, IDLE_HIDE_DELAY);
     };
@@ -332,16 +333,7 @@ export function LandingTableOfContents(): React.JSX.Element {
         window.cancelAnimationFrame(frame);
       }
     };
-  }, [setActiveSection]);
-
-  useEffect(() => {
-    if (!previewsEnabled || isVisible !== true) {
-      clearPreviewTimers();
-      finishHidePreview();
-      return;
-    }
-    warmTocSectionPreviews(SECTIONS.map((section) => section.id));
-  }, [clearPreviewTimers, finishHidePreview, isVisible, previewsEnabled]);
+  }, [clearPreviewTimers, finishHidePreview, setActiveSection]);
 
   useLayoutEffect(() => {
     const mount = previewMountReference.current;
@@ -445,9 +437,8 @@ export function LandingTableOfContents(): React.JSX.Element {
       aria-label="Spis treści strony"
       aria-hidden={isVisible !== true}
       className={cn(
-        "group/toc fixed top-1/2 left-0 z-[100] w-11 -translate-y-1/2 py-1.5",
-        "transition-[width,opacity,transform] duration-300 ease-out hover:w-48 has-[:focus-visible]:w-48 motion-reduce:transition-none",
-        previewActive && "w-48",
+        "group/toc fixed top-1/2 left-0 z-[100] hidden w-48 -translate-y-1/2 py-1.5 md:block",
+        "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
         isVisible === true
           ? "translate-x-0 opacity-100"
           : "pointer-events-none -translate-x-2 opacity-0",
@@ -483,9 +474,8 @@ export function LandingTableOfContents(): React.JSX.Element {
               >
                 <span
                   className={cn(
-                    "group-hover/link:bg-background/70 group-focus-visible/link:bg-background/70 flex w-fit max-w-full items-center justify-start gap-0 rounded-r-sm py-0.5 pr-1.5 pl-1 transition-[gap,background-color] duration-200 group-hover/link:gap-2 group-hover/link:backdrop-blur-[6px] group-focus-visible/link:gap-2 group-focus-visible/link:backdrop-blur-[6px] motion-reduce:transition-none",
-                    isPreviewActive &&
-                      "bg-background/70 gap-2 backdrop-blur-[6px]",
+                    "group-hover/link:bg-background/90 group-focus-visible/link:bg-background/90 flex w-fit max-w-full items-center justify-start gap-0 rounded-r-sm py-0.5 pr-1.5 pl-1 transition-[gap,background-color] duration-200 group-hover/link:gap-2 group-focus-visible/link:gap-2 motion-reduce:transition-none",
+                    isPreviewActive && "bg-background/90 gap-2",
                   )}
                 >
                   <span

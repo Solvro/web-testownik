@@ -100,7 +100,7 @@ export function AiDemo(): React.JSX.Element {
   };
 
   return (
-    <div className="bg-background text-foreground flex h-full min-h-[35rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5">
+    <div className="bg-background text-foreground flex h-full max-h-[35rem] min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem] lg:max-h-none">
       <header className="border-border flex items-center gap-3 border-b px-4 py-3 sm:px-5">
         <span className="bg-primary/10 grid size-9 place-items-center rounded-full">
           <BotMessageSquareIcon
@@ -120,7 +120,7 @@ export function AiDemo(): React.JSX.Element {
         ref={transcript}
         className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6"
       >
-        <div className="border-border bg-card mx-auto max-w-[34rem] rounded-xl border p-4">
+        <div className="border-border bg-card mx-auto max-w-[48rem] rounded-xl border p-4">
           <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
             <CircleHelpIcon aria-hidden="true" className="size-3.5" />
             Aktywne pytanie
@@ -135,7 +135,7 @@ export function AiDemo(): React.JSX.Element {
         </div>
 
         <div
-          className="mx-auto mt-7 flex max-w-[34rem] flex-col gap-4"
+          className="mx-auto mt-7 flex max-w-[48rem] flex-col gap-4"
           aria-live="polite"
         >
           {messages.length === 0 && pending === null ? (
@@ -148,7 +148,7 @@ export function AiDemo(): React.JSX.Element {
             message.role === "user" ? (
               <div
                 key={message.id}
-                className="bg-primary text-primary-foreground animate-lp-rise ml-auto max-w-[82%] rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed"
+                className="bg-primary text-primary-foreground animate-lp-rise ml-auto max-w-[82%] rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed"
               >
                 {message.text}
               </div>
@@ -177,7 +177,7 @@ export function AiDemo(): React.JSX.Element {
                   className="text-primary size-4"
                 />
               </span>
-              <div className="bg-secondary text-muted-foreground flex items-center gap-2 rounded-2xl rounded-tl-md px-4 py-3 text-sm font-medium">
+              <div className="bg-secondary text-muted-foreground flex items-center gap-2 rounded-2xl rounded-tl-sm px-4 py-3 text-sm font-medium">
                 <span className="flex gap-1" aria-hidden="true">
                   <span className="bg-primary size-1.5 animate-bounce rounded-full [animation-delay:-0.2s]" />
                   <span className="bg-primary size-1.5 animate-bounce rounded-full [animation-delay:-0.1s]" />

@@ -2,6 +2,7 @@
 
 import { ArrowRightIcon } from "lucide-react";
 import dynamic from "next/dynamic";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -47,6 +48,12 @@ function ShowcaseScene({
 
 /** Shared top inset so the "0X" stays on one Y across open/closed. */
 const RAIL_TOP = "lg:pt-6";
+
+const showcaseBackdropStyle: CSSProperties = {
+  backgroundImage:
+    "radial-gradient(ellipse at 12% 18%, color-mix(in oklab, var(--primary) 24%, transparent), transparent 42%), radial-gradient(ellipse at 88% 82%, color-mix(in oklab, var(--chart-6) 10%, transparent), transparent 38%), linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+  backgroundSize: "auto, auto, 4rem 4rem, 4rem 4rem",
+};
 
 export function ProductShowcase(): React.JSX.Element {
   const [activeId, setActiveId] = useState<ShowcaseFeatureId>("quiz");
@@ -121,7 +128,7 @@ export function ProductShowcase(): React.JSX.Element {
                       RAIL_TOP,
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="hidden items-center gap-3 lg:flex">
                       <span className="text-primary text-sm font-bold tabular-nums">
                         {number}
                       </span>
@@ -129,7 +136,7 @@ export function ProductShowcase(): React.JSX.Element {
                         {feature.label}
                       </span>
                     </div>
-                    <h3 className="mt-6 text-[clamp(2rem,3.2vw,3.65rem)] leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8">
+                    <h3 className="mt-6 text-5xl leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8">
                       {feature.title}
                     </h3>
                     <p className="text-muted-foreground mt-6 text-[0.98rem] leading-[1.7]">
@@ -147,8 +154,13 @@ export function ProductShowcase(): React.JSX.Element {
                     </p>
                   </div>
 
-                  <div className="bg-secondary min-h-0 p-3 sm:p-6 lg:p-8">
-                    <ShowcaseScene feature={feature.id} />
+                  <div
+                    className="bg-background relative min-h-0 overflow-hidden p-2 sm:p-6 lg:p-8"
+                    style={showcaseBackdropStyle}
+                  >
+                    <div className="relative h-full">
+                      <ShowcaseScene feature={feature.id} />
+                    </div>
                   </div>
                 </div>
               ) : null}

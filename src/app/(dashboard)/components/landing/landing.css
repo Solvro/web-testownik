@@ -189,12 +189,10 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   from {
     opacity: 0;
     transform: translateX(0.4rem) scale(0.94);
-    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translateX(0) scale(1);
-    filter: blur(0);
   }
 }
 
@@ -202,17 +200,14 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   0% {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0);
   }
   28% {
     opacity: 1;
     transform: scale(1.1);
-    filter: blur(0);
   }
   100% {
     opacity: 0;
     transform: scale(0.42);
-    filter: blur(7px);
   }
 }
 

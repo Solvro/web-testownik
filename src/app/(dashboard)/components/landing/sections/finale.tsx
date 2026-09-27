@@ -48,7 +48,7 @@ export function Finale({
         className="pointer-events-none relative mt-16 aspect-[2.2] w-[94vw] sm:mt-[clamp(2rem,6vh,4.5rem)] sm:aspect-[3.4] sm:w-[min(92vw,82rem)]"
       />
 
-      <p className="text-muted-foreground relative mt-14 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-[clamp(3rem,7vh,5rem)]">
+      <p className="text-muted-foreground relative mt-8 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-10 sm:mt-[clamp(3rem,7vh,5rem)]">
         Wejdź do aplikacji i poznaj nowy sposób na naukę
         <br />
         Zawsze pod ręką dla ciebie i znajomych

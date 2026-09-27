@@ -46,11 +46,11 @@ export function GradesDemo(): React.JSX.Element {
   }, [realAverage, whatIf]);
 
   return (
-    <div className="bg-background text-foreground flex h-full min-h-[35rem] flex-col overflow-hidden rounded-[1rem] border p-3 shadow-xl shadow-black/5 sm:p-5">
-      <div className="mx-auto grid w-full max-w-[48rem] flex-none gap-3.5">
+    <div className="bg-background text-foreground flex h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border p-3 shadow-xl shadow-black/5 sm:min-h-[35rem] sm:p-5">
+      <div className="mx-auto grid w-full flex-none gap-3.5">
         <SummaryStats {...PREVIEW_GRADE_SUMMARY} average={realAverage} />
       </div>
-      <div className="mx-auto mt-3.5 min-h-0 w-full max-w-[48rem] flex-1 [&_[role=region]]:flex [&_[role=region]]:h-full [&_[role=region]]:flex-col [&_[role=region]_[data-slot=card-content]]:flex [&_[role=region]_[data-slot=card-content]]:h-full [&_[role=region]_[data-slot=card-content]]:flex-col [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:max-h-none [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:min-h-0 [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:flex-1">
+      <div className="mx-auto mt-3.5 min-h-0 w-full flex-1 [&_[role=region]]:flex [&_[role=region]]:h-full [&_[role=region]]:flex-col [&_[role=region]_[data-slot=card-content]]:flex [&_[role=region]_[data-slot=card-content]]:h-full [&_[role=region]_[data-slot=card-content]]:flex-col [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:max-h-none [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:min-h-0 [&_[role=region]_[data-slot=card-content]>div:nth-child(2)]:flex-1">
         <AverageSimulator
           courses={COURSES}
           grades={[...SIMULATOR_GRADES]}

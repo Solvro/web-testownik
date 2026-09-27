@@ -32,7 +32,7 @@ export function LandingNav({
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <header className="border-border/70 absolute top-0 left-0 z-50 grid h-[4.5rem] w-full grid-cols-[1fr_auto_1fr] items-center border-b px-4 backdrop-blur-[18px] sm:h-[5.3rem] sm:px-[1.4rem] lg:px-[2.2rem]">
+    <header className="border-border/70 absolute top-0 left-0 z-50 grid h-[4.5rem] w-full grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:h-[5.3rem] sm:px-[1.4rem] lg:px-[2.2rem]">
       <Link
         href="/?landing=true"
         aria-label="Testownik"
@@ -55,7 +55,7 @@ export function LandingNav({
 
       <nav
         aria-label="Główna nawigacja"
-        className="hidden items-center gap-1 justify-self-center lg:flex"
+        className="hidden items-center gap-1 justify-self-center min-[1030px]:flex"
       >
         {SECTION_LINKS.map((link) => (
           <a
@@ -73,7 +73,7 @@ export function LandingNav({
         ))}
       </nav>
 
-      <div className="flex items-center justify-end gap-2 justify-self-end sm:gap-3">
+      <div className="col-start-2 flex items-center justify-end gap-2 justify-self-end min-[1030px]:col-start-3 sm:gap-3">
         <button
           type="button"
           aria-label="Zmień motyw"

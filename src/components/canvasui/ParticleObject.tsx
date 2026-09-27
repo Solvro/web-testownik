@@ -574,6 +574,7 @@ export function createParticleObject(
   scene.add(floatGroup);
 
   const controls = new OrbitControls(camera, canvas);
+  canvas.style.touchAction = "pan-y";
   controls.enableDamping = true;
   controls.enablePan = false;
 
@@ -1050,7 +1051,7 @@ export function ParticleObject({
           width: "100%",
           height: "100%",
           display: "block",
-          touchAction: "none",
+          touchAction: "pan-y",
         }}
       />
     </div>
