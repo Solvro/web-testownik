@@ -23,6 +23,17 @@
 
 ## 🚀 Uruchomienie lokalne
 
+### Struktura repozytorium
+
+```text
+apps/
+  web/        # Aplikacja Next.js
+packages/
+  core/       # Współdzielone typy, schematy i logika (@testownik/core)
+```
+
+Wszystkie komendy uruchamiasz z katalogu głównego repozytorium.
+
 ### Wymagania
 
 - [Node.js](https://nodejs.org/) (zalecana wersja LTS)
@@ -64,6 +75,7 @@
 | `pnpm run format`       | Formatuje kod za pomocą Prettier    |
 | `pnpm run format:check` | Sprawdza formatowanie kodu          |
 | `pnpm run typecheck`    | Sprawdza typy TypeScript            |
+| `pnpm run test`         | Uruchamia testy (Vitest)            |
 
 ---
 
