@@ -1,0 +1,28 @@
+{
+  "name": "@testownik/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Platform-neutral types, schemas and quiz logic shared by the web and mobile apps.",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "lint": "eslint --cache .",
+    "lint:fix": "eslint --cache --fix .",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "seedrandom": "^3.0.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@solvro/config": "^2.3.3",
+    "@types/seedrandom": "^3.0.8",
+    "eslint": "^9",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.17"
+  }
+}
