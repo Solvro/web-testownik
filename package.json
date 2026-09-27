@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
-    "@solvro/config": "^2.3.3",
+    "@solvro/config": "^3.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
