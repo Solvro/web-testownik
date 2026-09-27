@@ -1,0 +1,227 @@
+import type { QuizMetadata, SharedQuiz } from "@testownik/core/quiz/types";
+import {
+  ArrowDownAZIcon,
+  ArrowDownUpIcon,
+  ArrowDownZAIcon,
+  CalendarArrowDownIcon,
+  CalendarArrowUpIcon,
+  HistoryIcon,
+  SearchIcon,
+  X as XIcon,
+} from "lucide-react";
+import { ViewTransition, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface Option {
+  label: string;
+  icon: React.ReactNode;
+  comparator: (
+    a: QuizMetadata | SharedQuiz,
+    b: QuizMetadata | SharedQuiz,
+  ) => number;
+}
+
+interface QuizSortProps {
+  onSortChange: (
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ) => number,
+  ) => void;
+  onNameFilterChange: (value: string) => void;
+  onResetFilters: () => void;
+}
+
+const defaultComparator = (
+  _a: QuizMetadata | SharedQuiz,
+  _b: QuizMetadata | SharedQuiz,
+): number => {
+  return 0;
+};
+
+const getTitle = (quiz: QuizMetadata | SharedQuiz): string => {
+  return "quiz" in quiz ? quiz.quiz.title : quiz.title;
+};
+
+const getCreationDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateString = "quiz" in quiz ? quiz.quiz.created_at : quiz.created_at;
+  return new Date(dateString);
+};
+
+const getLastUsedDate = (quiz: QuizMetadata | SharedQuiz): Date => {
+  const dateString: string | null =
+    "quiz" in quiz ? quiz.quiz.last_used_at : quiz.last_used_at;
+  return new Date(dateString ?? 0); // Return earliest date if last_used_at is null
+};
+
+const sortingOptions: Record<string, Option> = {
+  ascending: {
+    label: "A → Z",
+    icon: <ArrowDownAZIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getTitle(a).localeCompare(getTitle(b));
+    },
+  },
+  descending: {
+    label: "Z → A",
+    icon: <ArrowDownZAIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getTitle(b).localeCompare(getTitle(a));
+    },
+  },
+  lastest: {
+    label: "Najnowsze",
+    icon: <CalendarArrowDownIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(b).getTime() - getCreationDate(a).getTime();
+    },
+  },
+  oldest: {
+    label: "Najstarsze",
+    icon: <CalendarArrowUpIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getCreationDate(a).getTime() - getCreationDate(b).getTime();
+    },
+  },
+  lastUsed: {
+    label: "Ostatnio używane",
+    icon: <HistoryIcon />,
+    comparator: (
+      a: QuizMetadata | SharedQuiz,
+      b: QuizMetadata | SharedQuiz,
+    ): number => {
+      return getLastUsedDate(b).getTime() - getLastUsedDate(a).getTime();
+    },
+  },
+};
+
+export function QuizSort({
+  onSortChange,
+  onNameFilterChange,
+  onResetFilters,
+}: QuizSortProps) {
+  const [selectedOption, setSelectedOption] = useState<Option | null>(
+    sortingOptions.lastUsed,
+  );
+  const [searchValue, setSearchValue] = useState<string>("");
+
+  const isFiltered =
+    selectedOption !== sortingOptions.lastUsed || searchValue !== "";
+
+  const handleClearFilters = () => {
+    setSelectedOption(null);
+    setSearchValue("");
+    onNameFilterChange("");
+    onSortChange(defaultComparator);
+  };
+
+  return (
+    <div className="flex flex-1 flex-row items-center justify-end gap-2">
+      <ViewTransition name="quiz-info">
+        <div className="flex flex-row items-center gap-2">
+          {isFiltered ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      onResetFilters();
+                      handleClearFilters();
+                    }}
+                    aria-label="Wyczyść filtry"
+                  >
+                    <XIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Wyczyść filtry</TooltipContent>
+            </Tooltip>
+          ) : null}
+          <InputGroup className="w-full sm:w-xs">
+            <InputGroupInput
+              placeholder="Wyszukaj quiz"
+              value={searchValue}
+              onChange={(event) => {
+                setSearchValue(event.target.value);
+                onNameFilterChange(event.target.value);
+              }}
+            />
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+          </InputGroup>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label="Sortuj quizy"
+                      >
+                        {selectedOption === null ? (
+                          <ArrowDownUpIcon />
+                        ) : (
+                          selectedOption.icon
+                        )}
+                      </Button>
+                    }
+                  ></DropdownMenuTrigger>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Sortuj</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              {Object.values(sortingOptions).map((option) => (
+                <DropdownMenuItem
+                  key={option.label}
+                  onClick={() => {
+                    setSelectedOption(option);
+                    onSortChange(option.comparator);
+                  }}
+                  className="flex w-auto justify-between"
+                >
+                  {option.label}
+                  {option.icon}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ViewTransition>
+    </div>
+  );
+}
