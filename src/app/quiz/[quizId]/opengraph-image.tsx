@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 import { env } from "@/env";
 import { API_URL } from "@/lib/api";
@@ -67,6 +68,31 @@ async function getFonts() {
   return fontsCache;
 }
 
+const AVATAR_FETCH_TIMEOUT_MS = 3000;
+
+// Satori only decodes PNG/JPEG, while profile photos are stored as AVIF.
+async function loadAvatar(url: string | null | undefined) {
+  if (url == null || url.length === 0) {
+    return null;
+  }
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(AVATAR_FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const png = await sharp(Buffer.from(await response.arrayBuffer()))
+      .resize(80, 80, { fit: "cover" })
+      .png()
+      .toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch (error) {
+    console.error("Failed to load creator avatar", error);
+    return null;
+  }
+}
+
 function Badge({
   icon,
   text,
@@ -94,7 +120,7 @@ function Badge({
         )
       ) : (
         <img
-          src={avatarUrl.replace("/svg?", "/png?size=40&")} // use png instead of svg for dicebear avatars
+          src={avatarUrl}
           alt=""
           tw="w-10 h-10 rounded-full mr-2"
           style={{ objectFit: "cover" }}
@@ -193,6 +219,11 @@ export default async function Image({
     return await renderFallbackImage();
   }
 
+  const shouldShowAuthor = !quiz.is_anonymous && quiz.creator != null;
+  const creatorAvatar = shouldShowAuthor
+    ? await loadAvatar(quiz.creator?.photo)
+    : null;
+
   const questionTitle = quiz.preview_question?.text ?? "Ile to jest 2+2?";
 
   const answers =
@@ -203,8 +234,6 @@ export default async function Image({
   const renderAnswers = [0, 1, 2].map((index) => {
     return answers[index]?.text ?? ((index + 9) % 5).toString();
   });
-
-  const shouldShowAuthor = !quiz.is_anonymous && quiz.creator != null;
 
   return new ImageResponse(
     <div
@@ -238,7 +267,7 @@ export default async function Image({
           {/* Badge 1: Author */}
           {shouldShowAuthor ? (
             <Badge
-              avatarUrl={quiz.creator?.photo}
+              avatarUrl={creatorAvatar}
               avatarInitial={quiz.creator?.full_name.charAt(0)}
               text={quiz.creator?.full_name ?? ""}
             />

@@ -1,5 +1,5 @@
-import { ACCOUNT_TYPE } from "@/types/user";
-import type { AccountType } from "@/types/user";
+import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@/types/user";
+import type { AccountLevel, AccountType } from "@/types/user";
 
 export enum PermissionAction {
   // Searching and browsing public quizzes
@@ -24,6 +24,8 @@ export enum PermissionAction {
   VIEW_QUIZ_STATS = "view_quiz_stats",
   // Viewing Testownik Wrapped summaries
   VIEW_WRAPPED = "view_wrapped",
+  // Uploading a personal profile photo (predefined avatars remain available to all accounts)
+  UPLOAD_PROFILE_PHOTO = "upload_profile_photo",
 }
 
 export const PERMISSIONS_BY_ROLE: Record<
@@ -36,6 +38,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.SEARCH_IN_QUIZ,
   ],
   [ACCOUNT_TYPE.EMAIL]: [
+    PermissionAction.UPLOAD_PROFILE_PHOTO,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
     PermissionAction.REPORT_QUIZ_ISSUES,
@@ -47,6 +50,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.VIEW_WRAPPED,
   ],
   [ACCOUNT_TYPE.STUDENT]: [
+    PermissionAction.UPLOAD_PROFILE_PHOTO,
     PermissionAction.BROWSE_PUBLIC_QUIZZES,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
@@ -60,6 +64,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.VIEW_WRAPPED,
   ],
   [ACCOUNT_TYPE.LECTURER]: [
+    PermissionAction.UPLOAD_PROFILE_PHOTO,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
     PermissionAction.REPORT_QUIZ_ISSUES,
@@ -72,9 +77,21 @@ export const PERMISSIONS_BY_ROLE: Record<
   ],
 };
 
+export const ACCOUNT_LEVEL_REQUIREMENTS: Partial<
+  Record<PermissionAction, readonly AccountLevel[]>
+> = {
+  [PermissionAction.UPLOAD_PROFILE_PHOTO]: [ACCOUNT_LEVEL.GOLD],
+};
+
 export function hasPermission(
   accountType: AccountType | undefined,
   action: PermissionAction,
+  accountLevel?: AccountLevel,
 ): boolean {
-  return PERMISSIONS_BY_ROLE[accountType ?? "unauthenticated"].includes(action);
+  const allowedLevels = ACCOUNT_LEVEL_REQUIREMENTS[action];
+  return (
+    PERMISSIONS_BY_ROLE[accountType ?? "unauthenticated"].includes(action) &&
+    (allowedLevels === undefined ||
+      (accountLevel !== undefined && allowedLevels.includes(accountLevel)))
+  );
 }

@@ -21,8 +21,9 @@ function MaintenanceOverlay() {
         if (response.ok) {
           window.location.reload();
         }
-      } catch {
-        // Ignore polling errors while the backend is unreachable.
+      } catch (error) {
+        // Keep polling while unavailable, but retain diagnostics for debugging.
+        console.warn("Maintenance status check failed", error);
       }
     }, 30_000);
     return () => {
@@ -32,7 +33,7 @@ function MaintenanceOverlay() {
 
   return (
     <div className="flex flex-1 items-center justify-center p-5">
-      <Empty className="w-full max-w-xl overflow-hidden text-center">
+      <Empty className="w-full max-w-2xl overflow-hidden text-center">
         <div className="w-full" />
 
         <EmptyHeader className="flex flex-col items-center">
