@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "tw-shimmer";
+@import "./(dashboard)/components/landing/landing-theme.css";
 
 @plugin "@tailwindcss/typography";
 

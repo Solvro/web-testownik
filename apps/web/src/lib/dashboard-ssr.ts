@@ -12,6 +12,7 @@ export async function getContributorsSSR(): Promise<GitHubContributor[]> {
       GITHUB_REPOS.map(async (repo) =>
         fetch(`https://api.github.com/repos/${repo}/contributors?anon=1`, {
           next: { revalidate: 3600 },
+          signal: AbortSignal.timeout(3500),
         }),
       ),
     );

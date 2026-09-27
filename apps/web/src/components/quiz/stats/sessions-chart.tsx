@@ -14,6 +14,7 @@ import { TimelineTooltip } from "./timeline-tooltip";
 interface SessionsChartProps {
   quizId: string;
   canViewAll: boolean;
+  animated?: boolean;
 }
 
 const chartConfig = {
@@ -23,7 +24,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function SessionsChart({ quizId, canViewAll }: SessionsChartProps) {
+export function SessionsChart({
+  quizId,
+  canViewAll,
+  animated = true,
+}: SessionsChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
   const { data, isFetching, isPending } = useQuizTimeline(quizId, scope);
   const isRefreshing = isFetching && !isPending;
@@ -77,6 +82,7 @@ export function SessionsChart({ quizId, canViewAll }: SessionsChartProps) {
             dataKey="sessions_count"
             fill="var(--color-sessions_count)"
             radius={[4, 4, 0, 0]}
+            isAnimationActive={animated}
           />
         </BarChart>
       </ChartContainer>

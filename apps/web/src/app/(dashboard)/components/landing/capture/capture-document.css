@@ -1,0 +1,30 @@
+/*
+ * The capture harness blanks out the app shell around it. The document, the
+ * body and the layout container are rendered by the root layout, so they can
+ * only be reached from CSS; everything the harness renders itself is styled
+ * with utilities in device-capture.tsx.
+ *
+ * Scoped to a class the harness adds on mount, so this file is inert unless a
+ * capture is actually running.
+ */
+html.device-capture-document,
+body.device-capture-document {
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+body.device-capture-document #container {
+  min-height: 100vh !important;
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+body.device-capture-document #container > :not(main),
+body.device-capture-document > footer {
+  display: none !important;
+}
+
+body.device-capture-document #container main {
+  width: 100vw;
+  height: 100vh;
+}

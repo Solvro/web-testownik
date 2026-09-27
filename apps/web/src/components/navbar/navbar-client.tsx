@@ -28,10 +28,11 @@ export function NavbarClient() {
         "flex flex-col gap-2 py-4",
         expanded && "bg-background z-50 -mx-4 px-4",
       )}
+      data-app-navbar
     >
       <div className="flex items-center justify-between gap-4 sm:px-4">
         <nav className="flex items-center gap-6">
-          <Link href="/">
+          <Link href="/?landing=true" aria-label="Przejdź do strony głównej">
             <AppLogo />
           </Link>
           <NavLinks variant="desktop" />
