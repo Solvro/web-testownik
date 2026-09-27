@@ -6,7 +6,7 @@ import { CheckCircle2Icon, GraduationCapIcon, MailIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AccountType } from "@/types/user";
-import { ACCOUNT_TYPE } from "@/types/user";
+import { ACCOUNT_TYPE, ACCOUNT_TYPE_LABELS } from "@/types/user";
 
 const ACCOUNT_TYPE_BADGE_CONFIG: Record<
   AccountType,
@@ -15,22 +15,22 @@ const ACCOUNT_TYPE_BADGE_CONFIG: Record<
   [ACCOUNT_TYPE.GUEST]: {
     color: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     icon: null,
-    label: "Gość",
+    label: ACCOUNT_TYPE_LABELS[ACCOUNT_TYPE.GUEST],
   },
   [ACCOUNT_TYPE.EMAIL]: {
     color: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
     icon: MailIcon,
-    label: "Email",
+    label: ACCOUNT_TYPE_LABELS[ACCOUNT_TYPE.EMAIL],
   },
   [ACCOUNT_TYPE.STUDENT]: {
     color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     icon: CheckCircle2Icon,
-    label: "Student",
+    label: ACCOUNT_TYPE_LABELS[ACCOUNT_TYPE.STUDENT],
   },
   [ACCOUNT_TYPE.LECTURER]: {
     color: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
     icon: GraduationCapIcon,
-    label: "Wykładowca",
+    label: ACCOUNT_TYPE_LABELS[ACCOUNT_TYPE.LECTURER],
   },
 };
 

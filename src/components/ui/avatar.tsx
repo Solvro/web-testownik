@@ -58,6 +58,10 @@ function AvatarFallback({
     const text = React.Children.toArray(children)
       .map((child) => (typeof child === "string" ? child : ""))
       .join("");
+    // Icon-only fallbacks have no text to hash; keep them neutral instead of always red.
+    if (text.length === 0) {
+      return;
+    }
     let hash = 0;
     for (let index = 0; index < text.length; index++) {
       const char = text.codePointAt(index);

@@ -116,6 +116,23 @@ export class BaseApiService {
   }
 
   /**
+   * Intercept 503 responses and halt execution
+   */
+  private async checkMaintenance(response: Response): Promise<void> {
+    const runtimeWindow = (globalThis as { window?: Window | null }).window;
+    if (
+      response.status === 503 &&
+      runtimeWindow !== undefined &&
+      runtimeWindow !== null
+    ) {
+      runtimeWindow.dispatchEvent(new Event("backend-maintenance"));
+      await new Promise<never>(() => {
+        /* empty */
+      });
+    }
+  }
+
+  /**
    * Make HTTP request with fetch
    */
   private async makeRequest<T>(
@@ -143,6 +160,8 @@ export class BaseApiService {
     try {
       let response = await fetch(fullURL, requestOptions);
 
+      await this.checkMaintenance(response);
+
       if (response.status === 401) {
         const refreshed = await this.queueTokenRefresh();
         if (refreshed) {
@@ -152,6 +171,7 @@ export class BaseApiService {
             ...headers,
           };
           response = await fetch(fullURL, requestOptions);
+          await this.checkMaintenance(response);
         }
       }
 
@@ -203,6 +223,7 @@ export class BaseApiService {
       const data = (await response.json()) as T;
       return this.handleResponse(response, data);
     } catch (error) {
+      // Network failures can mean the user is offline; only HTTP 503 triggers maintenance.
       const apiError = this.handleError(error);
       throw new Error(apiError.message);
     }
@@ -252,6 +273,9 @@ export class BaseApiService {
             this.clearAuthTokens();
           }
           return false;
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth-token-refreshed"));
         }
         return true;
       } catch {

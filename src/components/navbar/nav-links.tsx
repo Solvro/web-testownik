@@ -10,9 +10,11 @@ import { ReportBugDialog } from "@/components/report-bug-dialog";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { API_URL } from "@/lib/api";
@@ -81,15 +83,27 @@ export function NavLinks({ variant = "desktop", onNavigate }: NavLinksProps) {
           Prześlij opinię
         </Button>
         {isStaff ? (
-          <Link
-            href={`${API_URL}/admin/`}
-            target="_blank"
-            onClick={onNavigate}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            rel="noreferrer"
-          >
-            Panel administratora
-          </Link>
+          <div className="mt-1 flex flex-col gap-2 border-t pt-2">
+            <p className="text-muted-foreground text-xs font-medium uppercase">
+              Admin
+            </p>
+            <Link
+              href="/admin/ai"
+              onClick={onNavigate}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Ustawienia AI
+            </Link>
+            <a
+              href={`${API_URL}/admin/`}
+              target="_blank"
+              onClick={onNavigate}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              rel="noreferrer"
+            >
+              Panel administratora
+            </a>
+          </div>
         ) : null}
         <ReportBugDialog
           open={showReportDialog}
@@ -141,19 +155,45 @@ export function NavLinks({ variant = "desktop", onNavigate }: NavLinksProps) {
           </NavigationMenuItem>
           {isStaff ? (
             <NavigationMenuItem>
-              <NavigationMenuLink
-                render={
-                  // eslint-disable-next-line jsx-a11y/anchor-has-content
-                  <a
-                    href={`${API_URL}/admin/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-                className={navigationMenuTriggerStyle()}
-              >
-                Panel administratora
-              </NavigationMenuLink>
+              <NavigationMenuTrigger>
+                <span className="pointer-fine:hidden">Admin</span>
+                <a
+                  href={`${API_URL}/admin/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Admin
+                </a>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-50">
+                  <li>
+                    <NavigationMenuLink
+                      closeOnClick
+                      data-active={pathname.startsWith("/admin/ai")}
+                      // eslint-disable-next-line jsx-a11y/anchor-has-content
+                      render={<Link href="/admin/ai" />}
+                    >
+                      Ustawienia AI
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink
+                      closeOnClick
+                      render={
+                        // eslint-disable-next-line jsx-a11y/anchor-has-content
+                        <a
+                          href={`${API_URL}/admin/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      Panel administratora
+                    </NavigationMenuLink>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
             </NavigationMenuItem>
           ) : null}
         </NavigationMenuList>

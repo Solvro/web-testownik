@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable react-refresh/only-export-components */
-import { makeAssistantToolUI, useToolArgsStatus } from "@assistant-ui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangleIcon,
@@ -304,7 +302,7 @@ function QuestionCard({
               className="ml-auto gap-1 px-1.5 py-0 text-[10px]"
             >
               <LoaderCircleIcon className="size-2.5 animate-spin" />
-              Generowanie...
+              Generowanie…
             </Badge>
           )}
         </div>
@@ -437,7 +435,7 @@ function QuestionCard({
               {isSaving ? (
                 <>
                   <LoaderCircleIcon className="animate-spin" />
-                  Dodawanie...
+                  Dodawanie…
                 </>
               ) : saved ? (
                 <>
@@ -511,7 +509,7 @@ function LoadingCard() {
             className="ml-auto gap-1 px-1.5 py-0 text-[10px]"
           >
             <LoaderCircleIcon className="size-2.5 animate-spin" />
-            Generowanie...
+            Generowanie…
           </Badge>
         </div>
         <div className="bg-muted mt-1.5 h-4 w-4/5 animate-pulse rounded" />
@@ -524,15 +522,21 @@ function LoadingCard() {
   );
 }
 
-function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
+function QuestionsCarousel({
+  questions,
+  isRunning,
+  isToolComplete,
+}: {
+  questions: GeneratedQuestion[];
+  isRunning: boolean;
+  isToolComplete: boolean;
+}) {
   const { quizId, canEdit } = useAiChatContext();
-  const { status } = useToolArgsStatus();
   const queryClient = useQueryClient();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [isBulkSaved, setIsBulkSaved] = useState(false);
 
-  const isToolComplete = status === "complete";
   const visibleQuestions = questions.filter(
     (question) =>
       (question.text !== undefined && question.text !== "") ||
@@ -581,7 +585,7 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
     }
   };
 
-  if (status === "running" && visibleQuestions.length === 0) {
+  if (isRunning && visibleQuestions.length === 0) {
     return <LoadingCard />;
   }
 
@@ -637,7 +641,7 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
               {isSavingAll ? (
                 <>
                   <LoaderCircleIcon className="size-3.5 animate-spin" />
-                  Dodawanie...
+                  Dodawanie…
                 </>
               ) : (
                 <>
@@ -653,35 +657,50 @@ function QuestionsCarousel({ questions }: { questions: GeneratedQuestion[] }) {
   );
 }
 
-export const GeneratedQuestionsToolUI = makeAssistantToolUI<
-  GeneratedQuestionsArguments,
-  string
->({
-  toolName: "generate_practice_questions",
-  render: ({ args, status }) => {
-    if (status.type === "incomplete") {
-      return (
-        <Card className="border-destructive/20 from-destructive/5 bg-linear-to-br to-transparent">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <div className="bg-destructive/10 flex size-5 items-center justify-center rounded-full">
-                <AlertTriangleIcon className="text-destructive size-3" />
-              </div>
-              <CardTitle className="text-xs font-medium">
-                Błąd generowania pytań
-              </CardTitle>
+export function GeneratedQuestionsTool({
+  input,
+  state,
+  interrupted = false,
+}: {
+  input: unknown;
+  state: string;
+  interrupted?: boolean;
+}) {
+  if (state === "output-error" || state === "output-denied") {
+    return (
+      <Card className="border-destructive/20 from-destructive/5 bg-linear-to-br to-transparent">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-destructive/10 flex size-5 items-center justify-center rounded-full">
+              <AlertTriangleIcon className="text-destructive size-3" />
             </div>
-            <CardDescription className="text-destructive/70 mt-1 text-sm">
-              Generowanie nie powiodło się. Spróbuj ponownie.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      );
-    }
-    const questions = args.questions ?? [];
-    if (questions.length === 0 && status.type !== "running") {
-      return null;
-    }
-    return <QuestionsCarousel questions={questions} />;
-  },
-});
+            <CardTitle className="text-xs font-medium">
+              Błąd generowania pytań
+            </CardTitle>
+          </div>
+          <CardDescription className="text-destructive/70 mt-1 text-sm">
+            Generowanie nie powiodło się. Spróbuj ponownie.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+  const arguments_ =
+    typeof input === "object" && input !== null
+      ? (input as GeneratedQuestionsArguments)
+      : {};
+  const questions = (arguments_.questions ?? []).filter(
+    (question) => !interrupted || isQuestionComplete(toQuestionDraft(question)),
+  );
+  const isRunning = !interrupted && state !== "output-available";
+  if (questions.length === 0 && !isRunning) {
+    return null;
+  }
+  return (
+    <QuestionsCarousel
+      questions={questions}
+      isRunning={isRunning}
+      isToolComplete={state === "output-available" || interrupted}
+    />
+  );
+}

@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable react-refresh/only-export-components */
-import { makeAssistantToolUI, useToolArgsStatus } from "@assistant-ui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { diffChars, diffLines } from "diff";
 import type { Change } from "diff";
@@ -189,7 +187,7 @@ function DiffChunk({ change }: { change: Change }) {
   return (
     <pre
       className={cn(
-        "font-mono text-[11px] leading-relaxed whitespace-pre-wrap",
+        "font-mono text-xs leading-relaxed whitespace-pre-wrap",
         change.added && "bg-green-500/10 text-green-900 dark:text-green-200",
         change.removed && "bg-red-500/10 text-red-900 dark:text-red-200",
         !change.added && !change.removed && "text-muted-foreground",
@@ -211,7 +209,7 @@ function InlineDiffLine({ before, after }: { before: string; after: string }) {
 
   return (
     <>
-      <pre className="bg-red-500/10 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-red-900 dark:text-red-200">
+      <pre className="bg-red-500/10 font-mono text-xs leading-relaxed whitespace-pre-wrap text-red-900 dark:text-red-200">
         -{" "}
         {removedParts.map((part, index) => (
           <span
@@ -222,7 +220,7 @@ function InlineDiffLine({ before, after }: { before: string; after: string }) {
           </span>
         ))}
       </pre>
-      <pre className="bg-green-500/10 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-green-900 dark:text-green-200">
+      <pre className="bg-green-500/10 font-mono text-xs leading-relaxed whitespace-pre-wrap text-green-900 dark:text-green-200">
         +{" "}
         {addedParts.map((part, index) => (
           <span
@@ -281,7 +279,7 @@ function QuestionDiff({ sections }: { sections: DiffSection[] }) {
           </div>
         </div>
       ))}
-      <div className="text-muted-foreground grid grid-cols-2 gap-2 text-[11px]">
+      <div className="text-muted-foreground grid grid-cols-2 gap-2 text-xs">
         <span className="rounded bg-red-500/10 px-2 py-1">- usunięto</span>
         <span className="rounded bg-green-500/10 px-2 py-1">+ dodano</span>
       </div>
@@ -289,12 +287,19 @@ function QuestionDiff({ sections }: { sections: DiffSection[] }) {
   );
 }
 
-function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
+function EditQuestionCard({
+  edit,
+  isRunning,
+  answersComplete,
+  interrupted,
+}: {
+  edit: EditedQuestion;
+  isRunning: boolean;
+  answersComplete: boolean;
+  interrupted: boolean;
+}) {
   const { quizId, questionId, question, canEdit } = useAiChatContext();
   const queryClient = useQueryClient();
-  const { status, propStatus } = useToolArgsStatus();
-  const isRunning = status === "running";
-  const answersComplete = propStatus.answers === "complete";
   const [applied, setApplied] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -387,7 +392,7 @@ function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
             {isRunning ? (
               <Badge variant="secondary" className="text-xs">
                 <LoaderCircleIcon className="size-3 animate-spin" />
-                Generowanie...
+                Generowanie…
               </Badge>
             ) : null}
           </div>
@@ -471,7 +476,7 @@ function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
           </>
         )}
 
-        {answersComplete ? null : (
+        {answersComplete || interrupted ? null : (
           <div className="border-border flex w-full items-center gap-2 rounded-lg border px-3 py-2">
             <div className="bg-muted size-3.5 shrink-0 animate-pulse rounded-full" />
             <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
@@ -492,7 +497,7 @@ function EditQuestionCard({ edit }: { edit: EditedQuestion }) {
               {isPending ? (
                 <>
                   <LoaderCircleIcon className="animate-spin" />
-                  Zapisywanie...
+                  Zapisywanie…
                 </>
               ) : applied ? (
                 <>
@@ -572,15 +577,33 @@ function ToolErrorCard({ label }: { label: string }) {
   );
 }
 
-export const EditQuestionToolUI = makeAssistantToolUI<EditedQuestion, string>({
-  toolName: "edit_question",
-  render: ({ args, status }) => {
-    if (status.type === "incomplete") {
-      return <ToolErrorCard label="Błąd edycji pytania" />;
-    }
-    if (args.text == null || args.text === "") {
-      return null;
-    }
-    return <EditQuestionCard edit={args} />;
-  },
-});
+export function EditQuestionTool({
+  input,
+  state,
+  interrupted = false,
+}: {
+  input: unknown;
+  state: string;
+  interrupted?: boolean;
+}) {
+  if (state === "output-error" || state === "output-denied") {
+    return <ToolErrorCard label="Błąd edycji pytania" />;
+  }
+  if (typeof input !== "object" || input === null) {
+    return null;
+  }
+  const edit = input as EditedQuestion;
+  if (edit.text == null || edit.text === "") {
+    return null;
+  }
+  return (
+    <EditQuestionCard
+      edit={edit}
+      isRunning={!interrupted && state !== "output-available"}
+      answersComplete={
+        state !== "input-streaming" && Array.isArray(edit.answers)
+      }
+      interrupted={interrupted}
+    />
+  );
+}

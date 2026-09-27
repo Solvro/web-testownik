@@ -1,29 +1,21 @@
 import { IdCardLanyardIcon, PencilIcon } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
+import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateUserProfile } from "@/hooks/use-user-profile";
 import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
 import { cn, getInitials } from "@/lib/utils";
-import { getUserService } from "@/services";
 import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@/types/user";
 import type { UserData } from "@/types/user";
 
@@ -36,42 +28,6 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
   const router = useRouter();
   const updateUserProfile = useUpdateUserProfile();
   const [showDialog, setShowDialog] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState(userData?.photo ?? "");
-
-  useEffect(() => {
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
-    setSelectedPhoto(userData?.photo ?? "");
-  }, [userData?.photo]);
-
-  const handleOpenDialog = () => {
-    setShowDialog(true);
-  };
-  const handleCloseDialog = () => {
-    setSelectedPhoto(userData?.photo ?? "");
-    setShowDialog(false);
-  };
-
-  const handleSavePhoto = () => {
-    handleCloseDialog();
-    updateUserProfile.mutate(
-      {
-        overriden_photo_url:
-          selectedPhoto === userData?.photo_url ? null : selectedPhoto,
-      },
-      {
-        onSuccess: async () => {
-          // Refresh token to get updated user data (avatar) in the token payload
-          await getUserService().refreshToken();
-          router.refresh();
-        },
-        onError: (error: unknown) => {
-          console.error("Error saving photo:", error);
-          toast.error("Wystąpił błąd podczas zapisywania zdjęcia profilowego.");
-        },
-      },
-    );
-  };
-
   const handleHideProfile = (hide: boolean) => {
     updateUserProfile.mutate(
       { hide_profile: hide },
@@ -83,34 +39,6 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
       },
     );
   };
-
-  const avatarOptions = [
-    userData?.photo_url ?? "",
-    encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"}`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"} 2`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/adventurer/svg?seed=${userData?.full_name ?? "default"} 3`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/dylan/svg?seed=${userData?.full_name ?? "default"}`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name ?? "default"}`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/micah/svg?seed=${userData?.full_name ?? "default"} 2`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/shapes/svg?seed=${userData?.full_name ?? "default"}`,
-    ),
-    encodeURI(
-      `https://api.dicebear.com/9.x/initials/svg?seed=${userData?.full_name ?? "default"}`,
-    ),
-  ];
 
   if (userData?.account_type === ACCOUNT_TYPE.GUEST) {
     return (
@@ -141,16 +69,47 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
     <div className="space-y-2">
       <Card>
         {loading ? (
-          <CardContent className="flex flex-col items-center gap-6 py-10">
-            <div className="flex justify-center">
-              <span className="border-border size-10 animate-spin rounded-full border-4 border-t-transparent" />
+          <CardContent
+            className="flex flex-col items-center space-y-4 text-center"
+            role="status"
+            aria-label="Ładowanie profilu"
+          >
+            <Skeleton className="size-24 rounded-full" />
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-5 w-24" />
+            <div className="flex justify-center gap-2">
+              <Skeleton className="h-5 w-20 rounded-md" />
+              <Skeleton className="h-5 w-16 rounded-md" />
             </div>
-            <div className="bg-muted h-6 w-40 animate-pulse rounded" />
-            <div className="bg-muted h-5 w-32 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
             <div className="bg-border h-px w-full" />
-            <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-28 animate-pulse rounded" />
+            <div className="w-full space-y-2 text-sm">
+              <h5 className="text-muted-foreground font-medium">
+                Prywatne dane:
+              </h5>
+              <div className="space-y-2">
+                <Skeleton className="mx-auto h-5 w-28" />
+                <Skeleton className="mx-auto h-5 w-44 max-w-full" />
+              </div>
+            </div>
+            <div className="bg-border h-px w-full" />
+            <div className="flex w-full items-center gap-4 text-left">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">Ukryj profil</p>
+                <p className="text-muted-foreground text-xs">
+                  Nie będzie cię można znaleźć w wyszukiwarce po imieniu i
+                  nazwisku, nie będziesz wyświetlany w rankingach.
+                </p>
+              </div>
+              <Switch disabled className="ml-auto" />
+            </div>
+            <div className="bg-border h-px w-full" />
+            <p className="text-muted-foreground max-w-prose text-xs">
+              Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami
+              pod adresem:{" "}
+              <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
+                kn.solvro@pwr.edu.pl
+              </a>
+            </p>
           </CardContent>
         ) : (
           <CardContent className="flex flex-col items-center space-y-4 text-center">
@@ -164,7 +123,7 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
                 )}
               >
                 <AvatarImage
-                  src={userData?.photo}
+                  src={userData?.photo ?? undefined}
                   alt={`Zdjęcie profilowe użytkownika ${userData?.full_name ?? ""}`}
                 />
                 <AvatarFallback className="text-3xl" delay={600}>
@@ -172,7 +131,10 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
                 </AvatarFallback>
               </Avatar>
               <button
-                onClick={handleOpenDialog}
+                aria-label="Zmień zdjęcie profilowe"
+                onClick={() => {
+                  setShowDialog(true);
+                }}
                 className="bg-background hover:bg-accent absolute top-0 -right-2 inline-flex size-8 items-center justify-center rounded-full border shadow transition"
               >
                 <PencilIcon className="size-4" />
@@ -242,85 +204,14 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
           </CardContent>
         )}
       </Card>
-      <div className="w-full text-center md:hidden">
-        <Link href="/privacy-policy" className="text-sm underline">
-          Polityka prywatności
-        </Link>
-      </div>
-      <Dialog
-        open={showDialog}
-        onOpenChange={(open) => {
-          if (open) {
-            setShowDialog(true);
-          } else {
-            handleCloseDialog();
-          }
-        }}
-      >
-        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>Wybierz zdjęcie profilowe</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-wrap justify-center gap-4">
-            {avatarOptions.map((url, index) => (
-              <Button
-                key={`avatar-select-${index.toString()}`}
-                variant="ghost"
-                className={cn(
-                  "size-20 rounded-full p-0 ring-2 transition-all hover:shadow-xl",
-                  selectedPhoto === url
-                    ? "ring-primary shadow-lg"
-                    : "ring-transparent",
-                )}
-                onClick={() => {
-                  setSelectedPhoto(url);
-                }}
-              >
-                <Image
-                  key={`avatar-option-${index.toString()}`}
-                  src={url}
-                  alt={`Avatar ${index.toString()}`}
-                  className="size-20 rounded-full object-cover"
-                  unoptimized
-                  width={80}
-                  height={80}
-                />
-              </Button>
-            ))}
-            {!avatarOptions.includes(selectedPhoto) && selectedPhoto ? (
-              <Button
-                variant="ghost"
-                className="ring-primary size-20 rounded-full p-0 shadow-lg ring-2 transition-all hover:shadow-xl"
-                onClick={() =>
-                  toast(
-                    "To zdjęcie nie jest już dostępne. Po zmianie na inne nie będzie możliwości powrotu.",
-                  )
-                }
-              >
-                <Image
-                  src={selectedPhoto}
-                  alt="Wybrane zdjęcie"
-                  className="size-20 rounded-full object-cover"
-                  unoptimized
-                  width={96}
-                  height={96}
-                />
-              </Button>
-            ) : null}
-          </div>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Anuluj
-            </Button>
-            <Button
-              onClick={handleSavePhoto}
-              disabled={updateUserProfile.isPending}
-            >
-              Zapisz
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showDialog && userData !== null ? (
+        <ProfilePhotoDialog
+          userData={userData}
+          onClose={() => {
+            setShowDialog(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

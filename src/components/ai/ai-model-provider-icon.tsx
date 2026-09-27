@@ -12,13 +12,13 @@ export function AiModelProviderIcon({
   provider,
 }: AiModelProviderIconProps) {
   switch (provider) {
-    case "Anthropic": {
+    case "anthropic": {
       return <Anthropic aria-hidden="true" className={className} />;
     }
-    case "xAI": {
+    case "xai": {
       return <Grok aria-hidden="true" className={className} />;
     }
-    case "OpenAI": {
+    case "openai": {
       return <OpenAI aria-hidden="true" className={className} />;
     }
   }

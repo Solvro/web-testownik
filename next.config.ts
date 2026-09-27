@@ -5,9 +5,6 @@ const s3Url = new URL(process.env.S3_URL ?? "https://s3.b.solvro.pl");
 const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ["sharp"],
-  experimental: {
-    viewTransition: true,
-  },
   images: {
     dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
     remotePatterns: [

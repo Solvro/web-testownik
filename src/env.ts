@@ -1,18 +1,20 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import * as z from "zod";
 
+const aiExplicitlyDisabled = ["0", "false", "no", "off", "disabled"].includes(
+  process.env.NEXT_PUBLIC_AI_ENABLED?.toLowerCase() ?? "",
+);
+
 export const env = createEnv({
   server: {
     JWT_SECRET: z.string().min(1).optional(),
     JWT_COOKIE_DOMAIN: z.string().min(1).optional(),
-    INTERNAL_API_KEY: z.string().min(1).optional(),
+    INTERNAL_API_KEY: aiExplicitlyDisabled
+      ? z.string().min(1).optional()
+      : z.string().min(1),
     OPENAI_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     XAI_API_KEY: z.string().min(1).optional(),
-    AI_CHAT_RATE_LIMIT: z.coerce.number().default(10),
-    AI_CHAT_RATE_WINDOW: z.coerce.number().default(60),
-    AI_EXPLAIN_RATE_LIMIT: z.coerce.number().default(15),
-    AI_EXPLAIN_RATE_WINDOW: z.coerce.number().default(60),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

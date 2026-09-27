@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Glass } from "@/components/canvasui/Glass";

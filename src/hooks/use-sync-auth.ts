@@ -117,6 +117,7 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
       cookieStore.addEventListener("change", handleCookieStoreChange);
     }
     window.addEventListener("focus", handleFocus);
+    window.addEventListener("auth-token-refreshed", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
@@ -124,6 +125,7 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
         cookieStore.removeEventListener("change", handleCookieStoreChange);
       }
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("auth-token-refreshed", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [syncAuthFromCookies]);

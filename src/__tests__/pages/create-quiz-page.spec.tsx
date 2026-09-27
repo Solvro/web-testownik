@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import assert from "node:assert";
@@ -76,7 +76,7 @@ const setup = async () => {
     await user.click(removeButtons[0]);
   };
 
-  return { user, fillFields, submit, addQuestion, removeQuestion };
+  return { user, token, fillFields, submit, addQuestion, removeQuestion };
 };
 
 describe("CreateQuizPage", () => {
@@ -86,12 +86,27 @@ describe("CreateQuizPage", () => {
   });
 
   it("should try to post quiz if user is authenticated", async () => {
-    const { fillFields, submit } = await setup();
+    let authorization: string | null = null;
+    let postedQuiz: Quiz | undefined;
+    server.use(
+      http.post("*/quizzes/", async ({ request }) => {
+        authorization = request.headers.get("authorization");
+        postedQuiz = (await request.json()) as Quiz;
+        return HttpResponse.json({ ...postedQuiz, id: "123" }, { status: 201 });
+      }),
+    );
+    const { token, fillFields, submit } = await setup();
 
     await fillFields();
     await submit();
 
-    expect(toast.success).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(postedQuiz).toBeDefined();
+    });
+    expect(authorization).toBe(`Bearer ${token}`);
+    expect(postedQuiz).toEqual(
+      expect.objectContaining({ title: testQuiz.title }),
+    );
   });
 
   it("should show error if request fails", async () => {
