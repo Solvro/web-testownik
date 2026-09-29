@@ -1,0 +1,462 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T13:59:36.138173+00:00",
+  "title": "Design System: Testownik mobile",
+  "extensions": {
+    "colorMeta": {
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Light Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.00574 264.53)",
+          "oklch(26.43% 0.00574 264.53)",
+          "oklch(37.86% 0.00574 264.53)",
+          "oklch(49.29% 0.00574 264.53)",
+          "oklch(60.71% 0.00574 264.53)",
+          "oklch(72.14% 0.00574 264.53)",
+          "oklch(83.57% 0.00574 264.53)",
+          "oklch(95.00% 0.00574 264.53)"
+        ]
+      },
+      "light-surface": {
+        "role": "neutral",
+        "displayName": "Light Surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 89.88)",
+          "oklch(26.43% 0.00000 89.88)",
+          "oklch(37.86% 0.00000 89.88)",
+          "oklch(49.29% 0.00000 89.88)",
+          "oklch(60.71% 0.00000 89.88)",
+          "oklch(72.14% 0.00000 89.88)",
+          "oklch(83.57% 0.00000 89.88)",
+          "oklch(95.00% 0.00000 89.88)"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Light Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.04884 261.92)",
+          "oklch(26.43% 0.04884 261.92)",
+          "oklch(37.86% 0.04884 261.92)",
+          "oklch(49.29% 0.04884 261.92)",
+          "oklch(60.71% 0.04884 261.92)",
+          "oklch(72.14% 0.04884 261.92)",
+          "oklch(83.57% 0.04884 261.92)",
+          "oklch(95.00% 0.04884 261.92)"
+        ]
+      },
+      "light-muted": {
+        "role": "neutral",
+        "displayName": "Light Muted",
+        "tonalRamp": [
+          "oklch(15.00% 0.04395 261.92)",
+          "oklch(26.43% 0.04395 261.92)",
+          "oklch(37.86% 0.04395 261.92)",
+          "oklch(49.29% 0.04395 261.92)",
+          "oklch(60.71% 0.04395 261.92)",
+          "oklch(72.14% 0.04395 261.92)",
+          "oklch(83.57% 0.04395 261.92)",
+          "oklch(95.00% 0.04395 261.92)"
+        ]
+      },
+      "light-primary": {
+        "role": "primary",
+        "displayName": "Light Primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.16584 260.36)",
+          "oklch(26.43% 0.16584 260.36)",
+          "oklch(37.86% 0.16584 260.36)",
+          "oklch(49.29% 0.16584 260.36)",
+          "oklch(60.71% 0.16584 260.36)",
+          "oklch(72.14% 0.16584 260.36)",
+          "oklch(83.57% 0.16584 260.36)",
+          "oklch(95.00% 0.16584 260.36)"
+        ]
+      },
+      "light-tint": {
+        "role": "primary",
+        "displayName": "Light Tint",
+        "tonalRamp": [
+          "oklch(15.00% 0.01905 263.01)",
+          "oklch(26.43% 0.01905 263.01)",
+          "oklch(37.86% 0.01905 263.01)",
+          "oklch(49.29% 0.01905 263.01)",
+          "oklch(60.71% 0.01905 263.01)",
+          "oklch(72.14% 0.01905 263.01)",
+          "oklch(83.57% 0.01905 263.01)",
+          "oklch(95.00% 0.01905 263.01)"
+        ]
+      },
+      "light-border": {
+        "role": "neutral",
+        "displayName": "Light Border",
+        "tonalRamp": [
+          "oklch(15.00% 0.02101 261.77)",
+          "oklch(26.43% 0.02101 261.77)",
+          "oklch(37.86% 0.02101 261.77)",
+          "oklch(49.29% 0.02101 261.77)",
+          "oklch(60.71% 0.02101 261.77)",
+          "oklch(72.14% 0.02101 261.77)",
+          "oklch(83.57% 0.02101 261.77)",
+          "oklch(95.00% 0.02101 261.77)"
+        ]
+      },
+      "light-success": {
+        "role": "semantic",
+        "displayName": "Light Success",
+        "tonalRamp": [
+          "oklch(15.00% 0.10122 154.90)",
+          "oklch(26.43% 0.10122 154.90)",
+          "oklch(37.86% 0.10122 154.90)",
+          "oklch(49.29% 0.10122 154.90)",
+          "oklch(60.71% 0.10122 154.90)",
+          "oklch(72.14% 0.10122 154.90)",
+          "oklch(83.57% 0.10122 154.90)",
+          "oklch(95.00% 0.10122 154.90)"
+        ]
+      },
+      "light-success-bg": {
+        "role": "semantic",
+        "displayName": "Light Success Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.02148 158.59)",
+          "oklch(26.43% 0.02148 158.59)",
+          "oklch(37.86% 0.02148 158.59)",
+          "oklch(49.29% 0.02148 158.59)",
+          "oklch(60.71% 0.02148 158.59)",
+          "oklch(72.14% 0.02148 158.59)",
+          "oklch(83.57% 0.02148 158.59)",
+          "oklch(95.00% 0.02148 158.59)"
+        ]
+      },
+      "light-danger": {
+        "role": "semantic",
+        "displayName": "Light Danger",
+        "tonalRamp": [
+          "oklch(15.00% 0.17083 21.54)",
+          "oklch(26.43% 0.17083 21.54)",
+          "oklch(37.86% 0.17083 21.54)",
+          "oklch(49.29% 0.17083 21.54)",
+          "oklch(60.71% 0.17083 21.54)",
+          "oklch(72.14% 0.17083 21.54)",
+          "oklch(83.57% 0.17083 21.54)",
+          "oklch(95.00% 0.17083 21.54)"
+        ]
+      },
+      "light-danger-bg": {
+        "role": "semantic",
+        "displayName": "Light Danger Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.01883 5.29)",
+          "oklch(26.43% 0.01883 5.29)",
+          "oklch(37.86% 0.01883 5.29)",
+          "oklch(49.29% 0.01883 5.29)",
+          "oklch(60.71% 0.01883 5.29)",
+          "oklch(72.14% 0.01883 5.29)",
+          "oklch(83.57% 0.01883 5.29)",
+          "oklch(95.00% 0.01883 5.29)"
+        ]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Dark Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.03049 261.23)",
+          "oklch(26.43% 0.03049 261.23)",
+          "oklch(37.86% 0.03049 261.23)",
+          "oklch(49.29% 0.03049 261.23)",
+          "oklch(60.71% 0.03049 261.23)",
+          "oklch(72.14% 0.03049 261.23)",
+          "oklch(83.57% 0.03049 261.23)",
+          "oklch(95.00% 0.03049 261.23)"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.03923 260.97)",
+          "oklch(26.43% 0.03923 260.97)",
+          "oklch(37.86% 0.03923 260.97)",
+          "oklch(49.29% 0.03923 260.97)",
+          "oklch(60.71% 0.03923 260.97)",
+          "oklch(72.14% 0.03923 260.97)",
+          "oklch(83.57% 0.03923 260.97)",
+          "oklch(95.00% 0.03923 260.97)"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dark Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.00986 267.36)",
+          "oklch(26.43% 0.00986 267.36)",
+          "oklch(37.86% 0.00986 267.36)",
+          "oklch(49.29% 0.00986 267.36)",
+          "oklch(60.71% 0.00986 267.36)",
+          "oklch(72.14% 0.00986 267.36)",
+          "oklch(83.57% 0.00986 267.36)",
+          "oklch(95.00% 0.00986 267.36)"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted",
+        "tonalRamp": [
+          "oklch(15.00% 0.03684 258.87)",
+          "oklch(26.43% 0.03684 258.87)",
+          "oklch(37.86% 0.03684 258.87)",
+          "oklch(49.29% 0.03684 258.87)",
+          "oklch(60.71% 0.03684 258.87)",
+          "oklch(72.14% 0.03684 258.87)",
+          "oklch(83.57% 0.03684 258.87)",
+          "oklch(95.00% 0.03684 258.87)"
+        ]
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "Dark Primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.11153 262.67)",
+          "oklch(26.43% 0.11153 262.67)",
+          "oklch(37.86% 0.11153 262.67)",
+          "oklch(49.29% 0.11153 262.67)",
+          "oklch(60.71% 0.11153 262.67)",
+          "oklch(72.14% 0.11153 262.67)",
+          "oklch(83.57% 0.11153 262.67)",
+          "oklch(95.00% 0.11153 262.67)"
+        ]
+      },
+      "dark-tint": {
+        "role": "primary",
+        "displayName": "Dark Tint",
+        "tonalRamp": [
+          "oklch(15.00% 0.07170 258.04)",
+          "oklch(26.43% 0.07170 258.04)",
+          "oklch(37.86% 0.07170 258.04)",
+          "oklch(49.29% 0.07170 258.04)",
+          "oklch(60.71% 0.07170 258.04)",
+          "oklch(72.14% 0.07170 258.04)",
+          "oklch(83.57% 0.07170 258.04)",
+          "oklch(95.00% 0.07170 258.04)"
+        ]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "Dark Border",
+        "tonalRamp": [
+          "oklch(15.00% 0.04613 258.31)",
+          "oklch(26.43% 0.04613 258.31)",
+          "oklch(37.86% 0.04613 258.31)",
+          "oklch(49.29% 0.04613 258.31)",
+          "oklch(60.71% 0.04613 258.31)",
+          "oklch(72.14% 0.04613 258.31)",
+          "oklch(83.57% 0.04613 258.31)",
+          "oklch(95.00% 0.04613 258.31)"
+        ]
+      },
+      "dark-success": {
+        "role": "semantic",
+        "displayName": "Dark Success",
+        "tonalRamp": [
+          "oklch(15.00% 0.10617 158.47)",
+          "oklch(26.43% 0.10617 158.47)",
+          "oklch(37.86% 0.10617 158.47)",
+          "oklch(49.29% 0.10617 158.47)",
+          "oklch(60.71% 0.10617 158.47)",
+          "oklch(72.14% 0.10617 158.47)",
+          "oklch(83.57% 0.10617 158.47)",
+          "oklch(95.00% 0.10617 158.47)"
+        ]
+      },
+      "dark-success-bg": {
+        "role": "semantic",
+        "displayName": "Dark Success Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.05197 161.03)",
+          "oklch(26.43% 0.05197 161.03)",
+          "oklch(37.86% 0.05197 161.03)",
+          "oklch(49.29% 0.05197 161.03)",
+          "oklch(60.71% 0.05197 161.03)",
+          "oklch(72.14% 0.05197 161.03)",
+          "oklch(83.57% 0.05197 161.03)",
+          "oklch(95.00% 0.05197 161.03)"
+        ]
+      },
+      "dark-danger": {
+        "role": "semantic",
+        "displayName": "Dark Danger",
+        "tonalRamp": [
+          "oklch(15.00% 0.11859 13.58)",
+          "oklch(26.43% 0.11859 13.58)",
+          "oklch(37.86% 0.11859 13.58)",
+          "oklch(49.29% 0.11859 13.58)",
+          "oklch(60.71% 0.11859 13.58)",
+          "oklch(72.14% 0.11859 13.58)",
+          "oklch(83.57% 0.11859 13.58)",
+          "oklch(95.00% 0.11859 13.58)"
+        ]
+      },
+      "dark-danger-bg": {
+        "role": "semantic",
+        "displayName": "Dark Danger Bg",
+        "tonalRamp": [
+          "oklch(15.00% 0.05277 1.58)",
+          "oklch(26.43% 0.05277 1.58)",
+          "oklch(37.86% 0.05277 1.58)",
+          "oklch(49.29% 0.05277 1.58)",
+          "oklch(60.71% 0.05277 1.58)",
+          "oklch(72.14% 0.05277 1.58)",
+          "oklch(83.57% 0.05277 1.58)",
+          "oklch(95.00% 0.05277 1.58)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Shared page heading",
+        "purpose": "React Native heading only; not a native-control font override."
+      },
+      "rich-body": {
+        "displayName": "Rich study text",
+        "purpose": "Scalable Markdown and math."
+      },
+      "question": {
+        "displayName": "Question prompt",
+        "purpose": "Larger rich content in the study flow."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "browser-fallback-left-tabs-above",
+        "value": "800px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Android Compose Button",
+      "kind": "button",
+      "refersTo": "native-primary-action",
+      "description": "Browser semantic preview only; not native rendering evidence. Android Compose Button; iOS SwiftUI glassProminent or borderedProminent. The signed iOS 27 simulator XCTest exercises the SwiftUI guest-login action; the dark/large-text editor and study captures now show primary-action appearance and keyboard/Save placement.",
+      "html": "<button class=\"ds-primary\">Sprawdź odpowiedź</button>",
+      "css": ".ds-primary{font-family:system-ui,sans-serif;color:#17243C;width:100%;min-height:48px}.ds-primary:hover{cursor:pointer}.ds-primary:focus-visible{outline:auto}.ds-primary:active{opacity:.8}.ds-primary:disabled{cursor:default}"
+    },
+    {
+      "name": "Android Compose TextButton",
+      "kind": "button",
+      "refersTo": "native-secondary-action",
+      "description": "Browser semantic preview only; not native rendering evidence. Android Compose TextButton; iOS borderless Button.",
+      "html": "<button class=\"ds-secondary\">Wczytaj obrazy</button>",
+      "css": ".ds-secondary{font-family:system-ui,sans-serif;color:#17243C;width:100%;min-height:48px}.ds-secondary:hover{cursor:pointer}.ds-secondary:focus-visible{outline:auto}.ds-secondary:active{opacity:.8}.ds-secondary:disabled{cursor:default}"
+    },
+    {
+      "name": "Android error-colored TextButton",
+      "kind": "button",
+      "refersTo": "native-destructive-action",
+      "description": "Browser semantic preview only; not native rendering evidence. Android error-colored TextButton; iOS destructive-role Button.",
+      "html": "<button class=\"ds-destructive\">Usuń lokalną kopię</button>",
+      "css": ".ds-destructive{font-family:system-ui,sans-serif;color:#17243C;width:100%;min-height:48px}.ds-destructive:hover{cursor:pointer}.ds-destructive:focus-visible{outline:auto}.ds-destructive:active{opacity:.8}.ds-destructive:disabled{cursor:default}"
+    },
+    {
+      "name": "Material OutlinedTextField / UIKit-backed iOS TextInput",
+      "kind": "input",
+      "refersTo": "native-field",
+      "description": "Browser semantic preview only; not native rendering evidence. Android uses Compose OutlinedTextField. iOS uses UIKit-backed React Native TextInput with defaultValue, native cursor authority, external-only setNativeProps updates, a single visible label and a standard clear button for single-line editing. Final light/default-text and dark/extra-extra-extra-large native tests pass quiz creation/study and keyboard search. SwiftUI actions and rows remain.",
+      "html": "<label class=\"ds-field\">Tytuł quizu<input class=\"ds-field-input\" /></label>",
+      "css": ".ds-field{font-family:system-ui,sans-serif;color:#17243C;display:grid;gap:8px}.ds-field-input{font:inherit;min-height:48px}.ds-field-input:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Android ListItem / iOS SwiftUI row",
+      "kind": "custom",
+      "refersTo": "native-list-item",
+      "description": "Browser semantic preview only; not native rendering evidence. Android retains universal ListItem. iOS uses a plain SwiftUI Button with full-width HStack, minimum height 48, rectangular content shape, Dynamic Type body/subheadline labels and semantic colors. Native XCTest passes height >=48 and width >250 for all five guest-profile rows; the updated iOS profile capture confirms the appearance. Both final native flows pass in dark appearance with extra-extra-extra-large text; the corresponding Profile capture is visually inspected. This does not cover every text scale or device.",
+      "html": "<button class=\"ds-list-item\">Ustawienia nauki<small>Powtórki i asystent AI</small></button>",
+      "css": ".ds-list-item{font-family:system-ui,sans-serif;color:#17243C;display:grid;text-align:left;width:100%;min-height:48px;background:#FFFFFF}.ds-list-item small{color:#526079}.ds-list-item:hover{cursor:pointer}.ds-list-item:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Native Switch",
+      "kind": "custom",
+      "refersTo": "native-switch",
+      "description": "Browser semantic preview only; not native rendering evidence. Uses @expo/ui Switch on devices; this checkbox conveys binary semantics only.",
+      "html": "<label class=\"ds-switch\"><span>Poprawna odpowiedź 1</span><input type=\"checkbox\" role=\"switch\" checked /></label>",
+      "css": ".ds-switch{font-family:system-ui,sans-serif;color:#17243C;display:flex;justify-content:space-between;gap:16px}.ds-switch input:focus-visible{outline:auto}.ds-switch input:hover{cursor:pointer}"
+    },
+    {
+      "name": "NativeTabs",
+      "kind": "nav",
+      "refersTo": "native-tabs",
+      "description": "Browser semantic preview only; not native rendering evidence. Native platform tab geometry is not reproduced here. Native Library and Profile navigation passed on the iOS 27 iPhone 17 Pro simulator; the profile screenshot confirms the native bottom tab bar.",
+      "html": "<nav class=\"ds-tabs\"><a href=\"#study\" aria-current=\"page\">Nauka</a><a href=\"#library\">Biblioteka</a><a href=\"#grades\">Oceny</a><a href=\"#profile\">Profil</a></nav>",
+      "css": ".ds-tabs{font-family:system-ui,sans-serif;color:#17243C;display:flex;gap:16px;flex-wrap:wrap}.ds-tabs a{color:#526079}.ds-tabs [aria-current]{color:#215BBD}.ds-tabs a:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Native MenuView trigger",
+      "kind": "custom",
+      "refersTo": "native-overflow-trigger",
+      "description": "Browser semantic preview only; not native rendering evidence. The popup is native; this browser button only previews the accessible trigger.",
+      "html": "<button class=\"ds-overflow\" aria-label=\"Opcje quizu\" aria-haspopup=\"menu\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><circle cx=\"19\" cy=\"12\" r=\"2\"/></svg></button>",
+      "css": ".ds-overflow{font-family:system-ui,sans-serif;color:#17243C;width:48px;height:48px;background:transparent;border:0}.ds-overflow svg{fill:currentColor}.ds-overflow:hover{cursor:pointer}.ds-overflow:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Study answer with native choice indicator",
+      "kind": "custom",
+      "refersTo": "study-answer",
+      "description": "Browser semantic preview only; not native rendering evidence. Android uses RadioButton/Checkbox; iOS uses SF Symbols. Browser radio is semantic only.",
+      "html": "<label class=\"ds-answer\"><input type=\"radio\" name=\"ds-answer\" /><span>Cztery</span></label>",
+      "css": ".ds-answer{font-family:system-ui,sans-serif;color:#17243C;display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border:1px solid #D7DFED;border-radius:16px;background:#FFFFFF}.ds-answer:hover{cursor:pointer}.ds-answer:active{opacity:.8}.ds-answer input:focus-visible{outline:auto}.ds-answer:has(input:checked){border-color:#215BBD;background:#E8EFFC}"
+    },
+    {
+      "name": "Shared content group",
+      "kind": "card",
+      "refersTo": "content-group",
+      "description": "Browser semantic preview only; not native rendering evidence. Used to group related profile rows or editor answers; not a universal page recipe.",
+      "html": "<section class=\"ds-group\">Powiązane ustawienia</section>",
+      "css": ".ds-group{font-family:system-ui,sans-serif;color:#17243C;background:#FFFFFF;border-radius:16px;padding:20px;display:grid;gap:12px;margin-bottom:16px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Testownik through native controls",
+    "overview": "The product uses actual platform components: Android Material 3 through Jetpack Compose, iOS SwiftUI actions and rows through Expo UI, and UIKit-backed text entry through React Native TextInput. Testownik blue and Polish copy provide continuity; platform controls provide the material, interaction states and navigation conventions. The user explicitly rejected the previous uniform card-and-button-list interface.\n\nThe operational hierarchy is one primary action per task, with contextual actions in native menus. Questions, lists and forms have distinct structures. Native controls own their behavior and appearance; shared React Native containers organize content without pretending to be native controls. Wrapped preserves the existing web experience inside the native shell.\n\n**Evidence boundary:** this document supersedes the rejected original UI and follows current `PRODUCT.md`. Source inspection covers the native adapters, navigation, study, editor, profile and Wrapped. Android captures `/tmp/testownik-native-study-clean.png`, `/tmp/testownik-native-menu.png`, `/tmp/testownik-native-editor.png` and `/tmp/testownik-native-wrapped-final.png` show light-mode study, native menus, editor and the Wrapped guest restriction; they do not establish a signed-in recap. The signed iOS build runs on the iOS 27 iPhone 17 Pro simulator with Xcode 27 beta 4. `/tmp/testownik-ios-accessible-flows.log` and `/tmp/testownik-ios-accessible-flows.xcresult` pass both native flows (2 tests, zero failures) in dark appearance with extra-extra-extra-large text: quiz creation and study, plus guest navigation, keyboard search, profile-row targets and loaded Wrapped guest restriction. Inspected native captures under `/tmp/testownik-ios-accessible-verified/` corroborate editor keyboard/Save visibility (`2DA75C8D-EEE0-4C9F-B8D6-5F540CFB4AA8.png`), study feedback (`F1310E2D-60E1-466E-9F2C-8FCD4582DD32.png`) and Profile (`6936B384-C947-4BE8-990F-D2B60C2A03A5.png`) in that configuration. `/tmp/testownik-ios-profile.png` and `/tmp/testownik-ios-wrapped.png` provide earlier native light-mode Profile and fully loaded guest-Wrapped visual evidence. The final light/default-text rerun also passes both native flows (2 tests, zero failures), recorded in `/tmp/testownik-ios-final-light.log` and `/tmp/testownik-ios-final-light.xcresult`. These bounded flows do not establish every screen, every text scale or every device. Signed-in Wrapped recaps, native offline behavior, Android keyboard/dark/large-text checks, physical devices and older iOS versions remain unverified. Browser phone/tablet PNGs under `mobile/test-results` are fallback evidence, not native evidence.",
+    "keyCharacteristics": [
+      "Actual Jetpack Compose and SwiftUI/UIKit controls, not CSS lookalikes.",
+      "Testownik blue, Polish labels and system appearance.",
+      "Persistent task actions with secondary actions in native menus.",
+      "Readable question content with native selection indicators and explicit feedback."
+    ],
+    "rules": [
+      {
+        "name": "The Native Authority Rule",
+        "body": "Use the platform component implementation for control shape, type, focus, pressed and disabled behavior; browser fallbacks do not define the native design system.",
+        "section": "typography"
+      },
+      {
+        "name": "The Semantic Theme Rule",
+        "body": "Use semantic light/dark tokens for shared surfaces and feedback, while leaving native control palettes to their configured platform theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Platform Depth Rule",
+        "body": "Let native menus, navigation and supported system glass supply their own depth; do not replace them with invented shared shadow tokens.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do implement actions, fields, lists, switches, tabs and menus through their platform-native components.",
+      "Do keep one primary task action and move contextual operations into native menus.",
+      "Do retain Polish copy, scalable text, safe-area spacing and explicit answer feedback.",
+      "Do distinguish verified native flows and screenshots from untested iOS surfaces and browser fallback checks.",
+      "Do retain the existing Wrapped web experience inside its isolated native WebView."
+    ],
+    "donts": [
+      "Don't restore the rejected uniform card-and-button-list composition.",
+      "Don't impose browser button radii, opacity states or tablet breakpoints on native components.",
+      "Don't imitate Liquid Glass in CSS or extend the iOS smoke-test result to untested screens, appearances or text scales.",
+      "Don't copy Wrapped's web colors and display typography into the native study interface.",
+      "Don't rely on answer color alone or hide the main task action below secondary commands."
+    ]
+  }
+}

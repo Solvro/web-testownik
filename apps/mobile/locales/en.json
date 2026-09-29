@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Choose a photo for your quiz or profile.",
+    "NSCameraUsageDescription": "Take a photo to add to your quiz."
+  }
+}

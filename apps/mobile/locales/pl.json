@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Wybierz zdjęcie do quizu lub profilu.",
+    "NSCameraUsageDescription": "Zrób zdjęcie, aby dodać je do quizu."
+  }
+}

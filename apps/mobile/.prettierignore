@@ -1,0 +1,10 @@
+node_modules
+.expo
+dist
+android
+ios
+test-results
+playwright-report
+pnpm-lock.yaml
+src/lib/math-style.json
+assets

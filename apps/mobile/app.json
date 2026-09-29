@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Testownik",
+    "slug": "testownik",
+    "version": "1.0.0",
+    "scheme": "testownik",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "locales": {
+      "en": "./locales/en.json",
+      "pl": "./locales/pl.json"
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pl.solvro.testownik",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": ["en", "pl"]
+      }
+    },
+    "android": {
+      "package": "pl.solvro.testownik",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#215BBD"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ],
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font",
+      "expo-dev-client",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a photo for your quiz or profile.",
+          "cameraPermission": "Take a photo to add to your quiz.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-sharing",
+      "./plugins/with-provider-icons",
+      "./plugins/with-material3-theme",
+      "expo-image",
+      "./plugins/with-brand-logo"
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
