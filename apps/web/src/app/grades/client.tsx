@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   buildCourseView,
   earnedEcts,
+  projectedAverage,
   termGradeOptions,
   totalEcts,
   weightedAverage,
@@ -152,21 +153,7 @@ function GradesContent() {
       ? realAverage - previousAverage
       : null;
 
-  let projectedSum = 0;
-  let projectedWeight = 0;
-  const overrideOf = (id: string): number | undefined => whatIf[id];
-  for (const course of termCourses) {
-    const overridden = overrideOf(course.id);
-    const current = overridden ?? course.mainValue;
-    const counts =
-      overridden == null ? course.counts && course.mainValue != null : true;
-    if (current != null && counts) {
-      projectedSum += current * course.ects;
-      projectedWeight += course.ects;
-    }
-  }
-  const projected =
-    projectedWeight === 0 ? null : projectedSum / projectedWeight;
+  const projected = projectedAverage(termCourses, whatIf);
   const projectedDelta =
     projected != null && realAverage != null ? projected - realAverage : null;
 

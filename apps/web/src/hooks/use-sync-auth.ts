@@ -58,6 +58,14 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
   }, []);
 
   const syncAuthFromCookies = useCallback(async () => {
+    // Embedded sessions deliberately keep their token in an HttpOnly cookie.
+    // They cannot use the normal browser cookie reader or refresh flow.
+    if (initialUser?.mobile_embed === true) {
+      if (initialUser.exp * 1000 <= Date.now()) {
+        clearAuthenticatedPayload();
+      }
+      return;
+    }
     const { hasToken, payload } = readToken();
 
     if (hasToken && payload !== null) {
@@ -81,7 +89,12 @@ export function useSyncAuth(initialUser: JWTPayload | null) {
     }
 
     clearAuthenticatedPayload();
-  }, [applyAuthenticatedPayload, clearAuthenticatedPayload, readToken]);
+  }, [
+    applyAuthenticatedPayload,
+    clearAuthenticatedPayload,
+    initialUser,
+    readToken,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {

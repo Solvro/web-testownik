@@ -3,7 +3,7 @@
 import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import { IdCardLanyardIcon, LogInIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
@@ -17,7 +17,9 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
+import { env } from "@/env";
 import { API_URL } from "@/lib/api";
+import { loginRedirect } from "@/lib/auth/login-redirect";
 
 function buildLoginUrl(
   base: string,
@@ -53,17 +55,14 @@ const createGuestAccount = async (): Promise<boolean> => {
 export function LoginPrompt(): React.JSX.Element {
   const { user } = useContext(AppContext);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState("/quizzes");
   const router = useRouter();
 
   const searchParameters = useSearchParams();
 
   const redirect = searchParameters.get("redirect");
 
-  useEffect(() => {
-    const url = new URL(redirect ?? "/quizzes", window.location.origin);
-    setRedirectUrl(url.toString());
-  }, [redirect]);
+  // The initial server-rendered link must preserve OAuth parameters even before hydration.
+  const redirectUrl = loginRedirect(redirect, env.NEXT_PUBLIC_SITE_URL);
 
   const guestId =
     user?.account_type === ACCOUNT_TYPE.GUEST ? user.user_id : undefined;
@@ -123,11 +122,11 @@ export function LoginPrompt(): React.JSX.Element {
                 className="w-full"
                 onClick={async () => {
                   if (user?.account_type === ACCOUNT_TYPE.GUEST) {
-                    router.push(redirect ?? "/quizzes");
+                    router.push(redirectUrl);
                   } else {
                     const result = await createGuestAccount();
                     if (result) {
-                      router.push(redirect ?? "/quizzes");
+                      router.push(redirectUrl);
                     } else {
                       toast.error(
                         "Nie udało się utworzyć konta gościa. Spróbuj ponownie.",

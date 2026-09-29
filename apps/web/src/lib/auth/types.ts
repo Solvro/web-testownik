@@ -1,6 +1,7 @@
 import type { AccountLevel, AccountType } from "@testownik/core/user/types";
 
 export interface JWTPayload {
+  mobile_embed?: boolean;
   token_type: "access" | "refresh";
   exp: number;
   iat: number;

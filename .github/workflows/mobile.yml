@@ -1,0 +1,51 @@
+name: Mobile
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ["main", "dev"]
+    paths:
+      - "apps/mobile/**"
+      - "packages/core/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mobile.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "packages/core/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mobile.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: "true"
+
+      - name: Setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter "@testownik/mobile..."
+
+      - name: Typecheck
+        run: pnpm --filter "@testownik/mobile..." typecheck
+
+      - name: Test
+        run: pnpm --filter @testownik/mobile test
+        if: always()
+
+      - name: Export
+        run: pnpm --filter @testownik/mobile export
+        if: always()

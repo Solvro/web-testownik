@@ -34,7 +34,7 @@ export function Providers({
           >
             {children}
           </ThemeProvider>
-          <ReactQueryDevtools />
+          {initialUser?.mobile_embed === true ? null : <ReactQueryDevtools />}
         </TooltipProvider>
       </QueryClientProvider>
     </AppContextProvider>

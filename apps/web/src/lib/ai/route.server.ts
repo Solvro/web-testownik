@@ -69,7 +69,7 @@ export async function withAiRoute<TBody, TPrepared = undefined>(
     return jsonServiceUnavailable("ai_disabled", "AI is not configured");
   }
 
-  const user = await getServerCurrentUser();
+  const user = await getServerCurrentUser(options.request);
   if (user === null) {
     return Response.json({ code: "unauthorized" }, { status: 401 });
   }

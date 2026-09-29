@@ -6,7 +6,7 @@ import type {
 } from "@testownik/core/wrapped/types";
 import { isWrappedStoryData } from "@testownik/core/wrapped/types";
 import type { CSSProperties } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { shareWrapped } from "../share-image";
 import type { ShareTheme } from "../share-image";
@@ -67,6 +67,27 @@ function StoryPlayer({
   // Edge slides render as a card over the app background, so the browser
   // bars should keep their default tint there.
   useImmersiveThemeColor(isEdgeSlide ? null : colors.bg);
+  useEffect(() => {
+    if (document.body.dataset.mobileEmbed !== "true") {
+      return;
+    }
+    document.body.classList.add("wrapped-embed-body");
+    document.body.style.backgroundColor = colors.bg;
+    document.documentElement.style.backgroundColor = colors.bg;
+    const bridge = (
+      window as Window & {
+        ReactNativeWebView?: { postMessage: (message: string) => void };
+      }
+    ).ReactNativeWebView;
+    bridge?.postMessage(
+      JSON.stringify({
+        type: "wrapped-theme",
+        background: colors.bg,
+        foreground: colors.fg,
+        dark: isDark(colors.bg),
+      }),
+    );
+  }, [colors.bg, colors.fg]);
 
   const onShare = () => {
     if (sharing.current) {

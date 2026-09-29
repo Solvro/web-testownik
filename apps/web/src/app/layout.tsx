@@ -12,6 +12,7 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import { cn } from "@/lib/utils";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -79,6 +80,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getServerCurrentUser();
+  const embedded = user?.mobile_embed === true;
 
   return (
     <html
@@ -100,24 +102,35 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%">
+      <body
+        data-mobile-embed={embedded ? "true" : undefined}
+        className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%"
+      >
         <Providers initialUser={user}>
           <div
-            className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
+            className={cn(
+              "mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24",
+              // The app's native header sits above the embed instead of the navbar.
+              embedded && "pt-4 pb-10",
+            )}
             id="container"
           >
-            <Navbar />
+            {embedded ? null : <Navbar />}
             <MaintenanceWrapper>
               <Suspense>
                 <ErrorHandler />
-                <GuestAlert />
-                <Alerts />
+                {embedded ? null : (
+                  <>
+                    <GuestAlert />
+                    <Alerts />
+                  </>
+                )}
               </Suspense>
               <main>{children}</main>
             </MaintenanceWrapper>
           </div>
           <Toaster richColors />
-          <AppFooter />
+          {embedded ? null : <AppFooter />}
         </Providers>
         <Script
           src="https://analytics.solvro.pl/script.js"

@@ -184,11 +184,26 @@ export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
   };
 
   const { data, isPending, error, refetch } = useQuery({
-    queryKey: ["wrapped", mode],
-    queryFn: async () =>
-      mode === "global"
+    queryKey: ["wrapped", mode, user?.mobile_embed],
+    queryFn: async () => {
+      if (user?.mobile_embed === true) {
+        const response = await fetch(
+          `/auth/mobile/wrapped?global=${mode === "global" ? "true" : "false"}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          throw new Error(
+            `Nie udało się pobrać Wrapped (${String(response.status)}).`,
+          );
+        }
+        return response.json() as ReturnType<
+          ReturnType<typeof getWrappedService>["getWrapped"]
+        >;
+      }
+      return mode === "global"
         ? getWrappedService().getGlobalWrapped()
-        : getWrappedService().getWrapped(),
+        : getWrappedService().getWrapped();
+    },
     enabled: canViewWrapped,
     staleTime: 5 * 60 * 1000,
   });

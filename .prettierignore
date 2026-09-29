@@ -2,3 +2,13 @@
 build
 coverage
 pnpm-lock.yaml
+
+# Mobile app build output and generated files
+apps/mobile/.expo
+apps/mobile/dist
+apps/mobile/android
+apps/mobile/ios
+apps/mobile/test-results
+apps/mobile/playwright-report
+apps/mobile/assets
+apps/mobile/src/lib/math-style.json

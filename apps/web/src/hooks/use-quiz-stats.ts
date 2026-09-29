@@ -4,6 +4,40 @@ import type { QuizMetadata } from "@testownik/core/quiz/types";
 
 import { getQuizService } from "@/services";
 
+// Embedded (mobile WebView) sessions keep their token in an HttpOnly cookie, so
+// stats are proxied through /auth/mobile/stats. The root layout marks the body.
+function isMobileEmbed(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    document.body.dataset.mobileEmbed === "true"
+  );
+}
+
+async function requestStats<T>(
+  id: string,
+  part: string,
+  parameters: Record<string, string | number>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  if (!isMobileEmbed()) {
+    return fallback();
+  }
+  const query = new URLSearchParams({
+    id,
+    part,
+    ...Object.fromEntries(
+      Object.entries(parameters).map(([key, value]) => [key, String(value)]),
+    ),
+  });
+  const response = await fetch(`/auth/mobile/stats?${query.toString()}`, {
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    throw new Error("Nie udało się wczytać statystyk. Spróbuj ponownie.");
+  }
+  return (await response.json()) as T;
+}
+
 export const quizStatsKeys = {
   all: (quizId: string) => ["quiz-stats", quizId] as const,
   metadata: (quizId: string) => ["quiz-stats", quizId, "metadata"] as const,
@@ -22,7 +56,10 @@ export const quizStatsKeys = {
 export function useQuizMetadata(quizId: string) {
   return useQuery<QuizMetadata>({
     queryKey: quizStatsKeys.metadata(quizId),
-    queryFn: async () => getQuizService().getQuizMetadata(quizId),
+    queryFn: async () =>
+      requestStats(quizId, "metadata", {}, async () =>
+        getQuizService().getQuizMetadata(quizId),
+      ),
     enabled: quizId.trim() !== "",
     refetchOnWindowFocus: false,
     retry: 1,
@@ -36,7 +73,10 @@ export function useQuizStats(
 ) {
   return useQuery({
     queryKey: quizStatsKeys.aggregated(quizId, scope),
-    queryFn: async () => getQuizService().getQuizStats(quizId, scope),
+    queryFn: async () =>
+      requestStats(quizId, "summary", { scope }, async () =>
+        getQuizService().getQuizStats(quizId, scope),
+      ),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -47,7 +87,10 @@ export function useQuizStats(
 export function useQuizTimeline(quizId: string, scope: StatsScope, days = 30) {
   return useQuery({
     queryKey: quizStatsKeys.timeline(quizId, scope, days),
-    queryFn: async () => getQuizService().getQuizTimeline(quizId, scope, days),
+    queryFn: async () =>
+      requestStats(quizId, "timeline", { scope, days }, async () =>
+        getQuizService().getQuizTimeline(quizId, scope, days),
+      ),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -62,7 +105,10 @@ export function useQuizSessions(
 ) {
   return useQuery({
     queryKey: quizStatsKeys.sessions(quizId, scope, days),
-    queryFn: async () => getQuizService().getQuizSessions(quizId, scope, days),
+    queryFn: async () =>
+      requestStats(quizId, "sessions", { scope, days }, async () =>
+        getQuizService().getQuizSessions(quizId, scope, days),
+      ),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -78,7 +124,9 @@ export function useQuizHardestQuestions(
   return useQuery({
     queryKey: quizStatsKeys.hardest(quizId, scope, limit),
     queryFn: async () =>
-      getQuizService().getQuizHardestQuestions(quizId, scope, limit),
+      requestStats(quizId, "hardest", { scope, limit }, async () =>
+        getQuizService().getQuizHardestQuestions(quizId, scope, limit),
+      ),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -88,7 +136,10 @@ export function useQuizHardestQuestions(
 export function useQuizHourly(quizId: string, scope: StatsScope) {
   return useQuery({
     queryKey: quizStatsKeys.hourly(quizId, scope),
-    queryFn: async () => getQuizService().getQuizHourly(quizId, scope),
+    queryFn: async () =>
+      requestStats(quizId, "hourly", { scope }, async () =>
+        getQuizService().getQuizHourly(quizId, scope),
+      ),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,

@@ -28,7 +28,7 @@ export function getRemainingAttempts(
   // Filter answers for this question, sorted by time
   const questionAnswers = answers
     .filter((a) => a.question === questionId)
-    .toSorted(
+    .sort(
       (a, b) =>
         new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime(),
     );

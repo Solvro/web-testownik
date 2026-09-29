@@ -17,7 +17,7 @@ export interface QuizMetadata extends QuizBase {
   updated_at: string;
   last_used_at: string | null;
   preview_question?: Question;
-  question_count?: number;
+  question_count?: number | null;
 }
 
 export interface Answer {

@@ -29,7 +29,8 @@ export function StatsPageClient({ quizId }: StatsPageClientProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      {/* The mobile app shows its own native navigation bar above the embed. */}
+      <div className="flex items-center gap-3 [[data-mobile-embed=true]_&]:hidden">
         <ButtonLink
           variant="outline"
           size="icon"

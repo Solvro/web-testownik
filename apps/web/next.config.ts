@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const s3Url = new URL(process.env.S3_URL ?? "https://s3.b.solvro.pl");
 
 const nextConfig: NextConfig = {
+  // LAN_HOST lets a phone on the same Wi-Fi load the dev server.
+  allowedDevOrigins: [
+    "127.0.0.1",
+    ...(process.env.LAN_HOST ? [process.env.LAN_HOST] : []),
+  ],
   reactCompiler: true,
   transpilePackages: ["@testownik/core"],
   serverExternalPackages: ["sharp"],

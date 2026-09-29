@@ -60,7 +60,10 @@ export function WrappedChrome({
           marginTop: "13px",
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+        <span
+          className="wrapped-brand"
+          style={{ display: "flex", alignItems: "center", gap: "9px" }}
+        >
           <button
             type="button"
             onClick={onLogoClick}
@@ -105,6 +108,7 @@ export function WrappedChrome({
           <button
             type="button"
             onClick={onSkip}
+            className="wrapped-skip"
             style={{
               pointerEvents: "auto",
               background: "none",

@@ -4,6 +4,7 @@ import "server-only";
 
 import { resolveImages } from "@/lib/ai/images";
 import { collectQuestionImages } from "@/lib/ai/prompts";
+import type { ResponseLanguage } from "@/lib/ai/prompts";
 import { estimateJsonTokens, isQuestion } from "@/lib/ai/request-validation";
 import { withAiRoute } from "@/lib/ai/route.server";
 import { buildUsageCallbacks } from "@/lib/ai/usage.server";
@@ -12,11 +13,13 @@ import type { UsageReportPayload } from "@/lib/ai/usage.server";
 interface QuestionBody {
   question: Question;
   config?: { modelName?: unknown };
+  /** Clients with their own interface language (the mobile app) pin replies to it. */
+  language?: unknown;
 }
 
 interface QuestionRouteOptions {
   scope: Extract<UsageReportPayload["scope"], "explain" | "hint">;
-  buildSystemPrompt: () => string;
+  buildSystemPrompt: (language?: ResponseLanguage) => string;
   buildUserPrompt: (question: Question) => string;
 }
 
@@ -48,7 +51,7 @@ export function createQuestionCompletionRoute(options: QuestionRouteOptions) {
           await resolveImages(collectQuestionImages(question), signal),
       },
       ({
-        body: { question },
+        body: { question, language },
         model,
         quota,
         selectedModel,
@@ -70,7 +73,9 @@ export function createQuestionCompletionRoute(options: QuestionRouteOptions) {
         const result = streamText({
           model,
           abortSignal: signal,
-          system: options.buildSystemPrompt(),
+          system: options.buildSystemPrompt(
+            language === "pl" || language === "en" ? language : undefined,
+          ),
           prompt:
             imageParts.length > 0
               ? [

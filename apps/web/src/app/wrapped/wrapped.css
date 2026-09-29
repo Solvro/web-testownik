@@ -211,3 +211,38 @@ body.wrapped-immersive-body {
     animation: none !important;
   }
 }
+
+/* The native app supplies navigation around the existing Wrapped experience. */
+body[data-mobile-embed="true"] #container {
+  max-width: none;
+  padding: 0;
+  gap: 0;
+}
+body[data-mobile-embed="true"] .wrapped-shell-wrap {
+  padding: 0;
+}
+body[data-mobile-embed="true"] .wrapped-stage,
+body[data-mobile-embed="true"] .wrapped-stage.is-edge {
+  /* The app may draw a transparent header over the page. */
+  top: var(--mobile-embed-top, 0px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0 !important;
+  min-height: calc(100dvh - var(--mobile-embed-top, 0px)) !important;
+  box-shadow: none !important;
+}
+/* Behind the app's header the page colour fades along with the stage. */
+html:has(body[data-mobile-embed="true"].wrapped-embed-body),
+body[data-mobile-embed="true"].wrapped-embed-body {
+  background-image: none !important;
+  transition: background-color 0.45s ease;
+}
+/* The app's navigation bar already names Wrapped above the story. */
+body[data-mobile-embed="true"] .wrapped-brand {
+  visibility: hidden;
+}
+body[data-mobile-embed="true"] .wrapped-skip {
+  min-height: 44px;
+  min-width: 44px;
+}

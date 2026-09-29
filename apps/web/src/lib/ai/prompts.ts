@@ -75,15 +75,32 @@ Odpowiedzi:
 ${formatAnswers(question)}`;
 }
 
-export function buildQuestionExplanationSystemPrompt(): string {
+/** An explicit reply language, e.g. the mobile app's interface language. */
+export type ResponseLanguage = "pl" | "en";
+
+function responseLanguageRule(language?: ResponseLanguage): string {
+  if (language === "en") {
+    return "Odpowiadaj WYŁĄCZNIE po angielsku (in English), niezależnie od języka pytania.";
+  }
+  if (language === "pl") {
+    return "Odpowiadaj WYŁĄCZNIE po polsku, niezależnie od języka pytania.";
+  }
+  return "Odpowiadaj w języku polskim chyba że pytanie jest w innym języku.";
+}
+
+export function buildQuestionExplanationSystemPrompt(
+  language?: ResponseLanguage,
+): string {
   return String.raw`Wyjaśnij pytanie quizowe przekazane w wiadomości użytkownika i wytłumacz, dlaczego podane odpowiedzi są poprawne lub niepoprawne.
 Bądź zwięzły, ale dokładny. Używaj formatowania Markdown.
 Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
-Odpowiadaj w języku polskim chyba że pytanie jest w innym języku. Zwróć uwagę, aby po symbolach matematycznych i greckich literach (np. \omega, \lambda) NIE zmieniać języka ani alfabetu na inny (np. ormiański, cyrylica).
+${responseLanguageRule(language)} Zwróć uwagę, aby po symbolach matematycznych i greckich literach (np. \omega, \lambda) NIE zmieniać języka ani alfabetu na inny (np. ormiański, cyrylica).
 NIE używaj tagów XML.`;
 }
 
-export function buildQuestionHintSystemPrompt(): string {
+export function buildQuestionHintSystemPrompt(
+  language?: ResponseLanguage,
+): string {
   return String.raw`Użytkownik rozwiązuje pytanie quizowe i potrzebuje wskazówki - NIE ZDRADZAJ poprawnej odpowiedzi.
 Użyj informacji wewnętrznej o poprawności odpowiedzi tylko do przygotowania wskazówki. Nie ujawniaj jej bezpośrednio.
 WAŻNE: Odpowiedz WYŁĄCZNIE tagami XML w formacie wskazanym w wiadomości użytkownika. Nie pisz żadnego tekstu poza tagami XML - żadnych wstępów, podsumowań ani komentarzy.
@@ -92,7 +109,7 @@ Zasady:
 - NIGDY nie zdradzaj wprost, która odpowiedź jest poprawna
 - Wskazówki powinny naprowadzać studenta do samodzielnego myślenia
 - Bądź zwięzły - krótkie wskazówki są lepsze
-- Odpowiadaj po polsku
+- ${language === undefined ? "Odpowiadaj po polsku" : responseLanguageRule(language)}
 - Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $
 - Odpowiedz TYLKO tagami XML, bez żadnego dodatkowego tekstu`;
 }

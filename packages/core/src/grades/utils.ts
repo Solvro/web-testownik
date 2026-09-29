@@ -83,6 +83,30 @@ export function numericGradeLabel(value: string) {
   });
 }
 
+// USOS records pass/fail courses with a word instead of a number.
+const PASS_SYMBOLS = new Set([
+  "zal",
+  "zal.",
+  "zaliczone",
+  "zaliczony",
+  "zaliczona",
+  "zrealizowane",
+  "zrealizowany",
+  "zrealizowana",
+  "passed",
+  "pass",
+  "zw",
+  "zw.",
+  "zwolniony",
+]);
+
+/** A non-numeric grade that means the course was passed (e.g. "zal.", "zrealizowany"). */
+export function isPassSymbol(symbol: string | null | undefined) {
+  return (
+    symbol != null && PASS_SYMBOLS.has(symbol.trim().toLocaleLowerCase("pl"))
+  );
+}
+
 function gradeLabel(grade: Grade) {
   return grade.value_symbol ?? grade.value?.toLocaleString("pl-PL") ?? "-";
 }
@@ -131,11 +155,16 @@ function isNewGrade(timestamp: string | null) {
   return age >= 0 && age <= 24 * 60 * 60 * 1000;
 }
 
-function classTypeLabel(classType: CourseClassType | null | undefined) {
+function classTypeLabel(
+  classType: CourseClassType | null | undefined,
+  language: "pl" | "en" = "pl",
+) {
   if (classType == null) {
     return null;
   }
-  return classType.name_pl ?? classType.name_en ?? classType.id;
+  return language === "en"
+    ? (classType.name_en ?? classType.name_pl ?? classType.id)
+    : (classType.name_pl ?? classType.name_en ?? classType.id);
 }
 
 function localizedName(
@@ -192,7 +221,7 @@ function buildDistribution(report: GradeReport): DistributionEntry[] {
       grade,
       percentage: bucket.total / bucket.count,
     }))
-    .toSorted((a, b) => {
+    .sort((a, b) => {
       const left = numericGradeValue(a.grade) ?? 0;
       const right = numericGradeValue(b.grade) ?? 0;
       return left - right;
@@ -222,6 +251,8 @@ export interface ReportView {
   symbol: string;
   color: GradeColor;
   counts: boolean;
+  /** USOS marks the grade as passing, whether or not it is numeric. */
+  passes: boolean;
   scope: string;
   typeLabel: string;
   reportType: string;
@@ -248,6 +279,12 @@ export interface CourseView {
   color: GradeColor;
 }
 
+function gradePasses(grade: Grade | null) {
+  return (
+    grade != null && (grade.passes === true || isPassSymbol(grade.value_symbol))
+  );
+}
+
 function pickReportGrade(report: GradeReport): Grade | null {
   const withValue = report.grades.filter(
     (grade) => grade.value != null || grade.value_symbol != null,
@@ -258,7 +295,11 @@ function pickReportGrade(report: GradeReport): Grade | null {
   return withValue.find((grade) => grade.counts_into_average) ?? withValue[0];
 }
 
-function buildReportView(report: GradeReport, key: string): ReportView {
+function buildReportView(
+  report: GradeReport,
+  key: string,
+  language: "pl" | "en",
+): ReportView {
   const grade = pickReportGrade(report);
   const value =
     grade == null
@@ -268,7 +309,7 @@ function buildReportView(report: GradeReport, key: string): ReportView {
   const groupAverage = distributionAverage(distribution);
   const groupDelta =
     value != null && groupAverage != null ? value - groupAverage : null;
-  const classLabel = classTypeLabel(report.class_type);
+  const classLabel = classTypeLabel(report.class_type, language);
   const typeLabel =
     report.class_type_id == null
       ? (report.type_description ?? report.type_id ?? "Zaliczenie")
@@ -280,6 +321,7 @@ function buildReportView(report: GradeReport, key: string): ReportView {
     symbol: grade == null ? "–" : gradeLabel(grade),
     color: gradeColor(value),
     counts: grade?.counts_into_average ?? false,
+    passes: gradePasses(grade),
     scope: report.scope,
     typeLabel,
     reportType: report.type_description ?? report.type_id ?? "Zaliczenie",
@@ -292,7 +334,11 @@ function buildReportView(report: GradeReport, key: string): ReportView {
   };
 }
 
-function directGradeView(grade: Grade, code: string): ReportView {
+function directGradeView(
+  grade: Grade,
+  code: string,
+  language: "pl" | "en",
+): ReportView {
   const value = grade.value ?? numericGradeValue(grade.value_symbol);
   const timestamp = gradeTimestamp(grade);
   return {
@@ -301,9 +347,10 @@ function directGradeView(grade: Grade, code: string): ReportView {
     symbol: gradeLabel(grade),
     color: gradeColor(value),
     counts: grade.counts_into_average,
+    passes: gradePasses(grade),
     scope: "course",
-    typeLabel: "Ocena końcowa",
-    reportType: "Ocena końcowa",
+    typeLabel: language === "pl" ? "Ocena końcowa" : "Final grade",
+    reportType: language === "pl" ? "Ocena końcowa" : "Final grade",
     issuer: issuerLabel(grade.modification_author),
     timestamp,
     isNew: isNewGrade(timestamp),
@@ -313,12 +360,16 @@ function directGradeView(grade: Grade, code: string): ReportView {
   };
 }
 
-export function buildCourseView(course: Course): CourseView {
+export function buildCourseView(
+  course: Course,
+  language: "pl" | "en" = "pl",
+): CourseView {
   const reports = course.reports ?? [];
   const reportViews = reports.map((report, index) =>
     buildReportView(
       report,
       `${course.course_id}-${String(report.id ?? index)}-${report.scope}`,
+      language,
     ),
   );
 
@@ -335,7 +386,7 @@ export function buildCourseView(course: Course): CourseView {
       direct.find((grade) => grade.counts_into_average) ??
       (direct.length > 0 ? direct[0] : null);
     if (chosen != null) {
-      hero = directGradeView(chosen, course.course_id);
+      hero = directGradeView(chosen, course.course_id, language);
     }
   }
 
@@ -348,13 +399,17 @@ export function buildCourseView(course: Course): CourseView {
     name: course.course_name,
     code: course.course_id,
     courseTypeNames: classTypes
-      .map((classType) => classTypeLabel(classType))
+      .map((classType) => classTypeLabel(classType, language))
       .filter((label): label is string => label != null && label.length > 0),
     courseTypeSymbols: classTypes
       .map((classType) => classType.id)
       .filter((label) => label.length > 0),
     ects: course.ects,
-    passed: course.passing_status === "passed",
+    // USOS's status only weighs grades counted into the average, so a
+    // pass/fail course ("zrealizowany") would otherwise never read as passed.
+    passed:
+      course.passing_status === "passed" ||
+      (hero != null && hero.value == null && hero.passes),
     hero,
     subs,
     mainValue,
@@ -407,5 +462,20 @@ export function termGradeOptions(courses: CourseView[]) {
   }
   return [...options]
     .filter((value) => value >= 2 && value <= 5.5)
-    .toSorted((a, b) => a - b);
+    .sort((a, b) => a - b);
+}
+
+/** Same weighting rules as the real average, with explicit per-course predictions. */
+export function projectedAverage(
+  courses: CourseView[],
+  overrides: Record<string, number>,
+) {
+  return weightedAverage(
+    courses.map((course) => {
+      const override = overrides[course.id] as number | undefined;
+      return override === undefined
+        ? course
+        : { ...course, mainValue: override, counts: true };
+    }),
+  );
 }
