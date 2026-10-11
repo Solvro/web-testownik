@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
+import { ProfileChangeNameForm } from "@/components/profile/profile-change-name-form";
 import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
   const router = useRouter();
   const updateUserProfile = useUpdateUserProfile();
   const [showDialog, setShowDialog] = useState(false);
+  const [changeName, setChangeName] = useState(false);
   const handleHideProfile = (hide: boolean) => {
     updateUserProfile.mutate(
       { hide_profile: hide },
@@ -140,9 +142,22 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
                 <PencilIcon className="size-4" />
               </button>
             </div>
-            <h1 className="text-xl leading-tight font-semibold">
-              {userData?.full_name}
-            </h1>
+            <div className="relative inline-flex items-center justify-center gap-2">
+              <h1 className="text-xl leading-tight font-semibold">
+                {(userData?.full_name ?? "").trim() === ""
+                  ? "Ustaw nazwę"
+                  : userData?.full_name}
+              </h1>
+              <button
+                aria-label="Zmień nazwę"
+                onClick={() => {
+                  setChangeName(true);
+                }}
+                className="bg-background hover:bg-accent inline-flex size-7 items-center justify-center rounded-full border shadow transition"
+              >
+                <PencilIcon className="size-3.5" />
+              </button>
+            </div>
             <h2 className="text-muted-foreground text-sm">
               {userData?.student_number}
             </h2>
@@ -209,6 +224,14 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
           userData={userData}
           onClose={() => {
             setShowDialog(false);
+          }}
+        />
+      ) : null}
+      {changeName && userData !== null ? (
+        <ProfileChangeNameForm
+          userData={userData}
+          onClose={() => {
+            setChangeName(false);
           }}
         />
       ) : null}
