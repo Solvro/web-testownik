@@ -7,8 +7,8 @@ import type {
 import { CircleHelp, InfoIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { OverTypeEditor } from "@/components/overtype-editor";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ImageDropZone, ImagePreview } from "@/components/quiz/editor/image";
 import type { ImageState } from "@/components/quiz/editor/image";
@@ -204,7 +204,7 @@ export function QuestionFormContent({
         label="Upuść zdjęcie do pytania"
       >
         <div className="space-y-2">
-          <OverTypeEditor
+          <MarkdownEditor
             placeholder="Treść pytania..."
             value={question.text}
             onChange={(text) => {
@@ -215,7 +215,6 @@ export function QuestionFormContent({
             }}
             minHeight="72px"
             className="min-h-8"
-            autoResize={true}
           />
           <ImagePreview
             image={question.image}

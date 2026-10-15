@@ -7,12 +7,17 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CreateQuizPageClient as CreateQuizPage } from "@/app/create-quiz/client";
+import { createQuestion } from "@/components/quiz/editor/quiz-editor-factories";
 import { server } from "@/test-utils/mocks/server";
 import { Providers } from "@/test-utils/providers";
 import { generateTestToken } from "@/test-utils/token-factory";
 
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
+  toast: Object.assign(vi.fn(), {
+    error: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+  }),
 }));
 
 const testQuiz = {
@@ -22,13 +27,25 @@ const testQuiz = {
   answers: ["test answer 1", "test answer 2", "test answer 3", "test answer 4"],
 };
 
+function questionRows() {
+  return within(screen.getByRole("list", { name: "Lista pytań" })).getAllByRole(
+    "listitem",
+  );
+}
+
 const setup = async () => {
   const user = userEvent.setup();
   const token = await generateTestToken();
 
   render(
     <Providers accessToken={token}>
-      <CreateQuizPage />
+      <CreateQuizPage
+        initialValues={{
+          title: "",
+          description: "",
+          questions: [createQuestion(1)],
+        }}
+      />
     </Providers>,
   );
 
@@ -36,8 +53,11 @@ const setup = async () => {
     const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
     const answers = screen.getAllByPlaceholderText(/Odpowiedź \d/i);
     const fields: [HTMLElement, string][] = [
-      [screen.getByPlaceholderText(/podaj tytuł quizu/i), testQuiz.title],
-      [screen.getByPlaceholderText(/podaj opis quizu/i), testQuiz.description],
+      [screen.getByRole("textbox", { name: "Tytuł quizu" }), testQuiz.title],
+      [
+        screen.getByRole("textbox", { name: "Opis quizu" }),
+        testQuiz.description,
+      ],
       [questionTextareas[0], testQuiz.questions[0]],
       [answers[0], testQuiz.answers[0]],
       [answers[1], testQuiz.answers[1]],
@@ -48,10 +68,9 @@ const setup = async () => {
       await user.paste(text);
     }
 
-    const correctAnswerButtons = screen.getAllByRole("button", {
-      name: /oznacz jako poprawną/i,
-    });
-    await user.click(correctAnswerButtons[0]);
+    await user.click(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
+    );
   };
 
   const submit = async () => {
@@ -59,7 +78,6 @@ const setup = async () => {
   };
 
   const addQuestion = async () => {
-    // Use the "Dodaj pytanie" button in the header
     const addButtons = screen.getAllByRole("button", {
       name: /dodaj pytanie/i,
     });
@@ -67,13 +85,17 @@ const setup = async () => {
   };
 
   const removeQuestion = async () => {
-    const removeButtons = screen.getAllByRole("button", {
-      name: /usuń pytanie/i,
-    });
-    await user.click(removeButtons[0]);
+    await user.click(screen.getByRole("button", { name: /^Usuń pytanie \d/ }));
   };
 
-  return { user, token, fillFields, submit, addQuestion, removeQuestion };
+  return {
+    user,
+    token,
+    fillFields,
+    submit,
+    addQuestion,
+    removeQuestion,
+  };
 };
 
 describe("CreateQuizPage", () => {
@@ -141,7 +163,7 @@ describe("CreateQuizPage", () => {
   it("should show validation error if question field is empty", async () => {
     const { user, submit } = await setup();
     await user.type(
-      screen.getByPlaceholderText(/podaj tytuł quizu/i),
+      screen.getByRole("textbox", { name: "Tytuł quizu" }),
       testQuiz.title,
     );
 
@@ -170,7 +192,7 @@ describe("CreateQuizPage", () => {
     const { user, submit } = await setup();
 
     await user.type(
-      screen.getByPlaceholderText(/podaj tytuł quizu/i),
+      screen.getByRole("textbox", { name: "Tytuł quizu" }),
       testQuiz.title,
     );
     const questionTextareas = screen.getAllByPlaceholderText(/treść pytania/i);
@@ -205,18 +227,24 @@ describe("CreateQuizPage", () => {
     await fillFields();
     await addQuestion();
 
-    const questionItems = await screen.findAllByTestId("question-item");
-    expect(questionItems).toHaveLength(2);
-    const newQuestion = questionItems[1];
-
-    const questionTextarea =
-      within(newQuestion).getByPlaceholderText(/treść pytania/i);
-    await user.type(questionTextarea, testQuiz.questions[1]);
-
-    const answerFields =
-      within(newQuestion).getAllByPlaceholderText(/Odpowiedź \d/i);
-    await user.type(answerFields[0], testQuiz.answers[2]);
-    await user.type(answerFields[1], testQuiz.answers[3]);
+    const newQuestion = await screen.findByRole("article", {
+      name: "Pytanie 2",
+    });
+    expect(
+      within(newQuestion).getByRole("textbox", { name: "Treść pytania 2" }),
+    ).toHaveValue("");
+    await user.type(
+      within(newQuestion).getByRole("textbox", { name: "Treść pytania 2" }),
+      testQuiz.questions[1],
+    );
+    await user.type(
+      within(newQuestion).getByRole("textbox", { name: "Odpowiedź 1" }),
+      testQuiz.answers[2],
+    );
+    await user.type(
+      within(newQuestion).getByRole("textbox", { name: "Odpowiedź 2" }),
+      testQuiz.answers[3],
+    );
 
     await submit();
 
@@ -230,20 +258,18 @@ describe("CreateQuizPage", () => {
     const { removeQuestion, addQuestion } = await setup();
     await addQuestion();
 
-    // Verify we have 2 questions by checking for "Pytanie 2" label
-    const labels = screen.getAllByText(/pytanie \d/i);
-    const questionLabels = labels.filter((label) =>
-      /^pytanie \d$/i.test(label.textContent),
-    );
-    expect(questionLabels).toHaveLength(2);
+    expect(questionRows()).toHaveLength(2);
 
     await removeQuestion();
 
-    // Should now have only 1 question
-    const labelsAfter = screen.getAllByText(/pytanie \d/i);
-    const questionLabelsAfter = labelsAfter.filter((label) =>
-      /^pytanie \d$/i.test(label.textContent),
+    expect(questionRows()).toHaveLength(1);
+    expect(toast).toHaveBeenCalledWith(
+      "Usunięto pytanie 2",
+      expect.objectContaining({
+        action: expect.objectContaining({
+          label: "Cofnij",
+        }) as unknown as Record<string, unknown>,
+      }),
     );
-    expect(questionLabelsAfter).toHaveLength(1);
   });
 });

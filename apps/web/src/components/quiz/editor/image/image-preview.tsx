@@ -68,7 +68,7 @@ export function ImagePreview({
     }
   };
 
-  const heightClass = size === "small" ? "h-24" : "h-40";
+  const heightClass = size === "small" ? "max-h-24" : "max-h-40";
   const targetHeight = RENDERED_HEIGHTS[size];
 
   const targetWidth =
@@ -107,7 +107,7 @@ export function ImagePreview({
           setIsHovered(false);
         }}
         className={cn(
-          "focus-visible:ring-ring relative inline-flex w-auto cursor-pointer overflow-hidden rounded-lg border transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none",
+          "focus-visible:ring-ring relative inline-flex w-auto max-w-full cursor-pointer overflow-hidden rounded-lg border transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none",
           heightClass,
           isDragOver
             ? "border-primary bg-primary/10 ring-primary/50 ring-2"
@@ -117,6 +117,7 @@ export function ImagePreview({
           (disabled || isUploading) && "cursor-default",
           disabled && "opacity-50",
           isUploading && "w-32 border-dashed",
+          isUploading && (size === "small" ? "h-24" : "h-40"),
           className,
         )}
       >
@@ -135,7 +136,10 @@ export function ImagePreview({
             alt="Podgląd zdjęcia"
             width={targetWidth}
             height={targetHeight}
-            className="bg-muted/10 h-full w-auto object-contain"
+            className={cn(
+              "bg-muted/10 h-auto w-auto max-w-full object-contain",
+              heightClass,
+            )}
             draggable={false}
             unoptimized={false}
           />
@@ -144,7 +148,10 @@ export function ImagePreview({
           <img
             src={image}
             alt="Podgląd zdjęcia"
-            className="bg-muted/10 h-full w-auto object-contain"
+            className={cn(
+              "bg-muted/10 h-auto w-auto max-w-full object-contain",
+              heightClass,
+            )}
             draggable={false}
           />
         )}

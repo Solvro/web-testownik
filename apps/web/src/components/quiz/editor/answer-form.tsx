@@ -3,7 +3,7 @@
 import type { AnswerFormData } from "@testownik/core/quiz/schema";
 import { CheckIcon, Trash2 } from "lucide-react";
 
-import { OverTypeEditor } from "@/components/overtype-editor";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import {
   ImageButton,
   ImageDropZone,
@@ -132,7 +132,7 @@ export function AnswerForm({
             </TooltipContent>
           </Tooltip>
 
-          <OverTypeEditor
+          <MarkdownEditor
             placeholder={`Odpowiedź ${String(answer.order)}...`}
             value={answer.text}
             onChange={(text) => {
@@ -144,7 +144,6 @@ export function AnswerForm({
             onKeyDown={onKeyDown}
             className="min-h-8 flex-1"
             minHeight="40px"
-            autoResize={true}
           />
 
           <Tooltip>

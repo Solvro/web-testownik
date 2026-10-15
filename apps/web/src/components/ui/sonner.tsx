@@ -18,6 +18,9 @@ function Toaster({ ...props }: ToasterProps) {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      // Bottom right, above the fixed app footer shown from `sm`.
+      position="bottom-right"
+      offset={{ bottom: 56, right: 24 }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,

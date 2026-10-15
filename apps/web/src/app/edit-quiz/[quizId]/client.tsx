@@ -3,11 +3,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { QuizFormData } from "@testownik/core/quiz/schema";
 import { prepareQuizForSubmission } from "@testownik/core/quiz/schema";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Loader } from "@/components/loader";
+import { quizToFormData } from "@/components/quiz/editor/quiz-editor-form";
 import {
   quizDetailQueryKey,
   quizQueryKey,
@@ -29,7 +29,6 @@ function EditQuizPageContent({
 }): React.JSX.Element {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const searchParameters = useSearchParams();
 
   const {
     data: initialQuiz,
@@ -46,67 +45,34 @@ function EditQuizPageContent({
     document.title = "Edytuj quiz - Testownik Solvro";
   }
 
-  useEffect(() => {
-    if (initialQuiz == null) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      const scrollTo = searchParameters.get("scroll_to");
-      const hashId = window.location.hash.slice(1);
-      const id = scrollTo ?? hashId;
-      if (id !== "") {
-        const element = document.querySelector(`#${id}`);
-        if (element !== null) {
-          element.scrollIntoView({ behavior: "smooth" });
-          if (window.location.hash) {
-            window.history.replaceState(
-              null,
-              "",
-              window.location.pathname + window.location.search,
-            );
-          }
-        }
-      }
-    }, 100);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [initialQuiz, searchParameters]);
-
-  async function handleSave(data: QuizFormData): Promise<boolean> {
+  async function handleSave(data: QuizFormData): Promise<QuizFormData | null> {
     if (quizId.trim() === "") {
       toast.error("Nieprawidłowy identyfikator quizu.");
-      return false;
+      return null;
     }
     const payload = prepareQuizForSubmission(data);
     try {
       const updatedQuiz = await getQuizService().updateQuiz(quizId, payload);
       queryClient.setQueryData(quizQueryKey(quizId), updatedQuiz);
       toast.success("Quiz został zaktualizowany.");
-      return true;
+      return quizToFormData(updatedQuiz);
     } catch {
       toast.error("Wystąpił błąd podczas aktualizacji quizu.");
-      return false;
+      return null;
     }
   }
 
-  async function handleSaveAndClose(data: QuizFormData): Promise<boolean> {
-    const ok = await handleSave(data);
-    if (ok) {
-      await queryClient.refetchQueries({
-        queryKey: quizDetailQueryKey(quizId),
-      });
-      const navigation = window.navigation as Navigation | null;
+  async function handleClose() {
+    await queryClient.refetchQueries({
+      queryKey: quizDetailQueryKey(quizId),
+    });
+    const navigation = window.navigation as Navigation | null;
 
-      if (navigation?.canGoBack === true) {
-        router.back();
-      } else {
-        router.push("/quizzes");
-      }
+    if (navigation?.canGoBack === true) {
+      router.back();
+    } else {
+      router.push("/quizzes");
     }
-    return ok;
   }
 
   if (isLoading) {
@@ -122,22 +88,33 @@ function EditQuizPageContent({
     );
   }
 
+  if (isInvalidQuizId || initialQuiz === undefined) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertDescription>
+          {isInvalidQuizId
+            ? "Nieprawidłowy identyfikator quizu."
+            : "Wystąpił błąd podczas ładowania quizu."}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <>
-      {isInvalidQuizId || isError ? (
+      {isError ? (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>
-            {isInvalidQuizId
-              ? "Nieprawidłowy identyfikator quizu."
-              : "Wystąpił błąd podczas ładowania quizu."}
+            Nie udało się odświeżyć quizu. Twoje zmiany są nadal w edytorze.
           </AlertDescription>
         </Alert>
       ) : null}
       <QuizEditor
+        key={quizId}
         mode="edit"
-        initialQuiz={initialQuiz ?? undefined}
+        initialQuiz={initialQuiz}
         onSave={handleSave}
-        onSaveAndClose={handleSaveAndClose}
+        onClose={handleClose}
       />
     </>
   );
