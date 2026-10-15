@@ -63,6 +63,7 @@ export function VersionHistoryDialog({
   onOpenChange,
   current,
   hasChanges,
+  onRestoringChange,
   onRestored,
 }: {
   quizId: string;
@@ -72,6 +73,8 @@ export function VersionHistoryDialog({
   current: () => QuizFormData;
   /** Restoring discards the editor's unsaved changes. */
   hasChanges: boolean;
+  /** The editor disables itself while a restore is in flight. */
+  onRestoringChange: (restoring: boolean) => void;
   /** Loads the restored quiz into the editor. */
   onRestored: (quiz: Quiz) => void;
 }) {
@@ -99,6 +102,7 @@ export function VersionHistoryDialog({
   /** Restores `version`; `undoTo` offers restoring that version back. */
   async function restore(version: number, message: string, undoTo?: number) {
     setRestoring(true);
+    onRestoringChange(true);
     try {
       const quiz = await getQuizService().restoreQuizVersion(quizId, version);
       queryClient.setQueryData(quizQueryKey(quizId), quiz);
@@ -123,6 +127,7 @@ export function VersionHistoryDialog({
       toast.error("Nie udało się przywrócić wersji. Spróbuj ponownie.");
     } finally {
       setRestoring(false);
+      onRestoringChange(false);
     }
   }
 
@@ -137,6 +142,10 @@ export function VersionHistoryDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        // Stays open while restoring, so no edits are made in the meantime.
+        if (!next && restoring) {
+          return;
+        }
         onOpenChange(next);
         if (!next) {
           setSelected(null);
@@ -425,9 +434,21 @@ function VersionContent({
                               />
                             ) : null}
                           </span>
-                          <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm!">
-                            {answer.text}
-                          </MarkdownRenderer>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            {answer.text === "" ? null : (
+                              <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm!">
+                                {answer.text}
+                              </MarkdownRenderer>
+                            )}
+                            {answer.image === null ? null : (
+                              // eslint-disable-next-line @next/next/no-img-element -- Images come from many hosts and have unknown sizes.
+                              <img
+                                src={answer.image}
+                                alt=""
+                                className="max-h-24 rounded border object-contain"
+                              />
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>

@@ -8,6 +8,7 @@ import type {
 } from "@testownik/core/quiz/schema";
 import { quizFormSchema } from "@testownik/core/quiz/schema";
 import type { Quiz } from "@testownik/core/quiz/types";
+import { toast } from "sonner";
 
 export { createAnswer, createQuestion } from "./quiz-editor-factories";
 
@@ -65,6 +66,19 @@ export function useQuizEditorForm(options: {
 }
 
 export type QuizEditorForm = ReturnType<typeof useQuizEditorForm>;
+
+/**
+ * Whether an action outside the form, such as a toast's Cofnij, may change
+ * the quiz now. While a save is running its response would overwrite the
+ * change, so the author is asked to wait instead.
+ */
+export function canMutate(form: QuizEditorForm) {
+  if (!form.state.isSubmitting) {
+    return true;
+  }
+  toast.info("Poczekaj na zakończenie zapisu.");
+  return false;
+}
 
 /**
  * Field errors are stored by position, so after answers or questions move,

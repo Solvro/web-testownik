@@ -25,6 +25,7 @@ import {
   splitPastedAnswers,
 } from "./paste-answers";
 import {
+  canMutate,
   createAnswer,
   hasImage,
   undoChoiceChanges,
@@ -117,6 +118,9 @@ export function QuestionEditor({
         action: {
           label: "Cofnij",
           onClick: () => {
+            if (!canMutate(form)) {
+              return;
+            }
             form.setFieldValue("questions", (questions) =>
               undoChoiceChanges(
                 questions,
@@ -189,6 +193,9 @@ export function QuestionEditor({
       action: {
         label: "Cofnij",
         onClick: () => {
+          if (!canMutate(form)) {
+            return;
+          }
           updateQuestion(form, questionId, (current) =>
             current.answers.some((answer) => answer.id === answerId)
               ? current
@@ -239,6 +246,9 @@ export function QuestionEditor({
       action: {
         label: "Wklej jako jedną",
         onClick: () => {
+          if (!canMutate(form)) {
+            return;
+          }
           // Reverse only the split, keeping edits made since the paste.
           updateQuestion(form, questionId, (current) =>
             joinPastedAnswers(current, paste),

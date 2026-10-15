@@ -27,6 +27,7 @@ import {
 import { QuestionRow } from "@/components/quiz/editor/question-row";
 import { matchesQuery } from "@/components/quiz/editor/question-summary";
 import {
+  canMutate,
   createQuestion,
   quizToFormData,
   removeQuestion,
@@ -162,7 +163,7 @@ export function QuizEditor(props: QuizEditorProps) {
     if (linked !== undefined) {
       revealQuestion(linked);
     }
-    return linked ?? defaultValues.questions[0].id;
+    return linked ?? defaultValues.questions.at(0)?.id ?? "";
   });
   const [search, setSearch] = useState("");
   const [rowFocusId, setRowFocusId] = useState("");
@@ -178,6 +179,8 @@ export function QuizEditor(props: QuizEditorProps) {
   const [historyMounted, setHistoryMounted] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // A version is being restored; its response replaces the whole quiz.
+  const [restoring, setRestoring] = useState(false);
   // React keys of questions and answers whose IDs the API replaced on save.
   const keysRef = useRef(new Map<string, string>());
   const keyOf = (id: string) => keysRef.current.get(id) ?? id;
@@ -320,7 +323,7 @@ export function QuizEditor(props: QuizEditorProps) {
   const tabbableRowId = closedRows.some((row) => row.id === rowFocusId)
     ? rowFocusId
     : (closedRows.at(0)?.id ?? "");
-  const busy = isSubmitting || uploadCount > 0;
+  const busy = isSubmitting || uploadCount > 0 || restoring;
 
   /** Opens a question. Keyboard users continue in its text field. */
   function select(id: string, focusText = false) {
@@ -393,6 +396,9 @@ export function QuizEditor(props: QuizEditorProps) {
       action: {
         label: "Cofnij",
         onClick: () => {
+          if (!canMutate(form)) {
+            return;
+          }
           restore();
           setActiveId(id);
         },
@@ -539,7 +545,7 @@ export function QuizEditor(props: QuizEditorProps) {
       </div>
 
       <fieldset
-        disabled={isSubmitting}
+        disabled={isSubmitting || restoring}
         className="mt-6 grid min-w-0 gap-x-10 gap-y-6 pb-8 sm:pb-16 lg:grid-cols-[15rem_minmax(0,1fr)]"
       >
         <legend className="sr-only">Treść quizu</legend>
@@ -622,7 +628,11 @@ export function QuizEditor(props: QuizEditorProps) {
         </aside>
 
         <div className="min-w-0 space-y-3 lg:col-start-2">
-          {matches.length === 0 ? (
+          {matches.length === 0 && query === "" ? (
+            <p className="text-muted-foreground py-8 text-center text-sm">
+              Ten quiz nie ma jeszcze pytań.
+            </p>
+          ) : matches.length === 0 ? (
             <div className="text-muted-foreground py-8 text-center text-sm">
               <p>Brak pasujących pytań.</p>
               <Button
@@ -718,6 +728,7 @@ export function QuizEditor(props: QuizEditorProps) {
           onOpenChange={setHistoryOpen}
           current={() => form.state.values}
           hasChanges={hasChanges}
+          onRestoringChange={setRestoring}
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);
             keysRef.current.clear();
@@ -789,6 +800,9 @@ function BulkActions({
         action: {
           label: "Cofnij",
           onClick: () => {
+            if (!canMutate(form)) {
+              return;
+            }
             form.setFieldValue("questions", (questions) =>
               undoChoiceChanges(questions, changes),
             );

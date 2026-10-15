@@ -364,6 +364,50 @@ describe("Quiz editor", () => {
     ).toHaveAttribute("aria-invalid", "false");
   });
 
+  it("opens a quiz without questions and lets one be added", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={{ ...quizFixture(1), questions: [] }}
+        onSave={saveMock()}
+      />,
+    );
+    expect(
+      screen.getByText("Ten quiz nie ma jeszcze pytań."),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getAllByRole("button", { name: "Dodaj pytanie" })[0],
+    );
+    expect(
+      await screen.findByRole("textbox", { name: "Treść pytania 1" }),
+    ).toBeInTheDocument();
+  });
+
+  it("refuses toast undo while a save is pending", async () => {
+    const user = userEvent.setup();
+    const saveResult = Promise.withResolvers<QuizFormData | null>();
+    const onSave = vi.fn<SaveQuiz>().mockReturnValue(saveResult.promise);
+    render(
+      <QuizEditor mode="edit" initialQuiz={quizFixture(2)} onSave={onSave} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Usuń pytanie 1" }));
+    const [, options] = vi.mocked(toast).mock.calls[0];
+    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      (options?.action as ToastAction).onClick();
+    });
+    expect(listRows()).toHaveLength(1);
+    expect(toast.info).toHaveBeenCalledWith("Poczekaj na zakończenie zapisu.");
+    await act(async () => {
+      saveResult.resolve(onSave.mock.calls[0][0]);
+      await saveResult.promise;
+    });
+  });
+
   it("focuses the title when it is missing", async () => {
     const user = userEvent.setup();
     render(
@@ -1118,7 +1162,10 @@ describe("Quiz editor", () => {
           order: answer.order,
           text: answer.text,
           is_correct: answer.is_correct,
-          image: null,
+          image:
+            answer.id === removed.answers[0].id
+              ? "https://example.com/a.png"
+              : null,
         })),
       })),
     });
@@ -1178,6 +1225,11 @@ describe("Quiz editor", () => {
       await within(dialog).findByText("Usunięte pytanie"),
     ).toBeInTheDocument();
     expect(within(dialog).getByText("Później usunięte")).toBeInTheDocument();
+    expect(
+      within(dialog)
+        .getAllByRole("presentation")
+        .some((img) => img.getAttribute("src") === "https://example.com/a.png"),
+    ).toBe(true);
 
     await user.click(
       within(dialog).getByRole("button", { name: "Przywróć tę wersję" }),
