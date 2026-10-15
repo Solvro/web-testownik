@@ -72,10 +72,8 @@ export function KeyboardShortcuts({
                   key={description}
                   className="flex items-center justify-between gap-4 py-1.5"
                 >
-                  <dd className="text-muted-foreground order-first">
-                    {description}
-                  </dd>
-                  <dt className="flex shrink-0 items-center gap-1.5">
+                  <dt className="text-muted-foreground">{description}</dt>
+                  <dd className="flex shrink-0 items-center gap-1.5">
                     {combos.map((keys, index) => (
                       <Fragment key={keys.join("+")}>
                         {index > 0 ? (
@@ -90,7 +88,7 @@ export function KeyboardShortcuts({
                         </KbdGroup>
                       </Fragment>
                     ))}
-                  </dt>
+                  </dd>
                 </div>
               ))}
             </dl>

@@ -320,7 +320,7 @@ export function VersionHistoryDialog({
                     </p>
                   </div>
                   {shownVersion.version === latest ? (
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-sm max-sm:basis-full">
                       Obecna wersja quizu
                     </span>
                   ) : (
@@ -435,7 +435,7 @@ function VersionContent({
                           "text-xs font-medium",
                           change === "removed"
                             ? "text-amber-700 dark:text-amber-400"
-                            : "text-primary",
+                            : "text-primary-text",
                         )}
                       >
                         {change === "removed"

@@ -193,6 +193,11 @@ export function MarkdownField({
 
   useEffect(() => {
     const textarea = textareaRef.current;
+    // The first field, the question text, is the target until one is focused,
+    // so a toolbar reached with Tab before any field still works.
+    if (activeTarget?.current === null) {
+      activeTarget.current = textarea;
+    }
     return () => {
       if (activeTarget?.current === textarea) {
         activeTarget.current = null;

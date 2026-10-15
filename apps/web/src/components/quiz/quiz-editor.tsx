@@ -717,7 +717,7 @@ export function QuizEditor(props: QuizEditorProps) {
           <button
             type="button"
             onClick={addQuestion}
-            className="border-border text-primary hover:border-primary/50 hover:bg-primary/5 focus-visible:ring-primary flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 font-medium transition-colors outline-none focus-visible:ring-2"
+            className="border-border text-primary-text hover:border-primary/50 hover:bg-primary/5 focus-visible:ring-primary flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed py-4 font-medium transition-colors outline-none focus-visible:ring-2"
           >
             <PlusIcon className="size-4" />
             Dodaj pytanie

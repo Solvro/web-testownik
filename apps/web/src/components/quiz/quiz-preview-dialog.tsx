@@ -47,7 +47,7 @@ export function QuizPreviewDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-lg">
+        <DialogContent showCloseButton={false} className="w-lg">
           <DialogHeader>
             <DialogTitle>
               {type === "created"

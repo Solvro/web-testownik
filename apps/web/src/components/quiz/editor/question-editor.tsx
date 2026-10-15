@@ -431,7 +431,7 @@ export function QuestionEditor({
                             <ImageButton
                               {...imageProps}
                               target="pytania"
-                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-60 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
+                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
                             />
                           )}
                         </div>
@@ -506,7 +506,7 @@ export function QuestionEditor({
               id={`add-answer-${questionId}`}
               type="button"
               variant="ghost"
-              className="text-primary hover:text-primary -ml-1 px-2"
+              className="text-primary-text hover:text-primary-text -ml-1 px-2"
               disabled={disabled}
               onClick={() => {
                 addAnswer();
