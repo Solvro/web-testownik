@@ -67,17 +67,33 @@ export function useQuizEditorForm(options: {
 
 export type QuizEditorForm = ReturnType<typeof useQuizEditorForm>;
 
+// Forms with a version restore in flight; its response replaces the quiz.
+const restoring = new WeakSet<QuizEditorForm>();
+
+export function setRestoring(form: QuizEditorForm, value: boolean) {
+  if (value) {
+    restoring.add(form);
+  } else {
+    restoring.delete(form);
+  }
+}
+
 /**
  * Whether an action outside the form, such as a toast's Cofnij, may change
- * the quiz now. While a save is running its response would overwrite the
- * change, so the author is asked to wait instead.
+ * the quiz now. While a save or a restore is running its response would
+ * overwrite the change, so the author is asked to wait instead. Reads the
+ * live state, so callbacks created earlier see the current lock.
  */
 export function canMutate(form: QuizEditorForm) {
-  if (!form.state.isSubmitting) {
-    return true;
+  if (restoring.has(form)) {
+    toast.info("Poczekaj na zakończenie przywracania.");
+    return false;
   }
-  toast.info("Poczekaj na zakończenie zapisu.");
-  return false;
+  if (form.state.isSubmitting) {
+    toast.info("Poczekaj na zakończenie zapisu.");
+    return false;
+  }
+  return true;
 }
 
 /**

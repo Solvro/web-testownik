@@ -31,6 +31,7 @@ import {
   createQuestion,
   quizToFormData,
   removeQuestion,
+  setRestoring as setFormRestoring,
   undoChoiceChanges,
   useQuizEditorForm,
   withChoiceType,
@@ -731,7 +732,12 @@ export function QuizEditor(props: QuizEditorProps) {
           onOpenChange={setHistoryOpen}
           current={() => form.state.values}
           hasChanges={hasChanges}
-          onRestoringChange={setRestoring}
+          onRestoringChange={(value) => {
+            // Synchronous, so toast actions created earlier see it at once.
+            setFormRestoring(form, value);
+            setRestoring(value);
+          }}
+          canStart={() => canMutate(form)}
           hasUnsavedChanges={() => !form.state.isDefaultValue}
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);

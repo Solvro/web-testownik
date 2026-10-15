@@ -65,6 +65,7 @@ export function VersionHistoryDialog({
   hasChanges,
   onRestoringChange,
   hasUnsavedChanges,
+  canStart,
   onRestored,
 }: {
   quizId: string;
@@ -78,6 +79,8 @@ export function VersionHistoryDialog({
   onRestoringChange: (restoring: boolean) => void;
   /** Whether the editor has edits since the last save or restore. */
   hasUnsavedChanges: () => boolean;
+  /** Whether no save or restore is running; shows why otherwise. */
+  canStart: () => boolean;
   /** Loads the restored quiz into the editor. */
   onRestored: (quiz: Quiz) => void;
 }) {
@@ -104,6 +107,9 @@ export function VersionHistoryDialog({
 
   /** Restores `version`; `undoTo` offers restoring that version back. */
   async function restore(version: number, message: string, undoTo?: number) {
+    if (!canStart()) {
+      return;
+    }
     setRestoring(true);
     onRestoringChange(true);
     try {
