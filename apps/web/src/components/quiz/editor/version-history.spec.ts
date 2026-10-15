@@ -82,7 +82,7 @@ describe("Version history labels", () => {
     expect(authorLabel(base, "u2")).toBe("Ada Autorka");
     expect(authorLabel({ ...base, author: null }, "u1")).toBe("Nieznany autor");
     expect(authorLabel({ ...base, author: null, source: "baseline" })).toBe(
-      "Autor nieznany",
+      "Nieznany autor",
     );
   });
 });

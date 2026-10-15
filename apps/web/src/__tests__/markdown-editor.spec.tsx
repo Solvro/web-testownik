@@ -127,12 +127,15 @@ it("formats the field focused last and is disabled until a field has focus", asy
     name: "Drugie",
   });
   const code = screen.getByRole("button", { name: "Kod" });
-  expect(code).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Cofnij" })).toBeDisabled();
+  expect(code).toHaveAttribute("aria-disabled", "true");
+  expect(screen.getByRole("button", { name: "Cofnij" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
 
   await user.click(first);
   first.setSelectionRange(0, 8);
-  expect(code).toBeEnabled();
+  expect(code).toHaveAttribute("aria-disabled", "false");
   await user.click(code);
   expect(first).toHaveValue("`pierwsze`");
 

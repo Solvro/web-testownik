@@ -26,7 +26,6 @@ export function CreateQuizPageClient({
       const payload = prepareQuizForSubmission(data);
       const result = await getQuizService().createQuiz(payload);
       setQuiz(result);
-      toast.success("Quiz został utworzony.");
       return quizToFormData(result);
     } catch {
       toast.error("Wystąpił błąd podczas tworzenia quizu.");

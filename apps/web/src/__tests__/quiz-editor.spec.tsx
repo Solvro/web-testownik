@@ -154,7 +154,7 @@ describe("Quiz editor", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^Pytanie 1: Zmienione pytanie/ }),
-    ).toHaveAccessibleName(/2 odp\. · 1 popr\.$/);
+    ).toHaveAccessibleName(/2 odpowiedzi, 1 poprawna$/);
     expect(listRows()[1]).toHaveAttribute("aria-current", "true");
 
     await user.click(listRows()[0]);
@@ -697,7 +697,7 @@ describe("Quiz editor", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^Pytanie 1:/ }),
-    ).toHaveAccessibleName(/Brak poprawnej$/);
+    ).toHaveAccessibleName(/Brak poprawnej odpowiedzi$/);
   });
 
   it("collapses the open question and opens another from the outline", async () => {
@@ -787,7 +787,9 @@ describe("Quiz editor", () => {
       name: "Formatowanie tekstu",
     });
     // Enabled only while a field has focus.
-    expect(within(toolbar).getByRole("button", { name: "Kod" })).toBeDisabled();
+    expect(
+      within(toolbar).getByRole("button", { name: "Kod" }),
+    ).toHaveAttribute("aria-disabled", "true");
     await user.click(screen.getByRole("textbox", { name: "Treść pytania 1" }));
     const buttons = within(toolbar).getAllByRole("button");
     expect(buttons.filter((button) => button.tabIndex === 0)).toHaveLength(1);
@@ -1215,7 +1217,7 @@ describe("Quiz editor", () => {
     const list = within(dialog).getByRole("navigation", { name: "Wersje" });
     expect(await within(list).findByText("Aktualna")).toBeInTheDocument();
     expect(within(list).getAllByText("Ada Autorka")).toHaveLength(2);
-    expect(within(list).getByText("Edytor")).toBeInTheDocument();
+    expect(within(list).getByText("Zapis w edytorze")).toBeInTheDocument();
     expect(within(dialog).getByText("Obecna wersja quizu")).toBeInTheDocument();
 
     await user.click(
@@ -1227,7 +1229,7 @@ describe("Quiz editor", () => {
     expect(within(dialog).getByText("Później usunięte")).toBeInTheDocument();
     expect(
       within(dialog)
-        .getAllByRole("presentation")
+        .getAllByRole("img")
         .some((img) => img.getAttribute("src") === "https://example.com/a.png"),
     ).toBe(true);
 

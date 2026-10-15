@@ -119,7 +119,7 @@ export function AnswerEditor({
                           multiple ? "rounded-[5px]" : "rounded-full",
                           answer.is_correct
                             ? "border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500"
-                            : "border-muted-foreground/45 group-hover/answer:border-muted-foreground",
+                            : "border-muted-foreground/80 group-hover/answer:border-muted-foreground",
                         )}
                       >
                         {answer.is_correct ? (

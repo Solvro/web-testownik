@@ -115,6 +115,7 @@ export function QuestionEditor({
     if (unmarked.length > 0) {
       toast(`Odznaczono poprawne odpowiedzi: ${String(unmarked.length)}`, {
         description: "Jednokrotny wybór pozwala na jedną poprawną odpowiedź.",
+        duration: 10_000,
         action: {
           label: "Cofnij",
           onClick: () => {
@@ -190,6 +191,7 @@ export function QuestionEditor({
       return;
     }
     toast(`Usunięto odpowiedź ${String(position + 1)}`, {
+      duration: 10_000,
       action: {
         label: "Cofnij",
         onClick: () => {
@@ -243,6 +245,7 @@ export function QuestionEditor({
       focusField(`answer-text-${last.id}`);
     }
     toast.success(`Wklejono odpowiedzi: ${String(lines.length)}`, {
+      duration: 10_000,
       action: {
         label: "Wklej jako jedną",
         onClick: () => {
@@ -294,7 +297,7 @@ export function QuestionEditor({
           }
         }}
       >
-        <header className="bg-card/95 supports-backdrop-filter:bg-card/80 border-border sticky top-14 z-20 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-xl border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:px-4">
+        <header className="bg-card/95 supports-backdrop-filter:bg-card/80 border-border z-20 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-xl border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:sticky sm:top-14 sm:px-4">
           <h2
             aria-label={`Pytanie ${number}`}
             className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
@@ -428,7 +431,7 @@ export function QuestionEditor({
                             <ImageButton
                               {...imageProps}
                               target="pytania"
-                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
+                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-60 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
                             />
                           )}
                         </div>

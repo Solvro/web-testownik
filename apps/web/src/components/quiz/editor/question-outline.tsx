@@ -31,7 +31,7 @@ export function QuestionSearch({
         type="search"
         value={value}
         aria-label="Szukaj w pytaniach i odpowiedziach"
-        placeholder="Szukaj…"
+        placeholder="Szukaj w pytaniach…"
         className="bg-card dark:bg-card h-10 pr-9 pl-9 text-base sm:text-sm [&::-webkit-search-cancel-button]:hidden"
         onChange={(event) => {
           onChange(event.target.value);
@@ -190,6 +190,7 @@ function OutlineItem({
       <button
         type="button"
         data-question-link={summary.id}
+        aria-label={`Przejdź do pytania ${String(index + 1)}: ${summary.text === "" ? emptyLabel(summary) : summary.text}`}
         aria-current={active ? "true" : undefined}
         tabIndex={tabbable ? 0 : -1}
         onClick={(event) => {

@@ -267,6 +267,7 @@ function ImageDialogBody({
                       }}
                       disabled={disabled}
                       title="Usuń zdjęcie"
+                      aria-label="Usuń zdjęcie"
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -348,6 +349,7 @@ function ImageDialogBody({
                     onClick={handleRemove}
                     disabled={disabled}
                     title="Usuń zdjęcie"
+                    aria-label="Usuń zdjęcie"
                   >
                     <Trash2 className="size-4" />
                   </Button>

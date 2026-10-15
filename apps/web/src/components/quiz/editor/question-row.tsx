@@ -10,6 +10,7 @@ import {
   visibleIssue,
 } from "./question-summary";
 import type { QuizEditorForm } from "./quiz-editor-form";
+import { plural } from "./version-history";
 
 /** A collapsed question: its preview and status. Clicking opens it. */
 export function QuestionRow({
@@ -38,8 +39,8 @@ export function QuestionRow({
     issue === "missing"
       ? "Wymaga uzupełnienia"
       : issue === "no-correct"
-        ? "Brak poprawnej"
-        : `${String(summary.answers)} odp. · ${String(summary.correct)} popr.`;
+        ? "Brak poprawnej odpowiedzi"
+        : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
 
   return (
     <button
@@ -47,7 +48,7 @@ export function QuestionRow({
       data-question-row={summary.id}
       tabIndex={tabbable ? 0 : -1}
       aria-expanded={false}
-      aria-label={`Pytanie ${number}: ${text}. ${status}`}
+      aria-label={`Pytanie ${number}: ${text}, ${status}`}
       onClick={(event) => {
         // `detail` is 0 when Enter or Space pressed the button.
         onOpen(summary.id, event.detail === 0);

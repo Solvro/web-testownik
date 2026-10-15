@@ -64,6 +64,7 @@ export function VersionHistoryDialog({
   current,
   hasChanges,
   onRestoringChange,
+  hasUnsavedChanges,
   onRestored,
 }: {
   quizId: string;
@@ -75,6 +76,8 @@ export function VersionHistoryDialog({
   hasChanges: boolean;
   /** The editor disables itself while a restore is in flight. */
   onRestoringChange: (restoring: boolean) => void;
+  /** Whether the editor has edits since the last save or restore. */
+  hasUnsavedChanges: () => boolean;
   /** Loads the restored quiz into the editor. */
   onRestored: (quiz: Quiz) => void;
 }) {
@@ -113,12 +116,20 @@ export function VersionHistoryDialog({
       onOpenChange(false);
       setSelected(null);
       toast.success(message, {
+        duration: 10_000,
         action:
           undoTo === undefined
             ? undefined
             : {
                 label: "Cofnij",
                 onClick: () => {
+                  // Undoing would also throw away edits made since.
+                  if (hasUnsavedChanges()) {
+                    toast.info(
+                      "Masz już nowe zmiany. Zapisz je albo przywróć wersję z historii.",
+                    );
+                    return;
+                  }
                   void restore(undoTo, "Cofnięto przywrócenie wersji");
                 },
               },
@@ -149,6 +160,7 @@ export function VersionHistoryDialog({
         onOpenChange(next);
         if (!next) {
           setSelected(null);
+          setFocusVersion(null);
         }
       }}
     >
@@ -213,6 +225,15 @@ export function VersionHistoryDialog({
                       }
                       onClick={() => {
                         setSelected(version.version);
+                        // On phones the list gives way to the preview.
+                        requestAnimationFrame(() => {
+                          const back = document.querySelector<HTMLElement>(
+                            "[data-history-back]",
+                          );
+                          if (back !== null && back.offsetParent !== null) {
+                            back.focus();
+                          }
+                        });
                       }}
                       className={cn(
                         "focus-visible:outline-primary w-full rounded-lg px-3 py-2.5 text-left transition-colors outline-none focus-visible:outline-2",
@@ -226,7 +247,7 @@ export function VersionHistoryDialog({
                           {formatWhen(version.updated_at)}
                         </span>
                         {version.version === latest ? (
-                          <span className="text-primary text-xs font-medium">
+                          <span className="text-primary-text text-xs font-medium">
                             Aktualna
                           </span>
                         ) : null}
@@ -265,8 +286,17 @@ export function VersionHistoryDialog({
                     size="icon-sm"
                     className="md:hidden"
                     aria-label="Wróć do listy wersji"
+                    data-history-back
                     onClick={() => {
+                      const shownNow = shown;
                       setSelected(null);
+                      requestAnimationFrame(() => {
+                        document
+                          .querySelector<HTMLElement>(
+                            `[data-version="${String(shownNow)}"]`,
+                          )
+                          ?.focus();
+                      });
                     }}
                   >
                     <ArrowLeftIcon />
@@ -365,7 +395,9 @@ function VersionContent({
       <header>
         <h3 className="text-xl font-semibold">{content.title}</h3>
         {content.description === "" ? null : (
-          <p className="text-muted-foreground mt-1">{content.description}</p>
+          <MarkdownRenderer className="text-muted-foreground prose-p:my-0 mt-1 text-base!">
+            {content.description}
+          </MarkdownRenderer>
         )}
       </header>
       {content.questions.length === 0 ? (
@@ -412,7 +444,7 @@ function VersionContent({
                       // eslint-disable-next-line @next/next/no-img-element -- Images come from many hosts and have unknown sizes.
                       <img
                         src={question.image}
-                        alt=""
+                        alt={`Zdjęcie do pytania ${String(index + 1)}`}
                         className="max-h-40 rounded border object-contain"
                       />
                     )}
@@ -444,7 +476,7 @@ function VersionContent({
                               // eslint-disable-next-line @next/next/no-img-element -- Images come from many hosts and have unknown sizes.
                               <img
                                 src={answer.image}
-                                alt=""
+                                alt="Zdjęcie do odpowiedzi"
                                 className="max-h-24 rounded border object-contain"
                               />
                             )}
@@ -453,10 +485,14 @@ function VersionContent({
                       ))}
                     </ul>
                     {question.explanation === "" ? null : (
-                      <p className="text-muted-foreground text-sm">
-                        <span className="font-medium">Wyjaśnienie:</span>{" "}
-                        {question.explanation}
-                      </p>
+                      <div className="text-muted-foreground flex gap-1.5 text-sm">
+                        <span className="shrink-0 font-medium">
+                          Wyjaśnienie:
+                        </span>
+                        <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm! text-inherit!">
+                          {question.explanation}
+                        </MarkdownRenderer>
+                      </div>
                     )}
                   </div>
                 </div>

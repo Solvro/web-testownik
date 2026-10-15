@@ -70,7 +70,7 @@ export function formatWhen(iso: string, now = new Date()) {
 export function sourceLabel(version: QuizVersion) {
   switch (version.source) {
     case "baseline": {
-      return "Stan sprzed historii zmian";
+      return "Stan początkowy";
     }
     case "create": {
       return "Utworzenie quizu";
@@ -79,7 +79,7 @@ export function sourceLabel(version: QuizVersion) {
       return "Kopia innego quizu";
     }
     case "editor": {
-      return "Edytor";
+      return "Zapis w edytorze";
     }
     case "question": {
       return "Edycja pojedynczego pytania";
@@ -125,7 +125,7 @@ export function describeSummary(
 /** Who saved a version: "Ty" for the current user, else their name. */
 export function authorLabel(version: QuizVersion, currentUserId?: string) {
   if (version.author === null) {
-    return version.source === "baseline" ? "Autor nieznany" : "Nieznany autor";
+    return "Nieznany autor";
   }
   if (version.author.id === currentUserId) {
     return "Ty";

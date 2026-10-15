@@ -54,7 +54,6 @@ function EditQuizPageContent({
     try {
       const updatedQuiz = await getQuizService().updateQuiz(quizId, payload);
       queryClient.setQueryData(quizQueryKey(quizId), updatedQuiz);
-      toast.success("Quiz został zaktualizowany.");
       return quizToFormData(updatedQuiz);
     } catch {
       toast.error("Wystąpił błąd podczas aktualizacji quizu.");

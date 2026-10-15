@@ -51,7 +51,7 @@ export function QuizPreviewDialog({
           <DialogHeader>
             <DialogTitle>
               {type === "created"
-                ? `Quiz "${title}" został utworzony`
+                ? `Quiz „${title}” został utworzony`
                 : `Quiz "${title}" został zaimportowany`}
             </DialogTitle>
             <DialogDescription className={description ? "" : "sr-only"}>

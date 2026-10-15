@@ -126,7 +126,7 @@ export function ImagePreview({
             <div className="flex flex-col items-center gap-2 p-4 text-center">
               <Loader2 className="text-primary size-5 animate-spin" />
               <span className="text-muted-foreground text-xs font-medium">
-                Przesyłanie...
+                Przesyłanie…
               </span>
             </div>
           </div>
@@ -173,7 +173,7 @@ export function ImagePreview({
             >
               <ImageIcon className="size-4" />
               <span className="text-xs font-semibold">
-                {isDragOver ? "Upuść aby zmienić" : "Zmień"}
+                {isDragOver ? "Upuść, aby zmienić" : "Zmień"}
               </span>
             </div>
           </div>

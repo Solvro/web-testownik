@@ -40,6 +40,7 @@ import type {
   QuizEditorForm,
 } from "@/components/quiz/editor/quiz-editor-form";
 import { UnsavedChangesGuard } from "@/components/quiz/editor/unsaved-changes-guard";
+import { plural } from "@/components/quiz/editor/version-history";
 import { VersionHistoryDialog } from "@/components/quiz/editor/version-history-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -393,6 +394,7 @@ export function QuizEditor(props: QuizEditorProps) {
       select(neighbour.id, true);
     }
     toast(`Usunięto pytanie ${String(index + 1)}`, {
+      duration: 10_000,
       action: {
         label: "Cofnij",
         onClick: () => {
@@ -400,6 +402,7 @@ export function QuizEditor(props: QuizEditorProps) {
             return;
           }
           restore();
+          select(id, true);
           setActiveId(id);
         },
       },
@@ -493,7 +496,7 @@ export function QuizEditor(props: QuizEditorProps) {
                   Zapisano
                 </>
               ) : (
-                `Pytania: ${String(count)}`
+                `${String(count)} ${plural(count, "pytanie", "pytania", "pytań")}`
               )}
             </p>
           </div>
@@ -729,6 +732,7 @@ export function QuizEditor(props: QuizEditorProps) {
           current={() => form.state.values}
           hasChanges={hasChanges}
           onRestoringChange={setRestoring}
+          hasUnsavedChanges={() => !form.state.isDefaultValue}
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);
             keysRef.current.clear();
@@ -797,6 +801,7 @@ function BulkActions({
           unmarked > 0
             ? `Odznaczono poprawne odpowiedzi: ${String(unmarked)}.`
             : undefined,
+        duration: 10_000,
         action: {
           label: "Cofnij",
           onClick: () => {

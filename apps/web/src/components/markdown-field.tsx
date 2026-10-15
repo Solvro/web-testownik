@@ -337,7 +337,8 @@ function toolbarItems(toolbar: HTMLElement | null) {
 /**
  * Formatting buttons for the field inside the provider that was focused last.
  * They work while that field, or the toolbar itself, has focus, and show
- * which inline formats surround the caret. `children` sit after the inline
+ * which inline formats surround the caret. Otherwise they are marked
+ * `aria-disabled` but keep their tab stop, so the keyboard can reach them. `children` sit after the inline
  * buttons, before the menu.
  */
 export function MarkdownToolbar({
@@ -425,8 +426,10 @@ export function MarkdownToolbar({
     document.execCommand(command);
   }
 
+  // Inactive buttons stay in the tab order, so Shift+Tab from a field reaches
+  // the toolbar; they only look and act disabled.
   const buttonClassName =
-    "text-muted-foreground hover:text-foreground pointer-coarse:size-10";
+    "text-muted-foreground hover:text-foreground pointer-coarse:size-10 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
   return (
     <div
@@ -463,10 +466,13 @@ export function MarkdownToolbar({
           className={buttonClassName}
           aria-label={title}
           title={title}
-          disabled={inactive}
+          disabled={disabled}
+          aria-disabled={inactive}
           onMouseDown={keepFocus}
           onClick={() => {
-            history(command);
+            if (!inactive) {
+              history(command);
+            }
           }}
         >
           <Icon />
@@ -488,10 +494,13 @@ export function MarkdownToolbar({
             aria-label={title}
             aria-pressed={pressed}
             title={title}
-            disabled={inactive}
+            disabled={disabled}
+            aria-disabled={inactive}
             onMouseDown={keepFocus}
             onClick={() => {
-              apply(format);
+              if (!inactive) {
+                apply(format);
+              }
             }}
           >
             <Icon />
@@ -509,7 +518,7 @@ export function MarkdownToolbar({
               className={buttonClassName}
               aria-label="Więcej formatowania"
               title="Więcej formatowania"
-              disabled={inactive}
+              disabled={disabled || inactive}
             >
               <EllipsisIcon />
             </Button>
