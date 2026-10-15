@@ -52,10 +52,19 @@ export function QuizPreviewDialog({
             <DialogTitle>
               {type === "created"
                 ? `Quiz „${title}” został utworzony`
-                : `Quiz "${title}" został zaimportowany`}
+                : `Quiz „${title}” został zaimportowany`}
             </DialogTitle>
-            <DialogDescription className={description ? "" : "sr-only"}>
-              {description || "Podgląd quizu"}
+            <DialogDescription
+              className={description ? "" : "sr-only"}
+              render={<div />}
+            >
+              {description ? (
+                <MarkdownRenderer className="prose-p:my-0 text-sm! text-inherit!">
+                  {description}
+                </MarkdownRenderer>
+              ) : (
+                "Podgląd quizu"
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
