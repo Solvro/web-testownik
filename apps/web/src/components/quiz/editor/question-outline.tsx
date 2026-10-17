@@ -203,7 +203,7 @@ function OutlineItem({
           onSelect(summary.id, event.detail === 0);
         }}
         className={cn(
-          "focus-visible:outline-primary -ml-px flex w-full items-center gap-2 rounded-r-md border-l-2 py-1.5 pr-1 pl-4 text-left text-sm leading-6 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+          "focus-visible:outline-primary -ml-px flex w-full items-center gap-2 rounded-r-md border-l-2 py-1.5 pr-1 pl-4 text-left text-sm leading-6 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid",
           active
             ? "border-primary text-foreground font-semibold"
             : "text-muted-foreground hover:text-foreground border-transparent",

@@ -54,7 +54,7 @@ export function QuestionRow({
         onOpen(summary.id, event.detail === 0);
       }}
       className={cn(
-        "bg-card focus-visible:outline-primary flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 sm:gap-4 sm:px-5",
+        "bg-card focus-visible:outline-primary flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid sm:gap-4 sm:px-5",
         issue === "missing"
           ? "border-destructive/50 hover:border-destructive"
           : issue === "no-correct"
