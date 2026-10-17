@@ -55,6 +55,8 @@ export interface ImageDialogProps {
   onImageChange: (state: ImageState) => void;
   onUpload: (file: File) => Promise<void>;
   disabled?: boolean;
+  /** What the image belongs to, in the genitive, e.g. "pytania". */
+  target?: string;
 }
 
 export function ImageDialog({
@@ -64,7 +66,7 @@ export function ImageDialog({
 }: ImageDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <ImageDialogBody
           {...props}
           closeDialog={() => {
@@ -92,6 +94,7 @@ function ImageDialogBody({
   onImageChange,
   onUpload,
   disabled = false,
+  target,
   closeDialog,
 }: ImageDialogBodyProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -111,14 +114,14 @@ function ImageDialogBody({
     return "";
   });
 
-  const safeUrl = isSafeImageUrl(urlInput) ? urlInput : null;
+  const safeUrl = isSafeImageUrl(urlInput.trim()) ? urlInput.trim() : null;
 
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    if (hasImage && !hasUpload) {
-      return "url";
-    }
-    return "upload";
-  });
+  // External URLs are only kept for images which already use one, e.g. from
+  // imports; new images are uploaded.
+  const allowUrl = hasImage && !hasUpload;
+  const [activeTab, setActiveTab] = useState<string>(() =>
+    allowUrl ? "url" : "upload",
+  );
 
   const targetHeight = 330;
   const targetWidth =
@@ -161,7 +164,7 @@ function ImageDialogBody({
 
   function handleUrlSubmit() {
     const trimmedUrl = urlInput.trim();
-    if (trimmedUrl !== "") {
+    if (!disabled && isSafeImageUrl(trimmedUrl)) {
       onImageChange({
         image: trimmedUrl,
         imageUrl: trimmedUrl,
@@ -181,7 +184,9 @@ function ImageDialogBody({
     <>
       <DialogHeader>
         <DialogTitle>
-          {hasImage ? "Zarządzaj zdjęciem" : "Dodaj zdjęcie"}
+          {hasImage
+            ? `Zarządzaj zdjęciem${target === undefined ? "" : ` ${target}`}`
+            : `Dodaj zdjęcie${target === undefined ? "" : ` do ${target}`}`}
         </DialogTitle>
       </DialogHeader>
 
@@ -195,16 +200,17 @@ function ImageDialogBody({
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mx-auto grid w-full grid-cols-2 py-0.75">
-          <TabsTrigger value="upload">
-            {hasImage ? "Zmień zdjęcie" : "Prześlij plik"}
-          </TabsTrigger>
-          <TabsTrigger value="url">Podaj URL</TabsTrigger>
-        </TabsList>
+        {allowUrl ? (
+          <TabsList className="mx-auto grid w-full grid-cols-2 py-0.75">
+            <TabsTrigger value="upload">Zmień zdjęcie</TabsTrigger>
+            <TabsTrigger value="url">Podaj URL</TabsTrigger>
+          </TabsList>
+        ) : null}
 
         <TabsContent value="upload" className="space-y-4">
           <div className="h-82.5">
             <ImageDropZone
+              disabled={disabled}
               onFileDrop={(file) => void handleUpload(file)}
               className={cn(
                 "h-full w-full",
@@ -261,6 +267,7 @@ function ImageDialogBody({
                       }}
                       disabled={disabled}
                       title="Usuń zdjęcie"
+                      aria-label="Usuń zdjęcie"
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -295,97 +302,102 @@ function ImageDialogBody({
           </div>
         </TabsContent>
 
-        <TabsContent value="url" className="space-y-4">
-          <div className="flex h-82.5 flex-col gap-4">
-            <div className="bg-muted/10 relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border">
-              {hasImage && !hasUpload ? (
-                <>
-                  {canUseNextImage ? (
-                    <Image
-                      src={image}
-                      alt="Podgląd"
-                      width={targetWidth}
-                      height={targetHeight}
-                      className="h-full w-full object-cover"
-                      draggable={false}
-                      unoptimized={false}
-                    />
-                  ) : urlInput === "" ? (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <p className="text-muted-foreground text-sm">
-                        Podaj URL, aby zobaczyć podgląd
-                      </p>
-                    </div>
-                  ) : hasImageError || safeUrl === null ? (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <p className="text-muted-foreground text-sm">
-                        Podaj poprawny URL
-                      </p>
-                    </div>
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={safeUrl}
-                      alt="Podgląd"
-                      className="h-full w-full object-cover"
-                      draggable={false}
-                      onError={() => {
-                        setHasImageError(true);
-                      }}
-                    />
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon-sm"
-                      className="rounded-full shadow-sm"
-                      onClick={handleRemove}
-                      disabled={disabled}
-                      title="Usuń zdjęcie"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+        {allowUrl ? (
+          <TabsContent value="url" className="space-y-4">
+            <div className="flex h-82.5 flex-col gap-4">
+              <div className="bg-muted/10 relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border">
+                {canUseNextImage ? (
+                  <Image
+                    src={image}
+                    alt="Podgląd"
+                    width={targetWidth}
+                    height={targetHeight}
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                    unoptimized={false}
+                  />
+                ) : urlInput === "" ? (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <p className="text-muted-foreground text-sm">
+                      Podaj URL, aby zobaczyć podgląd
+                    </p>
                   </div>
-                </>
-              ) : (
-                <div className="text-muted-foreground flex h-full flex-col items-center justify-center">
-                  <ImageIcon className="mb-2 size-8 opacity-20" />
-                  <span className="text-sm">Podgląd zdjęcia</span>
+                ) : hasImageError || safeUrl === null ? (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <p className="text-muted-foreground text-sm">
+                      Podaj poprawny URL
+                    </p>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={safeUrl}
+                    alt="Podgląd"
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                    onError={() => {
+                      setHasImageError(true);
+                    }}
+                  />
+                )}
+                <div className="absolute top-2 right-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon-sm"
+                    className="rounded-full shadow-sm"
+                    onClick={handleRemove}
+                    disabled={disabled}
+                    title="Usuń zdjęcie"
+                    aria-label="Usuń zdjęcie"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            <div className="flex-none space-y-3">
-              <Label htmlFor="image-url" className="sr-only">
-                URL zdjęcia
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="image-url"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={urlInput}
-                  onChange={(event) => {
-                    setUrlInput(event.target.value);
-                    setHasImageError(false);
-                  }}
-                  disabled={disabled}
-                />
-                <Button
-                  type="button"
-                  onClick={handleUrlSubmit}
-                  disabled={disabled || urlInput.trim() === ""}
-                >
-                  {hasImage ? "Zmień" : "Dodaj"}
-                </Button>
               </div>
-              <p className="text-muted-foreground text-center text-xs">
-                Podaj bezpośredni link do zdjęcia
-              </p>
+
+              <div className="flex-none space-y-3">
+                <Label htmlFor="image-url" className="sr-only">
+                  URL zdjęcia
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="image-url"
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={urlInput}
+                    onChange={(event) => {
+                      setUrlInput(event.target.value);
+                      setHasImageError(false);
+                    }}
+                    disabled={disabled}
+                    aria-invalid={urlInput.trim() !== "" && safeUrl === null}
+                    aria-describedby="image-url-hint"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleUrlSubmit();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleUrlSubmit}
+                    disabled={disabled || safeUrl === null}
+                  >
+                    Zmień
+                  </Button>
+                </div>
+                <p
+                  id="image-url-hint"
+                  className="text-muted-foreground text-center text-xs"
+                >
+                  Podaj bezpośredni link HTTPS do zdjęcia
+                </p>
+              </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
+        ) : null}
       </Tabs>
     </>
   );

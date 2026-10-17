@@ -5,9 +5,9 @@ import type {
   QuestionFormData,
 } from "@testownik/core/quiz/schema";
 import { CircleHelp, InfoIcon } from "lucide-react";
-import type { KeyboardEvent } from "react";
 import { toast } from "sonner";
 
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { AnswerForm } from "@/components/quiz/editor/answer-form";
 import { ImageDropZone, ImagePreview } from "@/components/quiz/editor/image";
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/hover-card";
 import { KbdShortcut } from "@/components/ui/kbd-shortcut";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -119,10 +118,7 @@ export function QuestionFormContent({
     await onUpload(file);
   }
 
-  async function handleAnswerKeyDown(
-    answerId: string,
-    event: KeyboardEvent<HTMLTextAreaElement>,
-  ) {
+  async function handleAnswerKeyDown(answerId: string, event: KeyboardEvent) {
     if (
       (event.ctrlKey || event.metaKey) &&
       event.shiftKey &&
@@ -200,7 +196,7 @@ export function QuestionFormContent({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-4", className)} data-testid="question-item">
       <ImageDropZone
         onFileDrop={(file) => {
           void onUpload(file);
@@ -208,17 +204,17 @@ export function QuestionFormContent({
         label="Upuść zdjęcie do pytania"
       >
         <div className="space-y-2">
-          <Textarea
+          <MarkdownEditor
             placeholder="Treść pytania..."
             value={question.text}
-            onChange={(event) => {
-              onUpdate({ text: event.target.value });
+            onChange={(text) => {
+              onUpdate({ text });
             }}
             onPaste={(event) => {
               handlePaste(event);
             }}
-            rows={2}
-            className="resize-none"
+            minHeight="72px"
+            className="min-h-8"
           />
           <ImagePreview
             image={question.image}

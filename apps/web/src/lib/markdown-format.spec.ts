@@ -1,0 +1,116 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  activeInlineFormats,
+  formatMarkdownSelection,
+} from "./markdown-format";
+
+describe("Markdown selection formatting", () => {
+  it("formats Unicode text without changing adjacent content", () => {
+    expect(formatMarkdownSelection("Zażółć gęślą jaźń", 7, 12, "bold")).toEqual(
+      { value: "Zażółć **gęślą** jaźń", start: 9, end: 14 },
+    );
+  });
+
+  it("places an empty cursor inside formatting markers", () => {
+    expect(formatMarkdownSelection("abc", 1, 1, "math")).toEqual({
+      value: "a$$bc",
+      start: 2,
+      end: 2,
+    });
+  });
+
+  it("removes formatting whether the selection includes its markers or just its text", () => {
+    expect(formatMarkdownSelection("**bold** tail", 0, 8, "bold")).toEqual({
+      value: "bold tail",
+      start: 0,
+      end: 4,
+    });
+    expect(formatMarkdownSelection("**bold** tail", 2, 6, "bold")).toEqual({
+      value: "bold tail",
+      start: 0,
+      end: 4,
+    });
+  });
+
+  it("changes an existing heading instead of nesting heading markers", () => {
+    expect(
+      formatMarkdownSelection("before\n# Title\nafter", 10, 12, "h3").value,
+    ).toBe("before\n### Title\nafter");
+  });
+
+  it("numbers selected lines and leaves the next line unchanged", () => {
+    const formatted = formatMarkdownSelection(
+      "first\nsecond\nthird",
+      0,
+      13,
+      "numbered",
+    );
+    expect(formatted.value).toBe("1. first\n2. second\nthird");
+    expect(
+      formatMarkdownSelection(
+        formatted.value,
+        formatted.start,
+        formatted.end,
+        "numbered",
+      ).value,
+    ).toBe("first\nsecond\nthird");
+  });
+
+  it("applies and removes quotes on the current line with an empty selection", () => {
+    const quoted = formatMarkdownSelection(
+      "before\nline\nafter",
+      8,
+      8,
+      "quote",
+    );
+    expect(quoted.value).toBe("before\n> line\nafter");
+    expect(
+      formatMarkdownSelection(quoted.value, quoted.start, quoted.end, "quote")
+        .value,
+    ).toBe("before\nline\nafter");
+  });
+
+  it("wraps block math and links with an editable text selection", () => {
+    expect(formatMarkdownSelection("x+y", 0, 3, "mathBlock")).toEqual({
+      value: "\n$$\nx+y\n$$\n",
+      start: 4,
+      end: 7,
+    });
+    expect(formatMarkdownSelection("link", 0, 4, "link")).toEqual({
+      value: "[link](url)",
+      start: 7,
+      end: 10,
+    });
+    expect(formatMarkdownSelection("ab", 1, 1, "link")).toEqual({
+      value: "a[](url)b",
+      start: 2,
+      end: 2,
+    });
+  });
+
+  it("formats an empty first line before an existing newline", () => {
+    expect(formatMarkdownSelection("\nline", 0, 0, "h1").value).toBe(
+      "# \nline",
+    );
+  });
+
+  it("reports the formats around the caret and removes them from inside", () => {
+    const value = "Dziedziną **informatyki** i `kod` oraz $x$ i $$blok$$";
+    expect(activeInlineFormats(value, 14, 14)).toEqual(["bold"]);
+    expect(activeInlineFormats(value, 29, 32)).toEqual(["code"]);
+    expect(activeInlineFormats(value, 40, 40)).toEqual(["math"]);
+    expect(activeInlineFormats(value, 0, 0)).toEqual([]);
+    expect(activeInlineFormats(value, 48, 48)).toEqual([]);
+    expect(activeInlineFormats("_kursywa_ i *też*", 3, 3)).toEqual(["italic"]);
+    expect(activeInlineFormats("snake_case_name", 8, 8)).toEqual(["italic"]);
+
+    const result = formatMarkdownSelection(value, 14, 18, "bold");
+    expect(result.value).toBe(
+      "Dziedziną informatyki i `kod` oraz $x$ i $$blok$$",
+    );
+    expect([result.start, result.end]).toEqual([12, 16]);
+    // Markers on another line do not count.
+    expect(activeInlineFormats("**a\nb**", 4, 4)).toEqual([]);
+  });
+});
