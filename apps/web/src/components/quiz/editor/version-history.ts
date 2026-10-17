@@ -84,8 +84,11 @@ export function sourceLabel(version: QuizVersion) {
     case "question": {
       return "Edycja pojedynczego pytania";
     }
-    case "mcp": {
+    case "ai": {
       return "Asystent AI";
+    }
+    case "mcp": {
+      return "Narzędzia MCP";
     }
     case "restore": {
       return version.restored_from === null

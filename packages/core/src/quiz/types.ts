@@ -104,6 +104,7 @@ export type QuizVersionSource =
   | "copy"
   | "editor"
   | "question"
+  | "ai"
   | "mcp"
   | "restore";
 
