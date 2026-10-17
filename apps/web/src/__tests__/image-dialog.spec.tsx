@@ -1,7 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ImageDialog } from "@/components/quiz/editor/image/image-dialog";
+import { ImagePreview } from "@/components/quiz/editor/image/image-preview";
 
 afterEach(cleanup);
 
@@ -42,5 +44,44 @@ describe("Image dialog", () => {
     expect(screen.getByLabelText("URL zdjęcia")).toHaveValue(
       "https://example.com/image.png",
     );
+  });
+});
+
+describe("Image preview", () => {
+  it("removes the image from a button next to the preview", async () => {
+    const user = userEvent.setup();
+    const onImageChange = vi.fn();
+    render(
+      <ImagePreview
+        image="https://example.com/a.png"
+        imageUrl="https://example.com/a.png"
+        imageUploadId={null}
+        onImageChange={onImageChange}
+        onUpload={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Usuń zdjęcie" }));
+    expect(onImageChange).toHaveBeenCalledWith({
+      image: null,
+      imageUrl: null,
+      uploadId: null,
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("hides the delete button while uploading", () => {
+    render(
+      <ImagePreview
+        image="https://example.com/a.png"
+        imageUrl="https://example.com/a.png"
+        imageUploadId={null}
+        onImageChange={vi.fn()}
+        onUpload={vi.fn()}
+        isUploading
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Usuń zdjęcie" }),
+    ).not.toBeInTheDocument();
   });
 });
