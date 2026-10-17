@@ -39,6 +39,8 @@ const groups: { title: string; shortcuts: [string[][], string][] }[] = [
   {
     title: "Formatowanie",
     shortcuts: [
+      [[["Ctrl", "Z"]], "Cofnij zmianę w pytaniu"],
+      [[["Ctrl", "Shift", "Z"]], "Ponów zmianę w pytaniu"],
       [[["Ctrl", "B"]], "Pogrubienie"],
       [[["Ctrl", "I"]], "Kursywa"],
       [[["Ctrl", "E"]], "Kod"],

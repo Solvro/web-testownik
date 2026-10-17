@@ -1,8 +1,9 @@
 /**
  * Focuses a field once it has rendered, for example after adding an answer or
- * switching to another question, and puts the caret at the end.
+ * switching to another question, and puts the caret at `position`, by
+ * default the end.
  */
-export function focusField(id: string) {
+export function focusField(id: string, position?: number) {
   // Sonner returns focus to where it was when focus leaves a toast, which
   // would undo this. Leaving the toast first lets it do that right away.
   const active = document.activeElement;
@@ -21,7 +22,11 @@ export function focusField(id: string) {
     ) {
       field.focus({ preventScroll: true });
       field.scrollIntoView({ block: "nearest" });
-      field.setSelectionRange(field.value.length, field.value.length);
+      const caret = Math.min(
+        position ?? field.value.length,
+        field.value.length,
+      );
+      field.setSelectionRange(caret, caret);
     } else if (attempts++ < 10) {
       requestAnimationFrame(focus);
     }

@@ -24,6 +24,7 @@ import {
   joinPastedAnswers,
   splitPastedAnswers,
 } from "./paste-answers";
+import { useQuestionHistory } from "./question-history";
 import {
   canMutate,
   createAnswer,
@@ -53,7 +54,7 @@ export function QuestionEditor({
   onUploadStart,
   onUploadEnd,
 }: {
-  /** Kept mounted while closed, to keep the fields' undo history. */
+  /** Kept mounted while closed, so opening it again is instant. */
   hidden?: boolean;
   /** The React key of an answer, stable when saving replaces its ID. */
   keyOf?: (id: string) => string;
@@ -83,6 +84,7 @@ export function QuestionEditor({
     onUploadStart,
     onUploadEnd,
   });
+  const history = useQuestionHistory(form, questionId);
   if (question === undefined) {
     return null;
   }
@@ -287,6 +289,23 @@ export function QuestionEditor({
             onCollapse();
             return;
           }
+          // The question's history replaces the fields' own undo, which
+          // would only know about typing.
+          if ((event.metaKey || event.ctrlKey) && !event.altKey) {
+            const key = event.key.toLowerCase();
+            if (key === "z" || (key === "y" && !event.shiftKey)) {
+              event.preventDefault();
+              if (disabled) {
+                return;
+              }
+              if (key === "z" && !event.shiftKey) {
+                history.undo();
+              } else {
+                history.redo();
+              }
+              return;
+            }
+          }
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
             if (isLast) {
@@ -307,6 +326,7 @@ export function QuestionEditor({
           <div className="order-last flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:order-none sm:w-auto sm:flex-1">
             <MarkdownToolbar
               disabled={disabled}
+              history={history}
               className="bg-muted/60 dark:bg-input/30 rounded-lg p-0.5"
             />
             {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- Focus goes to the checked radio inside. */}

@@ -128,10 +128,6 @@ it("formats the field focused last and is disabled until a field has focus", asy
   });
   const code = screen.getByRole("button", { name: "Kod" });
   expect(code).toHaveAttribute("aria-disabled", "true");
-  expect(screen.getByRole("button", { name: "Cofnij" })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
 
   await user.click(first);
   first.setSelectionRange(0, 8);

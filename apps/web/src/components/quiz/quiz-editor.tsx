@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { focusField } from "@/components/quiz/editor/focus-field";
 import { KeyboardShortcuts } from "@/components/quiz/editor/keyboard-shortcuts";
 import { QuestionEditor } from "@/components/quiz/editor/question-editor";
+import { clearQuestionHistories } from "@/components/quiz/editor/question-history";
 import {
   QuestionOutline,
   QuestionSearch,
@@ -303,7 +304,7 @@ export function QuizEditor(props: QuizEditorProps) {
       .flatMap((question, index) => {
         const match = query === "" || matchesQuery(question, query);
         // The open question stays open while its text no longer matches, and
-        // recent ones stay mounted, hidden, to keep their undo history.
+        // recent ones stay mounted, hidden, so opening them again is instant.
         return match ||
           question.id === currentId ||
           recentIds.includes(question.id)
@@ -742,6 +743,7 @@ export function QuizEditor(props: QuizEditorProps) {
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);
             keysRef.current.clear();
+            clearQuestionHistories(form);
             form.reset(values);
             setShowErrors(false);
             setSaved(false);

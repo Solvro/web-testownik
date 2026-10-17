@@ -48,6 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Toggle } from "./ui/toggle";
 
 interface MarkdownToolbarTargets {
   /** The field that was focused last. */
@@ -346,15 +347,25 @@ function toolbarItems(toolbar: HTMLElement | null) {
  * `aria-disabled` but keep their tab stop, so the keyboard can reach them. `children` sit after the inline
  * buttons, before the menu.
  */
+export interface ToolbarHistory {
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
+}
+
 export function MarkdownToolbar({
   label = "Formatowanie tekstu",
   disabled = false,
   className,
+  history,
   children,
 }: {
   label?: string;
   disabled?: boolean;
   className?: string;
+  /** Undo and redo buttons; they work whenever there is a step to apply. */
+  history?: ToolbarHistory;
   children?: ReactNode;
 }) {
   const toolbar = use(MarkdownToolbarContext);
@@ -421,16 +432,6 @@ export function MarkdownToolbar({
     }
   }
 
-  function history(command: "undo" | "redo") {
-    const active = toolbar?.active.current;
-    if (active?.isConnected !== true) {
-      return;
-    }
-    active.focus({ preventScroll: true });
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Edits go through execCommand, so the browser's history has them.
-    document.execCommand(command);
-  }
-
   // Inactive buttons stay in the tab order, so Shift+Tab from a field reaches
   // the toolbar; they only look and act disabled.
   const buttonClassName =
@@ -457,61 +458,62 @@ export function MarkdownToolbar({
         moveRovingFocus(event, "button:not(:disabled)", "horizontal");
       }}
     >
-      {(
-        [
-          ["undo", "Cofnij", Undo2Icon],
-          ["redo", "Ponów", Redo2Icon],
-        ] as const
-      ).map(([command, title, Icon]) => (
-        <Button
-          key={command}
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className={buttonClassName}
+      {history === undefined ? null : (
+        <>
+          {(
+            [
+              ["undo", "Cofnij", "Control+Z", Undo2Icon, history.canUndo],
+              ["redo", "Ponów", "Control+Shift+Z", Redo2Icon, history.canRedo],
+            ] as const
+          ).map(([command, title, keys, Icon, can]) => (
+            <Button
+              key={command}
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className={buttonClassName}
+              aria-label={title}
+              aria-keyshortcuts={keys}
+              title={title}
+              disabled={disabled}
+              aria-disabled={!can}
+              onMouseDown={keepFocus}
+              onClick={() => {
+                if (can) {
+                  history[command]();
+                }
+              }}
+            >
+              <Icon />
+            </Button>
+          ))}
+          <div className="bg-border mx-0.5 h-4 w-px" aria-hidden="true" />
+        </>
+      )}
+      {inlineFormats.map(({ format, label: title, icon: Icon }) => (
+        <Toggle
+          key={format}
+          size="sm"
+          className={cn(
+            buttonClassName,
+            // The toolbar sits on the muted colour, so a pressed toggle is lifted instead.
+            "aria-pressed:bg-background aria-pressed:text-foreground dark:aria-pressed:bg-card size-8 px-0 aria-pressed:shadow-xs",
+          )}
           aria-label={title}
           title={title}
           disabled={disabled}
           aria-disabled={inactive}
+          pressed={state.active.includes(format)}
           onMouseDown={keepFocus}
-          onClick={() => {
+          onPressedChange={() => {
             if (!inactive) {
-              history(command);
+              apply(format);
             }
           }}
         >
           <Icon />
-        </Button>
+        </Toggle>
       ))}
-      <div className="bg-border mx-0.5 h-4 w-px" aria-hidden="true" />
-      {inlineFormats.map(({ format, label: title, icon: Icon }) => {
-        const pressed = state.active.includes(format);
-        return (
-          <Button
-            key={format}
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className={cn(
-              buttonClassName,
-              pressed && "bg-background text-foreground dark:bg-card shadow-xs",
-            )}
-            aria-label={title}
-            aria-pressed={pressed}
-            title={title}
-            disabled={disabled}
-            aria-disabled={inactive}
-            onMouseDown={keepFocus}
-            onClick={() => {
-              if (!inactive) {
-                apply(format);
-              }
-            }}
-          >
-            <Icon />
-          </Button>
-        );
-      })}
       {children}
       <DropdownMenu>
         <DropdownMenuTrigger

@@ -1010,6 +1010,104 @@ describe("Quiz editor", () => {
     );
   });
 
+  it("undoes and redoes every change to the open question", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={quizFixture(2)}
+        onSave={saveMock()}
+      />,
+    );
+    const undo = screen.getByRole("button", { name: "Cofnij" });
+    const redo = screen.getByRole("button", { name: "Ponów" });
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+
+    const answer = screen.getByRole("textbox", { name: "Odpowiedź 1" });
+    const before = (answer as HTMLTextAreaElement).value;
+    await user.type(answer, " dopisek");
+    await user.click(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
+    );
+    // Nothing is focused, yet the steps can still be undone.
+    (document.activeElement as HTMLElement).blur();
+    expect(undo).toHaveAttribute("aria-disabled", "false");
+    expect(screen.getByRole("button", { name: "Pogrubienie" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    await user.click(undo);
+    expect(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(answer).toHaveValue(`${before} dopisek`);
+
+    await user.click(undo);
+    expect(answer).toHaveValue(before);
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    expect(redo).toHaveAttribute("aria-disabled", "false");
+
+    await user.click(redo);
+    expect(answer).toHaveValue(`${before} dopisek`);
+    await user.click(redo);
+    expect(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(redo).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("undoes with Ctrl+Z inside a field and brings removed answers back", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={quizFixture(2)}
+        onSave={saveMock()}
+      />,
+    );
+    const question = screen.getByRole("textbox", { name: "Treść pytania 1" });
+    const before = (question as HTMLTextAreaElement).value;
+    await user.type(question, "!");
+    await user.keyboard("{Control>}z{/Control}");
+    expect(question).toHaveValue(before);
+    await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+    expect(question).toHaveValue(`${before}!`);
+
+    await user.click(screen.getByRole("button", { name: "Usuń odpowiedź 2" }));
+    expect(
+      screen.queryByRole("textbox", { name: "Odpowiedź 2" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(
+      screen.getByRole("textbox", { name: "Odpowiedź 2" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps a question's undo steps while it is collapsed", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={quizFixture(2)}
+        onSave={saveMock()}
+      />,
+    );
+    const first = screen.getByRole("textbox", { name: "Treść pytania 1" });
+    const before = (first as HTMLTextAreaElement).value;
+    await user.type(first, "?");
+    await user.click(screen.getByRole("button", { name: /^Pytanie 2:/ }));
+    expect(screen.getByRole("button", { name: "Cofnij" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    await user.click(listRows()[0]);
+    await user.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(
+      screen.getByRole("textbox", { name: "Treść pytania 1" }),
+    ).toHaveValue(before);
+  });
+
   it("keeps recently open fields mounted so their undo history survives", async () => {
     const user = userEvent.setup();
     render(
