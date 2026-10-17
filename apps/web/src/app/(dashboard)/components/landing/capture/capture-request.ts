@@ -12,11 +12,14 @@ export interface CaptureRequest {
   pixelRatio?: number;
   background?: "black" | "green" | "white";
   theme?: "dark" | "light";
+  /** Hero scroll progress to pose the stack at, 0 closed → 1 open. */
+  progress?: number;
 }
 
 export interface LandingSearchParameters {
   capture?: string;
   captureBg?: "black" | "green" | "white";
+  captureProgress?: string;
   captureScale?: string;
   captureTheme?: "dark" | "light";
   landing?: string;
@@ -38,6 +41,7 @@ export function parseCaptureRequest(
   }
 
   const scale = Number.parseFloat(parameters.captureScale ?? "");
+  const progress = Number.parseFloat(parameters.captureProgress ?? "");
 
   return {
     loadingCover: parameters.capture === "cover",
@@ -46,5 +50,8 @@ export function parseCaptureRequest(
       : undefined,
     background: parameters.captureBg,
     theme: parameters.captureTheme,
+    progress: Number.isFinite(progress)
+      ? Math.min(Math.max(progress, 0), 1)
+      : undefined,
   };
 }

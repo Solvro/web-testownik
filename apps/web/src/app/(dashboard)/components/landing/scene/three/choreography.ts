@@ -153,7 +153,7 @@ export function createChoreography({
   scene: Scene;
   camera: PerspectiveCamera;
   laptop: Object3D;
-  lidPivot: Group;
+  lidPivot: Object3D;
   tablet: { rig: Group; attachment: SatelliteAttachment };
   phone: { rig: Group; attachment: SatelliteAttachment };
 }): Choreography {

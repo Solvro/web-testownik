@@ -13,7 +13,7 @@ type Corner = readonly [number, number, number];
 
 /**
  * Axis-aligned bounds of the model, measured once from
- * `macbook-pro-14-space-black.usdz` with the lid at each end of its travel.
+ * the MacBook in `public/models/device-stack.glb` with the lid at each end of its travel.
  * The closed box is deeper than the visible laptop because the hinge barrel
  * swings below the base; that padding is harmless as long as both consumers
  * use the same numbers.

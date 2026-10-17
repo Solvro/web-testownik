@@ -1,9 +1,10 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { publishHeroProgress } from "../hero-progress";
 import { landingFontVariables } from "../landing-fonts";
 import "../landing.css";
 import { DeviceScene } from "../scene/device-scene";
@@ -22,7 +23,8 @@ export function DeviceCapture({
 }: {
   request: CaptureRequest;
 }): React.JSX.Element {
-  const { theme } = request;
+  const { theme, progress } = request;
+  const rootReference = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const { documentElement, body } = document;
@@ -39,8 +41,17 @@ export function DeviceCapture({
     };
   }, [theme]);
 
+  // Poses the stack as if the hero had been scrolled this far.
+  useLayoutEffect(() => {
+    const root = rootReference.current;
+    if (root !== null && progress !== undefined) {
+      publishHeroProgress(root, progress);
+    }
+  }, [progress]);
+
   return (
     <div
+      ref={rootReference}
       data-device-capture
       className={cn(
         // Above everything, transparent by default so the capture can be

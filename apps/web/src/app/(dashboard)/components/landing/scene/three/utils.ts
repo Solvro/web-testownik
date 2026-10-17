@@ -1,11 +1,4 @@
-import type {
-  Material,
-  Mesh,
-  MeshStandardMaterial,
-  Object3D,
-  Texture,
-  Vector3,
-} from "three";
+import type { Material, Mesh, Object3D, Texture, Vector3 } from "three";
 
 export function isMesh(object: Object3D): object is Mesh {
   return "isMesh" in object && object.isMesh === true;
@@ -20,21 +13,8 @@ function isTexture(value: unknown): value is Texture {
   );
 }
 
-export function isStandardMaterial(
-  material: Material,
-): material is MeshStandardMaterial {
-  return (
-    "emissiveMap" in material && "emissive" in material && "color" in material
-  );
-}
-
-export function materialsOf(mesh: Mesh): Material[] {
+function materialsOf(mesh: Mesh): Material[] {
   return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-}
-
-/** Sorted descending, so `[0]` and `[1]` are the two dimensions of a plane. */
-export function sortedExtents(size: Vector3): number[] {
-  return [size.x, size.y, size.z].toSorted((first, second) => second - first);
 }
 
 export function smoothstep(from: number, to: number, value: number): number {

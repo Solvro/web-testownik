@@ -1,12 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
-import type {
-  Camera,
-  Group,
-  Mesh,
-  Object3D,
-  PerspectiveCamera,
-  Scene,
-} from "three";
+import type { Camera, Mesh, Object3D, PerspectiveCamera, Scene } from "three";
 import { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import {
@@ -19,7 +12,6 @@ import type {
   PlaneBasis,
   PlaneExtents,
 } from "./display-plane";
-import { takeSatelliteDisplay } from "./models";
 import { smoothstep } from "./utils";
 
 /**
@@ -104,6 +96,7 @@ export interface SatelliteAttachment {
 export function attachSatelliteScreen({
   scene,
   root,
+  display,
   rig,
   host,
   logicalWidth,
@@ -113,7 +106,9 @@ export function attachSatelliteScreen({
 }: {
   scene: Scene;
   root: Object3D;
-  rig: Group;
+  /** The display mesh inside `root` the live UI is anchored to. */
+  display: Mesh;
+  rig: Object3D;
   host: HTMLElement;
   logicalWidth: number;
   /** Width the device should occupy in scene units once scaled. */
@@ -127,7 +122,6 @@ export function attachSatelliteScreen({
   rig.rotation.set(0, 0, 0);
   scene.updateMatrixWorld(true);
 
-  const display = takeSatelliteDisplay(root);
   const basis = resolveDisplayBasis(display, root, orientation);
   const extents = measureInPlane(display, basis);
 

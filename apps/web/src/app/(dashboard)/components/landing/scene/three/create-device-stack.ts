@@ -1,14 +1,9 @@
 import { Group, MathUtils } from "three";
-import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
 import { SATELLITE_POSES, createChoreography } from "./choreography";
-import {
-  DISPLAY_ASSEMBLY_NAME,
-  disposeModels,
-  loadDeviceModels,
-  takeLaptopPanel,
-} from "./models";
+import { disposeModels, loadDeviceModels } from "./models";
+import type { DeviceModels } from "./models";
 import {
   attachLaptopScreen,
   attachSatelliteScreen,
@@ -24,9 +19,6 @@ import { createStage } from "./stage";
  * wrapper imports dynamically — that is what keeps three, the loaders and the
  * device model downloads off the initial bundle and away from phones entirely.
  */
-
-/** Synthetic pivot the lid is re-parented onto, measured from the model. */
-const HINGE_POSITION = { x: 0, y: -0.09, z: -10.78 } as const;
 
 const getCurrentScrollProgress = (): number =>
   MathUtils.clamp(getHeroProgress(), 0, 1);
@@ -97,7 +89,18 @@ export async function createDeviceStack({
   let catchUpStartsAt = 0;
   let catchUpDuration = 0;
 
-  const models = await loadDeviceModels();
+  let models: DeviceModels;
+  try {
+    models = await loadDeviceModels(signal);
+  } catch (error) {
+    stage.dispose();
+    // An aborted download is the hero unmounting, not a failure.
+    if (signal.aborted) {
+      return { dispose: stage.dispose };
+    }
+    throw error;
+  }
+
   const teardown = (): void => {
     disposed = true;
     if (frame !== 0) {
@@ -117,44 +120,29 @@ export async function createDeviceStack({
   }
 
   // --- Laptop -------------------------------------------------------------
-  const displayAssembly = models.laptop.getObjectByName(DISPLAY_ASSEMBLY_NAME);
-  const displayParent = displayAssembly?.parent;
-  if (displayAssembly === undefined || displayParent == null) {
-    teardown();
-    throw new Error("The MacBook display assembly could not be located.");
-  }
-
-  const panel = takeLaptopPanel(displayAssembly);
-
-  const lidPivot = new Group();
-  lidPivot.name = "TestownikMacBookHinge";
-  lidPivot.position.set(HINGE_POSITION.x, HINGE_POSITION.y, HINGE_POSITION.z);
-  displayParent.add(lidPivot);
-  lidPivot.attach(displayAssembly);
-  scene.add(models.laptop);
+  const { hinge: lidPivot } = models.laptop;
+  scene.add(models.laptop.root);
 
   // Pose the model exactly as the finished hero shows it, so that "faces the
   // camera" and "points up" are meaningful tests while the panel is measured.
   lidPivot.rotation.x = 0;
-  models.laptop.rotation.set(0, 0, 0);
+  models.laptop.root.rotation.set(0, 0, 0);
   scene.updateMatrixWorld(true);
   poseForMeasurement(camera);
 
-  const laptopScreen: CSS3DObject | null =
-    panel === null
-      ? null
-      : attachLaptopScreen({
-          panel,
-          host: hosts.laptop,
-          camera,
-          logicalWidth: SCREEN_WIDTH_PX.laptop,
-        });
+  const laptopScreen = attachLaptopScreen({
+    panel: models.laptop.display,
+    host: hosts.laptop,
+    camera,
+    logicalWidth: SCREEN_WIDTH_PX.laptop,
+  });
 
   // --- Satellites ---------------------------------------------------------
   const tabletRig = new Group();
   const tablet = attachSatelliteScreen({
     scene,
-    root: models.tablet,
+    root: models.tablet.root,
+    display: models.tablet.display,
     rig: tabletRig,
     host: hosts.tablet,
     logicalWidth: SCREEN_WIDTH_PX.tablet,
@@ -166,7 +154,8 @@ export async function createDeviceStack({
   const phoneRig = new Group();
   const phone = attachSatelliteScreen({
     scene,
-    root: models.phone,
+    root: models.phone.root,
+    display: models.phone.display,
     rig: phoneRig,
     host: hosts.phone,
     logicalWidth: SCREEN_WIDTH_PX.phone,
@@ -178,7 +167,7 @@ export async function createDeviceStack({
   const choreography = createChoreography({
     scene,
     camera,
-    laptop: models.laptop,
+    laptop: models.laptop.root,
     lidPivot,
     tablet: { rig: tabletRig, attachment: tablet },
     phone: { rig: phoneRig, attachment: phone },
@@ -232,23 +221,21 @@ export async function createDeviceStack({
       bounds.height,
     );
 
-    if (laptopScreen !== null) {
-      const visibility = screenFacing(laptopScreen, camera, 0.06, 0.26);
-      const opacity = visibility.toFixed(3);
-      if (opacity !== lastLaptopOpacity) {
-        hosts.laptop.style.opacity = opacity;
-        lastLaptopOpacity = opacity;
-      }
-      // Facing the camera is not enough: for the first half of the hinge travel
-      // the panel is still physically behind the lid. Keeping the host inert
-      // stops controls firing "through" a closed MacBook.
-      const isInteractive =
-        progressMode === "scroll" && opening > 0.25 && visibility > 0.5;
-      if (isInteractive !== lastLaptopInteractive) {
-        hosts.laptop.style.pointerEvents = isInteractive ? "auto" : "none";
-        hosts.laptop.inert = !isInteractive;
-        lastLaptopInteractive = isInteractive;
-      }
+    const laptopVisibility = screenFacing(laptopScreen, camera, 0.06, 0.26);
+    const laptopOpacity = laptopVisibility.toFixed(3);
+    if (laptopOpacity !== lastLaptopOpacity) {
+      hosts.laptop.style.opacity = laptopOpacity;
+      lastLaptopOpacity = laptopOpacity;
+    }
+    // Facing the camera is not enough: for the first half of the hinge travel
+    // the panel is still physically behind the lid. Keeping the host inert
+    // stops controls firing "through" a closed MacBook.
+    const isInteractive =
+      progressMode === "scroll" && opening > 0.25 && laptopVisibility > 0.5;
+    if (isInteractive !== lastLaptopInteractive) {
+      hosts.laptop.style.pointerEvents = isInteractive ? "auto" : "none";
+      hosts.laptop.inert = !isInteractive;
+      lastLaptopInteractive = isInteractive;
     }
 
     const tabletVisibility = screenFacing(tablet.object, camera, 0.04, 0.2);

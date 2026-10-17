@@ -139,6 +139,15 @@ export function Hero({
       ref={heroReference}
       className="relative scroll-mt-4 [--landing-hero-progress:0] lg:h-[300vh] lg:min-h-[190rem]"
     >
+      {/* React hoists this into <head>; only wide viewports fetch the model. */}
+      <link
+        rel="preload"
+        href="/models/device-stack.glb"
+        as="fetch"
+        type="model/gltf-binary"
+        crossOrigin="anonymous"
+        media="(min-width: 1024px)"
+      />
       <div className="relative lg:sticky lg:top-0 lg:h-[100svh] lg:min-h-[42rem] lg:overflow-hidden">
         {isDesktop ? (
           <Suspense fallback={staticHero}>

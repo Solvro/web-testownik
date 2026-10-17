@@ -7,6 +7,7 @@
     "build": "next build",
     "capture:device-stack": "node scripts/capture-device-stack.mjs",
     "dev": "next dev",
+    "export:device-models": "node scripts/export-device-models/export-device-models.mjs",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "start": "next start",
@@ -42,7 +43,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "devices.css": "0.2.0",
     "diff": "^9.0.0",
     "dompurify": "^3.3.1",
     "embla-carousel-react": "^8.6.0",
@@ -84,6 +84,9 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@next/eslint-plugin-next": "^16.1.1",
     "@solvro/config": "^2.3.3",
     "@tailwindcss/typography": "^0.5.19",
@@ -101,6 +104,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "jsdom": "^27.4.0",
+    "meshoptimizer": "^1.3.0",
     "msw": "^2.12.7",
     "playwright-core": "^1.62.0",
     "prettier": "^3.7.4",
