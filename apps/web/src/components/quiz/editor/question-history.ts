@@ -22,20 +22,46 @@ interface QuestionHistory {
   listeners: Set<() => void>;
 }
 
+interface FormHistories {
+  byId: Map<string, QuestionHistory>;
+  unsubscribe: () => void;
+}
+
 // Kept per form and question, outside React, so a question's history
-// survives collapsing its editor.
-const histories = new WeakMap<QuizEditorForm, Map<string, QuestionHistory>>();
+// survives collapsing its editor. One subscription per form follows every
+// question with a history, so changes made while its editor is not mounted
+// (bulk actions, undo toasts) are steps too and `current` never goes stale.
+const histories = new WeakMap<QuizEditorForm, FormHistories>();
 
 function findQuestion(form: QuizEditorForm, id: string) {
   return form.state.values.questions.find((question) => question.id === id);
 }
 
-function historyOf(form: QuizEditorForm, id: string) {
-  let byId = histories.get(form);
-  if (byId === undefined) {
-    byId = new Map();
-    histories.set(form, byId);
+function historiesOf(form: QuizEditorForm) {
+  let entry = histories.get(form);
+  if (entry === undefined) {
+    const byId = new Map<string, QuestionHistory>();
+    const subscription = form.atom.subscribe((state) => {
+      for (const question of state.values.questions) {
+        const history = byId.get(question.id);
+        if (history !== undefined) {
+          record(history, question);
+        }
+      }
+    });
+    entry = {
+      byId,
+      unsubscribe: () => {
+        subscription.unsubscribe();
+      },
+    };
+    histories.set(form, entry);
   }
+  return entry;
+}
+
+function historyOf(form: QuizEditorForm, id: string) {
+  const { byId } = historiesOf(form);
   let history = byId.get(id);
   if (history === undefined) {
     const question = findQuestion(form, id);
@@ -58,17 +84,18 @@ function historyOf(form: QuizEditorForm, id: string) {
 
 /** Forgets every question's history, e.g. after a version was restored. */
 export function clearQuestionHistories(form: QuizEditorForm) {
-  const byId = histories.get(form);
-  if (byId === undefined) {
+  const entry = histories.get(form);
+  if (entry === undefined) {
     return;
   }
-  for (const history of byId.values()) {
+  entry.unsubscribe();
+  histories.delete(form);
+  for (const history of entry.byId.values()) {
     history.undo = [];
     history.redo = [];
     history.lastField = null;
     notify(history);
   }
-  histories.delete(form);
 }
 
 function notify(history: QuestionHistory) {
@@ -212,25 +239,15 @@ export function useQuestionHistory(
   const history = historyOf(form, questionId);
   const [, rerender] = useReducer((count: number) => count + 1, 0);
 
-  // Follows the question in the form, so every way of changing it is a step.
   useEffect(() => {
     if (history === null) {
       return;
     }
     history.listeners.add(rerender);
-    const subscription = form.atom.subscribe((state) => {
-      const question = state.values.questions.find(
-        (item) => item.id === questionId,
-      );
-      if (question !== undefined) {
-        record(history, question);
-      }
-    });
     return () => {
-      subscription.unsubscribe();
       history.listeners.delete(rerender);
     };
-  }, [form, history, questionId]);
+  }, [history]);
 
   return {
     canUndo: history !== null && history.undo.length > 0,

@@ -1140,6 +1140,42 @@ describe("Quiz editor", () => {
     );
   });
 
+  it("keeps a question's history while its editor is not mounted", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={quizFixture(8)}
+        onSave={saveMock()}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Treść pytania 1" }), {
+      target: { value: "Zmienione" },
+    });
+    // Opening seven other questions evicts the first editor.
+    for (const number of [2, 3, 4, 5, 6, 7, 8]) {
+      await user.click(
+        screen.getByRole("button", {
+          name: new RegExp(`^Pytanie ${String(number)}:`),
+        }),
+      );
+    }
+    await chooseAllQuestions(user, "Wielokrotny wybór");
+    await user.click(screen.getByRole("button", { name: /^Pytanie 1:/ }));
+    expect(questionOptions(1)).toHaveTextContent("Wielokrotny wybór");
+
+    // The bulk change made while the editor was away is its own step.
+    await user.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(questionOptions(1)).toHaveTextContent("Jednokrotny wybór");
+    expect(
+      screen.getByRole("textbox", { name: "Treść pytania 1" }),
+    ).toHaveValue("Zmienione");
+    await user.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(
+      screen.getByRole("textbox", { name: "Treść pytania 1" }),
+    ).toHaveValue("Treść numer 1");
+  });
+
   it("undoes and redoes every change to the open question", async () => {
     const user = userEvent.setup();
     render(

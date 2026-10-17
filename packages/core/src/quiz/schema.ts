@@ -97,10 +97,10 @@ export const questionFormSchema = z
       error: "Pytanie musi zawierać tekst lub zdjęcie",
     },
   )
-  .superRefine((data, ctx) => {
+  .superRefine((data, context) => {
     const error = choiceTypeError(data);
     if (error !== null) {
-      ctx.addIssue({ code: "custom", message: error, path: ["answers"] });
+      context.addIssue({ code: "custom", message: error, path: ["answers"] });
     }
   });
 

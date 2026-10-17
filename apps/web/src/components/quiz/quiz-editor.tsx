@@ -510,7 +510,7 @@ export function QuizEditor(props: QuizEditorProps) {
           </div>
           <BulkActions
             form={form}
-            disabled={isSubmitting}
+            disabled={isSubmitting || restoring}
             onOpenShortcuts={() => {
               setShortcutsOpen(true);
             }}
@@ -743,7 +743,15 @@ export function QuizEditor(props: QuizEditorProps) {
             setFormRestoring(form, value);
             setRestoring(value);
           }}
-          canStart={() => canMutate(form)}
+          canStart={() => {
+            // An upload finishing after the restore would write its image
+            // into the restored content.
+            if (uploadCount > 0) {
+              toast.info("Poczekaj na zakończenie przesyłania zdjęć.");
+              return false;
+            }
+            return canMutate(form);
+          }}
           hasUnsavedChanges={() => !form.state.isDefaultValue}
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);
@@ -802,6 +810,9 @@ function BulkActions({
   });
 
   function setAllMarkdown(enabled: boolean) {
+    if (!canMutate(form)) {
+      return;
+    }
     const previous = new Map(
       form
         .getFieldValue("questions")
@@ -842,6 +853,9 @@ function BulkActions({
   }
 
   function setAll(multiple: boolean) {
+    if (!canMutate(form)) {
+      return;
+    }
     const previous: ChoiceTypes = new Map(
       form
         .getFieldValue("questions")
