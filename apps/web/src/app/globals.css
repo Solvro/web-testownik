@@ -182,6 +182,19 @@
     @apply bg-background text-foreground;
   }
 
+  /* Fixed and sticky chrome covers the edges of the viewport. Tell the
+     scroll container about it so focused elements (Tab, scrollIntoView) land
+     in the visible area: the app footer from `sm` up and the editor's bar. */
+  html {
+    @variant sm {
+      scroll-padding-bottom: calc(var(--spacing) * 12);
+    }
+  }
+
+  html:has([data-sticky-bar]) {
+    scroll-padding-top: calc(var(--spacing) * 20);
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;

@@ -7,31 +7,39 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { quizToFormData } from "@/components/quiz/editor/quiz-editor-form";
 import { QuizEditor } from "@/components/quiz/quiz-editor";
 import { QuizPreviewDialog } from "@/components/quiz/quiz-preview-dialog";
 import { getQuizService } from "@/services";
 
-export function CreateQuizPageClient() {
+export function CreateQuizPageClient({
+  initialValues,
+}: {
+  initialValues: QuizFormData;
+}) {
   const router = useRouter();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
 
-  async function handleSave(data: QuizFormData): Promise<boolean> {
+  async function handleSave(data: QuizFormData): Promise<QuizFormData | null> {
     try {
       const payload = prepareQuizForSubmission(data);
       const result = await getQuizService().createQuiz(payload);
       setQuiz(result);
-      toast.success("Quiz został utworzony.");
-      return true;
+      return quizToFormData(result);
     } catch {
-      toast.error("Wystąpił błąd podczas importowania quizu.");
-      return false;
+      toast.error("Wystąpił błąd podczas tworzenia quizu.");
+      return null;
     }
   }
 
   return (
     <>
-      <QuizEditor mode="create" onSave={handleSave} />
+      <QuizEditor
+        mode="create"
+        initialValues={initialValues}
+        onSave={handleSave}
+      />
       <QuizPreviewDialog
         open={quiz !== null}
         onOpenChange={(open) => {
