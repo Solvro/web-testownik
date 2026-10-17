@@ -497,7 +497,7 @@ export function MarkdownToolbar({
           className={cn(
             buttonClassName,
             // The toolbar sits on the muted colour, so a pressed toggle is lifted instead.
-            "aria-pressed:bg-background aria-pressed:text-foreground dark:aria-pressed:bg-card size-8 px-0 aria-pressed:shadow-xs",
+            "aria-pressed:bg-background aria-pressed:text-foreground dark:aria-pressed:bg-foreground/15 size-8 px-0 aria-pressed:shadow-xs",
           )}
           aria-label={title}
           title={title}
