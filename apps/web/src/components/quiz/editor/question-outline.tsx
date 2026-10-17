@@ -3,8 +3,12 @@
 import { SearchIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { moveRovingFocus } from "@/lib/roving-focus";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +29,16 @@ export function QuestionSearch({
   className?: string;
 }) {
   return (
-    <div className={cn("relative", className)}>
-      <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-      <Input
+    <InputGroup className={cn("bg-card dark:bg-card", className)}>
+      <InputGroupAddon>
+        <SearchIcon />
+      </InputGroupAddon>
+      <InputGroupInput
         type="search"
         value={value}
         aria-label="Szukaj w pytaniach i odpowiedziach"
         placeholder="Szukaj w pytaniach…"
-        className="bg-card dark:bg-card h-10 pr-9 pl-9 text-base sm:text-sm [&::-webkit-search-cancel-button]:hidden"
+        className="text-base sm:text-sm [&::-webkit-search-cancel-button]:hidden"
         onChange={(event) => {
           onChange(event.target.value);
         }}
@@ -46,20 +52,19 @@ export function QuestionSearch({
         }}
       />
       {value === "" ? null : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="absolute top-1/2 right-2 -translate-y-1/2"
-          aria-label="Wyczyść wyszukiwanie"
-          onClick={() => {
-            onChange("");
-          }}
-        >
-          <XIcon />
-        </Button>
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            size="icon-xs"
+            aria-label="Wyczyść wyszukiwanie"
+            onClick={() => {
+              onChange("");
+            }}
+          >
+            <XIcon />
+          </InputGroupButton>
+        </InputGroupAddon>
       )}
-    </div>
+    </InputGroup>
   );
 }
 
