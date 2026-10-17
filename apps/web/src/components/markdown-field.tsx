@@ -216,7 +216,7 @@ export function MarkdownField({
     }
     const resize = () => {
       textarea.style.height = "0px";
-      textarea.style.height = `${String(textarea.scrollHeight + 2)}px`;
+      textarea.style.height = `${String(textarea.scrollHeight)}px`;
     };
     resize();
     let width = textarea.clientWidth;
@@ -260,7 +260,7 @@ export function MarkdownField({
         disabled={disabled}
         rows={1}
         className={cn(
-          "text-foreground placeholder:text-muted-foreground/80 caret-primary selection:bg-primary/20 block w-full resize-none bg-transparent outline-none disabled:cursor-not-allowed",
+          "text-foreground placeholder:text-muted-foreground/80 caret-primary selection:bg-primary/20 block w-full resize-none overflow-hidden bg-transparent outline-none disabled:cursor-not-allowed",
           inputClassName,
           rendered && "absolute inset-0 opacity-0",
         )}
