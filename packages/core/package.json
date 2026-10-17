@@ -19,7 +19,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@solvro/config": "^2.3.3",
+    "@solvro/config": "^3.0.1",
     "@types/seedrandom": "^3.0.8",
     "eslint": "^9",
     "typescript": "^5.9.3",
