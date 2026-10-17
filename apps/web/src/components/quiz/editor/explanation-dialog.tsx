@@ -3,6 +3,7 @@
 import { FileTextIcon } from "lucide-react";
 import { useState } from "react";
 
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 
 interface ExplanationDialogProps {
   open: boolean;
@@ -50,13 +50,13 @@ export function ExplanationDialog({
           <DialogTitle>Wyjaśnienie pytania</DialogTitle>
         </DialogHeader>
         <div className="w-full min-w-0 space-y-4">
-          <Textarea
+          <MarkdownEditor
+            label="Wyjaśnienie pytania"
             placeholder="Podaj wyjaśnienie, które wyświetli się po udzieleniu odpowiedzi..."
             value={localValue}
-            onChange={(event) => {
-              setLocalValue(event.target.value);
-            }}
-            className="max-h-96 min-h-38"
+            onChange={setLocalValue}
+            minHeight="152px"
+            maxHeight="384px"
           />
           <div className="flex justify-end gap-2">
             {localValue.trim() !== "" && (

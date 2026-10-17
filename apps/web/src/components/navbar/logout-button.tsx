@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DoorOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { leaveSafely } from "@/components/quiz/editor/leave-safely";
 import { Button } from "@/components/ui/button";
 
 interface LogoutButtonProps {
@@ -39,7 +40,10 @@ export function LogoutButton({ onLogout }: LogoutButtonProps) {
       variant="outline"
       size="icon"
       onClick={() => {
-        void handleLogout();
+        // Logging out leaves the page, so an open quiz editor asks first.
+        leaveSafely(() => {
+          void handleLogout();
+        });
       }}
       className="p-2"
       aria-label="Wyloguj się"

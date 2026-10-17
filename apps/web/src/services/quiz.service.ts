@@ -12,7 +12,12 @@ import type {
   StatsScope,
   TimelineEntry,
 } from "@testownik/core/quiz/stats";
-import type { Answer, Question } from "@testownik/core/quiz/types";
+import type {
+  Answer,
+  Question,
+  QuizVersion,
+  QuizVersionDetail,
+} from "@testownik/core/quiz/types";
 
 import { BaseApiService } from "./base-api.service";
 import type {
@@ -75,6 +80,32 @@ export class QuizService extends BaseApiService {
    */
   async getQuiz(quizId: string): Promise<Quiz> {
     const response = await this.get<Quiz>(`quizzes/${quizId}/`);
+    return response.data;
+  }
+
+  /** Versions of the quiz content, newest first. Editors only. */
+  async getQuizVersions(quizId: string): Promise<QuizVersion[]> {
+    const response = await this.get<QuizVersion[]>(
+      `quizzes/${quizId}/versions/`,
+    );
+    return response.data;
+  }
+
+  async getQuizVersion(
+    quizId: string,
+    version: number,
+  ): Promise<QuizVersionDetail> {
+    const response = await this.get<QuizVersionDetail>(
+      `quizzes/${quizId}/versions/${String(version)}/`,
+    );
+    return response.data;
+  }
+
+  /** Brings back a version's content as a new version. */
+  async restoreQuizVersion(quizId: string, version: number): Promise<Quiz> {
+    const response = await this.post<Quiz>(
+      `quizzes/${quizId}/versions/${String(version)}/restore/`,
+    );
     return response.data;
   }
 

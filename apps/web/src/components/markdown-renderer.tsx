@@ -8,12 +8,20 @@ import { cn } from "@/lib/utils";
 interface MarkdownRendererProps {
   children?: string;
   className?: string;
+  /** When false the text shows as typed, with its line breaks. */
+  enabled?: boolean;
 }
 
 export function MarkdownRenderer({
   children,
   className,
+  enabled = true,
 }: MarkdownRendererProps) {
+  if (!enabled) {
+    return (
+      <div className={cn("whitespace-pre-wrap", className)}>{children}</div>
+    );
+  }
   return (
     <div
       className={cn(

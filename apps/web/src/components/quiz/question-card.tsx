@@ -198,48 +198,54 @@ export function QuestionCard({
       <CardHeader>
         <ScrollArea className="w-full min-w-0">
           <CardTitle className="mb-1 font-medium">
-            <div className="inline-flex items-start gap-2">
-              <span className="inline-block leading-tight">
-                <MarkdownRenderer className="inline-block">
-                  {String.raw`${String(question.order)}\. ${question.text}`}
-                </MarkdownRenderer>
-              </span>
-              {question.is_ai_generated === true ? (
+            <div className="flex flex-col items-start gap-2">
+              <span className="inline-flex w-full items-center gap-2">
+                Pytanie {question.order}.
                 <Tooltip>
                   <TooltipTrigger
                     render={
                       <Badge
-                        variant="outline"
-                        className="border-primary/20 text-primary/70 my-px shrink-0 gap-1 px-1.5 select-none"
+                        variant="secondary"
+                        className="my-px shrink-0 select-none"
                       >
-                        <SparklesIcon className="size-3" />
-                        AI
+                        {answersCount}
                       </Badge>
                     }
                   ></TooltipTrigger>
                   <TooltipContent>
-                    To pytanie zostało wygenerowane przez AI
+                    To pytanie pojawiło się{" "}
+                    {answersCount === 1
+                      ? "pierwszy raz"
+                      : `już ${answersCount.toString()} razy`}
                   </TooltipContent>
                 </Tooltip>
-              ) : null}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Badge
-                      variant="secondary"
-                      className="my-px shrink-0 select-none"
-                    >
-                      {answersCount}
-                    </Badge>
-                  }
-                ></TooltipTrigger>
-                <TooltipContent>
-                  To pytanie pojawiło się{" "}
-                  {answersCount === 1
-                    ? "pierwszy raz"
-                    : `już ${answersCount.toString()} razy`}
-                </TooltipContent>
-              </Tooltip>
+                {question.is_ai_generated === true ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Badge
+                          variant="outline"
+                          className="border-primary/20 text-primary/70 my-px ml-auto shrink-0 gap-1 px-1.5 select-none"
+                        >
+                          <SparklesIcon className="size-3" />
+                          AI
+                        </Badge>
+                      }
+                    ></TooltipTrigger>
+                    <TooltipContent>
+                      To pytanie zostało wygenerowane przez AI
+                    </TooltipContent>
+                  </Tooltip>
+                ) : null}
+              </span>
+              <span className="inline-block leading-tight">
+                <MarkdownRenderer
+                  className="inline-block"
+                  enabled={question.is_markdown_enabled !== false}
+                >
+                  {String.raw`${question.text}`}
+                </MarkdownRenderer>
+              </span>
             </div>
           </CardTitle>
 
@@ -277,7 +283,10 @@ export function QuestionCard({
                     ),
                   )}
                 >
-                  <MarkdownRenderer className="pointer-events-none w-full text-sm">
+                  <MarkdownRenderer
+                    className="pointer-events-none w-full text-sm"
+                    enabled={question.is_markdown_enabled !== false}
+                  >
                     {answer.text}
                   </MarkdownRenderer>
                   <ImageLoad
@@ -367,7 +376,9 @@ export function QuestionCard({
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"
           >
-            <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
+            <MarkdownRenderer enabled={question.is_markdown_enabled !== false}>
+              {question.explanation}
+            </MarkdownRenderer>
           </div>
         ) : null}
       </CardContent>

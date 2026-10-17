@@ -39,6 +39,8 @@ export interface Question {
   explanation?: string;
   multiple: boolean;
   is_ai_generated?: boolean;
+  /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
+  is_markdown_enabled?: boolean;
   image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
@@ -94,4 +96,66 @@ export enum AccessLevel {
   SHARED = 1,
   UNLISTED = 2,
   PUBLIC = 3,
+}
+
+export type QuizVersionSource =
+  | "baseline"
+  | "create"
+  | "copy"
+  | "editor"
+  | "question"
+  | "ai"
+  | "mcp"
+  | "restore";
+
+/** Changes compared with the previous version; zero counts are omitted. */
+export interface QuizVersionSummary {
+  created?: boolean;
+  added?: number;
+  removed?: number;
+  changed?: number;
+  reordered?: boolean;
+  title?: boolean;
+  description?: boolean;
+}
+
+/** A version of a quiz's content, from its version history. */
+export interface QuizVersion {
+  version: number;
+  created_at: string;
+  /** The last change merged into this version. */
+  updated_at: string;
+  author: User | null;
+  source: QuizVersionSource;
+  restored_from: number | null;
+  title: string;
+  question_count: number;
+  summary: QuizVersionSummary;
+}
+
+export interface QuizVersionAnswer {
+  id: string;
+  order: number;
+  text: string;
+  is_correct: boolean;
+  image: string | null;
+}
+
+export interface QuizVersionQuestion {
+  id: string;
+  order: number;
+  text: string;
+  explanation: string;
+  multiple: boolean;
+  is_markdown_enabled?: boolean;
+  image: string | null;
+  answers: QuizVersionAnswer[];
+}
+
+export interface QuizVersionDetail extends QuizVersion {
+  content: {
+    title: string;
+    description: string;
+    questions: QuizVersionQuestion[];
+  };
 }

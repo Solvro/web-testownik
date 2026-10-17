@@ -21,6 +21,10 @@ export interface ImageButtonProps {
   className?: string;
   isUploading?: boolean;
   onDialogOpenChange?: (open: boolean) => void;
+  /** Shows a quiet text button instead of an icon. */
+  showLabel?: boolean;
+  /** What the image belongs to, in the genitive, e.g. "pytania". */
+  target?: string;
 }
 
 export function ImageButton({
@@ -35,6 +39,8 @@ export function ImageButton({
   className,
   isUploading = false,
   onDialogOpenChange,
+  showLabel = false,
+  target,
 }: ImageButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -46,28 +52,43 @@ export function ImageButton({
   const hasImage =
     (image !== null && image !== undefined && image !== "") ||
     (imageUploadId !== null && imageUploadId !== undefined);
+  const suffix = target === undefined ? "" : ` do ${target}`;
+  const label = hasImage ? `Zmień zdjęcie${suffix}` : `Dodaj zdjęcie${suffix}`;
 
   return (
     <>
       <Button
         type="button"
-        variant={hasImage ? "default" : "ghost"}
-        size="icon-sm"
-        className={cn("shrink-0", className)}
+        variant={hasImage && !showLabel ? "default" : "ghost"}
+        size={showLabel ? "sm" : "icon-sm"}
+        className={cn(
+          "shrink-0",
+          showLabel && "text-muted-foreground hover:text-foreground",
+          className,
+        )}
         onClick={() => {
           if (!isUploading) {
             handleDialogOpenChange(true);
           }
         }}
         disabled={disabled || isUploading}
-        aria-label={hasImage ? "Zmień zdjęcie" : "Dodaj zdjęcie"}
-        tabIndex={-1}
+        aria-label={label}
+        title={showLabel ? undefined : label}
       >
         {isUploading ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
           <ImageIcon className="size-4" />
         )}
+        {showLabel ? (
+          <span aria-hidden="true">
+            {isUploading
+              ? "Przesyłanie…"
+              : hasImage
+                ? "Zmień zdjęcie"
+                : "Zdjęcie"}
+          </span>
+        ) : null}
       </Button>
 
       <ImageDialog
@@ -81,6 +102,7 @@ export function ImageButton({
         onImageChange={onImageChange}
         onUpload={onUpload}
         disabled={disabled}
+        target={target}
       />
     </>
   );

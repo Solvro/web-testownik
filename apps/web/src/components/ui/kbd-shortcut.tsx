@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { Kbd } from "@/components/ui/kbd";
+import { useIsApplePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 interface KbdShortcutProps {
@@ -18,18 +17,7 @@ function KbdShortcut({
   suffix,
   className,
 }: KbdShortcutProps) {
-  const [isMac, setIsMac] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const platform = navigator.platform.toLowerCase();
-    const userAgent = navigator.userAgent.toLowerCase();
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
-    setIsMac(platform.includes("mac") || userAgent.includes("mac"));
-  }, []);
-
-  if (isMac === null) {
-    return null;
-  }
+  const isMac = useIsApplePlatform();
 
   const modifierKey = isMac ? macKey : winKey;
 

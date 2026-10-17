@@ -32,6 +32,35 @@ export const answerFormSchema = z
     },
   );
 
+/** Error of a single-choice question with several correct answers. */
+export const SINGLE_CHOICE_ERROR =
+  "Jednokrotny wybór pozwala na jedną poprawną odpowiedź. Odznacz pozostałe lub zmień typ pytania.";
+
+/** Error of a single-choice question without a correct answer. */
+export const SINGLE_CHOICE_REQUIRED_ERROR =
+  "Jednokrotny wybór wymaga zaznaczenia poprawnej odpowiedzi";
+
+/**
+ * The error of the question's answers against its choice type, or null.
+ * Single choice needs exactly one correct answer.
+ */
+export function choiceTypeError(question: {
+  multiple: boolean;
+  answers: { is_correct: boolean }[];
+}) {
+  if (question.multiple) {
+    return null;
+  }
+  const correct = question.answers.filter((answer) => answer.is_correct).length;
+  if (correct > 1) {
+    return SINGLE_CHOICE_ERROR;
+  }
+  if (correct === 0) {
+    return SINGLE_CHOICE_REQUIRED_ERROR;
+  }
+  return null;
+}
+
 export const questionFormSchema = z
   .object({
     id: z.string(),
@@ -40,6 +69,8 @@ export const questionFormSchema = z
     explanation: z.string().optional(),
     multiple: z.boolean(),
     is_ai_generated: z.boolean().optional(),
+    /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
+    is_markdown_enabled: z.boolean().optional(),
     image: z.string().optional().nullable().readonly(), // Read-only (Display URL from backend)
     image_url: z.string().optional().nullable(), // Write-only (Input for external URLs)
     image_upload: z.string().optional().nullable(), // Write-only (UUID from /api/upload/)
@@ -65,7 +96,13 @@ export const questionFormSchema = z
     {
       error: "Pytanie musi zawierać tekst lub zdjęcie",
     },
-  );
+  )
+  .superRefine((data, context) => {
+    const error = choiceTypeError(data);
+    if (error !== null) {
+      context.addIssue({ code: "custom", message: error, path: ["answers"] });
+    }
+  });
 
 export const quizFormSchema = z.object({
   title: z

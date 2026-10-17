@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ImageLoad } from "@/components/image-load";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,15 +47,24 @@ export function QuizPreviewDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-lg">
+        <DialogContent showCloseButton={false} className="w-lg">
           <DialogHeader>
             <DialogTitle>
               {type === "created"
-                ? `Quiz "${title}" został utworzony`
-                : `Quiz "${title}" został zaimportowany`}
+                ? `Quiz „${title}” został utworzony`
+                : `Quiz „${title}” został zaimportowany`}
             </DialogTitle>
-            <DialogDescription className={description ? "" : "sr-only"}>
-              {description || "Podgląd quizu"}
+            <DialogDescription
+              className={description ? "" : "sr-only"}
+              render={<div />}
+            >
+              {description ? (
+                <MarkdownRenderer className="prose-p:my-0 text-sm! text-inherit!">
+                  {description}
+                </MarkdownRenderer>
+              ) : (
+                "Podgląd quizu"
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -77,9 +87,12 @@ export function QuizPreviewDialog({
                           <span className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
                             {qi + 1}
                           </span>
-                          <p className="text-sm leading-snug font-medium">
+                          <MarkdownRenderer
+                            className="prose-p:my-0 min-w-0 text-sm! leading-snug! font-medium"
+                            enabled={question.is_markdown_enabled !== false}
+                          >
                             {question.text}
-                          </p>
+                          </MarkdownRenderer>
                         </div>
                         <ImageLoad
                           url={question.image}
@@ -123,9 +136,14 @@ export function QuizPreviewDialog({
                                 )}
                               </span>
                               <div className="flex flex-1 flex-col gap-1">
-                                <span className="leading-snug">
+                                <MarkdownRenderer
+                                  className="prose-p:my-0 min-w-0 text-xs! leading-snug! text-inherit!"
+                                  enabled={
+                                    question.is_markdown_enabled !== false
+                                  }
+                                >
                                   {answer.text}
-                                </span>
+                                </MarkdownRenderer>
                                 <ImageLoad
                                   url={answer.image}
                                   alt={answer.text}
