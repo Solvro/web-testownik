@@ -11,7 +11,7 @@ const cardVariants = cva(
       variant: {
         default: "",
         gradient:
-          "bg-radial-[at_0_0] from-(--card-gradient-from) to-(--card-gradient-to)",
+          "bg-radial-[at_0_0] from-(--card-gradient-from)/50 to-(--card-gradient-to)/50 ring-input",
       },
     },
     defaultVariants: {

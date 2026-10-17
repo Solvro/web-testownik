@@ -263,7 +263,8 @@ describe("ImportQuizPage", () => {
     const { clickImport, inputJson, switchToJson } = await setup();
 
     await switchToJson();
-    inputJson(JSON.stringify(mockQuiz));
+    const { folder, ...legacyMock } = mockQuiz;
+    inputJson(JSON.stringify(legacyMock));
     await clickImport();
 
     expect(
