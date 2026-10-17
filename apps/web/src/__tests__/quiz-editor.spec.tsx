@@ -1084,12 +1084,14 @@ describe("Quiz editor", () => {
 
     // The conflict blocks saving.
     await user.click(screen.getByRole("button", { name: "Zapisz" }));
-    expect(
-      await screen.findByText(
-        "Jednokrotny wybór pozwala na jedną poprawną odpowiedź",
-      ),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Zapisz" })).toBeEnabled();
+    });
     expect(onSave).not.toHaveBeenCalled();
+    // The hint next to the answers is the only place that explains it.
+    expect(
+      screen.getAllByText(/Jednokrotny wybór pozwala na jedną poprawną/),
+    ).toHaveLength(1);
 
     // Edits made after the change survive the undo.
     fireEvent.change(screen.getByRole("textbox", { name: "Odpowiedź 1" }), {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
+import { SINGLE_CHOICE_ERROR } from "@testownik/core/quiz/schema";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -415,9 +416,13 @@ export function QuestionEditor({
               {(questionField) => (
                 <form.Field name={`${path}.text`}>
                   {(field) => {
+                    // The conflict is explained next to the answers, so it
+                    // neither marks the text nor repeats under it.
+                    const questionErrors = questionField.errors.filter(
+                      (error) => error.message !== SINGLE_CHOICE_ERROR,
+                    );
                     const invalid =
-                      field.errors.length > 0 ||
-                      questionField.errors.length > 0;
+                      field.errors.length > 0 || questionErrors.length > 0;
                     return (
                       <>
                         <div
@@ -462,7 +467,7 @@ export function QuestionEditor({
                           }}
                         />
                         <div id={`question-error-${questionId}`}>
-                          <FieldError errors={questionField.errors} />
+                          <FieldError errors={questionErrors} />
                         </div>
                       </>
                     );

@@ -32,6 +32,10 @@ export const answerFormSchema = z
     },
   );
 
+/** Error of a single-choice question with several correct answers. */
+export const SINGLE_CHOICE_ERROR =
+  "Jednokrotny wybór pozwala na jedną poprawną odpowiedź";
+
 export const questionFormSchema = z
   .object({
     id: z.string(),
@@ -72,9 +76,7 @@ export const questionFormSchema = z
     (data) =>
       data.multiple ||
       data.answers.filter((answer) => answer.is_correct).length <= 1,
-    {
-      error: "Jednokrotny wybór pozwala na jedną poprawną odpowiedź",
-    },
+    { error: SINGLE_CHOICE_ERROR },
   );
 
 export const quizFormSchema = z.object({
