@@ -5,11 +5,11 @@ import { Fragment } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useIsApplePlatform } from "@/lib/platform";
 
 const groups: { title: string; shortcuts: [string[][], string][] }[] = [
   {
@@ -50,7 +50,9 @@ const groups: { title: string; shortcuts: [string[][], string][] }[] = [
   },
 ];
 
-/** Lists the editor's keyboard shortcuts. Opened from the quiz menu. */
+const appleKeys: Record<string, string> = { Ctrl: "⌘", Shift: "⇧" };
+
+/** Lists the editor's keyboard shortcuts, with the keys of the system in use. Opened from the quiz menu. */
 export function KeyboardShortcuts({
   open,
   onOpenChange,
@@ -58,12 +60,13 @@ export function KeyboardShortcuts({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const apple = useIsApplePlatform();
+  const keyLabel = (key: string) => (apple ? (appleKeys[key] ?? key) : key);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Skróty klawiszowe</DialogTitle>
-          <DialogDescription>Na Macu zamiast Ctrl użyj ⌘.</DialogDescription>
         </DialogHeader>
         {groups.map((group) => (
           <section key={group.title} className="space-y-2">
@@ -85,7 +88,7 @@ export function KeyboardShortcuts({
                         ) : null}
                         <KbdGroup>
                           {keys.map((key) => (
-                            <Kbd key={key}>{key}</Kbd>
+                            <Kbd key={key}>{keyLabel(key)}</Kbd>
                           ))}
                         </KbdGroup>
                       </Fragment>

@@ -1383,9 +1383,36 @@ describe("Quiz editor", () => {
     await user.click(
       await screen.findByRole("menuitem", { name: "Skróty klawiszowe" }),
     );
-    expect(
-      await screen.findByRole("dialog", { name: "Skróty klawiszowe" }),
-    ).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", {
+      name: "Skróty klawiszowe",
+    });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Ctrl").length).toBeGreaterThan(0);
+    expect(within(dialog).queryByText("⌘")).not.toBeInTheDocument();
+  });
+
+  it("shows ⌘ and ⇧ in the shortcuts on Apple systems", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Safari/605.1.15",
+    );
+    render(
+      <QuizEditor
+        mode="edit"
+        initialQuiz={quizFixture(1)}
+        onSave={saveMock()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Opcje quizu" }));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "Skróty klawiszowe" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Skróty klawiszowe",
+    });
+    expect(within(dialog).queryByText("Ctrl")).not.toBeInTheDocument();
+    expect(within(dialog).getAllByText("⌘").length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText("⇧").length).toBeGreaterThan(0);
   });
 
   it("attaches an uploaded image to its answer after switching and removing questions", async () => {
