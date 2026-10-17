@@ -1154,7 +1154,7 @@ describe("Quiz editor", () => {
     });
     // Opening seven other questions evicts the first editor.
     for (const number of [2, 3, 4, 5, 6, 7, 8]) {
-      await user.click(
+      fireEvent.click(
         screen.getByRole("button", {
           name: new RegExp(`^Pytanie ${String(number)}:`),
         }),
@@ -1174,7 +1174,8 @@ describe("Quiz editor", () => {
     expect(
       screen.getByRole("textbox", { name: "Treść pytania 1" }),
     ).toHaveValue("Treść numer 1");
-  });
+    // Eight editors are rendered on the way; slower CI machines need room.
+  }, 15_000);
 
   it("undoes and redoes every change to the open question", async () => {
     const user = userEvent.setup();

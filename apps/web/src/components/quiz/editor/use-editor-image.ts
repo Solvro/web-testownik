@@ -11,15 +11,19 @@ export function useEditorImage({
   onChange,
   onUploadStart,
   onUploadEnd,
+  canStart,
 }: {
   onChange: (state: ImageState) => void;
   onUploadStart: () => void;
   onUploadEnd: () => void;
+  /** Checked when a file arrives, also by drop and paste, which no
+   * disabled control stops. */
+  canStart?: () => boolean;
 }) {
   const { upload, isUploading } = useImageUpload();
   const uploadingRef = useRef(false);
   async function onUpload(file: File) {
-    if (uploadingRef.current) {
+    if (uploadingRef.current || (canStart !== undefined && !canStart())) {
       return;
     }
     uploadingRef.current = true;

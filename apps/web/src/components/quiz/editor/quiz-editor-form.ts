@@ -119,6 +119,27 @@ export function canMutate(form: QuizEditorForm) {
   return true;
 }
 
+// Image uploads in flight per form; each writes into the form when done.
+const uploading = new WeakMap<QuizEditorForm, number>();
+
+export function setUploading(form: QuizEditorForm, count: number) {
+  uploading.set(form, count);
+}
+
+/**
+ * Whether a version restore may start now. Like `canMutate`, and no upload
+ * may be running: finishing after the restore, it would write its image
+ * into the restored content. Reads the live state, so a toast's Cofnij
+ * created earlier sees uploads started since.
+ */
+export function canRestore(form: QuizEditorForm) {
+  if ((uploading.get(form) ?? 0) > 0) {
+    toast.info("Poczekaj na zakończenie przesyłania zdjęć.");
+    return false;
+  }
+  return canMutate(form);
+}
+
 /**
  * Field errors are stored by position, so after answers or questions move,
  * an error can sit on the wrong row. Runs the validation again once the

@@ -30,6 +30,7 @@ import { QuestionRow } from "@/components/quiz/editor/question-row";
 import { matchesQuery } from "@/components/quiz/editor/question-summary";
 import {
   canMutate,
+  canRestore,
   createQuestion,
   questionIssue,
   quizToFormData,
@@ -37,6 +38,7 @@ import {
   restoreChoiceTypes,
   revalidate,
   setRestoring as setFormRestoring,
+  setUploading,
   useQuizEditorForm,
   withChoiceType,
 } from "@/components/quiz/editor/quiz-editor-form";
@@ -192,6 +194,7 @@ export function QuizEditor(props: QuizEditorProps) {
   const keyOf = (id: string) => keysRef.current.get(id) ?? id;
   const savedRef = useRef(false);
   const [uploadCount, setUploadCount] = useState(0);
+  const uploadsRef = useRef(0);
   useGlobalFileDragMonitor();
 
   const form = useQuizEditorForm({
@@ -415,7 +418,10 @@ export function QuizEditor(props: QuizEditorProps) {
   }
 
   function trackUpload(change: number) {
-    setUploadCount((current) => Math.max(0, current + change));
+    uploadsRef.current = Math.max(0, uploadsRef.current + change);
+    setUploadCount(uploadsRef.current);
+    // Mirrored outside React, where restore guards read it live.
+    setUploading(form, uploadsRef.current);
   }
 
   /** Saves, and resolves true when the quiz was saved. */
@@ -687,6 +693,7 @@ export function QuizEditor(props: QuizEditorProps) {
                     hidden={id !== currentId}
                     keyOf={keyOf}
                     form={form}
+                    locked={restoring}
                     index={index}
                     questionId={id}
                     count={count}
@@ -743,15 +750,7 @@ export function QuizEditor(props: QuizEditorProps) {
             setFormRestoring(form, value);
             setRestoring(value);
           }}
-          canStart={() => {
-            // An upload finishing after the restore would write its image
-            // into the restored content.
-            if (uploadCount > 0) {
-              toast.info("Poczekaj na zakończenie przesyłania zdjęć.");
-              return false;
-            }
-            return canMutate(form);
-          }}
+          canStart={() => canRestore(form)}
           hasUnsavedChanges={() => !form.state.isDefaultValue}
           onRestored={(quiz) => {
             const values = quizToFormData(quiz);

@@ -66,9 +66,12 @@ export function QuestionEditor({
   onCollapse,
   onUploadStart,
   onUploadEnd,
+  locked = false,
 }: {
   /** Kept mounted while closed, so opening it again is instant. */
   hidden?: boolean;
+  /** A restore is in flight; its response replaces the content. */
+  locked?: boolean;
   /** The React key of an answer, stable when saving replaces its ID. */
   keyOf?: (id: string) => string;
   form: QuizEditorForm;
@@ -85,7 +88,8 @@ export function QuestionEditor({
   const question = useSelector(form.atom, (state) =>
     state.values.questions.at(index),
   );
-  const disabled = useSelector(form.atom, (state) => state.isSubmitting);
+  const disabled =
+    useSelector(form.atom, (state) => state.isSubmitting) || locked;
   const onImageChange = (state: Parameters<typeof imageUpdates>[0]) => {
     updateQuestion(form, questionId, (current) => ({
       ...current,
@@ -96,6 +100,7 @@ export function QuestionEditor({
     onChange: onImageChange,
     onUploadStart,
     onUploadEnd,
+    canStart: () => canMutate(form),
   });
   const history = useQuestionHistory(form, questionId);
   if (question === undefined) {

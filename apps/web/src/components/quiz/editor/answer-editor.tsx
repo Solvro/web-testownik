@@ -10,7 +10,7 @@ import { FieldError } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 import { ImageButton, ImageDropZone, ImagePreview } from "./image";
-import { hasImage, updateAnswer } from "./quiz-editor-form";
+import { canMutate, hasImage, updateAnswer } from "./quiz-editor-form";
 import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
 
@@ -61,6 +61,7 @@ export function AnswerEditor({
     onChange: onImageChange,
     onUploadStart,
     onUploadEnd,
+    canStart: () => canMutate(form),
   });
   const path =
     `questions[${String(questionIndex)}].answers[${String(answerIndex)}]` as `questions[${number}].answers[${number}]`;
