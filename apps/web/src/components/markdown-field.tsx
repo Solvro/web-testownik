@@ -48,6 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Separator } from "./ui/separator";
 import { Toggle } from "./ui/toggle";
 
 interface MarkdownToolbarTargets {
@@ -495,7 +496,7 @@ export function MarkdownToolbar({
             </Button>
           ))}
           {formatting ? (
-            <div className="bg-border mx-0.5 h-4 w-px" aria-hidden="true" />
+            <Separator orientation="vertical" className="mx-0.5 h-4" />
           ) : null}
         </>
       )}

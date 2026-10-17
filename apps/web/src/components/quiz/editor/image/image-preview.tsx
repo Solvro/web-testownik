@@ -48,7 +48,6 @@ export function ImagePreview({
   onDialogOpenChange,
 }: ImagePreviewProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const { isDragOver, elementRef } = useImageDropTarget((file) => {
     onFileDrop?.(file);
@@ -90,8 +89,9 @@ export function ImagePreview({
 
   return (
     <>
-      {/* The delete button is a sibling of the preview button, so one
-          interactive element is not nested in another. */}
+      {/* The hover overlay and the delete button are siblings of the preview
+          button: no interactive element nests in another, and both stay
+          aligned with the image. */}
       <div className="group/preview relative inline-flex max-w-full">
         <div
           ref={elementRef}
@@ -104,20 +104,16 @@ export function ImagePreview({
               handleOpenDialog();
             }
           }}
-          onMouseEnter={() => {
-            setIsHovered(true);
-          }}
-          onMouseLeave={() => {
-            setIsHovered(false);
-          }}
           className={cn(
-            "focus-visible:ring-ring relative inline-flex w-auto max-w-full cursor-pointer overflow-hidden rounded-lg border transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none",
+            "focus-visible:ring-ring relative inline-flex w-auto max-w-full cursor-pointer overflow-hidden rounded-lg border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none",
             heightClass,
             isDragOver
               ? "border-primary bg-primary/10 ring-primary/50 ring-2"
-              : isHovered && !isUploading
-                ? "border-primary/50 scale-[1.01]"
-                : "border-border",
+              : "border-border",
+            !isDragOver &&
+              !isUploading &&
+              !disabled &&
+              "pointer-fine:group-hover/preview:border-primary/50",
             (disabled || isUploading) && "cursor-default",
             disabled && "opacity-50",
             isUploading && "w-32 border-dashed",
@@ -159,17 +155,21 @@ export function ImagePreview({
               draggable={false}
             />
           )}
-
-          {!isUploading && !disabled && (isHovered || isDragOver) ? (
+        </div>
+        {isUploading || disabled ? null : (
+          <>
             <div
+              aria-hidden="true"
               className={cn(
-                "absolute inset-0 flex items-center justify-center backdrop-blur-[1px] transition-all duration-200",
-                isDragOver ? "bg-primary/10" : "bg-black/20",
+                "pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg backdrop-blur-[1px] transition-opacity duration-200",
+                isDragOver
+                  ? "bg-primary/10 opacity-100"
+                  : "bg-black/20 opacity-0 pointer-fine:group-hover/preview:opacity-100",
               )}
             >
               <div
                 className={cn(
-                  "flex items-center gap-2 rounded-full px-4 py-2 shadow-sm transition-all duration-300",
+                  "flex items-center gap-2 rounded-full px-4 py-2 shadow-sm",
                   isDragOver
                     ? "bg-primary text-primary-foreground"
                     : "bg-background/90 text-foreground",
@@ -181,22 +181,20 @@ export function ImagePreview({
                 </span>
               </div>
             </div>
-          ) : null}
-        </div>
-        {isUploading || disabled ? null : (
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon-sm"
-            className="absolute top-2 right-2 rounded-full shadow-sm transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/preview:opacity-100 pointer-fine:group-hover/preview:opacity-100"
-            title="Usuń zdjęcie"
-            aria-label="Usuń zdjęcie"
-            onClick={() => {
-              onImageChange({ image: null, imageUrl: null, uploadId: null });
-            }}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon-sm"
+              className="absolute top-2 right-2 rounded-full shadow-sm transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/preview:opacity-100 pointer-fine:group-hover/preview:opacity-100"
+              title="Usuń zdjęcie"
+              aria-label="Usuń zdjęcie"
+              onClick={() => {
+                onImageChange({ image: null, imageUrl: null, uploadId: null });
+              }}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </>
         )}
       </div>
 

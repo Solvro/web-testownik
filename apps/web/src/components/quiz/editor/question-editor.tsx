@@ -2,10 +2,6 @@
 
 import { useSelector } from "@tanstack/react-form";
 import {
-  SINGLE_CHOICE_ERROR,
-  SINGLE_CHOICE_REQUIRED_ERROR,
-} from "@testownik/core/quiz/schema";
-import {
   ChevronDownIcon,
   ChevronUpIcon,
   PlusIcon,
@@ -259,11 +255,9 @@ export function QuestionEditor({
     return true;
   }
 
-  const correctCount = question.answers.filter(
-    (answer) => answer.is_correct,
-  ).length;
-  const hasCorrect = correctCount > 0;
-  const conflict = !question.multiple && correctCount > 1;
+  const conflict =
+    !question.multiple &&
+    question.answers.filter((answer) => answer.is_correct).length > 1;
   const questionImage = hasImage(question);
   const markdown = question.is_markdown_enabled !== false;
 
@@ -419,15 +413,9 @@ export function QuestionEditor({
               {(questionField) => (
                 <form.Field name={`${path}.text`}>
                   {(field) => {
-                    // Choice errors are explained next to the answers, so
-                    // they neither mark the text nor repeat under it.
-                    const questionErrors = questionField.errors.filter(
-                      (error) =>
-                        error.message !== SINGLE_CHOICE_ERROR &&
-                        error.message !== SINGLE_CHOICE_REQUIRED_ERROR,
-                    );
                     const invalid =
-                      field.errors.length > 0 || questionErrors.length > 0;
+                      field.errors.length > 0 ||
+                      questionField.errors.length > 0;
                     return (
                       <>
                         <div
@@ -472,7 +460,7 @@ export function QuestionEditor({
                           }}
                         />
                         <div id={`question-error-${questionId}`}>
-                          <FieldError errors={questionErrors} />
+                          <FieldError errors={questionField.errors} />
                         </div>
                       </>
                     );
@@ -486,21 +474,8 @@ export function QuestionEditor({
             aria-label={`Odpowiedzi do pytania ${number}`}
             className="space-y-2"
           >
-            <form.Field name={path}>
-              {(questionField) => {
-                const message = conflict
-                  ? "Jednokrotny wybór pozwala na jedną poprawną odpowiedź. Odznacz pozostałe lub zmień typ na wielokrotny wybór."
-                  : !hasCorrect &&
-                      questionField.errors.some(
-                        (error) =>
-                          error.message === SINGLE_CHOICE_REQUIRED_ERROR,
-                      )
-                    ? SINGLE_CHOICE_REQUIRED_ERROR
-                    : null;
-                return message === null ? null : (
-                  <p className="text-destructive text-sm">{message}</p>
-                );
-              }}
+            <form.Field name={`${path}.answers`}>
+              {(answersField) => <FieldError errors={answersField.errors} />}
             </form.Field>
             <div className="space-y-2">
               {question.answers.map((answer, answerIndex) => (

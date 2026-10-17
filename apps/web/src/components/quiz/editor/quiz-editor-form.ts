@@ -6,7 +6,11 @@ import type {
   QuestionFormData,
   QuizFormData,
 } from "@testownik/core/quiz/schema";
-import { quizFormSchema } from "@testownik/core/quiz/schema";
+import {
+  SINGLE_CHOICE_ERROR,
+  choiceTypeError,
+  quizFormSchema,
+} from "@testownik/core/quiz/schema";
 import type { Quiz } from "@testownik/core/quiz/types";
 import { toast } from "sonner";
 
@@ -44,6 +48,25 @@ export function useQuizEditorForm(options: {
         triggers: [
           { trigger: "blur", when: ({ formApi }) => formApi.state.isInvalid },
         ],
+      },
+      // A single-choice question with several correct answers comes from a
+      // deliberate change, so it is reported at once. A missing correct
+      // answer waits for the submit check, like other incomplete input.
+      {
+        run: ({ value, createErrorMap }) => {
+          const errors = createErrorMap();
+          for (const [index, question] of value.questions.entries()) {
+            if (choiceTypeError(question) === SINGLE_CHOICE_ERROR) {
+              const field =
+                `questions[${String(index)}].answers` as `questions[${number}].answers`;
+              errors.fields[field] = SINGLE_CHOICE_ERROR;
+            }
+          }
+          return errors;
+        },
+        runOnMount: true,
+        runOnSubmit: false,
+        triggers: ["change"],
       },
     ],
     onSubmitInvalid: ({ value }) => {
