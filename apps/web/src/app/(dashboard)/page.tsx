@@ -9,7 +9,7 @@ import {
   parseCaptureRequest,
 } from "./components/landing/capture/capture-request";
 import type { LandingSearchParameters } from "./components/landing/capture/capture-request";
-import { DeviceCapture } from "./components/landing/capture/device-capture";
+import { DeviceCapture } from "./components/landing/capture/device-capture-loader";
 import { LandingPage } from "./components/landing/landing-page";
 
 export const metadata: Metadata = {

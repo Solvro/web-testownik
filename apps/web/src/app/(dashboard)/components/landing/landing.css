@@ -42,10 +42,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * Share the hero grid with the mobile still. CanvasUI samples RGB and discards
- * alpha, so its captured subtree needs this opaque background.
+ * The hero grid, shared by the static hero (phones, and desktop until the stage
+ * mounts) and the Bubble. CanvasUI samples RGB and discards alpha, so its
+ * captured subtree needs this opaque background.
  */
-.lp-mobile-hero,
+.lp-hero-grid,
 .lp-bubble-capture > canvas > div,
 .lp-bubble-capture > div:not([class]),
 .lp-bubble-capture > div {
@@ -174,6 +175,222 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   transform: translateX(-50%);
 }
 
+/*
+ * The mobile hero's iPhone 14 Pro, ported from devices.css v0.2.0 (MIT,
+ * github.com/picturepan2/devices.css) with `lp-` names. Vendored rather than
+ * imported: the package ships every device (~50 KB) and its reset sets
+ * `display: block` on every descendant of `.device`, which would override the
+ * Tailwind display utilities of the live screen inside. Silver in light, space
+ * black in dark; the screen follows the page theme on its own.
+ */
+.lp-iphone {
+  --lp-iphone-edge: #c8cacb;
+  --lp-iphone-rim: #e2e3e4;
+  position: relative;
+  width: 428px;
+  height: 868px;
+}
+
+.dark .lp-iphone {
+  --lp-iphone-edge: #5c5956;
+  --lp-iphone-rim: #76726f;
+}
+
+.lp-iphone-frame {
+  box-sizing: border-box;
+  width: 428px;
+  height: 868px;
+  padding: 19px;
+  border: 1px solid var(--lp-iphone-edge);
+  border-radius: 68px;
+  background: #010101;
+  box-shadow:
+    inset 0 0 4px 2px white,
+    inset 0 0 0 6px var(--lp-iphone-rim),
+    0 2.6rem 4rem -1.6rem rgb(0 0 0 / 38%);
+}
+
+/* Its own stacking context so the screen's z-indexed UI stays under the island. */
+.lp-iphone-screen {
+  position: relative;
+  isolation: isolate;
+  width: 390px;
+  height: 830px;
+  overflow: hidden;
+  border-radius: 49px;
+  background: var(--background);
+}
+
+.lp-iphone-stripe::before,
+.lp-iphone-stripe::after,
+.lp-iphone-bands::before,
+.lp-iphone-bands::after,
+.lp-iphone-sensors::before,
+.lp-iphone-sensors::after,
+.lp-iphone-buttons::before,
+.lp-iphone-buttons::after {
+  position: absolute;
+  box-sizing: border-box;
+  content: "";
+}
+
+/* Antenna lines on the long edges. */
+.lp-iphone-stripe::before,
+.lp-iphone-stripe::after {
+  z-index: 9;
+  left: 0;
+  width: 100%;
+  height: 7px;
+  border: solid rgb(1 1 1 / 25%);
+  border-width: 0 7px;
+}
+
+.lp-iphone-stripe::after {
+  top: 85px;
+}
+
+.lp-iphone-stripe::before {
+  bottom: 85px;
+}
+
+/* Antenna lines on the short edges. */
+.lp-iphone-bands::before,
+.lp-iphone-bands::after {
+  z-index: 9;
+  width: 6px;
+  height: 6px;
+  border: solid rgb(1 1 1 / 25%);
+  border-width: 6px 0;
+}
+
+.lp-iphone-bands::after {
+  top: 0;
+  right: 86px;
+}
+
+.lp-iphone-bands::before {
+  bottom: 0;
+  left: 86px;
+}
+
+/* Dynamic Island. */
+.lp-iphone-island {
+  position: absolute;
+  top: 29px;
+  left: 50%;
+  width: 120px;
+  height: 35px;
+  margin-left: -60px;
+  border-radius: 20px;
+  background: #010101;
+}
+
+.lp-iphone-sensors::after {
+  top: 30px;
+  left: 50%;
+  width: 74px;
+  height: 33px;
+  margin-left: -60px;
+  border-radius: 17px;
+  background: #010101;
+}
+
+.lp-iphone-sensors::before {
+  top: 42px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: 36px;
+  border-radius: 50%;
+  background:
+    radial-gradient(farthest-corner at 20% 20%, #6074bf 0, transparent 40%),
+    radial-gradient(
+      farthest-corner at 80% 80%,
+      #513785 0,
+      #24555e 20%,
+      transparent 50%
+    );
+  box-shadow: 0 0 1px 1px rgb(255 255 255 / 5%);
+}
+
+/* Action button, then volume up and down. */
+.lp-iphone-buttons,
+.lp-iphone-buttons::before,
+.lp-iphone-buttons::after,
+.lp-iphone-power {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--lp-iphone-edge);
+}
+
+.lp-iphone-buttons {
+  top: 115px;
+  left: -2px;
+  height: 32px;
+}
+
+.lp-iphone-buttons::before,
+.lp-iphone-buttons::after {
+  left: 0;
+  height: 62px;
+}
+
+.lp-iphone-buttons::after {
+  top: 60px;
+}
+
+.lp-iphone-buttons::before {
+  top: 140px;
+}
+
+.lp-iphone-power {
+  top: 200px;
+  right: -2px;
+  height: 100px;
+}
+
+/*
+ * Mobile hero choreography with no JavaScript: over the first stretch of page
+ * scroll the phone rises and straightens and the study chips drift outwards.
+ * Each chip sets its own `--lp-chip-drift`. Without scroll-timeline support,
+ * or with reduced motion, both stay in the resting pose (no offset).
+ */
+@keyframes lp-hero-phone-rise {
+  from {
+    translate: 0 1.75rem;
+    rotate: -4deg;
+  }
+  to {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+
+@keyframes lp-hero-chip-drift {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: var(--lp-chip-drift, 0 -1rem);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-hero-phone,
+    .lp-hero-chip {
+      animation: lp-hero-phone-rise linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 65vh;
+    }
+
+    .lp-hero-chip {
+      animation-name: lp-hero-chip-drift;
+    }
+  }
+}
+
 /* TOC section peek — arrive soft, leave with a quick pop. */
 @keyframes lp-toc-preview-in {
   from {
@@ -295,4 +512,21 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     transform: none;
     filter: none;
   }
+}
+
+/*
+ * Screen hosts as sealed boxes. The hosts are created imperatively and
+ * reparented by CSS3DRenderer, so they carry no utility classes; the preview
+ * inside (`PreviewSandbox`) seals itself with utilities, and these rules give
+ * the host the same boundary so nothing it holds — focus rings, overlays
+ * portalled into the screen, scroll chaining — paints or scrolls past the
+ * device. `inert` on the laptop host still applies to the overlay layer
+ * because it lives inside the host.
+ */
+.lp-screen-laptop,
+.lp-screen-tablet,
+.lp-screen-phone {
+  contain: layout paint style;
+  isolation: isolate;
+  overscroll-behavior: contain;
 }

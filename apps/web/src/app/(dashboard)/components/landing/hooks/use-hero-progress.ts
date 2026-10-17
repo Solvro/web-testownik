@@ -2,7 +2,7 @@
 
 import { useLayoutEffect } from "react";
 
-import { publishHeroProgress } from "../hero-progress";
+import { HERO_PROGRESS_PROPERTY, publishHeroProgress } from "../hero-progress";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 function clamp(value: number, minimum = 0, maximum = 1): number {
@@ -16,6 +16,11 @@ function clamp(value: number, minimum = 0, maximum = 1): number {
  *
  * With reduced motion the hero is pinned at 1 — the laptop renders open and
  * nothing animates on scroll.
+ *
+ * Only the desktop stage calls this, so phones never attach the listeners. On
+ * unmount (the viewport dropped below `lg`) the inline value is removed and the
+ * section's own `--landing-hero-progress: 0` takes over again, leaving the
+ * shared copy fully visible.
  */
 export function useHeroProgress(
   heroReference: React.RefObject<HTMLElement | null>,
@@ -53,6 +58,7 @@ export function useHeroProgress(
       if (frame !== 0) {
         window.cancelAnimationFrame(frame);
       }
+      hero.style.removeProperty(HERO_PROGRESS_PROPERTY);
     };
   }, [heroReference, prefersReducedMotion]);
 }

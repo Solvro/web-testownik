@@ -6,7 +6,6 @@ import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
 import { useGuestStart } from "./hooks/use-guest-start";
-import { useHeroProgress } from "./hooks/use-hero-progress";
 import { landingFontVariables } from "./landing-fonts";
 import "./landing.css";
 import { Faq } from "./sections/faq";
@@ -32,8 +31,6 @@ export function LandingPage({
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
-
-  useHeroProgress(heroReference);
 
   return (
     <div

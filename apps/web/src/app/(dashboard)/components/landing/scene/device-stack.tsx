@@ -6,14 +6,17 @@ import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 
-import { BREAKPOINT } from "../breakpoints";
+import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import { MonoLabel } from "../components/typography";
 import { laptopScreenRect } from "./laptop-framing";
-import { SCENE_CLASS } from "./scene-classes";
+import { DEVICE_COVER_CLASS, SCENE_CLASS } from "./scene-classes";
 import type { DeviceStackHosts } from "./three/create-device-stack";
 
-/** Below this width the hero drops the 3D scene entirely — see device-scene.tsx. */
-const MIN_SCENE_WIDTH = `(min-width: ${String(BREAKPOINT.sm)}px)`;
+/**
+ * The hero only mounts this component at `lg` and above, but the capture route
+ * and a window resized below `lg` mid-load should not boot WebGL either.
+ */
+const MIN_SCENE_WIDTH = DESKTOP_STAGE_QUERY;
 
 /**
  * React wrapper around the WebGL device stack.
@@ -132,8 +135,8 @@ export function DeviceStack({
       }
     };
 
-    // Phones get a single floating iPhone instead of the laptop, so nothing
-    // here should cost them a WebGL context or a model download. Booting waits
+    // Below `lg` the hero shows a CSS phone instead, so nothing here should
+    // cost those viewports a WebGL context or a model download. Booting waits
     // until the viewport is wide enough and the hero is actually close.
     const wideEnough = window.matchMedia(MIN_SCENE_WIDTH);
     let hasBooted = false;
@@ -184,22 +187,14 @@ export function DeviceStack({
       )}
     >
       {/*
-       * A background image rather than an <img>: phones hide the whole rig, and
-       * a hidden ancestor stops the browser fetching a background but not a
-       * src. The percentages below are expressed in container-height units so
-       * the server-rendered still already agrees with the camera solver; the
-       * measured rect replaces them on mount, before the model arrives.
-       *
-       * Regenerate both files with `pnpm capture:device-stack` whenever the
-       * closed pose, the field of view or the framing constants change.
+       * The measured rect replaces the container-unit placement on mount,
+       * before the model arrives. See DEVICE_COVER_CLASS.
        */}
       <div
         ref={coverReference}
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[63.42%] w-[89.35cqh] -translate-x-1/2",
-          "bg-[url(/models/testownik-device-stack-cover-light-v8.webp)] bg-size-[100%_100%]",
-          "dark:bg-[url(/models/testownik-device-stack-cover-dark-v8.webp)]",
+          DEVICE_COVER_CLASS,
           "transition-opacity delay-150 duration-150",
           "group-data-[model-ready=true]/stack:opacity-0",
           "group-data-[cover-only=true]/stack:opacity-100!",

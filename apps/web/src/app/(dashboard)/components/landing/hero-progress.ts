@@ -39,8 +39,3 @@ export function publishHeroProgress(
   cachedHeroProgress = next;
   window.dispatchEvent(new Event(HERO_PROGRESS_EVENT));
 }
-
-/** @deprecated Use `getHeroProgress()` — kept for callers outside the landing tree. */
-export function readHeroProgress(_element: Element): number {
-  return cachedHeroProgress;
-}

@@ -4,8 +4,8 @@ import { memo, useCallback, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { HERO_PROGRESS } from "../hero-progress";
+import { useQuizPreviewState } from "../hooks/use-quiz-preview-state";
 import { setSatelliteHovered } from "../satellite-hover";
-import type { DeviceQuizControls } from "./device-screen-content";
 import { DeviceStack } from "./device-stack";
 
 type DeviceScreenModule = typeof import("./device-screen-content");
@@ -38,24 +38,12 @@ function useDeviceScreenModule(enabled: boolean): DeviceScreenModule | null {
   return module;
 }
 
-function useQuizPreviewState(): DeviceQuizControls {
-  const [selectedAnswers, setSelectedAnswers] = useState<string[]>(["a-4"]);
-  const [questionChecked, setQuestionChecked] = useState(false);
-
-  return {
-    selectedAnswers,
-    onSelectedAnswersChange: setSelectedAnswers,
-    questionChecked,
-    onQuestionCheckedChange: setQuestionChecked,
-  };
-}
-
 const DeviceSceneBackdrop = memo((): React.JSX.Element => {
   return (
     <div
       aria-hidden="true"
       style={glowStyle}
-      className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] sm:block"
+      className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] lg:block"
     />
   );
 });
@@ -126,7 +114,7 @@ export function DeviceScene({
        * derives from the camera, which detaches every screen from its bezel.
        * All framing lives in the camera instead.
        */}
-      <div className="absolute inset-0 z-2 hidden sm:block">
+      <div className="absolute inset-0 z-2 hidden lg:block">
         <InteractiveDeviceStack
           captureLoadingCover={captureLoadingCover}
           capturePixelRatio={capturePixelRatio}

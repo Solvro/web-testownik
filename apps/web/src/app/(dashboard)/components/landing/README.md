@@ -8,9 +8,18 @@ to the application. For local work, open `/?landing=true`.
 - `landing-page.tsx` composes the page and imports the feature-owned plain CSS.
 - `landing-theme.css` registers Tailwind variants, fonts, and animation tokens.
 - `landing.css` contains only selectors that utilities cannot express: app-shell
-  overrides and DOM owned by CanvasUI, CSS3DRenderer, or devices.css.
-- `breakpoints.ts` mirrors Tailwind's default breakpoints for browser queries
-  and owns the independent 3D scene widths.
+  overrides, DOM owned by CanvasUI or CSS3DRenderer, the CSS iPhone (ported
+  from devices.css) and the mobile hero's scroll-driven animation.
+- `breakpoints.ts` mirrors Tailwind's breakpoints for browser queries. `lg`
+  (`DESKTOP_STAGE_QUERY`) is the one switch between the two heroes; it also
+  owns the independent 3D scene widths.
+- `sections/hero.tsx` renders the copy, nav and links once. Below `lg` (and as
+  the server render) the visual is `hero-phone.tsx`: a CSS iPhone running the
+  live quiz (`hero-phone-screen.tsx`, lazy, loaded below `lg` only) with
+  scroll-driven CSS motion and no JS. At `lg` it lazily mounts
+  `hero-desktop-stage.tsx` (Bubble, device scene, badges, progress bar and
+  `useHeroProgress`), so phones never download it. Until it loads, a
+  placeholder holds the device cover where `DeviceStack` shows it.
 - `components/` contains shared landing primitives.
 - `sections/` contains page sections and the interactive product showcase.
 - `scene/` owns the device stack, camera framing, and Three.js choreography.

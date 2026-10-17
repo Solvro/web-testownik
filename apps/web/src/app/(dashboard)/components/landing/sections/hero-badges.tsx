@@ -90,32 +90,40 @@ const STUDY_BADGES: StudyBadge[] = [
     id: "notebook",
     icon: NotebookPenIcon,
     className: "top-[24%] right-[20%] hidden xl:grid",
-    mobileClassName: "-top-2 left-0 hidden rotate-[7deg] sm:grid",
+    mobileClassName:
+      "top-[9%] -left-6 rotate-[7deg] [--lp-chip-drift:-0.5rem_-1.1rem] sm:-left-9",
     rotation: "7deg",
   },
   {
     id: "flask",
     icon: TestTubeDiagonalIcon,
     className: "top-[38%] right-[10%]",
-    mobileClassName: "-top-5 right-0 rotate-[-6deg]",
+    mobileClassName:
+      "top-[31%] -right-7 rotate-[-6deg] [--lp-chip-drift:0.6rem_-1.4rem] sm:-right-10",
     rotation: "-6deg",
   },
   {
     id: "books",
     icon: BookMarkedIcon,
     className: "bottom-[25%] left-[12%]",
-    mobileClassName: "-bottom-5 left-0 rotate-[-8deg]",
+    mobileClassName:
+      "top-[56%] -left-7 rotate-[-8deg] [--lp-chip-drift:-0.7rem_-0.7rem] sm:-left-10",
     rotation: "-8deg",
   },
   {
     id: "cap",
     icon: GraduationCap,
     className: "bottom-[38%] left-[20%] hidden xl:grid",
-    mobileClassName: "right-[7%] -bottom-5 hidden rotate-[6deg] sm:grid",
+    mobileClassName:
+      "top-[74%] -right-9 hidden rotate-[6deg] [--lp-chip-drift:0.5rem_-1rem] sm:grid",
     rotation: "6deg",
   },
 ];
 
+/**
+ * Study chips floating around the mobile CSS phone, positioned against the
+ * phone's box. `.lp-hero-chip` drifts them on scroll (see landing.css).
+ */
 export function MobileHeroBadges(): React.JSX.Element {
   return (
     <div
@@ -126,7 +134,7 @@ export function MobileHeroBadges(): React.JSX.Element {
         <span
           key={id}
           className={cn(
-            "border-border bg-card/90 absolute grid size-10 place-items-center rounded-xl border shadow-lg sm:size-12",
+            "lp-hero-chip border-border bg-card/90 absolute grid size-10 place-items-center rounded-xl border shadow-lg sm:size-12",
             "[&_svg]:text-primary [&_svg]:size-5 sm:[&_svg]:size-6",
             mobileClassName,
           )}
