@@ -443,7 +443,10 @@ function VersionContent({
                           : "Później zmienione"}
                       </p>
                     )}
-                    <MarkdownRenderer className="prose-p:my-0 text-sm!">
+                    <MarkdownRenderer
+                      className="prose-p:my-0 text-sm!"
+                      enabled={question.is_markdown_enabled !== false}
+                    >
                       {question.text}
                     </MarkdownRenderer>
                     {question.image === null ? null : (
@@ -474,7 +477,10 @@ function VersionContent({
                           </span>
                           <div className="min-w-0 flex-1 space-y-1">
                             {answer.text === "" ? null : (
-                              <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm!">
+                              <MarkdownRenderer
+                                className="prose-p:my-0 min-w-0 text-sm!"
+                                enabled={question.is_markdown_enabled !== false}
+                              >
                                 {answer.text}
                               </MarkdownRenderer>
                             )}
@@ -495,7 +501,10 @@ function VersionContent({
                         <span className="shrink-0 font-medium">
                           Wyjaśnienie:
                         </span>
-                        <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm! text-inherit!">
+                        <MarkdownRenderer
+                          className="prose-p:my-0 min-w-0 text-sm! text-inherit!"
+                          enabled={question.is_markdown_enabled !== false}
+                        >
                           {question.explanation}
                         </MarkdownRenderer>
                       </div>

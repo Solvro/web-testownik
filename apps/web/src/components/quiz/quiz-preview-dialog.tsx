@@ -87,7 +87,10 @@ export function QuizPreviewDialog({
                           <span className="bg-primary/10 text-primary inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
                             {qi + 1}
                           </span>
-                          <MarkdownRenderer className="prose-p:my-0 min-w-0 text-sm! leading-snug! font-medium">
+                          <MarkdownRenderer
+                            className="prose-p:my-0 min-w-0 text-sm! leading-snug! font-medium"
+                            enabled={question.is_markdown_enabled !== false}
+                          >
                             {question.text}
                           </MarkdownRenderer>
                         </div>
@@ -133,7 +136,12 @@ export function QuizPreviewDialog({
                                 )}
                               </span>
                               <div className="flex flex-1 flex-col gap-1">
-                                <MarkdownRenderer className="prose-p:my-0 min-w-0 text-xs! leading-snug! text-inherit!">
+                                <MarkdownRenderer
+                                  className="prose-p:my-0 min-w-0 text-xs! leading-snug! text-inherit!"
+                                  enabled={
+                                    question.is_markdown_enabled !== false
+                                  }
+                                >
                                   {answer.text}
                                 </MarkdownRenderer>
                                 <ImageLoad

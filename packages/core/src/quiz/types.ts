@@ -39,6 +39,8 @@ export interface Question {
   explanation?: string;
   multiple: boolean;
   is_ai_generated?: boolean;
+  /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
+  is_markdown_enabled?: boolean;
   image?: string | null; // Read-only (Display)
   image_url?: string | null; // Write-only (Input for external URLs)
   image_upload?: string | null; // Write-only (UUID from /api/upload/)
@@ -144,6 +146,7 @@ export interface QuizVersionQuestion {
   text: string;
   explanation: string;
   multiple: boolean;
+  is_markdown_enabled?: boolean;
   image: string | null;
   answers: QuizVersionAnswer[];
 }

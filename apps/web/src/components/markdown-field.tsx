@@ -156,6 +156,8 @@ export interface MarkdownFieldProps {
   inputClassName?: string;
   minHeight?: string;
   maxHeight?: string;
+  /** False makes the field a plain textarea: no preview and no formatting shortcuts. */
+  markdown?: boolean;
   onBlur?: () => void;
   onFocus?: () => void;
   onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
@@ -180,6 +182,7 @@ export function MarkdownField({
   inputClassName,
   minHeight,
   maxHeight,
+  markdown = true,
   onBlur,
   onFocus,
   onPaste,
@@ -190,7 +193,7 @@ export function MarkdownField({
   // The refs stay the same across renders, unlike the context object.
   const activeTarget = toolbar?.active;
   const [focused, setFocused] = useState(false);
-  const rendered = !focused && hasMarkdownMarkup(value);
+  const rendered = markdown && !focused && hasMarkdownMarkup(value);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -284,6 +287,7 @@ export function MarkdownField({
         onKeyDown={(event) => {
           onKeyDown?.(event);
           if (
+            !markdown ||
             event.defaultPrevented ||
             event.nativeEvent.defaultPrevented ||
             event.nativeEvent.isComposing ||
@@ -359,6 +363,7 @@ export function MarkdownToolbar({
   disabled = false,
   className,
   history,
+  formatting = true,
   children,
 }: {
   label?: string;
@@ -366,6 +371,8 @@ export function MarkdownToolbar({
   className?: string;
   /** Undo and redo buttons; they work whenever there is a step to apply. */
   history?: ToolbarHistory;
+  /** False leaves only undo and redo, for fields without Markdown. */
+  formatting?: boolean;
   children?: ReactNode;
 }) {
   const toolbar = use(MarkdownToolbarContext);
@@ -487,64 +494,70 @@ export function MarkdownToolbar({
               <Icon />
             </Button>
           ))}
-          <div className="bg-border mx-0.5 h-4 w-px" aria-hidden="true" />
+          {formatting ? (
+            <div className="bg-border mx-0.5 h-4 w-px" aria-hidden="true" />
+          ) : null}
         </>
       )}
-      {inlineFormats.map(({ format, label: title, icon: Icon }) => (
-        <Toggle
-          key={format}
-          size="sm"
-          className={cn(
-            buttonClassName,
-            // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
-            "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
-          )}
-          aria-label={title}
-          title={title}
-          disabled={disabled}
-          aria-disabled={inactive}
-          pressed={state.active.includes(format)}
-          onMouseDown={keepFocus}
-          onPressedChange={() => {
-            if (!inactive) {
-              apply(format);
-            }
-          }}
-        >
-          <Icon />
-        </Toggle>
-      ))}
-      {children}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className={buttonClassName}
-              aria-label="Więcej formatowania"
-              title="Więcej formatowania"
-              disabled={disabled || inactive}
-            >
-              <EllipsisIcon />
-            </Button>
-          }
-        />
-        <DropdownMenuContent className="w-52" finalFocus={false}>
-          {blockFormats.map(({ format, label: title, icon: Icon }) => (
-            <DropdownMenuItem
+      {formatting ? (
+        <>
+          {inlineFormats.map(({ format, label: title, icon: Icon }) => (
+            <Toggle
               key={format}
-              onClick={() => {
-                apply(format);
+              size="sm"
+              className={cn(
+                buttonClassName,
+                // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
+                "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
+              )}
+              aria-label={title}
+              title={title}
+              disabled={disabled}
+              aria-disabled={inactive}
+              pressed={state.active.includes(format)}
+              onMouseDown={keepFocus}
+              onPressedChange={() => {
+                if (!inactive) {
+                  apply(format);
+                }
               }}
             >
               <Icon />
-              {title}
-            </DropdownMenuItem>
+            </Toggle>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          {children}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className={buttonClassName}
+                  aria-label="Więcej formatowania"
+                  title="Więcej formatowania"
+                  disabled={disabled || inactive}
+                >
+                  <EllipsisIcon />
+                </Button>
+              }
+            />
+            <DropdownMenuContent className="w-52" finalFocus={false}>
+              {blockFormats.map(({ format, label: title, icon: Icon }) => (
+                <DropdownMenuItem
+                  key={format}
+                  onClick={() => {
+                    apply(format);
+                  }}
+                >
+                  <Icon />
+                  {title}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      ) : null}
     </div>
   );
 }

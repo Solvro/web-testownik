@@ -239,7 +239,10 @@ export function QuestionCard({
                 ) : null}
               </span>
               <span className="inline-block leading-tight">
-                <MarkdownRenderer className="inline-block">
+                <MarkdownRenderer
+                  className="inline-block"
+                  enabled={question.is_markdown_enabled !== false}
+                >
                   {String.raw`${question.text}`}
                 </MarkdownRenderer>
               </span>
@@ -280,7 +283,10 @@ export function QuestionCard({
                     ),
                   )}
                 >
-                  <MarkdownRenderer className="pointer-events-none w-full text-sm">
+                  <MarkdownRenderer
+                    className="pointer-events-none w-full text-sm"
+                    enabled={question.is_markdown_enabled !== false}
+                  >
                     {answer.text}
                   </MarkdownRenderer>
                   <ImageLoad
@@ -370,7 +376,9 @@ export function QuestionCard({
             id="explanation"
             className="bg-muted/40 mt-6 max-w-none space-y-2 rounded-md border p-4 text-sm"
           >
-            <MarkdownRenderer>{question.explanation}</MarkdownRenderer>
+            <MarkdownRenderer enabled={question.is_markdown_enabled !== false}>
+              {question.explanation}
+            </MarkdownRenderer>
           </div>
         ) : null}
       </CardContent>

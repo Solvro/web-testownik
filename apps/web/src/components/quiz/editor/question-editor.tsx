@@ -1,7 +1,12 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
-import { ChevronUpIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import type { ClipboardEvent } from "react";
 import { toast } from "sonner";
 
@@ -11,8 +16,17 @@ import {
   MarkdownToolbarProvider,
 } from "@/components/markdown-field";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FieldError } from "@/components/ui/field";
-import { moveRovingFocus } from "@/lib/roving-focus";
 import { cn } from "@/lib/utils";
 
 import { AnswerEditor } from "./answer-editor";
@@ -267,6 +281,7 @@ export function QuestionEditor({
 
   const hasCorrect = question.answers.some((answer) => answer.is_correct);
   const questionImage = hasImage(question);
+  const markdown = question.is_markdown_enabled !== false;
 
   return (
     <MarkdownToolbarProvider>
@@ -327,54 +342,56 @@ export function QuestionEditor({
             <MarkdownToolbar
               disabled={disabled}
               history={history}
+              formatting={markdown}
               className="bg-muted/60 dark:bg-input/30 rounded-lg p-0.5"
             />
-            {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- Focus goes to the checked radio inside. */}
-            <div
-              role="radiogroup"
-              aria-label="Typ wyboru"
-              className="bg-muted/60 dark:bg-input/30 inline-flex rounded-lg p-0.5"
-              onKeyDown={(event) => {
-                const item = moveRovingFocus(
-                  event,
-                  "[role=radio]",
-                  "horizontal",
-                );
-                if (item === null) {
-                  return;
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground gap-1 pr-2 pl-2.5 font-medium"
+                    aria-label={`Opcje pytania ${number}`}
+                    disabled={disabled}
+                  >
+                    {question.multiple
+                      ? "Wielokrotny wybór"
+                      : "Jednokrotny wybór"}
+                    <ChevronDownIcon className="opacity-70" />
+                  </Button>
                 }
-                // Radio buttons select as focus moves.
-                setMultiple(item.dataset.multiple === "true");
-              }}
-            >
-              {[false, true].map((multiple) => (
-                <button
-                  key={String(multiple)}
-                  type="button"
-                  role="radio"
-                  data-multiple={String(multiple)}
-                  aria-checked={question.multiple === multiple}
-                  tabIndex={question.multiple === multiple ? 0 : -1}
-                  title={
-                    multiple
-                      ? "Można zaznaczyć kilka poprawnych odpowiedzi"
-                      : "Tylko jedna odpowiedź jest poprawna"
-                  }
-                  disabled={disabled}
-                  onClick={() => {
-                    setMultiple(multiple);
+              />
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuRadioGroup
+                  value={question.multiple ? "multiple" : "single"}
+                  onValueChange={(value) => {
+                    setMultiple(value === "multiple");
                   }}
-                  className={cn(
-                    "focus-visible:outline-primary rounded-md px-3 py-1 text-sm font-medium transition-colors outline-none focus-visible:outline-2 pointer-coarse:py-2",
-                    question.multiple === multiple
-                      ? "bg-primary/10 text-foreground dark:bg-primary/25"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
                 >
-                  {multiple ? "Wielokrotny" : "Jednokrotny"}
-                </button>
-              ))}
-            </div>
+                  <DropdownMenuLabel>Typ wyboru</DropdownMenuLabel>
+                  <DropdownMenuRadioItem value="single">
+                    Jednokrotny wybór
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="multiple">
+                    Wielokrotny wybór
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={markdown}
+                  onCheckedChange={(checked) => {
+                    updateQuestion(form, questionId, (current) => ({
+                      ...current,
+                      is_markdown_enabled: checked,
+                    }));
+                  }}
+                >
+                  Formatowanie Markdown
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
             <Button
@@ -443,6 +460,7 @@ export function QuestionEditor({
                             onPaste={handlePaste}
                             className="flex-1"
                             minHeight="2.5rem"
+                            markdown={markdown}
                             inputClassName="scroll-mt-32 scroll-mb-4 py-1.5 text-lg leading-relaxed sm:text-xl"
                           />
                           {questionImage ? null : (
@@ -489,6 +507,7 @@ export function QuestionEditor({
               {question.answers.map((answer, answerIndex) => (
                 <AnswerEditor
                   key={keyOf(answer.id)}
+                  markdown={markdown}
                   form={form}
                   questionId={questionId}
                   questionIndex={index}
@@ -562,6 +581,7 @@ export function QuestionEditor({
                   onBlur={field.handleBlur}
                   className="flex-1"
                   inputClassName="scroll-mt-32 scroll-mb-4 py-0.5 text-base leading-relaxed sm:text-sm"
+                  markdown={markdown}
                 />
               </div>
             )}

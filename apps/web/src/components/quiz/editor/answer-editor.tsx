@@ -15,6 +15,7 @@ import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
 
 export function AnswerEditor({
+  markdown = true,
   form,
   questionId,
   questionIndex,
@@ -30,6 +31,8 @@ export function AnswerEditor({
   onUploadStart,
   onUploadEnd,
 }: {
+  /** Whether the question renders Markdown. */
+  markdown?: boolean;
   form: QuizEditorForm;
   questionId: string;
   questionIndex: number;
@@ -140,6 +143,7 @@ export function AnswerEditor({
                         onBlur={field.handleBlur}
                         inputClassName="scroll-mt-32 scroll-mb-4 py-2.5 pr-1 text-base leading-relaxed"
                         minHeight="2.75rem"
+                        markdown={markdown}
                         onPaste={(event) => {
                           handlePaste(event);
                           if (!event.defaultPrevented && onPasteLines(event)) {

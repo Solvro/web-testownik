@@ -60,7 +60,10 @@ export function useQuestionSummary(form: QuizEditorForm, index: number) {
         ? null
         : {
             id: question.id,
-            text: plainText(question.text),
+            text:
+              question.is_markdown_enabled === false
+                ? question.text.replaceAll(/\s+/g, " ").trim().slice(0, 200)
+                : plainText(question.text),
             image: hasImage(question),
             answers: question.answers.length,
             correct: question.answers.filter((answer) => answer.is_correct)

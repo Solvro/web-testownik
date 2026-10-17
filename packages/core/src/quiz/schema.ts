@@ -40,6 +40,8 @@ export const questionFormSchema = z
     explanation: z.string().optional(),
     multiple: z.boolean(),
     is_ai_generated: z.boolean().optional(),
+    /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
+    is_markdown_enabled: z.boolean().optional(),
     image: z.string().optional().nullable().readonly(), // Read-only (Display URL from backend)
     image_url: z.string().optional().nullable(), // Write-only (Input for external URLs)
     image_upload: z.string().optional().nullable(), // Write-only (UUID from /api/upload/)

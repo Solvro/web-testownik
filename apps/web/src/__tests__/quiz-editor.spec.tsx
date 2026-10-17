@@ -114,6 +114,22 @@ async function chooseAllQuestions(
   await user.keyboard("{Enter}");
 }
 
+/** The trigger of the open question's menu, labelled with its choice type. */
+function questionOptions(number: number) {
+  return screen.getByRole("button", {
+    name: `Opcje pytania ${String(number)}`,
+  });
+}
+
+async function chooseInQuestionMenu(
+  user: ReturnType<typeof userEvent.setup>,
+  number: number,
+  label: string,
+) {
+  await user.click(questionOptions(number));
+  await user.click(await screen.findByRole("menuitemradio", { name: label }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.history.replaceState(null, "", "/");
@@ -651,7 +667,7 @@ describe("Quiz editor", () => {
       <QuizEditor mode="edit" initialQuiz={quizFixture()} onSave={onSave} />,
     );
     await chooseAllQuestions(user, "Wielokrotny wybór");
-    expect(screen.getByRole("radio", { name: "Wielokrotny" })).toBeChecked();
+    expect(questionOptions(1)).toHaveTextContent("Wielokrotny wybór");
     await user.click(
       screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
     );
@@ -659,7 +675,7 @@ describe("Quiz editor", () => {
       screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
     ).toHaveAttribute("aria-pressed", "true");
 
-    await user.click(screen.getByRole("radio", { name: "Jednokrotny" }));
+    await chooseInQuestionMenu(user, 1, "Jednokrotny wybór");
     expect(
       screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -668,7 +684,7 @@ describe("Quiz editor", () => {
     ).toHaveAttribute("aria-pressed", "false");
 
     await user.click(listRows()[2]);
-    expect(screen.getByRole("radio", { name: "Wielokrotny" })).toBeChecked();
+    expect(questionOptions(3)).toHaveTextContent("Wielokrotny wybór");
     await user.click(screen.getByRole("button", { name: "Zapisz" }));
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledTimes(1);
@@ -774,7 +790,7 @@ describe("Quiz editor", () => {
     });
   });
 
-  it("keeps the toolbar and the choice type to one tab stop each", async () => {
+  it("keeps the toolbar to one tab stop and changes the choice type from the question menu", async () => {
     const user = userEvent.setup();
     render(
       <QuizEditor
@@ -799,13 +815,64 @@ describe("Quiz editor", () => {
     expect(buttons[1]).toHaveAttribute("tabindex", "0");
     expect(buttons[0]).toHaveAttribute("tabindex", "-1");
 
-    const single = screen.getByRole("radio", { name: "Jednokrotny" });
-    expect(single).toBeChecked();
-    single.focus();
+    expect(questionOptions(1)).toHaveTextContent("Jednokrotny wybór");
+    await user.click(questionOptions(1));
+    expect(
+      await screen.findByRole("menuitemradio", { name: "Jednokrotny wybór" }),
+    ).toBeChecked();
+    await user.click(
+      screen.getByRole("menuitemradio", { name: "Wielokrotny wybór" }),
+    );
+    expect(questionOptions(1)).toHaveTextContent("Wielokrotny wybór");
+  });
+
+  it("turns Markdown off for one question or for all of them", async () => {
+    const user = userEvent.setup();
+    const onSave = saveMock();
+    const quiz = quizFixture(2);
+    quiz.questions[0].text = "Tekst z **gwiazdkami**";
+    render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={onSave} />);
+    const field = screen.getByRole("textbox", { name: "Treść pytania 1" });
+    // Rendered as Markdown while the field is not focused.
+    expect(document.querySelector("strong")).toHaveTextContent("gwiazdkami");
+    expect(
+      screen.getByRole("button", { name: "Pogrubienie" }),
+    ).toBeInTheDocument();
+
+    await user.click(questionOptions(1));
+    const item = await screen.findByRole("menuitemcheckbox", {
+      name: "Formatowanie Markdown",
+    });
+    expect(item).toBeChecked();
+    await user.click(item);
+    // A plain textarea: no preview and no formatting buttons, but undo stays.
+    expect(document.querySelector("strong")).toBeNull();
+    expect(field).toHaveValue("Tekst z **gwiazdkami**");
+    expect(
+      screen.queryByRole("button", { name: "Pogrubienie" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cofnij" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Opcje quizu" }));
+    const trigger = await screen.findByRole("menuitem", {
+      name: "Formatowanie Markdown",
+    });
+    trigger.focus();
     await user.keyboard("{ArrowRight}");
-    const multiple = screen.getByRole("radio", { name: "Wielokrotny" });
-    expect(multiple).toBeChecked();
-    expect(multiple).toHaveFocus();
+    const off = await screen.findByRole("menuitemradio", { name: "Wyłączone" });
+    off.focus();
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1);
+    });
+    const saved = onSave.mock.calls[0][0];
+    expect(
+      saved.questions.map((question) => question.is_markdown_enabled),
+    ).toEqual([false, false]);
   });
 
   it("asks before an app link leaves unsaved changes", async () => {
@@ -1001,7 +1068,7 @@ describe("Quiz editor", () => {
     act(() => {
       (options?.action as ToastAction).onClick();
     });
-    expect(screen.getByRole("radio", { name: "Wielokrotny" })).toBeChecked();
+    expect(questionOptions(1)).toHaveTextContent("Wielokrotny wybór");
     expect(
       screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
     ).toHaveAttribute("aria-pressed", "true");

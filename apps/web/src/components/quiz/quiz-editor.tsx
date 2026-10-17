@@ -13,6 +13,7 @@ import {
   Loader2Icon,
   PlusIcon,
   SaveIcon,
+  TextIcon,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -786,6 +787,55 @@ function BulkActions({
     );
     return types.size === 1 ? ([...types][0] ? "multiple" : "single") : "";
   });
+  // Whether every question renders Markdown, or "" when they differ.
+  const allMarkdown = useSelector(form.atom, (state) => {
+    const flags = new Set(
+      state.values.questions.map(
+        (question) => question.is_markdown_enabled !== false,
+      ),
+    );
+    return flags.size === 1 ? ([...flags][0] ? "on" : "off") : "";
+  });
+
+  function setAllMarkdown(enabled: boolean) {
+    const previous = new Map(
+      form
+        .getFieldValue("questions")
+        .map((question) => [
+          question.id,
+          question.is_markdown_enabled !== false,
+        ]),
+    );
+    form.setFieldValue("questions", (questions) =>
+      questions.map((question) => ({
+        ...question,
+        is_markdown_enabled: enabled,
+      })),
+    );
+    toast(
+      enabled
+        ? "Włączono formatowanie Markdown we wszystkich pytaniach"
+        : "Wyłączono formatowanie Markdown we wszystkich pytaniach",
+      {
+        duration: 10_000,
+        action: {
+          label: "Cofnij",
+          onClick: () => {
+            if (!canMutate(form)) {
+              return;
+            }
+            form.setFieldValue("questions", (questions) =>
+              questions.map((question) => ({
+                ...question,
+                is_markdown_enabled:
+                  previous.get(question.id) ?? question.is_markdown_enabled,
+              })),
+            );
+          },
+        },
+      },
+    );
+  }
 
   function setAll(multiple: boolean) {
     const changes: ChoiceChanges = new Map();
@@ -878,6 +928,28 @@ function BulkActions({
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="multiple">
                 Wielokrotny wybór
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <TextIcon />
+            Formatowanie Markdown
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={allMarkdown}
+              onValueChange={(value) => {
+                if (value !== allMarkdown) {
+                  setAllMarkdown(value === "on");
+                }
+              }}
+            >
+              <DropdownMenuLabel>Dla wszystkich pytań</DropdownMenuLabel>
+              <DropdownMenuRadioItem value="on">Włączone</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="off">
+                Wyłączone
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>

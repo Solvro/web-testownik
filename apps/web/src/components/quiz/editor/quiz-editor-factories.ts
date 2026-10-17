@@ -26,6 +26,7 @@ export function createQuestion(
     order,
     text: "",
     multiple,
+    is_markdown_enabled: true,
     answers: [createAnswer(1), createAnswer(2)],
     image: null,
     image_url: null,
