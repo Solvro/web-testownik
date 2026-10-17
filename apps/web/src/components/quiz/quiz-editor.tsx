@@ -468,7 +468,10 @@ export function QuizEditor(props: QuizEditorProps) {
         }
       }}
     >
-      <div className="bg-background/90 supports-backdrop-filter:bg-background/75 border-border sticky top-0 z-30 -mx-4 border-b px-4 supports-backdrop-filter:backdrop-blur-md">
+      <div
+        data-sticky-bar
+        className="bg-background/90 supports-backdrop-filter:bg-background/75 border-border sticky top-0 z-30 -mx-4 border-b px-4 supports-backdrop-filter:backdrop-blur-md"
+      >
         <div className="flex h-14 items-center gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base leading-tight font-semibold">
@@ -571,7 +574,7 @@ export function QuizEditor(props: QuizEditorProps) {
                   onChange={(event) => {
                     field.handleChange(event.target.value);
                   }}
-                  className="placeholder:text-muted-foreground/60 hover:bg-muted/40 focus-visible:ring-primary aria-invalid:ring-destructive/30 -mx-2 block w-[calc(100%+1rem)] scroll-mt-20 rounded-lg bg-transparent px-2 py-1 text-3xl font-bold tracking-tight outline-none focus-visible:bg-transparent focus-visible:ring-2 aria-invalid:ring-3 sm:text-4xl"
+                  className="placeholder:text-muted-foreground/60 hover:bg-muted/40 focus-visible:ring-primary aria-invalid:ring-destructive/30 -mx-2 block w-[calc(100%+1rem)] rounded-lg bg-transparent px-2 py-1 text-3xl font-bold tracking-tight outline-none focus-visible:bg-transparent focus-visible:ring-2 aria-invalid:ring-3 sm:text-4xl"
                 />
                 <div id="quiz-title-error">
                   <FieldError errors={field.errors} />
@@ -676,7 +679,6 @@ export function QuizEditor(props: QuizEditorProps) {
                 id={`question-${id}`}
                 // A kept editor whose question the search does not match.
                 hidden={!match && id !== currentId}
-                className="scroll-mt-20"
               >
                 {id === currentId || recentIds.includes(id) ? (
                   <QuestionEditor

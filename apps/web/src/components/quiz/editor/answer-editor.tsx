@@ -141,7 +141,7 @@ export function AnswerEditor({
                         describedBy={`answer-error-${answer.id}`}
                         onChange={field.handleChange}
                         onBlur={field.handleBlur}
-                        inputClassName="scroll-mt-32 scroll-mb-4 py-2.5 pr-1 text-base leading-relaxed"
+                        inputClassName="scroll-mb-4 py-2.5 pr-1 text-base leading-relaxed"
                         minHeight="2.75rem"
                         markdown={markdown}
                         onPaste={(event) => {

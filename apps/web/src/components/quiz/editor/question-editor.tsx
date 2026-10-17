@@ -290,7 +290,7 @@ export function QuestionEditor({
         hidden={hidden}
         data-testid="question-editor"
         aria-label={`Pytanie ${number}`}
-        className="bg-card border-primary/60 ring-primary/15 scroll-mt-20 rounded-xl border ring-3"
+        className="bg-card border-primary/60 ring-primary/15 rounded-xl border ring-3"
         onKeyDown={(event) => {
           // Ignore keys from menus and dialogs portalled out of the card.
           if (
@@ -423,7 +423,7 @@ export function QuestionEditor({
           </div>
         </header>
 
-        <div className="space-y-5 px-4 pt-5 pb-6 sm:pr-6 sm:pl-15">
+        <div className="space-y-5 px-4 pt-5 pb-6 sm:pr-6 sm:pl-15 sm:**:scroll-mt-14">
           <ImageDropZone
             disabled={isUploading || disabled}
             label="Upuść zdjęcie do pytania"
@@ -461,7 +461,7 @@ export function QuestionEditor({
                             className="flex-1"
                             minHeight="2.5rem"
                             markdown={markdown}
-                            inputClassName="scroll-mt-32 scroll-mb-4 py-1.5 text-lg leading-relaxed sm:text-xl"
+                            inputClassName="scroll-mb-4 py-1.5 text-lg leading-relaxed sm:text-xl"
                           />
                           {questionImage ? null : (
                             // Each field has its own image button, which
@@ -580,7 +580,7 @@ export function QuestionEditor({
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}
                   className="flex-1"
-                  inputClassName="scroll-mt-32 scroll-mb-4 py-0.5 text-base leading-relaxed sm:text-sm"
+                  inputClassName="scroll-mb-4 py-0.5 text-base leading-relaxed sm:text-sm"
                   markdown={markdown}
                 />
               </div>
