@@ -17,6 +17,7 @@ import { ChartCard } from "./chart-card";
 interface HourlyChartProps {
   quizId: string;
   canViewAll: boolean;
+  animated?: boolean;
 }
 
 const chartConfig = {
@@ -26,7 +27,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
+export function HourlyChart({
+  quizId,
+  canViewAll,
+  animated = true,
+}: HourlyChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
   const { data, isFetching, isPending } = useQuizHourly(quizId, scope);
   const isRefreshing = isFetching && !isPending;
@@ -71,6 +76,7 @@ export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
             fillOpacity={0.3}
             stroke="var(--color-sessions_count)"
             strokeWidth={2}
+            isAnimationActive={animated}
           />
         </RadarChart>
       </ChartContainer>

@@ -1,60 +1,43 @@
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { cookies } from "next/headers";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { LoginPrompt } from "@/components/login-prompt";
-import { API_URL } from "@/lib/api";
-import { AUTH_COOKIES } from "@/lib/auth";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { getContributorsSSR } from "@/lib/dashboard-ssr";
-import { getQueryClient } from "@/lib/query-client";
-import { QuizService } from "@/services/quiz.service";
 
-import { AboutCard } from "./components/about-card";
-import { ImportButtonsCard } from "./components/import-buttons-card";
-import { LastUsedCard } from "./components/last-used-card";
-import { QuestionQuizCard } from "./components/question-quiz-card";
-import { SearchCard } from "./components/search-card";
+import {
+  isLandingRequest,
+  parseCaptureRequest,
+} from "./components/landing/capture/capture-request";
+import type { LandingSearchParameters } from "./components/landing/capture/capture-request";
+import { DeviceCapture } from "./components/landing/capture/device-capture";
+import { LandingPage } from "./components/landing/landing-page";
 
-export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
+export const metadata: Metadata = {
+  title: {
+    absolute: "Testownik — uczysz się wszędzie",
+  },
+  description:
+    "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
+};
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<LandingSearchParameters>;
+}) {
   const user = await getServerCurrentUser();
+  const parameters = await searchParams;
 
-  if (user == null) {
-    return <LoginPrompt />;
+  if (user != null && !isLandingRequest(parameters)) {
+    redirect("/quizzes");
   }
 
-  const queryClient = getQueryClient();
-
-  if (accessToken !== undefined && accessToken !== "") {
-    const quizService = new QuizService(API_URL, {}, accessToken);
-
-    await Promise.all([
-      queryClient.prefetchInfiniteQuery({
-        queryKey: ["last-used-quizzes", 10],
-        queryFn: async () => quizService.getLastUsedQuizzes(10, 0),
-        initialPageParam: 0,
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ["random-question"],
-        queryFn: async () => quizService.getRandomQuestion(),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ["contributors"],
-        queryFn: getContributorsSSR,
-      }),
-    ]);
+  const captureRequest = parseCaptureRequest(parameters);
+  if (captureRequest !== null) {
+    return <DeviceCapture request={captureRequest} />;
   }
 
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="grid gap-4 sm:grid-cols-2 sm:grid-rows-3 md:h-[70vh] md:grid-cols-3 md:grid-rows-2">
-        <LastUsedCard className="md:order-2" />
-        <ImportButtonsCard className="md:order-4" />
-        <QuestionQuizCard className="row-span-2 md:order-1" />
-        <SearchCard className="md:order-3" />
-        <AboutCard className="md:order-5" />
-      </div>
-    </HydrationBoundary>
-  );
+  // Deliberately not awaited: the contributor rail streams into the team
+  // section, so three GitHub calls cannot delay the hero.
+  return <LandingPage contributors={getContributorsSSR()} />;
 }
