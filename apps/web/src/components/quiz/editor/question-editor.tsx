@@ -367,7 +367,7 @@ export function QuestionEditor({
                   className={cn(
                     "focus-visible:outline-primary rounded-md px-3 py-1 text-sm font-medium transition-colors outline-none focus-visible:outline-2 pointer-coarse:py-2",
                     question.multiple === multiple
-                      ? "bg-background text-foreground dark:bg-foreground/15 shadow-xs"
+                      ? "bg-primary/10 text-foreground dark:bg-primary/25"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
