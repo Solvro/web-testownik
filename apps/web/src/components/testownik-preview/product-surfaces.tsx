@@ -43,6 +43,7 @@ import {
   PREVIEW_QUIZ_ID,
 } from "./preview-fixtures";
 import { PREVIEW_COURSE_VIEWS, PREVIEW_GRADE_SUMMARY } from "./preview-grades";
+import { PreviewSandbox } from "./preview-provider";
 
 /**
  * Every surface below mounts the component the app itself renders. Nothing here
@@ -194,6 +195,25 @@ function PreviewAiHintPanel(): React.JSX.Element {
   );
 }
 
+/**
+ * `QuizInfoCard` wires sharing straight to the API and the clipboard: the share
+ * dialog loads the visitor's study groups, and copying writes the landing URL.
+ * The buttons stay visible — they are part of the product — but a click on
+ * them stops here, before the card's handler runs.
+ */
+const ACCOUNT_ACTIONS =
+  '[aria-label="Udostępnij quiz"], [aria-label="Skopiuj link do quizu"]';
+
+function swallowAccountActions(event: React.MouseEvent<HTMLElement>): void {
+  if (
+    event.target instanceof Element &&
+    event.target.closest(ACCOUNT_ACTIONS) !== null
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
 function QuizPageSurface({
   selectedAnswers,
   onSelectedAnswersChange,
@@ -201,10 +221,12 @@ function QuizPageSurface({
   onQuestionCheckedChange,
 }: PreviewQuizControls): React.JSX.Element {
   const timer = useStudyTimer(false, 4836);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
-    <div className="grid h-full grid-cols-[minmax(0,1.9fr)_minmax(15rem,0.92fr)] content-start gap-3">
+    <div
+      className="grid h-full grid-cols-[minmax(0,1.9fr)_minmax(15rem,0.92fr)] content-start gap-3"
+      onClickCapture={swallowAccountActions}
+    >
       <div className="min-w-0">
         <QuizPreviewSurface
           selectedAnswers={selectedAnswers}
@@ -235,8 +257,12 @@ function QuizPageSurface({
           onReconnectContinuity={() => {
             // Continuity needs a peer; not part of the preview.
           }}
-          isSettingsOpen={isSettingsOpen}
-          onSettingsOpenChange={setIsSettingsOpen}
+          // The settings dialog edits the visitor's real account settings, so
+          // it never opens from a preview.
+          isSettingsOpen={false}
+          onSettingsOpenChange={() => {
+            // See above.
+          }}
         />
         <PreviewAiHintPanel />
       </div>
@@ -345,7 +371,11 @@ function PhoneQuizHeader(): React.JSX.Element {
   );
 }
 
-/** The phone and laptop share the same selected answer and checked state. */
+/**
+ * The phone and laptop share the same selected answer and checked state. Both
+ * seal themselves in a `PreviewSandbox`, so they stay self-contained in every
+ * frame that hosts them (the 3D scene and the plain CSS phone alike).
+ */
 export function PhoneQuizSurface({
   selectedAnswers,
   onSelectedAnswersChange,
@@ -353,18 +383,20 @@ export function PhoneQuizSurface({
   onQuestionCheckedChange,
 }: PreviewQuizControls): React.JSX.Element {
   return (
-    <div className="bg-background text-foreground flex size-full flex-col overflow-hidden px-[0.55rem] pb-[0.55rem]">
-      <PhoneStatusBar />
-      <PhoneQuizHeader />
-      <QuizPreviewSurface
-        density="phone"
-        selectedAnswers={selectedAnswers}
-        onSelectedAnswersChange={onSelectedAnswersChange}
-        questionChecked={questionChecked}
-        onQuestionCheckedChange={onQuestionCheckedChange}
-        className="min-h-0 flex-1 overflow-hidden"
-      />
-    </div>
+    <PreviewSandbox>
+      <div className="bg-background text-foreground flex size-full flex-col overflow-hidden px-[0.55rem] pb-[0.55rem]">
+        <PhoneStatusBar />
+        <PhoneQuizHeader />
+        <QuizPreviewSurface
+          density="phone"
+          selectedAnswers={selectedAnswers}
+          onSelectedAnswersChange={onSelectedAnswersChange}
+          questionChecked={questionChecked}
+          onQuestionCheckedChange={onQuestionCheckedChange}
+          className="min-h-0 flex-1 overflow-hidden"
+        />
+      </div>
+    </PreviewSandbox>
   );
 }
 
@@ -379,11 +411,8 @@ export function ProductAppChrome({
 } & PreviewQuizControls): React.JSX.Element {
   return (
     <AppContext.Provider value={PREVIEW_APP_CONTEXT}>
-      <div
-        className={cn(
-          "bg-background text-foreground size-full overflow-hidden",
-          className,
-        )}
+      <PreviewSandbox
+        className={cn("bg-background text-foreground", className)}
       >
         <section
           aria-label="Ekran podglądu Testownika"
@@ -396,7 +425,7 @@ export function ProductAppChrome({
             onQuestionCheckedChange={onQuestionCheckedChange}
           />
         </section>
-      </div>
+      </PreviewSandbox>
     </AppContext.Provider>
   );
 }

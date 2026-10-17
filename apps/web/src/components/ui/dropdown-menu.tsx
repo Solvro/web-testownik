@@ -4,14 +4,37 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 
+import {
+  useEmbeddedSurface,
+  usePortalContainer,
+} from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+function DropdownMenu({ modal, ...props }: MenuPrimitive.Root.Props) {
+  // A modal menu locks the page's scroll and hides everything else from
+  // assistive tech, which an embedded surface has no business doing.
+  const isEmbedded = useEmbeddedSurface() !== null;
+  return (
+    <MenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={modal ?? (isEmbedded ? false : undefined)}
+      {...props}
+    />
+  );
 }
 
-function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
-  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
+function DropdownMenuPortal({
+  container,
+  ...props
+}: MenuPrimitive.Portal.Props) {
+  const embeddedContainer = usePortalContainer();
+  return (
+    <MenuPrimitive.Portal
+      data-slot="dropdown-menu-portal"
+      container={container ?? embeddedContainer}
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
@@ -30,8 +53,9 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const container = usePortalContainer();
   return (
-    <MenuPrimitive.Portal>
+    <MenuPrimitive.Portal container={container}>
       <MenuPrimitive.Positioner
         className="isolate z-50 outline-none"
         align={align}

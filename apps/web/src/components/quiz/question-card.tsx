@@ -20,6 +20,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  isEventForSurface,
+  useEmbeddedSurface,
+} from "@/components/ui/portal-container";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -85,8 +89,15 @@ export function QuestionCard({
     setSelectedAnswers(newSelectedAnswers);
   };
 
+  // Embedded previews only react to keys pressed while focus is inside them;
+  // in the app the shortcuts are page-wide.
+  const surface = useEmbeddedSurface();
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isEventForSurface(surface, event)) {
+        return;
+      }
       if (event.key >= "1" && event.key <= "9") {
         const target = event.target as HTMLElement;
         if (isInputElement(target)) {
@@ -108,7 +119,7 @@ export function QuestionCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [question, selectedAnswers, handleAnswerClick]);
+  }, [question, selectedAnswers, handleAnswerClick, surface]);
 
   if (isQuizFinished) {
     return (

@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, lazy, useCallback, useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Glass } from "@/components/canvasui/Glass";
+import { PreviewSandbox } from "@/components/testownik-preview/preview-provider";
 import {
   PhoneQuizSurface,
   ProductAppChrome,
@@ -89,32 +90,38 @@ export function DeviceLaptopScreen({
 export function DeviceTabletScreen(): React.JSX.Element {
   const [showCharts, setShowCharts] = useState(false);
   const [chartsReady, setChartsReady] = useState(false);
-  const revealCharts = useCallback(() => {
-    setChartsReady(true);
-  }, []);
 
+  // The charts are not a product surface of their own, so the screen seals
+  // them here.
   return (
-    <GlassScreen
-      onFirstEngage={() => {
-        setShowCharts(true);
-      }}
-    >
-      <div className="relative size-full">
-        {/* Captured from the real seeded charts; refresh when their preview changes. */}
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark.webp)]",
-            chartsReady ? "opacity-0" : "opacity-100",
-          )}
-        />
-        {showCharts ? (
-          <Suspense fallback={null}>
-            <TabletLiveCharts visible={chartsReady} onReady={revealCharts} />
-          </Suspense>
-        ) : null}
-      </div>
-    </GlassScreen>
+    <PreviewSandbox>
+      <GlassScreen
+        onFirstEngage={() => {
+          setShowCharts(true);
+        }}
+      >
+        <div className="relative size-full">
+          {/* Captured from the real seeded charts; refresh when their preview changes. */}
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark.webp)]",
+              chartsReady ? "opacity-0" : "opacity-100",
+            )}
+          />
+          {showCharts ? (
+            <Suspense fallback={null}>
+              <TabletLiveCharts
+                visible={chartsReady}
+                onReady={() => {
+                  setChartsReady(true);
+                }}
+              />
+            </Suspense>
+          ) : null}
+        </div>
+      </GlassScreen>
+    </PreviewSandbox>
   );
 }
 
@@ -136,6 +143,7 @@ export function DevicePhoneScreen({
     />
   );
 
+  // The surface seals itself; see `PreviewSandbox`.
   if (!withGlass) {
     return surface;
   }
