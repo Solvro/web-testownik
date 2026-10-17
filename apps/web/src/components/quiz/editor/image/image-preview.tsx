@@ -185,7 +185,9 @@ export function ImagePreview({
               type="button"
               variant="destructive"
               size="icon-sm"
-              className="absolute top-2 right-2 rounded-full shadow-sm transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/preview:opacity-100 pointer-fine:group-hover/preview:opacity-100"
+              // Solid like the "Zmień" pill, so the darkened image does not
+              // show through the translucent destructive background.
+              className="bg-background/90 hover:bg-background absolute top-2 right-2 z-10 rounded-full shadow-sm transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/preview:opacity-100 pointer-fine:group-hover/preview:opacity-100"
               title="Usuń zdjęcie"
               aria-label="Usuń zdjęcie"
               onClick={() => {
