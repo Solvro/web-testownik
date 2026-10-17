@@ -22,6 +22,7 @@ export function AnswerEditor({
   answer,
   answerIndex,
   multiple,
+  conflict = false,
   canDelete,
   disabled,
   onToggleCorrect,
@@ -39,6 +40,8 @@ export function AnswerEditor({
   answer: AnswerFormData;
   answerIndex: number;
   multiple: boolean;
+  /** Single choice with several correct answers: the marks show as wrong. */
+  conflict?: boolean;
   canDelete: boolean;
   disabled: boolean;
   onToggleCorrect: () => void;
@@ -98,7 +101,9 @@ export function AnswerEditor({
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
                       "focus-within:ring-primary focus-within:ring-2",
                       answer.is_correct
-                        ? "border-green-600/45 bg-green-500/[0.07] dark:border-green-400/40 dark:bg-green-400/10"
+                        ? conflict
+                          ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"
+                          : "border-green-600/45 bg-green-500/[0.07] dark:border-green-400/40 dark:bg-green-400/10"
                         : "border-border hover:border-foreground/20 dark:bg-input/20",
                       invalid && "border-destructive",
                     )}
@@ -109,7 +114,9 @@ export function AnswerEditor({
                       aria-label={`Poprawna odpowiedź ${number}`}
                       title={
                         answer.is_correct
-                          ? "Poprawna odpowiedź. Kliknij, aby odznaczyć."
+                          ? conflict
+                            ? "Jedna z kilku poprawnych odpowiedzi w pytaniu jednokrotnego wyboru. Kliknij, aby odznaczyć."
+                            : "Poprawna odpowiedź. Kliknij, aby odznaczyć."
                           : "Oznacz jako poprawną"
                       }
                       disabled={disabled}
@@ -121,7 +128,9 @@ export function AnswerEditor({
                           "flex size-5 items-center justify-center border-2 transition-colors",
                           multiple ? "rounded-[5px]" : "rounded-full",
                           answer.is_correct
-                            ? "border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500"
+                            ? conflict
+                              ? "border-destructive bg-destructive text-white"
+                              : "border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500"
                             : "border-muted-foreground/80 group-hover/answer:border-muted-foreground",
                         )}
                       >

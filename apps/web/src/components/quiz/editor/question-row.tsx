@@ -33,14 +33,17 @@ export function QuestionRow({
     return null;
   }
   const issue = visibleIssue(summary.issue, false, showErrors);
+  const blocking = issue === "missing" || issue === "conflict";
   const number = String(index + 1);
   const text = summary.text === "" ? emptyLabel(summary) : summary.text;
   const status =
     issue === "missing"
       ? "Wymaga uzupełnienia"
-      : issue === "no-correct"
-        ? "Brak poprawnej odpowiedzi"
-        : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
+      : issue === "conflict"
+        ? "Kilka poprawnych odpowiedzi"
+        : issue === "no-correct"
+          ? "Brak poprawnej odpowiedzi"
+          : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
 
   return (
     <button
@@ -55,7 +58,7 @@ export function QuestionRow({
       }}
       className={cn(
         "bg-card focus-visible:outline-primary flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid sm:gap-4 sm:px-5",
-        issue === "missing"
+        blocking
           ? "border-destructive/50 hover:border-destructive"
           : issue === "no-correct"
             ? "border-amber-500/60 hover:border-amber-500"
@@ -83,7 +86,7 @@ export function QuestionRow({
       <span
         className={cn(
           "hidden shrink-0 text-sm sm:inline",
-          issue === "missing"
+          blocking
             ? "text-destructive"
             : issue === "no-correct"
               ? "text-amber-700 dark:text-amber-400"
@@ -97,7 +100,7 @@ export function QuestionRow({
           aria-hidden="true"
           className={cn(
             "size-2 shrink-0 rounded-full sm:hidden",
-            issue === "missing" ? "bg-destructive" : "bg-amber-600",
+            blocking ? "bg-destructive" : "bg-amber-600",
           )}
         />
       )}

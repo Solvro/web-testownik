@@ -67,6 +67,14 @@ export const questionFormSchema = z
     {
       error: "Pytanie musi zawierać tekst lub zdjęcie",
     },
+  )
+  .refine(
+    (data) =>
+      data.multiple ||
+      data.answers.filter((answer) => answer.is_correct).length <= 1,
+    {
+      error: "Jednokrotny wybór pozwala na jedną poprawną odpowiedź",
+    },
   );
 
 export const quizFormSchema = z.object({

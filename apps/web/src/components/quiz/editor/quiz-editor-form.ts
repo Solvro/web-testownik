@@ -176,7 +176,10 @@ export function hasImage(item: {
   );
 }
 
-/** `missing` blocks saving; `no-correct` is only a reminder. */
+/**
+ * `missing` and `conflict` block saving; `no-correct` is only a reminder.
+ * `conflict` is a single-choice question with several correct answers.
+ */
 export function questionIssue(question: QuestionFormData) {
   if (
     (question.text.trim() === "" && !hasImage(question)) ||
@@ -187,60 +190,39 @@ export function questionIssue(question: QuestionFormData) {
   ) {
     return "missing";
   }
-  if (!question.answers.some((answer) => answer.is_correct)) {
+  const correct = question.answers.filter((answer) => answer.is_correct).length;
+  if (!question.multiple && correct > 1) {
+    return "conflict";
+  }
+  if (correct === 0) {
     return "no-correct";
   }
   return null;
 }
 
 /**
- * Sets the choice type. Single choice keeps only the first correct answer;
- * the IDs of the answers it unmarks are returned for undoing.
+ * Sets the choice type. Correct answers are left as they are: a single-choice
+ * question with several of them shows as a conflict until it is fixed.
  */
-export function withChoiceType(question: QuestionFormData, multiple: boolean) {
-  const firstCorrect = question.answers.findIndex((a) => a.is_correct);
-  const unmarked = multiple
-    ? []
-    : question.answers
-        .filter((answer, index) => answer.is_correct && index !== firstCorrect)
-        .map((answer) => answer.id);
-  return {
-    question: {
-      ...question,
-      multiple,
-      answers: question.answers.map((answer) =>
-        unmarked.includes(answer.id)
-          ? { ...answer, is_correct: false }
-          : answer,
-      ),
-    },
-    unmarked,
-  };
+export function withChoiceType(
+  question: QuestionFormData,
+  multiple: boolean,
+): QuestionFormData {
+  return question.multiple === multiple ? question : { ...question, multiple };
 }
 
-/** Changes made by `withChoiceType`, by question ID. */
-export type ChoiceChanges = Map<
-  string,
-  { multiple: boolean; unmarked: string[] }
->;
+/** Previous choice types by question ID, for undoing `withChoiceType`. */
+export type ChoiceTypes = Map<string, boolean>;
 
-/** Reverses `withChoiceType` changes, keeping other edits made since. */
-export function undoChoiceChanges(
+/** Restores choice types, keeping other edits made since. */
+export function restoreChoiceTypes(
   questions: QuestionFormData[],
-  changes: ChoiceChanges,
+  previous: ChoiceTypes,
 ) {
   return questions.map((question) => {
-    const change = changes.get(question.id);
-    return change === undefined
+    const multiple = previous.get(question.id);
+    return multiple === undefined
       ? question
-      : {
-          ...question,
-          multiple: change.multiple,
-          answers: question.answers.map((answer) =>
-            change.unmarked.includes(answer.id)
-              ? { ...answer, is_correct: true }
-              : answer,
-          ),
-        };
+      : withChoiceType(question, multiple);
   });
 }

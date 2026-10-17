@@ -43,7 +43,6 @@ import {
   canMutate,
   createAnswer,
   hasImage,
-  undoChoiceChanges,
   updateQuestion,
   withChoiceType,
 } from "./quiz-editor-form";
@@ -118,51 +117,28 @@ export function QuestionEditor({
   };
 
   function setMultiple(multiple: boolean) {
-    const current = form.getFieldValue(path);
-    if (current.multiple === multiple) {
-      return;
-    }
-    const { unmarked } = withChoiceType(current, multiple);
-    updateQuestion(
-      form,
-      questionId,
-      (latest) => withChoiceType(latest, multiple).question,
+    updateQuestion(form, questionId, (latest) =>
+      withChoiceType(latest, multiple),
     );
-    if (unmarked.length > 0) {
-      toast(`Odznaczono poprawne odpowiedzi: ${String(unmarked.length)}`, {
-        description: "Jednokrotny wybór pozwala na jedną poprawną odpowiedź.",
-        duration: 10_000,
-        action: {
-          label: "Cofnij",
-          onClick: () => {
-            if (!canMutate(form)) {
-              return;
-            }
-            form.setFieldValue("questions", (questions) =>
-              undoChoiceChanges(
-                questions,
-                new Map([
-                  [questionId, { multiple: current.multiple, unmarked }],
-                ]),
-              ),
-            );
-          },
-        },
-      });
-    }
   }
 
   function toggleCorrect(answerId: string) {
-    updateQuestion(form, questionId, (current) => ({
-      ...current,
-      answers: current.answers.map((answer) => ({
-        ...answer,
-        is_correct:
-          answer.id === answerId
-            ? !answer.is_correct
-            : current.multiple && answer.is_correct,
-      })),
-    }));
+    updateQuestion(form, questionId, (current) => {
+      const marking =
+        current.answers.find((answer) => answer.id === answerId)?.is_correct !==
+        true;
+      // Marking in single choice replaces the correct answer. Unmarking only
+      // clears the one answer, also when a conflict left several marked.
+      const keepOthers = current.multiple || !marking;
+      return {
+        ...current,
+        answers: current.answers.map((answer) => ({
+          ...answer,
+          is_correct:
+            answer.id === answerId ? marking : keepOthers && answer.is_correct,
+        })),
+      };
+    });
   }
 
   function addAnswer(afterId?: string) {
@@ -279,7 +255,11 @@ export function QuestionEditor({
     return true;
   }
 
-  const hasCorrect = question.answers.some((answer) => answer.is_correct);
+  const correctCount = question.answers.filter(
+    (answer) => answer.is_correct,
+  ).length;
+  const hasCorrect = correctCount > 0;
+  const conflict = !question.multiple && correctCount > 1;
   const questionImage = hasImage(question);
   const markdown = question.is_markdown_enabled !== false;
 
@@ -496,7 +476,12 @@ export function QuestionEditor({
             aria-label={`Odpowiedzi do pytania ${number}`}
             className="space-y-2"
           >
-            {hasCorrect ? null : (
+            {conflict ? (
+              <p className="text-destructive text-sm">
+                Jednokrotny wybór pozwala na jedną poprawną odpowiedź. Odznacz
+                pozostałe lub zmień typ na wielokrotny wybór.
+              </p>
+            ) : hasCorrect ? null : (
               <p className="text-muted-foreground text-sm">
                 {question.multiple
                   ? "Zaznacz kwadraty przy poprawnych odpowiedziach."
@@ -514,6 +499,7 @@ export function QuestionEditor({
                   answer={answer}
                   answerIndex={answerIndex}
                   multiple={question.multiple}
+                  conflict={conflict}
                   canDelete={question.answers.length > 1}
                   disabled={disabled}
                   onToggleCorrect={() => {

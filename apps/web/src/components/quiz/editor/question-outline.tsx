@@ -208,7 +208,7 @@ function OutlineItem({
             ? "border-primary text-foreground font-semibold"
             : "text-muted-foreground hover:text-foreground border-transparent",
           issue === "no-correct" && "text-amber-700 dark:text-amber-400",
-          issue === "missing" && "text-destructive",
+          (issue === "missing" || issue === "conflict") && "text-destructive",
         )}
       >
         <span className="min-w-0 flex-1 truncate">
@@ -224,11 +224,13 @@ function OutlineItem({
             aria-label={
               issue === "missing"
                 ? "Wymaga uzupełnienia"
-                : "Brak poprawnej odpowiedzi"
+                : issue === "conflict"
+                  ? "Kilka poprawnych odpowiedzi"
+                  : "Brak poprawnej odpowiedzi"
             }
             className={cn(
               "size-2 shrink-0 rounded-full",
-              issue === "missing" ? "bg-destructive" : "bg-amber-600",
+              issue === "no-correct" ? "bg-amber-600" : "bg-destructive",
             )}
           />
         )}

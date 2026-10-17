@@ -31,15 +31,17 @@ import { matchesQuery } from "@/components/quiz/editor/question-summary";
 import {
   canMutate,
   createQuestion,
+  questionIssue,
   quizToFormData,
   removeQuestion,
+  restoreChoiceTypes,
+  revalidate,
   setRestoring as setFormRestoring,
-  undoChoiceChanges,
   useQuizEditorForm,
   withChoiceType,
 } from "@/components/quiz/editor/quiz-editor-form";
 import type {
-  ChoiceChanges,
+  ChoiceTypes,
   QuizEditorForm,
 } from "@/components/quiz/editor/quiz-editor-form";
 import { UnsavedChangesGuard } from "@/components/quiz/editor/unsaved-changes-guard";
@@ -840,26 +842,26 @@ function BulkActions({
   }
 
   function setAll(multiple: boolean) {
-    const changes: ChoiceChanges = new Map();
-    for (const question of form.getFieldValue("questions")) {
-      const { unmarked } = withChoiceType(question, multiple);
-      changes.set(question.id, { multiple: question.multiple, unmarked });
-    }
+    const previous: ChoiceTypes = new Map(
+      form
+        .getFieldValue("questions")
+        .map((question) => [question.id, question.multiple]),
+    );
     form.setFieldValue("questions", (questions) =>
-      questions.map((question) => withChoiceType(question, multiple).question),
+      questions.map((question) => withChoiceType(question, multiple)),
     );
-    const unmarked = [...changes.values()].reduce(
-      (total, change) => total + change.unmarked.length,
-      0,
-    );
+    revalidate(form);
+    const conflicts = form
+      .getFieldValue("questions")
+      .filter((question) => questionIssue(question) === "conflict").length;
     toast(
       multiple
         ? "Ustawiono wielokrotny wybór we wszystkich pytaniach"
         : "Ustawiono jednokrotny wybór we wszystkich pytaniach",
       {
         description:
-          unmarked > 0
-            ? `Odznaczono poprawne odpowiedzi: ${String(unmarked)}.`
+          conflicts > 0
+            ? `${String(conflicts)} ${plural(conflicts, "pytanie ma", "pytania mają", "pytań ma")} kilka poprawnych odpowiedzi. Popraw je przed zapisem.`
             : undefined,
         duration: 10_000,
         action: {
@@ -869,8 +871,9 @@ function BulkActions({
               return;
             }
             form.setFieldValue("questions", (questions) =>
-              undoChoiceChanges(questions, changes),
+              restoreChoiceTypes(questions, previous),
             );
+            revalidate(form);
           },
         },
       },

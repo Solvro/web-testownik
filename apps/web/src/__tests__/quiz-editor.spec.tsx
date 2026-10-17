@@ -675,13 +675,27 @@ describe("Quiz editor", () => {
       screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
     ).toHaveAttribute("aria-pressed", "true");
 
+    // Single choice keeps both marks and flags the conflict; unmarking one
+    // answer leaves the other alone.
     await chooseInQuestionMenu(user, 1, "Jednokrotny wybór");
+    expect(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByText(/Jednokrotny wybór pozwala na jedną poprawną/),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
+    );
     expect(
       screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
     ).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.queryByText(/Jednokrotny wybór pozwala na jedną poprawną/),
+    ).not.toBeInTheDocument();
 
     await user.click(listRows()[2]);
     expect(questionOptions(3)).toHaveTextContent("Wielokrotny wybór");
@@ -1047,19 +1061,35 @@ describe("Quiz editor", () => {
     );
   });
 
-  it("can undo correct answers unmarked by single choice", async () => {
+  it("flags single-choice questions with several correct answers", async () => {
     const user = userEvent.setup();
+    const onSave = saveMock();
     const quiz = quizFixture(2);
     quiz.questions[0].multiple = true;
     quiz.questions[0].answers[1].is_correct = true;
-    render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={saveMock()} />);
+    render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={onSave} />);
     await chooseAllQuestions(user, "Jednokrotny wybór");
+    // Nothing is unmarked; the question is marked as conflicting instead.
     expect(
       screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
-    ).toHaveAttribute("aria-pressed", "false");
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("img", { name: "Kilka poprawnych odpowiedzi" }),
+    ).toBeInTheDocument();
     const [message, options] = vi.mocked(toast).mock.calls[0];
     expect(message).toBe("Ustawiono jednokrotny wybór we wszystkich pytaniach");
-    expect(options?.description).toBe("Odznaczono poprawne odpowiedzi: 1.");
+    expect(options?.description).toBe(
+      "1 pytanie ma kilka poprawnych odpowiedzi. Popraw je przed zapisem.",
+    );
+
+    // The conflict blocks saving.
+    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+    expect(
+      await screen.findByText(
+        "Jednokrotny wybór pozwala na jedną poprawną odpowiedź",
+      ),
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
 
     // Edits made after the change survive the undo.
     fireEvent.change(screen.getByRole("textbox", { name: "Odpowiedź 1" }), {
@@ -1070,8 +1100,8 @@ describe("Quiz editor", () => {
     });
     expect(questionOptions(1)).toHaveTextContent("Wielokrotny wybór");
     expect(
-      screen.getByRole("button", { name: "Poprawna odpowiedź 2" }),
-    ).toHaveAttribute("aria-pressed", "true");
+      screen.queryByRole("img", { name: "Kilka poprawnych odpowiedzi" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Odpowiedź 1" })).toHaveValue(
       "Zmieniona",
     );
