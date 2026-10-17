@@ -1,7 +1,10 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
-import { SINGLE_CHOICE_ERROR } from "@testownik/core/quiz/schema";
+import {
+  SINGLE_CHOICE_ERROR,
+  SINGLE_CHOICE_REQUIRED_ERROR,
+} from "@testownik/core/quiz/schema";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -416,10 +419,12 @@ export function QuestionEditor({
               {(questionField) => (
                 <form.Field name={`${path}.text`}>
                   {(field) => {
-                    // The conflict is explained next to the answers, so it
-                    // neither marks the text nor repeats under it.
+                    // Choice errors are explained next to the answers, so
+                    // they neither mark the text nor repeat under it.
                     const questionErrors = questionField.errors.filter(
-                      (error) => error.message !== SINGLE_CHOICE_ERROR,
+                      (error) =>
+                        error.message !== SINGLE_CHOICE_ERROR &&
+                        error.message !== SINGLE_CHOICE_REQUIRED_ERROR,
                     );
                     const invalid =
                       field.errors.length > 0 || questionErrors.length > 0;
@@ -481,18 +486,22 @@ export function QuestionEditor({
             aria-label={`Odpowiedzi do pytania ${number}`}
             className="space-y-2"
           >
-            {conflict ? (
-              <p className="text-destructive text-sm">
-                Jednokrotny wybór pozwala na jedną poprawną odpowiedź. Odznacz
-                pozostałe lub zmień typ na wielokrotny wybór.
-              </p>
-            ) : hasCorrect ? null : (
-              <p className="text-muted-foreground text-sm">
-                {question.multiple
-                  ? "Zaznacz kwadraty przy poprawnych odpowiedziach."
-                  : "Zaznacz kółko przy poprawnej odpowiedzi."}
-              </p>
-            )}
+            <form.Field name={path}>
+              {(questionField) => {
+                const message = conflict
+                  ? "Jednokrotny wybór pozwala na jedną poprawną odpowiedź. Odznacz pozostałe lub zmień typ na wielokrotny wybór."
+                  : !hasCorrect &&
+                      questionField.errors.some(
+                        (error) =>
+                          error.message === SINGLE_CHOICE_REQUIRED_ERROR,
+                      )
+                    ? SINGLE_CHOICE_REQUIRED_ERROR
+                    : null;
+                return message === null ? null : (
+                  <p className="text-destructive text-sm">{message}</p>
+                );
+              }}
+            </form.Field>
             <div className="space-y-2">
               {question.answers.map((answer, answerIndex) => (
                 <AnswerEditor

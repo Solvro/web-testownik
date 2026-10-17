@@ -177,8 +177,10 @@ export function hasImage(item: {
 }
 
 /**
- * `missing` and `conflict` block saving; `no-correct` is only a reminder.
- * `conflict` is a single-choice question with several correct answers.
+ * `missing`, `conflict` and `missing-correct` block saving; `no-correct` is
+ * only a reminder. Single choice needs exactly one correct answer: `conflict`
+ * has several, `missing-correct` none. Multiple choice without any correct
+ * answer is `no-correct`.
  */
 export function questionIssue(question: QuestionFormData) {
   if (
@@ -195,7 +197,7 @@ export function questionIssue(question: QuestionFormData) {
     return "conflict";
   }
   if (correct === 0) {
-    return "no-correct";
+    return question.multiple ? "no-correct" : "missing-correct";
   }
   return null;
 }

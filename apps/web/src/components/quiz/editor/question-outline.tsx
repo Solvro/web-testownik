@@ -208,7 +208,7 @@ function OutlineItem({
             ? "border-primary text-foreground font-semibold"
             : "text-muted-foreground hover:text-foreground border-transparent",
           issue === "no-correct" && "text-amber-700 dark:text-amber-400",
-          (issue === "missing" || issue === "conflict") && "text-destructive",
+          issue !== null && issue !== "no-correct" && "text-destructive",
         )}
       >
         <span className="min-w-0 flex-1 truncate">

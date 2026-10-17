@@ -318,6 +318,9 @@ describe("Quiz editor", () => {
         { target: { value: text } },
       );
     }
+    await user.click(
+      screen.getByRole("button", { name: "Poprawna odpowiedź 1" }),
+    );
     await user.click(screen.getByRole("button", { name: "Zapisz" }));
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent("Zapisano");
@@ -714,9 +717,6 @@ describe("Quiz editor", () => {
     quiz.questions[0].answers[0].is_correct = false;
     render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={saveMock()} />);
     expect(
-      screen.getByText("Zaznacz kółko przy poprawnej odpowiedzi."),
-    ).toBeInTheDocument();
-    expect(
       screen.queryByRole("img", { name: "Brak poprawnej odpowiedzi" }),
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Pytanie 2:/ }));
@@ -728,6 +728,37 @@ describe("Quiz editor", () => {
     expect(
       screen.getByRole("button", { name: /^Pytanie 1:/ }),
     ).toHaveAccessibleName(/Brak poprawnej odpowiedzi$/);
+  });
+
+  it("requires a correct answer in single choice when saving", async () => {
+    const user = userEvent.setup();
+    const onSave = saveMock();
+    const quiz = quizFixture(2);
+    quiz.questions[0].answers[0].is_correct = false;
+    render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={onSave} />);
+    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+    expect(
+      await screen.findByText(
+        "Jednokrotny wybór wymaga zaznaczenia poprawnej odpowiedzi",
+      ),
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+    // The outline marks it as blocking, not as a reminder.
+    expect(
+      screen.getByRole("img", { name: "Brak poprawnej odpowiedzi" }),
+    ).toHaveClass("bg-destructive");
+
+    // Multiple choice only reminds; the quiz saves.
+    await chooseInQuestionMenu(user, 1, "Wielokrotny wybór");
+    expect(
+      screen.queryByText(
+        "Jednokrotny wybór wymaga zaznaczenia poprawnej odpowiedzi",
+      ),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("collapses the open question and opens another from the outline", async () => {

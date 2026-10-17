@@ -76,10 +76,11 @@ export function useQuestionSummary(form: QuizEditorForm, index: number) {
 }
 
 /**
- * `missing` blocks saving and shows only after a save attempt, so a question
- * being written is not marked wrong straight away. `conflict` comes from a
- * deliberate change, so it shows at once. `no-correct` is a reminder shown
- * once the question is left.
+ * `missing` and `missing-correct` block saving and show only after a save
+ * attempt, so a question being written is not marked wrong straight away.
+ * `conflict` comes from a deliberate change, so it shows at once.
+ * `no-correct` is a reminder shown once the question is left, which is also
+ * how `missing-correct` shows before a save attempt.
  */
 export function visibleIssue(
   issue: QuestionSummary["issue"],
@@ -91,6 +92,9 @@ export function visibleIssue(
   }
   if (issue === "conflict") {
     return "conflict";
+  }
+  if (issue === "missing-correct") {
+    return showErrors ? "missing-correct" : active ? null : "no-correct";
   }
   if (issue === "no-correct" && !active) {
     return "no-correct";

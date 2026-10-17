@@ -33,7 +33,8 @@ export function QuestionRow({
     return null;
   }
   const issue = visibleIssue(summary.issue, false, showErrors);
-  const blocking = issue === "missing" || issue === "conflict";
+  const blocking =
+    issue === "missing" || issue === "conflict" || issue === "missing-correct";
   const number = String(index + 1);
   const text = summary.text === "" ? emptyLabel(summary) : summary.text;
   const status =
@@ -41,7 +42,7 @@ export function QuestionRow({
       ? "Wymaga uzupełnienia"
       : issue === "conflict"
         ? "Kilka poprawnych odpowiedzi"
-        : issue === "no-correct"
+        : issue === "no-correct" || issue === "missing-correct"
           ? "Brak poprawnej odpowiedzi"
           : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
 

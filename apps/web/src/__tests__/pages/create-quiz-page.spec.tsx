@@ -245,6 +245,10 @@ describe("CreateQuizPage", () => {
       within(newQuestion).getByRole("textbox", { name: "Odpowiedź 2" }),
       testQuiz.answers[3],
     );
+    // Single choice needs exactly one correct answer to save.
+    await user.click(
+      within(newQuestion).getByRole("button", { name: "Poprawna odpowiedź 1" }),
+    );
 
     await submit();
 
