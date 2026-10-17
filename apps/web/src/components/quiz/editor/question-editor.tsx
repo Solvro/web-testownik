@@ -526,7 +526,7 @@ export function QuestionEditor({
               id={`add-answer-${questionId}`}
               type="button"
               variant="ghost"
-              className="text-primary-text hover:text-primary-text -ml-1 px-2"
+              className="text-primary hover:text-primary -ml-1 px-2"
               disabled={disabled}
               onClick={() => {
                 addAnswer();

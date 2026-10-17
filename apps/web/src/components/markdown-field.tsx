@@ -497,7 +497,7 @@ export function MarkdownToolbar({
           className={cn(
             buttonClassName,
             // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
-            "aria-pressed:bg-primary/10 aria-pressed:text-primary-text dark:aria-pressed:bg-primary/25 size-8 px-0",
+            "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
           )}
           aria-label={title}
           title={title}

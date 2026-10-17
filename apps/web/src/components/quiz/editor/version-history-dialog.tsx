@@ -253,7 +253,7 @@ export function VersionHistoryDialog({
                           {formatWhen(version.updated_at)}
                         </span>
                         {version.version === latest ? (
-                          <span className="text-primary-text text-xs font-medium">
+                          <span className="text-primary text-xs font-medium">
                             Aktualna
                           </span>
                         ) : null}
@@ -435,7 +435,7 @@ function VersionContent({
                           "text-xs font-medium",
                           change === "removed"
                             ? "text-amber-700 dark:text-amber-400"
-                            : "text-primary-text",
+                            : "text-primary",
                         )}
                       >
                         {change === "removed"
