@@ -46,8 +46,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PermissionAction } from "@/lib/auth/permissions";
-import { getQuizService } from "@/services";
+import { servicesFor, useServices } from "@/services/client-services";
 
+import { formatStudyTime } from "./helpers/study-time";
 import type { TimerStore } from "./hooks/use-study-timer";
 import { useStudyTimeValue } from "./hooks/use-study-timer";
 
@@ -98,20 +99,6 @@ const getProgressColor = (percentage: number): string => {
   return "rgb(25, 135, 84)";
 };
 
-const formatStudyTime = (totalSeconds: number): string => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const paddedMinutes = String(minutes).padStart(2, "0");
-  const paddedSeconds = String(seconds).padStart(2, "0");
-
-  if (hours === 0) {
-    return `${paddedMinutes}:${paddedSeconds}`;
-  }
-
-  return `${String(hours)}:${paddedMinutes}:${paddedSeconds}`;
-};
-
 function StudyTimeDisplay({ timerStore }: { timerStore: TimerStore }) {
   const studyTime = useStudyTimeValue(timerStore);
 
@@ -144,11 +131,13 @@ export function QuizInfoCard({
   const canViewStats = checkPermission(PermissionAction.VIEW_QUIZ_STATS);
   const canUseContinuity = checkPermission(PermissionAction.QUIZ_CONTINUITY);
   const queryClient = useQueryClient();
+  const { clipboard } = useServices();
   const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   const { mutate: copyQuiz, isPending: isCopying } = useMutation({
-    mutationFn: async (quizId: string) => getQuizService().copyQuiz(quizId),
+    mutationFn: async (quizId: string, { client }) =>
+      servicesFor(client).quiz.copyQuiz(quizId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["user-quizzes"] }),
@@ -327,11 +316,7 @@ export function QuizInfoCard({
                             return;
                           }
 
-                          void navigator.clipboard
-                            .writeText(window.location.href)
-                            .then(() => {
-                              toast.success("Skopiowano link do quizu");
-                            });
+                          void clipboard.copyLink(window.location.href);
                         }}
                         aria-label={
                           canEditQuiz

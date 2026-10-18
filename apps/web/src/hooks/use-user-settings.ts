@@ -8,7 +8,7 @@ import { useCallback, useRef } from "react";
 import { toast } from "sonner";
 
 import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
-import { getUserService } from "@/services";
+import { servicesFor } from "@/services/client-services";
 
 export const userSettingsQueryKey = ["user-settings"] as const;
 const SETTINGS_UPDATE_DEBOUNCE_MS = 500;
@@ -40,7 +40,7 @@ export function useUserSettings({
 }: { enabled?: boolean; placeholderData?: UserSettings } = {}) {
   return useQuery({
     queryKey: userSettingsQueryKey,
-    queryFn: async () => getUserService().getUserSettings(),
+    queryFn: async ({ client }) => servicesFor(client).user.getUserSettings(),
     enabled,
     placeholderData,
   });
@@ -51,8 +51,8 @@ export function useUpdateUserSettings({ quizId }: { quizId?: string } = {}) {
   const versionRef = useRef(0);
 
   const mutation = useMutation({
-    mutationFn: async ({ settings }: UpdateUserSettingsVariables) =>
-      getUserService().updateUserSettings(settings),
+    mutationFn: async ({ settings }: UpdateUserSettingsVariables, { client }) =>
+      servicesFor(client).user.updateUserSettings(settings),
     onError: (error, variables) => {
       if (variables.version !== versionRef.current) {
         return;
