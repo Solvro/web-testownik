@@ -9,6 +9,8 @@ import {
 } from "three";
 import { CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
+import { CAMERA_FOV } from "../laptop-framing";
+
 /** Above this the extra pixels cost more than they show on a 3D product shot. */
 const MAX_PIXEL_RATIO = 1.35;
 
@@ -41,7 +43,10 @@ export function createStage({
   screenLayerClassName: string;
 }): Stage {
   const scene = new Scene();
-  const camera = new PerspectiveCamera(31, 1, 0.1, 400);
+  const camera = new PerspectiveCamera(CAMERA_FOV, 1, 0.1, 400);
+  // Both renderers would otherwise walk the whole scene graph again on every
+  // render. The choreography updates its world matrices once per frame.
+  scene.matrixWorldAutoUpdate = false;
 
   const renderer = new WebGLRenderer({
     canvas,

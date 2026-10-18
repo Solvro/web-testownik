@@ -182,6 +182,10 @@ export function DeviceStack({
       data-cover-only={coverOnly}
       className={cn(
         "group/stack @container-[size] absolute inset-0 transition-opacity duration-300",
+        // Nothing in here reads the hero progress, but the live screens are
+        // hundreds of elements that would inherit it: pinning it stops every
+        // scroll frame from restyling all three screens.
+        "[--landing-hero-progress:0]",
         "data-[model-failed=true]:opacity-[0.34]",
         className,
       )}

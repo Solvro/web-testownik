@@ -43,11 +43,16 @@ export const OPEN_CORNERS: readonly Corner[] = [
 /** Lid travel from open to shut, in degrees. */
 export const LID_TRAVEL_DEGREES = 111;
 
+/**
+ * Vertical field of view of the hero camera, in degrees. The scene only runs
+ * at `lg` and wider, so there is a single lens.
+ */
+export const CAMERA_FOV = 30;
+
 export interface Framing {
   target: [number, number, number];
   distance: number;
   pitch: number;
-  fov: number;
 }
 
 export interface ScreenRect {
@@ -81,7 +86,7 @@ function project(
   framing: Framing,
   aspect: number,
 ): { x: number; y: number } {
-  const { target, distance, pitch, fov } = framing;
+  const { target, distance, pitch } = framing;
   const sin = Math.sin(pitch);
   const cos = Math.cos(pitch);
   const eye = [
@@ -94,7 +99,7 @@ function project(
   // z = (0,sin,cos). three.js looks down -z, hence the negated depth.
   const up = view[1] * cos - view[2] * sin;
   const depth = -(view[1] * sin + view[2] * cos);
-  const half = Math.tan(toRadians(fov) / 2);
+  const half = Math.tan(toRadians(CAMERA_FOV) / 2);
   return {
     x: view[0] / depth / (half * aspect),
     y: up / depth / half,
@@ -104,12 +109,10 @@ function project(
 export function frameLaptop({
   opening,
   aspect,
-  compact,
   withSatellites,
 }: {
   opening: number;
   aspect: number;
-  compact: boolean;
   withSatellites: boolean;
 }): { framing: Framing; corners: Corner[] } {
   const corners = poseCorners(opening);
@@ -120,20 +123,19 @@ export function frameLaptop({
     target[2] += corner[2] / corners.length;
   }
 
-  const fov = compact ? 34 : 30;
   // Closed is viewed from a low three-quarter angle, not from overhead: the
   // wedge profile and the lid edge are what make it read as a laptop at all.
   // Straight down it is just a dark rectangle.
-  const pitch = toRadians(lerp(compact ? 46 : 38, compact ? 13 : 10, opening));
+  const pitch = toRadians(lerp(38, 10, opening));
   // Closed reads at a similar size to open without swallowing the frame. The
   // measured box is deeper when shut (the hinge barrel swings below the base),
   // so the same number here yields a visually smaller device.
-  const fill = lerp(compact ? 0.66 : 0.7, withSatellites ? 0.72 : 0.9, opening);
+  const fill = lerp(0.7, withSatellites ? 0.72 : 0.9, opening);
 
   // Converge on the tightest distance that still keeps every corner inside.
   let distance = 90;
   for (let pass = 0; pass < 3; pass += 1) {
-    const framing: Framing = { target, distance, pitch, fov };
+    const framing: Framing = { target, distance, pitch };
     let extent = 0;
     for (const corner of corners) {
       const point = project(corner, framing, aspect);
@@ -150,7 +152,7 @@ export function frameLaptop({
     target[2],
   ];
 
-  return { framing: { target: panned, distance, pitch, fov }, corners };
+  return { framing: { target: panned, distance, pitch }, corners };
 }
 
 /** Screen-space box the posed laptop occupies, in CSS pixels. */
@@ -163,7 +165,6 @@ export function laptopScreenRect(
   const { framing, corners } = frameLaptop({
     opening,
     aspect,
-    compact: width < SCENE_WIDTH.compact,
     withSatellites: width >= SCENE_WIDTH.satellites,
   });
 

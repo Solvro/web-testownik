@@ -1,13 +1,14 @@
 import { Group, MathUtils } from "three";
+import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
-import { SATELLITE_POSES, createChoreography } from "./choreography";
+import { createChoreography } from "./choreography";
 import { disposeModels, loadDeviceModels } from "./models";
 import type { DeviceModels } from "./models";
 import {
-  attachLaptopScreen,
-  attachSatelliteScreen,
-  poseForMeasurement,
+  SATELLITE_RIG,
+  SCREEN_PLACEMENT,
+  attachScreen,
   screenFacing,
 } from "./screens";
 import { createStage } from "./stage";
@@ -22,15 +23,6 @@ import { createStage } from "./stage";
 
 const getCurrentScrollProgress = (): number =>
   MathUtils.clamp(getHeroProgress(), 0, 1);
-
-/**
- * Logical widths of the DOM surfaces mapped onto each display. Heights follow
- * from the real mesh aspect ratio, so nothing ever letterboxes in the bezel.
- */
-const SCREEN_WIDTH_PX = { laptop: 940, tablet: 720, phone: 390 } as const;
-
-/** On-screen width of each satellite in scene units. */
-const SATELLITE_WIDTH = { tablet: 15.2, phone: 7.8 } as const;
 
 /** Lets the live screens settle and the cover disappear before catch-up begins. */
 const COVER_HANDOFF_MS = 320;
@@ -63,6 +55,50 @@ export interface DeviceStack {
   dispose: () => void;
 }
 
+/**
+ * One live screen's visibility rules. Opacity and interactivity are written to
+ * the host only when they change, so a scroll frame does not touch the DOM of
+ * a screen whose state is stable.
+ */
+interface ScreenState {
+  host: HTMLElement;
+  object: CSS3DObject;
+  /** Facing range (dot product) over which the screen fades in. */
+  fade: readonly [number, number];
+  /** Also toggles `inert`, not only pointer events. */
+  inert: boolean;
+  opacity: string;
+  interactive: boolean | null;
+}
+
+function screenState(
+  host: HTMLElement,
+  object: CSS3DObject,
+  fade: readonly [number, number],
+  inert = false,
+): ScreenState {
+  return { host, object, fade, inert, opacity: "", interactive: null };
+}
+
+function syncScreen(
+  screen: ScreenState,
+  visibility: number,
+  interactive: boolean,
+): void {
+  const opacity = visibility.toFixed(3);
+  if (opacity !== screen.opacity) {
+    screen.host.style.opacity = opacity;
+    screen.opacity = opacity;
+  }
+  if (interactive !== screen.interactive) {
+    screen.host.style.pointerEvents = interactive ? "auto" : "none";
+    if (screen.inert) {
+      screen.host.inert = !interactive;
+    }
+    screen.interactive = interactive;
+  }
+}
+
 export async function createDeviceStack({
   canvas,
   container,
@@ -88,6 +124,9 @@ export async function createDeviceStack({
   let progressMode: ProgressMode = "loading";
   let catchUpStartsAt = 0;
   let catchUpDuration = 0;
+  // Kept from the resize observer so a frame never forces layout to read it.
+  let width = 1;
+  let height = 1;
 
   let models: DeviceModels;
   try {
@@ -119,59 +158,49 @@ export async function createDeviceStack({
     return { dispose: teardown };
   }
 
-  // --- Laptop -------------------------------------------------------------
-  const { hinge: lidPivot } = models.laptop;
+  // --- Devices ------------------------------------------------------------
   scene.add(models.laptop.root);
+  const laptopScreen = attachScreen(
+    models.laptop.display,
+    hosts.laptop,
+    SCREEN_PLACEMENT.laptop,
+  );
 
-  // Pose the model exactly as the finished hero shows it, so that "faces the
-  // camera" and "points up" are meaningful tests while the panel is measured.
-  lidPivot.rotation.x = 0;
-  models.laptop.root.rotation.set(0, 0, 0);
-  scene.updateMatrixWorld(true);
-  poseForMeasurement(camera);
-
-  const laptopScreen = attachLaptopScreen({
-    panel: models.laptop.display,
-    host: hosts.laptop,
-    camera,
-    logicalWidth: SCREEN_WIDTH_PX.laptop,
-  });
-
-  // --- Satellites ---------------------------------------------------------
   const tabletRig = new Group();
-  const tablet = attachSatelliteScreen({
-    scene,
-    root: models.tablet.root,
-    display: models.tablet.display,
-    rig: tabletRig,
-    host: hosts.tablet,
-    logicalWidth: SCREEN_WIDTH_PX.tablet,
-    targetWidth: SATELLITE_WIDTH.tablet,
-    restPosition: SATELLITE_POSES.tablet.open,
-    orientation: "landscape",
-  });
-
   const phoneRig = new Group();
-  const phone = attachSatelliteScreen({
-    scene,
-    root: models.phone.root,
-    display: models.phone.display,
-    rig: phoneRig,
-    host: hosts.phone,
-    logicalWidth: SCREEN_WIDTH_PX.phone,
-    targetWidth: SATELLITE_WIDTH.phone,
-    restPosition: SATELLITE_POSES.phone.open,
-    orientation: "portrait",
-  });
+  for (const [rig, device, name] of [
+    [tabletRig, models.tablet, "tablet"],
+    [phoneRig, models.phone, "phone"],
+  ] as const) {
+    device.root.position.fromArray(SATELLITE_RIG[name].rootPosition);
+    rig.add(device.root);
+    scene.add(rig);
+  }
+  const tabletScreen = attachScreen(
+    models.tablet.display,
+    hosts.tablet,
+    SCREEN_PLACEMENT.tablet,
+  );
+  const phoneScreen = attachScreen(
+    models.phone.display,
+    hosts.phone,
+    SCREEN_PLACEMENT.phone,
+  );
 
   const choreography = createChoreography({
-    scene,
     camera,
     laptop: models.laptop.root,
-    lidPivot,
-    tablet: { rig: tabletRig, attachment: tablet },
-    phone: { rig: phoneRig, attachment: phone },
+    lidPivot: models.laptop.hinge,
+    scene,
+    tablet: { rig: tabletRig, placement: SATELLITE_RIG.tablet },
+    phone: { rig: phoneRig, placement: SATELLITE_RIG.phone },
   });
+
+  const laptop = screenState(hosts.laptop, laptopScreen, [0.06, 0.26], true);
+  const satellites = [
+    screenState(hosts.tablet, tabletScreen, [0.04, 0.2]),
+    screenState(hosts.phone, phoneScreen, [0.04, 0.2]),
+  ];
 
   // --- Frame loop ---------------------------------------------------------
   const progressForFrame = (): number => {
@@ -200,66 +229,34 @@ export async function createDeviceStack({
     return target * easedTime;
   };
 
-  let lastLaptopOpacity = "";
-  let lastTabletOpacity = "";
-  let lastPhoneOpacity = "";
-  let lastLaptopInteractive: boolean | null = null;
-  let lastTabletInteractive: boolean | null = null;
-  let lastPhoneInteractive: boolean | null = null;
-
   function render(): void {
     frame = 0;
     if (disposed) {
       return;
     }
 
-    const bounds = canvas.getBoundingClientRect();
-    const progress = progressForFrame();
-    const { opening } = choreography.apply(
-      progress,
-      bounds.width,
-      bounds.height,
-    );
+    const { opening } = choreography.apply(progressForFrame(), width, height);
 
-    const laptopVisibility = screenFacing(laptopScreen, camera, 0.06, 0.26);
-    const laptopOpacity = laptopVisibility.toFixed(3);
-    if (laptopOpacity !== lastLaptopOpacity) {
-      hosts.laptop.style.opacity = laptopOpacity;
-      lastLaptopOpacity = laptopOpacity;
-    }
+    const laptopVisibility = screenFacing(
+      laptop.object,
+      camera,
+      ...laptop.fade,
+    );
     // Facing the camera is not enough: for the first half of the hinge travel
     // the panel is still physically behind the lid. Keeping the host inert
     // stops controls firing "through" a closed MacBook.
-    const isInteractive =
-      progressMode === "scroll" && opening > 0.25 && laptopVisibility > 0.5;
-    if (isInteractive !== lastLaptopInteractive) {
-      hosts.laptop.style.pointerEvents = isInteractive ? "auto" : "none";
-      hosts.laptop.inert = !isInteractive;
-      lastLaptopInteractive = isInteractive;
-    }
-
-    const tabletVisibility = screenFacing(tablet.object, camera, 0.04, 0.2);
-    const tabletOpacity = tabletVisibility.toFixed(3);
-    if (tabletOpacity !== lastTabletOpacity) {
-      hosts.tablet.style.opacity = tabletOpacity;
-      lastTabletOpacity = tabletOpacity;
-    }
-    const tabletInteractive = tabletVisibility > 0.88;
-    if (tabletInteractive !== lastTabletInteractive) {
-      hosts.tablet.style.pointerEvents = tabletInteractive ? "auto" : "none";
-      lastTabletInteractive = tabletInteractive;
-    }
-
-    const phoneVisibility = screenFacing(phone.object, camera, 0.04, 0.2);
-    const phoneOpacity = phoneVisibility.toFixed(3);
-    if (phoneOpacity !== lastPhoneOpacity) {
-      hosts.phone.style.opacity = phoneOpacity;
-      lastPhoneOpacity = phoneOpacity;
-    }
-    const phoneInteractive = phoneVisibility > 0.88;
-    if (phoneInteractive !== lastPhoneInteractive) {
-      hosts.phone.style.pointerEvents = phoneInteractive ? "auto" : "none";
-      lastPhoneInteractive = phoneInteractive;
+    syncScreen(
+      laptop,
+      laptopVisibility,
+      progressMode === "scroll" && opening > 0.25 && laptopVisibility > 0.5,
+    );
+    for (const satellite of satellites) {
+      const visibility = screenFacing(
+        satellite.object,
+        camera,
+        ...satellite.fade,
+      );
+      syncScreen(satellite, visibility, visibility > 0.88);
     }
 
     stage.render();
@@ -275,12 +272,10 @@ export async function createDeviceStack({
     }
   }
 
-  const resize = (): void => {
-    const bounds = canvas.getBoundingClientRect();
-    stage.setSize(
-      Math.max(1, Math.round(bounds.width)),
-      Math.max(1, Math.round(bounds.height)),
-    );
+  const resize = (nextWidth: number, nextHeight: number): void => {
+    width = Math.max(1, nextWidth);
+    height = Math.max(1, nextHeight);
+    stage.setSize(Math.round(width), Math.round(height));
     render();
   };
 
@@ -297,13 +292,15 @@ export async function createDeviceStack({
   );
   visibilityObserver.observe(container);
 
-  const resizeObserver = new ResizeObserver(resize);
+  const resizeObserver = new ResizeObserver(([entry]) => {
+    resize(entry.contentRect.width, entry.contentRect.height);
+  });
   resizeObserver.observe(canvas);
-  window.addEventListener("resize", schedule, { passive: true });
   window.addEventListener(HERO_PROGRESS_EVENT, schedule);
 
   isVisible = true;
-  resize();
+  const initial = canvas.getBoundingClientRect();
+  resize(initial.width, initial.height);
 
   // Portal content must mount only after CSS3DRenderer has connected and sized
   // its hosts. ResponsiveContainer otherwise observes a detached 0 × 0 node.
@@ -361,7 +358,6 @@ export async function createDeviceStack({
     dispose() {
       visibilityObserver.disconnect();
       resizeObserver.disconnect();
-      window.removeEventListener("resize", schedule);
       window.removeEventListener(HERO_PROGRESS_EVENT, schedule);
       teardown();
     },

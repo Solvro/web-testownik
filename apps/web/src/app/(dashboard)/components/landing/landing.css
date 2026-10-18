@@ -100,8 +100,18 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   height: 100%;
 }
 
+/*
+ * The MacBook panel. The host covers the display mesh exactly (see
+ * `SCREEN_PLACEMENT` in scene/three/screens.ts); rounding all four corners
+ * lets the dark glass beneath show through like the panel's own mask, and the
+ * inset outline is the thin black border every MacBook display has between
+ * the lit area and the bezel. Outlines paint above the content, so it also
+ * hides the CSS3D layer's aliased edge.
+ */
 .lp-screen-laptop {
-  border-radius: 1rem 1rem 0 0;
+  border-radius: 14px;
+  outline: 3px solid oklch(0.04 0 0);
+  outline-offset: -3px;
 }
 
 .lp-screen-laptop[inert],

@@ -40,6 +40,15 @@ subtree into a canvas and cannot host the hero's WebGL renderer.
 Each live device screen is a `CSS3DObject` attached to the corresponding display
 mesh. It intentionally shares the Three.js camera and physical transform; a
 separate flat DOM overlay will drift during the lid and satellite motion.
+Where each screen sits on its mesh and how large its DOM host is are baked
+constants in `scene/three/screens.ts`, guarded by `screens.test.ts` against
+the GLB.
+
+`--landing-hero-progress` changes on every scroll frame and is inherited, so
+every element under the hero is restyled each frame unless something pins it.
+`DeviceStack` pins it to 0 for the live screens (hundreds of elements); at 4×
+CPU throttling that took a hero scroll frame from ~50 ms of style recalc to
+~7 ms. Pin it on any new large subtree under the hero that does not read it.
 
 ## Regenerating the loading cover
 

@@ -32,12 +32,15 @@ Every emissive material inside the MacBook lid is blanked, not only the panel's,
 so no baked-in screenshot can show through. Inactive variants (Magic Keyboard,
 Pencil, Pro Max) and their empty nodes are pruned.
 
-The three `*-display` meshes are exempt from welding and quantisation. The hero
-derives each screen's plane, extent and in-plane axes from those meshes' raw
-vertices, normals and UVs: 8-bit normals tilted the MacBook's live UI by about
-0.3°, and welding the iPhone screen shrank its UI by 0.4%. Everything else is welded, quantised (positions
-14-bit, UVs 12-bit with `KHR_texture_transform`, normals 8-bit) and meshopt
-compressed.
+The three `*-display` meshes are exempt from welding and quantisation. Each
+live screen's plane, extent and in-plane axes were measured from those meshes'
+raw vertices, normals and UVs (8-bit normals tilted the MacBook's live UI by
+about 0.3°, and welding the iPhone screen shrank its UI by 0.4%). The results
+are baked into `SCREEN_PLACEMENT` and `SATELLITE_RIG` in
+`scene/three/screens.ts`; `screens.test.ts` re-measures the display meshes in
+this file and fails if they no longer match. Everything else is welded,
+quantised (positions 14-bit, UVs 12-bit with `KHR_texture_transform`, normals
+8-bit) and meshopt compressed.
 
 ### Regenerating
 
@@ -58,7 +61,10 @@ produce byte-identical output.
 After regenerating, check the hero against the previous model in both the
 closed and fully open pose (`?landing=true&capture=devices&captureProgress=0`
 and `…=1`, see `capture/capture-request.ts`). If the closed pose moved at all,
-regenerate the loading covers below.
+regenerate the loading covers below. If the display geometry changed,
+`screens.test.ts` fails: re-derive the placements with the solver they were
+baked from (`scene/three/display-plane.ts` and `screens.ts` as of commit
+`d9589472`) and paste the new values into `scene/three/screens.ts`.
 
 ### Sources
 
