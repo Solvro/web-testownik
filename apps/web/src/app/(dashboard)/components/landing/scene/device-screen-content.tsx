@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { Glass } from "@/components/canvasui/Glass";
 import { PreviewSandbox } from "@/components/testownik-preview/preview-provider";
+import type { PreviewQuizSession } from "@/components/testownik-preview/preview-session";
 import {
   PhoneQuizSurface,
   ProductAppChrome,
@@ -65,26 +66,14 @@ function GlassScreen({
 }
 
 export interface DeviceQuizControls {
-  selectedAnswers: string[];
-  onSelectedAnswersChange: (answers: string[]) => void;
-  questionChecked: boolean;
-  onQuestionCheckedChange: (checked: boolean) => void;
+  /** The quiz the laptop and the iPhone both show. */
+  session: PreviewQuizSession;
 }
 
 export function DeviceLaptopScreen({
-  selectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked,
-  onQuestionCheckedChange,
+  session,
 }: DeviceQuizControls): React.JSX.Element {
-  return (
-    <ProductAppChrome
-      selectedAnswers={selectedAnswers}
-      onSelectedAnswersChange={onSelectedAnswersChange}
-      questionChecked={questionChecked}
-      onQuestionCheckedChange={onQuestionCheckedChange}
-    />
-  );
+  return <ProductAppChrome session={session} />;
 }
 
 export function DeviceTabletScreen(): React.JSX.Element {
@@ -126,22 +115,12 @@ export function DeviceTabletScreen(): React.JSX.Element {
 }
 
 export function DevicePhoneScreen({
-  selectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked,
-  onQuestionCheckedChange,
+  session,
   withGlass = true,
 }: DeviceQuizControls & {
   withGlass?: boolean;
 }): React.JSX.Element {
-  const surface = (
-    <PhoneQuizSurface
-      selectedAnswers={selectedAnswers}
-      onSelectedAnswersChange={onSelectedAnswersChange}
-      questionChecked={questionChecked}
-      onQuestionCheckedChange={onQuestionCheckedChange}
-    />
-  );
+  const surface = <PhoneQuizSurface session={session} />;
 
   // The surface seals itself; see `PreviewSandbox`.
   if (!withGlass) {

@@ -25,7 +25,14 @@ to the application. For local work, open `/?landing=true`.
 - `scene/` owns the device stack, camera framing, and Three.js choreography.
 - `capture/` is the development-only device-cover capture route.
 - `src/components/testownik-preview/` composes real application components with
-  local fixtures for the device screens and showcase.
+  local fixtures for the device screens and showcase. The quiz screens run a
+  `PreviewQuizSession` (`hooks/use-quiz-preview-state.ts` over the pure
+  `preview-quiz-machine.ts`); the desktop stage shares one between the laptop
+  and the iPhone, the CSS phone owns its own. Each session has its own query
+  cache bound to `preview-services.ts`, so the real settings, share, history
+  and stats components read fixtures and never reach the API or the
+  clipboard. Links inside a screen are cancelled by `PreviewSandbox` and
+  handed to its `onNavigate`, which is how the stats view opens.
 
 ## Non-obvious constraints
 

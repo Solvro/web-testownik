@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import Link from "next/link";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   Popover,
@@ -71,5 +71,17 @@ describe("PreviewSandbox", () => {
 
     const notCancelled = fireEvent.click(screen.getByText("Statystyki"));
     expect(notCancelled).toBe(false);
+  });
+
+  it("hands the cancelled link's href to the screen", () => {
+    const onNavigate = vi.fn();
+    render(
+      <PreviewSandbox onNavigate={onNavigate}>
+        <Link href="/quiz/preview/stats">Statystyki</Link>
+      </PreviewSandbox>,
+    );
+
+    fireEvent.click(screen.getByText("Statystyki"));
+    expect(onNavigate).toHaveBeenCalledWith("/quiz/preview/stats");
   });
 });
