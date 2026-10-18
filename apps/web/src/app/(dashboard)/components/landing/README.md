@@ -27,8 +27,9 @@ to the application. For local work, open `/?landing=true`.
 - `src/components/testownik-preview/` composes real application components with
   local fixtures for the device screens and showcase. The quiz screens run a
   `PreviewQuizSession` (`hooks/use-quiz-preview-state.ts` over the pure
-  `preview-quiz-machine.ts`); the desktop stage shares one between the laptop
-  and the iPhone, the CSS phone owns its own. Each session has its own query
+  `preview-quiz-machine.ts`); on the desktop stage the laptop and the iPhone
+  each run one and keep them in step over a `BroadcastChannel`
+  (`preview-quiz-sync.ts`), the CSS phone owns its own. Each session has its own query
   cache bound to `preview-services.ts`, so the real settings, share, history
   and stats components read fixtures and never reach the API or the
   clipboard. Links inside a screen are cancelled by `PreviewSandbox` and
@@ -36,7 +37,7 @@ to the application. For local work, open `/?landing=true`.
 
 ## Non-obvious constraints
 
-CanvasUI's Bubble and Glass shaders sample RGB but discard alpha. Their captured
+CanvasUI's Bubble shader samples RGB but discard alpha. Their captured
 subtrees must therefore paint an opaque background; transparent pixels become
 black. The Bubble capture background is the `.lp-bubble-capture` escape hatch in
 `landing.css`.
@@ -50,6 +51,16 @@ separate flat DOM overlay will drift during the lid and satellite motion.
 Where each screen sits on its mesh and how large its DOM host is are baked
 constants in `scene/three/screens.ts`, guarded by `screens.test.ts` against
 the GLB.
+
+Each host holds an iframe of `/landing-screen/<device>`
+(`scene/device-screen-frame.tsx`, contract in `scene/screen-frame-protocol.ts`),
+so the app's components lay out at the screen's native width: breakpoints,
+dialog variants and Floating UI positions are those of the device, not of the
+visitor's monitor seen through the CSS3D perspective. The root layout serves
+that route bare (no navbar, auth, analytics; see `lib/document-shell.ts`).
+The page passes the theme in the URL and posts changes; each frame posts
+`ready` once painted, and the loading cover waits for all three. Nothing
+html-in-canvas can reach inside a frame, so the screens have no Glass.
 
 `--landing-hero-progress` changes on every scroll frame and is inherited, so
 every element under the hero is restyled each frame unless something pins it.

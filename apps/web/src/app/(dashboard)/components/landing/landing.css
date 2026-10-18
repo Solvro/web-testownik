@@ -61,11 +61,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   z-index: 80;
 }
 
-/* CanvasUI appends Glass's output canvas after the content it refracts. */
-.lp-device-glass > canvas:last-child {
-  z-index: 4;
-}
-
 .lp-screen-layer {
   position: absolute;
   z-index: 3;
@@ -93,6 +88,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   pointer-events: auto;
 }
 
+/*
+ * Each host holds one iframe (`scene/device-screen-frame.tsx`), a document of
+ * its own, so nothing inside can paint, portal or scroll past the device. The
+ * host's `pointer-events` and `inert` reach into the frame.
+ */
 .lp-screen-laptop > *,
 .lp-screen-tablet > *,
 .lp-screen-phone > * {
@@ -548,21 +548,4 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     transform: none;
     filter: none;
   }
-}
-
-/*
- * Screen hosts as sealed boxes. The hosts are created imperatively and
- * reparented by CSS3DRenderer, so they carry no utility classes; the preview
- * inside (`PreviewSandbox`) seals itself with utilities, and these rules give
- * the host the same boundary so nothing it holds — focus rings, overlays
- * portalled into the screen, scroll chaining — paints or scrolls past the
- * device. `inert` on the laptop host still applies to the overlay layer
- * because it lives inside the host.
- */
-.lp-screen-laptop,
-.lp-screen-tablet,
-.lp-screen-phone {
-  contain: layout paint style;
-  isolation: isolate;
-  overscroll-behavior: contain;
 }

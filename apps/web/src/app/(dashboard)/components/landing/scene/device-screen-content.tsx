@@ -2,9 +2,7 @@
 
 import { BatteryFull, Search, Wifi } from "lucide-react";
 import { Suspense, lazy, useState } from "react";
-import type { ReactNode } from "react";
 
-import { Glass } from "@/components/canvasui/Glass";
 import { PreviewSandbox } from "@/components/testownik-preview/preview-provider";
 import type { PreviewQuizSession } from "@/components/testownik-preview/preview-session";
 import {
@@ -13,58 +11,16 @@ import {
 } from "@/components/testownik-preview/product-surfaces";
 import { cn } from "@/lib/utils";
 
-import { setSatelliteHovered } from "../satellite-hover";
-import { SCENE_CLASS } from "./scene-classes";
+/**
+ * What each desktop device screen renders inside its iframe (see
+ * `screen-frame-document.tsx`). The frame is the screen, at its native size,
+ * so these lay out as the app does on a device that wide.
+ */
 
 const TabletLiveCharts = lazy(async () => {
   const loaded = await import("./tablet-live-charts");
   return { default: loaded.TabletLiveCharts };
 });
-
-/**
- * Glass runs its own WebGL loop per instance. The magnifier is only needed once
- * the visitor is actually pointing at a device screen, so the effect stays off
- * until first contact and then remains mounted for that surface.
- */
-function GlassScreen({
-  children,
-  targets,
-  onFirstEngage,
-}: {
-  children: ReactNode;
-  targets?: string;
-  onFirstEngage?: () => void;
-}): React.JSX.Element {
-  const [engaged, setEngaged] = useState(false);
-
-  return (
-    <div
-      className="relative isolate size-full overflow-hidden"
-      onPointerEnter={() => {
-        setEngaged(true);
-        setSatelliteHovered(true);
-        if (!engaged) {
-          onFirstEngage?.();
-        }
-      }}
-      onPointerLeave={() => {
-        setSatelliteHovered(false);
-      }}
-    >
-      {engaged ? (
-        <Glass
-          className={cn("size-full", SCENE_CLASS.deviceGlass)}
-          size={60}
-          targets={targets}
-        >
-          {children}
-        </Glass>
-      ) : (
-        children
-      )}
-    </div>
-  );
-}
 
 export interface DeviceQuizControls {
   /** The quiz the laptop and the iPhone both show. */
@@ -104,9 +60,13 @@ export function DeviceLaptopScreen({
   session,
 }: DeviceQuizControls): React.JSX.Element {
   return (
-    <div className="bg-background flex flex-col">
+    <div className="bg-background flex size-full flex-col">
       <LaptopMenuBar />
-      <ProductAppChrome className="min-h-0 flex-1" session={session} />
+      <ProductAppChrome
+        className="min-h-0 flex-1"
+        session={session}
+        standalone
+      />
     </div>
   );
 }
@@ -115,56 +75,41 @@ export function DeviceTabletScreen(): React.JSX.Element {
   const [showCharts, setShowCharts] = useState(false);
   const [chartsReady, setChartsReady] = useState(false);
 
-  // The charts are not a product surface of their own, so the screen seals
-  // them here.
+  // The charts are not a product surface of their own, so the screen cancels
+  // their links here. They load on the visitor's first contact with the iPad.
   return (
-    <PreviewSandbox>
-      <GlassScreen
-        onFirstEngage={() => {
+    <PreviewSandbox standalone>
+      <div
+        className="relative size-full"
+        onPointerEnter={() => {
           setShowCharts(true);
         }}
       >
-        <div className="relative size-full">
-          {/* Captured from the real seeded charts; refresh when their preview changes. */}
-          <div
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark.webp)]",
-              chartsReady ? "opacity-0" : "opacity-100",
-            )}
-          />
-          {showCharts ? (
-            <Suspense fallback={null}>
-              <TabletLiveCharts
-                visible={chartsReady}
-                onReady={() => {
-                  setChartsReady(true);
-                }}
-              />
-            </Suspense>
-          ) : null}
-        </div>
-      </GlassScreen>
+        {/* Captured from the real seeded charts; refresh when their preview changes. */}
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark.webp)]",
+            chartsReady ? "opacity-0" : "opacity-100",
+          )}
+        />
+        {showCharts ? (
+          <Suspense fallback={null}>
+            <TabletLiveCharts
+              visible={chartsReady}
+              onReady={() => {
+                setChartsReady(true);
+              }}
+            />
+          </Suspense>
+        ) : null}
+      </div>
     </PreviewSandbox>
   );
 }
 
 export function DevicePhoneScreen({
   session,
-  withGlass = true,
-}: DeviceQuizControls & {
-  withGlass?: boolean;
-}): React.JSX.Element {
-  const surface = <PhoneQuizSurface session={session} />;
-
-  // The surface seals itself; see `PreviewSandbox`.
-  if (!withGlass) {
-    return surface;
-  }
-
-  return (
-    <GlassScreen targets="button, [data-slot=card-title]">
-      {surface}
-    </GlassScreen>
-  );
+}: DeviceQuizControls): React.JSX.Element {
+  return <PhoneQuizSurface session={session} standalone />;
 }

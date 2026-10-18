@@ -99,6 +99,11 @@ function syncScreen(
   }
 }
 
+/** See `DeviceStack`'s screen props. */
+function isSurfaceReady(host: HTMLElement): boolean {
+  return host.querySelector('[data-surface-ready="true"]') !== null;
+}
+
 export async function createDeviceStack({
   canvas,
   container,
@@ -303,22 +308,26 @@ export async function createDeviceStack({
   resize(initial.width, initial.height);
 
   // Portal content must mount only after CSS3DRenderer has connected and sized
-  // its hosts. ResponsiveContainer otherwise observes a detached 0 × 0 node.
+  // its hosts, so each screen's iframe starts at its final size.
   onHostsAttached();
 
-  // The iPad starts with a still preview; its charts load after interaction.
-  // The cover only needs the three portal surfaces to have mounted.
+  // The screens are iframes that load on their own; each marks itself
+  // `data-surface-ready` once it has painted (the iPad with its still
+  // preview — its charts load after interaction). The cover waits for all
+  // three, so it never hands over to a blank screen.
   let stableSurfaceFrames = 0;
 
   const revealWhenSurfacesAreStable = (): void => {
-    render();
-
-    stableSurfaceFrames =
-      hosts.laptop.childElementCount > 0 &&
-      hosts.tablet.childElementCount > 0 &&
-      hosts.phone.childElementCount > 0
-        ? stableSurfaceFrames + 1
-        : 0;
+    const surfacesReady =
+      isSurfaceReady(hosts.laptop) &&
+      isSurfaceReady(hosts.tablet) &&
+      isSurfaceReady(hosts.phone);
+    // Loading the frames takes a while; the scene has nothing new to draw
+    // until they are in, so the wait is a cheap poll rather than a render.
+    if (surfacesReady) {
+      render();
+    }
+    stableSurfaceFrames = surfacesReady ? stableSurfaceFrames + 1 : 0;
 
     if (stableSurfaceFrames >= 2) {
       readinessFrame = 0;
