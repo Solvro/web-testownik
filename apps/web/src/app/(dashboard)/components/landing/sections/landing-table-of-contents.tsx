@@ -18,8 +18,10 @@ import {
   TOC_PREVIEW_INNER_HEIGHT,
   TOC_PREVIEW_INNER_WIDTH,
   TOC_PREVIEW_WIDTH,
-  getTocSectionPreview,
+  attachTocPreviewHost,
   invalidateTocSectionPreviews,
+  showTocSectionPreview,
+  warmTocSectionPreviews,
 } from "./toc-section-preview";
 
 const SECTIONS = LANDING_SECTIONS;
@@ -30,8 +32,10 @@ const SHOW_AFTER_SCROLL = 160;
 const IDLE_HIDE_DELAY = 2800;
 const POINTER_REVEAL_WIDTH = 88;
 const POINTER_REVEAL_PADDING = 24;
-const PREVIEW_SHOW_DELAY = 140;
+/** Short grace period so moving between rail items does not flicker. */
 const PREVIEW_HIDE_DELAY = 120;
+/** Let a resize settle before rebuilding peeks against the new layout. */
+const PREVIEW_REWARM_DELAY = 400;
 const PREVIEW_BOOM_MS = 360;
 /** Outer chrome: padding + screen + caption row. */
 const PREVIEW_CARD_HEIGHT = TOC_PREVIEW_INNER_HEIGHT + 8 + 8 + 36;
@@ -56,7 +60,6 @@ export function LandingTableOfContents(): React.JSX.Element {
   const activeIdReference = useRef<SectionId>(SECTIONS[0].id);
   const previewIdReference = useRef<SectionId | null>(null);
   const previewMotionReference = useRef<PreviewMotion>("hidden");
-  const previewShowTimer = useRef(0);
   const previewHideTimer = useRef(0);
   const previewBoomTimer = useRef(0);
   const [activeId, setActiveId] = useState<SectionId>(SECTIONS[0].id);
@@ -90,10 +93,6 @@ export function LandingTableOfContents(): React.JSX.Element {
   }, []);
 
   const clearPreviewTimers = useCallback((): void => {
-    if (previewShowTimer.current !== 0) {
-      window.clearTimeout(previewShowTimer.current);
-      previewShowTimer.current = 0;
-    }
     if (previewHideTimer.current !== 0) {
       window.clearTimeout(previewHideTimer.current);
       previewHideTimer.current = 0;
@@ -142,37 +141,15 @@ export function LandingTableOfContents(): React.JSX.Element {
         return;
       }
 
+      // Peeks are pre-built during idle, so showing one is only a mount:
+      // reveal on the same event. This also lets a returning cursor
+      // interrupt an in-flight boom.
       clearPreviewTimers();
       placePreview(anchor);
-
-      const reveal = (): void => {
-        previewShowTimer.current = 0;
-        placePreview(anchor);
-        previewIdReference.current = id;
-        previewMotionReference.current = "in";
-        setPreviewId(id);
-        setPreviewMotion("in");
-      };
-
-      if (
-        previewIdReference.current === id &&
-        previewMotionReference.current !== "out"
-      ) {
-        previewMotionReference.current = "in";
-        setPreviewMotion("in");
-        return;
-      }
-
-      // Interrupt an in-flight boom if the cursor returns.
-      if (previewMotionReference.current === "out") {
-        previewIdReference.current = id;
-        previewMotionReference.current = "in";
-        setPreviewId(id);
-        setPreviewMotion("in");
-        return;
-      }
-
-      previewShowTimer.current = window.setTimeout(reveal, PREVIEW_SHOW_DELAY);
+      previewIdReference.current = id;
+      previewMotionReference.current = "in";
+      setPreviewId(id);
+      setPreviewMotion("in");
     },
     [clearPreviewTimers, placePreview, previewsEnabled],
   );
@@ -201,6 +178,61 @@ export function LandingTableOfContents(): React.JSX.Element {
       media.removeEventListener("change", sync);
     };
   }, [finishHidePreview]);
+
+  useEffect(() => {
+    if (!previewsEnabled) {
+      return;
+    }
+
+    let cancelWarm: (() => void) | null = null;
+    let rewarmTimer = 0;
+
+    const warm = (): void => {
+      cancelWarm?.();
+      cancelWarm = warmTocSectionPreviews(SECTIONS);
+    };
+    const drop = (): void => {
+      cancelWarm?.();
+      cancelWarm = null;
+      invalidateTocSectionPreviews();
+    };
+    // Resizes change the layout; theme switches change the cloned icons.
+    const rebuild = (): void => {
+      drop();
+      window.clearTimeout(rewarmTimer);
+      rewarmTimer = window.setTimeout(warm, PREVIEW_REWARM_DELAY);
+    };
+    const themeObserver = new MutationObserver(rebuild);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    const handlePageShow = (event: PageTransitionEvent): void => {
+      if (event.persisted) {
+        warm();
+      }
+    };
+
+    // After `load`, so warming never competes with the hero's own boot.
+    if (document.readyState === "complete") {
+      warm();
+    } else {
+      window.addEventListener("load", warm, { once: true });
+    }
+    window.addEventListener("resize", rebuild);
+    window.addEventListener("pagehide", drop);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("load", warm);
+      window.removeEventListener("resize", rebuild);
+      window.removeEventListener("pagehide", drop);
+      window.removeEventListener("pageshow", handlePageShow);
+      themeObserver.disconnect();
+      window.clearTimeout(rewarmTimer);
+      drop();
+    };
+  }, [previewsEnabled]);
 
   useEffect(() => {
     for (const section of SECTIONS) {
@@ -306,21 +338,16 @@ export function LandingTableOfContents(): React.JSX.Element {
       }
     };
 
-    const handleResize = (): void => {
-      invalidateTocSectionPreviews();
-      scheduleUpdate();
-    };
-
     update();
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", scheduleUpdate);
     window.addEventListener("pointermove", handlePointerMove, {
       passive: true,
     });
 
     return () => {
       window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("pointermove", handlePointerMove);
       clearHideTimer();
       if (frame !== 0) {
@@ -329,29 +356,26 @@ export function LandingTableOfContents(): React.JSX.Element {
     };
   }, [clearPreviewTimers, finishHidePreview, setActiveSection]);
 
+  const previewHostReady = portalReady && previewsEnabled;
+
   useLayoutEffect(() => {
     const mount = previewMountReference.current;
-    if (mount === null) {
+    if (!previewHostReady || mount === null) {
       return;
     }
+    return attachTocPreviewHost(mount);
+  }, [previewHostReady]);
 
-    mount.replaceChildren();
-    if (previewId === null) {
+  useLayoutEffect(() => {
+    if (!previewHostReady) {
       return;
     }
-
-    const stage = getTocSectionPreview(previewId);
-    if (stage === null) {
-      return;
-    }
-    mount.append(stage);
-
-    return () => {
-      if (stage.parentElement === mount) {
-        stage.remove();
-      }
-    };
-  }, [previewId]);
+    const section =
+      previewId === null
+        ? null
+        : (SECTIONS.find((candidate) => candidate.id === previewId) ?? null);
+    showTocSectionPreview(section);
+  }, [previewHostReady, previewId]);
 
   useEffect(() => {
     if (previewId === null || previewMotion === "out") {
@@ -508,7 +532,12 @@ export function LandingTableOfContents(): React.JSX.Element {
         })}
       </ol>
 
-      {portalReady && previewsEnabled && previewMounted
+      {/*
+       * Always mounted while previews are enabled: the card's screen hosts
+       * every pre-built peek, so a hover flips visibility instead of
+       * inserting DOM.
+       */}
+      {previewHostReady
         ? createPortal(
             <div
               aria-hidden="true"
@@ -525,13 +554,19 @@ export function LandingTableOfContents(): React.JSX.Element {
                 left: previewLeft,
                 width: TOC_PREVIEW_WIDTH,
                 transform: "translateY(-50%)",
-                pointerEvents: previewBooming ? "none" : "auto",
+                // Opacity, not visibility: visibility is inherited, so
+                // toggling it would restyle every parked clone.
+                opacity: previewMounted ? 1 : 0,
+                pointerEvents: previewActive ? "auto" : "none",
               }}
             >
               <div
                 className={cn(
                   "relative",
-                  previewBooming ? "lp-toc-preview-boom" : "lp-toc-preview-in",
+                  previewMounted &&
+                    (previewBooming
+                      ? "lp-toc-preview-boom"
+                      : "lp-toc-preview-in"),
                 )}
               >
                 <div className="border-border bg-background relative rounded-xl border p-2 shadow-[0_18px_50px_-28px_oklch(0_0_0/0.55)]">
@@ -548,15 +583,28 @@ export function LandingTableOfContents(): React.JSX.Element {
                       className="absolute top-0 left-0 origin-top-left"
                     />
                   </div>
-                  <div className="mt-2 flex items-center gap-2 px-0.5">
-                    <span className="font-landing-mono text-muted-foreground text-[0.62rem] tabular-nums">
-                      {previewIndex >= 0
-                        ? String(previewIndex + 1).padStart(2, "0")
-                        : "00"}
-                    </span>
-                    <span className="font-landing text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
-                      {previewSection.label}
-                    </span>
+                  {/*
+                   * Every caption is rendered and stacked; only class flips on
+                   * hover. Inserting a text node would invalidate the page's
+                   * `body:has(...)` rules and restyle the whole document.
+                   */}
+                  <div className="mt-2 grid px-0.5">
+                    {SECTIONS.map((section, index) => (
+                      <div
+                        key={section.id}
+                        className={cn(
+                          "col-start-1 row-start-1 flex min-w-0 items-center gap-2",
+                          index !== previewIndex && "invisible",
+                        )}
+                      >
+                        <span className="font-landing-mono text-muted-foreground text-[0.62rem] tabular-nums">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <span className="font-landing text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
+                          {section.label}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

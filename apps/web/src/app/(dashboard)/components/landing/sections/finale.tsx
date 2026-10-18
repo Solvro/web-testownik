@@ -45,6 +45,7 @@ export function Finale({
       <div
         role="img"
         aria-label="Testownik"
+        data-toc-peek-wordmark=""
         className="pointer-events-none relative aspect-[2.2] w-[94vw] sm:mt-[clamp(2rem,6vh,4.5rem)] sm:aspect-[3.4] sm:w-[min(92vw,82rem)]"
       />
 
