@@ -1,6 +1,5 @@
 "use client";
 
-import { BatteryFull, Search, Wifi } from "lucide-react";
 import { Suspense, lazy, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -14,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { setSatelliteHovered } from "../satellite-hover";
+import { LaptopMenuBar } from "./laptop-menu-bar";
 import { SCENE_CLASS } from "./scene-classes";
 
 const TabletLiveCharts = lazy(async () => {
@@ -69,35 +69,6 @@ function GlassScreen({
 export interface DeviceQuizControls {
   /** The quiz the laptop and the iPhone both show. */
   session: PreviewQuizSession;
-}
-
-const MENU_BAR_ITEMS = ["Plik", "Edycja", "Widok", "Okno", "Pomoc"] as const;
-
-/**
- * A slim macOS-style menu bar. It is as tall as the notch drawn by
- * `.lp-screen-laptop::after`, so the app below starts clear of it, exactly as
- * on a real notched MacBook.
- */
-function LaptopMenuBar(): React.JSX.Element {
-  return (
-    <div
-      aria-hidden="true"
-      className="text-foreground/80 flex h-[22px] shrink-0 items-center justify-between px-4 text-[11px] leading-none select-none"
-    >
-      <div className="flex items-center gap-4">
-        <span className="text-foreground font-bold">Testownik</span>
-        {MENU_BAR_ITEMS.map((item) => (
-          <span key={item}>{item}</span>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 tabular-nums">
-        <Wifi className="size-3" strokeWidth={2.4} />
-        <BatteryFull className="size-3.5" strokeWidth={2} />
-        <Search className="size-3" strokeWidth={2.4} />
-        <span>pt. 9:41</span>
-      </div>
-    </div>
-  );
 }
 
 export function DeviceLaptopScreen({
