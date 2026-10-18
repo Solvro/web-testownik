@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { FOCUS_RING } from "../components/focus";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS } from "../hero-progress";
+import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import { HeroPhone } from "./hero-phone";
@@ -105,6 +106,7 @@ export function Hero({
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
   const isDesktop = useIsDesktopViewport();
+  useHeroProgress(heroReference, isDesktop);
 
   /*
    * Phones keep this for good. On desktop it is the server render and the
@@ -151,7 +153,7 @@ export function Hero({
       <div className="relative lg:sticky lg:top-0 lg:h-[100svh] lg:min-h-[42rem] lg:overflow-hidden">
         {isDesktop ? (
           <Suspense fallback={staticHero}>
-            <HeroDesktopStage heroReference={heroReference}>
+            <HeroDesktopStage>
               <HeroContent isStarting={isStarting} onStart={onStart} />
             </HeroDesktopStage>
           </Suspense>

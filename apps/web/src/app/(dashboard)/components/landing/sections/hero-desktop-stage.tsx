@@ -6,7 +6,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { HeroBubble } from "../components/hero-bubble";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS } from "../hero-progress";
-import { useHeroProgress } from "../hooks/use-hero-progress";
 import { wordmarkDark, wordmarkLight } from "../logos";
 import { DeviceScene } from "../scene/device-scene";
 import { HeroBadges } from "./hero-badges";
@@ -22,7 +21,8 @@ const openLogoStyle: CSSProperties = {
 
 /**
  * Everything the hero only does at `lg` and above: the CanvasUI Bubble, the
- * WebGL device scene, the scroll progress and what reads it. `Hero` loads this
+ * WebGL device scene and everything that reads the scroll progress (which
+ * `Hero` itself publishes). `Hero` loads this
  * module lazily once `DESKTOP_STAGE_QUERY` matches, so smaller viewports never
  * download it.
  *
@@ -30,14 +30,10 @@ const openLogoStyle: CSSProperties = {
  * droplet refracts it with the rest of the header.
  */
 export function HeroDesktopStage({
-  heroReference,
   children,
 }: {
-  heroReference: React.RefObject<HTMLElement | null>;
   children: ReactNode;
 }): React.JSX.Element {
-  useHeroProgress(heroReference);
-
   return (
     <>
       {/*

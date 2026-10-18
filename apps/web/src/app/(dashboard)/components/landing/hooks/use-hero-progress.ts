@@ -17,19 +17,27 @@ function clamp(value: number, minimum = 0, maximum = 1): number {
  * With reduced motion the hero is pinned at 1 — the laptop renders open and
  * nothing animates on scroll.
  *
- * Only the desktop stage calls this, so phones never attach the listeners. On
- * unmount (the viewport dropped below `lg`) the inline value is removed and the
- * section's own `--landing-hero-progress: 0` takes over again, leaving the
- * shared copy fully visible.
+ * `Hero` owns the section ref and calls this itself, with `enabled` true only
+ * on desktop viewports, so phones never attach the listeners. It must not be
+ * called from a child: a lazily loaded child that is already cached mounts in
+ * the same commit as the section, and its layout effect runs before the
+ * parent's ref is attached, which would make the hook bail out for good while
+ * the scene kept a stale cached progress (the "open devices under the
+ * headline" freeze).
+ *
+ * When disabled (the viewport dropped below `lg`) the inline value is removed,
+ * the shared cache is reset, and the section's own `--landing-hero-progress: 0`
+ * takes over again, leaving the shared copy fully visible.
  */
 export function useHeroProgress(
   heroReference: React.RefObject<HTMLElement | null>,
+  enabled: boolean,
 ): void {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     const hero = heroReference.current;
-    if (hero === null) {
+    if (!enabled || hero === null) {
       return;
     }
 
@@ -50,15 +58,22 @@ export function useHeroProgress(
 
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
+    // A back/forward-cache restore brings the page back at an arbitrary
+    // scroll position without a scroll event.
+    window.addEventListener("pageshow", schedule);
     update();
 
     return () => {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
+      window.removeEventListener("pageshow", schedule);
       if (frame !== 0) {
         window.cancelAnimationFrame(frame);
       }
+      // Reset the scene's cached value too, so CSS and WebGL never disagree
+      // the next time the stage mounts.
+      publishHeroProgress(hero, 0);
       hero.style.removeProperty(HERO_PROGRESS_PROPERTY);
     };
-  }, [heroReference, prefersReducedMotion]);
+  }, [enabled, heroReference, prefersReducedMotion]);
 }
