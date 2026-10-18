@@ -1,42 +1,18 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useRef } from "react";
 import type { CSSProperties } from "react";
 
 import { HERO_PROGRESS } from "../hero-progress";
-import { useQuizPreviewState } from "../hooks/use-quiz-preview-state";
 import { setSatelliteHovered } from "../satellite-hover";
+import { DeviceScreenFrame } from "./device-screen-frame";
 import { DeviceStack } from "./device-stack";
-
-type DeviceScreenModule = typeof import("./device-screen-content");
+import { createScreenChannelName } from "./screen-frame-protocol";
 
 const glowStyle: CSSProperties = {
   opacity: `calc(0.16 + ${HERO_PROGRESS} * 0.2)`,
   transform: `translate(-50%, -50%) scale(calc(0.86 + ${HERO_PROGRESS} * 0.16))`,
 };
-
-function useDeviceScreenModule(enabled: boolean): DeviceScreenModule | null {
-  const [module, setModule] = useState<DeviceScreenModule | null>(null);
-
-  useEffect(() => {
-    if (!enabled || module !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    void import("./device-screen-content").then((loaded) => {
-      if (!cancelled) {
-        setModule(loaded);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled, module]);
-
-  return module;
-}
 
 const DeviceSceneBackdrop = memo((): React.JSX.Element => {
   return (
@@ -57,29 +33,25 @@ const InteractiveDeviceStack = memo(
     captureLoadingCover?: boolean;
     capturePixelRatio?: number;
   }): React.JSX.Element => {
-    const [hostsAttached, setHostsAttached] = useState(false);
-    const screens = useDeviceScreenModule(hostsAttached);
-    const session = useQuizPreviewState();
-
-    const handleHostsAttached = useCallback((): void => {
-      setHostsAttached(true);
-    }, []);
+    // The laptop and the iPhone share their quiz over this channel. The
+    // frames only mount once the stack has attached its hosts, which is
+    // client-side, so a random name cannot cause a hydration mismatch.
+    const channelReference = useRef<string | null>(null);
+    channelReference.current ??= createScreenChannelName();
+    const channel = channelReference.current;
 
     return (
       <DeviceStack
         coverOnly={captureLoadingCover}
         pixelRatio={capturePixelRatio}
-        onHostsAttached={handleHostsAttached}
-        laptopContent={
-          screens === null ? null : (
-            <screens.DeviceLaptopScreen session={session} />
-          )
-        }
-        tabletContent={screens === null ? null : <screens.DeviceTabletScreen />}
+        laptopContent={<DeviceScreenFrame device="laptop" channel={channel} />}
+        tabletContent={<DeviceScreenFrame device="tablet" hoverShrinksBubble />}
         phoneContent={
-          screens === null ? null : (
-            <screens.DevicePhoneScreen session={session} />
-          )
+          <DeviceScreenFrame
+            device="phone"
+            channel={channel}
+            hoverShrinksBubble
+          />
         }
       />
     );

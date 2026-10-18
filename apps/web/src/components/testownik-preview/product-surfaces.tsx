@@ -30,7 +30,6 @@ import { useStudyTimeValue } from "@/components/quiz/hooks/use-study-timer";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
-import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { HardestQuestionsChart } from "@/components/quiz/stats/hardest-questions-chart";
 import { HourlyChart } from "@/components/quiz/stats/hourly-chart";
@@ -196,16 +195,22 @@ function PreviewScreenShell({
   session,
   screen,
   className,
+  standalone,
   children,
 }: {
   session: PreviewQuizSession;
   screen: PreviewScreen;
   className?: string;
+  standalone: boolean;
   children: ReactNode;
 }): React.JSX.Element {
   return (
     <AppContext.Provider value={PREVIEW_APP_CONTEXT}>
-      <PreviewSandbox className={className} onNavigate={screen.navigate}>
+      <PreviewSandbox
+        className={className}
+        onNavigate={screen.navigate}
+        standalone={standalone}
+      >
         <PreviewRuntime client={session.client} toasterId={screen.toasterId}>
           {children}
           <QuizHistoryDialog
@@ -214,7 +219,10 @@ function PreviewScreenShell({
             showHistory={screen.history.open}
             toggleHistory={screen.history.toggle}
           />
-          <FocusModeOnboardingDialog {...screen.onboarding} embedded />
+          <FocusModeOnboardingDialog
+            {...screen.onboarding}
+            embedded={!standalone}
+          />
         </PreviewRuntime>
       </PreviewSandbox>
     </AppContext.Provider>
@@ -310,21 +318,20 @@ function PreviewAiHintPanel({
 }
 
 /**
- * The quiz stats page's cards, laid out for a screen: the page itself picks
- * its columns from the viewport, which says nothing about the device. Its
+ * The quiz stats page's cards, laid out for a screen. The page picks its
+ * columns from the viewport, which inside the mobile hero's CSS phone says
+ * nothing about the device, so the columns follow the view's own width. Its
  * back link would leave the screen, so this has its own button.
  */
 function PreviewStatsView({
-  columns,
   onBack,
 }: {
-  columns: 1 | 2;
   onBack: () => void;
 }): React.JSX.Element {
   const resetKeys = [PREVIEW_QUIZ_ID];
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="@container/stats flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -338,7 +345,7 @@ function PreviewStatsView({
           Statystyki: {PREVIEW_QUIZ.title}
         </h2>
       </div>
-      <div className={cn("grid gap-3", columns === 2 && "grid-cols-2")}>
+      <div className="grid gap-3 @2xl/stats:grid-cols-2">
         <StatsCardErrorBoundaryGroup resetKeys={resetKeys}>
           <StatsInfoCard
             quiz={PREVIEW_QUIZ_METADATA}
@@ -358,7 +365,8 @@ function PreviewStatsView({
   );
 }
 
-function QuizPageSurface({
+/** `QuizInfoCard` on the session; it also owns the screen's settings dialog. */
+function PreviewQuizInfoCard({
   session,
   screen,
 }: {
@@ -368,30 +376,42 @@ function QuizPageSurface({
   const { view } = session;
 
   return (
+    <QuizInfoCard
+      quiz={PREVIEW_QUIZ}
+      correctAnswersCount={view.correctAnswersCount}
+      wrongAnswersCount={view.wrongAnswersCount}
+      masteredCount={view.masteredCount}
+      totalQuestions={view.totalQuestions}
+      timerStore={session.timer}
+      resetProgress={session.reset}
+      isFocusModeActive={session.state.focusMode}
+      toggleFocusMode={screen.toggleFocusMode}
+      onToggleHistory={screen.history.toggle}
+      isContinuityDisconnected={false}
+      onReconnectContinuity={() => {
+        // Continuity needs a second device of the visitor's.
+      }}
+      isSettingsOpen={screen.settings.open}
+      onSettingsOpenChange={screen.settings.onOpenChange}
+    />
+  );
+}
+
+function QuizPageSurface({
+  session,
+  screen,
+}: {
+  session: PreviewQuizSession;
+  screen: PreviewScreen;
+}): React.JSX.Element {
+  return (
     <div className="grid h-full grid-cols-[minmax(0,1.9fr)_minmax(15rem,0.92fr)] content-start gap-3">
       <div className="min-w-0">
         <QuizPreviewSurface session={session} />
       </div>
       <div className="flex h-fit min-w-0 flex-col gap-3">
-        <QuizInfoCard
-          quiz={PREVIEW_QUIZ}
-          correctAnswersCount={view.correctAnswersCount}
-          wrongAnswersCount={view.wrongAnswersCount}
-          masteredCount={view.masteredCount}
-          totalQuestions={view.totalQuestions}
-          timerStore={session.timer}
-          resetProgress={session.reset}
-          isFocusModeActive={session.state.focusMode}
-          toggleFocusMode={screen.toggleFocusMode}
-          onToggleHistory={screen.history.toggle}
-          isContinuityDisconnected={false}
-          onReconnectContinuity={() => {
-            // Continuity needs a second device of the visitor's.
-          }}
-          isSettingsOpen={screen.settings.open}
-          onSettingsOpenChange={screen.settings.onOpenChange}
-        />
-        <PreviewAiHintPanel questionId={view.question?.id} />
+        <PreviewQuizInfoCard session={session} screen={screen} />
+        <PreviewAiHintPanel questionId={session.view.question?.id} />
       </div>
     </div>
   );
@@ -534,11 +554,7 @@ function PhoneQuizHeader({
         aria-label={`Postęp quizu: ${progress.toString()}%`}
         className="mt-2.5 h-1.5"
       />
-      <QuizSettingsDialog
-        open={screen.settings.open}
-        onOpenChange={screen.settings.onOpenChange}
-        quizId={PREVIEW_QUIZ_ID}
-      />
+      {/* The settings dialog belongs to the `QuizInfoCard` further down. */}
       <ShareQuizDialog
         open={screen.share.open}
         onOpenChange={screen.share.onOpenChange}
@@ -548,39 +564,59 @@ function PhoneQuizHeader({
   );
 }
 
+/** A device-screen iframe is a document of its own; see `PreviewSandbox`. */
+interface StandaloneProps {
+  standalone?: boolean;
+}
+
 /**
  * The iPhone screen. Below the status bar it is an ordinary scrolling list
- * (header, question, answers, explanation) with the browser's default scroll
- * chaining, so once it reaches the end the page keeps scrolling.
+ * stacked like the app's mobile quiz page: the header, the question (at least
+ * a screen tall, answer controls at its bottom), the AI hint and the quiz
+ * info card. In the mobile hero it keeps the browser's default scroll
+ * chaining, so once the list ends the page carries on; in the desktop hero's
+ * iframe the list holds its scroll, as the 3D screens always have.
  */
 export function PhoneQuizSurface({
   session,
-}: {
+  standalone = false,
+}: StandaloneProps & {
   session: PreviewQuizSession;
 }): React.JSX.Element {
   const screen = usePreviewScreen(session);
 
   return (
-    <PreviewScreenShell session={session} screen={screen}>
+    <PreviewScreenShell
+      session={session}
+      screen={screen}
+      standalone={standalone}
+    >
       <div className="bg-background text-foreground flex size-full flex-col">
         <PhoneStatusBar />
         <div
           data-preview-scroll=""
-          // The bottom inset keeps the card's corners clear of the screen's.
-          className="min-h-0 flex-1 overflow-y-auto px-[0.55rem] pt-1 pb-4 [scrollbar-width:none]"
+          className={cn(
+            // The bottom inset keeps the card's corners clear of the screen's.
+            "min-h-0 flex-1 touch-pan-y overflow-y-auto px-[0.55rem] pt-1 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none]",
+            standalone ? "overscroll-contain" : "overscroll-auto",
+          )}
         >
-          <div className="flex min-h-full flex-col">
-            {screen.view === "stats" ? (
-              <div className="px-1 text-[0.8em]">
-                <PreviewStatsView columns={1} onBack={screen.showQuiz} />
-              </div>
-            ) : (
-              <>
+          {screen.view === "stats" ? (
+            <div className="px-1 text-[0.8em]">
+              <PreviewStatsView onBack={screen.showQuiz} />
+            </div>
+          ) : (
+            <>
+              <div className="flex min-h-full flex-col">
                 <PhoneQuizHeader session={session} screen={screen} />
                 <QuizPreviewSurface session={session} density="phone" />
-              </>
-            )}
-          </div>
+              </div>
+              <div className="mx-1 mt-3 flex flex-col gap-3">
+                <PreviewAiHintPanel questionId={session.view.question?.id} />
+                <PreviewQuizInfoCard session={session} screen={screen} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </PreviewScreenShell>
@@ -590,7 +626,8 @@ export function PhoneQuizSurface({
 export function ProductAppChrome({
   session,
   className,
-}: {
+  standalone = false,
+}: StandaloneProps & {
   session: PreviewQuizSession;
   className?: string;
 }): React.JSX.Element {
@@ -600,17 +637,20 @@ export function ProductAppChrome({
     <PreviewScreenShell
       session={session}
       screen={screen}
+      standalone={standalone}
       className={cn("bg-background text-foreground", className)}
     >
       <section
         aria-label="Ekran podglądu Testownika"
         className={cn(
           "size-full min-h-0 p-4",
-          screen.view === "stats" ? "overflow-y-auto" : "overflow-hidden",
+          screen.view === "stats"
+            ? "overflow-y-auto overscroll-contain"
+            : "overflow-hidden",
         )}
       >
         {screen.view === "stats" ? (
-          <PreviewStatsView columns={2} onBack={screen.showQuiz} />
+          <PreviewStatsView onBack={screen.showQuiz} />
         ) : (
           <QuizPageSurface session={session} screen={screen} />
         )}

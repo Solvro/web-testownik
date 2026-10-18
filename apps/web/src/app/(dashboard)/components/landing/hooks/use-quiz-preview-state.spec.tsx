@@ -20,9 +20,23 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
-function PhonePreview(): React.JSX.Element {
-  const session = useQuizPreviewState();
-  return <PhoneQuizSurface session={session} />;
+function PhonePreview({
+  syncChannel,
+}: {
+  syncChannel?: string;
+}): React.JSX.Element {
+  const session = useQuizPreviewState({ syncChannel });
+  return (
+    <PhoneQuizSurface
+      session={session}
+      standalone={syncChannel !== undefined}
+    />
+  );
+}
+
+/** The header's ☰; the quiz info card further down has its own. */
+function headerMenu(): HTMLElement {
+  return screen.getAllByRole("button", { name: "Więcej opcji quizu" })[0];
 }
 
 function portalLayer(): HTMLElement {
@@ -85,9 +99,7 @@ describe("phone quiz preview", () => {
     const user = userEvent.setup();
     render(<PhonePreview />);
 
-    await user.click(
-      screen.getByRole("button", { name: "Więcej opcji quizu" }),
-    );
+    await user.click(headerMenu());
     await user.click(
       await screen.findByRole("menuitem", { name: "Udostępnij quiz" }),
     );
@@ -109,9 +121,7 @@ describe("phone quiz preview", () => {
     const user = userEvent.setup();
     render(<PhonePreview />);
 
-    await user.click(
-      screen.getByRole("button", { name: "Więcej opcji quizu" }),
-    );
+    await user.click(headerMenu());
     await user.click(
       await screen.findByRole("menuitem", { name: "Ustawienia" }),
     );
@@ -130,9 +140,7 @@ describe("phone quiz preview", () => {
     });
     await user.keyboard("{Escape}");
 
-    await user.click(
-      screen.getByRole("button", { name: "Więcej opcji quizu" }),
-    );
+    await user.click(headerMenu());
     await user.click(
       await screen.findByRole("menuitem", { name: "Resetuj postęp" }),
     );
@@ -144,4 +152,35 @@ describe("phone quiz preview", () => {
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it.runIf(typeof BroadcastChannel !== "undefined")(
+    "keeps two screens on one channel in step",
+    async () => {
+      const user = userEvent.setup();
+      const first = render(<PhonePreview syncChannel="spec-sync" />);
+      const second = render(<PhonePreview syncChannel="spec-sync" />);
+      const left = within(first.container);
+      const right = within(second.container);
+
+      await user.click(
+        left.getByRole("button", {
+          name: /aktywne przypominanie i powtórki/,
+        }),
+      );
+      await user.click(left.getByRole("button", { name: "Sprawdź odpowiedź" }));
+      expect(left.getByText("Poprawna odpowiedź!")).toBeInTheDocument();
+      expect(await right.findByText("Poprawna odpowiedź!")).toBeInTheDocument();
+      expect(right.getByText("72/119")).toBeInTheDocument();
+
+      // And back the other way.
+      await user.click(right.getByRole("button", { name: "Następne pytanie" }));
+      expect(await left.findByText(/^Pytanie 97\./)).toBeInTheDocument();
+
+      // A screen that joins late adopts the session so far.
+      const late = within(
+        render(<PhonePreview syncChannel="spec-sync" />).container,
+      );
+      expect(await late.findByText(/^Pytanie 97\./)).toBeInTheDocument();
+    },
+  );
 });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -12,6 +13,10 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import {
+  BARE_DOCUMENT_SHELL,
+  DOCUMENT_SHELL_HEADER,
+} from "@/lib/document-shell";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -74,6 +79,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The landing's device-screen iframes bring their own providers; see
+  // `lib/document-shell.ts`.
+  const requestHeaders = await headers();
+  if (requestHeaders.get(DOCUMENT_SHELL_HEADER) === BARE_DOCUMENT_SHELL) {
+    return (
+      <html
+        lang="pl"
+        suppressHydrationWarning
+        className={hankenGrotesk.className}
+      >
+        <body className="bg-background overflow-hidden">{children}</body>
+      </html>
+    );
+  }
+
   const user = await getServerCurrentUser();
 
   return (

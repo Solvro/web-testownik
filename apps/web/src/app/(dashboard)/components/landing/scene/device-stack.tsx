@@ -37,17 +37,19 @@ export function DeviceStack({
   laptopContent,
   tabletContent,
   phoneContent,
-  onHostsAttached,
 }: {
   className?: string;
   /** Capture harness: hold the still cover and hide every live surface. */
   coverOnly?: boolean;
   pixelRatio?: number;
+  /**
+   * The live screens, mounted once CSS3DRenderer has attached their hosts.
+   * Each must mark an element `data-surface-ready="true"` once it has
+   * painted; the cover stays up until all three have.
+   */
   laptopContent: ReactNode;
   tabletContent: ReactNode;
   phoneContent: ReactNode;
-  /** Called once CSS3DRenderer has attached the portal hosts. */
-  onHostsAttached?: () => void;
 }): React.JSX.Element {
   const containerReference = useRef<HTMLDivElement>(null);
   const canvasReference = useRef<HTMLCanvasElement>(null);
@@ -118,7 +120,6 @@ export function DeviceStack({
           signal: controller.signal,
           onHostsAttached: () => {
             setHosts(screenHosts);
-            onHostsAttached?.();
           },
           onReady: () => {
             setIsReady(true);
@@ -172,7 +173,7 @@ export function DeviceStack({
       tablet.remove();
       phone.remove();
     };
-  }, [onHostsAttached, pixelRatio]);
+  }, [pixelRatio]);
 
   return (
     <div

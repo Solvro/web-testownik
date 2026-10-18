@@ -100,26 +100,27 @@ function cancelNavigation(
  * Turns whatever it wraps into a self-contained screen: the box is the
  * boundary for layout, paint, focus rings and fixed positioning, overlays
  * portal into a layer inside it (so a tooltip is clipped by the device and
- * follows its 3D transform), page-wide keyboard shortcuts only fire while
+ * follows its transform), page-wide keyboard shortcuts only fire while
  * focus is inside, and links do not navigate — `onNavigate` receives their
  * `href` instead, which is how a screen switches views.
  *
  * The box itself does not scroll. A screen that does keeps the browser's
- * default scroll chaining, so at the end of its list the page carries on;
- * landing.css contains it only for the 3D scene's screen hosts.
+ * default scroll chaining, so at the end of its list the page carries on.
  *
- * The containment is expressed with utilities here rather than on the scene's
- * screen hosts because the same surfaces also render in a plain CSS phone
- * frame; landing.css only adds the matching rules for the CSS3D hosts.
+ * `standalone` is for a surface that is a document of its own (the desktop
+ * hero's device-screen iframes): the frame already is the boundary, so the box
+ * only cancels links, and overlays portal to the frame's `body` as in the app.
  */
 export function PreviewSandbox({
   children,
   className,
   onNavigate,
+  standalone = false,
 }: {
   children: ReactNode;
   className?: string;
   onNavigate?: (href: string) => void;
+  standalone?: boolean;
 }): React.JSX.Element {
   // Elements in state rather than refs: the context must update once they
   // attach so portals that opened early move into the screen.
@@ -128,6 +129,23 @@ export function PreviewSandbox({
     null,
   );
   const surface: EmbeddedSurface = { root, portalContainer };
+
+  if (standalone) {
+    return (
+      <div
+        data-preview-sandbox=""
+        className={cn("relative size-full", className)}
+        onClickCapture={(event) => {
+          cancelNavigation(event, onNavigate);
+        }}
+        onAuxClickCapture={(event) => {
+          cancelNavigation(event);
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div
