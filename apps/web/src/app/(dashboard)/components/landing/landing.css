@@ -471,8 +471,34 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 .lp-toc-preview-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
+  transform-origin: top left;
+  pointer-events: none;
+  user-select: none;
+  contain: layout paint style;
+}
+
+/*
+ * Built peeks stay mounted in the card; parked ones keep their layout but skip
+ * rendering, so revealing one is a single class flip. `visibility` hides the
+ * parked stage's own background, which `content-visibility` still paints.
+ */
+.lp-toc-preview-stage:not(.lp-toc-preview-active) {
+  visibility: hidden;
+  content-visibility: hidden;
+}
+
+/* A peek is a still: no entrance, nudge or hover motion inside the clone. */
+.lp-toc-preview-stage *,
+.lp-toc-preview-stage *::before,
+.lp-toc-preview-stage *::after {
+  animation: none !important;
+  transition: none !important;
 }
 
 @keyframes lp-story-date-in {
