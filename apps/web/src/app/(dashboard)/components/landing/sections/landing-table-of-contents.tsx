@@ -20,6 +20,7 @@ import {
   TOC_PREVIEW_WIDTH,
   attachTocPreviewHost,
   invalidateTocSectionPreviews,
+  setTocPreviewRailVisible,
   showTocSectionPreview,
   warmTocSectionPreviews,
 } from "./toc-section-preview";
@@ -377,6 +378,12 @@ export function LandingTableOfContents(): React.JSX.Element {
     showTocSectionPreview(section);
   }, [previewHostReady, previewId]);
 
+  // Dirty peeks are re-cloned in idle time only while the rail is out, so a
+  // hover usually finds a current one already parked.
+  useEffect(() => {
+    setTocPreviewRailVisible(previewsEnabled && isVisible === true);
+  }, [isVisible, previewsEnabled]);
+
   useEffect(() => {
     if (previewId === null || previewMotion === "out") {
       return;
@@ -585,8 +592,9 @@ export function LandingTableOfContents(): React.JSX.Element {
                   </div>
                   {/*
                    * Every caption is rendered and stacked; only class flips on
-                   * hover. Inserting a text node would invalidate the page's
-                   * `body:has(...)` rules and restyle the whole document.
+                   * hover. Inserting a node would trip the app CSS's
+                   * `group-has-*` rules and restyle the whole document (see
+                   * `toc-section-preview.ts`).
                    */}
                   <div className="mt-2 grid px-0.5">
                     {SECTIONS.map((section, index) => (

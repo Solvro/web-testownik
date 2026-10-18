@@ -499,6 +499,22 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 .lp-toc-preview-stage *::after {
   animation: none !important;
   transition: none !important;
+  /* Replayed inner scroll offsets must land at once, not glide. */
+  scroll-behavior: auto !important;
+}
+
+/*
+ * A re-cloned peek replacing the one on screen fades in over it in the same
+ * box; the stale stage underneath is removed once covered.
+ */
+@keyframes lp-toc-preview-fresh {
+  from {
+    opacity: 0;
+  }
+}
+
+.lp-toc-preview-stage.lp-toc-preview-fresh {
+  animation: lp-toc-preview-fresh 100ms ease-out both;
 }
 
 @keyframes lp-story-date-in {
@@ -535,6 +551,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 
 @media (prefers-reduced-motion: reduce) {
   .lp-toc-preview-in,
+  .lp-toc-preview-stage.lp-toc-preview-fresh,
   .lp-toc-preview-boom,
   .lp-toc-preview-boom::before,
   .lp-toc-preview-boom::after {
