@@ -19,6 +19,7 @@ import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
+import { FocusModeOnboardingDialog } from "@/components/quiz/focus-mode-onboarding-dialog";
 import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
 import { useFocusMode } from "@/components/quiz/hooks/use-focus-mode";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
@@ -30,7 +31,6 @@ import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -250,53 +250,12 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
+      <FocusModeOnboardingDialog
         open={showOnboarding}
-        onOpenChange={(open: boolean) => {
-          if (!open) {
-            cancelOnboarding();
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Czym jest tryb skupienia?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-1 text-base">
-              Tryb skupienia to funkcja, która pomaga Ci skoncentrować się na
-              quizie.
-              <span className="mt-2 block">
-                <strong>Jak to działa? </strong>
-                Po włączeniu tego trybu, jeśli opuścisz tę kartę, przełączysz
-                się do innego okna lub aplikacji albo nie wykonasz żadnej akcji
-                przez 5 minut, timer zostanie automatycznie zatrzymany, a
-                aplikacja odtworzy głośny dźwięk i pokaże powiadomienie
-                przypominające o powrocie do nauki.
-              </span>
-              <span className="mt-2 block text-sm">
-                Na niektórych urządzeniach i przeglądarkach, zwłaszcza na
-                iPhonie i iPadzie, system może zablokować automatyczne
-                odtworzenie dźwięku. Powiadomienie nadal się pokaże, ale dźwięk
-                trybu skupienia może nie zawsze zadziałać.
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
-              variant="secondary"
-              onClick={confirmOnboardingAndHide}
-              className="sm:mr-auto"
-            >
-              OK, nie pokazuj ponownie
-            </AlertDialogAction>
-            <AlertDialogCancel onClick={cancelOnboarding}>
-              Anuluj
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmOnboarding}>
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onCancel={cancelOnboarding}
+        onConfirm={confirmOnboarding}
+        onConfirmAndHide={confirmOnboardingAndHide}
+      />
 
       <div className="grid touch-manipulation grid-cols-1 gap-4 lg:grid-cols-4">
         <div

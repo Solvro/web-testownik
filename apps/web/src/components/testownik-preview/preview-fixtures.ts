@@ -11,8 +11,7 @@ import type {
   Quiz,
   QuizMetadata,
 } from "@testownik/core/quiz/types";
-
-import type { AnswerHint } from "@/components/ai/ai-explain-card";
+import type { User } from "@testownik/core/user/types";
 
 /**
  * Fixtures for the landing-page device screens.
@@ -72,30 +71,148 @@ export const PREVIEW_QUESTION: Question = {
     "Aktywne odtwarzanie wiedzy wzmacnia ślady pamięciowe, a rozłożenie powtórek w czasie pomaga wracać do materiału tuż przed jego zapomnieniem.",
 };
 
-/** Shown on the phone so the AI hint UI appears in its real form. */
-export const PREVIEW_ANSWER_HINTS: AnswerHint[] = [
+const answers = (
+  questionId: string,
+  entries: [text: string, isCorrect: boolean][],
+): Question["answers"] =>
+  entries.map(([text, isCorrect], index) => ({
+    id: `${questionId}-a${(index + 1).toString()}`,
+    order: index + 1,
+    text,
+    is_correct: isCorrect,
+  }));
+
+/**
+ * The sample of the quiz the previews cycle through, in quiz order. The rest
+ * of its 119 questions only exist as numbers (`PREVIEW_PROGRESS`).
+ */
+export const PREVIEW_QUESTIONS: Question[] = [
   {
-    answerIndex: 2,
-    hint: "Najwięcej zapamiętujesz, gdy próbujesz **wydobyć wiedzę z pamięci** i wracasz do niej w odstępach.",
+    id: "q-12",
+    order: 12,
+    text: "Jak długa powinna być krótka przerwa po 25 minutach nauki w technice Pomodoro?",
+    multiple: false,
+    answers: answers("q-12", [
+      ["około 5 minut", true],
+      ["co najmniej pół godziny", false],
+      ["godzina, żeby odpocząć na zapas", false],
+      ["przerwa nie jest potrzebna", false],
+    ]),
+  },
+  {
+    id: "q-27",
+    order: 27,
+    text: "Które z poniższych metod to aktywne przypominanie?",
+    multiple: true,
+    answers: answers("q-27", [
+      ["fiszki rozwiązywane bez zaglądania na odwrót", true],
+      ["tłumaczenie tematu koledze z pamięci", true],
+      ["ponowne czytanie tych samych notatek", false],
+      ["rozwiązywanie zadań z poprzednich egzaminów", true],
+      ["oglądanie nagrania wykładu w przyspieszeniu", false],
+    ]),
+  },
+  {
+    id: "q-41",
+    order: 41,
+    text: "Na czym polega efekt rozłożenia nauki w czasie?",
+    multiple: false,
+    answers: answers("q-41", [
+      ["kilka krótszych sesji daje trwalszą wiedzę niż jedna długa", true],
+      ["im dłuższa jednorazowa sesja, tym lepiej", false],
+      ["materiał trzeba powtarzać codziennie o tej samej porze", false],
+      ["najlepiej uczyć się kilku przedmiotów naraz", false],
+    ]),
+  },
+  {
+    id: "q-56",
+    order: 56,
+    text: "Co pomaga wykryć iluzję znajomości materiału?",
+    multiple: true,
+    answers: answers("q-56", [
+      ["test z pamięci bez notatek", true],
+      ["wyjaśnienie zagadnienia własnymi słowami", true],
+      ["podkreślanie najważniejszych zdań", false],
+      ["przepisanie notatek na czysto", false],
+    ]),
+    explanation:
+      "Znajomy tekst łatwo pomylić z opanowanym materiałem. Dopiero próba odtworzenia go **bez podglądu** pokazuje, co naprawdę pamiętasz.",
+  },
+  PREVIEW_QUESTION,
+  {
+    id: "q-97",
+    order: 97,
+    text: "Kiedy najlepiej zaplanować pierwszą powtórkę nowego materiału?",
+    multiple: false,
+    answers: answers("q-97", [
+      ["tego samego lub następnego dnia", true],
+      ["tydzień przed egzaminem", false],
+      ["dopiero po przerobieniu całego materiału", false],
+      ["dopiero gdy pojawią się trudności", false],
+    ]),
+  },
+  {
+    id: "q-104",
+    order: 104,
+    text: "Co warto zrobić z pytaniem, na które odpowiedziałeś błędnie?",
+    multiple: true,
+    answers: answers("q-104", [
+      ["przeczytać wyjaśnienie i poprawną odpowiedź", true],
+      ["wrócić do niego w kolejnej sesji", true],
+      ["pomijać je, żeby nie psuło statystyk", false],
+      ["zapamiętać tylko, która to była opcja", false],
+    ]),
   },
 ];
 
-export const PREVIEW_ANSWERS: AnswerRecord[] = [
-  {
-    id: "r-1",
-    question: "q-83",
-    answered_at: day(2),
-    selected_answers: ["a-1"],
-    was_correct: false,
-  },
-  {
-    id: "r-2",
-    question: "q-83",
-    answered_at: day(1),
-    selected_answers: ["a-3"],
-    was_correct: true,
-  },
-];
+/** The AI hint the laptop's side panel shows for each sample question. */
+export const PREVIEW_AI_HINTS: Record<string, string> = {
+  "q-12":
+    "Krótka przerwa ma dać odpocząć, ale **nie wybić z rytmu** — wystarczy kilka minut.",
+  "q-27":
+    "Szukaj metod, w których musisz **wydobyć wiedzę z pamięci**, a nie tylko ją zobaczyć.",
+  "q-41": "Pomyśl o tym, co dzieje się z pamięcią **między sesjami** nauki.",
+  "q-56":
+    "Iluzja znajomości znika, gdy materiał trzeba **odtworzyć**, a nie rozpoznać.",
+  "q-83":
+    "Najwięcej zapamiętujesz, gdy próbujesz **wydobyć wiedzę z pamięci** i wracasz do niej w odstępach.",
+  "q-97": "Krzywa zapominania jest najbardziej stroma **zaraz po nauce**.",
+  "q-104":
+    "Błąd to najlepsza wskazówka, **do czego wrócić** przy następnej powtórce.",
+};
+
+/** The question every preview opens on. */
+export const PREVIEW_START_QUESTION_ID = PREVIEW_QUESTION.id;
+
+/**
+ * This session's answer history, newest first like
+ * `current_session.answers`. It feeds the per-question counters, the back
+ * button and the history dialog.
+ */
+export const PREVIEW_SESSION_ANSWERS: AnswerRecord[] = [
+  ["r-5", "q-41", 0.02, ["q-41-a2"], false],
+  ["r-4", "q-27", 0.04, ["q-27-a1", "q-27-a2", "q-27-a4"], true],
+  ["r-3", "q-12", 0.06, ["q-12-a1"], true],
+  ["r-2", "q-83", 1, ["a-3"], true],
+  ["r-1", "q-83", 2, ["a-1"], false],
+].map(([id, question, offset, selected, correct]) => ({
+  id: id as string,
+  question: question as string,
+  answered_at: day(offset as number),
+  selected_answers: selected as string[],
+  was_correct: correct as boolean,
+}));
+
+/**
+ * Progress over the whole quiz as the previews open, matching the stats on
+ * the tablet. The sample questions move these numbers as they are answered.
+ */
+export const PREVIEW_PROGRESS = {
+  mastered: 71,
+  correct: 336,
+  wrong: 88,
+  total: 119,
+};
 
 export const PREVIEW_QUIZ: Quiz = {
   id: PREVIEW_QUIZ_ID,
@@ -107,8 +224,47 @@ export const PREVIEW_QUIZ: Quiz = {
   is_anonymous: false,
   version: 3,
   can_edit: true,
-  questions: [PREVIEW_QUESTION],
+  questions: PREVIEW_QUESTIONS,
 };
+
+/** People the share dialog lists; no photos, so nothing is fetched. */
+export const PREVIEW_SHARED_WITH: User[] = [
+  {
+    id: "u-1",
+    full_name: "Ola Nowak",
+    photo: "",
+    student_number: "276431",
+  },
+  {
+    id: "u-2",
+    full_name: "Kuba Wiśniewski",
+    photo: "",
+    student_number: "281907",
+  },
+];
+
+/** What the share dialog's search finds. */
+export const PREVIEW_DIRECTORY: User[] = [
+  ...PREVIEW_SHARED_WITH,
+  {
+    id: "u-3",
+    full_name: "Maja Kowalczyk",
+    photo: "",
+    student_number: "279015",
+  },
+  {
+    id: "u-4",
+    full_name: "Michał Zieliński",
+    photo: "",
+    student_number: "283344",
+  },
+  {
+    id: "u-5",
+    full_name: "Zuzanna Lewandowska",
+    photo: "",
+    student_number: "274862",
+  },
+];
 
 export const PREVIEW_QUIZ_METADATA: QuizMetadata = {
   ...PREVIEW_QUIZ,

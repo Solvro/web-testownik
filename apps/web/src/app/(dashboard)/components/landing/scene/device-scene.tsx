@@ -59,7 +59,7 @@ const InteractiveDeviceStack = memo(
   }): React.JSX.Element => {
     const [hostsAttached, setHostsAttached] = useState(false);
     const screens = useDeviceScreenModule(hostsAttached);
-    const quiz = useQuizPreviewState();
+    const session = useQuizPreviewState();
 
     const handleHostsAttached = useCallback((): void => {
       setHostsAttached(true);
@@ -71,11 +71,15 @@ const InteractiveDeviceStack = memo(
         pixelRatio={capturePixelRatio}
         onHostsAttached={handleHostsAttached}
         laptopContent={
-          screens === null ? null : <screens.DeviceLaptopScreen {...quiz} />
+          screens === null ? null : (
+            <screens.DeviceLaptopScreen session={session} />
+          )
         }
         tabletContent={screens === null ? null : <screens.DeviceTabletScreen />}
         phoneContent={
-          screens === null ? null : <screens.DevicePhoneScreen {...quiz} />
+          screens === null ? null : (
+            <screens.DevicePhoneScreen session={session} />
+          )
         }
       />
     );

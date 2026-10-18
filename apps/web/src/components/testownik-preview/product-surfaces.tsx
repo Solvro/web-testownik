@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ArrowLeftIcon,
   BarChart3Icon,
   CircleHelpIcon,
+  EyeOffIcon,
   HistoryIcon,
   MenuIcon,
   RotateCcwIcon,
@@ -14,15 +16,31 @@ import {
   TimerIcon,
 } from "lucide-react";
 import { useId, useState } from "react";
+import type { ReactNode } from "react";
+import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import type { AppContextType } from "@/app-context-type";
 import { GradesList } from "@/app/grades/components/grades-list";
 import { SummaryStats } from "@/app/grades/components/summary-stats";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { useStudyTimer } from "@/components/quiz/hooks/use-study-timer";
+import { FocusModeOnboardingDialog } from "@/components/quiz/focus-mode-onboarding-dialog";
+import { formatStudyTime } from "@/components/quiz/helpers/study-time";
+import { useStudyTimeValue } from "@/components/quiz/hooks/use-study-timer";
 import { QuestionCard } from "@/components/quiz/question-card";
+import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
+import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
+import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
+import { HardestQuestionsChart } from "@/components/quiz/stats/hardest-questions-chart";
+import { HourlyChart } from "@/components/quiz/stats/hourly-chart";
+import { ScoreChart } from "@/components/quiz/stats/score-chart";
+import { SessionsChart } from "@/components/quiz/stats/sessions-chart";
+import { StatsCardErrorBoundaryGroup } from "@/components/quiz/stats/stats-card-error-boundary";
+import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
+import { StatsTable } from "@/components/quiz/stats/stats-table";
+import { StudyTimeChart } from "@/components/quiz/stats/study-time-chart";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -36,21 +54,25 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 import {
-  PREVIEW_ANSWERS,
-  PREVIEW_ANSWER_HINTS,
-  PREVIEW_QUESTION,
+  PREVIEW_AI_HINTS,
   PREVIEW_QUIZ,
   PREVIEW_QUIZ_ID,
+  PREVIEW_QUIZ_METADATA,
+  PREVIEW_STATS,
 } from "./preview-fixtures";
 import { PREVIEW_COURSE_VIEWS, PREVIEW_GRADE_SUMMARY } from "./preview-grades";
-import { PreviewSandbox } from "./preview-provider";
+import { PreviewRuntime, PreviewSandbox } from "./preview-provider";
+import type { PreviewQuizSession } from "./preview-session";
 
 /**
  * Every surface below mounts the component the app itself renders. Nothing here
- * re-implements product UI: the quiz is `QuestionCard`, and the grades run
- * through the real `buildCourseView`. What this module supplies is only the
- * state and fixtures those components would normally get from the API — plus
- * a container and a type scale for the device screens.
+ * re-implements product UI: the quiz is `QuestionCard` and `QuizInfoCard`, the
+ * menus open the app's own settings, history, share and focus-mode dialogs,
+ * the stats view is the stats page's cards, and the grades run through the
+ * real `buildCourseView`. What this module supplies is the state those
+ * components would normally get from the API (a `PreviewQuizSession`, the
+ * preview services in `PreviewRuntime`), the in-screen navigation, and a
+ * container and type scale for the device screens.
  */
 
 /**
@@ -62,13 +84,6 @@ type Density = "full" | "compact" | "phone";
 interface PreviewSurfaceProps {
   density?: Density;
   className?: string;
-}
-
-export interface PreviewQuizControls {
-  selectedAnswers?: string[];
-  onSelectedAnswersChange?: (answers: string[]) => void;
-  questionChecked?: boolean;
-  onQuestionCheckedChange?: (checked: boolean) => void;
 }
 
 const PREVIEW_APP_CONTEXT = {
@@ -83,34 +98,137 @@ const QUIZ_DENSITY: Record<Density, string> = {
   full: "",
   compact: "text-[0.86em]",
   phone: cn(
-    "h-full text-[0.62em]",
-    // The phone shows one card filling the screen, with the answer controls
-    // pinned to the bottom.
-    "[&_[data-slot=card]]:flex [&_[data-slot=card]]:h-full [&_[data-slot=card]]:flex-col [&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
+    "flex flex-1 flex-col text-[0.62em]",
+    // One card at least as tall as the screen, with the answer controls
+    // pinned to its bottom; longer content (an explanation) scrolls.
+    "[&_[data-slot=card]]:flex [&_[data-slot=card]]:flex-1 [&_[data-slot=card]]:flex-col [&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
     "[&_[data-slot=card-header]]:px-3 [&_[data-slot=card-content]]:px-3",
-    "[&_[data-slot=card-content]]:flex [&_[data-slot=card-content]]:min-h-0 [&_[data-slot=card-content]]:flex-1 [&_[data-slot=card-content]]:flex-col",
+    "[&_[data-slot=card-content]]:flex [&_[data-slot=card-content]]:flex-1 [&_[data-slot=card-content]]:flex-col",
     "[&_[data-slot=card-content]>:nth-child(3)]:mt-auto",
   ),
 };
 
+/** Where `QuizInfoCard`'s links point, mapped to the screen's own views. */
+type ScreenView = "quiz" | "stats";
+
+/**
+ * Menus, dialogs and views of one screen. The quiz itself lives in the
+ * shared session; this is what each screen keeps to itself.
+ */
+function usePreviewScreen(session: PreviewQuizSession) {
+  const toasterId = useId();
+  const [view, setView] = useState<ScreenView>("quiz");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  // The app remembers this in localStorage; a preview forgets on reload.
+  const [hideOnboarding, setHideOnboarding] = useState(false);
+
+  const notify = (message: string): void => {
+    toast(message, { toasterId });
+  };
+
+  return {
+    toasterId,
+    view,
+    showQuiz: () => {
+      setView("quiz");
+    },
+    showStats: () => {
+      setView("stats");
+    },
+    /** Links are cancelled by the sandbox; the ones with a view open it. */
+    navigate: (href: string) => {
+      if (href.endsWith("/stats")) {
+        setView("stats");
+      } else if (href.startsWith("/search-in-quiz/")) {
+        notify("To tylko podgląd — wyszukiwarka pytań działa w aplikacji.");
+      } else if (href.startsWith(`/quiz/`)) {
+        setView("quiz");
+      }
+    },
+    notify,
+    settings: { open: isSettingsOpen, onOpenChange: setIsSettingsOpen },
+    history: {
+      open: isHistoryOpen,
+      toggle: () => {
+        setIsHistoryOpen((open) => !open);
+      },
+    },
+    share: { open: isShareOpen, onOpenChange: setIsShareOpen },
+    // Only the switch and the onboarding: the app's inactivity and
+    // left-the-tab alarms would fire on the landing page itself.
+    toggleFocusMode: () => {
+      if (session.state.focusMode) {
+        session.setFocusMode(false);
+      } else if (hideOnboarding) {
+        session.setFocusMode(true);
+      } else {
+        setIsOnboardingOpen(true);
+      }
+    },
+    onboarding: {
+      open: isOnboardingOpen,
+      onCancel: () => {
+        setIsOnboardingOpen(false);
+      },
+      onConfirm: () => {
+        setIsOnboardingOpen(false);
+        session.setFocusMode(true);
+      },
+      onConfirmAndHide: () => {
+        setIsOnboardingOpen(false);
+        setHideOnboarding(true);
+        session.setFocusMode(true);
+      },
+    },
+  };
+}
+
+type PreviewScreen = ReturnType<typeof usePreviewScreen>;
+
+/**
+ * A device screen: the sandbox, the preview runtime (query cache, services,
+ * toaster) and the app context, plus the dialogs every screen can open.
+ */
+function PreviewScreenShell({
+  session,
+  screen,
+  className,
+  children,
+}: {
+  session: PreviewQuizSession;
+  screen: PreviewScreen;
+  className?: string;
+  children: ReactNode;
+}): React.JSX.Element {
+  return (
+    <AppContext.Provider value={PREVIEW_APP_CONTEXT}>
+      <PreviewSandbox className={className} onNavigate={screen.navigate}>
+        <PreviewRuntime client={session.client} toasterId={screen.toasterId}>
+          {children}
+          <QuizHistoryDialog
+            quiz={PREVIEW_QUIZ}
+            answers={session.view.answers}
+            showHistory={screen.history.open}
+            toggleHistory={screen.history.toggle}
+          />
+          <FocusModeOnboardingDialog {...screen.onboarding} />
+        </PreviewRuntime>
+      </PreviewSandbox>
+    </AppContext.Provider>
+  );
+}
+
 export function QuizPreviewSurface({
+  session,
   density = "full",
   className,
-  withHint = false,
-  selectedAnswers: controlledSelectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked: controlledQuestionChecked,
-  onQuestionCheckedChange,
-}: PreviewSurfaceProps &
-  PreviewQuizControls & { withHint?: boolean }): React.JSX.Element {
-  const [localSelectedAnswers, setLocalSelectedAnswers] = useState<string[]>(
-    [],
-  );
-  const [localQuestionChecked, setLocalQuestionChecked] = useState(false);
-  const selectedAnswers = controlledSelectedAnswers ?? localSelectedAnswers;
-  const questionChecked = controlledQuestionChecked ?? localQuestionChecked;
-  const setSelectedAnswers = onSelectedAnswersChange ?? setLocalSelectedAnswers;
-  const setQuestionChecked = onQuestionCheckedChange ?? setLocalQuestionChecked;
+}: PreviewSurfaceProps & {
+  session: PreviewQuizSession;
+}): React.JSX.Element {
+  const { view } = session;
   // QuestionCard names a ViewTransition after the quiz id. Several previews are
   // mounted at once on this page, so each needs its own id to stay unique.
   const instanceId = useId();
@@ -119,26 +237,16 @@ export function QuizPreviewSurface({
     <div className={cn(SURFACE, QUIZ_DENSITY[density], className)}>
       <QuestionCard
         quizId={`${PREVIEW_QUIZ_ID}${instanceId}`}
-        question={PREVIEW_QUESTION}
-        selectedAnswers={selectedAnswers}
-        setSelectedAnswers={setSelectedAnswers}
-        answers={PREVIEW_ANSWERS}
-        questionChecked={questionChecked}
-        nextAction={() => {
-          if (questionChecked) {
-            setQuestionChecked(false);
-            setSelectedAnswers([]);
-          } else {
-            setQuestionChecked(true);
-          }
-        }}
+        question={view.question}
+        selectedAnswers={view.selectedAnswers}
+        setSelectedAnswers={session.select}
+        answers={view.answers}
+        questionChecked={view.questionChecked}
+        nextAction={session.next}
         isQuizFinished={false}
-        togglePreviousQuestion={() => {
-          // The preview holds a single question, so there is nowhere to go.
-        }}
-        canGoBack={false}
-        isHistoryQuestion={false}
-        answerHints={withHint ? PREVIEW_ANSWER_HINTS : []}
+        togglePreviousQuestion={session.back}
+        canGoBack={view.canGoBack}
+        isHistoryQuestion={view.isHistoryQuestion}
       />
     </div>
   );
@@ -171,7 +279,11 @@ export function GradesPreviewSurface({
   );
 }
 
-function PreviewAiHintPanel(): React.JSX.Element {
+function PreviewAiHintPanel({
+  questionId,
+}: {
+  questionId: string | undefined;
+}): React.JSX.Element {
   return (
     <Card
       size="sm"
@@ -187,8 +299,10 @@ function PreviewAiHintPanel(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <MarkdownRenderer className="text-muted-foreground text-xs leading-relaxed">
-          {PREVIEW_ANSWER_HINTS[0]?.hint ??
-            "Zwróć uwagę na brak gwarancji optymalności."}
+          {(questionId === undefined
+            ? undefined
+            : PREVIEW_AI_HINTS[questionId]) ??
+            "Zastanów się, co pomaga **wydobyć wiedzę z pamięci**."}
         </MarkdownRenderer>
       </CardContent>
     </Card>
@@ -196,89 +310,103 @@ function PreviewAiHintPanel(): React.JSX.Element {
 }
 
 /**
- * `QuizInfoCard` wires sharing straight to the API and the clipboard: the share
- * dialog loads the visitor's study groups, and copying writes the landing URL.
- * The buttons stay visible — they are part of the product — but a click on
- * them stops here, before the card's handler runs.
+ * The quiz stats page's cards, laid out for a screen: the page itself picks
+ * its columns from the viewport, which says nothing about the device. Its
+ * back link would leave the screen, so this has its own button.
  */
-const ACCOUNT_ACTIONS =
-  '[aria-label="Udostępnij quiz"], [aria-label="Skopiuj link do quizu"]';
+function PreviewStatsView({
+  columns,
+  onBack,
+}: {
+  columns: 1 | 2;
+  onBack: () => void;
+}): React.JSX.Element {
+  const resetKeys = [PREVIEW_QUIZ_ID];
 
-function swallowAccountActions(event: React.MouseEvent<HTMLElement>): void {
-  if (
-    event.target instanceof Element &&
-    event.target.closest(ACCOUNT_ACTIONS) !== null
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={onBack}
+          aria-label={`Powrót do quizu ${PREVIEW_QUIZ.title}`}
+        >
+          <ArrowLeftIcon />
+        </Button>
+        <h2 className="min-w-0 truncate text-base font-bold">
+          Statystyki: {PREVIEW_QUIZ.title}
+        </h2>
+      </div>
+      <div className={cn("grid gap-3", columns === 2 && "grid-cols-2")}>
+        <StatsCardErrorBoundaryGroup resetKeys={resetKeys}>
+          <StatsInfoCard
+            quiz={PREVIEW_QUIZ_METADATA}
+            lastActivityAt={PREVIEW_STATS.me.last_activity_at}
+          />
+          <StatsTable quizId={PREVIEW_QUIZ_ID} canViewAll />
+          <SessionsChart quizId={PREVIEW_QUIZ_ID} canViewAll />
+          <HourlyChart quizId={PREVIEW_QUIZ_ID} canViewAll />
+          <ScoreChart quizId={PREVIEW_QUIZ_ID} canViewAll />
+          <StudyTimeChart quizId={PREVIEW_QUIZ_ID} canViewAll />
+        </StatsCardErrorBoundaryGroup>
+      </div>
+      <StatsCardErrorBoundaryGroup resetKeys={resetKeys}>
+        <HardestQuestionsChart quizId={PREVIEW_QUIZ_ID} canViewAll />
+      </StatsCardErrorBoundaryGroup>
+    </div>
+  );
 }
 
 function QuizPageSurface({
-  selectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked,
-  onQuestionCheckedChange,
-}: PreviewQuizControls): React.JSX.Element {
-  const timer = useStudyTimer(false, 4836);
+  session,
+  screen,
+}: {
+  session: PreviewQuizSession;
+  screen: PreviewScreen;
+}): React.JSX.Element {
+  const { view } = session;
 
   return (
-    <div
-      className="grid h-full grid-cols-[minmax(0,1.9fr)_minmax(15rem,0.92fr)] content-start gap-3"
-      onClickCapture={swallowAccountActions}
-    >
+    <div className="grid h-full grid-cols-[minmax(0,1.9fr)_minmax(15rem,0.92fr)] content-start gap-3">
       <div className="min-w-0">
-        <QuizPreviewSurface
-          selectedAnswers={selectedAnswers}
-          onSelectedAnswersChange={onSelectedAnswersChange}
-          questionChecked={questionChecked}
-          onQuestionCheckedChange={onQuestionCheckedChange}
-        />
+        <QuizPreviewSurface session={session} />
       </div>
       <div className="flex h-fit min-w-0 flex-col gap-3">
         <QuizInfoCard
           quiz={PREVIEW_QUIZ}
-          correctAnswersCount={336}
-          wrongAnswersCount={88}
-          masteredCount={71}
-          totalQuestions={119}
-          timerStore={timer.store}
-          resetProgress={() => {
-            // Nothing to reset in a preview.
-          }}
-          isFocusModeActive={false}
-          toggleFocusMode={() => {
-            // Focus mode has no meaning outside the app shell.
-          }}
-          onToggleHistory={() => {
-            // History needs a session; not part of the preview.
-          }}
+          correctAnswersCount={view.correctAnswersCount}
+          wrongAnswersCount={view.wrongAnswersCount}
+          masteredCount={view.masteredCount}
+          totalQuestions={view.totalQuestions}
+          timerStore={session.timer}
+          resetProgress={session.reset}
+          isFocusModeActive={session.state.focusMode}
+          toggleFocusMode={screen.toggleFocusMode}
+          onToggleHistory={screen.history.toggle}
           isContinuityDisconnected={false}
           onReconnectContinuity={() => {
-            // Continuity needs a peer; not part of the preview.
+            // Continuity needs a second device of the visitor's.
           }}
-          // The settings dialog edits the visitor's real account settings, so
-          // it never opens from a preview.
-          isSettingsOpen={false}
-          onSettingsOpenChange={() => {
-            // See above.
-          }}
+          isSettingsOpen={screen.settings.open}
+          onSettingsOpenChange={screen.settings.onOpenChange}
         />
-        <PreviewAiHintPanel />
+        <PreviewAiHintPanel questionId={view.question?.id} />
       </div>
     </div>
   );
 }
 
-/** iOS status bar, so the phone reads as a phone rather than a floating card. */
+/** iOS status bar, laid out around the Dynamic Island like the real one. */
 function PhoneStatusBar(): React.JSX.Element {
   return (
-    <div className="flex h-12 flex-none items-center justify-between px-[0.95rem] pt-[0.15rem] text-[0.68rem] leading-none font-[650] tracking-[-0.015em]">
-      <span>9:41</span>
-      <div
-        aria-hidden="true"
-        className="inline-flex items-center gap-[0.42rem] [&>svg]:block [&>svg]:h-[0.72rem] [&>svg]:w-4 [&>svg]:fill-current"
-      >
+    <div
+      aria-hidden="true"
+      className="grid h-[54px] flex-none grid-cols-[1fr_126px_1fr] items-center text-[15px] leading-none font-semibold tracking-[-0.01em]"
+    >
+      <span className="justify-self-center pl-2">9:41</span>
+      <span />
+      <div className="inline-flex items-center gap-[6px] justify-self-center pr-2 [&>svg]:block [&>svg]:h-[11px] [&>svg]:w-[17px] [&>svg]:fill-current">
         <svg viewBox="0 0 18 12">
           <path d="M1 11h2V8H1zm4 0h2V6H5zm4 0h2V3H9zm4 0h2V0h-2z" />
         </svg>
@@ -291,28 +419,49 @@ function PhoneStatusBar(): React.JSX.Element {
             strokeWidth="1.8"
           />
         </svg>
-        <span className="relative inline-flex h-[0.68rem] w-[1.38rem] items-center rounded-[0.2rem] border border-current p-[0.08rem] opacity-[0.92] after:absolute after:top-1/2 after:right-[-0.18rem] after:h-[0.3rem] after:w-[0.1rem] after:-translate-y-1/2 after:rounded-full after:bg-current after:content-['']">
-          <span className="h-full w-[78%] rounded-[0.08rem] bg-current" />
+        <span className="relative inline-flex h-[12px] w-[24px] items-center rounded-[4px] border border-current p-[1.5px] opacity-[0.92] after:absolute after:top-1/2 after:right-[-3px] after:h-[5px] after:w-[1.5px] after:-translate-y-1/2 after:rounded-full after:bg-current after:content-['']">
+          <span className="h-full w-[78%] rounded-[2px] bg-current" />
         </span>
       </div>
     </div>
   );
 }
 
-function PhoneQuizHeader(): React.JSX.Element {
+function PhoneStudyTime({
+  session,
+}: {
+  session: PreviewQuizSession;
+}): React.JSX.Element {
+  const seconds = useStudyTimeValue(session.timer);
+  return <>{formatStudyTime(seconds)}</>;
+}
+
+/** The phone's compact quiz header; its menu holds `QuizInfoCard`'s actions. */
+function PhoneQuizHeader({
+  session,
+  screen,
+}: {
+  session: PreviewQuizSession;
+  screen: PreviewScreen;
+}): React.JSX.Element {
+  const { view } = session;
+  const isFocusModeActive = session.state.focusMode;
+  const FocusModeIcon = isFocusModeActive ? ScanEyeIcon : EyeOffIcon;
+  const progress = Math.round(view.progress);
+
   return (
     <div className="border-border bg-card mx-1 mb-2 rounded-[0.9rem] border px-3 py-3 shadow-xs">
       <div className="flex items-center gap-[0.55rem]">
         <strong className="min-w-0 flex-1 truncate text-[0.75rem] tracking-[-0.015em]">
           {PREVIEW_QUIZ.title}
         </strong>
-        <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[0.59rem] font-medium">
+        <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[0.59rem] font-medium tabular-nums">
           <TimerIcon className="size-[0.75rem]" />
-          01:29
+          <PhoneStudyTime session={session} />
         </span>
-        <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[0.59rem] font-medium">
+        <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1 text-[0.59rem] font-medium tabular-nums">
           <CircleHelpIcon className="size-[0.78rem]" />
-          71/119
+          {view.masteredCount}/{view.totalQuestions}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -328,104 +477,144 @@ function PhoneQuizHeader(): React.JSX.Element {
             }
           />
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                screen.navigate(`/search-in-quiz/${PREVIEW_QUIZ_ID}`);
+              }}
+            >
               <SearchIcon />
               Wyszukaj w quizie
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                screen.share.onOpenChange(true);
+              }}
+            >
               <Share2Icon />
               Udostępnij quiz
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                screen.settings.onOpenChange(true);
+              }}
+            >
               <SettingsIcon />
               Ustawienia
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={screen.history.toggle}>
               <HistoryIcon />
               Historia odpowiedzi
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={screen.showStats}>
               <BarChart3Icon />
               Statystyki
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <ScanEyeIcon />
-              Tryb skupienia
+            <DropdownMenuItem onClick={screen.toggleFocusMode}>
+              <FocusModeIcon />
+              {isFocusModeActive ? "Wyłącz tryb skupienia" : "Tryb skupienia"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant="destructive" onClick={session.reset}>
               <RotateCcwIcon />
               Resetuj postęp
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {isFocusModeActive ? (
+        <Badge className="mt-2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+          <ScanEyeIcon />
+          Tryb skupienia
+        </Badge>
+      ) : null}
       <Progress
-        value={60}
-        aria-label="Postęp quizu: 60%"
+        value={view.progress}
+        aria-label={`Postęp quizu: ${progress.toString()}%`}
         className="mt-2.5 h-1.5"
+      />
+      <QuizSettingsDialog
+        open={screen.settings.open}
+        onOpenChange={screen.settings.onOpenChange}
+        quizId={PREVIEW_QUIZ_ID}
+      />
+      <ShareQuizDialog
+        open={screen.share.open}
+        onOpenChange={screen.share.onOpenChange}
+        quiz={PREVIEW_QUIZ}
       />
     </div>
   );
 }
 
 /**
- * The phone and laptop share the same selected answer and checked state. Both
- * seal themselves in a `PreviewSandbox`, so they stay self-contained in every
- * frame that hosts them (the 3D scene and the plain CSS phone alike).
+ * The iPhone screen. Below the status bar it is an ordinary scrolling list
+ * (header, question, answers, explanation) with the browser's default scroll
+ * chaining, so once it reaches the end the page keeps scrolling.
  */
 export function PhoneQuizSurface({
-  selectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked,
-  onQuestionCheckedChange,
-}: PreviewQuizControls): React.JSX.Element {
+  session,
+}: {
+  session: PreviewQuizSession;
+}): React.JSX.Element {
+  const screen = usePreviewScreen(session);
+
   return (
-    <PreviewSandbox>
-      <div className="bg-background text-foreground flex size-full flex-col overflow-hidden px-[0.55rem] pb-[0.55rem]">
+    <PreviewScreenShell session={session} screen={screen}>
+      <div className="bg-background text-foreground flex size-full flex-col">
         <PhoneStatusBar />
-        <PhoneQuizHeader />
-        <QuizPreviewSurface
-          density="phone"
-          selectedAnswers={selectedAnswers}
-          onSelectedAnswersChange={onSelectedAnswersChange}
-          questionChecked={questionChecked}
-          onQuestionCheckedChange={onQuestionCheckedChange}
-          className="min-h-0 flex-1 overflow-hidden"
-        />
+        <div
+          data-preview-scroll=""
+          // The bottom inset keeps the card's corners clear of the screen's.
+          className="min-h-0 flex-1 overflow-y-auto px-[0.55rem] pt-1 pb-4 [scrollbar-width:none]"
+        >
+          <div className="flex min-h-full flex-col">
+            {screen.view === "stats" ? (
+              <div className="px-1 text-[0.8em]">
+                <PreviewStatsView columns={1} onBack={screen.showQuiz} />
+              </div>
+            ) : (
+              <>
+                <PhoneQuizHeader session={session} screen={screen} />
+                <QuizPreviewSurface session={session} density="phone" />
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </PreviewSandbox>
+    </PreviewScreenShell>
   );
 }
 
 export function ProductAppChrome({
+  session,
   className,
-  selectedAnswers,
-  onSelectedAnswersChange,
-  questionChecked,
-  onQuestionCheckedChange,
 }: {
+  session: PreviewQuizSession;
   className?: string;
-} & PreviewQuizControls): React.JSX.Element {
+}): React.JSX.Element {
+  const screen = usePreviewScreen(session);
+
   return (
-    <AppContext.Provider value={PREVIEW_APP_CONTEXT}>
-      <PreviewSandbox
-        className={cn("bg-background text-foreground", className)}
+    <PreviewScreenShell
+      session={session}
+      screen={screen}
+      className={cn("bg-background text-foreground", className)}
+    >
+      <section
+        aria-label="Ekran podglądu Testownika"
+        className={cn(
+          "size-full min-h-0 p-4",
+          screen.view === "stats" ? "overflow-y-auto" : "overflow-hidden",
+        )}
       >
-        <section
-          aria-label="Ekran podglądu Testownika"
-          className="size-full min-h-0 overflow-hidden p-4"
-        >
-          <QuizPageSurface
-            selectedAnswers={selectedAnswers}
-            onSelectedAnswersChange={onSelectedAnswersChange}
-            questionChecked={questionChecked}
-            onQuestionCheckedChange={onQuestionCheckedChange}
-          />
-        </section>
-      </PreviewSandbox>
-    </AppContext.Provider>
+        {screen.view === "stats" ? (
+          <PreviewStatsView columns={2} onBack={screen.showQuiz} />
+        ) : (
+          <QuizPageSurface session={session} screen={screen} />
+        )}
+      </section>
+    </PreviewScreenShell>
   );
 }

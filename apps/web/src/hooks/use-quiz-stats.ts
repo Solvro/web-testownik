@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { StatsScope } from "@testownik/core/quiz/stats";
 import type { QuizMetadata } from "@testownik/core/quiz/types";
 
-import { getQuizService } from "@/services";
+import { servicesFor } from "@/services/client-services";
 
 export const quizStatsKeys = {
   all: (quizId: string) => ["quiz-stats", quizId] as const,
@@ -22,7 +22,8 @@ export const quizStatsKeys = {
 export function useQuizMetadata(quizId: string) {
   return useQuery<QuizMetadata>({
     queryKey: quizStatsKeys.metadata(quizId),
-    queryFn: async () => getQuizService().getQuizMetadata(quizId),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizMetadata(quizId),
     enabled: quizId.trim() !== "",
     refetchOnWindowFocus: false,
     retry: 1,
@@ -36,7 +37,8 @@ export function useQuizStats(
 ) {
   return useQuery({
     queryKey: quizStatsKeys.aggregated(quizId, scope),
-    queryFn: async () => getQuizService().getQuizStats(quizId, scope),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizStats(quizId, scope),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -47,7 +49,8 @@ export function useQuizStats(
 export function useQuizTimeline(quizId: string, scope: StatsScope, days = 30) {
   return useQuery({
     queryKey: quizStatsKeys.timeline(quizId, scope, days),
-    queryFn: async () => getQuizService().getQuizTimeline(quizId, scope, days),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizTimeline(quizId, scope, days),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -62,7 +65,8 @@ export function useQuizSessions(
 ) {
   return useQuery({
     queryKey: quizStatsKeys.sessions(quizId, scope, days),
-    queryFn: async () => getQuizService().getQuizSessions(quizId, scope, days),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizSessions(quizId, scope, days),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -77,8 +81,8 @@ export function useQuizHardestQuestions(
 ) {
   return useQuery({
     queryKey: quizStatsKeys.hardest(quizId, scope, limit),
-    queryFn: async () =>
-      getQuizService().getQuizHardestQuestions(quizId, scope, limit),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizHardestQuestions(quizId, scope, limit),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -88,7 +92,8 @@ export function useQuizHardestQuestions(
 export function useQuizHourly(quizId: string, scope: StatsScope) {
   return useQuery({
     queryKey: quizStatsKeys.hourly(quizId, scope),
-    queryFn: async () => getQuizService().getQuizHourly(quizId, scope),
+    queryFn: async ({ client }) =>
+      servicesFor(client).quiz.getQuizHourly(quizId, scope),
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     retry: 1,
