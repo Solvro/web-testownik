@@ -107,8 +107,9 @@ function findQuestion(
 
 /**
  * The next question in quiz order after the current one that still has
- * attempts left. When everything is mastered it simply moves on, so the
- * preview keeps going.
+ * attempts left. If every other question is mastered but the current one is
+ * not, it stays on the current question (as the app's session does). Only when
+ * everything is mastered does it simply move on, so the preview keeps going.
  */
 export function pickNextPreviewQuestion(
   questions: Question[],
@@ -120,12 +121,16 @@ export function pickNextPreviewQuestion(
   const ordered = questions.map(
     (_, offset) => questions[(start + 1 + offset) % questions.length],
   );
+  const unfinished = (question: Question): boolean =>
+    getRemainingAttempts(question.id, answers, settings) > 0;
   return (
     ordered.find(
-      (question) =>
-        question.id !== currentQuestionId &&
-        getRemainingAttempts(question.id, answers, settings) > 0,
-    ) ?? ordered[0]
+      (question) => question.id !== currentQuestionId && unfinished(question),
+    ) ??
+    ordered.find(
+      (question) => question.id === currentQuestionId && unfinished(question),
+    ) ??
+    ordered[0]
   );
 }
 

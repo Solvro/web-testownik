@@ -22,6 +22,8 @@ export interface RateLimitResult {
 
 const rateLimitEntries = new Map<string, number[]>();
 const CLEANUP_INTERVAL_MS = 60_000;
+/** Upper bound on distinct keys kept in memory; the oldest bucket is dropped past it. */
+const MAX_ENTRIES = 5000;
 
 let lastCleanup = Date.now();
 
@@ -71,11 +73,39 @@ export function checkRateLimit(
 
   const reset = now + windowMs;
   activeTimestamps.push(reset);
+  if (!rateLimitEntries.has(entryKey) && rateLimitEntries.size >= MAX_ENTRIES) {
+    const oldestKey = rateLimitEntries.keys().next().value;
+    if (oldestKey !== undefined) {
+      rateLimitEntries.delete(oldestKey);
+    }
+  }
   rateLimitEntries.set(entryKey, activeTimestamps);
 
   const oldestReset = activeTimestamps[0] ?? reset;
   return {
     allowed: true,
+    limit,
+    remaining: Math.max(0, limit - activeTimestamps.length),
+    reset: oldestReset,
+    retryAfter: Math.max(1, Math.ceil((oldestReset - now) / 1000)),
+  };
+}
+
+/** Reports whether a request would currently be admitted, without counting it. */
+export function peekRateLimit(
+  userId: string,
+  scope: string,
+  options: RateLimitOptions,
+): RateLimitResult {
+  const limit = Math.max(1, Math.floor(options.limit));
+  const windowMs = Math.max(1, Math.floor(options.window)) * 1000;
+  const now = Date.now();
+  const activeTimestamps = (
+    rateLimitEntries.get(`${scope}:${userId}`) ?? []
+  ).filter((timestamp) => timestamp > now);
+  const oldestReset = activeTimestamps[0] ?? now + windowMs;
+  return {
+    allowed: activeTimestamps.length < limit,
     limit,
     remaining: Math.max(0, limit - activeTimestamps.length),
     reset: oldestReset,

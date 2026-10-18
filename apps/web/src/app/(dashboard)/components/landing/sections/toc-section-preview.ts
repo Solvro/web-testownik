@@ -225,6 +225,8 @@ function parkInHost(stage: HTMLElement): void {
   stage.style.removeProperty("content-visibility");
 }
 
+let activeSection: TocPreviewSection | null = null;
+
 function cachedPreview(sectionId: string): HTMLElement | undefined {
   const layout = tocPreviewLayout(window.innerWidth);
   return previewCache.get(cacheKey(sectionId, layout));
@@ -251,6 +253,11 @@ function ensurePreview(section: TocPreviewSection): HTMLElement | null {
   const stage = buildPreview(element, section.peek, layout);
   previewCache.set(cacheKey(section.id, layout), stage);
   parkInHost(stage);
+  // A rebuild (resize, theme change) drops every stage, including the one on
+  // screen; when the idle warm-up recreates it, put it straight back.
+  if (activeSection !== null && activeSection.id === section.id) {
+    activateStage(stage);
+  }
   return stage;
 }
 
@@ -275,15 +282,19 @@ export function attachTocPreviewHost(host: HTMLElement): () => void {
   };
 }
 
-/** Reveal one section's peek in the host and park every other one. */
-export function showTocSectionPreview(section: TocPreviewSection | null): void {
-  const stage = section === null ? null : ensurePreview(section);
+function activateStage(stage: HTMLElement | null): void {
   if (previewHost === null) {
     return;
   }
   for (const child of previewHost.children) {
     child.classList.toggle(ACTIVE_CLASS, child === stage);
   }
+}
+
+/** Reveal one section's peek in the host and park every other one. */
+export function showTocSectionPreview(section: TocPreviewSection | null): void {
+  activeSection = section;
+  activateStage(section === null ? null : ensurePreview(section));
 }
 
 /** Drop cached peeks (and their DOM) so the next build uses current layout. */

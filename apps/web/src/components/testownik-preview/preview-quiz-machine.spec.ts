@@ -126,6 +126,26 @@ describe("quiz preview machine", () => {
     ).toBe("q-12");
   });
 
+  it("stays on the current question when it is the only one left", () => {
+    const othersMastered = PREVIEW_QUESTIONS.filter(
+      (question) => question.id !== "q-104",
+    ).map((question, index) => ({
+      id: `m-${index.toString()}`,
+      question: question.id,
+      answered_at: new Date(2026, 0, 1, 0, index).toISOString(),
+      selected_answers: [],
+      was_correct: true,
+    }));
+    expect(
+      pickNextPreviewQuestion(
+        PREVIEW_QUESTIONS,
+        "q-104",
+        othersMastered,
+        settings,
+      ).id,
+    ).toBe("q-104");
+  });
+
   it("never finishes, even when every sample question is mastered", () => {
     const allMastered = PREVIEW_QUESTIONS.map((question, index) => ({
       id: `m-${index.toString()}`,

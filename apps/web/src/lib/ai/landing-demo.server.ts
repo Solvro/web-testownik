@@ -10,6 +10,7 @@ import { buildLandingDemoSystemPrompt } from "@/lib/ai/prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
+  peekRateLimit,
 } from "@/lib/ai/rate-limit";
 
 export const DEFAULT_LANDING_AI_MODEL = "openai:gpt-5.6-luna";
@@ -35,9 +36,19 @@ function serviceUnavailable(code: string) {
   );
 }
 
+const IPV4 = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+const IPV6 = /^[\da-f:.]{2,45}$/i;
+
+function isIpAddress(value: string): boolean {
+  return IPV4.test(value) || (value.includes(":") && IPV6.test(value));
+}
+
 /**
  * First `x-forwarded-for` hop (set by the reverse proxy), then `x-real-ip`.
- * Clients without either share one bucket, which the global cap backs up.
+ * Only well-formed addresses become keys: anything else, and clients without
+ * either header, share one bucket that the global cap backs up. The header is
+ * only as trustworthy as the ingress that writes it, so the global cap is the
+ * real backstop against rotated keys.
  */
 export function getClientKey(headers: Headers): string {
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -45,10 +56,15 @@ export function getClientKey(headers: Headers): string {
     forwarded === undefined || forwarded === ""
       ? headers.get("x-real-ip")?.trim()
       : forwarded;
-  if (candidate === undefined || candidate === "") {
+  if (
+    candidate === undefined ||
+    candidate === "" ||
+    candidate.length > MAX_CLIENT_KEY_LENGTH ||
+    !isIpAddress(candidate)
+  ) {
     return UNKNOWN_CLIENT_KEY;
   }
-  return candidate.toLowerCase().slice(0, MAX_CLIENT_KEY_LENGTH);
+  return candidate.toLowerCase();
 }
 
 export function parseLandingAiModel(
@@ -65,12 +81,42 @@ export function parseLandingAiModel(
   return { provider, model };
 }
 
+class BodyTooLargeError extends Error {}
+
+/**
+ * Reads at most `MAX_BODY_BYTES`, cancelling the stream as soon as the cap is
+ * crossed, so an oversized upload never buffers in full.
+ */
 async function readJsonBody(request: Request): Promise<unknown> {
-  const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) {
-    throw new Error("Request body too large");
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > MAX_BODY_BYTES) {
+    throw new BodyTooLargeError();
   }
-  return JSON.parse(text) as unknown;
+  if (request.body === null) {
+    throw new Error("Missing body");
+  }
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    received += value.byteLength;
+    if (received > MAX_BODY_BYTES) {
+      await reader.cancel();
+      throw new BodyTooLargeError();
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
 }
 
 export async function handleLandingDemoRequest(
@@ -84,10 +130,35 @@ export async function handleLandingDemoRequest(
     return serviceUnavailable("ai_model_unavailable");
   }
 
+  // Limits are checked before the body is read, so an over-quota caller costs
+  // nothing but a header lookup. The global cap is only peeked here: it is
+  // consumed after the per-client check, so one noisy visitor is stopped by
+  // their own bucket without allocating or eating into the shared allowance.
+  const globalPeek = peekRateLimit(
+    GLOBAL_RATE_LIMIT_KEY,
+    RATE_LIMIT_SCOPE,
+    LANDING_DEMO_RATE_LIMITS.global,
+  );
+  if (!globalPeek.allowed) {
+    return createRateLimitExceededResponse(globalPeek);
+  }
+  const clientKey = getClientKey(request.headers);
+  const clientPeek = peekRateLimit(
+    clientKey,
+    RATE_LIMIT_SCOPE,
+    LANDING_DEMO_RATE_LIMITS.perClient,
+  );
+  if (!clientPeek.allowed) {
+    return createRateLimitExceededResponse(clientPeek);
+  }
+
   let rawBody: unknown;
   try {
     rawBody = await readJsonBody(request);
-  } catch {
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) {
+      return Response.json({ code: "payload_too_large" }, { status: 413 });
+    }
     return Response.json({ code: "invalid_json" }, { status: 400 });
   }
   const body = parseLandingDemoRequest(rawBody);
@@ -95,10 +166,8 @@ export async function handleLandingDemoRequest(
     return Response.json({ code: "invalid_request" }, { status: 400 });
   }
 
-  // Per-client first, so one noisy visitor is stopped by their own bucket
-  // without eating into the shared global allowance.
   const clientLimit = checkRateLimit(
-    getClientKey(request.headers),
+    clientKey,
     RATE_LIMIT_SCOPE,
     LANDING_DEMO_RATE_LIMITS.perClient,
   );

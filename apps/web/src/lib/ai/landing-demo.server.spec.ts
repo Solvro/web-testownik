@@ -133,6 +133,16 @@ describe("landing demo helpers", () => {
       "198.51.100.1",
     );
     expect(getClientKey(new Headers())).toBe("unknown");
+    // Anything that is not an address shares the fallback bucket, so a caller
+    // cannot mint fresh keys by sending arbitrary header values.
+    expect(
+      getClientKey(
+        new Headers({ "x-forwarded-for": `not-an-ip-${"x".repeat(20)}` }),
+      ),
+    ).toBe("unknown");
+    expect(
+      getClientKey(new Headers({ "x-forwarded-for": "2001:DB8::1" })),
+    ).toBe("2001:db8::1");
   });
 
   it("parses provider:model and falls back to the Luna default", () => {
@@ -221,6 +231,20 @@ describe("handleLandingDemoRequest", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ code: "ai_model_unavailable" });
     expect(mocks.getConfiguredAiModel).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized bodies with 413 before parsing them", async () => {
+    const huge = "x".repeat(20_000);
+    const response = await handleLandingDemoRequest(
+      demoRequest({ prompt: huge }, { "x-forwarded-for": "203.0.113.9" }),
+    );
+    expect(response.status).toBe(413);
+    // The rejected request did not count against the client.
+    const ok = await handleLandingDemoRequest(
+      demoRequest({ prompt: "a" }, { "x-forwarded-for": "203.0.113.9" }),
+    );
+    expect(ok.status).toBe(200);
+    await ok.text();
   });
 
   it("rate limits each client IP with Retry-After", async () => {

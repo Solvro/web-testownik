@@ -214,7 +214,7 @@ function PreviewScreenShell({
             showHistory={screen.history.open}
             toggleHistory={screen.history.toggle}
           />
-          <FocusModeOnboardingDialog {...screen.onboarding} />
+          <FocusModeOnboardingDialog {...screen.onboarding} embedded />
         </PreviewRuntime>
       </PreviewSandbox>
     </AppContext.Provider>
