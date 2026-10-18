@@ -3,7 +3,7 @@ import type { Group, Object3D, PerspectiveCamera, Scene } from "three";
 
 import { SCENE_WIDTH } from "../../breakpoints";
 import { LID_TRAVEL_DEGREES, frameLaptop } from "../laptop-framing";
-import type { SatelliteAttachment } from "./screens";
+import type { SatelliteRig } from "./screens";
 import { setCubicBezier, smoothstep } from "./utils";
 
 /**
@@ -39,7 +39,7 @@ interface SatellitePose {
   standing: readonly [number, number, number];
 }
 
-export const SATELLITE_POSES = {
+const SATELLITE_POSES = {
   tablet: {
     closed: new Vector3(-6.4, 1.35, -0.4),
     controlOne: new Vector3(-22, 2.6, 5.5),
@@ -66,7 +66,7 @@ export const SATELLITE_POSES = {
 
 interface Satellite {
   rig: Group;
-  attachment: SatelliteAttachment;
+  scale: number;
   pose: SatellitePose;
   lying: Quaternion;
   standing: Quaternion;
@@ -74,7 +74,7 @@ interface Satellite {
 
 function createSatellite(
   rig: Group,
-  attachment: SatelliteAttachment,
+  { scale, upright }: SatelliteRig,
   pose: SatellitePose,
 ): Satellite {
   const lying = CLOSED_TILT.clone()
@@ -83,7 +83,7 @@ function createSatellite(
         new Euler(0, 0, MathUtils.degToRad(pose.lyingYaw)),
       ),
     )
-    .multiply(attachment.upright);
+    .multiply(upright);
 
   const [pitch, yaw, roll] = pose.standing;
   const standing = new Quaternion()
@@ -94,9 +94,9 @@ function createSatellite(
         MathUtils.degToRad(roll),
       ),
     )
-    .multiply(attachment.upright);
+    .multiply(upright);
 
-  return { rig, attachment, pose, lying, standing };
+  return { rig, scale, pose, lying, standing };
 }
 
 /** Moves one satellite to where it belongs at this point in the travel. */
@@ -124,7 +124,7 @@ function placeSatellite(
     keepSatellites ? pose.open : pose.exit,
     travel,
   );
-  rig.scale.setScalar(satellite.attachment.scale * (1 - exit));
+  rig.scale.setScalar(satellite.scale * (1 - exit));
   rig.visible = exit < 0.995;
   rig.quaternion.slerpQuaternions(
     satellite.lying,
@@ -154,17 +154,16 @@ export function createChoreography({
   camera: PerspectiveCamera;
   laptop: Object3D;
   lidPivot: Object3D;
-  tablet: { rig: Group; attachment: SatelliteAttachment };
-  phone: { rig: Group; attachment: SatelliteAttachment };
+  tablet: { rig: Group; placement: SatelliteRig };
+  phone: { rig: Group; placement: SatelliteRig };
 }): Choreography {
   const satellites = [
-    createSatellite(tablet.rig, tablet.attachment, SATELLITE_POSES.tablet),
-    createSatellite(phone.rig, phone.attachment, SATELLITE_POSES.phone),
+    createSatellite(tablet.rig, tablet.placement, SATELLITE_POSES.tablet),
+    createSatellite(phone.rig, phone.placement, SATELLITE_POSES.phone),
   ];
 
   return {
     apply(progress, width, height) {
-      const isCompact = width < SCENE_WIDTH.compact;
       const keepSatellites = width >= SCENE_WIDTH.satellites;
 
       const travel = smoothstep(0.02, 0.6, progress);
@@ -172,12 +171,6 @@ export function createChoreography({
       const opening = smoothstep(0.3, 0.82, progress);
       const settle = smoothstep(0.78, 0.96, progress);
       const exit = keepSatellites ? 0 : smoothstep(0.06, 0.34, progress);
-
-      const fieldOfView = isCompact ? 34 : 30;
-      if (camera.fov !== fieldOfView) {
-        camera.fov = fieldOfView;
-        camera.updateProjectionMatrix();
-      }
 
       lidPivot.rotation.x =
         (1 - opening) * MathUtils.degToRad(LID_TRAVEL_DEGREES);
@@ -195,7 +188,6 @@ export function createChoreography({
       const { framing } = frameLaptop({
         opening,
         aspect: width / height,
-        compact: isCompact,
         withSatellites: keepSatellites,
       });
       const [targetX, targetY, targetZ] = framing.target;
@@ -210,8 +202,10 @@ export function createChoreography({
         targetZ + Math.cos(framing.pitch) * distance,
       );
       camera.lookAt(targetX, targetY, targetZ);
-      scene.updateMatrixWorld(true);
-      camera.updateMatrixWorld(true);
+      // The only scene-graph matrix pass per frame: both renderers skip
+      // theirs (see `stage.ts`), and the screen-facing test reads the result
+      // before they run.
+      scene.updateMatrixWorld();
 
       return { opening };
     },

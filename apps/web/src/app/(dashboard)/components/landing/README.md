@@ -40,6 +40,9 @@ subtree into a canvas and cannot host the hero's WebGL renderer.
 Each live device screen is a `CSS3DObject` attached to the corresponding display
 mesh. It intentionally shares the Three.js camera and physical transform; a
 separate flat DOM overlay will drift during the lid and satellite motion.
+Where each screen sits on its mesh and how large its DOM host is are baked
+constants in `scene/three/screens.ts`, guarded by `screens.test.ts` against
+the GLB.
 
 ## Regenerating the loading cover
 

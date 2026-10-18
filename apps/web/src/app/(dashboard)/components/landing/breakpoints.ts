@@ -9,4 +9,4 @@ export const BREAKPOINT = { lg: 1024, xl: 1280 } as const;
 export const DESKTOP_STAGE_QUERY = `(min-width: ${String(BREAKPOINT.lg)}px)`;
 
 /** Widths the 3D hero changes shape at, independent of page layout. */
-export const SCENE_WIDTH = { compact: 700, satellites: 1280 } as const;
+export const SCENE_WIDTH = { satellites: 1280 } as const;
