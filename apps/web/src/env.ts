@@ -15,6 +15,11 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     XAI_API_KEY: z.string().min(1).optional(),
+    /** Model for the public landing-page AI demo, as `provider:model`. */
+    LANDING_AI_MODEL: z
+      .string()
+      .regex(/^(?:openai|xai|anthropic):\S+$/)
+      .optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
