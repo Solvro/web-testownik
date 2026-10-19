@@ -34,6 +34,11 @@ body:has([data-landing-page]) #container > main {
   width: 100%;
 }
 
+/* Keep the development launcher clear of the hero's bottom-right link. */
+body:has([data-landing-page]) .tsqd-open-btn-container {
+  bottom: 4rem;
+}
+
 body:has([data-landing-page]) #container > [data-app-navbar],
 body:has([data-landing-page]) [data-app-footer],
 body:has([data-landing-page]) #container > [role="alert"],

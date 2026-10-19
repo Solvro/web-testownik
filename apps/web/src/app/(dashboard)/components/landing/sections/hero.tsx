@@ -80,7 +80,7 @@ function HeroContent({
         href="#features"
         className={cn(
           "text-muted-foreground mt-6 ml-auto flex w-fit items-center gap-[0.45rem] rounded-xs text-[0.66rem] font-bold tracking-[0.1em] uppercase",
-          "lg:absolute lg:right-8 lg:bottom-[1.15rem] lg:z-20 lg:mt-0",
+          "lg:absolute lg:right-[2.2rem] lg:bottom-[1.15rem] lg:z-20 lg:mt-0",
           FOCUS_RING,
         )}
       >
