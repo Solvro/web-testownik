@@ -59,8 +59,21 @@ dialog variants and Floating UI positions are those of the device, not of the
 visitor's monitor seen through the CSS3D perspective. The root layout serves
 that route bare (no navbar, auth, analytics; see `lib/document-shell.ts`).
 The page passes the theme in the URL and posts changes; each frame posts
-`ready` once painted, and the loading cover waits for all three. Nothing
-html-in-canvas can reach inside a frame, so the screens have no Glass.
+`ready` once painted, and the loading cover waits for all three. The page's
+html-in-canvas cannot reach inside a frame, so the iPad's and the iPhone's
+Glass magnifier runs in the frame's own document (`device-screen-content.tsx`),
+mounted on first pointer contact and so never in the captured covers.
+
+A frame keeps the input that lands on it, so it hands back what the page needs
+(`scene/screen-frame-input.ts`). A wheel no scroller under the pointer can use
+is posted to the page, which scrolls itself; the frame's root never chains
+natively (`overscroll-behavior: none`), and where Chrome chains anyway
+(always over the tilted MacBook screen, now and then over the satellites) the
+page notices its own scroll and drops the forwarded copies. The pointer is posted
+once per frame in the screen's own pixels; the page projects it through the
+CSS3D screen (`projectScreenPoint` in `create-device-stack.ts`, provided to the
+frames by `DeviceStack`) and replays it on `window` as a `pointermove`, which
+is what the hero Bubble follows.
 
 `--landing-hero-progress` changes on every scroll frame and is inherited, so
 every element under the hero is restyled each frame unless something pins it.
