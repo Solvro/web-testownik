@@ -12,6 +12,7 @@ import {
   screenFacing,
 } from "./screens";
 import { createStage } from "./stage";
+import { smoothstep } from "./utils";
 
 /**
  * Builds the hero's device stack and runs it until disposed.
@@ -201,7 +202,7 @@ export async function createDeviceStack({
     phone: { rig: phoneRig, placement: SATELLITE_RIG.phone },
   });
 
-  const laptop = screenState(hosts.laptop, laptopScreen, [0.06, 0.26], true);
+  const laptop = screenState(hosts.laptop, laptopScreen, [0, 0.1], true);
   const satellites = [
     screenState(hosts.tablet, tabletScreen, [0.04, 0.2]),
     screenState(hosts.phone, phoneScreen, [0.04, 0.2]),
@@ -242,10 +243,14 @@ export async function createDeviceStack({
 
     const { opening } = choreography.apply(progressForFrame(), width, height);
 
-    const laptopVisibility = screenFacing(
-      laptop.object,
-      camera,
-      ...laptop.fade,
+    // The panel is edge-on to the camera when it first faces it, where the
+    // facing value grows about one unit per radian, so a fade on facing
+    // alone switches the screen on within a dozen degrees of hinge travel.
+    // The facing test only gates the back of the lid; the ramp itself
+    // follows the lid opening, over a third of its travel.
+    const laptopVisibility = Math.min(
+      screenFacing(laptop.object, camera, ...laptop.fade),
+      smoothstep(0.3, 0.64, opening),
     );
     // Facing the camera is not enough: for the first half of the hinge travel
     // the panel is still physically behind the lid. Keeping the host inert
