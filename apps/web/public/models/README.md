@@ -32,6 +32,15 @@ Every emissive material inside the MacBook lid is blanked, not only the panel's,
 so no baked-in screenshot can show through. Inactive variants (Magic Keyboard,
 Pencil, Pro Max) and their empty nodes are pruned.
 
+The iPhone shell is re-toned to navy `#22355d`. Apple's file is Cosmic Orange,
+and until commit `a49fa98d` the hero re-toned the orange materials to this navy
+at runtime. The trimmed `iphone.usdz` instead tints the shell near-black
+(`#020305`, roughness 0.5, roughness map dropped), and with no environment map
+that rendered pure black. The export puts the old tone back on the trim's shell
+(at roughness 0.41, the mean of the dropped map) and on the orange parts it
+left. The trim also removed the bottom port and speaker grille meshes, so their
+detail is gone. The MacBook and iPad render as they did before the trim.
+
 The three `*-display` meshes are exempt from welding and quantisation. Each
 live screen's plane, extent and in-plane axes were measured from those meshes'
 raw vertices, normals and UVs (8-bit normals tilted the MacBook's live UI by
