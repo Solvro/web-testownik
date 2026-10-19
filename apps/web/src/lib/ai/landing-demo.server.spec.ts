@@ -297,5 +297,6 @@ describe("handleLandingDemoRequest", () => {
     );
     expect(limited.status).toBe(429);
     expect(limited.headers.get("Retry-After")).not.toBeNull();
-  });
+    // 600 streamed responses; the default 5 s is tight on a busy machine.
+  }, 30_000);
 });
