@@ -129,7 +129,25 @@ export async function handleLandingDemoChatRequest(
     abortSignal: request.signal,
     system,
     messages: modelMessages,
-    stopWhen: stepCountIs(LANDING_DEMO_CHAT_MAX_STEPS),
+    stopWhen: [
+      stepCountIs(LANDING_DEMO_CHAT_MAX_STEPS),
+      ({ steps }) =>
+        estimateLandingDemoChatInputTokens([
+          ...modelMessages,
+          ...(steps.at(-1)?.response.messages ?? []),
+        ]) > LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
+    ],
+    prepareStep: ({ messages: stepMessages }) => {
+      // stopWhen ends normal tool continuations cleanly. Check the actual SDK
+      // messages as well, before any provider call, including the first step.
+      if (
+        estimateLandingDemoChatInputTokens(stepMessages) >
+        LANDING_DEMO_CHAT_MAX_INPUT_TOKENS
+      ) {
+        throw new Error("Landing demo chat model input budget exceeded");
+      }
+      return {};
+    },
     maxOutputTokens: LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,
     maxRetries: 0,
     providerOptions: LANDING_DEMO_PROVIDER_OPTIONS,

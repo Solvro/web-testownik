@@ -6,8 +6,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PREVIEW_QUIZ } from "@/components/testownik-preview/preview-fixtures";
 import { buildChatModelMessages } from "@/lib/ai/chat-messages";
+import { buildChatTools, buildLandingDemoChatTools } from "@/lib/ai/chat-tools";
 import {
   LANDING_DEMO_CHAT_LIMITS,
+  LANDING_DEMO_CHAT_TOOL_LIMITS,
   parseLandingDemoChatRequest,
   trimLandingDemoChatHistory,
 } from "@/lib/ai/landing-demo-chat";
@@ -44,19 +46,42 @@ vi.mock("@/lib/ai/model", () => ({
   getConfiguredAiModel: mocks.getConfiguredAiModel,
 }));
 
-function createMockModel() {
+function createMockModel(
+  toolSteps: { toolName: string; input: Record<string, unknown> }[][] = [],
+) {
+  let step = 0;
   return new MockLanguageModelV3({
     doStream: async () => {
       await Promise.resolve();
+      const toolCalls = toolSteps.at(step++);
       return {
         stream: simulateReadableStream({
           chunks: [
-            { type: "text-start" as const, id: "t1" },
-            { type: "text-delta" as const, id: "t1", delta: "Pytanie nr 2." },
-            { type: "text-end" as const, id: "t1" },
+            ...(toolCalls === undefined
+              ? [
+                  { type: "text-start" as const, id: "t1" },
+                  {
+                    type: "text-delta" as const,
+                    id: "t1",
+                    delta: "Pytanie nr 2.",
+                  },
+                  { type: "text-end" as const, id: "t1" },
+                ]
+              : toolCalls.map((call, index) => ({
+                  type: "tool-call" as const,
+                  toolCallId: `call-${step.toString()}-${index.toString()}`,
+                  toolName: call.toolName,
+                  input: JSON.stringify(call.input),
+                }))),
             {
               type: "finish" as const,
-              finishReason: { unified: "stop" as const, raw: "stop" },
+              finishReason: {
+                unified:
+                  toolCalls === undefined
+                    ? ("stop" as const)
+                    : ("tool-calls" as const),
+                raw: toolCalls === undefined ? "stop" : "tool_calls",
+              },
               usage: {
                 inputTokens: {
                   total: 10,
@@ -434,7 +459,10 @@ describe("handleLandingDemoChatRequest", () => {
       messages,
       chatQuestion: null,
       chatQuestions: [],
-      resolveQuestionImages: () => Promise.resolve([]),
+      resolveQuestionImages: async () => {
+        await Promise.resolve();
+        return [];
+      },
     });
     const previousEstimate = estimateJsonTokens({
       system: buildChatSystemPrompt(PREVIEW_QUIZ, 0, undefined, true, true),
@@ -497,6 +525,155 @@ describe("handleLandingDemoChatRequest", () => {
     );
     expect(invalidBody.status).toBe(400);
     expect(mocks.getConfiguredAiModel).not.toHaveBeenCalled();
+  });
+
+  it("bounds get_question results before a real second inference without changing authenticated tools", async () => {
+    const largeQuestion: Question = {
+      ...question(1, "q".repeat(2000)),
+      explanation: "e".repeat(2000),
+      answers: Array.from({ length: 50 }, (_, index) => ({
+        id: `a-${index.toString()}`,
+        order: index + 1,
+        text: "a".repeat(500),
+        is_correct: index === 0,
+      })),
+    };
+    const model = createMockModel([
+      [{ toolName: "get_question", input: { question_order: 1 } }],
+    ]);
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(
+        chatBody({
+          question: null,
+          questions: [largeQuestion],
+        }),
+      ),
+    );
+    const output = await response.text();
+    expect(output).toContain("Pytanie nr 2.");
+    expect(model.doStreamCalls).toHaveLength(2);
+    const bounded = buildLandingDemoChatTools([
+      largeQuestion,
+    ]).get_question.execute({ question_order: 1 });
+    const full = buildChatTools({
+      questions: [largeQuestion],
+      canEdit: true,
+    }).get_question.execute({ question_order: 1 });
+    const details = JSON.parse(bounded) as {
+      text: string;
+      explanation: string;
+      answers: { text: string }[];
+    };
+    expect(details.text).toHaveLength(
+      LANDING_DEMO_CHAT_TOOL_LIMITS.maxQuestionTextLength,
+    );
+    expect(details.explanation).toHaveLength(
+      LANDING_DEMO_CHAT_TOOL_LIMITS.maxExplanationLength,
+    );
+    expect(details.answers).toHaveLength(
+      LANDING_DEMO_CHAT_TOOL_LIMITS.maxAnswers,
+    );
+    expect(
+      details.answers.every(
+        (answer) =>
+          answer.text.length ===
+          LANDING_DEMO_CHAT_TOOL_LIMITS.maxAnswerTextLength,
+      ),
+    ).toBe(true);
+    expect((JSON.parse(full) as { answers: unknown[] }).answers).toHaveLength(
+      50,
+    );
+    const secondInput = model.doStreamCalls[1].prompt.filter(
+      (message) => message.role !== "system",
+    );
+    expect(JSON.stringify(secondInput)).toContain(JSON.stringify(bounded));
+    expect(estimateLandingDemoChatInputTokens(secondInput)).toBeLessThanOrEqual(
+      LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
+    );
+    expect(
+      estimateLandingDemoChatInputTokens(
+        JSON.parse(
+          JSON.stringify(secondInput).replace(
+            JSON.stringify(bounded),
+            JSON.stringify(full),
+          ),
+        ),
+      ),
+    ).toBeGreaterThan(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
+  });
+
+  it("caps demo list pages at 20 previews of 180 characters and keeps pagination accurate", () => {
+    const questions = Array.from({ length: 60 }, (_, index) =>
+      question(index + 1, "\u0800".repeat(2000)),
+    );
+    const tools = buildLandingDemoChatTools(questions);
+    for (const limit of [undefined, 100]) {
+      const page = JSON.parse(
+        tools.list_questions.execute({ limit, offset: 20 }),
+      ) as {
+        returned: number;
+        matched: number;
+        next_offset: number;
+        questions: { order: number; text: string }[];
+      };
+      expect(page.returned).toBe(20);
+      expect(page.matched).toBe(60);
+      expect(page.next_offset).toBe(40);
+      expect(page.questions[0].order).toBe(21);
+      expect(page.questions.every((item) => item.text.length === 180)).toBe(
+        true,
+      );
+    }
+    const full = JSON.parse(
+      buildChatTools({ questions, canEdit: true }).list_questions.execute({}),
+    ) as { returned: number };
+    expect(full.returned).toBe(50);
+  });
+
+  it.each(["x", "\u0800"])(
+    "stops before step two when parallel tool results exhaust the remaining budget (%s)",
+    async (character) => {
+      const model = createMockModel([
+        [
+          { toolName: "list_questions", input: {} },
+          { toolName: "list_questions", input: {} },
+        ],
+      ]);
+      mocks.getConfiguredAiModel.mockReturnValue(model);
+      const questions = Array.from({ length: 20 }, (_, index) =>
+        question(index + 1, character.repeat(180)),
+      );
+      const response = await handleLandingDemoChatRequest(
+        chatRequest(chatBody({ question: null, questions })),
+      );
+      const output = await response.text();
+      expect(output).toContain('"type":"tool-output-available"');
+      expect(output).not.toContain('"type":"error"');
+      expect(model.doStreamCalls).toHaveLength(1);
+    },
+  );
+
+  it("rechecks cumulative tool output before step three", async () => {
+    const toolCall = { toolName: "list_questions", input: {} };
+    const model = createMockModel([[toolCall], [toolCall]]);
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const questions = Array.from({ length: 20 }, (_, index) =>
+      question(index + 1, "x".repeat(180)),
+    );
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(chatBody({ question: null, questions })),
+    );
+    const output = await response.text();
+    expect(output).not.toContain('"type":"error"');
+    expect(model.doStreamCalls).toHaveLength(2);
+    for (const call of model.doStreamCalls) {
+      expect(
+        estimateLandingDemoChatInputTokens(
+          call.prompt.filter((message) => message.role !== "system"),
+        ),
+      ).toBeLessThanOrEqual(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
+    }
   });
 
   it("returns 503 without AI or a key for the landing model", async () => {
