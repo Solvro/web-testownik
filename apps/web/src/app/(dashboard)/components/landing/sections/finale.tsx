@@ -49,10 +49,13 @@ export function Finale({
         className="pointer-events-none relative aspect-[2.2] w-[94vw] sm:mt-[clamp(2rem,6vh,4.5rem)] sm:aspect-[3.4] sm:w-[min(92vw,82rem)]"
       />
 
-      <p className="text-muted-foreground relative mt-8 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-10 sm:mt-[clamp(3rem,7vh,5rem)]">
-        Wejdź do aplikacji i poznaj nowy sposób na naukę
-        <br />
-        Zawsze pod ręką dla ciebie i znajomych
+      <p className="text-muted-foreground relative mt-8 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-[clamp(3rem,7vh,5rem)]">
+        <span className="block text-balance">
+          Wejdź do aplikacji i poznaj nowy sposób na naukę
+        </span>
+        <span className="block text-balance">
+          Zawsze pod ręką dla ciebie i znajomych
+        </span>
       </p>
 
       <div className="relative mt-8 flex w-full flex-col gap-[0.8rem] sm:w-auto sm:flex-row">
