@@ -22,3 +22,26 @@
     }
   }
 }
+
+/* Measured with axe on the landing and its screen documents. Keep fills and
+ * colored text independent: pale text needs a darker blue fill in light mode,
+ * while small blue labels need a lighter blue on dark surfaces. */
+@theme inline {
+  --color-landing-primary: var(--landing-primary-text);
+}
+
+[data-landing-page],
+html[data-landing-screen-document] {
+  --primary: oklch(0.55 0.172 258.85);
+  --destructive: oklch(0.5 0.245 27.325);
+  --color-emerald-600: var(--color-emerald-700);
+  --landing-primary-text: oklch(0.52 0.172 258.85);
+}
+
+.dark [data-landing-page],
+[data-landing-page] .dark,
+html.dark[data-landing-screen-document] {
+  --primary: oklch(0.553 0.18 259.121);
+  --destructive: oklch(0.704 0.191 22.216);
+  --landing-primary-text: oklch(0.65 0.18 259.121);
+}

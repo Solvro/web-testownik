@@ -5,6 +5,7 @@ import { useRef } from "react";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
+import { FOCUS_RING } from "./components/focus";
 import { useGuestStart } from "./hooks/use-guest-start";
 import { landingFontVariables } from "./landing-fonts";
 import "./landing.css";
@@ -43,6 +44,15 @@ export function LandingPage({
         landingFontVariables,
       )}
     >
+      <a
+        href="#features"
+        className={cn(
+          "bg-background text-foreground sr-only fixed top-2 left-2 z-[110] rounded-md p-3 focus:not-sr-only",
+          FOCUS_RING,
+        )}
+      >
+        Przejdź do treści
+      </a>
       <LandingTableOfContents />
       <Hero
         heroReference={heroReference}

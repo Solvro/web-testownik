@@ -31,5 +31,10 @@ export default async function LandingScreenPage({
   if (request === null) {
     notFound();
   }
-  return <ScreenFrameDocument request={request} />;
+  return (
+    <main>
+      <h1 className="sr-only">Podgląd Testownika — {device}</h1>
+      <ScreenFrameDocument request={request} />
+    </main>
+  );
 }
