@@ -434,7 +434,7 @@ export function QuizDemo(): React.JSX.Element {
   return (
     <PreviewSandbox className="rounded-[1rem]">
       <PreviewRuntime client={session.client}>
-        <div className="bg-background text-foreground relative flex h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem]">
+        <div className="bg-background text-foreground relative flex max-h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem]">
           <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
