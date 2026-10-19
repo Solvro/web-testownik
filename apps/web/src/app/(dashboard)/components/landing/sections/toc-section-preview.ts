@@ -38,8 +38,8 @@ const HERO_MIN_HEIGHT = 42 * 16;
 const HERO_DEVICE_TOP = "5.3rem";
 /**
  * Marks the revealed stage. A class rather than a `data-*` attribute: the app
- * CSS has `:has([data-…])` rules, and an attribute flip they might match makes
- * Chrome restyle the whole document.
+ * CSS has `:has([data-…])` rules, and an attribute flip they might match sends
+ * Chrome through `:has()` invalidation; a class no rule mentions does not.
  */
 const ACTIVE_CLASS = "lp-toc-preview-active";
 /** Fades a refreshed stage in over the stale one it replaces. */
@@ -60,12 +60,14 @@ const SHOWN_IDLE_TIMEOUT = 150;
  * with `content-visibility: hidden` while parked, so showing one is a class
  * flip.
  *
- * Why a shadow root: the app CSS has Tailwind `group-has-*` rules
- * (`:is(:where(.group\/x):has(…) *)`), and while any of them exists Chrome
- * restyles the whole document on every element inserted or removed anywhere
- * in it (~30 ms of style recalc at 4x CPU, for an empty `div`). `:has()` does
- * not look across a shadow boundary, so inserting or removing a stage in here
- * only restyles the stage.
+ * Why a shadow root: `:has()` does not look across a shadow boundary, so
+ * inserting or removing a stage in here only restyles the stage, whatever
+ * `:has()` rules the app CSS holds. It used to matter a lot: Tailwind
+ * `group-has-*` rules (`:is(:where(.group\/x):has(…) *)`) made Chrome restyle
+ * the whole document on every insertion anywhere (~30 ms at 4x CPU). The UI
+ * components no longer use them (see the guard in
+ * `components/ui/no-group-has.test.ts`), but a stage is hundreds of nodes, so
+ * keeping it out of the document's invalidation is still worth it.
  */
 let previewHost: HTMLElement | null = null;
 /** Where stages are appended: the scope inside the shadow root (or the host). */
