@@ -19,8 +19,8 @@ export const LANDING_DEMO_MAX_OUTPUT_TOKENS = 220;
 
 /** 10-minute sliding windows: per visitor IP, and across all visitors. */
 export const LANDING_DEMO_RATE_LIMITS = {
-  perClient: { limit: 8, window: 600 },
-  global: { limit: 120, window: 600 },
+  perClient: { limit: 30, window: 600 },
+  global: { limit: 600, window: 600 },
 } as const;
 
 const RATE_LIMIT_SCOPE = "ai-landing-demo";

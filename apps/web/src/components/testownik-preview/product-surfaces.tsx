@@ -607,13 +607,17 @@ export function PhoneQuizSurface({
             </div>
           ) : (
             <>
-              <div className="flex min-h-full flex-col">
+              <div className="flex flex-col">
                 <PhoneQuizHeader session={session} screen={screen} />
                 <QuizPreviewSurface session={session} density="phone" />
               </div>
-              <div className="mx-1 mt-3 flex flex-col gap-3">
+              {/*
+               * The hint follows the question card directly, as on the
+               * mobile quiz page. The info card is behind the header's
+               * menu button, so it is not repeated below.
+               */}
+              <div className="mx-1 mt-3">
                 <PreviewAiHintPanel questionId={session.view.question?.id} />
-                <PreviewQuizInfoCard session={session} screen={screen} />
               </div>
             </>
           )}
