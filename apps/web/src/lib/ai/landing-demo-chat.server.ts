@@ -13,6 +13,9 @@ import {
   admitLandingDemoRequest,
 } from "@/lib/ai/landing-demo.server";
 import { buildChatSystemPrompt } from "@/lib/ai/prompts";
+import { estimateJsonTokens } from "@/lib/ai/request-validation";
+
+export const LANDING_DEMO_CHAT_MAX_INPUT_TOKENS = 6000;
 
 /** Room for a short answer or a few generated questions per step. */
 export const LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS = 800;
@@ -40,18 +43,48 @@ export async function handleLandingDemoChatRequest(
   const { messages, question, questions, questionContextSnapshots } =
     admission.body;
 
+  const system = buildChatSystemPrompt(
+    { title: PREVIEW_QUIZ.title, description: PREVIEW_QUIZ.description },
+    questions.length,
+    undefined,
+    true,
+    true,
+  );
+  let recentMessages = messages;
   let modelMessages;
   try {
-    modelMessages = await buildChatModelMessages({
-      messages,
-      chatQuestion: question,
-      chatQuestions: questions,
-      questionContextSnapshots,
-      resolveQuestionImages: async () => {
-        await Promise.resolve();
-        return [];
-      },
-    });
+    for (;;) {
+      const recentIds = new Set(recentMessages.map((message) => message.id));
+      modelMessages = await buildChatModelMessages({
+        messages: recentMessages,
+        chatQuestion: question,
+        chatQuestions: questions,
+        questionContextSnapshots: questionContextSnapshots.filter((snapshot) =>
+          recentIds.has(snapshot.messageId),
+        ),
+        resolveQuestionImages: async () => {
+          await Promise.resolve();
+          return [];
+        },
+      });
+      if (
+        estimateJsonTokens({ system, messages: modelMessages }) <=
+        LANDING_DEMO_CHAT_MAX_INPUT_TOKENS
+      ) {
+        break;
+      }
+      // Drop a complete old turn, leaving the most recent request intact.
+      const nextUserIndex = recentMessages.findIndex(
+        (message, index) => index > 0 && message.role === "user",
+      );
+      if (nextUserIndex === -1) {
+        return Response.json(
+          { code: "model_input_too_large" },
+          { status: 413 },
+        );
+      }
+      recentMessages = recentMessages.slice(nextUserIndex);
+    }
   } catch {
     // The history did not convert (a malformed tool part).
     return Response.json({ code: "invalid_request" }, { status: 400 });
@@ -60,13 +93,7 @@ export async function handleLandingDemoChatRequest(
   const result = streamText({
     model: admission.model,
     abortSignal: request.signal,
-    system: buildChatSystemPrompt(
-      { title: PREVIEW_QUIZ.title, description: PREVIEW_QUIZ.description },
-      questions.length,
-      undefined,
-      true,
-      true,
-    ),
+    system,
     messages: modelMessages,
     stopWhen: stepCountIs(LANDING_DEMO_CHAT_MAX_STEPS),
     maxOutputTokens: LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,

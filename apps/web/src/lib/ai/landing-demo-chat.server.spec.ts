@@ -4,12 +4,14 @@ import { simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { buildChatModelMessages } from "@/lib/ai/chat-messages";
 import {
   LANDING_DEMO_CHAT_LIMITS,
   parseLandingDemoChatRequest,
   trimLandingDemoChatHistory,
 } from "@/lib/ai/landing-demo-chat";
 import {
+  LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
   LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,
   handleLandingDemoChatRequest,
 } from "@/lib/ai/landing-demo-chat.server";
@@ -19,6 +21,7 @@ import {
 } from "@/lib/ai/landing-demo.server";
 import { CURRENT_QUESTION_CONTEXT_MARKER } from "@/lib/ai/prompts";
 import { resetRateLimitStore } from "@/lib/ai/rate-limit";
+import { estimateJsonTokens } from "@/lib/ai/request-validation";
 
 const mocks = vi.hoisted(() => ({
   env: {
@@ -304,6 +307,103 @@ describe("handleLandingDemoChatRequest", () => {
     // The current question goes in as context, as in the app.
     expect(prompt).toContain(CURRENT_QUESTION_CONTEXT_MARKER);
     expect(prompt).toContain("Jak działa spacing?");
+  });
+
+  it("bounds context amplification from a valid small HTTP request", async () => {
+    const model = createMockModel();
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const questions = [
+      question(1, "x".repeat(23_000)),
+      question(2, "y".repeat(23_000)),
+    ];
+    const messages = Array.from({ length: 19 }, (_, index) =>
+      userMessage("dalej", `m-${index.toString()}`),
+    );
+    const questionContextSnapshots = messages.map((message, index) => ({
+      messageId: message.id,
+      questionId: questions[index % 2].id,
+    }));
+    const body = chatBody({
+      question: null,
+      questions,
+      messages,
+      questionContextSnapshots,
+    });
+    expect(JSON.stringify(body).length).toBeLessThan(
+      LANDING_DEMO_CHAT_LIMITS.maxBodyBytes,
+    );
+    const expanded = await buildChatModelMessages({
+      messages,
+      chatQuestion: null,
+      chatQuestions: questions,
+      questionContextSnapshots,
+      resolveQuestionImages: async () => {
+        await Promise.resolve();
+        return [];
+      },
+    });
+    expect(estimateJsonTokens(expanded)).toBeGreaterThan(100_000);
+    const parsed = parseLandingDemoChatRequest(body);
+    expect(parsed?.questionContextSnapshots).toEqual(
+      questionContextSnapshots.slice(-3),
+    );
+    expect(parsed?.questions[0].text).toHaveLength(
+      LANDING_DEMO_CHAT_LIMITS.maxQuestionTextLength,
+    );
+
+    const response = await handleLandingDemoChatRequest(chatRequest(body));
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(
+      estimateJsonTokens(model.doStreamCalls[0].prompt),
+    ).toBeLessThanOrEqual(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
+    expect(
+      JSON.stringify(model.doStreamCalls[0].prompt).split(
+        CURRENT_QUESTION_CONTEXT_MARKER,
+      ).length - 1,
+    ).toBeLessThanOrEqual(3);
+  });
+
+  it("drops oldest turns before rejecting an expanded history", async () => {
+    const model = createMockModel();
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const messages = Array.from({ length: 19 }, (_, index) =>
+      index % 2 === 0
+        ? userMessage(
+            index === 18 ? "latest-request" : `old-${index.toString()}`,
+          )
+        : assistantMessage("a".repeat(4000)),
+    );
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(chatBody({ messages })),
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+    const prompt = model.doStreamCalls[0].prompt;
+    expect(estimateJsonTokens(prompt)).toBeLessThanOrEqual(
+      LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
+    );
+    expect(JSON.stringify(prompt)).not.toContain("old-0");
+    expect(JSON.stringify(prompt)).toContain("latest-request");
+  });
+
+  it("rejects an oversized latest turn with a stable 413 code before inference", async () => {
+    const model = createMockModel();
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const message: UIMessage = {
+      id: "latest",
+      role: "user",
+      parts: Array.from({ length: 30 }, () => ({
+        type: "text",
+        text: "x".repeat(1000),
+      })),
+    };
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(chatBody({ messages: [message] })),
+    );
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ code: "model_input_too_large" });
+    expect(model.doStreamCalls).toHaveLength(0);
   });
 
   it("returns 400 for invalid JSON and invalid bodies", async () => {

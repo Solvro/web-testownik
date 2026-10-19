@@ -24,6 +24,10 @@ export const LANDING_DEMO_CHAT_LIMITS = {
   maxAssistantTextLength: 4000,
   /** Parts per message. */
   maxParts: 30,
+  maxQuestionTextLength: 2000,
+  maxAnswerTextLength: 500,
+  maxExplanationLength: 2000,
+  maxContextSnapshots: 3,
   /** The whole request; tool calls in the history make it larger. */
   maxBodyBytes: 65_536,
 } as const;
@@ -103,6 +107,24 @@ export function trimLandingDemoChatHistory(messages: UIMessage[]): UIMessage[] {
     : recent.slice(firstUser).map((message) => trimText(message));
 }
 
+function trimQuestion(question: Question): Question {
+  return {
+    ...question,
+    text: question.text.slice(
+      0,
+      LANDING_DEMO_CHAT_LIMITS.maxQuestionTextLength,
+    ),
+    explanation: question.explanation?.slice(
+      0,
+      LANDING_DEMO_CHAT_LIMITS.maxExplanationLength,
+    ),
+    answers: question.answers.map((answer) => ({
+      ...answer,
+      text: answer.text.slice(0, LANDING_DEMO_CHAT_LIMITS.maxAnswerTextLength),
+    })),
+  };
+}
+
 /**
  * Accepts `{ messages, question?, questions?, questionContextSnapshots? }`
  * within the limits above, ending on a user turn. Anything else is rejected
@@ -149,11 +171,27 @@ export function parseLandingDemoChatRequest(
     return null;
   }
 
+  // A snapshot belongs to a user turn. Keep only the three most recent
+  // distinct turns, even when the caller repeats snapshot IDs or reorders them.
+  const snapshotsByMessageId = new Map(
+    ((questionContextSnapshots ?? []) as QuestionContextSnapshot[]).map(
+      (snapshot) => [snapshot.messageId, snapshot],
+    ),
+  );
+  const recentSnapshots = messages
+    .filter((message) => message.role === "user")
+    .flatMap((message) => {
+      const snapshot = snapshotsByMessageId.get(message.id);
+      return snapshot === undefined ? [] : [snapshot];
+    })
+    .slice(-LANDING_DEMO_CHAT_LIMITS.maxContextSnapshots);
+
   return {
     messages: messages.map((message) => trimText(message)),
-    question: question ?? null,
-    questions: questions ?? [],
-    questionContextSnapshots:
-      (questionContextSnapshots as QuestionContextSnapshot[] | undefined) ?? [],
+    question: question == null ? null : trimQuestion(question),
+    questions: (questions ?? []).map((candidate: Question) =>
+      trimQuestion(candidate),
+    ),
+    questionContextSnapshots: recentSnapshots,
   };
 }
