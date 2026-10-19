@@ -32,6 +32,16 @@ export const LANDING_DEMO_CHAT_LIMITS = {
   maxBodyBytes: 65_536,
 } as const;
 
+/** Tool results become model input on the next inference step. */
+export const LANDING_DEMO_CHAT_TOOL_LIMITS = {
+  maxAnswers: 6,
+  maxAnswerTextLength: 300,
+  maxQuestionTextLength: 1500,
+  maxExplanationLength: 600,
+  maxListQuestions: 20,
+  maxListPreviewLength: 180,
+} as const;
+
 /** The tools whose calls can come back in the history. */
 const TOOL_PART_TYPES = new Set([
   "tool-generate_practice_questions",

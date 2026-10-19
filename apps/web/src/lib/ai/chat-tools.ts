@@ -1,6 +1,8 @@
 import type { Question } from "@testownik/core/quiz/types";
 import { z } from "zod";
 
+import { LANDING_DEMO_CHAT_TOOL_LIMITS as DEMO_LIMITS } from "@/lib/ai/landing-demo-chat";
+
 /**
  * The assistant's tools, shared by the app's chat (`/ai/chat`) and the
  * landing page's demo chat (`/ai/landing-demo/chat`). They only read the
@@ -76,7 +78,7 @@ function truncateQuestionPreview(text: string): string {
   return text.length > 180 ? `${text.slice(0, 180)}…` : text;
 }
 
-function buildQuizTools(questions: Question[]) {
+function buildQuizTools(questions: Question[], demo = false) {
   return {
     generate_practice_questions: {
       description:
@@ -104,7 +106,12 @@ function buildQuizTools(questions: Question[]) {
           .filter((q) =>
             query === "" ? true : q.text.toLowerCase().includes(query),
           );
-        const limit = arguments_.limit ?? 50;
+        const limit = demo
+          ? Math.min(
+              arguments_.limit ?? DEMO_LIMITS.maxListQuestions,
+              DEMO_LIMITS.maxListQuestions,
+            )
+          : (arguments_.limit ?? 50);
         const offset = arguments_.offset ?? 0;
         const page = matchingQuestions.slice(offset, offset + limit);
         const nextOffset =
@@ -118,7 +125,9 @@ function buildQuizTools(questions: Question[]) {
           next_offset: nextOffset,
           questions: page.map((q) => ({
             order: q.order,
-            text: truncateQuestionPreview(q.text),
+            text: demo
+              ? q.text.slice(0, DEMO_LIMITS.maxListPreviewLength)
+              : truncateQuestionPreview(q.text),
             answer_count: q.answers.length,
             multiple: q.multiple,
             has_explanation:
@@ -143,13 +152,22 @@ function buildQuizTools(questions: Question[]) {
 
         return JSON.stringify({
           order: question.order,
-          text: question.text,
-          explanation: question.explanation ?? null,
+          text: demo
+            ? question.text.slice(0, DEMO_LIMITS.maxQuestionTextLength)
+            : question.text,
+          explanation:
+            (demo
+              ? question.explanation?.slice(0, DEMO_LIMITS.maxExplanationLength)
+              : question.explanation) ?? null,
           multiple: question.multiple,
-          answers: question.answers.map((a) => ({
-            text: a.text,
-            is_correct: a.is_correct,
-          })),
+          answers: question.answers
+            .slice(0, demo ? DEMO_LIMITS.maxAnswers : undefined)
+            .map((a) => ({
+              text: demo
+                ? a.text.slice(0, DEMO_LIMITS.maxAnswerTextLength)
+                : a.text,
+              is_correct: a.is_correct,
+            })),
         });
       },
     },
@@ -204,7 +222,7 @@ export function buildChatTools({
  */
 export function buildLandingDemoChatTools(questions: Question[]) {
   return {
-    ...buildQuizTools(questions),
+    ...buildQuizTools(questions, true),
     edit_question: editQuestionTool,
   };
 }
