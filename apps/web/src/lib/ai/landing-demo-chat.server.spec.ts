@@ -4,6 +4,7 @@ import { simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PREVIEW_QUIZ } from "@/components/testownik-preview/preview-fixtures";
 import { buildChatModelMessages } from "@/lib/ai/chat-messages";
 import {
   LANDING_DEMO_CHAT_LIMITS,
@@ -13,13 +14,17 @@ import {
 import {
   LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
   LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,
+  estimateLandingDemoChatInputTokens,
   handleLandingDemoChatRequest,
 } from "@/lib/ai/landing-demo-chat.server";
 import {
   LANDING_DEMO_RATE_LIMITS,
   handleLandingDemoRequest,
 } from "@/lib/ai/landing-demo.server";
-import { CURRENT_QUESTION_CONTEXT_MARKER } from "@/lib/ai/prompts";
+import {
+  CURRENT_QUESTION_CONTEXT_MARKER,
+  buildChatSystemPrompt,
+} from "@/lib/ai/prompts";
 import { resetRateLimitStore } from "@/lib/ai/rate-limit";
 import { estimateJsonTokens } from "@/lib/ai/request-validation";
 
@@ -355,7 +360,11 @@ describe("handleLandingDemoChatRequest", () => {
     expect(response.status).toBe(200);
     await response.text();
     expect(
-      estimateJsonTokens(model.doStreamCalls[0].prompt),
+      estimateLandingDemoChatInputTokens(
+        model.doStreamCalls[0].prompt.filter(
+          (message) => message.role !== "system",
+        ),
+      ),
     ).toBeLessThanOrEqual(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
     expect(
       JSON.stringify(model.doStreamCalls[0].prompt).split(
@@ -380,9 +389,11 @@ describe("handleLandingDemoChatRequest", () => {
     expect(response.status).toBe(200);
     await response.text();
     const prompt = model.doStreamCalls[0].prompt;
-    expect(estimateJsonTokens(prompt)).toBeLessThanOrEqual(
-      LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
-    );
+    expect(
+      estimateLandingDemoChatInputTokens(
+        prompt.filter((message) => message.role !== "system"),
+      ),
+    ).toBeLessThanOrEqual(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
     expect(JSON.stringify(prompt)).not.toContain("old-0");
     expect(JSON.stringify(prompt)).toContain("latest-request");
   });
@@ -403,6 +414,76 @@ describe("handleLandingDemoChatRequest", () => {
     );
     expect(response.status).toBe(413);
     expect(await response.json()).toEqual({ code: "model_input_too_large" });
+    expect(model.doStreamCalls).toHaveLength(0);
+  });
+
+  it("rejects UTF-8 input that the former chars / 4 estimate admitted", async () => {
+    const model = createMockModel();
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const messages: UIMessage[] = [
+      {
+        id: "unicode",
+        role: "user",
+        parts: Array.from({ length: 20 }, () => ({
+          type: "text",
+          text: "\u0800".repeat(1000),
+        })),
+      },
+    ];
+    const expanded = await buildChatModelMessages({
+      messages,
+      chatQuestion: null,
+      chatQuestions: [],
+      resolveQuestionImages: () => Promise.resolve([]),
+    });
+    const previousEstimate = estimateJsonTokens({
+      system: buildChatSystemPrompt(PREVIEW_QUIZ, 0, undefined, true, true),
+      messages: expanded,
+    });
+    expect(previousEstimate).toBeLessThan(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
+    expect(estimateLandingDemoChatInputTokens(expanded)).toBeGreaterThan(
+      24_000,
+    );
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(
+        chatBody({
+          messages,
+          question: null,
+          questions: [],
+        }),
+      ),
+    );
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ code: "model_input_too_large" });
+    expect(model.doStreamCalls).toHaveLength(0);
+  });
+
+  it("includes the system prompt and tool schemas in the input budget", async () => {
+    const model = createMockModel();
+    mocks.getConfiguredAiModel.mockReturnValue(model);
+    const messages: UIMessage[] = [
+      {
+        id: "schemas",
+        role: "user",
+        parts: Array.from({ length: 10 }, () => ({
+          type: "text",
+          text: "x".repeat(1000),
+        })),
+      },
+    ];
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(
+        chatBody({
+          messages,
+          question: null,
+          questions: [],
+        }),
+      ),
+    );
+    expect(estimateJsonTokens(messages)).toBeLessThan(
+      LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
+    );
+    expect(response.status).toBe(413);
     expect(model.doStreamCalls).toHaveLength(0);
   });
 
