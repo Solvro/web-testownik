@@ -31,6 +31,7 @@ import { useStudyTimeValue } from "@/components/quiz/hooks/use-study-timer";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
 import { QuizInfoCard } from "@/components/quiz/quiz-info-card";
+import { QuizSettingsDialog } from "@/components/quiz/quiz-settings-dialog";
 import { ShareQuizDialog } from "@/components/quiz/share-quiz-dialog/share-quiz-dialog";
 import { HardestQuestionsChart } from "@/components/quiz/stats/hardest-questions-chart";
 import { HourlyChart } from "@/components/quiz/stats/hourly-chart";
@@ -554,7 +555,11 @@ function PhoneQuizHeader({
         aria-label={`Postęp quizu: ${progress.toString()}%`}
         className="mt-2.5 h-1.5"
       />
-      {/* The settings dialog belongs to the `QuizInfoCard` further down. */}
+      <QuizSettingsDialog
+        open={screen.settings.open}
+        onOpenChange={screen.settings.onOpenChange}
+        quizId={PREVIEW_QUIZ_ID}
+      />
       <ShareQuizDialog
         open={screen.share.open}
         onOpenChange={screen.share.onOpenChange}
