@@ -53,7 +53,7 @@ function clampPreviewTop(centerY: number): number {
   return Math.min(max, Math.max(min, centerY));
 }
 
-/** Compact section navigator — left rail, vertically centered. */
+/** Compact rail: collapsed links fit inside the sections' 24px left gutter. */
 export function LandingTableOfContents(): React.JSX.Element {
   const navigationReference = useRef<HTMLElement>(null);
   const previewMountReference = useRef<HTMLDivElement>(null);
@@ -79,7 +79,7 @@ export function LandingTableOfContents(): React.JSX.Element {
   const placePreview = useCallback((anchor: HTMLElement): void => {
     const linkRect = anchor.getBoundingClientRect();
     const navRect = navigationReference.current?.getBoundingClientRect();
-    // TOC expands to w-48 on hover; keep the peek clear of labels mid-transition.
+    // Keep the peek clear of labels while their width animates on hover.
     const railRight = Math.max(navRect?.right ?? 0, 12 * 16);
     setPreviewLeft(railRight + TOC_PREVIEW_GAP);
     setPreviewTop(clampPreviewTop(linkRect.top + linkRect.height / 2));
@@ -462,7 +462,7 @@ export function LandingTableOfContents(): React.JSX.Element {
       aria-label="Spis treści strony"
       aria-hidden={isVisible !== true}
       className={cn(
-        "group/toc fixed top-1/2 left-0 z-[100] hidden w-48 -translate-y-1/2 py-1.5 md:block",
+        "group/toc pointer-events-none fixed top-1/2 left-0 z-[100] hidden w-max -translate-y-1/2 py-1.5 md:block",
         "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
         isVisible === true
           ? "translate-x-0 opacity-100"
@@ -492,7 +492,8 @@ export function LandingTableOfContents(): React.JSX.Element {
                 }}
                 onBlur={scheduleHidePreview}
                 className={cn(
-                  "group/link text-muted-foreground hover:text-foreground flex h-5 items-center justify-start text-[0.72rem] transition-colors",
+                  "group/link text-muted-foreground hover:text-foreground flex h-5 w-fit items-center justify-start text-[0.72rem] transition-colors",
+                  isVisible === true && "pointer-events-auto",
                   FOCUS_RING,
                   isActive && "text-foreground font-bold",
                 )}
@@ -508,7 +509,7 @@ export function LandingTableOfContents(): React.JSX.Element {
                     className={cn(
                       "h-px shrink-0 transition-[width,background-color,opacity] duration-200 motion-reduce:transition-none",
                       isActive
-                        ? "bg-primary w-7 opacity-80 group-hover/link:w-9 group-hover/link:opacity-100 group-focus-visible/link:w-9 group-focus-visible/link:opacity-100"
+                        ? "bg-primary w-3 opacity-80 group-hover/link:w-9 group-hover/link:opacity-100 group-focus-visible/link:w-9 group-focus-visible/link:opacity-100"
                         : "bg-foreground group-focus-visible/link:bg-primary group-hover/link:bg-primary w-3 opacity-15 group-hover/link:w-8 group-hover/link:opacity-80 group-focus-visible/link:w-8 group-focus-visible/link:opacity-80",
                       isPreviewActive &&
                         (isActive
