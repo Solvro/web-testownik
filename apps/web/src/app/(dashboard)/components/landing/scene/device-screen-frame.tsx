@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 
 import { setSatelliteHovered } from "../satellite-hover";
+import { pageScrollOwnership } from "./page-scroll-ownership";
 import {
   SCREEN_FRAME_SOURCE,
   parseScreenFrameMessage,
@@ -36,13 +37,6 @@ const READY_TIMEOUT_MS = 8000;
  * the frame in less than this is not dismissed either.
  */
 const POINTER_GONE_MS = 120;
-
-/**
- * How recently the page must have scrolled on its own for a forwarded wheel
- * to count as one the browser already chained; wheel events come at least
- * this often within one gesture.
- */
-const NATIVE_CHAIN_MS = 100;
 
 function pageTheme(): ScreenTheme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
@@ -148,13 +142,12 @@ export function DeviceScreenFrame({
     // starts chaining after the first forwarded wheel, that one tick lands
     // twice; telling that apart from the browser taking over the next wheel
     // is not possible from here, and undoing it undershoots as often.)
-    let ownScrollY = Number.NaN;
-    let foreignScrollAt = Number.NEGATIVE_INFINITY;
     const onPageScroll = (): void => {
-      if (window.scrollY !== ownScrollY) {
-        foreignScrollAt = performance.now();
-      }
-      ownScrollY = Number.NaN;
+      pageScrollOwnership.observePageScroll(
+        window.scrollX,
+        window.scrollY,
+        performance.now(),
+      );
     };
 
     const onMessage = (event: MessageEvent<unknown>): void => {
@@ -176,7 +169,7 @@ export function DeviceScreenFrame({
           // The frame only posts what nothing inside it could scroll. Where
           // the browser chains that wheel to the page by itself, the page
           // has already moved without us; scrolling again would double it.
-          if (performance.now() - foreignScrollAt < NATIVE_CHAIN_MS) {
+          if (pageScrollOwnership.isNativeChaining(performance.now())) {
             break;
           }
           window.scrollBy(
@@ -191,7 +184,11 @@ export function DeviceScreenFrame({
               window.innerHeight,
             ),
           );
-          ownScrollY = window.scrollY;
+          pageScrollOwnership.recordForwardedScroll(
+            window.scrollX,
+            window.scrollY,
+            performance.now(),
+          );
           break;
         }
         case "pointer": {
