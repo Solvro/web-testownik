@@ -127,7 +127,13 @@ function AvatarGroupCount({
     <div
       data-slot="avatar-group-count"
       className={cn(
-        "bg-muted text-muted-foreground ring-background relative flex size-8 shrink-0 items-center justify-center rounded-full text-sm ring-2 group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3",
+        "bg-muted text-muted-foreground ring-background relative flex size-8 shrink-0 items-center justify-center rounded-full text-sm ring-2 [--avatar-group-count-icon:--spacing(4)] [&>svg]:size-(--avatar-group-count-icon)",
+        // Sized from the group without `group-has-*`: a `:has()` rule whose
+        // target is `*` or a bare `svg` makes Chrome restyle every match on
+        // the page after any DOM change. The icon follows a custom property
+        // set on this element instead.
+        "[:where([data-slot=avatar-group]):has([data-size=lg])_&]:size-10 [:where([data-slot=avatar-group]):has([data-size=lg])_&]:[--avatar-group-count-icon:--spacing(5)]",
+        "[:where([data-slot=avatar-group]):has([data-size=sm])_&]:size-6 [:where([data-slot=avatar-group]):has([data-size=sm])_&]:[--avatar-group-count-icon:--spacing(3)]",
         className,
       )}
       {...props}
