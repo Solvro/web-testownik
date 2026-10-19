@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useRef } from "react";
+import { useRef } from "react";
 import type { CSSProperties } from "react";
 
 import { HERO_PROGRESS } from "../hero-progress";
@@ -14,7 +14,7 @@ const glowStyle: CSSProperties = {
   transform: `translate(-50%, -50%) scale(calc(0.86 + ${HERO_PROGRESS} * 0.16))`,
 };
 
-const DeviceSceneBackdrop = memo((): React.JSX.Element => {
+function DeviceSceneBackdrop(): React.JSX.Element {
   return (
     <div
       aria-hidden="true"
@@ -22,42 +22,41 @@ const DeviceSceneBackdrop = memo((): React.JSX.Element => {
       className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] lg:block"
     />
   );
-});
-DeviceSceneBackdrop.displayName = "DeviceSceneBackdrop";
+}
 
-const InteractiveDeviceStack = memo(
-  ({
-    captureLoadingCover,
-    capturePixelRatio,
-  }: {
-    captureLoadingCover?: boolean;
-    capturePixelRatio?: number;
-  }): React.JSX.Element => {
-    // The laptop and the iPhone share their quiz over this channel. The
-    // frames only mount once the stack has attached its hosts, which is
-    // client-side, so a random name cannot cause a hydration mismatch.
-    const channelReference = useRef<string | null>(null);
-    channelReference.current ??= createScreenChannelName();
-    const channel = channelReference.current;
+function InteractiveDeviceStack({
+  captureLoadingCover,
+  capturePixelRatio,
+  onUnavailable,
+}: {
+  captureLoadingCover?: boolean;
+  capturePixelRatio?: number;
+  onUnavailable?: () => void;
+}): React.JSX.Element {
+  // The laptop and the iPhone share their quiz over this channel. The
+  // frames only mount once the stack has attached its hosts, which is
+  // client-side, so a random name cannot cause a hydration mismatch.
+  const channelReference = useRef<string | null>(null);
+  channelReference.current ??= createScreenChannelName();
+  const channel = channelReference.current;
 
-    return (
-      <DeviceStack
-        coverOnly={captureLoadingCover}
-        pixelRatio={capturePixelRatio}
-        laptopContent={<DeviceScreenFrame device="laptop" channel={channel} />}
-        tabletContent={<DeviceScreenFrame device="tablet" hoverShrinksBubble />}
-        phoneContent={
-          <DeviceScreenFrame
-            device="phone"
-            channel={channel}
-            hoverShrinksBubble
-          />
-        }
-      />
-    );
-  },
-);
-InteractiveDeviceStack.displayName = "InteractiveDeviceStack";
+  return (
+    <DeviceStack
+      onUnavailable={onUnavailable}
+      coverOnly={captureLoadingCover}
+      pixelRatio={capturePixelRatio}
+      laptopContent={<DeviceScreenFrame device="laptop" channel={channel} />}
+      tabletContent={<DeviceScreenFrame device="tablet" hoverShrinksBubble />}
+      phoneContent={
+        <DeviceScreenFrame
+          device="phone"
+          channel={channel}
+          hoverShrinksBubble
+        />
+      }
+    />
+  );
+}
 
 /**
  * The hero's device composition: a MacBook that opens on scroll with an iPad
@@ -67,20 +66,20 @@ export function DeviceScene({
   captureLoadingCover = false,
   captureMode = false,
   capturePixelRatio,
+  onUnavailable,
 }: {
   captureLoadingCover?: boolean;
   captureMode?: boolean;
   capturePixelRatio?: number;
+  onUnavailable?: () => void;
 }): React.JSX.Element {
-  const resetSatelliteHover = useCallback((): void => {
-    setSatelliteHovered(false);
-  }, []);
-
   return (
     <div
       aria-label="MacBook Pro otwierający Testownik oraz statystyki na iPadzie i quiz na iPhonie"
       className="pointer-events-none absolute inset-0 isolate"
-      onPointerLeave={resetSatelliteHover}
+      onPointerLeave={() => {
+        setSatelliteHovered(false);
+      }}
     >
       {captureMode ? null : <DeviceSceneBackdrop />}
 
@@ -92,6 +91,7 @@ export function DeviceScene({
        */}
       <div className="absolute inset-0 z-2 hidden lg:block">
         <InteractiveDeviceStack
+          onUnavailable={onUnavailable}
           captureLoadingCover={captureLoadingCover}
           capturePixelRatio={capturePixelRatio}
         />

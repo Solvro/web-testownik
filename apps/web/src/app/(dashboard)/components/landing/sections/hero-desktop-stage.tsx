@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { HeroBubble } from "../components/hero-bubble";
@@ -34,6 +35,7 @@ export function HeroDesktopStage({
 }: {
   children: ReactNode;
 }): React.JSX.Element {
+  const [isStatic, setIsStatic] = useState(false);
   return (
     <>
       {/*
@@ -49,7 +51,7 @@ export function HeroDesktopStage({
 
           <div
             aria-hidden="true"
-            style={openLogoStyle}
+            style={isStatic ? { display: "none" } : openLogoStyle}
             className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
           >
             <Image
@@ -66,6 +68,7 @@ export function HeroDesktopStage({
 
           <div
             aria-hidden="true"
+            hidden={isStatic}
             className="absolute bottom-[1.3rem] left-1/2 z-20 flex -translate-x-1/2 items-center gap-[0.8rem]"
           >
             <Eyebrow>PRZEWIŃ</Eyebrow>
@@ -87,7 +90,11 @@ export function HeroDesktopStage({
        * stays sharp and the droplet passes underneath.
        */}
       <div className="pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30">
-        <DeviceScene />
+        <DeviceScene
+          onUnavailable={() => {
+            setIsStatic(true);
+          }}
+        />
       </div>
     </>
   );

@@ -125,6 +125,17 @@ pnpm dev
 pnpm capture:device-stack
 ```
 
+## `testownik-device-stack-open-{light,dark}-v1.webp`
+
+The static fallback when WebGL2 is unavailable or a lost context does not
+restore. Captured with the same harness at progress 1, including all three
+Testownik screens. Transparent WebP, 1600 pixels wide, quality 90; each theme is
+smaller than the closed loading cover. Regenerate without changing those covers:
+
+```sh
+CAPTURE_BASE_URL=http://localhost:3113 CAPTURE_POSE=open pnpm capture:device-stack
+```
+
 ## `testownik-tablet-stats-preview-{light,dark}.webp`
 
 The still the iPad shows before its live statistics charts load

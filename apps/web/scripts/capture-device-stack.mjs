@@ -7,6 +7,7 @@ const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:3000";
 // `scene/three/stage.ts`; capturing at 4× made the MacBook's thin metal edges
 // look brighter during the loading-cover cross-fade.
 const captureDpr = 1.35;
+const openPose = process.env.CAPTURE_POSE === "open";
 const viewport = { height: 1000, width: 1758 };
 const referenceDpr = 4;
 const outputScale = captureDpr / referenceDpr;
@@ -23,12 +24,14 @@ const outputPlacement = {
 
 const themes = /** @type {const} */ (["light", "dark"]);
 
-const screenshotClip = {
-  height: 830,
-  width: viewport.width - 320,
-  x: 160,
-  y: 120,
-};
+const screenshotClip = openPose
+  ? { x: 0, y: 85, width: viewport.width, height: viewport.height - 85 }
+  : {
+      height: 830,
+      width: viewport.width - 320,
+      x: 160,
+      y: 120,
+    };
 
 const screenshotStyle = `
   nextjs-portal,
@@ -56,6 +59,9 @@ async function captureTheme(page, theme) {
   url.searchParams.set("capture", "devices");
   url.searchParams.set("captureScale", String(captureDpr));
   url.searchParams.set("captureTheme", theme);
+  if (openPose) {
+    url.searchParams.set("captureProgress", "1");
+  }
 
   await page.goto(url.href, {
     timeout: 120_000,
@@ -71,7 +77,7 @@ async function captureTheme(page, theme) {
 
   // Let the loading cover finish fading and give both renderers two complete
   // frames at their final closed pose.
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(openPose ? 2600 : 900);
   await page.evaluate(
     () =>
       new Promise((resolve) => {
@@ -107,6 +113,22 @@ async function captureTheme(page, theme) {
     .trim({ background: { alpha: 0, b: 0, g: 0, r: 0 } })
     .png()
     .toBuffer();
+  if (openPose) {
+    const output = `public/models/testownik-device-stack-open-${theme}-v1.webp`;
+    await sharp(transparentStack)
+      .resize({
+        width: 1600,
+        height: 1136,
+        fit: "inside",
+      })
+      .webp({ effort: 6, quality: 90, alphaQuality: 100 })
+      .toFile(output);
+    return {
+      dpr: effectiveDpr,
+      output,
+      source: await sharp(transparentStack).metadata(),
+    };
+  }
   const fittedStack = await sharp(transparentStack)
     .resize({
       fit: "fill",
@@ -150,6 +172,11 @@ async function captureTheme(page, theme) {
 const browser = await chromium.launch({
   channel: "chrome",
   headless: true,
+  args: [
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
+  ],
 });
 
 try {
