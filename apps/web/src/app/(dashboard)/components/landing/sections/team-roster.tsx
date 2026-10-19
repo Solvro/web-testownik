@@ -1,21 +1,50 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
-import { use, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { FiGithub } from "react-icons/fi";
+import { use, useState } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import { MonoLabel } from "../components/typography";
+import { REPOSITORY_URL } from "../landing-content";
 import { TEAM_MEMBERS } from "../team-data";
-import type { TeamMember } from "../team-data";
+import type { ProjectTeam, TeamMember } from "../team-data";
 
 const COMMUNITY_LIMIT = 12;
+const SKELETON_COUNT = 6;
+/*
+ * The open source grid always spans COMMUNITY_LIMIT slots, filled or not, so the
+ * skeleton and the resolved list take the same rows at every column count.
+ */
 
-const ACTIVE_MEMBERS = TEAM_MEMBERS.filter((member) => member.active);
-const ALUMNI_MEMBERS = TEAM_MEMBERS.filter((member) => !member.active);
+/** Masthead order: who decides, who builds, who makes it look and sound good. */
+const TEAM_ORDER: readonly ProjectTeam[] = [
+  "Product",
+  "Frontend",
+  "Backend",
+  "AI/ML",
+  "UX/UI",
+  "Promo",
+];
+
+/** Roles credited with a pill rather than plain text. */
+const LEAD_ROLES = new Set(["Tech Lead", "Product Owner", "Project Manager"]);
+
+const ACTIVE_MEMBERS: readonly TeamMember[] = TEAM_MEMBERS.filter(
+  (member) => member.active,
+);
+const ALUMNI_MEMBERS: readonly TeamMember[] = TEAM_MEMBERS.filter(
+  (member) => !member.active,
+);
+
+const TEAM_GROUPS = TEAM_ORDER.map((team) => ({
+  team,
+  members: ACTIVE_MEMBERS.filter((member) => member.team === team),
+})).filter((group) => group.members.length > 0);
 
 const TEAM_GITHUB_HANDLES = new Set(
   TEAM_MEMBERS.flatMap((member) =>
@@ -23,649 +52,458 @@ const TEAM_GITHUB_HANDLES = new Set(
   ),
 );
 
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2);
+type GitHubByLogin = ReadonlyMap<string, GitHubContributor>;
+
+function pluralize(
+  count: number,
+  one: string,
+  few: string,
+  many: string,
+): string {
+  if (count === 1) {
+    return one;
+  }
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  return lastDigit >= 2 &&
+    lastDigit <= 4 &&
+    (lastTwoDigits < 12 || lastTwoDigits > 14)
+    ? few
+    : many;
 }
 
 function formatCommitCount(count: number): string {
-  if (count === 1) {
-    return "1 commit";
-  }
-
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  const noun =
-    lastDigit >= 2 &&
-    lastDigit <= 4 &&
-    (lastTwoDigits < 12 || lastTwoDigits > 14)
-      ? "commity"
-      : "commitów";
-
-  return `${count.toString()} ${noun}`;
+  return `${count.toString()} ${pluralize(count, "commit", "commity", "commitów")}`;
 }
 
+type AvatarSize = 36 | 44;
+
+/** Twice the rendered size, for dense displays. */
+function avatarPixels(size: AvatarSize): string {
+  return String(size * 2);
+}
+
+/**
+ * The hardcoded handle wins over the API's `avatar_url` so the fallback and
+ * the resolved roster request the same image and nothing reloads on resolve.
+ */
 function memberImageUrl(
   member: TeamMember,
-  github?: GitHubContributor,
+  size: AvatarSize,
 ): string | undefined {
-  if (github?.avatar_url !== undefined) {
-    return github.avatar_url;
-  }
   if (member.github !== undefined) {
-    return `https://github.com/${member.github}.png`;
+    return `https://github.com/${member.github}.png?size=${avatarPixels(size)}`;
   }
   return member.imageUrl;
 }
 
-/** Matches the 512² portrait rendered in MemberCredit (2× for ~256px cards). */
-const MEMBER_PORTRAIT_SIZE = 512;
-
-function memberUiAvatarUrl(name: string): string {
-  return `https://ui-avatars.com/api/?background=7c3aed&color=fff&name=${name.replaceAll(" ", "+")}&size=${String(MEMBER_PORTRAIT_SIZE)}`;
+function memberUiAvatarUrl(name: string, size: AvatarSize): string {
+  return `https://ui-avatars.com/api/?background=7c3aed&color=fff&name=${name.replaceAll(" ", "+")}&size=${avatarPixels(size)}`;
 }
 
-function MemberPortrait({
+function contributorAvatarUrl(
+  contributor: GitHubContributor,
+  size: AvatarSize,
+): string {
+  const url = new URL(contributor.avatar_url);
+  url.searchParams.set("s", avatarPixels(size));
+  return url.toString();
+}
+
+function memberProfileUrl(
+  member: TeamMember,
+  github?: GitHubContributor,
+): string | undefined {
+  if (github !== undefined) {
+    return github.html_url;
+  }
+  if (member.profileUrl !== undefined) {
+    return member.profileUrl;
+  }
+  return member.github === undefined
+    ? undefined
+    : `https://github.com/${member.github}`;
+}
+
+function githubFor(
+  member: TeamMember,
+  githubByLogin?: GitHubByLogin,
+): GitHubContributor | undefined {
+  return member.github === undefined
+    ? undefined
+    : githubByLogin?.get(member.github.toLowerCase());
+}
+
+function Avatar({
   imageUrl,
-  member,
+  fallbackUrl,
+  size,
 }: {
   imageUrl?: string;
-  member: TeamMember;
+  fallbackUrl: string;
+  size: AvatarSize;
 }): React.JSX.Element {
-  const fallbackUrl = memberUiAvatarUrl(member.name);
-  const [source, setSource] = useState(imageUrl ?? fallbackUrl);
-
-  useEffect(() => {
-    setSource(imageUrl ?? fallbackUrl);
-  }, [fallbackUrl, imageUrl]);
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const source =
+    imageUrl === undefined || imageUrl === failedUrl ? fallbackUrl : imageUrl;
 
   return (
     <Image
       src={source}
-      width={MEMBER_PORTRAIT_SIZE}
-      height={MEMBER_PORTRAIT_SIZE}
+      width={size}
+      height={size}
+      sizes={`${String(size)}px`}
       alt=""
       unoptimized
-      className="size-full object-cover"
+      className={cn(
+        "bg-muted ring-border shrink-0 rounded-full object-cover ring-1",
+        size === 44 ? "size-11" : "size-9",
+      )}
       onError={() => {
         if (source !== fallbackUrl) {
-          setSource(fallbackUrl);
+          setFailedUrl(source);
         }
       }}
     />
   );
 }
 
-function MemberCredit({
-  github,
-  member,
+/** A link when there is somewhere to go, a plain block otherwise. */
+function EntryShell({
+  href,
+  label,
+  children,
 }: {
-  github?: GitHubContributor;
-  member: TeamMember;
+  href?: string;
+  label: string;
+  children: React.ReactNode;
 }): React.JSX.Element {
-  const hardcodedGitHubUrl =
-    member.github === undefined
-      ? undefined
-      : `https://github.com/${member.github}`;
-  const profileUrl =
-    github?.html_url ??
-    ("profileUrl" in member ? member.profileUrl : undefined) ??
-    hardcodedGitHubUrl;
-  const imageUrl = memberImageUrl(member, github);
-  const content = (
-    <>
-      <div className="bg-background relative aspect-square overflow-hidden">
-        <MemberPortrait imageUrl={imageUrl} member={member} />
-      </div>
+  const className =
+    "group/entry -m-1.5 flex min-w-0 items-center gap-3 rounded-md p-1.5";
 
-      <div className="mt-3 min-w-0">
-        <strong className="block truncate text-sm tracking-[-0.02em]">
-          {member.name}
-        </strong>
-        <div className="mt-1 flex min-w-0 items-center gap-1.5">
-          <MonoLabel size="2xs" tone="muted" className="truncate">
-            {member.team}
-          </MonoLabel>
-          <span
-            aria-hidden="true"
-            className="bg-border size-0.5 shrink-0 rounded-full"
-          />
-          <MonoLabel size="2xs" tone="primary" className="truncate">
-            {member.role}
-          </MonoLabel>
-        </div>
-        {github === undefined ? null : (
-          <span className="text-muted-foreground mt-2 flex items-center gap-1.5 text-[0.68rem]">
-            <FiGithub aria-hidden="true" className="size-3" />
-            {formatCommitCount(github.contributions)}
-          </span>
-        )}
-      </div>
-    </>
-  );
-
-  if (profileUrl === undefined) {
-    return (
-      <article className="w-3/5 max-w-60 shrink-0 sm:w-56 lg:w-64">
-        {content}
-      </article>
-    );
+  if (href === undefined) {
+    return <div className={className}>{children}</div>;
   }
 
   return (
     <a
-      href={profileUrl}
+      href={href}
       target="_blank"
       rel="noreferrer"
-      aria-label={`${member.name} — otwórz profil`}
-      className={cn(
-        "group/member block w-3/5 max-w-60 shrink-0 rounded-sm transition-transform duration-150 active:scale-[0.98] sm:w-56 lg:w-64",
-        FOCUS_RING,
-      )}
+      aria-label={label}
+      className={cn(className, FOCUS_RING)}
     >
-      {content}
+      {children}
     </a>
   );
 }
 
-interface AvatarStackItem {
-  key: string;
-  href?: string;
-  imageUrl?: string;
-  fallback: string;
-  title: string;
-  detail: string;
-}
-
-/**
- * Per-avatar tip via CSS hover — stays anchored to the icon, no portal remounts.
- */
-function AvatarStack({
-  items,
-  labelPrefix,
+function EntryName({
+  children,
+  linked,
+  className,
 }: {
-  items: readonly AvatarStackItem[];
-  labelPrefix: string;
+  children: React.ReactNode;
+  linked: boolean;
+  className?: string;
 }): React.JSX.Element {
   return (
-    <div className="flex -space-x-2.5 px-2">
-      {items.map((item) => {
-        const avatar =
-          item.imageUrl === undefined ? (
-            <span className="bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full text-[0.65rem] font-bold">
-              {item.fallback}
-            </span>
-          ) : (
-            <Image
-              src={item.imageUrl}
-              width={40}
-              height={40}
-              alt=""
-              unoptimized
-              className="size-full rounded-full object-cover"
-            />
-          );
+    <span className="flex min-w-0 items-center gap-1">
+      <span
+        className={cn(
+          "min-w-0 font-semibold tracking-[-0.015em] break-words transition-colors duration-150",
+          linked && "group-hover/entry:text-primary",
+          className,
+        )}
+      >
+        {children}
+      </span>
+      {linked ? (
+        <ArrowUpRight
+          aria-hidden="true"
+          className="text-primary size-3.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/entry:opacity-100 group-focus-visible/entry:opacity-100"
+        />
+      ) : null}
+    </span>
+  );
+}
 
-        const tip = (
+/** Always rendered so the roster keeps its height when commit counts arrive. */
+function CommitMeta({ count }: { count?: number }): React.JSX.Element {
+  return (
+    <span className="font-landing-mono text-muted-foreground block h-4 text-[0.62rem] leading-4 tracking-[0.04em]">
+      {count === undefined ? null : formatCommitCount(count)}
+    </span>
+  );
+}
+
+function MemberEntry({
+  member,
+  githubByLogin,
+  compact = false,
+}: {
+  member: TeamMember;
+  githubByLogin?: GitHubByLogin;
+  compact?: boolean;
+}): React.JSX.Element {
+  const github = githubFor(member, githubByLogin);
+  const href = memberProfileUrl(member, github);
+  const size = compact ? 36 : 44;
+  const isLead = !compact && LEAD_ROLES.has(member.role);
+  const role = compact ? `${member.team} · ${member.role}` : member.role;
+
+  return (
+    <EntryShell href={href} label={`${member.name}, ${role} — otwórz profil`}>
+      <Avatar
+        imageUrl={memberImageUrl(member, size)}
+        fallbackUrl={memberUiAvatarUrl(member.name, size)}
+        size={size}
+      />
+      <span className="flex min-w-0 flex-col">
+        <EntryName
+          linked={href !== undefined}
+          className={
+            compact ? "text-sm leading-5" : "text-[0.9375rem] leading-5"
+          }
+        >
+          {member.name}
+        </EntryName>
+        {isLead ? (
+          <span className="mt-0.5 flex h-[1.125rem] items-center">
+            <MonoLabel
+              size="2xs"
+              tone="primary"
+              className="bg-primary/10 ring-primary/25 rounded-full px-1.5 py-[0.2rem] leading-none ring-1 ring-inset"
+            >
+              {member.role}
+            </MonoLabel>
+          </span>
+        ) : (
           <span
-            aria-hidden="true"
             className={cn(
-              "bg-foreground text-background pointer-events-none absolute bottom-[calc(100%+0.55rem)] left-1/2 z-20 -translate-x-1/2",
-              "rounded-md px-3 py-1.5 text-xs whitespace-nowrap shadow-md",
-              "invisible opacity-0 transition-opacity duration-100",
-              "group-hover/avatar:visible group-hover/avatar:opacity-100",
-              "group-focus-visible/avatar:visible group-focus-visible/avatar:opacity-100",
+              "text-muted-foreground mt-0.5 leading-[1.125rem]",
+              compact ? "text-xs" : "text-[0.8125rem]",
             )}
           >
-            <span className="font-semibold">{item.title}</span>
-            <span className="opacity-70"> · {item.detail}</span>
-            <span className="bg-foreground absolute top-full left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px]" />
+            {role}
           </span>
-        );
-
-        const className = cn(
-          "group/avatar border-secondary bg-background relative block size-11 rounded-full border-2 transition-transform duration-150",
-          "hover:z-10 hover:-translate-y-1 focus-visible:z-10 active:scale-[0.96]",
-          FOCUS_RING,
-        );
-
-        if (item.href === undefined) {
-          return (
-            <span
-              key={item.key}
-              aria-label={`${item.title}, ${item.detail}`}
-              className={className}
-            >
-              {avatar}
-              {tip}
-            </span>
-          );
-        }
-
-        return (
-          <a
-            key={item.key}
-            href={item.href}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`${labelPrefix}${item.title}, ${item.detail}`}
-            className={className}
-          >
-            {avatar}
-            {tip}
-          </a>
-        );
-      })}
-    </div>
+        )}
+        <CommitMeta count={github?.contributions} />
+      </span>
+    </EntryShell>
   );
 }
 
-function TeamDirectory({
-  contributors = [],
+function ContributorEntry({
+  contributor,
 }: {
-  contributors?: readonly GitHubContributor[];
+  contributor: GitHubContributor;
 }): React.JSX.Element {
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const githubByLogin = new Map(
-    contributors.map((contributor) => [
-      contributor.login.toLowerCase(),
-      contributor,
-    ]),
-  );
-
-  useLayoutEffect(() => {
-    const carousel = carouselRef.current;
-    if (carousel === null) {
-      return;
-    }
-
-    for (const node of carousel.querySelectorAll<HTMLElement>(
-      "[data-carousel-clone]",
-    )) {
-      node.remove();
-    }
-
-    const originals = [...carousel.children].filter(
-      (child): child is HTMLElement =>
-        child instanceof HTMLElement &&
-        child.dataset.carouselClone === undefined,
-    );
-
-    for (const [index, original] of originals.entries()) {
-      const clone = original.cloneNode(true) as HTMLElement;
-      clone.dataset.carouselClone = "";
-      clone.setAttribute("aria-hidden", "true");
-      if (clone.matches("a[href]")) {
-        clone.tabIndex = -1;
-      }
-      if (index === 0) {
-        clone.dataset.carouselLoopStart = "";
-      }
-      for (const link of clone.querySelectorAll<HTMLElement>("a[href]")) {
-        link.setAttribute("aria-hidden", "true");
-        link.tabIndex = -1;
-      }
-      carousel.append(clone);
-    }
-  }, [contributors]);
-
-  useEffect(() => {
-    const carousel = carouselRef.current;
-    if (carousel === null) {
-      return;
-    }
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const scrollSpeed = 160;
-    const stopEasingDuration = 550;
-    const startEasingDuration = 650;
-
-    let loopPoint = 0;
-    let isHovered = false;
-    let isInteracting = false;
-    let pauseUntil = 0;
-    let pointerId = -1;
-    let pointerStartX = 0;
-    let pointerStartScroll = 0;
-    let isDragging = false;
-    let suppressClick = false;
-    let isVisible = false;
-    let currentSpeed = prefersReducedMotion ? 0 : scrollSpeed;
-    let scrollPosition = carousel.scrollLeft;
-    let previousTime = 0;
-    let animationFrameId = 0;
-
-    const updateLoopPoint = () => {
-      const first = carousel.firstElementChild;
-      const loopStart = carousel.querySelector<HTMLElement>(
-        "[data-carousel-loop-start]",
-      );
-      if (
-        !(first instanceof HTMLElement) ||
-        loopStart === null ||
-        first === loopStart
-      ) {
-        loopPoint = 0;
-        return;
-      }
-      loopPoint = loopStart.offsetLeft - first.offsetLeft;
-    };
-
-    const wrapScroll = (value: number): number => {
-      if (loopPoint <= 0) {
-        return value;
-      }
-      let next = value % loopPoint;
-      if (next < 0) {
-        next += loopPoint;
-      }
-      return next;
-    };
-
-    const handlePointerEnter = () => {
-      scrollPosition = carousel.scrollLeft;
-      isHovered = true;
-    };
-    const handlePointerLeave = () => {
-      scrollPosition = carousel.scrollLeft;
-      if (!isInteracting) {
-        isHovered = false;
-      }
-    };
-    const handlePointerDown = (event: PointerEvent) => {
-      if (
-        pointerId !== -1 ||
-        (event.pointerType === "mouse" && event.button !== 0)
-      ) {
-        return;
-      }
-      pointerId = event.pointerId;
-      pointerStartX = event.clientX;
-      pointerStartScroll = carousel.scrollLeft;
-      isInteracting = true;
-      isDragging = false;
-      suppressClick = false;
-      currentSpeed = 0;
-      scrollPosition = carousel.scrollLeft;
-    };
-    const handlePointerMove = (event: PointerEvent) => {
-      if (event.pointerId !== pointerId || event.pointerType !== "mouse") {
-        return;
-      }
-      const distance = pointerStartX - event.clientX;
-      if (!isDragging && Math.abs(distance) > 5) {
-        isDragging = true;
-        carousel.setPointerCapture(event.pointerId);
-      }
-      if (isDragging) {
-        scrollPosition = wrapScroll(pointerStartScroll + distance);
-        carousel.scrollLeft = scrollPosition;
-      }
-    };
-    const handlePointerEnd = (event: PointerEvent) => {
-      if (event.pointerId !== pointerId) {
-        return;
-      }
-      if (carousel.hasPointerCapture(event.pointerId)) {
-        carousel.releasePointerCapture(event.pointerId);
-      }
-      suppressClick = isDragging;
-      pointerId = -1;
-      isInteracting = false;
-      isHovered = event.pointerType === "mouse" && carousel.matches(":hover");
-      pauseUntil = performance.now() + 1500;
-    };
-    const handleClick = (event: MouseEvent) => {
-      if (suppressClick) {
-        event.preventDefault();
-        event.stopPropagation();
-        suppressClick = false;
-      }
-    };
-    const preventNativeDrag = (event: DragEvent) => {
-      event.preventDefault();
-    };
-    const handleManualScrollStart = () => {
-      currentSpeed = 0;
-      scrollPosition = carousel.scrollLeft;
-      pauseUntil = performance.now() + 1500;
-    };
-    const handleScroll = () => {
-      if (currentSpeed === 0) {
-        scrollPosition = wrapScroll(carousel.scrollLeft);
-        if (scrollPosition !== carousel.scrollLeft) {
-          carousel.scrollLeft = scrollPosition;
-        }
-        pauseUntil = performance.now() + 1500;
-      }
-    };
-
-    const animate = (time: number) => {
-      if (!isVisible) {
-        animationFrameId = 0;
-        return;
-      }
-
-      const elapsed = Math.min(time - previousTime, 64);
-      previousTime = time;
-      const elapsedSeconds = elapsed / 1000;
-      const paused = isHovered || isInteracting || time < pauseUntil;
-      const targetSpeed = paused ? 0 : scrollSpeed;
-      const easingDuration = paused ? stopEasingDuration : startEasingDuration;
-      const easing = 1 - Math.exp(-elapsed / easingDuration);
-
-      currentSpeed += (targetSpeed - currentSpeed) * easing;
-      if (paused && currentSpeed < 1) {
-        currentSpeed = 0;
-      }
-
-      scrollPosition = wrapScroll(
-        scrollPosition + currentSpeed * elapsedSeconds,
-      );
-      if (currentSpeed > 0) {
-        carousel.scrollLeft = scrollPosition;
-      }
-
-      animationFrameId = window.requestAnimationFrame(animate);
-    };
-
-    const intersectionObserver = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = entry.isIntersecting;
-
-        if (!isVisible) {
-          window.cancelAnimationFrame(animationFrameId);
-          animationFrameId = 0;
-          return;
-        }
-
-        if (animationFrameId === 0) {
-          previousTime = performance.now();
-          animationFrameId = window.requestAnimationFrame(animate);
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    updateLoopPoint();
-    const resizeObserver = new ResizeObserver(updateLoopPoint);
-    resizeObserver.observe(carousel);
-    if (!prefersReducedMotion) {
-      intersectionObserver.observe(carousel);
-    }
-    carousel.addEventListener("pointerenter", handlePointerEnter);
-    carousel.addEventListener("pointerleave", handlePointerLeave);
-    carousel.addEventListener("pointerdown", handlePointerDown);
-    carousel.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerEnd);
-    window.addEventListener("pointercancel", handlePointerEnd);
-    carousel.addEventListener("click", handleClick, true);
-    carousel.addEventListener("dragstart", preventNativeDrag);
-    carousel.addEventListener("wheel", handleManualScrollStart, {
-      passive: true,
-    });
-    carousel.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      intersectionObserver.disconnect();
-      resizeObserver.disconnect();
-      carousel.removeEventListener("pointerenter", handlePointerEnter);
-      carousel.removeEventListener("pointerleave", handlePointerLeave);
-      carousel.removeEventListener("pointerdown", handlePointerDown);
-      carousel.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerEnd);
-      window.removeEventListener("pointercancel", handlePointerEnd);
-      carousel.removeEventListener("click", handleClick, true);
-      carousel.removeEventListener("dragstart", preventNativeDrag);
-      carousel.removeEventListener("wheel", handleManualScrollStart);
-      carousel.removeEventListener("scroll", handleScroll);
-    };
-  }, [contributors]);
+  const commits = formatCommitCount(contributor.contributions);
 
   return (
-    <div className="mt-10">
-      <div className="border-border border-b pb-3">
-        <MonoLabel size="2xs">{ACTIVE_MEMBERS.length} OSÓB</MonoLabel>
-      </div>
+    <EntryShell
+      href={contributor.html_url}
+      label={`@${contributor.login}, ${commits} — otwórz profil`}
+    >
+      <Avatar
+        imageUrl={contributorAvatarUrl(contributor, 36)}
+        fallbackUrl={memberUiAvatarUrl(contributor.login, 36)}
+        size={36}
+      />
+      <span className="flex min-w-0 flex-col">
+        <EntryName
+          linked
+          className="text-sm leading-5 [overflow-wrap:anywhere]"
+        >
+          {contributor.login}
+        </EntryName>
+        <CommitMeta count={contributor.contributions} />
+      </span>
+    </EntryShell>
+  );
+}
 
-      <div
-        ref={carouselRef}
-        aria-label="Zespół Testownika"
-        className="mt-5 flex cursor-grab gap-3 overflow-x-auto overscroll-x-contain pb-3 select-none [scrollbar-width:none] active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
-      >
-        {ACTIVE_MEMBERS.map((member) => (
-          <MemberCredit
-            key={member.name}
-            member={member}
-            github={
-              "github" in member
-                ? githubByLogin.get(member.github.toLowerCase())
-                : undefined
-            }
-          />
+/** One masthead line: the label column on the left, credits on the right. */
+function CreditRow({
+  label,
+  labelledBy,
+  aside,
+  children,
+}: {
+  label: string;
+  labelledBy: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <section
+      aria-labelledby={labelledBy}
+      className="lg:border-border grid grid-cols-1 gap-x-8 gap-y-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:border-t lg:py-7"
+    >
+      <div className="flex min-h-4 items-center gap-3 lg:block">
+        <h3 id={labelledBy} className="shrink-0 leading-none">
+          <MonoLabel size="md" tone="default">
+            {label}
+          </MonoLabel>
+        </h3>
+        <span
+          aria-hidden="true"
+          className="bg-border h-px min-w-0 flex-1 lg:hidden"
+        />
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function labelId(label: string): string {
+  return `team-${label.toLowerCase().replaceAll(/[^a-z]+/g, "-")}`;
+}
+
+/** Sits beside the label on phones, under it on desktop; reserved while loading. */
+function OpenSourceMore({
+  hidden,
+  pending,
+}: {
+  hidden: number;
+  pending: boolean;
+}): React.JSX.Element | null {
+  if (pending) {
+    return <span aria-hidden="true" className="block h-4 shrink-0 lg:mt-3" />;
+  }
+
+  if (hidden <= 0) {
+    return null;
+  }
+
+  return (
+    <a
+      href={`${REPOSITORY_URL}/graphs/contributors`}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        "text-muted-foreground hover:text-primary inline-flex h-4 shrink-0 items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 lg:mt-3 [&_svg]:size-3.5",
+        FOCUS_RING,
+      )}
+    >
+      +{hidden} więcej na GitHubie
+      <ArrowUpRight aria-hidden="true" />
+    </a>
+  );
+}
+
+function Masthead({
+  githubByLogin,
+  community,
+}: {
+  githubByLogin?: GitHubByLogin;
+  /** `undefined` while GitHub is still loading. */
+  community?: readonly GitHubContributor[];
+}): React.JSX.Element {
+  const visibleCommunity = community?.slice(0, COMMUNITY_LIMIT);
+  const hiddenCommunity =
+    community === undefined ? 0 : community.length - COMMUNITY_LIMIT;
+
+  return (
+    <div className="mt-10 sm:mt-14">
+      <MonoLabel size="xs" className="block">
+        {ACTIVE_MEMBERS.length}{" "}
+        {pluralize(ACTIVE_MEMBERS.length, "osoba", "osoby", "osób")} ·{" "}
+        {TEAM_GROUPS.length}{" "}
+        {pluralize(TEAM_GROUPS.length, "zespół", "zespoły", "zespołów")}
+      </MonoLabel>
+
+      <div className="mt-3 lg:mt-4">
+        {TEAM_GROUPS.map(({ team, members }) => (
+          <CreditRow key={team} label={team} labelledBy={labelId(team)}>
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+              {members.map((member) => (
+                <li key={member.name} className="min-w-0">
+                  <MemberEntry member={member} githubByLogin={githubByLogin} />
+                </li>
+              ))}
+            </ul>
+          </CreditRow>
         ))}
       </div>
+
+      <div className="lg:border-border mt-2 lg:mt-8 lg:border-t">
+        {ALUMNI_MEMBERS.length === 0 ? null : (
+          <CreditRow label="Ex zespół" labelledBy="team-alumni">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4">
+              {ALUMNI_MEMBERS.map((member) => (
+                <li key={member.name} className="min-w-0">
+                  <MemberEntry
+                    compact
+                    member={member}
+                    githubByLogin={githubByLogin}
+                  />
+                </li>
+              ))}
+            </ul>
+          </CreditRow>
+        )}
+
+        {visibleCommunity?.length === 0 ? null : (
+          <CreditRow
+            label="Open source"
+            labelledBy="team-community"
+            aside={
+              <OpenSourceMore
+                hidden={hiddenCommunity}
+                pending={community === undefined}
+              />
+            }
+          >
+            <ul
+              aria-busy={community === undefined}
+              className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4"
+            >
+              {visibleCommunity === undefined
+                ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
+                    <li
+                      key={index}
+                      aria-hidden="true"
+                      className="flex h-9 items-center gap-3"
+                    >
+                      <Skeleton className="size-9 shrink-0 rounded-full" />
+                      <span className="flex flex-col gap-2">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-2 w-12" />
+                      </span>
+                    </li>
+                  ))
+                : visibleCommunity.map((contributor) => (
+                    <li key={contributor.login} className="min-w-0">
+                      <ContributorEntry contributor={contributor} />
+                    </li>
+                  ))}
+              {Array.from(
+                {
+                  length:
+                    COMMUNITY_LIMIT -
+                    (visibleCommunity?.length ?? SKELETON_COUNT),
+                },
+                (_, index) => (
+                  <li
+                    key={`slot-${String(index)}`}
+                    aria-hidden="true"
+                    className="h-9"
+                  />
+                ),
+              )}
+            </ul>
+          </CreditRow>
+        )}
+      </div>
     </div>
-  );
-}
-
-function AlumniContributors({
-  contributors,
-}: {
-  contributors: readonly GitHubContributor[];
-}): React.JSX.Element | null {
-  if (ALUMNI_MEMBERS.length === 0) {
-    return null;
-  }
-
-  const githubByLogin = new Map(
-    contributors.map((contributor) => [
-      contributor.login.toLowerCase(),
-      contributor,
-    ]),
-  );
-
-  const items: AvatarStackItem[] = ALUMNI_MEMBERS.map((member) => {
-    const github =
-      "github" in member
-        ? githubByLogin.get(member.github.toLowerCase())
-        : undefined;
-    let href: string | undefined = github?.html_url;
-    if (href === undefined && "github" in member) {
-      href = `https://github.com/${member.github}`;
-    }
-
-    return {
-      key: member.name,
-      href,
-      imageUrl: memberImageUrl(member, github),
-      fallback: initials(member.name),
-      title: member.name,
-      detail: `${member.team} · ${member.role}`,
-    };
-  });
-
-  return (
-    <section
-      aria-labelledby="alumni-contributors"
-      className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <header>
-        <MonoLabel size="2xs">EX ZESPÓŁ</MonoLabel>
-        <h3
-          id="alumni-contributors"
-          className="mt-1 text-sm font-bold tracking-[-0.02em]"
-        >
-          {ALUMNI_MEMBERS.length}{" "}
-          {ALUMNI_MEMBERS.length === 1
-            ? "osoba, która współtworzyła projekt"
-            : "osób, które współtworzyły projekt"}
-        </h3>
-      </header>
-
-      <AvatarStack items={items} labelPrefix="" />
-    </section>
-  );
-}
-
-function CommunityContributors({
-  contributors,
-}: {
-  contributors: readonly GitHubContributor[];
-}): React.JSX.Element | null {
-  const community = contributors
-    .filter(
-      (contributor) =>
-        !TEAM_GITHUB_HANDLES.has(contributor.login.toLowerCase()),
-    )
-    .slice(0, COMMUNITY_LIMIT);
-
-  if (community.length === 0) {
-    return null;
-  }
-
-  const items: AvatarStackItem[] = community.map((person) => ({
-    key: person.login,
-    href: person.html_url,
-    imageUrl: person.avatar_url,
-    fallback: person.login.slice(0, 2).toUpperCase(),
-    title: `@${person.login}`,
-    detail: formatCommitCount(person.contributions),
-  }));
-
-  return (
-    <section
-      aria-labelledby="community-contributors"
-      className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <header>
-        <MonoLabel size="2xs">OPEN SOURCE</MonoLabel>
-        <h3
-          id="community-contributors"
-          className="mt-1 text-sm font-bold tracking-[-0.02em]"
-        >
-          {community.length} kontrybutorów spoza zespołu
-        </h3>
-      </header>
-
-      <AvatarStack items={items} labelPrefix="" />
-    </section>
   );
 }
 
 export function TeamRosterFallback(): React.JSX.Element {
-  return (
-    <>
-      <TeamDirectory />
-      <AlumniContributors contributors={[]} />
-    </>
-  );
+  return <Masthead />;
 }
 
 export function TeamRoster({
@@ -674,12 +512,18 @@ export function TeamRoster({
   contributors: Promise<GitHubContributor[]>;
 }): React.JSX.Element {
   const resolved = use(contributors);
-
-  return (
-    <>
-      <TeamDirectory contributors={resolved} />
-      <AlumniContributors contributors={resolved} />
-      <CommunityContributors contributors={resolved} />
-    </>
+  const githubByLogin = new Map(
+    resolved.map((contributor) => [
+      contributor.login.toLowerCase(),
+      contributor,
+    ]),
   );
+  const community = resolved
+    .filter(
+      (contributor) =>
+        !TEAM_GITHUB_HANDLES.has(contributor.login.toLowerCase()),
+    )
+    .toSorted((a, b) => b.contributions - a.contributions);
+
+  return <Masthead githubByLogin={githubByLogin} community={community} />;
 }
