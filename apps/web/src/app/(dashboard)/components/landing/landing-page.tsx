@@ -47,7 +47,7 @@ export function LandingPage({
       <a
         href="#features"
         className={cn(
-          "bg-background text-foreground sr-only fixed top-2 left-2 z-[110] rounded-md p-3 focus:not-sr-only",
+          "bg-background text-foreground fixed top-2 left-2 z-[110] -translate-y-[calc(100%+1rem)] rounded-md p-3 focus:translate-y-0",
           FOCUS_RING,
         )}
       >
