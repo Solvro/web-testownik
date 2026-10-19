@@ -1,8 +1,5 @@
 "use client";
 
-import type { Question } from "@testownik/core/quiz/types";
-import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
-import type { UIMessage } from "ai";
 import {
   BotMessageSquareIcon,
   BrushCleaningIcon,
@@ -10,9 +7,7 @@ import {
   ChevronRightIcon,
   CircleHelpIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 
-import { ChatRuntime } from "@/components/ai/chat-runtime";
 import type { ChatRuntimeValue } from "@/components/ai/chat-runtime";
 import { ChatThread } from "@/components/ai/chat-thread";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -29,81 +24,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { getShowcaseExplanation } from "./showcase-quiz";
+import { describeFailure } from "./showcase-chat";
+import type { Failure } from "./showcase-chat";
 import { useShowcaseSession } from "./showcase-session-context";
-
-const EXPLAIN_PROMPT = "Wyjaśnij to pytanie";
-
-/** The empty chat's suggestions: what the app's assistant can do here. */
-const SUGGESTIONS = [
-  EXPLAIN_PROMPT,
-  "Wygeneruj 3 podobne pytania",
-  "Popraw literówki w tym pytaniu",
-  "Pokaż listę pytań w quizie",
-] as const;
-
-const UNAVAILABLE_NOTICE =
-  "Asystent jest teraz niedostępny. Spróbuj ponownie za chwilę.";
-
-/** Why the last request failed, from its response. */
-interface Failure {
-  status: number;
-  retryAfter: string | null;
-}
-
-function formatRetryAfter(header: string | null): string {
-  const seconds = Number(header);
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return "za chwilę";
-  }
-  if (seconds < 60) {
-    return `za ${Math.ceil(seconds).toString()} s`;
-  }
-  return `za ok. ${Math.ceil(seconds / 60).toString()} min`;
-}
-
-function describeFailure(failure: Failure | null): string {
-  if (failure?.status === 429) {
-    return `To tylko pokaz, więc liczba pytań jest ograniczona. Spróbuj ponownie ${formatRetryAfter(failure.retryAfter)}.`;
-  }
-  if (failure?.status === 413 || failure?.status === 400) {
-    return "Ta rozmowa jest już za długa na pokaz. Zacznij nową rozmowę.";
-  }
-  return UNAVAILABLE_NOTICE;
-}
-
-function lastUserText(messages: UIMessage[]): string | null {
-  const message = messages.findLast((candidate) => candidate.role === "user");
-  const part = message?.parts.find((candidate) => candidate.type === "text");
-  return part?.type === "text" ? part.text.trim() : null;
-}
-
-/**
- * Without the live assistant, "explain" still gets an answer: the question's
- * explanation, streamed like a reply.
- */
-function explainOffline(
-  messages: UIMessage[],
-  question: Question | null,
-): Response | undefined {
-  if (question === null || lastUserText(messages) !== EXPLAIN_PROMPT) {
-    return undefined;
-  }
-  const id = "demo-offline-explanation";
-  return createUIMessageStreamResponse({
-    stream: createUIMessageStream({
-      execute: ({ writer }) => {
-        writer.write({ type: "text-start", id });
-        writer.write({
-          type: "text-delta",
-          id,
-          delta: getShowcaseExplanation(question),
-        });
-        writer.write({ type: "text-end", id });
-      },
-    }),
-  });
-}
 
 /** The current question, which the assistant sees, and a way to switch it. */
 function ActiveQuestion({
@@ -180,21 +103,7 @@ function DemoChat({
   onNewConversation: () => void;
 }): React.JSX.Element {
   const { messages, error, status } = runtime;
-  const { saveChatMessages } = useShowcaseSession();
   const running = status === "submitted" || status === "streaming";
-
-  // The conversation outlives the tab: it is handed back when another demo
-  // opens and restored when this one does.
-  const messagesReference = useRef(messages);
-  useEffect(() => {
-    messagesReference.current = messages;
-  }, [messages]);
-  useEffect(
-    () => () => {
-      saveChatMessages(messagesReference.current);
-    },
-    [saveChatMessages],
-  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -248,49 +157,23 @@ function DemoChat({
  * preview services into that quiz.
  */
 export function AiDemo(): React.JSX.Element {
-  const { quiz: session, chatMessages } = useShowcaseSession();
-  const [failure, setFailure] = useState<Failure | null>(null);
+  const {
+    quiz: session,
+    chatRuntime: runtime,
+    chatFailure: failure,
+    newConversation,
+  } = useShowcaseSession();
 
   return (
     <PreviewSandbox className="rounded-[1rem]">
       <PreviewRuntime client={session.client}>
         <div className="bg-background text-foreground flex h-[38rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:h-[40rem] lg:h-full">
-          <ChatRuntime
-            demo
-            quizId={PREVIEW_QUIZ.id}
-            quiz={PREVIEW_QUIZ}
-            question={session.view.question}
-            questions={session.state.questions}
-            canEdit
-            suggestions={SUGGESTIONS}
-            initialMessages={chatMessages}
-            onResponse={(response, sent) => {
-              setFailure(
-                response.ok
-                  ? null
-                  : {
-                      status: response.status,
-                      retryAfter: response.headers.get("Retry-After"),
-                    },
-              );
-              return response.status >= 500
-                ? explainOffline(sent.messages, session.view.question)
-                : undefined;
-            }}
-          >
-            {(runtime) => (
-              <DemoChat
-                runtime={runtime}
-                session={session}
-                failure={failure}
-                onNewConversation={() => {
-                  runtime.clearError();
-                  runtime.setMessages([]);
-                  setFailure(null);
-                }}
-              />
-            )}
-          </ChatRuntime>
+          <DemoChat
+            runtime={runtime}
+            session={session}
+            failure={failure}
+            onNewConversation={newConversation}
+          />
         </div>
       </PreviewRuntime>
     </PreviewSandbox>

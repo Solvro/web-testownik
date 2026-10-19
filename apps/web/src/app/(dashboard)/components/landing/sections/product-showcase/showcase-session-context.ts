@@ -1,15 +1,18 @@
 "use client";
 
-import type { UIMessage } from "ai";
 import { createContext, use } from "react";
 
+import type { ChatRuntimeValue } from "@/components/ai/chat-runtime";
 import type { PreviewQuizSession } from "@/components/testownik-preview/preview-session";
+
+import type { Failure } from "./showcase-chat";
 
 export interface ShowcaseSession {
   quiz: PreviewQuizSession;
-  /** The AI demo's conversation, kept while another demo is open. */
-  chatMessages: UIMessage[];
-  saveChatMessages: (messages: UIMessage[]) => void;
+  /** Owned above the tabs, so hidden chat views keep receiving the stream. */
+  chatRuntime: ChatRuntimeValue;
+  chatFailure: Failure | null;
+  newConversation: () => void;
 }
 
 export const ShowcaseSessionContext = createContext<ShowcaseSession | null>(
