@@ -1,3 +1,10 @@
+/* Progress belongs only to its animated target, never its descendants. */
+@property --landing-hero-progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 /*
  * Rules for elements outside the landing's JSX and DOM created by CanvasUI,
  * and CSS3DRenderer. Everything rendered by React stays in
@@ -91,6 +98,9 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   background: var(--background);
   backface-visibility: hidden;
   pointer-events: auto;
+  /* attachScreen gives each host an explicit native width and height. */
+  contain: size layout paint;
+  will-change: transform, opacity;
 }
 
 /*
@@ -583,5 +593,12 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     opacity: 1;
     transform: none;
     filter: none;
+  }
+}
+
+/* These targets animate only transform/opacity; preserve their painted contents. */
+@media (min-width: 1024px) {
+  [data-hero-progress] {
+    will-change: transform, opacity;
   }
 }

@@ -3,7 +3,7 @@
 import { memo, useCallback, useRef } from "react";
 import type { CSSProperties } from "react";
 
-import { HERO_PROGRESS } from "../hero-progress";
+import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { setSatelliteHovered } from "../satellite-hover";
 import { DeviceScreenFrame } from "./device-screen-frame";
 import { DeviceStack } from "./device-stack";
@@ -18,6 +18,8 @@ const DeviceSceneBackdrop = memo((): React.JSX.Element => {
   return (
     <div
       aria-hidden="true"
+      data-hero-progress
+      ref={attachHeroProgress}
       style={glowStyle}
       className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] lg:block"
     />

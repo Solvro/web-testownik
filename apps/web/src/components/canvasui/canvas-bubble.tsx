@@ -609,6 +609,8 @@ export function createBubble(
   wake = wakeIfNeeded;
 
   function onPointerMove(event: PointerEvent) {
+    // Scrolling without a pointer intentionally leaves the cached bounds alone.
+    if (!hasPointer) pointerBounds = output.getBoundingClientRect();
     pointerClientX = event.clientX;
     pointerClientY = event.clientY;
     targetX = pointerClientX - pointerBounds.left;
@@ -640,11 +642,10 @@ export function createBubble(
   }
 
   function reprojectPointer() {
+    if (!hasPointer) return;
     pointerBounds = output.getBoundingClientRect();
-    if (hasPointer) {
-      targetX = pointerClientX - pointerBounds.left;
-      targetY = pointerClientY - pointerBounds.top;
-    }
+    targetX = pointerClientX - pointerBounds.left;
+    targetY = pointerClientY - pointerBounds.top;
     wakeIfNeeded();
   }
 

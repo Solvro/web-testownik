@@ -83,11 +83,23 @@ CSS3D screen (`projectScreenPoint` in `create-device-stack.ts`, provided to the
 frames by `DeviceStack`) and replays it on `window` as a `pointermove`, which
 is what the hero Bubble follows.
 
-`--landing-hero-progress` changes on every scroll frame and is inherited, so
-every element under the hero is restyled each frame unless something pins it.
-`DeviceStack` pins it to 0 for the live screens (hundreds of elements); at 4×
-CPU throttling that took a hero scroll frame from ~50 ms of style recalc to
-~7 ms. Pin it on any new large subtree under the hero that does not read it.
+`--landing-hero-progress` is a non-inheriting registered property. Each of the
+12 animated elements attaches `attachHeroProgress` as its React callback ref
+and carries `data-hero-progress` for layer promotion. New targets immediately
+receive the cached progress, including after the desktop stage lazily mounts.
+Do not move the variable back onto the section: that used to restyle roughly
+118 elements per scroll frame. Keep derived custom properties non-inheriting
+too (the study badges deliberately use their reveal expression directly).
+
+The hero measures its travel on resize and page restoration, then reads only
+`scrollY` on scroll. The TOC likewise caches section offsets using size observers;
+the timeline measures only when near the viewport. The Bubble does not reproject
+a missing pointer. Its native html-in-canvas path still needs to capture changed
+content for refraction; do not disable it just to improve fallback-path timings.
+
+CSS3D hosts have explicit native dimensions and size/layout/paint containment.
+Containment belongs on the hosts, not their perspective ancestors. Their
+transform writes and `syncScreen` opacity/interactivity gates remain intact.
 
 ## Regenerating the loading cover
 
