@@ -13,6 +13,11 @@ import { AiChatProvider } from "@/components/ai/ai-chat-context";
 import { invalidateAIUsage } from "@/hooks/use-ai-usage";
 import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
+  LANDING_DEMO_CHAT_ENDPOINT,
+  LANDING_DEMO_CHAT_LIMITS,
+  trimLandingDemoChatHistory,
+} from "@/lib/ai/landing-demo-chat";
+import {
   AI_RESPONSE_HEADERS,
   parseQuotaExceededResponse,
 } from "@/lib/ai/quota";
@@ -59,6 +64,10 @@ export function ChatRuntime({
   children,
   onQuotaExceeded,
   onModelResolved,
+  demo = false,
+  onResponse,
+  suggestions: suggestionsOverride,
+  initialMessages,
 }: {
   quizId: string;
   quiz: { title: string; description: string };
@@ -66,14 +75,31 @@ export function ChatRuntime({
   questions: Question[];
   userName?: string;
   canEdit: boolean;
-  selectedModel: string | null;
+  selectedModel?: string | null;
   children: (runtime: ChatRuntimeValue) => ReactNode;
-  onQuotaExceeded: (body: QuotaExceededBody) => void;
-  onModelResolved: (
+  onQuotaExceeded?: (body: QuotaExceededBody) => void;
+  onModelResolved?: (
     model: string,
     quotaTier: string | null,
     fallbackResetAt: string | null,
   ) => void;
+  /**
+   * The landing page's public demo (`LANDING_DEMO_CHAT_ENDPOINT`): no account,
+   * so no quota, usage or model headers, and a trimmed request.
+   */
+  demo?: boolean;
+  /**
+   * Every response, before the chat reads it (e.g. to explain a 429). A
+   * returned response is read instead, which lets a demo answer offline.
+   */
+  onResponse?: (
+    response: Response,
+    sent: { messages: UIMessage[] },
+  ) => Response | undefined;
+  /** Replaces the default suggestions on the empty chat. */
+  suggestions?: readonly string[];
+  /** The conversation to continue, read once. */
+  initialMessages?: UIMessage[];
 }) {
   const queryClient = useQueryClient();
   const usageRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -89,33 +115,43 @@ export function ChatRuntime({
   const routeContextRef = useRef(routeContext);
   const onQuotaExceededRef = useRef(onQuotaExceeded);
   const onModelResolvedRef = useRef(onModelResolved);
+  const onResponseRef = useRef(onResponse);
   useEffect(() => {
     routeContextRef.current = routeContext;
     onQuotaExceededRef.current = onQuotaExceeded;
     onModelResolvedRef.current = onModelResolved;
-  }, [onModelResolved, onQuotaExceeded, routeContext]);
+    onResponseRef.current = onResponse;
+  }, [onModelResolved, onQuotaExceeded, onResponse, routeContext]);
 
   const questionContextSnapshotsRef = useRef(
     new Map<string, QuestionContextSnapshot>(),
   );
   const conversationIdRef = useRef(crypto.randomUUID());
+  const sentMessagesRef = useRef<UIMessage[]>([]);
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport<UIMessage>({
-        api: "/ai/chat",
+        api: demo ? LANDING_DEMO_CHAT_ENDPOINT : "/ai/chat",
         fetch: async (input, init) => {
-          const response = await fetch(input, init);
+          const fetched = await fetch(input, init);
+          const response =
+            onResponseRef.current?.(fetched, {
+              messages: sentMessagesRef.current,
+            }) ?? fetched;
+          if (demo) {
+            return response;
+          }
           const quotaBody = await parseQuotaExceededResponse(response);
           if (quotaBody !== null) {
-            onQuotaExceededRef.current(quotaBody);
+            onQuotaExceededRef.current?.(quotaBody);
           }
           if (response.ok) {
             const resolvedModel = response.headers.get(
               AI_RESPONSE_HEADERS.model,
             );
             if (resolvedModel !== null) {
-              onModelResolvedRef.current(
+              onModelResolvedRef.current?.(
                 resolvedModel,
                 response.headers.get(AI_RESPONSE_HEADERS.quotaTier),
                 response.headers.get(AI_RESPONSE_HEADERS.fallbackResetAt),
@@ -125,6 +161,7 @@ export function ChatRuntime({
           return response;
         },
         prepareSendMessagesRequest: (options) => {
+          sentMessagesRef.current = options.messages;
           const messageIds = new Set(
             options.messages.map((message) => message.id),
           );
@@ -159,6 +196,24 @@ export function ChatRuntime({
             );
           const current = routeContextRef.current;
 
+          if (demo) {
+            const messages = trimLandingDemoChatHistory(options.messages);
+            const sentIds = new Set(messages.map((message) => message.id));
+            return {
+              body: {
+                messages,
+                questionContextSnapshots: questionContextSnapshots.filter(
+                  (snapshot) => sentIds.has(snapshot.messageId),
+                ),
+                question: current.question,
+                questions: current.questions.slice(
+                  0,
+                  LANDING_DEMO_CHAT_LIMITS.maxQuestions,
+                ),
+              },
+            };
+          }
+
           return {
             body: {
               ...options.body,
@@ -180,7 +235,7 @@ export function ChatRuntime({
           };
         },
       }),
-    [quizId],
+    [demo, quizId],
   );
 
   useEffect(
@@ -194,6 +249,7 @@ export function ChatRuntime({
 
   const chat = useChat({
     transport,
+    messages: initialMessages,
     onFinish: ({ message, finishReason }) => {
       setLengthLimitedMessageIds((current) => {
         if (finishReason !== "length" && !current.has(message.id)) {
@@ -208,6 +264,9 @@ export function ChatRuntime({
         return next;
       });
 
+      if (demo) {
+        return;
+      }
       if (usageRefreshTimerRef.current !== null) {
         clearTimeout(usageRefreshTimerRef.current);
       }
@@ -217,7 +276,7 @@ export function ChatRuntime({
       }, USAGE_REPORT_SETTLE_DELAY_MS);
     },
   });
-  const suggestions = useMemo(() => {
+  const defaultSuggestions = useMemo(() => {
     const prompts = [
       "Wyjaśnij to pytanie",
       "Podaj wskazówkę do odpowiedzi",
@@ -234,6 +293,7 @@ export function ChatRuntime({
     ];
     return prompts.slice(0, 2);
   }, [canEdit]);
+  const suggestions = suggestionsOverride ?? defaultSuggestions;
   const runtime: ChatRuntimeValue = {
     ...chat,
     lengthLimitedMessageIds,

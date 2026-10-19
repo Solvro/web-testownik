@@ -39,7 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { getQuizService } from "@/services";
+import { servicesFor } from "@/services/client-services";
 
 interface ImageFields {
   image?: string | null;
@@ -226,7 +226,7 @@ function QuestionCard({
 
   const { isPending: isSaving, mutateAsync: saveToQuiz } = useMutation({
     mutationFn: async () => {
-      return await getQuizService().createQuestion(
+      return await servicesFor(queryClient).quiz.createQuestion(
         quizId,
         toCreatePayload(visibleQuestion),
       );
@@ -562,7 +562,9 @@ function QuestionsCarousel({
     }
     setIsSavingAll(true);
     try {
-      const newQuestions = await getQuizService().bulkCreateQuestions(
+      const newQuestions = await servicesFor(
+        queryClient,
+      ).quiz.bulkCreateQuestions(
         quizId,
         savablePayloads.map((p) => ({ ...p, is_ai_generated: true })),
       );

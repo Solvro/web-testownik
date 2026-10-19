@@ -31,6 +31,8 @@ const PREVIEW_STUDY_TIME_SECONDS = 4836;
 
 const SETTINGS_HASH = hashKey(userSettingsQueryKey);
 
+type QuizPreviewOptions = Parameters<typeof createQuizPreviewState>[0];
+
 /**
  * The quiz session behind the device previews (see `preview-quiz-machine`).
  *
@@ -39,21 +41,49 @@ const SETTINGS_HASH = hashKey(userSettingsQueryKey);
  * both the same `syncChannel` and every action and settings change is
  * forwarded to the other (see `preview-quiz-sync`), so an answer on either
  * shows on both.
+ *
+ * Question writes through the session's services (the assistant saving or
+ * editing a question) become actions too, so they reach the quiz and, with a
+ * `syncChannel`, the other screen.
  */
 export function useQuizPreviewState({
   syncChannel,
+  // The fixture opens with a wrong answer picked, ready to be checked.
+  quiz = { selectedAnswers: ["a-4"] },
+  studyTimeSeconds = PREVIEW_STUDY_TIME_SECONDS,
 }: {
   syncChannel?: string;
+  /** The quiz the session opens on; read once. */
+  quiz?: QuizPreviewOptions;
+  studyTimeSeconds?: number;
 } = {}): PreviewQuizSession {
-  const [synced, dispatch] = useReducer(
-    syncedQuizReducer,
-    // The fixture opens with a wrong answer picked, ready to be checked.
-    { selectedAnswers: ["a-4"] },
-    (options) => createSyncedQuizState(createQuizPreviewState(options)),
+  const [synced, dispatch] = useReducer(syncedQuizReducer, quiz, (options) =>
+    createSyncedQuizState(createQuizPreviewState(options)),
   );
   const { state } = synced;
+  // What the services read and write. Kept ahead of the state so two writes
+  // before a render still number their questions apart.
+  const questionsReference = useRef(state.questions);
+  const actReference = useRef<(action: QuizPreviewAction) => void>(() => {
+    // Replaced once mounted.
+  });
   const clientReference = useRef<QueryClient | null>(null);
-  clientReference.current ??= createPreviewClient();
+  clientReference.current ??= createPreviewClient({
+    questions: () => questionsReference.current,
+    add: (questions) => {
+      questionsReference.current = [
+        ...questionsReference.current,
+        ...questions,
+      ];
+      actReference.current({ type: "addQuestions", questions });
+    },
+    update: (question) => {
+      questionsReference.current = questionsReference.current.map((current) =>
+        current.id === question.id ? question : current,
+      );
+      actReference.current({ type: "updateQuestion", question });
+    },
+  });
   const client = clientReference.current;
   // Edited by the real settings dialog in either screen; never persisted.
   const { data: settings = DEFAULT_USER_SETTINGS } = useQuery<UserSettings>(
@@ -63,7 +93,7 @@ export function useQuizPreviewState({
     },
     client,
   );
-  const timer = useStudyTimer(false, PREVIEW_STUDY_TIME_SECONDS);
+  const timer = useStudyTimer(false, studyTimeSeconds);
   const timerStore = timer.store;
 
   const channelReference = useRef<QuizSyncChannel | null>(null);
@@ -143,6 +173,14 @@ export function useQuizPreviewState({
     channelReference.current?.post({ kind: "action", action });
   };
 
+  useEffect(() => {
+    actReference.current = act;
+  });
+  // Snapshots from the other screen replace the questions too.
+  useEffect(() => {
+    questionsReference.current = state.questions;
+  }, [state.questions]);
+
   return {
     state,
     view: selectQuizPreviewView(state, settings),
@@ -161,6 +199,9 @@ export function useQuizPreviewState({
     },
     setFocusMode: (active) => {
       act({ type: "setFocusMode", active });
+    },
+    goTo: (questionId) => {
+      act({ type: "goTo", questionId });
     },
     timer: timer.store,
     client,

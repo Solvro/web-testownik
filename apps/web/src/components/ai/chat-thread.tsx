@@ -39,6 +39,8 @@ interface ChatThreadProps {
   composerDisabled?: boolean;
   composerDisabledMessage?: string;
   quotaNotice?: ChatNotice | null;
+  /** Replaces the generic text shown when a request fails. */
+  errorMessage?: string | null;
 }
 
 function hasRenderableAssistantContent(message: UIMessage) {
@@ -210,6 +212,7 @@ export function ChatThread({
   composerDisabled = false,
   composerDisabledMessage,
   quotaNotice,
+  errorMessage,
 }: ChatThreadProps) {
   const {
     messages,
@@ -310,7 +313,8 @@ export function ChatThread({
                       role="alert"
                     >
                       <MarkerContent className="flex-1">
-                        Nie udało się wygenerować odpowiedzi.
+                        {errorMessage ??
+                          "Nie udało się wygenerować odpowiedzi."}
                       </MarkerContent>
                       <Button
                         type="button"

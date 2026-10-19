@@ -1,5 +1,7 @@
 import type { UserSettings } from "@testownik/core/user/types";
 
+import { isQuestion } from "@/lib/ai/request-validation";
+
 import { quizPreviewReducer } from "./preview-quiz-machine";
 import type {
   QuizPreviewAction,
@@ -21,7 +23,7 @@ import type {
  * Everything below except `openQuizSyncChannel` is pure.
  */
 
-export const QUIZ_SYNC_PROTOCOL = "testownik-preview-quiz/1";
+export const QUIZ_SYNC_PROTOCOL = "testownik-preview-quiz/2";
 
 export type QuizSyncPayload =
   | { kind: "hello" }
@@ -107,6 +109,17 @@ export function isQuizPreviewAction(
     case "setFocusMode": {
       return typeof value.active === "boolean";
     }
+    case "goTo": {
+      return typeof value.questionId === "string";
+    }
+    case "addQuestions": {
+      return (
+        Array.isArray(value.questions) && value.questions.every(isQuestion)
+      );
+    }
+    case "updateQuestion": {
+      return isQuestion(value.question);
+    }
     default: {
       return false;
     }
@@ -117,6 +130,7 @@ function isQuizPreviewState(value: unknown): value is QuizPreviewState {
   return (
     isRecord(value) &&
     Array.isArray(value.questions) &&
+    typeof value.hiddenQuestionCount === "number" &&
     typeof value.currentQuestionId === "string" &&
     isStringArray(value.selectedAnswers) &&
     typeof value.questionChecked === "boolean" &&

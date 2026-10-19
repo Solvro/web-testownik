@@ -39,8 +39,18 @@ export interface PreviewProgressBaseline {
   wrong: number;
 }
 
+/** Progress over the whole quiz as a preview opens on it. */
+export interface PreviewProgress extends PreviewProgressBaseline {
+  total: number;
+}
+
 export interface QuizPreviewState {
   questions: Question[];
+  /**
+   * Questions of the quiz that only exist as numbers (the hero's quiz has 119,
+   * of which the sample is a few). Added questions grow the sample.
+   */
+  hiddenQuestionCount: number;
   currentQuestionId: string;
   selectedAnswers: string[];
   questionChecked: boolean;
@@ -59,7 +69,13 @@ export type QuizPreviewAction =
   | { type: "next"; settings: UserSettings }
   | { type: "back" }
   | { type: "reset" }
-  | { type: "setFocusMode"; active: boolean };
+  | { type: "setFocusMode"; active: boolean }
+  /** Jumps to a question, as the quiz page's question list does. */
+  | { type: "goTo"; questionId: string }
+  /** Questions saved to the quiz (by the assistant, in the showcase). */
+  | { type: "addQuestions"; questions: Question[] }
+  /** A question edited in place; its id stays. */
+  | { type: "updateQuestion"; question: Question };
 
 export function createQuizPreviewState({
   questions = PREVIEW_QUESTIONS,
@@ -72,25 +88,34 @@ export function createQuizPreviewState({
   answers?: AnswerRecord[];
   currentQuestionId?: string;
   selectedAnswers?: string[];
-  progress?: PreviewProgressBaseline;
+  /**
+   * The whole quiz's progress, the sample's answers included. `null` makes
+   * the sample the whole quiz, with no progress beyond its answers.
+   */
+  progress?: PreviewProgress | null;
 } = {}): QuizPreviewState {
   // The fixture totals already include what the sample history contributes,
   // so that part is taken out of the baseline and recomputed live.
   const counts = getAnswerCounts(answers);
   return {
     questions,
+    hiddenQuestionCount:
+      progress === null ? 0 : Math.max(0, progress.total - questions.length),
     currentQuestionId,
     selectedAnswers,
     questionChecked: false,
     answers,
     historyQuestionId: null,
-    baseline: {
-      mastered:
-        progress.mastered -
-        getMasteredCount(questions, answers, DEFAULT_USER_SETTINGS),
-      correct: progress.correct - counts.correct,
-      wrong: progress.wrong - counts.wrong,
-    },
+    baseline:
+      progress === null
+        ? { mastered: 0, correct: 0, wrong: 0 }
+        : {
+            mastered:
+              progress.mastered -
+              getMasteredCount(questions, answers, DEFAULT_USER_SETTINGS),
+            correct: progress.correct - counts.correct,
+            wrong: progress.wrong - counts.wrong,
+          },
     focusMode: false,
     recorded: 0,
   };
@@ -216,6 +241,47 @@ export function quizPreviewReducer(
     case "setFocusMode": {
       return { ...state, focusMode: action.active };
     }
+    case "goTo": {
+      if (
+        findQuestion(state, action.questionId) === null ||
+        (action.questionId === state.currentQuestionId &&
+          state.historyQuestionId === null)
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        currentQuestionId: action.questionId,
+        selectedAnswers: [],
+        questionChecked: false,
+        historyQuestionId: null,
+      };
+    }
+    case "addQuestions": {
+      const known = new Set(state.questions.map(({ id }) => id));
+      const added = action.questions.filter(({ id }) => !known.has(id));
+      return added.length === 0
+        ? state
+        : { ...state, questions: [...state.questions, ...added] };
+    }
+    case "updateQuestion": {
+      const { question } = action;
+      if (findQuestion(state, question.id) === null) {
+        return state;
+      }
+      const answerIds = new Set(question.answers.map(({ id }) => id));
+      return {
+        ...state,
+        questions: state.questions.map((current) =>
+          current.id === question.id ? question : current,
+        ),
+        // An edit can drop answers the visitor had picked.
+        selectedAnswers:
+          question.id === state.currentQuestionId
+            ? state.selectedAnswers.filter((id) => answerIds.has(id))
+            : state.selectedAnswers,
+      };
+    }
   }
 }
 
@@ -238,7 +304,7 @@ export interface QuizPreviewView {
 export function selectQuizPreviewView(
   state: QuizPreviewState,
   settings: UserSettings,
-  totalQuestions = PREVIEW_PROGRESS.total,
+  totalQuestions = state.questions.length + state.hiddenQuestionCount,
 ): QuizPreviewView {
   const historyQuestion = findQuestion(state, state.historyQuestionId);
   const counts = getAnswerCounts(state.answers);

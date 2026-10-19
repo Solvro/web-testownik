@@ -20,6 +20,8 @@ export interface PreviewQuizSession {
   back: () => void;
   reset: () => void;
   setFocusMode: (active: boolean) => void;
+  /** Opens a question of the quiz, unanswered. */
+  goTo: (questionId: string) => void;
   timer: TimerStore;
   /** Preview-local data: the settings dialog's cache and the stats queries. */
   client: QueryClient;
