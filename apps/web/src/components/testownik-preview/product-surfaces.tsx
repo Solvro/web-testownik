@@ -24,6 +24,7 @@ import { AppContext } from "@/app-context";
 import type { AppContextType } from "@/app-context-type";
 import { GradesList } from "@/app/grades/components/grades-list";
 import { SummaryStats } from "@/app/grades/components/summary-stats";
+import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { FocusModeOnboardingDialog } from "@/components/quiz/focus-mode-onboarding-dialog";
 import { formatStudyTime } from "@/components/quiz/helpers/study-time";
@@ -234,8 +235,11 @@ export function QuizPreviewSurface({
   session,
   density = "full",
   className,
+  answerHints,
 }: PreviewSurfaceProps & {
   session: PreviewQuizSession;
+  /** Per-answer AI hints, as the quiz page shows them. */
+  answerHints?: AnswerHint[];
 }): React.JSX.Element {
   const { view } = session;
   // QuestionCard names a ViewTransition after the quiz id. Several previews are
@@ -256,6 +260,7 @@ export function QuizPreviewSurface({
         togglePreviousQuestion={session.back}
         canGoBack={view.canGoBack}
         isHistoryQuestion={view.isHistoryQuestion}
+        answerHints={answerHints}
       />
     </div>
   );
@@ -555,6 +560,7 @@ function PhoneQuizHeader({
         aria-label={`Postęp quizu: ${progress.toString()}%`}
         className="mt-2.5 h-1.5"
       />
+      {/* The phone has no `QuizInfoCard`, which owns it elsewhere. */}
       <QuizSettingsDialog
         open={screen.settings.open}
         onOpenChange={screen.settings.onOpenChange}

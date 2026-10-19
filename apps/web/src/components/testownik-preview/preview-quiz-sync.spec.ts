@@ -146,6 +146,23 @@ describe("isQuizPreviewAction", () => {
     expect(isQuizPreviewAction({ type: "setFocusMode", active: "yes" })).toBe(
       false,
     );
+    expect(isQuizPreviewAction({ type: "goTo", questionId: "q-12" })).toBe(
+      true,
+    );
+    expect(isQuizPreviewAction({ type: "goTo" })).toBe(false);
+    const [question] = createQuizPreviewState().questions;
+    expect(
+      isQuizPreviewAction({ type: "addQuestions", questions: [question] }),
+    ).toBe(true);
+    expect(
+      isQuizPreviewAction({ type: "addQuestions", questions: [{ id: 1 }] }),
+    ).toBe(false);
+    expect(isQuizPreviewAction({ type: "updateQuestion", question })).toBe(
+      true,
+    );
+    expect(
+      isQuizPreviewAction({ type: "updateQuestion", question: "q-12" }),
+    ).toBe(false);
   });
 });
 

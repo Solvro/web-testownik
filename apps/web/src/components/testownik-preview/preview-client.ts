@@ -13,6 +13,7 @@ import {
   PREVIEW_TIMELINE,
 } from "./preview-fixtures";
 import { createPreviewServices } from "./preview-services";
+import type { PreviewQuizEditor } from "./preview-services";
 
 /**
  * Which screen's toaster a cache's services report to. Several screens can
@@ -35,9 +36,10 @@ export function setActivePreviewToaster(
  * A throwaway query cache for a preview, bound to the preview services (see
  * `bindServices`), so anything rendered from it never reaches the API, the
  * session or the clipboard. Nothing in it goes stale; components render what
- * is there and the services answer the rest from fixtures.
+ * is there and the services answer the rest from fixtures. A session passes
+ * its `editor`, so question writes land in its quiz.
  */
-export function createPreviewClient(): QueryClient {
+export function createPreviewClient(editor?: PreviewQuizEditor): QueryClient {
   const client = new QueryClient({
     defaultOptions: {
       queries: {
@@ -58,7 +60,7 @@ export function createPreviewClient(): QueryClient {
       if (toasterId !== undefined) {
         toast(message, { toasterId });
       }
-    }),
+    }, editor),
   );
   // The quiz settings dialog edits these; they never leave the cache.
   client.setQueryData(userSettingsQueryKey, DEFAULT_USER_SETTINGS);

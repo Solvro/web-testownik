@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { getQuizService } from "@/services";
+import { servicesFor } from "@/services/client-services";
 
 interface ImageFields {
   image?: string | null;
@@ -331,7 +331,7 @@ function EditQuestionCard({
       if (editableQuestion === null) {
         throw new Error("No editable question");
       }
-      return await getQuizService().updateQuestion(
+      return await servicesFor(queryClient).quiz.updateQuestion(
         questionId,
         prepareQuestionForSubmission(editableQuestion),
       );

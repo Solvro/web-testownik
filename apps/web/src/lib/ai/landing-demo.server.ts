@@ -27,6 +27,7 @@ const RATE_LIMIT_SCOPE = "ai-landing-demo";
 const GLOBAL_RATE_LIMIT_KEY = "global";
 const UNKNOWN_CLIENT_KEY = "unknown";
 const MAX_CLIENT_KEY_LENGTH = 64;
+/** The plain demo's body; the demo chat sets its own. */
 const MAX_BODY_BYTES = 16_384;
 
 function serviceUnavailable(code: string) {
@@ -84,12 +85,15 @@ export function parseLandingAiModel(
 class BodyTooLargeError extends Error {}
 
 /**
- * Reads at most `MAX_BODY_BYTES`, cancelling the stream as soon as the cap is
+ * Reads at most `maxBytes`, cancelling the stream as soon as the cap is
  * crossed, so an oversized upload never buffers in full.
  */
-async function readJsonBody(request: Request): Promise<unknown> {
+async function readJsonBody(
+  request: Request,
+  maxBytes: number,
+): Promise<unknown> {
   const declared = Number(request.headers.get("content-length") ?? "0");
-  if (declared > MAX_BODY_BYTES) {
+  if (declared > maxBytes) {
     throw new BodyTooLargeError();
   }
   if (request.body === null) {
@@ -104,7 +108,7 @@ async function readJsonBody(request: Request): Promise<unknown> {
       break;
     }
     received += value.byteLength;
-    if (received > MAX_BODY_BYTES) {
+    if (received > maxBytes) {
       await reader.cancel();
       throw new BodyTooLargeError();
     }
@@ -119,28 +123,53 @@ async function readJsonBody(request: Request): Promise<unknown> {
   return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
 }
 
-export async function handleLandingDemoRequest(
+export type LandingDemoAdmission<Body> =
+  | { admitted: false; response: Response }
+  | {
+      admitted: true;
+      body: Body;
+      model: ReturnType<typeof getConfiguredAiModel>;
+    };
+
+/**
+ * Everything a public demo endpoint does before it calls the model: AI and
+ * the landing model must be available, the caller and all visitors together
+ * must be within `LANDING_DEMO_RATE_LIMITS`, and the body must fit
+ * `maxBodyBytes` and `parse`. Every demo endpoint draws on the same per-IP
+ * and global budget, so a visitor has one allowance whichever they use.
+ *
+ * Limits are checked before the body is read, so an over-quota caller costs
+ * nothing but a header lookup. The global cap is only peeked then: it is
+ * consumed after the per-client check, so one noisy visitor is stopped by
+ * their own bucket without allocating or eating into the shared allowance.
+ * Requests rejected for their body do not count.
+ */
+export async function admitLandingDemoRequest<Body>(
   request: Request,
-): Promise<Response> {
+  {
+    maxBodyBytes,
+    parse,
+  }: { maxBodyBytes: number; parse: (value: unknown) => Body | null },
+): Promise<LandingDemoAdmission<Body>> {
+  const reject = (response: Response): LandingDemoAdmission<Body> => ({
+    admitted: false,
+    response,
+  });
   if (!env.NEXT_PUBLIC_AI_ENABLED) {
-    return serviceUnavailable("ai_disabled");
+    return reject(serviceUnavailable("ai_disabled"));
   }
   const modelConfig = parseLandingAiModel(env.LANDING_AI_MODEL);
   if (modelConfig === null || !isAiProviderConfigured(modelConfig.provider)) {
-    return serviceUnavailable("ai_model_unavailable");
+    return reject(serviceUnavailable("ai_model_unavailable"));
   }
 
-  // Limits are checked before the body is read, so an over-quota caller costs
-  // nothing but a header lookup. The global cap is only peeked here: it is
-  // consumed after the per-client check, so one noisy visitor is stopped by
-  // their own bucket without allocating or eating into the shared allowance.
   const globalPeek = peekRateLimit(
     GLOBAL_RATE_LIMIT_KEY,
     RATE_LIMIT_SCOPE,
     LANDING_DEMO_RATE_LIMITS.global,
   );
   if (!globalPeek.allowed) {
-    return createRateLimitExceededResponse(globalPeek);
+    return reject(createRateLimitExceededResponse(globalPeek));
   }
   const clientKey = getClientKey(request.headers);
   const clientPeek = peekRateLimit(
@@ -149,21 +178,23 @@ export async function handleLandingDemoRequest(
     LANDING_DEMO_RATE_LIMITS.perClient,
   );
   if (!clientPeek.allowed) {
-    return createRateLimitExceededResponse(clientPeek);
+    return reject(createRateLimitExceededResponse(clientPeek));
   }
 
   let rawBody: unknown;
   try {
-    rawBody = await readJsonBody(request);
+    rawBody = await readJsonBody(request, maxBodyBytes);
   } catch (error) {
     if (error instanceof BodyTooLargeError) {
-      return Response.json({ code: "payload_too_large" }, { status: 413 });
+      return reject(
+        Response.json({ code: "payload_too_large" }, { status: 413 }),
+      );
     }
-    return Response.json({ code: "invalid_json" }, { status: 400 });
+    return reject(Response.json({ code: "invalid_json" }, { status: 400 }));
   }
-  const body = parseLandingDemoRequest(rawBody);
+  const body = parse(rawBody);
   if (body === null) {
-    return Response.json({ code: "invalid_request" }, { status: 400 });
+    return reject(Response.json({ code: "invalid_request" }, { status: 400 }));
   }
 
   const clientLimit = checkRateLimit(
@@ -172,7 +203,7 @@ export async function handleLandingDemoRequest(
     LANDING_DEMO_RATE_LIMITS.perClient,
   );
   if (!clientLimit.allowed) {
-    return createRateLimitExceededResponse(clientLimit);
+    return reject(createRateLimitExceededResponse(clientLimit));
   }
   const globalLimit = checkRateLimit(
     GLOBAL_RATE_LIMIT_KEY,
@@ -180,21 +211,44 @@ export async function handleLandingDemoRequest(
     LANDING_DEMO_RATE_LIMITS.global,
   );
   if (!globalLimit.allowed) {
-    return createRateLimitExceededResponse(globalLimit);
+    return reject(createRateLimitExceededResponse(globalLimit));
   }
 
-  const model = getConfiguredAiModel(modelConfig.model, modelConfig.provider);
+  return {
+    admitted: true,
+    body,
+    model: getConfiguredAiModel(modelConfig.model, modelConfig.provider),
+  };
+}
+
+/**
+ * Luna-tier OpenAI models reason by default; keep it short so answers start
+ * quickly and reasoning cannot eat the small output budget. Other providers
+ * ignore OpenAI-scoped options.
+ */
+export const LANDING_DEMO_PROVIDER_OPTIONS = {
+  openai: { reasoningEffort: "low" },
+} as const;
+
+export async function handleLandingDemoRequest(
+  request: Request,
+): Promise<Response> {
+  const admission = await admitLandingDemoRequest(request, {
+    maxBodyBytes: MAX_BODY_BYTES,
+    parse: parseLandingDemoRequest,
+  });
+  if (!admission.admitted) {
+    return admission.response;
+  }
+
   const result = streamText({
-    model,
+    model: admission.model,
     abortSignal: request.signal,
     system: buildLandingDemoSystemPrompt(PREVIEW_QUESTION),
-    messages: body.messages,
+    messages: admission.body.messages,
     maxOutputTokens: LANDING_DEMO_MAX_OUTPUT_TOKENS,
     maxRetries: 0,
-    // Luna-tier OpenAI models reason by default; keep it short so answers
-    // start quickly and reasoning cannot eat the small output budget.
-    // Other providers ignore OpenAI-scoped options.
-    providerOptions: { openai: { reasoningEffort: "low" } },
+    providerOptions: LANDING_DEMO_PROVIDER_OPTIONS,
     onError: ({ error }) => {
       console.error("Landing AI demo stream failed", error);
     },

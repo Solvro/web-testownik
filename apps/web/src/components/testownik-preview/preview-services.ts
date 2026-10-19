@@ -1,6 +1,6 @@
 import type { StatsScope } from "@testownik/core/quiz/stats";
 import { AccessLevel } from "@testownik/core/quiz/types";
-import type { Quiz, SharedQuiz } from "@testownik/core/quiz/types";
+import type { Question, Quiz, SharedQuiz } from "@testownik/core/quiz/types";
 import type { UserSettings } from "@testownik/core/user/types";
 import { DEFAULT_USER_SETTINGS } from "@testownik/core/user/types";
 
@@ -33,6 +33,71 @@ import {
 
 /** Something a preview did instead of the real action, shown in the screen. */
 export type PreviewNotify = (message: string) => void;
+
+/**
+ * The preview quiz's questions, which live in its session (see
+ * `preview-quiz-machine`). Question writes go here, so what the assistant
+ * saves or edits shows up in the quiz.
+ */
+export interface PreviewQuizEditor {
+  questions: () => Question[];
+  add: (questions: Question[]) => void;
+  update: (question: Question) => void;
+}
+
+type CreateQuestionData = Parameters<QuizService["createQuestion"]>[1];
+
+/** What the API would answer for a created question, numbered after the rest. */
+function toCreatedQuestion(data: CreateQuestionData, order: number): Question {
+  const id = `preview-added-${crypto.randomUUID()}`;
+  return {
+    id,
+    order,
+    text: data.text,
+    explanation: data.explanation ?? "",
+    multiple: data.multiple,
+    is_ai_generated: data.is_ai_generated ?? false,
+    is_markdown_enabled: true,
+    // Nothing remote is loaded inside a preview.
+    image: null,
+    answers: data.answers.map((answer, index) => ({
+      id: `${id}-a${(index + 1).toString()}`,
+      order: index + 1,
+      text: answer.text,
+      is_correct: answer.is_correct,
+      image: null,
+    })),
+  };
+}
+
+function nextOrder(questions: Question[]): number {
+  return (
+    questions.reduce((highest, { order }) => Math.max(highest, order), 0) + 1
+  );
+}
+
+/** A PATCH of a question: the given fields win, answers keep their ids. */
+function applyQuestionUpdate(
+  question: Question,
+  data: Partial<Question>,
+): Question {
+  const answers = (data.answers ?? question.answers).map((answer, index) => ({
+    ...answer,
+    id: answer.id || `${question.id}-edit-${crypto.randomUUID()}`,
+    order: index + 1,
+    image: question.answers.find(({ id }) => id === answer.id)?.image ?? null,
+  }));
+  return {
+    ...question,
+    ...data,
+    id: question.id,
+    order: question.order,
+    image: question.image ?? null,
+    answers,
+    multiple:
+      data.multiple ?? answers.filter((answer) => answer.is_correct).length > 1,
+  };
+}
 
 /** Enough of a round trip that loading states show the way they do in the app. */
 const LATENCY_MS = 80;
@@ -87,9 +152,74 @@ const sharedWith: SharedQuiz[] = PREVIEW_SHARED_WITH.map((user, index) => ({
   allow_edit: index === 0,
 }));
 
-export function createPreviewServices(notify: PreviewNotify): AppServices {
+/** Questions kept by the services themselves, for a cache without a session. */
+function createLocalEditor(): PreviewQuizEditor {
+  let questions = PREVIEW_QUIZ.questions;
+  return {
+    questions: () => questions,
+    add: (added) => {
+      questions = [...questions, ...added];
+    },
+    update: (updated) => {
+      questions = questions.map((question) =>
+        question.id === updated.id ? updated : question,
+      );
+    },
+  };
+}
+
+export function createPreviewServices(
+  notify: PreviewNotify,
+  editor: PreviewQuizEditor = createLocalEditor(),
+): AppServices {
+  /**
+   * Adds what is not in the quiz yet. A chat card forgets that it saved its
+   * questions when the chat remounts, so saving them again returns the ones
+   * already there instead of duplicating them.
+   */
+  const createQuestions = (questions: CreateQuestionData[]): Question[] => {
+    const current = editor.questions();
+    const added: Question[] = [];
+    const result = questions.map((data) => {
+      const existing = [...current, ...added].find(
+        (question) => question.text === data.text,
+      );
+      if (existing !== undefined) {
+        return existing;
+      }
+      const created = toCreatedQuestion(
+        data,
+        nextOrder([...current, ...added]),
+      );
+      added.push(created);
+      return created;
+    });
+    if (added.length > 0) {
+      editor.add(added);
+    }
+    return result;
+  };
+
   const quiz = offline<QuizService>("quiz", {
-    getQuiz: reply(() => PREVIEW_QUIZ),
+    getQuiz: reply(() => ({ ...PREVIEW_QUIZ, questions: editor.questions() })),
+    createQuestion: reply(
+      (_quizId: string, data: CreateQuestionData) => createQuestions([data])[0],
+    ),
+    bulkCreateQuestions: reply(
+      (_quizId: string, questions: CreateQuestionData[]) =>
+        createQuestions(questions),
+    ),
+    updateQuestion: reply((questionId: string, data: Partial<Question>) => {
+      const question = editor
+        .questions()
+        .find((candidate) => candidate.id === questionId);
+      if (question === undefined) {
+        throw new PreviewOnlyError(`quiz.updateQuestion(${questionId})`);
+      }
+      const updated = applyQuestionUpdate(question, data);
+      editor.update(updated);
+      return updated;
+    }),
     getQuizMetadata: reply(() => PREVIEW_QUIZ_METADATA),
     getQuizStats: reply((_quizId: string, scope: StatsScope = "me") => ({
       ...PREVIEW_STATS[scope],

@@ -34,6 +34,14 @@ to the application. For local work, open `/?landing=true`.
   and stats components read fixtures and never reach the API or the
   clipboard. Links inside a screen are cancelled by `PreviewSandbox` and
   handed to its `onNavigate`, which is how the stats view opens.
+- The product showcase's quiz and AI demos share one session
+  (`sections/product-showcase/showcase-session.tsx`, quiz in
+  `showcase-quiz.ts`), held above the tabs so it survives switching. The AI
+  demo is the app's own `ChatRuntime` + `ChatThread` in `demo` mode against
+  `/ai/landing-demo/chat` (the app chat's prompt and tools, the landing model,
+  the `/ai/landing-demo` rate limits). Its tool cards save and edit questions
+  through the session's preview services, whose question writes become
+  session actions, so the quiz demo shows them.
 
 ## Non-obvious constraints
 

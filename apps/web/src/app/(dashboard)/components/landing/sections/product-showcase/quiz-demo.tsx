@@ -1,14 +1,12 @@
 "use client";
 
-import type {
-  AnswerRecord,
-  Question,
-  QuizBase,
-} from "@testownik/core/quiz/types";
 import { AccessLevel } from "@testownik/core/quiz/types";
+import type { QuizBase } from "@testownik/core/quiz/types";
 import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Group, User } from "@testownik/core/user/types";
 import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Link2Icon,
   Share2Icon,
   SparklesIcon,
@@ -20,10 +18,16 @@ import { toast } from "sonner";
 
 import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
-import { QuestionCard } from "@/components/quiz/question-card";
+import { useStudyTimeValue } from "@/components/quiz/hooks/use-study-timer";
 import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector";
 import { AccessList } from "@/components/quiz/share-quiz-dialog/access-list";
 import { SearchResultsPopover } from "@/components/quiz/share-quiz-dialog/search-results-popover";
+import { PREVIEW_QUIZ } from "@/components/testownik-preview/preview-fixtures";
+import {
+  PreviewRuntime,
+  PreviewSandbox,
+} from "@/components/testownik-preview/preview-provider";
+import { QuizPreviewSurface } from "@/components/testownik-preview/product-surfaces";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -36,204 +40,11 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const QUIZ_TITLE = "Jak uczyć się skuteczniej?";
-const QUIZ_ID = "landing-product-quiz";
+import { getShowcaseExplanation, getShowcaseHint } from "./showcase-quiz";
+import { useShowcaseSession } from "./showcase-session-context";
 
-const QUESTIONS: readonly Question[] = [
-  {
-    id: "landing-q-1",
-    order: 1,
-    text: "Która technika najskuteczniej sprawdza, czy naprawdę pamiętasz materiał?",
-    multiple: false,
-    explanation:
-      "Aktywne przypominanie wymaga odtworzenia wiedzy bez podpowiedzi.",
-    answers: [
-      {
-        id: "q1-a",
-        order: 1,
-        text: "Ponowne czytanie notatek",
-        is_correct: false,
-      },
-      { id: "q1-b", order: 2, text: "Aktywne przypominanie", is_correct: true },
-      {
-        id: "q1-c",
-        order: 3,
-        text: "Podkreślanie definicji",
-        is_correct: false,
-      },
-      {
-        id: "q1-d",
-        order: 4,
-        text: "Oglądanie gotowego rozwiązania",
-        is_correct: false,
-      },
-    ],
-  },
-  {
-    id: "landing-q-2",
-    order: 2,
-    text: "Które działania pomagają dobrze zaplanować powtórki? Zaznacz wszystkie poprawne.",
-    multiple: true,
-    explanation:
-      "Najlepiej działa regularne wydobywanie wiedzy z pamięci i szybszy powrót do trudnych tematów.",
-    answers: [
-      {
-        id: "q2-a",
-        order: 1,
-        text: "Rozkładanie nauki w czasie",
-        is_correct: true,
-      },
-      {
-        id: "q2-b",
-        order: 2,
-        text: "Wracanie częściej do błędnych pytań",
-        is_correct: true,
-      },
-      {
-        id: "q2-c",
-        order: 3,
-        text: "Jedna bardzo długa sesja",
-        is_correct: false,
-      },
-      {
-        id: "q2-d",
-        order: 4,
-        text: "Pomijanie pytań, które sprawiają trudność",
-        is_correct: false,
-      },
-    ],
-  },
-  {
-    id: "landing-q-3",
-    order: 3,
-    text: "Po sesji masz 72% poprawnych odpowiedzi. Co da Ci najwięcej przed kolejną próbą?",
-    multiple: false,
-    explanation:
-      "Analiza błędów pozwala rozpoznać konkretną lukę, zamiast powtarzać cały materiał od początku.",
-    answers: [
-      {
-        id: "q3-a",
-        order: 1,
-        text: "Powtórzenie tylko łatwych pytań",
-        is_correct: false,
-      },
-      {
-        id: "q3-b",
-        order: 2,
-        text: "Przejrzenie błędów i ich wyjaśnień",
-        is_correct: true,
-      },
-      {
-        id: "q3-c",
-        order: 3,
-        text: "Natychmiastowy reset wyniku",
-        is_correct: false,
-      },
-      {
-        id: "q3-d",
-        order: 4,
-        text: "Zmiana kolejności odpowiedzi",
-        is_correct: false,
-      },
-    ],
-  },
-];
-
-/** Static fixtures shaped like real `/ai/hint` + `/ai/explain` output — no API. */
-const STATIC_AI_BY_QUESTION: Record<
-  string,
-  { generalHint: string; answerHints: AnswerHint[]; explanation: string }
-> = {
-  "landing-q-1": {
-    generalHint:
-      "Zastanów się, która metoda **wymaga od Ciebie samodzielnego odtworzenia** wiedzy, zamiast tylko ponownego kontaktu z materiałem.",
-    answerHints: [
-      {
-        answerIndex: 0,
-        hint: "Czytanie jest pasywne — rozpoznajesz treść, ale nie sprawdzasz, czy potrafisz ją wydobyć.",
-      },
-      {
-        answerIndex: 1,
-        hint: "Tu musisz **samodzielnie przypomnieć** sobie odpowiedź. To najmocniejszy sygnał, że naprawdę pamiętasz.",
-      },
-      {
-        answerIndex: 2,
-        hint: "Podkreślanie pomaga zaznaczyć fragmenty, ale słabo weryfikuje pamięć.",
-      },
-      {
-        answerIndex: 3,
-        hint: "Gotowe rozwiązanie pokazuje wynik, nie Twoją umiejętność przypominania.",
-      },
-    ],
-    explanation:
-      "Aktywne przypominanie działa najlepiej, bo zmusza mózg do wyszukania informacji bez podpowiedzi. Ponowne czytanie i podkreślanie dają złudzenie znajomości materiału — rozpoznajesz tekst, ale nie ćwiczysz odtwarzania. Dlatego w Testowniku pytania i powtórki budują właśnie ten mechanizm.",
-  },
-  "landing-q-2": {
-    generalHint:
-      "Szukaj strategii, które **rozciągają naukę w czasie** i wracają do tego, co poszło najgorzej.",
-    answerHints: [
-      {
-        answerIndex: 0,
-        hint: "Rozłożenie nauki zmniejsza zapominanie między sesjami.",
-      },
-      {
-        answerIndex: 1,
-        hint: "Trudne pytania zasługują na **częstsze powtórki** — to tu rośnie wynik.",
-      },
-      {
-        answerIndex: 2,
-        hint: "Jedna długa sesja męczy i słabiej utrwala niż kilka krótszych.",
-      },
-      {
-        answerIndex: 3,
-        hint: "Pomijanie trudnych tematów zostawia największe luki na egzaminie.",
-      },
-    ],
-    explanation:
-      "Skuteczny plan łączy spacing (nauka w odstępach) z priorytetem błędów. Jedna maratonowa sesja i unikanie trudnych pytań wyglądają na postęp, ale nie budują trwałej pamięci. W praktyce: wracaj częściej do tego, co poszło źle, i rozkładaj powtórki na kilka dni.",
-  },
-  "landing-q-3": {
-    generalHint:
-      "Przy 72% największy zysk daje praca nad tym, **czego jeszcze nie umiesz** — nie nad tym, co już działa.",
-    answerHints: [
-      {
-        answerIndex: 0,
-        hint: "Łatwe pytania podnoszą pewność, ale słabo podnoszą wynik.",
-      },
-      {
-        answerIndex: 1,
-        hint: "Błędy + wyjaśnienia pokazują konkretną lukę do domknięcia.",
-      },
-      {
-        answerIndex: 2,
-        hint: "Reset wyniku kasuje historię, ale nie uczy materiału.",
-      },
-      {
-        answerIndex: 3,
-        hint: "Kolejność odpowiedzi nie zmienia Twojej wiedzy merytorycznej.",
-      },
-    ],
-    explanation:
-      "Najlepszy ruch po sesji to przegląd błędów i ich wyjaśnień. Widzisz, które pojęcia są dziurawe, i możesz celować powtórkę dokładnie tam. Reset czy układanie odpowiedzi na nowo nie naprawia luk — tylko analiza pomyłek daje konkretny plan na kolejną rundę.",
-  },
-};
-
-const HISTORY: AnswerRecord[] = [
-  {
-    id: "landing-history-1",
-    question: "landing-q-1",
-    answered_at: "2026-01-15T18:30:00.000Z",
-    selected_answers: ["q1-a"],
-    was_correct: false,
-  },
-  {
-    id: "landing-history-2",
-    question: "landing-q-1",
-    answered_at: "2026-01-16T18:30:00.000Z",
-    selected_answers: ["q1-b"],
-    was_correct: true,
-  },
-];
+const QUIZ_TITLE = PREVIEW_QUIZ.title;
+const QUIZ_ID = PREVIEW_QUIZ.id;
 
 const CREATOR: User = {
   id: "landing-creator",
@@ -580,170 +391,163 @@ function QuizShareOverlay({
   );
 }
 
+/**
+ * The quiz page's question card on the showcase's quiz session (see
+ * `ShowcaseSessionProvider`), with the quiz header's AI, share and timer.
+ * Questions the AI demo's assistant adds or edits are part of the same quiz,
+ * so the header's question list grows and they can be opened here.
+ */
 export function QuizDemo(): React.JSX.Element {
-  const [index, setIndex] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(4 * 60 + 36);
-  const [answersByQuestion, setAnswersByQuestion] = useState<
-    Record<string, string[]>
-  >({});
-  const [checkedByQuestion, setCheckedByQuestion] = useState<
-    Record<string, boolean>
-  >({});
+  const { quiz: session } = useShowcaseSession();
+  const { view, state } = session;
+  const elapsedSeconds = useStudyTimeValue(session.timer);
   const [shareOpen, setShareOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
+  // The question the AI card is open for; moving on closes it.
+  const [aiQuestionId, setAiQuestionId] = useState<string | null>(null);
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
-  const question = QUESTIONS[index] ?? QUESTIONS[0];
-  const selectedAnswers = answersByQuestion[question.id] ?? [];
-  const checked = checkedByQuestion[question.id] ?? false;
-  const staticAi = STATIC_AI_BY_QUESTION[question.id];
+  const question = view.question;
+  const checked = view.questionChecked;
+  const aiOpen = question !== null && aiQuestionId === question.id;
   const aiLabel = checked ? "Wyjaśnij pytanie" : "Podpowiedz";
-
-  const closeAi = (): void => {
-    setAiOpen(false);
-    setAnswerHints([]);
-  };
+  const { questions } = state;
+  const index =
+    question === null
+      ? -1
+      : questions.findIndex((candidate) => candidate.id === question.id);
 
   const openAi = (): void => {
-    setAiOpen(true);
+    setAnswerHints([]);
+    setAiQuestionId(question?.id ?? null);
+  };
+  const closeAi = (): void => {
+    setAiQuestionId(null);
     setAnswerHints([]);
   };
-
-  const goTo = (nextIndex: number): void => {
-    closeAi();
-    setIndex((nextIndex + QUESTIONS.length) % QUESTIONS.length);
+  const goTo = (offset: -1 | 1): void => {
+    const target =
+      questions[
+        (Math.max(index, 0) + offset + questions.length) % questions.length
+      ];
+    session.goTo(target.id);
   };
-
-  const advanceQuestion = (): void => {
-    if (index === QUESTIONS.length - 1) {
-      closeAi();
-      setIndex(0);
-      setAnswersByQuestion({});
-      setCheckedByQuestion({});
-      return;
-    }
-
-    goTo(index + 1);
-  };
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setElapsedSeconds((current) => current + 1);
-    }, 1000);
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, []);
 
   return (
-    <div className="bg-background text-foreground relative flex h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem]">
-      <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <strong className="block truncate text-sm sm:text-base">
-              {QUIZ_TITLE}
-            </strong>
-            <span className="text-muted-foreground mt-0.5 block text-xs">
-              Praktyczny zestaw do samodzielnej nauki
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="outline"
-                    aria-label={aiLabel}
-                    disabled={aiOpen}
-                    onClick={openAi}
-                  >
-                    <SparklesIcon className="size-3.5" />
-                  </Button>
-                }
-              />
-              <TooltipContent>{aiLabel}</TooltipContent>
-            </Tooltip>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="outline"
-              aria-label="Udostępnij quiz"
-              onClick={() => {
-                setShareOpen(true);
-              }}
-            >
-              <Share2Icon className="size-3.5" />
-            </Button>
-            <div className="text-muted-foreground flex items-center gap-1.5 text-sm font-semibold tabular-nums">
-              <TimerIcon
-                aria-hidden="true"
-                className="text-primary size-4 animate-pulse"
-              />
-              {formatTimer(elapsedSeconds)}
+    <PreviewSandbox className="rounded-[1rem]">
+      <PreviewRuntime client={session.client}>
+        <div className="bg-background text-foreground relative flex h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border shadow-xl shadow-black/5 sm:min-h-[35rem]">
+          <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <strong className="block truncate text-sm sm:text-base">
+                  {QUIZ_TITLE}
+                </strong>
+                <span className="text-muted-foreground mt-0.5 block truncate text-xs">
+                  {PREVIEW_QUIZ.description}
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        aria-label={aiLabel}
+                        disabled={aiOpen || question === null}
+                        onClick={openAi}
+                      >
+                        <SparklesIcon className="size-3.5" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>{aiLabel}</TooltipContent>
+                </Tooltip>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label="Udostępnij quiz"
+                  onClick={() => {
+                    setShareOpen(true);
+                  }}
+                >
+                  <Share2Icon className="size-3.5" />
+                </Button>
+                <div className="text-muted-foreground flex items-center gap-1.5 text-sm font-semibold tabular-nums">
+                  <TimerIcon
+                    aria-hidden="true"
+                    className="text-primary size-4 animate-pulse"
+                  />
+                  {formatTimer(elapsedSeconds)}
+                </div>
+              </div>
             </div>
+            <nav
+              aria-label="Pytania quizu"
+              className="text-muted-foreground mt-3 flex items-center gap-1 text-xs font-medium"
+            >
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                aria-label="Pokaż poprzednie pytanie"
+                disabled={questions.length < 2}
+                onClick={() => {
+                  goTo(-1);
+                }}
+              >
+                <ChevronLeftIcon />
+              </Button>
+              <span className="tabular-nums" aria-live="polite">
+                Pytanie {Math.max(index + 1, 1)} z {questions.length}
+              </span>
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                aria-label="Pokaż następne pytanie"
+                disabled={questions.length < 2}
+                onClick={() => {
+                  goTo(1);
+                }}
+              >
+                <ChevronRightIcon />
+              </Button>
+            </nav>
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-5 [&_[data-slot=card]]:shadow-none">
+            <QuizPreviewSurface
+              session={session}
+              answerHints={aiOpen ? answerHints : undefined}
+            />
+            {aiOpen ? (
+              checked ? (
+                <AiExplanationCard
+                  question={question}
+                  onClose={closeAi}
+                  preview={getShowcaseExplanation(question)}
+                />
+              ) : (
+                <AiHintCard
+                  question={question}
+                  onClose={closeAi}
+                  onAnswerHints={setAnswerHints}
+                  preview={getShowcaseHint(question)}
+                />
+              )
+            ) : null}
           </div>
+
+          <QuizShareOverlay
+            open={shareOpen}
+            onClose={() => {
+              setShareOpen(false);
+            }}
+          />
         </div>
-      </header>
-
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-5 [&_[data-slot=card]]:shadow-none">
-        <QuestionCard
-          quizId={QUIZ_ID}
-          question={question}
-          selectedAnswers={selectedAnswers}
-          setSelectedAnswers={(next) => {
-            setAnswersByQuestion((current) => ({
-              ...current,
-              [question.id]: next,
-            }));
-          }}
-          answers={HISTORY}
-          questionChecked={checked}
-          nextAction={() => {
-            if (checked) {
-              advanceQuestion();
-              return;
-            }
-            setCheckedByQuestion((current) => ({
-              ...current,
-              [question.id]: true,
-            }));
-          }}
-          isQuizFinished={false}
-          togglePreviousQuestion={() => {
-            goTo(index - 1);
-          }}
-          canGoBack={index > 0}
-          isHistoryQuestion={false}
-          answerHints={answerHints}
-        />
-        {aiOpen ? (
-          checked ? (
-            <AiExplanationCard
-              question={question}
-              onClose={closeAi}
-              preview={staticAi.explanation}
-            />
-          ) : (
-            <AiHintCard
-              question={question}
-              onClose={closeAi}
-              onAnswerHints={setAnswerHints}
-              preview={{
-                generalHint: staticAi.generalHint,
-                answerHints: staticAi.answerHints,
-              }}
-            />
-          )
-        ) : null}
-      </div>
-
-      <QuizShareOverlay
-        open={shareOpen}
-        onClose={() => {
-          setShareOpen(false);
-        }}
-      />
-    </div>
+      </PreviewRuntime>
+    </PreviewSandbox>
   );
 }

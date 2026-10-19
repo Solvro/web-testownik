@@ -1,3 +1,4 @@
+import { getMasteredCount } from "@testownik/core/quiz/session";
 import { DEFAULT_USER_SETTINGS } from "@testownik/core/user/types";
 import { describe, expect, it } from "vitest";
 
@@ -214,5 +215,104 @@ describe("quiz preview machine", () => {
     expect(
       quizPreviewReducer(on, { type: "setFocusMode", active: false }).focusMode,
     ).toBe(false);
+  });
+
+  it("jumps to a question, unanswered", () => {
+    const picked = run(createQuizPreviewState(), {
+      type: "select",
+      answers: ["a-3"],
+    });
+    const jumped = quizPreviewReducer(picked, {
+      type: "goTo",
+      questionId: "q-27",
+    });
+    expect(jumped.currentQuestionId).toBe("q-27");
+    expect(jumped.selectedAnswers).toEqual([]);
+    expect(jumped.questionChecked).toBe(false);
+    // Unknown questions and the open one change nothing.
+    expect(
+      quizPreviewReducer(jumped, { type: "goTo", questionId: "nope" }),
+    ).toBe(jumped);
+    expect(
+      quizPreviewReducer(jumped, { type: "goTo", questionId: "q-27" }),
+    ).toBe(jumped);
+    // From the previous answer, it also leaves the look back.
+    const back = run(createQuizPreviewState(), { type: "back" });
+    const fromBack = quizPreviewReducer(back, {
+      type: "goTo",
+      questionId: "q-83",
+    });
+    expect(fromBack.historyQuestionId).toBeNull();
+  });
+
+  it("adds questions to the quiz and its total", () => {
+    const added = [
+      { ...PREVIEW_QUESTIONS[0], id: "new-1", order: 120 },
+      { ...PREVIEW_QUESTIONS[1], id: "new-2", order: 121 },
+    ];
+    const state = run(createQuizPreviewState(), {
+      type: "addQuestions",
+      questions: added,
+    });
+    expect(state.questions.map(({ id }) => id).slice(-2)).toEqual([
+      "new-1",
+      "new-2",
+    ]);
+    expect(selectQuizPreviewView(state, settings).totalQuestions).toBe(
+      PREVIEW_PROGRESS.total + 2,
+    );
+    // Questions it already has are not added twice.
+    expect(
+      quizPreviewReducer(state, { type: "addQuestions", questions: added }),
+    ).toBe(state);
+    // New questions are in the rotation.
+    expect(
+      run(state, { type: "goTo", questionId: "q-104" }, next, next)
+        .currentQuestionId,
+    ).toBe("new-1");
+  });
+
+  it("can be the whole quiz", () => {
+    const state = createQuizPreviewState({ progress: null });
+    const view = selectQuizPreviewView(state, settings);
+    expect(view.totalQuestions).toBe(PREVIEW_QUESTIONS.length);
+    expect(view.masteredCount).toBe(
+      getMasteredCount(PREVIEW_QUESTIONS, PREVIEW_SESSION_ANSWERS, settings),
+    );
+    expect(view.correctAnswersCount).toBe(
+      PREVIEW_SESSION_ANSWERS.filter(({ was_correct }) => was_correct).length,
+    );
+  });
+
+  it("edits a question in place", () => {
+    const picked = run(createQuizPreviewState(), {
+      type: "select",
+      answers: ["a-3"],
+    });
+    const current = picked.questions.find(({ id }) => id === "q-83");
+    if (current === undefined) {
+      throw new Error("missing fixture");
+    }
+    const edited = {
+      ...current,
+      text: "Poprawiona treść",
+      answers: current.answers.filter(({ id }) => id !== "a-3"),
+    };
+    const state = quizPreviewReducer(picked, {
+      type: "updateQuestion",
+      question: edited,
+    });
+    expect(selectQuizPreviewView(state, settings).question?.text).toBe(
+      "Poprawiona treść",
+    );
+    expect(state.questions).toHaveLength(picked.questions.length);
+    // The removed answer is no longer picked.
+    expect(state.selectedAnswers).toEqual([]);
+    expect(
+      quizPreviewReducer(state, {
+        type: "updateQuestion",
+        question: { ...edited, id: "nope" },
+      }),
+    ).toBe(state);
   });
 });
