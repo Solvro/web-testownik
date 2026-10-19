@@ -103,9 +103,6 @@ const QUIZ_DENSITY: Record<Density, string> = {
     "flex flex-col text-[0.62em]",
     "[&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
     "[&_[data-slot=card-header]]:px-3 [&_[data-slot=card-content]]:px-3",
-    // The card's own action row is hidden: `PhoneQuizSurface` docks the
-    // same buttons at the bottom of the screen, as the mobile quiz page does.
-    "[&_[data-slot=card-content]>:nth-child(3)]:hidden",
   ),
 };
 
@@ -261,6 +258,8 @@ export function QuizPreviewSurface({
         canGoBack={view.canGoBack}
         isHistoryQuestion={view.isHistoryQuestion}
         answerHints={answerHints}
+        // The phone docks the same controls at the bottom of its screen.
+        hideActions={density === "phone"}
       />
     </div>
   );

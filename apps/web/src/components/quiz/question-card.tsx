@@ -46,6 +46,11 @@ interface QuestionCardProps {
   canGoBack: boolean;
   isHistoryQuestion: boolean;
   answerHints?: AnswerHint[];
+  /**
+   * Leave out the check/next/back row, for a host that docks the same
+   * controls elsewhere (the landing's phone preview).
+   */
+  hideActions?: boolean;
 }
 
 export function QuestionCard({
@@ -62,6 +67,7 @@ export function QuestionCard({
   canGoBack,
   isHistoryQuestion,
   answerHints = [],
+  hideActions = false,
 }: QuestionCardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAnswerClick = (answerId: string) => {
@@ -347,39 +353,41 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end gap-2">
-          {isHistoryQuestion ? (
-            <Button variant="outline" onClick={togglePreviousQuestion}>
-              Powrót do pytań
-            </Button>
-          ) : (
-            <>
-              {canGoBack && !questionChecked ? (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={togglePreviousQuestion}
-                      >
-                        <Undo2 />
-                      </Button>
-                    }
-                  ></TooltipTrigger>
-                  <TooltipContent>Poprzednie pytanie</TooltipContent>
-                </Tooltip>
-              ) : null}
-              <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
-                {questionChecked ? (
-                  <Button onClick={nextAction}>Następne pytanie</Button>
-                ) : (
-                  <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
-                )}
-              </ViewTransition>
-            </>
-          )}
-        </div>
+        {hideActions ? null : (
+          <div className="mt-2 flex justify-end gap-2">
+            {isHistoryQuestion ? (
+              <Button variant="outline" onClick={togglePreviousQuestion}>
+                Powrót do pytań
+              </Button>
+            ) : (
+              <>
+                {canGoBack && !questionChecked ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={togglePreviousQuestion}
+                        >
+                          <Undo2 />
+                        </Button>
+                      }
+                    ></TooltipTrigger>
+                    <TooltipContent>Poprzednie pytanie</TooltipContent>
+                  </Tooltip>
+                ) : null}
+                <ViewTransition name={`quiz-action-${quizId}`} default="h-full">
+                  {questionChecked ? (
+                    <Button onClick={nextAction}>Następne pytanie</Button>
+                  ) : (
+                    <Button onClick={nextAction}>Sprawdź odpowiedź</Button>
+                  )}
+                </ViewTransition>
+              </>
+            )}
+          </div>
+        )}
         {question.explanation != null &&
         question.explanation.trim() !== "" &&
         questionChecked ? (
