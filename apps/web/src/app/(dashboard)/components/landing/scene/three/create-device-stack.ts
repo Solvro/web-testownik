@@ -51,6 +51,8 @@ export interface DeviceStackOptions {
   onHostsAttached: () => void;
   /** Called once the live surfaces have settled and been composited. */
   onReady: () => void;
+  /** Context creation failed, or a lost context did not recover. */
+  onUnavailable: () => void;
 }
 
 /** A point in the page's client (viewport) coordinates. */
@@ -73,6 +75,13 @@ export interface DeviceStack {
     out: ClientPoint,
   ) => boolean;
 }
+
+const INACTIVE_STACK: DeviceStack = {
+  dispose() {
+    // No renderer was created.
+  },
+  projectScreenPoint: () => false,
+};
 
 /**
  * One live screen's visibility rules. Opacity and interactivity are written to
@@ -132,13 +141,35 @@ export async function createDeviceStack({
   signal,
   onHostsAttached,
   onReady,
+  onUnavailable,
 }: DeviceStackOptions): Promise<DeviceStack> {
-  const stage = createStage({
+  let failed = false;
+  const hasFailed = (): boolean => failed;
+  let disposeStack = INACTIVE_STACK.dispose;
+  const unavailable = (): void => {
+    if (failed || signal.aborted) {
+      return;
+    }
+    failed = true;
+    disposeStack();
+    onUnavailable();
+  };
+  const createdStage = createStage({
     canvas,
     container,
     pixelRatio,
     screenLayerClassName,
+    onUnavailable: unavailable,
+    onRestored: () => {
+      schedule();
+    },
   });
+  if (createdStage === null) {
+    unavailable();
+    return INACTIVE_STACK;
+  }
+  const stage = createdStage;
+  disposeStack = stage.dispose;
   const { scene, camera } = stage;
 
   let disposed = false;
@@ -158,13 +189,16 @@ export async function createDeviceStack({
   } catch (error) {
     stage.dispose();
     // An aborted download is the hero unmounting, not a failure.
-    if (signal.aborted) {
+    if (signal.aborted || hasFailed()) {
       return { dispose: stage.dispose, projectScreenPoint: () => false };
     }
     throw error;
   }
 
   const teardown = (): void => {
+    if (disposed) {
+      return;
+    }
     disposed = true;
     if (frame !== 0) {
       window.cancelAnimationFrame(frame);
@@ -177,7 +211,7 @@ export async function createDeviceStack({
   };
 
   // The models can take seconds to arrive; the hero may be long gone by then.
-  if (signal.aborted) {
+  if (signal.aborted || hasFailed()) {
     teardown();
     return { dispose: teardown, projectScreenPoint: () => false };
   }
@@ -255,7 +289,7 @@ export async function createDeviceStack({
 
   function render(): void {
     frame = 0;
-    if (disposed) {
+    if (disposed || !stage.isAvailable()) {
       return;
     }
 
@@ -295,7 +329,7 @@ export async function createDeviceStack({
   }
 
   function schedule(): void {
-    if (frame === 0 && isVisible) {
+    if (!disposed && frame === 0 && isVisible) {
       frame = window.requestAnimationFrame(render);
     }
   }
@@ -342,6 +376,7 @@ export async function createDeviceStack({
 
   const revealWhenSurfacesAreStable = (): void => {
     const surfacesReady =
+      stage.isAvailable() &&
       isSurfaceReady(hosts.laptop) &&
       isSurfaceReady(hosts.tablet) &&
       isSurfaceReady(hosts.phone);
@@ -420,13 +455,11 @@ export async function createDeviceStack({
     return true;
   };
 
-  return {
-    projectScreenPoint,
-    dispose() {
-      visibilityObserver.disconnect();
-      resizeObserver.disconnect();
-      window.removeEventListener(HERO_PROGRESS_EVENT, schedule);
-      teardown();
-    },
+  disposeStack = (): void => {
+    visibilityObserver.disconnect();
+    resizeObserver.disconnect();
+    window.removeEventListener(HERO_PROGRESS_EVENT, schedule);
+    teardown();
   };
+  return { projectScreenPoint, dispose: disposeStack };
 }

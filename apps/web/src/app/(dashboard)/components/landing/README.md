@@ -104,6 +104,20 @@ The capture command expects Chrome and the development server at
 preserves transparency, and writes the light and dark WebP files documented in
 `public/models/README.md`.
 
+## Static desktop fallback
+
+If WebGL2 context creation fails, the device stage shows the themed open-pose
+still at full opacity. It does not attach live screen iframes or retry on scroll.
+A lost context gets 1.5 seconds to restore before the stage disposes the scene,
+unmounts the screens and enters the same terminal fallback. The scroll-to-open
+hint and lid progress disappear; the hero badges remain.
+
+Regenerate the fallback stills separately, keeping the closed loading covers:
+
+```sh
+CAPTURE_BASE_URL=http://localhost:3113 CAPTURE_POSE=open pnpm capture:device-stack
+```
+
 ## Validation
 
 ```sh

@@ -10,6 +10,10 @@ import {
 import { CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import { CAMERA_FOV } from "../laptop-framing";
+import { nextWebGLAvailability, tryWebGLContext } from "./webgl-availability";
+import type { WebGLAvailability } from "./webgl-availability";
+
+const CONTEXT_RESTORE_MS = 1500;
 
 /** Above this the extra pixels cost more than they show on a 3D product shot. */
 const MAX_PIXEL_RATIO = 1.35;
@@ -21,6 +25,7 @@ export interface Stage {
   cssRenderer: CSS3DRenderer;
   setSize: (width: number, height: number) => void;
   render: () => void;
+  isAvailable: () => boolean;
   dispose: () => void;
 }
 
@@ -35,13 +40,36 @@ export function createStage({
   container,
   pixelRatio,
   screenLayerClassName,
+  onUnavailable,
+  onRestored,
 }: {
   canvas: HTMLCanvasElement;
   container: HTMLElement;
   /** Forced device pixel ratio, used by the capture harness. */
   pixelRatio?: number;
   screenLayerClassName: string;
-}): Stage {
+  onUnavailable: () => void;
+  onRestored: () => void;
+}): Stage | null {
+  // Three.js logs errors before throwing when it cannot create a context.
+  // Acquire it ourselves and pass the same context and attributes through.
+  const attributes: WebGLContextAttributes = {
+    alpha: true,
+    antialias: true,
+    depth: true,
+    stencil: false,
+    premultipliedAlpha: true,
+    preserveDrawingBuffer: false,
+    powerPreference: "high-performance",
+    failIfMajorPerformanceCaveat: false,
+  };
+  const context = tryWebGLContext(() =>
+    canvas.getContext("webgl2", attributes),
+  );
+  if (context === null) {
+    return null;
+  }
+
   const scene = new Scene();
   const camera = new PerspectiveCamera(CAMERA_FOV, 1, 0.1, 400);
   // Both renderers would otherwise walk the whole scene graph again on every
@@ -50,9 +78,8 @@ export function createStage({
 
   const renderer = new WebGLRenderer({
     canvas,
-    alpha: true,
-    antialias: true,
-    powerPreference: "high-performance",
+    context,
+    ...attributes,
   });
   renderer.setClearColor(0x00_00_00, 0);
   renderer.setPixelRatio(
@@ -76,6 +103,32 @@ export function createStage({
   rimLight.position.set(24, 14, -22);
   scene.add(rimLight);
 
+  let availability: WebGLAvailability = "available";
+  let disposed = false;
+  let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+  const onContextLost = (event: Event): void => {
+    event.preventDefault();
+    availability = nextWebGLAvailability(availability, "lost");
+    clearTimeout(restoreTimer);
+    restoreTimer = setTimeout(() => {
+      availability = nextWebGLAvailability(availability, "timeout");
+      if (availability === "unavailable") {
+        onUnavailable();
+      }
+    }, CONTEXT_RESTORE_MS);
+  };
+  const onContextRestored = (): void => {
+    clearTimeout(restoreTimer);
+    availability = nextWebGLAvailability(availability, "restored");
+    if (availability === "available") {
+      renderer.render(scene, camera);
+      cssRenderer.render(scene, camera);
+      onRestored();
+    }
+  };
+  canvas.addEventListener("webglcontextlost", onContextLost);
+  canvas.addEventListener("webglcontextrestored", onContextRestored);
+
   return {
     scene,
     camera,
@@ -87,11 +140,22 @@ export function createStage({
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     },
+    isAvailable: () => availability === "available",
     render() {
+      if (availability !== "available") {
+        return;
+      }
       renderer.render(scene, camera);
       cssRenderer.render(scene, camera);
     },
     dispose() {
+      if (disposed) {
+        return;
+      }
+      disposed = true;
+      clearTimeout(restoreTimer);
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
       renderer.dispose();
       cssRenderer.domElement.remove();
     },

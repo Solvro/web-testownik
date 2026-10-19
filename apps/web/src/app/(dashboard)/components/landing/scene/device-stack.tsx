@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 
 import { DESKTOP_STAGE_QUERY } from "../breakpoints";
-import { MonoLabel } from "../components/typography";
 import { laptopScreenRect } from "./laptop-framing";
 import { DEVICE_COVER_CLASS, SCENE_CLASS } from "./scene-classes";
 import { ScreenProjectionContext } from "./screen-projection";
@@ -42,8 +47,10 @@ export function DeviceStack({
   laptopContent,
   tabletContent,
   phoneContent,
+  onUnavailable,
 }: {
   className?: string;
+  onUnavailable?: () => void;
   /** Capture harness: hold the still cover and hide every live surface. */
   coverOnly?: boolean;
   pixelRatio?: number;
@@ -62,6 +69,9 @@ export function DeviceStack({
   const [hosts, setHosts] = useState<DeviceStackHosts | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
+  const reportUnavailable = useEffectEvent(() => {
+    onUnavailable?.();
+  });
   const stackReference = useRef<DeviceStackInstance | null>(null);
   // Reads whichever stack is current; it only captures the ref, so the
   // compiler keeps it stable for the screens' effects.
@@ -83,6 +93,10 @@ export function DeviceStack({
       if (cover === null || width === 0 || height === 0) {
         return;
       }
+      if (hasFailed) {
+        cover.removeAttribute("style");
+        return;
+      }
       const rect = laptopScreenRect(width, height);
       cover.style.left = `${(rect.left + rect.width / 2).toFixed(2)}px`;
       cover.style.top = `${rect.top.toFixed(2)}px`;
@@ -96,7 +110,7 @@ export function DeviceStack({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [hasFailed]);
 
   useEffect(() => {
     const canvas = canvasReference.current;
@@ -116,11 +130,24 @@ export function DeviceStack({
 
     const controller = new AbortController();
     let stack: DeviceStackInstance | null = null;
+    let failed = false;
+    const fallback = (): void => {
+      if (failed || controller.signal.aborted) {
+        return;
+      }
+      failed = true;
+      console.warn("Hero device scene unavailable; showing a static preview.");
+      setHosts(null);
+      setIsReady(false);
+      setHasFailed(true);
+      reportUnavailable();
+    };
 
     const boot = async (): Promise<void> => {
       try {
         const { createDeviceStack } =
           await import("./three/create-device-stack");
+        controller.signal.throwIfAborted();
         stack = await createDeviceStack({
           canvas,
           container,
@@ -128,11 +155,17 @@ export function DeviceStack({
           screenLayerClassName: SCENE_CLASS.screenLayer,
           pixelRatio,
           signal: controller.signal,
+          onUnavailable: fallback,
           onHostsAttached: () => {
+            if (failed || controller.signal.aborted) {
+              return;
+            }
             setHosts(screenHosts);
           },
           onReady: () => {
-            setIsReady(true);
+            if (!failed && !controller.signal.aborted) {
+              setIsReady(true);
+            }
           },
         });
         if (controller.signal.aborted) {
@@ -140,11 +173,8 @@ export function DeviceStack({
         } else {
           stackReference.current = stack;
         }
-      } catch (error) {
-        console.error("Unable to build the hero device stack:", error);
-        if (!controller.signal.aborted) {
-          setHasFailed(true);
-        }
+      } catch {
+        fallback();
       }
     };
 
@@ -200,7 +230,6 @@ export function DeviceStack({
         // hundreds of elements that would inherit it: pinning it stops every
         // scroll frame from restyling all three screens.
         "[--landing-hero-progress:0]",
-        "data-[model-failed=true]:opacity-[0.34]",
         className,
       )}
     >
@@ -212,7 +241,9 @@ export function DeviceStack({
         ref={coverReference}
         aria-hidden="true"
         className={cn(
-          DEVICE_COVER_CLASS,
+          hasFailed
+            ? "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] z-1 bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]"
+            : DEVICE_COVER_CLASS,
           "transition-opacity delay-150 duration-150",
           "group-data-[model-ready=true]/stack:opacity-0",
           "group-data-[cover-only=true]/stack:opacity-100!",
@@ -223,23 +254,13 @@ export function DeviceStack({
         aria-hidden="true"
         className="block size-full group-data-[cover-only=true]/stack:opacity-0"
       />
-      {hosts === null ? null : (
+      {hosts === null || hasFailed ? null : (
         <ScreenProjectionContext value={projectScreenPoint}>
           {createPortal(laptopContent, hosts.laptop)}
           {createPortal(tabletContent, hosts.tablet)}
           {createPortal(phoneContent, hosts.phone)}
         </ScreenProjectionContext>
       )}
-      {hasFailed ? (
-        <MonoLabel
-          aria-hidden="true"
-          size="2xs"
-          tone="subtle"
-          className="absolute bottom-[17%] left-1/2 -translate-x-1/2 font-semibold"
-        >
-          MODEL NIEDOSTĘPNY
-        </MonoLabel>
-      ) : null}
     </div>
   );
 }
