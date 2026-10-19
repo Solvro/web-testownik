@@ -34,6 +34,8 @@ export const LANDING_DEMO_CHAT_LIMITS = {
 
 /** Tool results become model input on the next inference step. */
 export const LANDING_DEMO_CHAT_TOOL_LIMITS = {
+  /** Tokenized on the server, including JSON syntax; oversized results are errors. */
+  maxOutputTokens: 2000,
   maxAnswers: 6,
   maxAnswerTextLength: 300,
   maxQuestionTextLength: 1500,

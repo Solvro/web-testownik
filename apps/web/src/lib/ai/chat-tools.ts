@@ -220,9 +220,35 @@ export function buildChatTools({
  * The landing demo's tools. The visitor owns the demo quiz, so it can be
  * edited; there are no settings to switch AI off in.
  */
-export function buildLandingDemoChatTools(questions: Question[]) {
+export function buildLandingDemoChatTools(
+  questions: Question[],
+  countTokens: (text: string) => number,
+) {
+  function boundOutput<T>(execute: (input: T) => string) {
+    return (input: T) => {
+      const output = execute(input);
+      return countTokens(output) <= DEMO_LIMITS.maxOutputTokens
+        ? output
+        : JSON.stringify({ error: "demo_tool_output_too_large" });
+    };
+  }
+  const tools = buildQuizTools(questions, true);
   return {
-    ...buildQuizTools(questions, true),
-    edit_question: editQuestionTool,
+    generate_practice_questions: {
+      ...tools.generate_practice_questions,
+      execute: boundOutput(tools.generate_practice_questions.execute),
+    },
+    list_questions: {
+      ...tools.list_questions,
+      execute: boundOutput(tools.list_questions.execute),
+    },
+    get_question: {
+      ...tools.get_question,
+      execute: boundOutput(tools.get_question.execute),
+    },
+    edit_question: {
+      ...editQuestionTool,
+      execute: boundOutput(editQuestionTool.execute),
+    },
   };
 }

@@ -1,3 +1,4 @@
+import type { ModelMessage } from "ai";
 import { stepCountIs, streamText } from "ai";
 import "server-only";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import {
   LANDING_DEMO_CHAT_LIMITS,
   parseLandingDemoChatRequest,
 } from "@/lib/ai/landing-demo-chat";
+import { getLandingDemoTokenCounter } from "@/lib/ai/landing-demo-tokenizer.server";
 import {
   LANDING_DEMO_PROVIDER_OPTIONS,
   admitLandingDemoRequest,
@@ -33,34 +35,55 @@ function buildDemoSystemPrompt(questionCount: number) {
   );
 }
 
-/** No tokenizer dependency: allow more room for UTF-8 than chars / 4 did. */
-function estimateDemoTokens(value: unknown): number {
-  const json = JSON.stringify(value);
-  return Math.ceil(
-    Math.max(json.length / 3, Buffer.byteLength(json, "utf8") / 2.5),
+// These schemas do not depend on the visitor's quiz. Count them once with the
+// same cached counter used for the prompt, history and tool output bounds.
+let toolSchemaTokens: number | undefined;
+
+async function createInputTokenCounter(questionCount: number) {
+  const countText = await getLandingDemoTokenCounter();
+  toolSchemaTokens ??= countText(
+    JSON.stringify(
+      Object.entries(buildLandingDemoChatTools([], countText)).map(
+        ([name, tool]) => ({
+          type: "function",
+          name,
+          description: tool.description,
+          inputSchema: z.toJSONSchema(tool.inputSchema, {
+            target: "draft-7",
+            io: "input",
+          }),
+        }),
+      ),
+    ),
   );
+  const fixedTokens =
+    toolSchemaTokens + countText(buildDemoSystemPrompt(questionCount)) + 4;
+  return (messages: ModelMessage[]) =>
+    fixedTokens +
+    messages.reduce((total, message) => {
+      const contentTokens =
+        typeof message.content === "string"
+          ? countText(message.content)
+          : message.content.reduce(
+              (sum, part) =>
+                sum +
+                countText(
+                  part.type === "text" || part.type === "reasoning"
+                    ? part.text
+                    : JSON.stringify(part),
+                ),
+              0,
+            );
+      // Include serialized tool calls/results as well as every text part.
+      return total + contentTokens + 4;
+    }, 0);
 }
 
-// Measured once, using the longest allowed question count and the actual tool
-// descriptions and JSON schemas. Reserve a little extra for provider framing.
-const FIXED_INPUT_TOKENS =
-  estimateDemoTokens({
-    system: buildDemoSystemPrompt(LANDING_DEMO_CHAT_LIMITS.maxQuestions),
-    tools: Object.entries(buildLandingDemoChatTools([])).map(
-      ([name, tool]) => ({
-        type: "function",
-        name,
-        description: tool.description,
-        inputSchema: z.toJSONSchema(tool.inputSchema, {
-          target: "draft-7",
-          io: "input",
-        }),
-      }),
-    ),
-  }) + 128;
-
-export function estimateLandingDemoChatInputTokens(messages: unknown): number {
-  return FIXED_INPUT_TOKENS + estimateDemoTokens(messages);
+export async function countLandingDemoChatInputTokens(
+  messages: ModelMessage[],
+  questionCount: number = LANDING_DEMO_CHAT_LIMITS.maxQuestions,
+): Promise<number> {
+  return (await createInputTokenCounter(questionCount))(messages);
 }
 
 /**
@@ -84,6 +107,8 @@ export async function handleLandingDemoChatRequest(
     admission.body;
 
   const system = buildDemoSystemPrompt(questions.length);
+  const countInputTokens = await createInputTokenCounter(questions.length);
+  const countText = await getLandingDemoTokenCounter();
   let recentMessages = messages;
   let modelMessages;
   try {
@@ -102,8 +127,7 @@ export async function handleLandingDemoChatRequest(
         },
       });
       if (
-        estimateLandingDemoChatInputTokens(modelMessages) <=
-        LANDING_DEMO_CHAT_MAX_INPUT_TOKENS
+        countInputTokens(modelMessages) <= LANDING_DEMO_CHAT_MAX_INPUT_TOKENS
       ) {
         break;
       }
@@ -132,7 +156,7 @@ export async function handleLandingDemoChatRequest(
     stopWhen: [
       stepCountIs(LANDING_DEMO_CHAT_MAX_STEPS),
       ({ steps }) =>
-        estimateLandingDemoChatInputTokens([
+        countInputTokens([
           ...modelMessages,
           ...(steps.at(-1)?.response.messages ?? []),
         ]) > LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
@@ -140,10 +164,7 @@ export async function handleLandingDemoChatRequest(
     prepareStep: ({ messages: stepMessages }) => {
       // stopWhen ends normal tool continuations cleanly. Check the actual SDK
       // messages as well, before any provider call, including the first step.
-      if (
-        estimateLandingDemoChatInputTokens(stepMessages) >
-        LANDING_DEMO_CHAT_MAX_INPUT_TOKENS
-      ) {
+      if (countInputTokens(stepMessages) > LANDING_DEMO_CHAT_MAX_INPUT_TOKENS) {
         throw new Error("Landing demo chat model input budget exceeded");
       }
       return {};
@@ -151,7 +172,7 @@ export async function handleLandingDemoChatRequest(
     maxOutputTokens: LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,
     maxRetries: 0,
     providerOptions: LANDING_DEMO_PROVIDER_OPTIONS,
-    tools: buildLandingDemoChatTools(questions),
+    tools: buildLandingDemoChatTools(questions, countText),
     onError: ({ error }) => {
       console.error("Landing AI demo chat stream failed", error);
     },
