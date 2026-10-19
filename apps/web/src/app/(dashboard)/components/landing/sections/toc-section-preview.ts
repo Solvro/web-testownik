@@ -222,15 +222,25 @@ function createStage(sectionId: string, layout: TocPreviewLayout): HTMLElement {
 }
 
 /**
- * Strip ids (no duplicates in the document) and link targets. Focus is covered
+ * Strip ids (no duplicates in the document) and turn copied links into text.
+ * An anchor without href still looks like a broken link to crawlers. Focus is covered
  * by `inert` on the stage and motion by the `.lp-toc-preview-stage` CSS rule,
  * so no per-node style writes are needed.
  */
 function neutralizeTree(root: HTMLElement): void {
   root.removeAttribute("id");
-  for (const node of root.querySelectorAll("[id], a[href]")) {
+  for (const node of root.querySelectorAll("[id]")) {
     node.removeAttribute("id");
-    node.removeAttribute("href");
+  }
+  for (const link of root.querySelectorAll("a")) {
+    const text = document.createElement("span");
+    for (const { name, value } of link.attributes) {
+      if (!["href", "target", "rel"].includes(name)) {
+        text.setAttribute(name, value);
+      }
+    }
+    text.append(...link.childNodes);
+    link.replaceWith(text);
   }
 }
 
