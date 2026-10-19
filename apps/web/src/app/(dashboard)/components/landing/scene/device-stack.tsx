@@ -10,7 +10,12 @@ import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import { MonoLabel } from "../components/typography";
 import { laptopScreenRect } from "./laptop-framing";
 import { DEVICE_COVER_CLASS, SCENE_CLASS } from "./scene-classes";
-import type { DeviceStackHosts } from "./three/create-device-stack";
+import { ScreenProjectionContext } from "./screen-projection";
+import type { ProjectScreenPoint } from "./screen-projection";
+import type {
+  DeviceStackHosts,
+  DeviceStack as DeviceStackInstance,
+} from "./three/create-device-stack";
 
 /**
  * The hero only mounts this component at `lg` and above, but the capture route
@@ -57,6 +62,11 @@ export function DeviceStack({
   const [hosts, setHosts] = useState<DeviceStackHosts | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
+  const stackReference = useRef<DeviceStackInstance | null>(null);
+  // Reads whichever stack is current; it only captures the ref, so the
+  // compiler keeps it stable for the screens' effects.
+  const projectScreenPoint: ProjectScreenPoint = (device, x, y, out) =>
+    stackReference.current?.projectScreenPoint(device, x, y, out) ?? false;
 
   // The cover is a still of this very model, laid out by the same solver the
   // camera uses, so the hand-off to the live scene is a pure cross-fade with
@@ -105,7 +115,7 @@ export function DeviceStack({
     const screenHosts: DeviceStackHosts = { laptop, tablet, phone };
 
     const controller = new AbortController();
-    let stack: { dispose: () => void } | null = null;
+    let stack: DeviceStackInstance | null = null;
 
     const boot = async (): Promise<void> => {
       try {
@@ -127,6 +137,8 @@ export function DeviceStack({
         });
         if (controller.signal.aborted) {
           stack.dispose();
+        } else {
+          stackReference.current = stack;
         }
       } catch (error) {
         console.error("Unable to build the hero device stack:", error);
@@ -169,6 +181,7 @@ export function DeviceStack({
       loadObserver.disconnect();
       wideEnough.removeEventListener("change", bootWhenPossible);
       stack?.dispose();
+      stackReference.current = null;
       laptop.remove();
       tablet.remove();
       phone.remove();
@@ -211,11 +224,11 @@ export function DeviceStack({
         className="block size-full group-data-[cover-only=true]/stack:opacity-0"
       />
       {hosts === null ? null : (
-        <>
+        <ScreenProjectionContext value={projectScreenPoint}>
           {createPortal(laptopContent, hosts.laptop)}
           {createPortal(tabletContent, hosts.tablet)}
           {createPortal(phoneContent, hosts.phone)}
-        </>
+        </ScreenProjectionContext>
       )}
       {hasFailed ? (
         <MonoLabel

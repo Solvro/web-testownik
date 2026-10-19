@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 
 import { setSatelliteHovered } from "../satellite-hover";
 import {
   SCREEN_FRAME_SOURCE,
   parseScreenFrameMessage,
   screenFrameUrl,
+  wheelDeltaToPixels,
 } from "./screen-frame-protocol";
 import type {
   ScreenDevice,
   ScreenTheme,
   ScreenThemeMessage,
 } from "./screen-frame-protocol";
+import { ScreenProjectionContext } from "./screen-projection";
 
 const TITLES: Record<ScreenDevice, string> = {
   laptop: "Testownik na MacBooku",
@@ -25,6 +27,22 @@ const TITLES: Record<ScreenDevice, string> = {
  * lets the scene take over from the loading cover after this long.
  */
 const READY_TIMEOUT_MS = 8000;
+
+/**
+ * A pointer that leaves a frame for the page reaches the page as a real event
+ * within a frame or two; one that left the window entirely never does, and
+ * only then is the Bubble told the pointer is gone. Entering the frame is
+ * itself a real `pointerover` on the iframe, so a pointer that only crossed
+ * the frame in less than this is not dismissed either.
+ */
+const POINTER_GONE_MS = 120;
+
+/**
+ * How recently the page must have scrolled on its own for a forwarded wheel
+ * to count as one the browser already chained; wheel events come at least
+ * this often within one gesture.
+ */
+const NATIVE_CHAIN_MS = 100;
 
 function pageTheme(): ScreenTheme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
@@ -42,6 +60,11 @@ function pageTheme(): ScreenTheme {
  * theme is passed in the URL once and posted to the frame on every change.
  * Pointer events and `inert` come from the host, which the scene toggles
  * while a screen is hidden or the lid is closed.
+ *
+ * The frame hands back the input the page would otherwise lose to it (see
+ * `screen-frame-input.ts`): the wheel it cannot use scrolls the page, and its
+ * pointer is projected through the 3D screen and replayed on the page as a
+ * `pointermove`, so the hero Bubble follows the cursor across the devices.
  */
 export function DeviceScreenFrame({
   device,
@@ -63,12 +86,76 @@ export function DeviceScreenFrame({
     channel,
   });
   const source = sourceReference.current;
+  const projectScreenPoint = use(ScreenProjectionContext);
 
   useEffect(() => {
     const frame = frameReference.current;
     if (frame === null) {
       return;
     }
+
+    // --- Pointer -------------------------------------------------------
+    // Only a moving pointer is replayed. When the stack moves under a still
+    // one, the cursor has not moved on the page and the Bubble keeps its
+    // client point; the frame reports the new point under it if it changes.
+    const client = { x: 0, y: 0 };
+    let pointerInside = false;
+    let leftAt = 0;
+    let lastPagePointerAt = 0;
+    let goneTimeout = 0;
+
+    const replayPointer = (x: number, y: number): void => {
+      if (!projectScreenPoint(device, x, y, client)) {
+        return;
+      }
+      window.dispatchEvent(
+        new PointerEvent("pointermove", {
+          clientX: client.x,
+          clientY: client.y,
+          pointerType: "mouse",
+          isPrimary: true,
+        }),
+      );
+    };
+    const onPagePointer = (event: PointerEvent): void => {
+      if (event.isTrusted) {
+        lastPagePointerAt = performance.now();
+      }
+    };
+    const onPointerGone = (): void => {
+      goneTimeout = 0;
+      // The page gets no pointer events while the pointer is over the frame,
+      // so a real one around the time it left (either side: the page's and
+      // the frame's events are not ordered) means it is on the page now.
+      if (pointerInside || lastPagePointerAt > leftAt - POINTER_GONE_MS) {
+        return;
+      }
+      if (hoverShrinksBubble) {
+        setSatelliteHovered(false);
+      }
+      // What the Bubble reads as the pointer leaving the document.
+      window.dispatchEvent(
+        new PointerEvent("pointerout", { relatedTarget: null }),
+      );
+    };
+
+    // --- Wheel ---------------------------------------------------------
+    // Chrome sometimes hands a frame's wheel to the page itself: always for
+    // the tilted MacBook screen, now and then for the satellites, and no
+    // `overscroll-behavior` or `preventDefault` in the frame stops it. A page
+    // scroll that was not ours means the browser is chaining this gesture,
+    // and forwarded wheels are dropped while it does. (When the browser only
+    // starts chaining after the first forwarded wheel, that one tick lands
+    // twice; telling that apart from the browser taking over the next wheel
+    // is not possible from here, and undoing it undershoots as often.)
+    let ownScrollY = Number.NaN;
+    let foreignScrollAt = Number.NEGATIVE_INFINITY;
+    const onPageScroll = (): void => {
+      if (window.scrollY !== ownScrollY) {
+        foreignScrollAt = performance.now();
+      }
+      ownScrollY = Number.NaN;
+    };
 
     const onMessage = (event: MessageEvent<unknown>): void => {
       if (
@@ -78,15 +165,63 @@ export function DeviceScreenFrame({
         return;
       }
       const message = parseScreenFrameMessage(event.data);
-      if (message?.type === "ready" && message.device === device) {
-        setIsReady(true);
+      switch (message?.type) {
+        case "ready": {
+          if (message.device === device) {
+            setIsReady(true);
+          }
+          break;
+        }
+        case "wheel": {
+          // The frame only posts what nothing inside it could scroll. Where
+          // the browser chains that wheel to the page by itself, the page
+          // has already moved without us; scrolling again would double it.
+          if (performance.now() - foreignScrollAt < NATIVE_CHAIN_MS) {
+            break;
+          }
+          window.scrollBy(
+            wheelDeltaToPixels(
+              message.deltaX,
+              message.deltaMode,
+              window.innerWidth,
+            ),
+            wheelDeltaToPixels(
+              message.deltaY,
+              message.deltaMode,
+              window.innerHeight,
+            ),
+          );
+          ownScrollY = window.scrollY;
+          break;
+        }
+        case "pointer": {
+          pointerInside = true;
+          replayPointer(message.clientX, message.clientY);
+          break;
+        }
+        case "pointerleave": {
+          pointerInside = false;
+          leftAt = performance.now();
+          window.clearTimeout(goneTimeout);
+          goneTimeout = window.setTimeout(onPointerGone, POINTER_GONE_MS);
+          break;
+        }
+        // Theme messages go the other way; anything else is not ours.
+        case "theme":
+        case undefined: {
+          break;
+        }
       }
     };
     window.addEventListener("message", onMessage);
+    window.addEventListener("scroll", onPageScroll, { passive: true });
+    window.addEventListener("pointermove", onPagePointer, { passive: true });
+    window.addEventListener("pointerover", onPagePointer, { passive: true });
     const timeout = window.setTimeout(() => {
       setIsReady(true);
     }, READY_TIMEOUT_MS);
 
+    // --- Theme ---------------------------------------------------------
     let theme = pageTheme();
     const themeObserver = new MutationObserver(() => {
       const next = pageTheme();
@@ -110,10 +245,14 @@ export function DeviceScreenFrame({
 
     return () => {
       window.removeEventListener("message", onMessage);
+      window.removeEventListener("scroll", onPageScroll);
+      window.removeEventListener("pointermove", onPagePointer);
+      window.removeEventListener("pointerover", onPagePointer);
+      window.clearTimeout(goneTimeout);
       window.clearTimeout(timeout);
       themeObserver.disconnect();
     };
-  }, [device]);
+  }, [device, hoverShrinksBubble, projectScreenPoint]);
 
   return (
     <iframe

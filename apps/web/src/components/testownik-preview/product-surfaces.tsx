@@ -574,8 +574,10 @@ interface StandaloneProps {
  * stacked like the app's mobile quiz page: the header, the question (at least
  * a screen tall, answer controls at its bottom), the AI hint and the quiz
  * info card. In the mobile hero it keeps the browser's default scroll
- * chaining, so once the list ends the page carries on; in the desktop hero's
- * iframe the list holds its scroll, as the 3D screens always have.
+ * chaining, so once the list ends the page carries on. In the desktop hero's
+ * iframe the list contains its overscroll and the frame posts the wheel it
+ * cannot use to the page instead (`scene/screen-frame-input.ts` in the
+ * landing), which ends the same way without the frame's own root scrolling.
  */
 export function PhoneQuizSurface({
   session,

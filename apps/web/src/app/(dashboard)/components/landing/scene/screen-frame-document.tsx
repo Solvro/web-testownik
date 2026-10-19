@@ -11,6 +11,7 @@ import {
   DevicePhoneScreen,
   DeviceTabletScreen,
 } from "./device-screen-content";
+import { forwardScreenInput } from "./screen-frame-input";
 import {
   SCREEN_FRAME_SOURCE,
   parseScreenFrameMessage,
@@ -70,6 +71,12 @@ export function ScreenFrameDocument({
     };
     window.addEventListener("message", onMessage);
 
+    // Wheel and pointer input the page needs back; see `screen-frame-input.ts`.
+    // The root must not chain the wheel natively as well.
+    const root = document.documentElement;
+    root.style.overscrollBehavior = "none";
+    const stopForwarding = forwardScreenInput();
+
     // Two frames: the first commits the screen, the second has painted it.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => {
@@ -87,6 +94,8 @@ export function ScreenFrameDocument({
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("message", onMessage);
+      stopForwarding();
+      root.style.overscrollBehavior = "";
     };
   }, [device]);
 
