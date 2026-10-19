@@ -1,7 +1,8 @@
-import { Group, MathUtils } from "three";
+import { Group, MathUtils, Vector3 } from "three";
 import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
+import type { ScreenDevice } from "../screen-frame-protocol";
 import { createChoreography } from "./choreography";
 import { disposeModels, loadDeviceModels } from "./models";
 import type { DeviceModels } from "./models";
@@ -52,8 +53,25 @@ export interface DeviceStackOptions {
   onReady: () => void;
 }
 
+/** A point in the page's client (viewport) coordinates. */
+export interface ClientPoint {
+  x: number;
+  y: number;
+}
+
 export interface DeviceStack {
   dispose: () => void;
+  /**
+   * Where a point on a live screen, in that screen's own CSS pixels (its
+   * iframe's client coordinates), is on the page as currently rendered.
+   * Writes it to `out` and returns false if it is behind the camera.
+   */
+  projectScreenPoint: (
+    device: ScreenDevice,
+    x: number,
+    y: number,
+    out: ClientPoint,
+  ) => boolean;
 }
 
 /**
@@ -141,7 +159,7 @@ export async function createDeviceStack({
     stage.dispose();
     // An aborted download is the hero unmounting, not a failure.
     if (signal.aborted) {
-      return { dispose: stage.dispose };
+      return { dispose: stage.dispose, projectScreenPoint: () => false };
     }
     throw error;
   }
@@ -161,7 +179,7 @@ export async function createDeviceStack({
   // The models can take seconds to arrive; the hero may be long gone by then.
   if (signal.aborted) {
     teardown();
-    return { dispose: teardown };
+    return { dispose: teardown, projectScreenPoint: () => false };
   }
 
   // --- Devices ------------------------------------------------------------
@@ -368,7 +386,42 @@ export async function createDeviceStack({
 
   readinessFrame = window.requestAnimationFrame(revealWhenSurfacesAreStable);
 
+  // --- Screen → page projection ------------------------------------------
+  const screenObjects = {
+    laptop: laptopScreen,
+    tablet: tabletScreen,
+    phone: phoneScreen,
+  } as const;
+  const projected = new Vector3();
+
+  /**
+   * CSS3DRenderer centres each host on its object's origin with +y up, and
+   * the object's scale is scene units per CSS pixel, so a host pixel is a
+   * point on the object's local z = 0 plane. The world matrices are the ones
+   * the last frame rendered with.
+   */
+  const projectScreenPoint: DeviceStack["projectScreenPoint"] = (
+    device,
+    x,
+    y,
+    out,
+  ) => {
+    const placement = SCREEN_PLACEMENT[device];
+    projected
+      .set(x - placement.width / 2, placement.height / 2 - y, 0)
+      .applyMatrix4(screenObjects[device].matrixWorld)
+      .project(camera);
+    if (projected.z > 1) {
+      return false;
+    }
+    const rect = canvas.getBoundingClientRect();
+    out.x = rect.left + ((projected.x + 1) / 2) * rect.width;
+    out.y = rect.top + ((1 - projected.y) / 2) * rect.height;
+    return true;
+  };
+
   return {
+    projectScreenPoint,
     dispose() {
       visibilityObserver.disconnect();
       resizeObserver.disconnect();

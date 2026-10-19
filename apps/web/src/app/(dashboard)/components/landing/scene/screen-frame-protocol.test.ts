@@ -7,7 +7,16 @@ import {
   parseScreenFrameMessage,
   parseScreenFrameRequest,
   screenFrameUrl,
+  wheelDeltaToPixels,
 } from "./screen-frame-protocol";
+
+describe("wheelDeltaToPixels", () => {
+  it("passes pixels through and scales lines and pages", () => {
+    expect(wheelDeltaToPixels(-53.5, 0, 900)).toBe(-53.5);
+    expect(wheelDeltaToPixels(3, 1, 900)).toBe(120);
+    expect(wheelDeltaToPixels(-1, 2, 800)).toBe(-700);
+  });
+});
 
 describe("parseScreenFrameRequest", () => {
   it.each(["laptop", "tablet", "phone"] as const)("accepts %s", (device) => {
@@ -75,7 +84,7 @@ describe("createScreenChannelName", () => {
 });
 
 describe("parseScreenFrameMessage", () => {
-  it("accepts the two messages", () => {
+  it("accepts the theme and ready messages", () => {
     expect(
       parseScreenFrameMessage({
         source: SCREEN_FRAME_SOURCE,
@@ -92,9 +101,63 @@ describe("parseScreenFrameMessage", () => {
     ).toEqual({ source: SCREEN_FRAME_SOURCE, type: "ready", device: "tablet" });
   });
 
+  it("accepts the wheel and pointer messages", () => {
+    const wheel = {
+      source: SCREEN_FRAME_SOURCE,
+      type: "wheel",
+      deltaX: 0,
+      deltaY: -120,
+      deltaMode: 1,
+    };
+    expect(parseScreenFrameMessage(wheel)).toEqual(wheel);
+    const pointer = {
+      source: SCREEN_FRAME_SOURCE,
+      type: "pointer",
+      clientX: 12.5,
+      clientY: 400,
+    };
+    expect(parseScreenFrameMessage(pointer)).toEqual(pointer);
+    expect(
+      parseScreenFrameMessage({
+        source: SCREEN_FRAME_SOURCE,
+        type: "pointerleave",
+      }),
+    ).toEqual({ source: SCREEN_FRAME_SOURCE, type: "pointerleave" });
+  });
+
   it.each([
     null,
     "ready",
+    { source: SCREEN_FRAME_SOURCE, type: "wheel", deltaX: 0, deltaY: 10 },
+    {
+      source: SCREEN_FRAME_SOURCE,
+      type: "wheel",
+      deltaX: 0,
+      deltaY: Number.NaN,
+      deltaMode: 0,
+    },
+    {
+      source: SCREEN_FRAME_SOURCE,
+      type: "wheel",
+      deltaX: "1",
+      deltaY: 10,
+      deltaMode: 0,
+    },
+    {
+      source: SCREEN_FRAME_SOURCE,
+      type: "wheel",
+      deltaX: 0,
+      deltaY: 10,
+      deltaMode: 3,
+    },
+    { source: SCREEN_FRAME_SOURCE, type: "pointer", clientX: 1 },
+    {
+      source: SCREEN_FRAME_SOURCE,
+      type: "pointer",
+      clientX: Number.POSITIVE_INFINITY,
+      clientY: 1,
+    },
+    { type: "pointerleave" },
     { type: "ready", device: "phone" },
     { source: SCREEN_FRAME_SOURCE, type: "ready", device: "watch" },
     { source: SCREEN_FRAME_SOURCE, type: "theme", theme: "sepia" },

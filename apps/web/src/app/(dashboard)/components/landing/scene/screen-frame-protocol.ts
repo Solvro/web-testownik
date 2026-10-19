@@ -93,7 +93,47 @@ export interface ScreenReadyMessage {
   device: ScreenDevice;
 }
 
-export type ScreenFrameMessage = ScreenThemeMessage | ScreenReadyMessage;
+/**
+ * Frame → page: a wheel the screen could not use. Sent only when no scroller
+ * under the pointer can move further that way, so the page scrolls instead
+ * and nothing scrolls twice. Deltas are the event's own, in `deltaMode` units.
+ */
+export interface ScreenWheelMessage {
+  source: typeof SCREEN_FRAME_SOURCE;
+  type: "wheel";
+  deltaX: number;
+  deltaY: number;
+  /** `WheelEvent.DOM_DELTA_PIXEL` (0), `_LINE` (1) or `_PAGE` (2). */
+  deltaMode: number;
+}
+
+/**
+ * Frame → page: where the pointer is on the screen, in the frame's own CSS
+ * pixels (at most one per animation frame), so the hero Bubble can follow it
+ * across the device. `pointerleave` once it leaves the frame's document.
+ */
+export interface ScreenPointerMessage {
+  source: typeof SCREEN_FRAME_SOURCE;
+  type: "pointer";
+  clientX: number;
+  clientY: number;
+}
+
+export interface ScreenPointerLeaveMessage {
+  source: typeof SCREEN_FRAME_SOURCE;
+  type: "pointerleave";
+}
+
+export type ScreenFrameMessage =
+  | ScreenThemeMessage
+  | ScreenReadyMessage
+  | ScreenWheelMessage
+  | ScreenPointerMessage
+  | ScreenPointerLeaveMessage;
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
 
 export function parseScreenFrameMessage(
   data: unknown,
@@ -114,7 +154,49 @@ export function parseScreenFrameMessage(
   if (message.type === "ready" && isScreenDevice(message.device)) {
     return message as unknown as ScreenReadyMessage;
   }
+  if (
+    message.type === "wheel" &&
+    isFiniteNumber(message.deltaX) &&
+    isFiniteNumber(message.deltaY) &&
+    (message.deltaMode === 0 ||
+      message.deltaMode === 1 ||
+      message.deltaMode === 2)
+  ) {
+    return message as unknown as ScreenWheelMessage;
+  }
+  if (
+    message.type === "pointer" &&
+    isFiniteNumber(message.clientX) &&
+    isFiniteNumber(message.clientY)
+  ) {
+    return message as unknown as ScreenPointerMessage;
+  }
+  if (message.type === "pointerleave") {
+    return message as unknown as ScreenPointerLeaveMessage;
+  }
   return null;
+}
+
+/** What one wheel "line" scrolls, as Chrome and Firefox do for the page. */
+const WHEEL_LINE_PX = 40;
+
+/**
+ * Converts a forwarded wheel delta to CSS pixels. Lines are browser-defined;
+ * a page is the scrolled viewport less a little overlap, as the browsers'
+ * own page scrolling does.
+ */
+export function wheelDeltaToPixels(
+  delta: number,
+  deltaMode: number,
+  pageSize: number,
+): number {
+  if (deltaMode === 1) {
+    return delta * WHEEL_LINE_PX;
+  }
+  if (deltaMode === 2) {
+    return delta * Math.max(pageSize * 0.875, 1);
+  }
+  return delta;
 }
 
 /** A fresh channel name per page load. */
