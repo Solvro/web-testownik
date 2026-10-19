@@ -693,8 +693,8 @@ export function warmTocSectionPreviews(
       tracker.markDirty(section.id);
       wake();
     };
-    // Inner scrollers do not gate rebuilds: the team carousel scrolls itself
-    // every frame while on screen.
+    // Inner scrollers do not gate rebuilds: a section that scrolls itself
+    // would otherwise keep its preview permanently dirty.
     const markScrolled = (): void => {
       tracker.markScrolled(section.id);
       wake();

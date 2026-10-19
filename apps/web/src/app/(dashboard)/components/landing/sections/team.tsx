@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { Suspense } from "react";
+import type { CSSProperties } from "react";
 import { FiGithub } from "react-icons/fi";
 
 import type { GitHubContributor } from "@/lib/contributors";
@@ -9,6 +10,15 @@ import { FOCUS_RING } from "../components/focus";
 import { DisplayHeading } from "../components/typography";
 import { REPOSITORY_URL } from "../landing-content";
 import { TeamRoster, TeamRosterFallback } from "./team-roster";
+
+/** Graph paper behind the heading, fading out before the roster starts. */
+const gridBackdropStyle: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+  backgroundSize: "4rem 4rem",
+  maskImage:
+    "radial-gradient(ellipse 70% 100% at 18% 0%, black, transparent 80%)",
+};
 
 export function Team({
   contributors,
@@ -22,8 +32,13 @@ export function Team({
   return (
     <section
       id="team"
-      className="bg-background w-full scroll-mt-4 px-4 pt-16 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pb-16"
+      className="bg-background relative isolate w-full scroll-mt-4 px-4 pt-16 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pb-16"
     >
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 -z-10 h-[28rem] opacity-60"
+        style={gridBackdropStyle}
+      />
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)] lg:items-end">
         <div>
           <DisplayHeading className="max-w-[12ch] text-[clamp(2.8rem,11vw,4.2rem)] leading-[0.9] sm:text-[clamp(3.4rem,5vw,4.9rem)]">
