@@ -14,6 +14,7 @@ import {
   Share2Icon,
   SparklesIcon,
   TimerIcon,
+  Undo2,
 } from "lucide-react";
 import { useId, useState } from "react";
 import type { ReactNode } from "react";
@@ -97,13 +98,12 @@ const QUIZ_DENSITY: Record<Density, string> = {
   full: "",
   compact: "text-[0.86em]",
   phone: cn(
-    "flex flex-1 flex-col text-[0.62em]",
-    // One card at least as tall as the screen, with the answer controls
-    // pinned to its bottom; longer content (an explanation) scrolls.
-    "[&_[data-slot=card]]:flex [&_[data-slot=card]]:flex-1 [&_[data-slot=card]]:flex-col [&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
+    "flex flex-col text-[0.62em]",
+    "[&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
     "[&_[data-slot=card-header]]:px-3 [&_[data-slot=card-content]]:px-3",
-    "[&_[data-slot=card-content]]:flex [&_[data-slot=card-content]]:flex-1 [&_[data-slot=card-content]]:flex-col",
-    "[&_[data-slot=card-content]>:nth-child(3)]:mt-auto",
+    // The card's own action row is hidden: `PhoneQuizSurface` docks the
+    // same buttons at the bottom of the screen, as the mobile quiz page does.
+    "[&_[data-slot=card-content]>:nth-child(3)]:hidden",
   ),
 };
 
@@ -577,6 +577,44 @@ interface StandaloneProps {
  * chaining, so once the list ends the page carries on; in the desktop hero's
  * iframe the list holds its scroll, as the 3D screens always have.
  */
+/**
+ * The quiz card's action row, docked at the bottom of the phone screen so it
+ * stays in reach while the question and the AI hint scroll above it.
+ */
+function PhoneQuizActions({
+  session,
+}: {
+  session: PreviewQuizSession;
+}): React.JSX.Element {
+  const { view } = session;
+
+  return (
+    <div className="bg-background flex shrink-0 justify-end gap-2 px-[0.8rem] pt-2 pb-5 text-[0.62em]">
+      {view.isHistoryQuestion ? (
+        <Button variant="outline" onClick={session.back}>
+          Powrót do pytań
+        </Button>
+      ) : (
+        <>
+          {view.canGoBack && !view.questionChecked ? (
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Poprzednie pytanie"
+              onClick={session.back}
+            >
+              <Undo2 />
+            </Button>
+          ) : null}
+          <Button onClick={session.next}>
+            {view.questionChecked ? "Następne pytanie" : "Sprawdź odpowiedź"}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function PhoneQuizSurface({
   session,
   standalone = false,
@@ -622,6 +660,7 @@ export function PhoneQuizSurface({
             </>
           )}
         </div>
+        {screen.view === "quiz" ? <PhoneQuizActions session={session} /> : null}
       </div>
     </PreviewScreenShell>
   );
