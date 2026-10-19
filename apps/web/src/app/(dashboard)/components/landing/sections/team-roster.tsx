@@ -17,9 +17,12 @@ import type { ProjectTeam, TeamMember } from "../team-data";
 const COMMUNITY_LIMIT = 12;
 const SKELETON_COUNT = 6;
 /*
- * The open source grid always spans COMMUNITY_LIMIT slots, filled or not, so the
- * skeleton and the resolved list take the same rows at every column count.
+ * The open source row reserves the height of COMMUNITY_LIMIT entries (36 px
+ * rows, 16 px gaps) at every column count, so the skeleton, the resolved list
+ * and the error state take the same space without rendering empty slots.
  */
+const COMMUNITY_MIN_HEIGHT =
+  "min-h-[calc(6*2.25rem+5*1rem)] md:min-h-[calc(4*2.25rem+3*1rem)] xl:min-h-[calc(3*2.25rem+2*1rem)]";
 
 /** Masthead order: who decides, who builds, who makes it look and sound good. */
 const TEAM_ORDER: readonly ProjectTeam[] = [
@@ -97,8 +100,11 @@ function memberImageUrl(
   return member.imageUrl;
 }
 
-function memberUiAvatarUrl(name: string, size: AvatarSize): string {
-  return `https://ui-avatars.com/api/?background=7c3aed&color=fff&name=${name.replaceAll(" ", "+")}&size=${avatarPixels(size)}`;
+function initials(name: string): string {
+  const words = name.split(/[\s_.-]+/).filter(Boolean);
+  const letters =
+    words.length >= 2 ? `${words[0][0]}${words[1][0]}` : name.slice(0, 2);
+  return letters.toUpperCase();
 }
 
 function contributorAvatarUrl(
@@ -134,35 +140,48 @@ function githubFor(
     : githubByLogin?.get(member.github.toLowerCase());
 }
 
+/** The photo, or neutral initials when there is none or it fails to load. */
 function Avatar({
   imageUrl,
-  fallbackUrl,
+  name,
   size,
 }: {
   imageUrl?: string;
-  fallbackUrl: string;
+  name: string;
   size: AvatarSize;
 }): React.JSX.Element {
   const [failedUrl, setFailedUrl] = useState<string>();
-  const source =
-    imageUrl === undefined || imageUrl === failedUrl ? fallbackUrl : imageUrl;
+  const className = cn(
+    "bg-muted ring-border shrink-0 rounded-full ring-1",
+    size === 44 ? "size-11" : "size-9",
+  );
+
+  if (imageUrl === undefined || imageUrl === failedUrl) {
+    return (
+      <span
+        aria-hidden="true"
+        className={cn(
+          className,
+          "text-foreground grid place-items-center font-semibold tracking-[-0.02em] select-none",
+          size === 44 ? "text-sm" : "text-xs",
+        )}
+      >
+        {initials(name)}
+      </span>
+    );
+  }
 
   return (
     <Image
-      src={source}
+      src={imageUrl}
       width={size}
       height={size}
       sizes={`${String(size)}px`}
       alt=""
       unoptimized
-      className={cn(
-        "bg-muted ring-border shrink-0 rounded-full object-cover ring-1",
-        size === 44 ? "size-11" : "size-9",
-      )}
+      className={cn(className, "object-cover")}
       onError={() => {
-        if (source !== fallbackUrl) {
-          setFailedUrl(source);
-        }
+        setFailedUrl(imageUrl);
       }}
     />
   );
@@ -256,7 +275,7 @@ function MemberEntry({
     <EntryShell href={href} label={`${member.name}, ${role} — otwórz profil`}>
       <Avatar
         imageUrl={memberImageUrl(member, size)}
-        fallbackUrl={memberUiAvatarUrl(member.name, size)}
+        name={member.name}
         size={size}
       />
       <span className="flex min-w-0 flex-col">
@@ -308,7 +327,7 @@ function ContributorEntry({
     >
       <Avatar
         imageUrl={contributorAvatarUrl(contributor, 36)}
-        fallbackUrl={memberUiAvatarUrl(contributor.login, 36)}
+        name={contributor.login}
         size={36}
       />
       <span className="flex min-w-0 flex-col">
@@ -394,13 +413,41 @@ function OpenSourceMore({
   );
 }
 
+/** Holds the open source row's footprint when GitHub could not be reached. */
+function OpenSourceUnavailable(): React.JSX.Element {
+  return (
+    <div
+      className={cn("flex flex-col items-start gap-2", COMMUNITY_MIN_HEIGHT)}
+    >
+      <p className="text-muted-foreground text-sm">
+        Nie udało się pobrać listy z GitHuba.
+      </p>
+      <a
+        href={`${REPOSITORY_URL}/graphs/contributors`}
+        target="_blank"
+        rel="noreferrer"
+        className={cn(
+          "text-foreground hover:text-primary inline-flex items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 [&_svg]:size-3.5",
+          FOCUS_RING,
+        )}
+      >
+        Zobacz kontrybutorów na GitHubie
+        <ArrowUpRight aria-hidden="true" />
+      </a>
+    </div>
+  );
+}
+
 function Masthead({
   githubByLogin,
   community,
+  failed = false,
 }: {
   githubByLogin?: GitHubByLogin;
   /** `undefined` while GitHub is still loading. */
   community?: readonly GitHubContributor[];
+  /** GitHub returned nothing, so the row shows a quiet error instead. */
+  failed?: boolean;
 }): React.JSX.Element {
   const visibleCommunity = community?.slice(0, COMMUNITY_LIMIT);
   const hiddenCommunity =
@@ -446,7 +493,7 @@ function Masthead({
           </CreditRow>
         )}
 
-        {visibleCommunity?.length === 0 ? null : (
+        {!failed && visibleCommunity?.length === 0 ? null : (
           <CreditRow
             label="Open source"
             labelledBy="team-community"
@@ -457,44 +504,37 @@ function Masthead({
               />
             }
           >
-            <ul
-              aria-busy={community === undefined}
-              className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4"
-            >
-              {visibleCommunity === undefined
-                ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
-                    <li
-                      key={index}
-                      aria-hidden="true"
-                      className="flex h-9 items-center gap-3"
-                    >
-                      <Skeleton className="size-9 shrink-0 rounded-full" />
-                      <span className="flex flex-col gap-2">
-                        <Skeleton className="h-3 w-20" />
-                        <Skeleton className="h-2 w-12" />
-                      </span>
-                    </li>
-                  ))
-                : visibleCommunity.map((contributor) => (
-                    <li key={contributor.login} className="min-w-0">
-                      <ContributorEntry contributor={contributor} />
-                    </li>
-                  ))}
-              {Array.from(
-                {
-                  length:
-                    COMMUNITY_LIMIT -
-                    (visibleCommunity?.length ?? SKELETON_COUNT),
-                },
-                (_, index) => (
-                  <li
-                    key={`slot-${String(index)}`}
-                    aria-hidden="true"
-                    className="h-9"
-                  />
-                ),
-              )}
-            </ul>
+            {failed ? (
+              <OpenSourceUnavailable />
+            ) : (
+              <ul
+                aria-busy={community === undefined}
+                className={cn(
+                  "grid grid-cols-2 content-start gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4",
+                  COMMUNITY_MIN_HEIGHT,
+                )}
+              >
+                {visibleCommunity === undefined
+                  ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
+                      <li
+                        key={index}
+                        aria-hidden="true"
+                        className="flex h-9 items-center gap-3"
+                      >
+                        <Skeleton className="size-9 shrink-0 rounded-full" />
+                        <span className="flex flex-col gap-2">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-2 w-12" />
+                        </span>
+                      </li>
+                    ))
+                  : visibleCommunity.map((contributor) => (
+                      <li key={contributor.login} className="min-w-0">
+                        <ContributorEntry contributor={contributor} />
+                      </li>
+                    ))}
+              </ul>
+            )}
           </CreditRow>
         )}
       </div>
@@ -525,5 +565,12 @@ export function TeamRoster({
     )
     .toSorted((a, b) => b.contributions - a.contributions);
 
-  return <Masthead githubByLogin={githubByLogin} community={community} />;
+  // The server resolves to an empty list when GitHub fails or times out.
+  return (
+    <Masthead
+      githubByLogin={githubByLogin}
+      community={community}
+      failed={resolved.length === 0}
+    />
+  );
 }
