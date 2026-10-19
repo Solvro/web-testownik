@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Question } from "@testownik/core/quiz/types";
 import { DefaultChatTransport } from "ai";
 import type { UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
@@ -54,22 +54,7 @@ function getSubmittedUserMessageId({
   return messages.findLast((message) => message.role === "user")?.id ?? null;
 }
 
-export function ChatRuntime({
-  quizId,
-  quiz,
-  question,
-  questions,
-  userName,
-  canEdit,
-  selectedModel,
-  children,
-  onQuotaExceeded,
-  onModelResolved,
-  demo = false,
-  onResponse,
-  suggestions: suggestionsOverride,
-  initialMessages,
-}: {
+interface ChatRuntimeProps {
   quizId: string;
   quiz: { title: string; description: string };
   question: Question | null;
@@ -101,7 +86,168 @@ export function ChatRuntime({
   suggestions?: readonly string[];
   /** The conversation to continue, read once. */
   initialMessages?: UIMessage[];
+}
+
+type TransportContext = Pick<
+  ChatRuntimeProps,
+  | "quiz"
+  | "question"
+  | "questions"
+  | "userName"
+  | "canEdit"
+  | "selectedModel"
+  | "onQuotaExceeded"
+  | "onModelResolved"
+  | "onResponse"
+>;
+
+/** Imperative SDK callbacks own the mutable session; React subscribes to snapshots. */
+function createRuntimeTransport({
+  demo,
+  quizId,
+  initialContext,
+}: {
+  demo: boolean;
+  quizId: string;
+  initialContext: TransportContext;
 }) {
+  let context = initialContext;
+  let sentMessages: UIMessage[] = [];
+  let snapshotList: QuestionContextSnapshot[] = [];
+  const questionSnapshots = new Map<string, QuestionContextSnapshot>();
+  const conversationId = crypto.randomUUID();
+  const listeners = new Set<() => void>();
+  const transport = new DefaultChatTransport<UIMessage>({
+    api: demo ? LANDING_DEMO_CHAT_ENDPOINT : "/ai/chat",
+    fetch: async (input, init) => {
+      const fetched = await fetch(input, init);
+      const response =
+        context.onResponse?.(fetched, {
+          messages: sentMessages,
+        }) ?? fetched;
+      if (demo) {
+        return response;
+      }
+      const quotaBody = await parseQuotaExceededResponse(response);
+      if (quotaBody !== null) {
+        context.onQuotaExceeded?.(quotaBody);
+      }
+      if (response.ok) {
+        const resolvedModel = response.headers.get(AI_RESPONSE_HEADERS.model);
+        if (resolvedModel !== null) {
+          context.onModelResolved?.(
+            resolvedModel,
+            response.headers.get(AI_RESPONSE_HEADERS.quotaTier),
+            response.headers.get(AI_RESPONSE_HEADERS.fallbackResetAt),
+          );
+        }
+      }
+      return response;
+    },
+    prepareSendMessagesRequest: (options) => {
+      sentMessages = options.messages;
+      const messageIds = new Set(options.messages.map((message) => message.id));
+      for (const messageId of questionSnapshots.keys()) {
+        if (!messageIds.has(messageId)) {
+          questionSnapshots.delete(messageId);
+        }
+      }
+
+      const submittedUserMessageId = getSubmittedUserMessageId(options);
+      const currentQuestion = context.question;
+      if (submittedUserMessageId !== null) {
+        if (currentQuestion === null) {
+          questionSnapshots.delete(submittedUserMessageId);
+        } else {
+          questionSnapshots.set(submittedUserMessageId, {
+            messageId: submittedUserMessageId,
+            questionId: currentQuestion.id,
+          });
+        }
+      }
+
+      const snapshots = options.messages
+        .map((message) => questionSnapshots.get(message.id))
+        .filter(
+          (snapshot): snapshot is QuestionContextSnapshot =>
+            snapshot !== undefined,
+        );
+      snapshotList = snapshots;
+      for (const listener of listeners) {
+        listener();
+      }
+      const current = context;
+
+      if (demo) {
+        const messages = trimLandingDemoChatHistory(options.messages);
+        const sentIds = new Set(messages.map((message) => message.id));
+        return {
+          body: {
+            messages,
+            questionContextSnapshots: snapshots.filter((snapshot) =>
+              sentIds.has(snapshot.messageId),
+            ),
+            question: current.question,
+            questions: current.questions.slice(
+              0,
+              LANDING_DEMO_CHAT_LIMITS.maxQuestions,
+            ),
+          },
+        };
+      }
+
+      return {
+        body: {
+          ...options.body,
+          id: options.id,
+          messages: options.messages,
+          trigger: options.trigger,
+          messageId: options.messageId,
+          metadata: options.requestMetadata,
+          questionContextSnapshots: snapshots,
+          quiz: current.quiz,
+          question: current.question,
+          questions: current.questions,
+          userName: current.userName,
+          canEdit: current.canEdit,
+          quizId,
+          conversationId,
+          config: { modelName: current.selectedModel },
+        },
+      };
+    },
+  });
+  return {
+    transport,
+    updateContext(next: TransportContext) {
+      context = next;
+    },
+    getSnapshot: () => snapshotList,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+export function ChatRuntime({
+  quizId,
+  quiz,
+  question,
+  questions,
+  userName,
+  canEdit,
+  selectedModel,
+  children,
+  onQuotaExceeded,
+  onModelResolved,
+  demo = false,
+  onResponse,
+  suggestions: suggestionsOverride,
+  initialMessages,
+}: ChatRuntimeProps) {
   const queryClient = useQueryClient();
   const usageRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -109,147 +255,57 @@ export function ChatRuntime({
   const [lengthLimitedMessageIds, setLengthLimitedMessageIds] = useState(
     () => new Set<string>(),
   );
-  const routeContext = useMemo(
-    () => ({ quiz, question, questions, userName, canEdit, selectedModel }),
-    [canEdit, quiz, question, questions, selectedModel, userName],
+  // The store identity never changes; useSyncExternalStore subscribes to updates.
+  // eslint-disable-next-line react/hook-use-state
+  const [transportStore] = useState(() =>
+    createRuntimeTransport({
+      demo,
+      quizId,
+      initialContext: {
+        quiz,
+        question,
+        questions,
+        userName,
+        canEdit,
+        selectedModel,
+        onQuotaExceeded,
+        onModelResolved,
+        onResponse,
+      },
+    }),
   );
-  const routeContextRef = useRef(routeContext);
-  const onQuotaExceededRef = useRef(onQuotaExceeded);
-  const onModelResolvedRef = useRef(onModelResolved);
-  const onResponseRef = useRef(onResponse);
   useEffect(() => {
-    routeContextRef.current = routeContext;
-    onQuotaExceededRef.current = onQuotaExceeded;
-    onModelResolvedRef.current = onModelResolved;
-    onResponseRef.current = onResponse;
-  }, [onModelResolved, onQuotaExceeded, onResponse, routeContext]);
-
-  const questionContextSnapshotsRef = useRef(
-    new Map<string, QuestionContextSnapshot>(),
-  );
-  const conversationIdRef = useRef(crypto.randomUUID());
-  const sentMessagesRef = useRef<UIMessage[]>([]);
-
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport<UIMessage>({
-        api: demo ? LANDING_DEMO_CHAT_ENDPOINT : "/ai/chat",
-        fetch: async (input, init) => {
-          const fetched = await fetch(input, init);
-          const response =
-            onResponseRef.current?.(fetched, {
-              messages: sentMessagesRef.current,
-            }) ?? fetched;
-          if (demo) {
-            return response;
-          }
-          const quotaBody = await parseQuotaExceededResponse(response);
-          if (quotaBody !== null) {
-            onQuotaExceededRef.current?.(quotaBody);
-          }
-          if (response.ok) {
-            const resolvedModel = response.headers.get(
-              AI_RESPONSE_HEADERS.model,
-            );
-            if (resolvedModel !== null) {
-              onModelResolvedRef.current?.(
-                resolvedModel,
-                response.headers.get(AI_RESPONSE_HEADERS.quotaTier),
-                response.headers.get(AI_RESPONSE_HEADERS.fallbackResetAt),
-              );
-            }
-          }
-          return response;
-        },
-        prepareSendMessagesRequest: (options) => {
-          sentMessagesRef.current = options.messages;
-          const messageIds = new Set(
-            options.messages.map((message) => message.id),
-          );
-          for (const messageId of questionContextSnapshotsRef.current.keys()) {
-            if (!messageIds.has(messageId)) {
-              questionContextSnapshotsRef.current.delete(messageId);
-            }
-          }
-
-          const submittedUserMessageId = getSubmittedUserMessageId(options);
-          const currentQuestion = routeContextRef.current.question;
-          if (submittedUserMessageId !== null) {
-            if (currentQuestion === null) {
-              questionContextSnapshotsRef.current.delete(
-                submittedUserMessageId,
-              );
-            } else {
-              questionContextSnapshotsRef.current.set(submittedUserMessageId, {
-                messageId: submittedUserMessageId,
-                questionId: currentQuestion.id,
-              });
-            }
-          }
-
-          const questionContextSnapshots = options.messages
-            .map((message) =>
-              questionContextSnapshotsRef.current.get(message.id),
-            )
-            .filter(
-              (snapshot): snapshot is QuestionContextSnapshot =>
-                snapshot !== undefined,
-            );
-          const current = routeContextRef.current;
-
-          if (demo) {
-            const messages = trimLandingDemoChatHistory(options.messages);
-            const sentIds = new Set(messages.map((message) => message.id));
-            return {
-              body: {
-                messages,
-                questionContextSnapshots: questionContextSnapshots.filter(
-                  (snapshot) => sentIds.has(snapshot.messageId),
-                ),
-                question: current.question,
-                questions: current.questions.slice(
-                  0,
-                  LANDING_DEMO_CHAT_LIMITS.maxQuestions,
-                ),
-              },
-            };
-          }
-
-          return {
-            body: {
-              ...options.body,
-              id: options.id,
-              messages: options.messages,
-              trigger: options.trigger,
-              messageId: options.messageId,
-              metadata: options.requestMetadata,
-              questionContextSnapshots,
-              quiz: current.quiz,
-              question: current.question,
-              questions: current.questions,
-              userName: current.userName,
-              canEdit: current.canEdit,
-              quizId,
-              conversationId: conversationIdRef.current,
-              config: { modelName: current.selectedModel },
-            },
-          };
-        },
-      }),
-    [demo, quizId],
-  );
-
-  useEffect(
-    () => () => {
-      if (usageRefreshTimerRef.current !== null) {
-        clearTimeout(usageRefreshTimerRef.current);
-      }
-    },
-    [],
+    transportStore.updateContext({
+      quiz,
+      question,
+      questions,
+      userName,
+      canEdit,
+      selectedModel,
+      onQuotaExceeded,
+      onModelResolved,
+      onResponse,
+    });
+  }, [
+    transportStore,
+    quiz,
+    question,
+    questions,
+    userName,
+    canEdit,
+    selectedModel,
+    onQuotaExceeded,
+    onModelResolved,
+    onResponse,
+  ]);
+  const questionContextSnapshots = useSyncExternalStore(
+    transportStore.subscribe,
+    transportStore.getSnapshot,
+    transportStore.getSnapshot,
   );
 
   const chat = useChat({
-    transport,
+    transport: transportStore.transport,
     messages: initialMessages,
     onFinish: ({ message, finishReason }) => {
       setLengthLimitedMessageIds((current) => {
@@ -277,40 +333,44 @@ export function ChatRuntime({
       }, USAGE_REPORT_SETTLE_DELAY_MS);
     },
   });
-  const defaultSuggestions = useMemo(() => {
-    const prompts = [
-      "Wyjaśnij to pytanie",
-      "Podaj wskazówkę do odpowiedzi",
-      "Znajdź podobne pytania w tym quizie",
-      ...(canEdit
-        ? [
-            "Popraw literówki w tym pytaniu",
-            "Wygeneruj 5 podobnych pytań",
-            "Dodaj wyjaśnienie odpowiedzi",
-            "Popraw formatowanie tego pytania",
-            "Uprość to pytanie",
-          ]
-        : []),
-    ];
-    return prompts.slice(0, 2);
-  }, [canEdit]);
+  const { stop } = chat;
+  useEffect(
+    () => () => {
+      void stop();
+      if (usageRefreshTimerRef.current !== null) {
+        clearTimeout(usageRefreshTimerRef.current);
+      }
+    },
+    [stop],
+  );
+  const defaultSuggestions = [
+    "Wyjaśnij to pytanie",
+    "Podaj wskazówkę do odpowiedzi",
+    "Znajdź podobne pytania w tym quizie",
+    ...(canEdit
+      ? [
+          "Popraw literówki w tym pytaniu",
+          "Wygeneruj 5 podobnych pytań",
+          "Dodaj wyjaśnienie odpowiedzi",
+          "Popraw formatowanie tego pytania",
+          "Uprość to pytanie",
+        ]
+      : []),
+  ].slice(0, 2);
   const suggestions = suggestionsOverride ?? defaultSuggestions;
   const runtime: ChatRuntimeValue = {
     ...chat,
     lengthLimitedMessageIds,
     suggestions,
-    questionContextSnapshots: [...questionContextSnapshotsRef.current.values()],
+    questionContextSnapshots,
   };
-  const chatContext = useMemo(
-    () => ({
-      quizId,
-      questionId: question?.id ?? null,
-      question,
-      questions,
-      canEdit,
-    }),
-    [quizId, question, questions, canEdit],
-  );
+  const chatContext = {
+    quizId,
+    questionId: question?.id ?? null,
+    question,
+    questions,
+    canEdit,
+  };
 
   return (
     <AiChatProvider value={chatContext}>{children(runtime)}</AiChatProvider>

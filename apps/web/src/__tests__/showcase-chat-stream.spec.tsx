@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AiDemo } from "@/app/(dashboard)/components/landing/sections/product-showcase/ai-demo";
@@ -48,7 +48,7 @@ describe("showcase chat lifetime", () => {
     const user = userEvent.setup();
     const continueStream = Promise.withResolvers<boolean>();
     const finishStream = Promise.withResolvers<boolean>();
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => {
       await Promise.resolve();
       return createUIMessageStreamResponse({
         stream: createUIMessageStream({
@@ -75,9 +75,11 @@ describe("showcase chat lifetime", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     render(
-      <ShowcaseSessionProvider>
-        <Tabs />
-      </ShowcaseSessionProvider>,
+      <StrictMode>
+        <ShowcaseSessionProvider>
+          <Tabs />
+        </ShowcaseSessionProvider>
+      </StrictMode>,
     );
 
     await user.click(
@@ -88,11 +90,15 @@ describe("showcase chat lifetime", () => {
     });
     const originalQuestionId = screen.getByTestId("snapshot").textContent;
     expect(originalQuestionId).not.toBe("");
+    const signal = fetchMock.mock.calls[0][1]?.signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal?.aborted).toBe(false);
     await user.click(screen.getByRole("button", { name: "Switch tab" }));
     expect(
       screen.queryByRole("textbox", { name: "Wiadomość" }),
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Next question" }));
+    expect(signal?.aborted).toBe(false);
 
     await act(async () => {
       continueStream.resolve(true);
@@ -119,4 +125,65 @@ describe("showcase chat lifetime", () => {
     expect(screen.getByTestId("snapshot").textContent).toBe(originalQuestionId);
     expect(fetchMock).toHaveBeenCalledOnce();
   });
+
+  it.each(["submitted", "streaming"] as const)(
+    "aborts a %s request when the whole showcase unmounts",
+    async (phase) => {
+      const user = userEvent.setup();
+      const finishStream = Promise.withResolvers<boolean>();
+      const fetchMock = vi.fn<typeof fetch>(async (_input, init) => {
+        init?.signal?.addEventListener(
+          "abort",
+          () => {
+            finishStream.resolve(true);
+          },
+          { once: true },
+        );
+        if (phase === "submitted") {
+          await finishStream.promise;
+          init?.signal?.throwIfAborted();
+        }
+        return createUIMessageStreamResponse({
+          stream: createUIMessageStream({
+            execute: async ({ writer }) => {
+              writer.write({ type: "start", messageId: "assistant-aborted" });
+              writer.write({ type: "text-start", id: "text" });
+              writer.write({
+                type: "text-delta",
+                id: "text",
+                delta: "Początek odpowiedzi.",
+              });
+              await finishStream.promise;
+              writer.write({ type: "text-end", id: "text" });
+              writer.write({ type: "finish", finishReason: "stop" });
+            },
+          }),
+        });
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const view = render(
+        <StrictMode>
+          <ShowcaseSessionProvider>
+            <Tabs />
+          </ShowcaseSessionProvider>
+        </StrictMode>,
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Wyjaśnij to pytanie" }),
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("stream-state")).toHaveTextContent(phase);
+        expect(fetchMock).toHaveBeenCalledOnce();
+      });
+      const signal = fetchMock.mock.calls[0][1]?.signal;
+      expect(signal).toBeInstanceOf(AbortSignal);
+      expect(signal?.aborted).toBe(false);
+      expect(screen.getByTestId("snapshot").textContent).not.toBe("");
+      await act(async () => {
+        view.unmount();
+        await finishStream.promise;
+      });
+      expect(signal?.aborted).toBe(true);
+    },
+  );
 });
