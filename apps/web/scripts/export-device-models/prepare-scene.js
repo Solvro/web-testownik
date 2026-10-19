@@ -26,6 +26,20 @@ const HINGE_POSITION = new Vector3(0, -0.09, -10.78);
 const LAPTOP_GLASS = 0x03_04_05;
 const SATELLITE_GLASS = 0x02_03_05;
 
+/**
+ * The hero's iPhone is navy, not black. Apple's file ships the shell in Cosmic
+ * Orange, and until commit a49fa98d the hero re-toned every orange material
+ * to this navy at runtime (`retoneShell`, roughness raised to at least 0.32).
+ * The trimmed `iphone.usdz` instead retints the anodised shell to near-black
+ * `#020305` at roughness 0.5 and drops its roughness map, so with no
+ * environment map the frame rendered pure black. The export restores the old
+ * tone on both: the trim's near-black shell and the orange parts it left.
+ */
+const PHONE_SHELL_COLOR = 0x22_35_5d;
+const TRIMMED_SHELL_COLOR = 0x02_03_05;
+/** Mean of the shell roughness map the trim dropped; Apple's factor is 1. */
+const TRIMMED_SHELL_ROUGHNESS = 0.41;
+
 const materialsOf = (mesh) =>
   Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
@@ -127,6 +141,34 @@ function prepareLaptop(root) {
   root.rotation.set(0, 0, 0);
 }
 
+/** Restores the hero's navy iPhone shell; see `PHONE_SHELL_COLOR`. */
+function retonePhoneShell(phone) {
+  let retoned = 0;
+  phone.traverse((object) => {
+    if (object.isMesh !== true) {
+      return;
+    }
+    for (const material of materialsOf(object)) {
+      const { color } = material;
+      if (material.emissiveMap != null) {
+        continue;
+      }
+      if (color.getHex() === TRIMMED_SHELL_COLOR) {
+        material.roughness = TRIMMED_SHELL_ROUGHNESS;
+      } else if (color.r > color.g * 2 && color.r > color.b * 1.6) {
+        material.roughness = Math.max(material.roughness, 0.32);
+      } else {
+        continue;
+      }
+      color.set(PHONE_SHELL_COLOR);
+      retoned += 1;
+    }
+  });
+  if (retoned === 0) {
+    throw new Error("No iPhone shell material found to re-tone.");
+  }
+}
+
 function prepareSatellite(root, name) {
   root.name = name;
   takeSatelliteDisplay(root).name = `${name}-display`;
@@ -180,6 +222,8 @@ async function exportDeviceModels() {
 
   prepareLaptop(laptop);
   prepareSatellite(tablet, "tablet");
+  // Before the display is blanked: its glass is `#020305` too.
+  retonePhoneShell(phone);
   prepareSatellite(phone, "phone");
 
   for (const root of [laptop, tablet, phone]) {
