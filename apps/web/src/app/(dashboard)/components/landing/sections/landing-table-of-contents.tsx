@@ -592,9 +592,8 @@ export function LandingTableOfContents(): React.JSX.Element {
                   </div>
                   {/*
                    * Every caption is rendered and stacked; only class flips on
-                   * hover. Inserting a node would trip the app CSS's
-                   * `group-has-*` rules and restyle the whole document (see
-                   * `toc-section-preview.ts`).
+                   * hover, so hovering never inserts nodes into the document
+                   * (see `toc-section-preview.ts` on `:has()` invalidation).
                    */}
                   <div className="mt-2 grid px-0.5">
                     {SECTIONS.map((section, index) => (
