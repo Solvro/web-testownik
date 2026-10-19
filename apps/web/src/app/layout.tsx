@@ -86,6 +86,7 @@ export default async function RootLayout({
     return (
       <html
         lang="pl"
+        data-landing-screen-document
         suppressHydrationWarning
         className={hankenGrotesk.className}
       >
@@ -139,7 +140,7 @@ export default async function RootLayout({
           src="https://analytics.solvro.pl/script.js"
           data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
           data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <Script
           src="https://analytics.solvro.pl/recorder.js"
@@ -147,7 +148,7 @@ export default async function RootLayout({
           data-sample-rate="1"
           data-mask-level="moderate"
           data-max-duration="300000"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </body>
     </html>
