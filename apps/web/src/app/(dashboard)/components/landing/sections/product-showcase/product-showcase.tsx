@@ -80,7 +80,7 @@ export function ProductShowcase(): React.JSX.Element {
       </header>
 
       <ShowcaseSessionProvider>
-        <div className="border-border bg-card mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[50rem]">
+        <div className="border-border bg-card mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[47rem]">
           {SHOWCASE_FEATURES.map((feature, index) => {
             const active = feature.id === activeId;
             const panelId = `landing-feature-${feature.id}`;

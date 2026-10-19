@@ -85,7 +85,7 @@ export const TEAM_MEMBERS = [
     team: "Frontend",
     role: "Developer",
     active: true,
-    github: "GumisC4",
+    github: "BFabianowski",
   },
   {
     name: "Jakub Kuflik",
