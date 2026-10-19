@@ -26,6 +26,7 @@ import type { QuotaExceededBody } from "@/lib/ai/quota";
 export interface ChatRuntimeValue extends UseChatHelpers<UIMessage> {
   lengthLimitedMessageIds: ReadonlySet<string>;
   suggestions: readonly string[];
+  questionContextSnapshots: readonly QuestionContextSnapshot[];
 }
 
 const USAGE_REPORT_SETTLE_DELAY_MS = 500;
@@ -298,10 +299,17 @@ export function ChatRuntime({
     ...chat,
     lengthLimitedMessageIds,
     suggestions,
+    questionContextSnapshots: [...questionContextSnapshotsRef.current.values()],
   };
   const chatContext = useMemo(
-    () => ({ quizId, questionId: question?.id ?? null, question, canEdit }),
-    [quizId, question, canEdit],
+    () => ({
+      quizId,
+      questionId: question?.id ?? null,
+      question,
+      questions,
+      canEdit,
+    }),
+    [quizId, question, questions, canEdit],
   );
 
   return (

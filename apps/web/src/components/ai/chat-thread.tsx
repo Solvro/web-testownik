@@ -25,6 +25,7 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getProposalQuestionId } from "@/lib/ai/chat-proposal-context";
 
 export interface ChatNotice {
   kind: "warning";
@@ -271,6 +272,11 @@ export function ChatThread({
                     >
                       <ChatMessage
                         message={message}
+                        originQuestionId={getProposalQuestionId(
+                          messages,
+                          index,
+                          runtime.questionContextSnapshots,
+                        )}
                         running={
                           running ? index === messages.length - 1 : false
                         }
