@@ -19,6 +19,9 @@ const CLOSED_TILT = new Quaternion().setFromEuler(
   new Euler(-Math.PI / 2, 0, 0),
 );
 
+/** Canvas aspect of the wide desktop composition, below the navigation. */
+const SATELLITE_REFERENCE_ASPECT = 1.92;
+
 interface SatellitePose {
   /** Resting on the closed lid. */
   closed: Vector3;
@@ -107,11 +110,13 @@ function placeSatellite(
     rotation,
     exit,
     keepSatellites,
+    fit,
   }: {
     travel: number;
     rotation: number;
     exit: number;
     keepSatellites: boolean;
+    fit: number;
   },
 ): void {
   const { pose, rig } = satellite;
@@ -124,7 +129,11 @@ function placeSatellite(
     keepSatellites ? pose.open : pose.exit,
     travel,
   );
-  rig.scale.setScalar(satellite.scale * (1 - exit));
+  // Pull the spread and device sizes in together on taller canvases. Blend
+  // through the travel so the closed pose still matches the loading cover.
+  const responsiveScale = MathUtils.lerp(1, fit, travel);
+  rig.position.x *= responsiveScale;
+  rig.scale.setScalar(satellite.scale * (1 - exit) * responsiveScale);
   rig.visible = exit < 0.995;
   rig.quaternion.slerpQuaternions(
     satellite.lying,
@@ -165,6 +174,9 @@ export function createChoreography({
   return {
     apply(progress, width, height) {
       const keepSatellites = width >= SCENE_WIDTH.satellites;
+      const fit = keepSatellites
+        ? Math.min(1, width / height / SATELLITE_REFERENCE_ASPECT)
+        : 1;
 
       const travel = smoothstep(0.02, 0.6, progress);
       const rotation = smoothstep(0.06, 0.66, progress);
@@ -180,7 +192,13 @@ export function createChoreography({
       laptop.rotation.z = MathUtils.degToRad((1 - opening) * -1.2);
 
       for (const satellite of satellites) {
-        placeSatellite(satellite, { travel, rotation, exit, keepSatellites });
+        placeSatellite(satellite, {
+          travel,
+          rotation,
+          exit,
+          keepSatellites,
+          fit,
+        });
       }
 
       // Framing comes from the shared solver so the static loading cover lands
