@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { useIsPhoneSurface } from "@/components/ui/portal-container";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ export function ShareQuizDialog({
   quiz,
   setQuiz,
 }: ShareQuizDialogProps) {
+  const isPhoneSurface = useIsPhoneSurface();
   const { checkPermission, user: currentUser } = useContext(AppContext);
 
   const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
@@ -498,14 +500,14 @@ export function ShareQuizDialog({
         )}
         <DialogFooter
           className={cn(
-            "sm:flex-row sm:justify-between",
+            !isPhoneSurface && "sm:flex-row sm:justify-between",
             !canShareQuiz && "hidden",
           )}
         >
           <Button
             variant="outline"
             onClick={copyLink}
-            className="hidden sm:inline-flex"
+            className={cn("hidden", !isPhoneSurface && "sm:inline-flex")}
           >
             <Link2Icon className="size-4" />
             Kopiuj link
@@ -515,7 +517,7 @@ export function ShareQuizDialog({
               render={
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto"
+                  className={cn("w-full", !isPhoneSurface && "sm:w-auto")}
                   disabled={isSaving}
                 >
                   Anuluj
@@ -523,7 +525,7 @@ export function ShareQuizDialog({
               }
             ></DialogClose>
             <Button
-              className="w-full sm:w-auto"
+              className={cn("w-full", !isPhoneSurface && "sm:w-auto")}
               onClick={handleSave}
               disabled={isSaving}
             >
@@ -534,7 +536,7 @@ export function ShareQuizDialog({
             variant="link"
             size="sm"
             onClick={copyLink}
-            className="sm:hidden"
+            className={cn(!isPhoneSurface && "sm:hidden")}
           >
             <Link2Icon className="size-4" />
             Kopiuj link

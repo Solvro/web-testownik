@@ -22,7 +22,7 @@ const blankScreen = (
  * no model, no WebGL. The scroll choreography is a CSS scroll-driven animation
  * on `.lp-hero-phone` and `.lp-hero-chip`.
  *
- * The frame is a fixed 428 × 868 px device scaled per breakpoint, so the
+ * The frame is a fixed 428 × 879 px device scaled per breakpoint, so the
  * screen keeps the 390 px logical width the quiz surface is designed for —
  * the same width the desktop iPhone renders at.
  */
@@ -37,7 +37,7 @@ export function HeroPhone({
   return (
     <div
       className={cn(
-        "relative mx-auto mt-10 h-[calc(868px*var(--lp-phone-scale))] w-[calc(428px*var(--lp-phone-scale))]",
+        "relative mx-auto mt-10 h-[calc(879px*var(--lp-phone-scale))] w-[calc(428px*var(--lp-phone-scale))]",
         "[--lp-phone-scale:0.54] min-[375px]:[--lp-phone-scale:0.57] min-[390px]:[--lp-phone-scale:0.6] min-[414px]:[--lp-phone-scale:0.63] min-[430px]:[--lp-phone-scale:0.66] sm:[--lp-phone-scale:0.72] md:[--lp-phone-scale:0.78]",
         className,
       )}
