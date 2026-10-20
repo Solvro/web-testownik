@@ -61,7 +61,12 @@ function HeroContent({
         data-hero-progress={isStatic ? undefined : true}
         ref={isStatic ? undefined : attachHeroProgress}
         style={isStatic ? undefined : copyStyle}
-        className="lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)] lg:z-10 lg:max-w-[min(64rem,82vw)]"
+        className={cn(
+          "lg:z-10 lg:max-w-[min(64rem,82vw)]",
+          isStatic
+            ? "lg:relative lg:ml-[clamp(1.5rem,4vw,4.5rem)]"
+            : "lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)]",
+        )}
       >
         <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
         <h1 className="mt-3 max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight lg:flex lg:max-w-none lg:flex-col lg:text-[clamp(3.3rem,6.25vw,7.35rem)] lg:leading-[0.78] lg:whitespace-nowrap">
@@ -145,7 +150,9 @@ export function Hero({
       data-hero-static={isStatic}
       className={cn(
         "relative scroll-mt-4",
-        isStatic ? "lg:h-[100svh]" : "lg:h-[300vh] lg:min-h-[190rem]",
+        isStatic
+          ? "lg:h-[100svh] lg:min-h-[36rem]"
+          : "lg:h-[300vh] lg:min-h-[190rem]",
       )}
     >
       {/* React hoists this into <head>; only wide viewports fetch the model. */}
@@ -160,7 +167,9 @@ export function Hero({
       <div
         className={cn(
           "relative lg:h-[100svh] lg:overflow-hidden",
-          !isStatic && "lg:sticky lg:top-0 lg:min-h-[42rem]",
+          isStatic
+            ? "lg:h-[100svh] lg:min-h-[36rem]"
+            : "lg:sticky lg:top-0 lg:min-h-[42rem]",
         )}
       >
         {isDesktop ? (

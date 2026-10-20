@@ -3,6 +3,8 @@
 import Image from "next/image";
 import type { CSSProperties, ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 import { HeroBubble } from "../components/hero-bubble";
 import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
@@ -48,10 +50,38 @@ export function HeroDesktopStage({
        * beneath the device layer.
        */}
       <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">
-        {children}
+        {/* Keep the copy mounted across context loss and restoration. */}
+        <div
+          className={
+            isStatic
+              ? "grid h-full grid-rows-[auto_minmax(0,1fr)] gap-6 pt-[calc(5.3rem+clamp(2rem,5vh,4rem))] pb-16"
+              : "contents"
+          }
+        >
+          {children}
+          {isStatic ? (
+            <div className="relative min-h-0" data-hero-static-visual>
+              <HeroBadges isStatic />
+              <Image
+                src="/models/testownik-device-stack-open-light-v1.webp"
+                alt=""
+                fill
+                sizes="100vw"
+                className="object-contain dark:hidden"
+              />
+              <Image
+                src="/models/testownik-device-stack-open-dark-v1.webp"
+                alt=""
+                fill
+                sizes="100vw"
+                className="hidden object-contain dark:block"
+              />
+            </div>
+          ) : null}
+        </div>
 
         <div className="absolute inset-x-0 top-[5.3rem] bottom-0">
-          <HeroBadges isStatic={isStatic} />
+          {isStatic ? null : <HeroBadges />}
 
           {isStatic ? null : (
             <div
@@ -98,9 +128,15 @@ export function HeroDesktopStage({
        * Outside the Bubble on purpose. The Bubble refracts through
        * html-in-canvas, which cannot host a nested WebGL canvas and would
        * rasterise the device screens; as a sibling above it the whole scene
-       * stays sharp and the droplet passes underneath.
+       * stays sharp and the droplet passes underneath. Keep it mounted while
+       * hidden so its context-restoration listener can return to the live hero.
        */}
-      <div className="pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30",
+          isStatic && "hidden",
+        )}
+      >
         <DeviceScene
           isStatic={isStatic}
           onUnavailable={onUnavailable}
