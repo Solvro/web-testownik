@@ -1,150 +1,159 @@
 # Landing page
 
-The anonymous `/` route renders `LandingPage`; authenticated visitors continue
-to the application. For local work, open `/?landing=true`.
+The anonymous `/` route renders `LandingPage`; signed-in visitors can open
+`/?landing=true`. `landing-page.tsx` composes the sections; `landing-theme.css`
+owns theme/font tokens and `landing.css` the registered progress property,
+CanvasUI/CSS3D selectors and CSS phone. `breakpoints.ts` keeps browser queries
+aligned with Tailwind: below `lg` the hero uses the CSS phone and its own quiz
+session; at `lg` it lazily mounts `hero-desktop-stage.tsx` and the device stack.
 
-## Module map
+## Device screens and input
 
-- `landing-page.tsx` composes the page and imports the feature-owned plain CSS.
-- `landing-theme.css` registers Tailwind variants, fonts, and animation tokens.
-- `landing.css` contains only selectors that utilities cannot express: app-shell
-  overrides, DOM owned by CanvasUI or CSS3DRenderer, the CSS iPhone (ported
-  from devices.css) and the mobile hero's scroll-driven animation.
-- `breakpoints.ts` mirrors Tailwind's breakpoints for browser queries. `lg`
-  (`DESKTOP_STAGE_QUERY`) is the one switch between the two heroes; it also
-  owns the independent 3D scene widths.
-- `sections/hero.tsx` renders the copy, nav and links once. Below `lg` (and as
-  the server render) the visual is `hero-phone.tsx`: a CSS iPhone running the
-  live quiz (`hero-phone-screen.tsx`, lazy, loaded below `lg` only) with
-  scroll-driven CSS motion and no JS. At `lg` it lazily mounts
-  `hero-desktop-stage.tsx` (Bubble, device scene, badges, progress bar and
-  `useHeroProgress`), so phones never download it. Until it loads, a
-  placeholder holds the device cover where `DeviceStack` shows it.
-- `components/` contains shared landing primitives.
-- `sections/` contains page sections and the interactive product showcase.
-- `scene/` owns the device stack, camera framing, and Three.js choreography.
-- `capture/` is the development-only device-cover capture route.
-- `src/components/testownik-preview/` composes real application components with
-  local fixtures for the device screens and showcase. The quiz screens run a
-  `PreviewQuizSession` (`hooks/use-quiz-preview-state.ts` over the pure
-  `preview-quiz-machine.ts`); on the desktop stage the laptop and the iPhone
-  each run one and keep them in step over a `BroadcastChannel`
-  (`preview-quiz-sync.ts`), the CSS phone owns its own. Each session has its own query
-  cache bound to `preview-services.ts`, so the real settings, share, history
-  and stats components read fixtures and never reach the API or the
-  clipboard. Links inside a screen are cancelled by `PreviewSandbox` and
-  handed to its `onNavigate`, which is how the stats view opens.
-- The product showcase's quiz and AI demos share one session
-  (`sections/product-showcase/showcase-session.tsx`, quiz in
-  `showcase-quiz.ts`), held above the tabs so it survives switching. The AI
-  demo is the app's own `ChatRuntime` + `ChatThread` in `demo` mode against
-  `/ai/landing-demo/chat` (the app chat's prompt and tools, the landing model,
-  the `/ai/landing-demo` rate limits). Its tool cards save and edit questions
-  through the session's preview services, whose question writes become
-  session actions, so the quiz demo shows them.
+`scene/three/create-device-stack.ts` combines WebGL hardware with CSS3D screen
+hosts attached to the display meshes, sharing their camera and physical
+transforms. `screens.ts` contains native screen dimensions and measured mesh
+placements, checked against `device-stack.glb` by `screens.test.ts`. Keep
+size/layout/paint containment on the hosts, outside their perspective ancestors.
 
-## Non-obvious constraints
+Each host contains an iframe of `/landing-screen/[device]` (laptop, tablet or
+phone), so responsive layouts and overlay positioning use that device's native
+viewport. `proxy.ts` sets the bare-shell request header defined in
+`lib/document-shell.ts`; the root layout skips app chrome, auth, analytics and
+surveys for these documents. The proxy strips a supplied shell header from other
+routes.
+`screen-frame-document.tsx` supplies the frame's theme and tooltip providers.
 
-CanvasUI's Bubble shader samples RGB but discard alpha. Their captured
-subtrees must therefore paint an opaque background; transparent pixels become
-black. The Bubble capture background is the `.lp-bubble-capture` escape hatch in
-`landing.css`.
+`scene/screen-frame-protocol.ts` defines validated, same-origin `postMessage`
+traffic; receivers also check the source window. The URL supplies initial theme
+and quiz channel. The page posts `theme`; frames post `ready` after two animation
+frames, `wheel` for unused wheel axes, and `pointer`/`pointerleave`. Each frame
+has an eight-second readiness escape hatch if its ready message never arrives.
+The stack waits for all three ready surfaces to remain stable before revealing.
 
-The device layer must remain a sibling above the Bubble. CanvasUI rasterizes its
-subtree into a canvas and cannot host the hero's WebGL renderer.
+`screen-frame-input.ts` lets inner scrollers consume wheel input first and
+forwards the rest in the original delta units. The root disables native
+overscroll chaining. Chrome can nevertheless chain from a transformed frame:
+all three parent listeners use the shared `page-scroll-ownership.ts` instance
+to distinguish forwarded scrolls from browser scrolls and drop duplicate
+forwarded input during native chaining. A browser takeover on the first tick
+can still apply that tick twice; this is documented in `device-screen-frame.tsx`.
 
-Each live device screen is a `CSS3DObject` attached to the corresponding display
-mesh. It intentionally shares the Three.js camera and physical transform; a
-separate flat DOM overlay will drift during the lid and satellite motion.
-Where each screen sits on its mesh and how large its DOM host is are baked
-constants in `scene/three/screens.ts`, guarded by `screens.test.ts` against
-the GLB.
+Pointer positions are sent at most once per animation frame in screen pixels.
+`DeviceStack` provides `projectScreenPoint`, which maps them through the CSS3D
+object and camera into page coordinates; `device-screen-frame.tsx` replays a
+window `pointermove` for the hero Bubble. The tablet and phone Glass lenses run
+inside their own documents because html-in-canvas cannot capture across iframe
+boundaries. They mount on first pointer contact; tablet charts also load then,
+replacing their seeded chart still. Untouched captures contain neither lens.
 
-Each host holds an iframe of `/landing-screen/<device>`
-(`scene/device-screen-frame.tsx`, contract in `scene/screen-frame-protocol.ts`),
-so the app's components lay out at the screen's native width: breakpoints,
-dialog variants and Floating UI positions are those of the device, not of the
-visitor's monitor seen through the CSS3D perspective. The root layout serves
-that route bare (no navbar, auth, analytics; see `lib/document-shell.ts`).
-The page passes the theme in the URL and posts changes; each frame posts
-`ready` once painted, and the loading cover waits for all three. The page's
-html-in-canvas cannot reach inside a frame, so the iPad's and the iPhone's
-Glass magnifier runs in the frame's own document (`device-screen-content.tsx`),
-mounted on first pointer contact and so never in the captured covers.
+The Bubble's captured subtree must paint an opaque background: its shader
+samples RGB and discards alpha (`.lp-bubble-capture`). Keep the device layer a
+sibling above the Bubble; html-in-canvas cannot host the device WebGL renderer.
 
-A frame keeps the input that lands on it, so it hands back what the page needs
-(`scene/screen-frame-input.ts`). A wheel no scroller under the pointer can use
-is posted to the page, which scrolls itself; the frame's root never chains
-natively (`overscroll-behavior: none`), and where Chrome chains anyway
-(always over the tilted MacBook screen, now and then over the satellites) the
-page notices its own scroll and drops the forwarded copies. The pointer is posted
-once per frame in the screen's own pixels; the page projects it through the
-CSS3D screen (`projectScreenPoint` in `create-device-stack.ts`, provided to the
-frames by `DeviceStack`) and replays it on `window` as a `pointermove`, which
-is what the hero Bubble follows.
+## Preview sessions and public AI demo
 
-`--landing-hero-progress` is a non-inheriting registered property. Each of the
-12 animated elements attaches `attachHeroProgress` as its React callback ref
-and carries `data-hero-progress` for layer promotion. New targets immediately
-receive the cached progress, including after the desktop stage lazily mounts.
-Do not move the variable back onto the section: that used to restyle roughly
-118 elements per scroll frame. Keep derived custom properties non-inheriting
-too (the study badges deliberately use their reveal expression directly).
+`components/testownik-preview/` combines real app components with fixtures and
+preview services. `use-quiz-preview-state.ts` runs the deterministic
+`preview-quiz-machine.ts` reducer, using `@testownik/core/quiz/session` helpers
+for answer/progress rules. Each session owns a query cache; settings, history,
+share and stats use local services. `PreviewSandbox` intercepts links and bounds
+embedded overlays; standalone iframe screens portal overlays to their own body.
 
-The hero measures its travel on resize and page restoration, then reads only
-`scrollY` on scroll. The TOC likewise caches section offsets using size observers;
-the timeline measures only when near the viewport. The Bubble does not reproject
-a missing pointer. Its native html-in-canvas path still needs to capture changed
-content for refraction; do not disable it just to improve fallback-path timings.
+The desktop laptop and phone own separate sessions synchronized through
+`preview-quiz-sync.ts`: `BroadcastChannel` carries actions and settings, and a
+late joiner requests a revisioned snapshot. The channel name is unique per
+landing mount. The CSS phone owns an independent session. The showcase has
+another shared session and `ChatRuntime` above its tabs
+(`product-showcase/showcase-session.tsx`), so answers, chat history and assistant
+question edits survive tab changes; it is independent of the hero.
 
-CSS3D hosts have explicit native dimensions and size/layout/paint containment.
-Containment belongs on the hosts, not their perspective ancestors. Their
-transform writes and `syncScreen` opacity/interactivity gates remain intact.
+The showcase uses the app's `ChatRuntime`/`ChatThread` in demo mode against
+`/ai/landing-demo/chat`, with the app prompt and bounded question tools. Tool
+cards save/edit questions through the session's preview services. The public
+route shares admission with `/ai/landing-demo`: AI must be enabled and the
+provider configured; `LANDING_AI_MODEL` selects `provider:model` (default
+`openai:gpt-5.6-luna`). In-memory sliding windows allow 30 requests per client IP
+and 600 globally per ten minutes across both endpoints. Client identity uses
+the first forwarded IP, then real IP, with an unknown-client bucket; its trust
+depends on ingress headers. Admission peeks before reading a streamed,
+size-bounded body and consumes the allowance after validation.
 
-## Regenerating the loading cover
+Chat accepts at most 65,536 body bytes, 20 messages and 60 questions; further
+field/tool limits live in `lib/ai/landing-demo-chat.ts`. The server budgets
+6,000 input tokens including prompt, tool schemas, history and results; it
+drops complete old turns and rejects an oversized remaining request. It checks
+every inference step, allows three steps and 800 output tokens per step, with
+no retries. `landing-demo-tokenizer.server.ts` lazily loads local `o200k_base`
+ranks with a bounded count cache and a UTF-8 byte-based fallback. Question
+images are not fetched. Server failures can use the showcase's local explanation
+fallback (`showcase-chat.ts`).
 
-Regenerate both theme covers after changing the closed pose, camera framing,
-device models, or product surfaces:
+## Progress, peeks and fallback
 
-```sh
-pnpm dev
-pnpm capture:device-stack
-```
+`--landing-hero-progress` is registered with `inherits: false`. The 12 desktop
+animation targets use `attachHeroProgress` callback refs and `data-hero-progress`;
+newly mounted targets receive cached progress immediately. `publishHeroProgress`
+quantizes to four decimals, writes only those targets and emits the scene event.
+Do not move it onto a section or introduce inheriting derived properties: that
+would invalidate the screens and other descendants on every scroll frame.
+`Hero` owns `useHeroProgress`, which caches geometry on resize/pageshow and reads
+only `scrollY` during scrolling. Reduced motion publishes the open pose.
 
-The capture command expects Chrome and the development server at
-`http://localhost:3000`. It renders the real WebGL and CSS3D stack at 4×,
-preserves transparency, and writes the light and dark WebP files documented in
-`public/models/README.md`.
+The TOC caches section offsets and shows peeks built by
+`sections/toc-section-preview.ts`. Inert clones live in a shadow root with
+copied styles, form state and scroll positions; canvas/video/iframes are removed,
+with still replacements for the hero and particle wordmark. Cached stages are
+parked and activated by class changes. Mutation/input/inner-scroll tracking
+refreshes stale peeks during idle periods, crossfading the visible replacement;
+resize/theme changes rebuild them. The hero observes only `data-hero-static`.
+`components/ui/no-group-has.test.ts` guards all source TS/TSX/CSS against
+`group-has-*` and `peer-has-*`, whose generated wildcard selectors caused broad
+style invalidation. Use component-scoped arbitrary variants instead.
 
-## Static desktop fallback
+A WebGL2 creation failure shows the themed open-pose still, removes live screens
+and switches the desktop hero to one viewport with visible copy and static
+study badges, without scroll publishers, lid progress or a scroll-to-open hint.
+A lost context shows that still while retaining the scene/screens for 15 seconds;
+restoration resumes at current progress. Expiry disposes the stack and selects
+the static layout; a later context-restored event can recreate it. Creation
+failures do not retry on scroll. The TOC rebuilds the hero peek for the shorter
+static layout.
 
-If WebGL2 context creation fails, the device stage shows the themed open-pose
-still at full opacity. It does not attach live screen iframes or retry on scroll.
-A lost context shows the open still while keeping the scene and its screens
-alive for 15 seconds. Restoration resumes rendering at the current progress.
-If that grace expires, the stage releases its resources and uses the static
-layout; a later `webglcontextrestored` event recreates the stack and returns
-the hero to its live layout. Creation failures do not retry on scroll.
-The static layout hides the scroll-to-open hint and lid progress; the hero
-badges remain.
+## Covers and verification
 
-The unavailable state belongs to `Hero`: after mounting, a failed desktop
-stage switches the hero to one viewport with fully visible copy and static
-study badges. No hero progress targets or scroll publisher remain active.
-The TOC observes the shorter section and rebuilds its hero peek with the open
-still when `data-hero-static` changes.
+The closed loading cover stays above the live scene until screen readiness,
+then fades after a 150 ms delay over 150 ms. A scrolled arrival holds the closed
+pose through that fade before catching up. `scene-classes.ts` shares placement
+with the pre-mount hero placeholder; `laptop-framing.ts` supplies the camera and
+cover solver. The separate open-pose images are the WebGL fallback. Asset names
+and provenance are documented in `public/models/README.md`.
 
-Regenerate the fallback stills separately, keeping the closed loading covers:
+From `apps/web`:
 
 ```sh
-CAPTURE_BASE_URL=http://localhost:3113 CAPTURE_POSE=open pnpm capture:device-stack
+pnpm dev --port 3123
+# In another terminal:
+CAPTURE_BASE_URL=http://localhost:3123 pnpm capture:device-stack
+CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-stack
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm exec vitest run --maxWorkers=2
+# From the repository root:
+pnpm -w run format:check
 ```
 
-## Validation
+The development-only capture route accepts `?landing=true&capture=devices`
+(live) or `capture=cover` (closed still), `captureTheme=light|dark`,
+`captureProgress=0|1`, `captureScale=1..4` and `captureBg=black|green|white`.
+The command uses local Chrome with a 1758×1000 viewport and 1.35× DPR, matching
+the runtime renderer cap; it trims alpha and writes transparent WebP assets.
+Regenerate after model, camera, choreography or screen-content changes.
 
-```sh
-pnpm typecheck
-npx eslint --no-cache .
-pnpm test --run
-pnpm build
-```
+For a browser/performance harness, use a 1440×900 viewport and Chromium flags
+`--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`. Measure
+scroll after all three iframes report ready; keep CPU throttle and DPR fixed
+between runs and record whether html-in-canvas is supported. These software-GPU
+measurements do not establish hardware-GPU performance. For a handover check,
+keep progress at zero, compare rendered cover/live images in both themes, and
+sample screenshots every 100 ms through two seconds after readiness; report
+actual sampling times and pixel differences around the fade.

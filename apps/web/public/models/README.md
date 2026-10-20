@@ -111,29 +111,37 @@ reproduce the current look exactly.
 Apple's terms for redistributing these assets have not been reviewed. The
 maintainers should confirm that shipping a derivative of them is acceptable.
 
-## `testownik-device-stack-cover-{light,dark}-v8.webp`
+## `testownik-device-stack-cover-{light,dark}-v9.webp`
 
-The still shown while `device-stack.glb` downloads. It is a capture of the
-hero's real WebGL and CSS3D renderers, including the live Testownik surfaces,
+The still shown while the model and all three iframe screens become ready. It
+is a capture of the hero's real WebGL and CSS3D renderers, including the live Testownik surfaces,
 trimmed and placed by `scripts/capture-device-stack.mjs`. The cover and the
 live camera are laid out by the same solver (`scene/laptop-framing.ts`), so the
-hand-off is a pure cross-fade. Regenerate both themes after changing the closed
-pose, camera framing, device models or product surfaces:
+handover uses a 150 ms fade after a 150 ms delay. Regenerate both themes after
+changing the closed pose, camera framing, device models or product surfaces:
 
 ```sh
-pnpm dev
-pnpm capture:device-stack
+pnpm dev --port 3123
+# In another terminal, from apps/web:
+CAPTURE_BASE_URL=http://localhost:3123 pnpm capture:device-stack
 ```
+
+The harness captures at 1758×1000 CSS pixels and 1.35× DPR (the runtime cap),
+then trims and places the silhouette on a transparent 983×698 canvas. Closed
+covers use lossless WebP. Bump the closed filename version in the harness and
+`scene/scene-classes.ts` together when replacing them. The phone capture includes
+the question card, AI hint and bottom-docked actions; Glass stays unmounted until
+pointer contact.
 
 ## `testownik-device-stack-open-{light,dark}-v1.webp`
 
 The static fallback when WebGL2 is unavailable or a lost context does not
 restore. Captured with the same harness at progress 1, including all three
-Testownik screens. Transparent WebP, 1600 pixels wide, quality 90; each theme is
-smaller than the closed loading cover. Regenerate without changing those covers:
+Testownik screens. Transparent WebP fitted inside 1600×1136 pixels at quality 90. Context loss also shows this still during the 15-second restoration grace
+period. Regenerate without changing those covers:
 
 ```sh
-CAPTURE_BASE_URL=http://localhost:3113 CAPTURE_POSE=open pnpm capture:device-stack
+CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-stack
 ```
 
 ## `testownik-tablet-stats-preview-{light,dark}.webp`
