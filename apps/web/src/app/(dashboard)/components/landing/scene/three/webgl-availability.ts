@@ -1,7 +1,7 @@
 /** Keep the scene alive through ordinary GPU resets before releasing it. */
 export const CONTEXT_RESTORE_MS = 15_000;
 
-/** Expired scenes can be recreated on restoration; creation failures cannot. */
+/** Creation failures are terminal for one scene; a desktop remount may retry. */
 export type WebGLAvailability =
   | "available"
   | "lost"
@@ -34,3 +34,25 @@ export function tryWebGLContext<T>(create: () => T | null): T | null {
     return null;
   }
 }
+
+/** Share the failure budget and warning across desktop remounts on this page. */
+export function createWebGLRetryPolicy(): {
+  canAttempt: () => boolean;
+  recordFailure: (reason: WebGLUnavailableReason) => boolean;
+} {
+  let creationFailures = 0;
+  let hasWarned = false;
+  return {
+    canAttempt: () => creationFailures < 2,
+    recordFailure: (reason) => {
+      if (reason === "creation-failed") {
+        creationFailures += 1;
+      }
+      const shouldWarn = !hasWarned;
+      hasWarned = true;
+      return shouldWarn;
+    },
+  };
+}
+
+export const heroWebGLRetryPolicy = createWebGLRetryPolicy();

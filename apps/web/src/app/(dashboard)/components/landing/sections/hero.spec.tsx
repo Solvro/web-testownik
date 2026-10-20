@@ -12,9 +12,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { HERO_PROGRESS_EVENT, publishHeroProgress } from "../hero-progress";
 import { Hero } from "./hero";
 
+const viewport = vi.hoisted(() => ({ isDesktop: true }));
+
 vi.mock("next/image", () => ({ default: () => null }));
 vi.mock("../hooks/use-prefers-reduced-motion", () => ({
-  useIsDesktopViewport: () => true,
+  useIsDesktopViewport: () => viewport.isDesktop,
   usePrefersReducedMotion: () => true,
 }));
 vi.mock("../components/hero-bubble", () => ({
@@ -46,6 +48,7 @@ function Harness(): React.JSX.Element {
 
 afterEach(() => {
   cleanup();
+  viewport.isDesktop = true;
   publishHeroProgress(0);
 });
 
@@ -76,10 +79,40 @@ it("replaces the reduced-motion runway with visible static copy and stops progre
     window.removeEventListener(HERO_PROGRESS_EVENT, listener);
   }
 
-  fireEvent.click(screen.getByRole("button", { name: "Restore WebGL" }));
+  const scene = screen.getByRole("button", {
+    name: "Restore WebGL",
+    hidden: true,
+  }).parentElement;
+  expect(scene).toHaveAttribute("aria-hidden", "true");
+  expect(scene).toHaveClass("invisible", "pointer-events-none");
+  expect(scene).not.toHaveClass("hidden");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Restore WebGL", hidden: true }),
+  );
   expect(hero).toHaveAttribute("data-hero-static", "false");
   expect(hero).toHaveClass("lg:min-h-[190rem]");
   expect(copy).toHaveAttribute("data-hero-progress");
   expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("1");
   expect(screen.getByText("PRZEWIŃ")).toBeInTheDocument();
+});
+
+it("resets the static fallback when the desktop stage remounts", async () => {
+  const view = render(<Harness />);
+  fireEvent.click(await screen.findByRole("button", { name: "Fail WebGL" }));
+  expect(view.container.querySelector("#start")).toHaveAttribute(
+    "data-hero-static",
+    "true",
+  );
+  viewport.isDesktop = false;
+  view.rerender(<Harness />);
+  expect(
+    screen.queryByRole("button", { name: "Fail WebGL", hidden: true }),
+  ).not.toBeInTheDocument();
+  viewport.isDesktop = true;
+  view.rerender(<Harness />);
+  await screen.findByRole("button", { name: "Fail WebGL" });
+  expect(view.container.querySelector("#start")).toHaveAttribute(
+    "data-hero-static",
+    "false",
+  );
 });

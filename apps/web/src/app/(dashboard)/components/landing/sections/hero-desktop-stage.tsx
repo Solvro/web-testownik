@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useEffectEvent } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -42,6 +43,13 @@ export function HeroDesktopStage({
   onUnavailable: () => void;
   onRestored: () => void;
 }): React.JSX.Element {
+  const resetFallback = useEffectEvent(onRestored);
+  useEffect(() => {
+    // A new desktop scene gets a fresh chance after a mobile viewport visit.
+    // DeviceStack retains the page-wide creation-failure budget.
+    resetFallback();
+  }, []);
+
   return (
     <>
       {/*
@@ -132,9 +140,10 @@ export function HeroDesktopStage({
        * hidden so its context-restoration listener can return to the live hero.
        */}
       <div
+        aria-hidden={isStatic ? true : undefined}
         className={cn(
           "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30",
-          isStatic && "hidden",
+          isStatic && "invisible",
         )}
       >
         <DeviceScene

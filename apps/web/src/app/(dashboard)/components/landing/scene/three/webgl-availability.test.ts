@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CONTEXT_RESTORE_MS,
+  createWebGLRetryPolicy,
   nextWebGLAvailability,
   tryWebGLContext,
 } from "./webgl-availability";
@@ -44,7 +45,7 @@ describe("WebGL availability", () => {
     expect(nextWebGLAvailability(restored, "lost")).toBe("lost");
   });
 
-  it("never retries a creation failure, even on a restored event", () => {
+  it("keeps a failed scene terminal, even on a restored event", () => {
     const failed = nextWebGLAvailability("available", "failed");
     expect(failed).toBe("unavailable");
     for (const event of ["lost", "restored", "timeout", "failed"] as const) {
@@ -56,5 +57,27 @@ describe("WebGL availability", () => {
   it("ignores duplicate restoration and stale timeouts on an available scene", () => {
     expect(nextWebGLAvailability("available", "restored")).toBe("available");
     expect(nextWebGLAvailability("available", "timeout")).toBe("available");
+  });
+});
+
+describe("desktop WebGL retries", () => {
+  it("allows one remount retry after failure and warns only once per page", () => {
+    const policy = createWebGLRetryPolicy();
+    expect(policy.canAttempt()).toBe(true);
+    expect(policy.recordFailure("creation-failed")).toBe(true);
+    expect(policy.canAttempt()).toBe(true);
+    expect(policy.recordFailure("creation-failed")).toBe(false);
+    for (let remount = 0; remount < 5; remount += 1) {
+      expect(policy.canAttempt()).toBe(false);
+      expect(policy.recordFailure("creation-failed")).toBe(false);
+    }
+    expect(createWebGLRetryPolicy().canAttempt()).toBe(true);
+  });
+
+  it("does not spend creation retries on GPU context restoration timeouts", () => {
+    const policy = createWebGLRetryPolicy();
+    expect(policy.recordFailure("context-timeout")).toBe(true);
+    expect(policy.recordFailure("context-timeout")).toBe(false);
+    expect(policy.canAttempt()).toBe(true);
   });
 });

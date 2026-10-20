@@ -21,6 +21,7 @@ import type {
   DeviceStackHosts,
   DeviceStack as DeviceStackInstance,
 } from "./three/create-device-stack";
+import { heroWebGLRetryPolicy } from "./three/webgl-availability";
 import type { WebGLUnavailableReason } from "./three/webgl-availability";
 
 /**
@@ -147,7 +148,11 @@ export function DeviceStack({
       }
       failed = true;
       canRetryOnRestore = reason === "context-timeout";
-      console.warn("Hero device scene unavailable; showing a static preview.");
+      if (heroWebGLRetryPolicy.recordFailure(reason)) {
+        console.warn(
+          "Hero device scene unavailable; showing a static preview.",
+        );
+      }
       setHosts(null);
       setIsReady(false);
       setHasFailed(true);
@@ -155,6 +160,10 @@ export function DeviceStack({
     };
 
     const boot = async (): Promise<void> => {
+      if (!heroWebGLRetryPolicy.canAttempt()) {
+        fallback("creation-failed");
+        return;
+      }
       try {
         const { createDeviceStack } =
           await import("./three/create-device-stack");
