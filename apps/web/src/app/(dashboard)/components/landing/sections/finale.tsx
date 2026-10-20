@@ -83,7 +83,7 @@ export function Finale({
       <footer
         className={cn(
           monoLabelVariants({ size: "xs" }),
-          "relative mt-16 flex flex-col justify-between gap-4 sm:absolute sm:inset-x-8 sm:bottom-6 sm:mt-0 sm:flex-row",
+          "relative mt-16 flex w-full flex-col justify-between gap-4 sm:flex-row",
         )}
       >
         <span>TESTOWNIK © {new Date().getFullYear()}</span>
