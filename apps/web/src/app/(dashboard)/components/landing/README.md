@@ -147,6 +147,11 @@ The development-only capture route accepts `?landing=true&capture=devices`
 `captureProgress=0|1`, `captureScale=1..4` and `captureBg=black|green|white`.
 The command uses local Chrome with a 1758×1000 viewport and 1.35× DPR, matching
 the runtime renderer cap; it trims alpha and writes transparent WebP assets.
+Closed covers have an 80,000-byte budget (quality 95); open stills have a
+60,000-byte budget (quality 82). Both use effort 6, smart chroma subsampling and
+lossless alpha. The harness rejects oversized output. For compression-only
+changes, re-encode the existing files without resizing or trimming again and
+inspect body gradients and screen text at 100% and 200%.
 Regenerate after model, camera, choreography or screen-content changes.
 
 For a browser/performance harness, use a 1440×900 viewport and Chromium flags

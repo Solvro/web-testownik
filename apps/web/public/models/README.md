@@ -128,8 +128,12 @@ CAPTURE_BASE_URL=http://localhost:3123 pnpm capture:device-stack
 
 The harness captures at 1758×1000 CSS pixels and 1.35× DPR (the runtime cap),
 then trims and places the silhouette on a transparent 983×698 canvas. Closed
-covers use lossless WebP. Bump the closed filename version in the harness and
-`scene/scene-classes.ts` together when replacing them. The phone capture includes
+covers use lossy WebP at quality 95, effort 6, smart chroma subsampling and
+lossless alpha (`alphaQuality: 100`), with a maximum of 80,000 bytes per file.
+Keep dimensions, trim and placement unchanged when re-encoding existing captures;
+compression-only updates can overwrite the current version. Bump the closed
+filename version in the harness and `scene/scene-classes.ts` together when
+changing the capture geometry or content. The phone capture includes
 the question card, AI hint and bottom-docked actions; Glass stays unmounted until
 pointer contact.
 
@@ -137,8 +141,11 @@ pointer contact.
 
 The static fallback when WebGL2 is unavailable or a lost context does not
 restore. Captured with the same harness at progress 1, including all three
-Testownik screens. Transparent WebP fitted inside 1600×1136 pixels at quality 90. Context loss also shows this still during the 15-second restoration grace
-period. Regenerate without changing those covers:
+Testownik screens. Transparent WebP fitted inside 1600×1136 pixels at quality 82, effort 6, smart
+chroma subsampling and lossless alpha, with a maximum of 60,000 bytes per file.
+The harness rejects outputs exceeding either pose budget; inspect body gradients
+and screen text at 100% and 200% before adjusting quality. Context loss also
+shows this still during the 15-second restoration grace period. Regenerate without changing those covers:
 
 ```sh
 CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-stack
