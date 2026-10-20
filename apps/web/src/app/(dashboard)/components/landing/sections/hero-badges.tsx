@@ -148,30 +148,36 @@ export function MobileHeroBadges(): React.JSX.Element {
   );
 }
 
-export function HeroBadges(): React.JSX.Element {
+export function HeroBadges({
+  isStatic = false,
+}: {
+  isStatic?: boolean;
+}): React.JSX.Element {
   return (
     <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-15 hidden sm:block"
-      >
-        {PRODUCT_BADGES.map(({ id, icon: Icon, label, className }) => (
-          <span
-            key={id}
-            data-hero-progress
-            ref={attachHeroProgress}
-            style={productBadgeStyle}
-            className={cn(
-              "border-border bg-card/92 text-muted-foreground absolute inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[0.72rem] font-medium whitespace-nowrap shadow-[0_1.2rem_2.4rem_-1.2rem_rgb(0_0_0/0.4)]",
-              "[&_svg]:text-landing-primary [&_svg]:size-[0.85rem]",
-              className,
-            )}
-          >
-            <Icon />
-            {label}
-          </span>
-        ))}
-      </div>
+      {isStatic ? null : (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-15 hidden sm:block"
+        >
+          {PRODUCT_BADGES.map(({ id, icon: Icon, label, className }) => (
+            <span
+              key={id}
+              data-hero-progress
+              ref={attachHeroProgress}
+              style={productBadgeStyle}
+              className={cn(
+                "border-border bg-card/92 text-muted-foreground absolute inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[0.72rem] font-medium whitespace-nowrap shadow-[0_1.2rem_2.4rem_-1.2rem_rgb(0_0_0/0.4)]",
+                "[&_svg]:text-landing-primary [&_svg]:size-[0.85rem]",
+                className,
+              )}
+            >
+              <Icon />
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div
         aria-hidden="true"
@@ -180,17 +186,21 @@ export function HeroBadges(): React.JSX.Element {
         {STUDY_BADGES.map(({ id, icon: Icon, className, rotation }) => (
           <span
             key={id}
-            data-hero-progress
-            ref={attachHeroProgress}
-            style={{
-              // Fade runs backwards: fully out before the lid moves, gone by
-              // the time the laptop is open.
-              opacity: studyBadgeReveal,
-              transform:
-                `translateY(calc((1 - ${studyBadgeReveal}) * -1.4rem))` +
-                ` rotate(${rotation})` +
-                ` scale(calc(0.72 + ${studyBadgeReveal} * 0.28))`,
-            }}
+            data-hero-progress={isStatic ? undefined : true}
+            ref={isStatic ? undefined : attachHeroProgress}
+            style={
+              isStatic
+                ? { transform: `rotate(${rotation})` }
+                : {
+                    // Fade runs backwards: fully out before the lid moves, gone by
+                    // the time the laptop is open.
+                    opacity: studyBadgeReveal,
+                    transform:
+                      `translateY(calc((1 - ${studyBadgeReveal}) * -1.4rem))` +
+                      ` rotate(${rotation})` +
+                      ` scale(calc(0.72 + ${studyBadgeReveal} * 0.28))`,
+                  }
+            }
             className={cn(
               "border-border bg-card/90 absolute grid size-[3.35rem] place-items-center rounded-2xl border shadow-[0_1.5rem_2.8rem_-1.2rem_rgb(0_0_0/0.42)]",
               "[&_svg]:text-landing-primary [&_svg]:size-[1.45rem]",

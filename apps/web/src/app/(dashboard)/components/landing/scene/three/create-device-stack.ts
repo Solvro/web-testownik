@@ -14,6 +14,7 @@ import {
 } from "./screens";
 import { createStage } from "./stage";
 import { smoothstep } from "./utils";
+import type { WebGLUnavailableReason } from "./webgl-availability";
 
 /**
  * Builds the hero's device stack and runs it until disposed.
@@ -52,7 +53,9 @@ export interface DeviceStackOptions {
   /** Called once the live surfaces have settled and been composited. */
   onReady: () => void;
   /** Context creation failed, or a lost context did not recover. */
-  onUnavailable: () => void;
+  onUnavailable: (reason: WebGLUnavailableReason) => void;
+  onContextLost: () => void;
+  onContextRestored: () => void;
 }
 
 /** A point in the page's client (viewport) coordinates. */
@@ -142,30 +145,36 @@ export async function createDeviceStack({
   onHostsAttached,
   onReady,
   onUnavailable,
+  onContextLost,
+  onContextRestored,
 }: DeviceStackOptions): Promise<DeviceStack> {
   let failed = false;
   const hasFailed = (): boolean => failed;
   let disposeStack = INACTIVE_STACK.dispose;
-  const unavailable = (): void => {
+  const unavailable = (reason: WebGLUnavailableReason): void => {
     if (failed || signal.aborted) {
       return;
     }
     failed = true;
     disposeStack();
-    onUnavailable();
+    onUnavailable(reason);
   };
   const createdStage = createStage({
     canvas,
     container,
     pixelRatio,
     screenLayerClassName,
-    onUnavailable: unavailable,
+    onUnavailable: () => {
+      unavailable("context-timeout");
+    },
+    onLost: onContextLost,
     onRestored: () => {
+      onContextRestored();
       schedule();
     },
   });
   if (createdStage === null) {
-    unavailable();
+    unavailable("creation-failed");
     return INACTIVE_STACK;
   }
   const stage = createdStage;

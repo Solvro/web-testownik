@@ -14,13 +14,21 @@ const glowStyle: CSSProperties = {
   transform: `translate(-50%, -50%) scale(calc(0.86 + ${HERO_PROGRESS} * 0.16))`,
 };
 
-function DeviceSceneBackdrop(): React.JSX.Element {
+function DeviceSceneBackdrop({
+  isStatic,
+}: {
+  isStatic: boolean;
+}): React.JSX.Element {
   return (
     <div
       aria-hidden="true"
-      data-hero-progress
-      ref={attachHeroProgress}
-      style={glowStyle}
+      data-hero-progress={isStatic ? undefined : true}
+      ref={isStatic ? undefined : attachHeroProgress}
+      style={
+        isStatic
+          ? { opacity: 0.16, transform: "translate(-50%, -50%) scale(0.86)" }
+          : glowStyle
+      }
       className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] lg:block"
     />
   );
@@ -30,10 +38,12 @@ function InteractiveDeviceStack({
   captureLoadingCover,
   capturePixelRatio,
   onUnavailable,
+  onRestored,
 }: {
   captureLoadingCover?: boolean;
   capturePixelRatio?: number;
   onUnavailable?: () => void;
+  onRestored?: () => void;
 }): React.JSX.Element {
   // The laptop and the iPhone share their quiz over this channel. The
   // frames only mount once the stack has attached its hosts, which is
@@ -45,6 +55,7 @@ function InteractiveDeviceStack({
   return (
     <DeviceStack
       onUnavailable={onUnavailable}
+      onRestored={onRestored}
       coverOnly={captureLoadingCover}
       pixelRatio={capturePixelRatio}
       laptopContent={<DeviceScreenFrame device="laptop" channel={channel} />}
@@ -67,13 +78,17 @@ function InteractiveDeviceStack({
 export function DeviceScene({
   captureLoadingCover = false,
   captureMode = false,
+  isStatic = false,
   capturePixelRatio,
   onUnavailable,
+  onRestored,
 }: {
   captureLoadingCover?: boolean;
   captureMode?: boolean;
+  isStatic?: boolean;
   capturePixelRatio?: number;
   onUnavailable?: () => void;
+  onRestored?: () => void;
 }): React.JSX.Element {
   return (
     <div
@@ -83,7 +98,7 @@ export function DeviceScene({
         setSatelliteHovered(false);
       }}
     >
-      {captureMode ? null : <DeviceSceneBackdrop />}
+      {captureMode ? null : <DeviceSceneBackdrop isStatic={isStatic} />}
 
       {/*
        * Deliberately untransformed: a CSS transform or filter on an ancestor of
@@ -94,6 +109,7 @@ export function DeviceScene({
       <div className="absolute inset-0 z-2 hidden lg:block">
         <InteractiveDeviceStack
           onUnavailable={onUnavailable}
+          onRestored={onRestored}
           captureLoadingCover={captureLoadingCover}
           capturePixelRatio={capturePixelRatio}
         />

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { HeroBubble } from "../components/hero-bubble";
@@ -32,10 +31,15 @@ const openLogoStyle: CSSProperties = {
  */
 export function HeroDesktopStage({
   children,
+  isStatic,
+  onUnavailable,
+  onRestored,
 }: {
   children: ReactNode;
+  isStatic: boolean;
+  onUnavailable: () => void;
+  onRestored: () => void;
 }): React.JSX.Element {
-  const [isStatic, setIsStatic] = useState(false);
   return (
     <>
       {/*
@@ -47,43 +51,46 @@ export function HeroDesktopStage({
         {children}
 
         <div className="absolute inset-x-0 top-[5.3rem] bottom-0">
-          <HeroBadges />
+          <HeroBadges isStatic={isStatic} />
 
-          <div
-            aria-hidden="true"
-            data-hero-progress
-            ref={attachHeroProgress}
-            style={isStatic ? { display: "none" } : openLogoStyle}
-            className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
-          >
-            <Image
-              src={wordmarkLight}
-              alt=""
-              className="block h-auto w-full dark:hidden"
-            />
-            <Image
-              src={wordmarkDark}
-              alt=""
-              className="hidden h-auto w-full dark:block"
-            />
-          </div>
-
-          <div
-            aria-hidden="true"
-            hidden={isStatic}
-            className="absolute bottom-[1.3rem] left-1/2 z-20 flex -translate-x-1/2 items-center gap-[0.8rem]"
-          >
-            <Eyebrow>PRZEWIŃ</Eyebrow>
-            <span className="bg-border relative block h-px w-36 overflow-hidden">
-              <span
-                data-hero-progress
-                ref={attachHeroProgress}
-                style={progressBarStyle}
-                className="bg-primary absolute inset-0 origin-left"
+          {isStatic ? null : (
+            <div
+              aria-hidden="true"
+              data-hero-progress
+              ref={attachHeroProgress}
+              style={openLogoStyle}
+              className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
+            >
+              <Image
+                src={wordmarkLight}
+                alt=""
+                className="block h-auto w-full dark:hidden"
               />
-            </span>
-            <Eyebrow>OTWÓRZ TESTOWNIK</Eyebrow>
-          </div>
+              <Image
+                src={wordmarkDark}
+                alt=""
+                className="hidden h-auto w-full dark:block"
+              />
+            </div>
+          )}
+
+          {isStatic ? null : (
+            <div
+              aria-hidden="true"
+              className="absolute bottom-[1.3rem] left-1/2 z-20 flex -translate-x-1/2 items-center gap-[0.8rem]"
+            >
+              <Eyebrow>PRZEWIŃ</Eyebrow>
+              <span className="bg-border relative block h-px w-36 overflow-hidden">
+                <span
+                  data-hero-progress
+                  ref={attachHeroProgress}
+                  style={progressBarStyle}
+                  className="bg-primary absolute inset-0 origin-left"
+                />
+              </span>
+              <Eyebrow>OTWÓRZ TESTOWNIK</Eyebrow>
+            </div>
+          )}
         </div>
       </HeroBubble>
 
@@ -95,9 +102,9 @@ export function HeroDesktopStage({
        */}
       <div className="pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30">
         <DeviceScene
-          onUnavailable={() => {
-            setIsStatic(true);
-          }}
+          isStatic={isStatic}
+          onUnavailable={onUnavailable}
+          onRestored={onRestored}
         />
       </div>
     </>

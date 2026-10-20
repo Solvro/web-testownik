@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -46,19 +46,21 @@ function HeroContent({
   isStarting,
   onStart,
   visual,
+  isStatic = false,
 }: {
   isStarting: boolean;
   onStart: () => void;
   visual?: ReactNode;
+  isStatic?: boolean;
 }): React.JSX.Element {
   return (
     <>
       <LandingNav isStarting={isStarting} onStart={onStart} />
 
       <div
-        data-hero-progress
-        ref={attachHeroProgress}
-        style={copyStyle}
+        data-hero-progress={isStatic ? undefined : true}
+        ref={isStatic ? undefined : attachHeroProgress}
+        style={isStatic ? undefined : copyStyle}
         className="lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)] lg:z-10 lg:max-w-[min(64rem,82vw)]"
       >
         <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
@@ -110,7 +112,8 @@ export function Hero({
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
   const isDesktop = useIsDesktopViewport();
-  useHeroProgress(heroReference, isDesktop);
+  const [isStatic, setIsStatic] = useState(false);
+  useHeroProgress(heroReference, isDesktop && !isStatic);
 
   /*
    * Phones keep this for good. On desktop it is the server render and the
@@ -143,7 +146,11 @@ export function Hero({
     <section
       id="start"
       ref={heroReference}
-      className="relative scroll-mt-4 lg:h-[300vh] lg:min-h-[190rem]"
+      data-hero-static={isStatic}
+      className={cn(
+        "relative scroll-mt-4",
+        isStatic ? "lg:h-[100svh]" : "lg:h-[300vh] lg:min-h-[190rem]",
+      )}
     >
       {/* React hoists this into <head>; only wide viewports fetch the model. */}
       <link
@@ -154,11 +161,28 @@ export function Hero({
         crossOrigin="anonymous"
         media="(min-width: 1024px)"
       />
-      <div className="relative lg:sticky lg:top-0 lg:h-[100svh] lg:min-h-[42rem] lg:overflow-hidden">
+      <div
+        className={cn(
+          "relative lg:h-[100svh] lg:overflow-hidden",
+          !isStatic && "lg:sticky lg:top-0 lg:min-h-[42rem]",
+        )}
+      >
         {isDesktop ? (
           <Suspense fallback={staticHero}>
-            <HeroDesktopStage>
-              <HeroContent isStarting={isStarting} onStart={onStart} />
+            <HeroDesktopStage
+              isStatic={isStatic}
+              onRestored={() => {
+                setIsStatic(false);
+              }}
+              onUnavailable={() => {
+                setIsStatic(true);
+              }}
+            >
+              <HeroContent
+                isStarting={isStarting}
+                onStart={onStart}
+                isStatic={isStatic}
+              />
             </HeroDesktopStage>
           </Suspense>
         ) : (

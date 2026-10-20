@@ -21,6 +21,7 @@ import type {
   DeviceStackHosts,
   DeviceStack as DeviceStackInstance,
 } from "./three/create-device-stack";
+import type { WebGLUnavailableReason } from "./three/webgl-availability";
 
 /**
  * The hero only mounts this component at `lg` and above, but the capture route
@@ -48,9 +49,11 @@ export function DeviceStack({
   tabletContent,
   phoneContent,
   onUnavailable,
+  onRestored,
 }: {
   className?: string;
   onUnavailable?: () => void;
+  onRestored?: () => void;
   /** Capture harness: hold the still cover and hide every live surface. */
   coverOnly?: boolean;
   pixelRatio?: number;
@@ -69,8 +72,14 @@ export function DeviceStack({
   const [hosts, setHosts] = useState<DeviceStackHosts | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
+  const [isContextLost, setIsContextLost] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const showOpenStill = hasFailed || isContextLost;
   const reportUnavailable = useEffectEvent(() => {
     onUnavailable?.();
+  });
+  const reportRestored = useEffectEvent(() => {
+    onRestored?.();
   });
   const stackReference = useRef<DeviceStackInstance | null>(null);
   // Reads whichever stack is current; it only captures the ref, so the
@@ -93,7 +102,7 @@ export function DeviceStack({
       if (cover === null || width === 0 || height === 0) {
         return;
       }
-      if (hasFailed) {
+      if (showOpenStill) {
         cover.removeAttribute("style");
         return;
       }
@@ -110,7 +119,7 @@ export function DeviceStack({
     return () => {
       observer.disconnect();
     };
-  }, [hasFailed]);
+  }, [showOpenStill]);
 
   useEffect(() => {
     const canvas = canvasReference.current;
@@ -131,11 +140,13 @@ export function DeviceStack({
     const controller = new AbortController();
     let stack: DeviceStackInstance | null = null;
     let failed = false;
-    const fallback = (): void => {
+    let canRetryOnRestore = false;
+    const fallback = (reason: WebGLUnavailableReason): void => {
       if (failed || controller.signal.aborted) {
         return;
       }
       failed = true;
+      canRetryOnRestore = reason === "context-timeout";
       console.warn("Hero device scene unavailable; showing a static preview.");
       setHosts(null);
       setIsReady(false);
@@ -156,6 +167,16 @@ export function DeviceStack({
           pixelRatio,
           signal: controller.signal,
           onUnavailable: fallback,
+          onContextLost: () => {
+            if (!failed && !controller.signal.aborted) {
+              setIsContextLost(true);
+            }
+          },
+          onContextRestored: () => {
+            if (!failed && !controller.signal.aborted) {
+              setIsContextLost(false);
+            }
+          },
           onHostsAttached: () => {
             if (failed || controller.signal.aborted) {
               return;
@@ -165,6 +186,8 @@ export function DeviceStack({
           onReady: () => {
             if (!failed && !controller.signal.aborted) {
               setIsReady(true);
+              // Also covers a fresh desktop mount after a mobile resize.
+              reportRestored();
             }
           },
         });
@@ -174,9 +197,24 @@ export function DeviceStack({
           stackReference.current = stack;
         }
       } catch {
-        fallback();
+        fallback("creation-failed");
       }
     };
+
+    // The expired stage has released its GPU resources and listeners. Keep
+    // this one listener until unmount so a late browser restore can recreate
+    // it, including if the original model download is still resolving.
+    const retryAfterRestore = (): void => {
+      if (!canRetryOnRestore || controller.signal.aborted) {
+        return;
+      }
+      canRetryOnRestore = false;
+      setHasFailed(false);
+      setIsContextLost(false);
+      setAttempt((value) => value + 1);
+      reportRestored();
+    };
+    canvas.addEventListener("webglcontextrestored", retryAfterRestore);
 
     // Below `lg` the hero shows a CSS phone instead, so nothing here should
     // cost those viewports a WebGL context or a model download. Booting waits
@@ -208,6 +246,7 @@ export function DeviceStack({
 
     return () => {
       controller.abort();
+      canvas.removeEventListener("webglcontextrestored", retryAfterRestore);
       loadObserver.disconnect();
       wideEnough.removeEventListener("change", bootWhenPossible);
       stack?.dispose();
@@ -216,13 +255,14 @@ export function DeviceStack({
       tablet.remove();
       phone.remove();
     };
-  }, [pixelRatio]);
+  }, [pixelRatio, attempt]);
 
   return (
     <div
       ref={containerReference}
       data-model-ready={isReady}
       data-model-failed={hasFailed}
+      data-context-lost={isContextLost}
       data-cover-only={coverOnly}
       className={cn(
         "group/stack @container-[size] absolute inset-0 transition-opacity duration-300",
@@ -241,18 +281,19 @@ export function DeviceStack({
         ref={coverReference}
         aria-hidden="true"
         className={cn(
-          hasFailed
+          showOpenStill
             ? "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] z-1 bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]"
             : DEVICE_COVER_CLASS,
           "transition-opacity delay-150 duration-150",
           "group-data-[model-ready=true]/stack:opacity-0",
           "group-data-[cover-only=true]/stack:opacity-100!",
+          "group-data-[context-lost=true]/stack:opacity-100!",
         )}
       />
       <canvas
         ref={canvasReference}
         aria-hidden="true"
-        className="block size-full group-data-[cover-only=true]/stack:opacity-0"
+        className="block size-full group-data-[context-lost=true]/stack:opacity-0 group-data-[cover-only=true]/stack:opacity-0"
       />
       {hosts === null || hasFailed ? null : (
         <ScreenProjectionContext value={projectScreenPoint}>

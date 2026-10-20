@@ -120,9 +120,19 @@ preserves transparency, and writes the light and dark WebP files documented in
 
 If WebGL2 context creation fails, the device stage shows the themed open-pose
 still at full opacity. It does not attach live screen iframes or retry on scroll.
-A lost context gets 1.5 seconds to restore before the stage disposes the scene,
-unmounts the screens and enters the same terminal fallback. The scroll-to-open
-hint and lid progress disappear; the hero badges remain.
+A lost context shows the open still while keeping the scene and its screens
+alive for 15 seconds. Restoration resumes rendering at the current progress.
+If that grace expires, the stage releases its resources and uses the static
+layout; a later `webglcontextrestored` event recreates the stack and returns
+the hero to its live layout. Creation failures do not retry on scroll.
+The static layout hides the scroll-to-open hint and lid progress; the hero
+badges remain.
+
+The unavailable state belongs to `Hero`: after mounting, a failed desktop
+stage switches the hero to one viewport with fully visible copy and static
+study badges. No hero progress targets or scroll publisher remain active.
+The TOC observes the shorter section and rebuilds its hero peek with the open
+still when `data-hero-static` changes.
 
 Regenerate the fallback stills separately, keeping the closed loading covers:
 

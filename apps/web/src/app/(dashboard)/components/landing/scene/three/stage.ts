@@ -10,10 +10,12 @@ import {
 import { CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import { CAMERA_FOV } from "../laptop-framing";
-import { nextWebGLAvailability, tryWebGLContext } from "./webgl-availability";
+import {
+  CONTEXT_RESTORE_MS,
+  nextWebGLAvailability,
+  tryWebGLContext,
+} from "./webgl-availability";
 import type { WebGLAvailability } from "./webgl-availability";
-
-const CONTEXT_RESTORE_MS = 1500;
 
 /** Above this the extra pixels cost more than they show on a 3D product shot. */
 const MAX_PIXEL_RATIO = 1.35;
@@ -42,6 +44,7 @@ export function createStage({
   screenLayerClassName,
   onUnavailable,
   onRestored,
+  onLost,
 }: {
   canvas: HTMLCanvasElement;
   container: HTMLElement;
@@ -50,6 +53,7 @@ export function createStage({
   screenLayerClassName: string;
   onUnavailable: () => void;
   onRestored: () => void;
+  onLost: () => void;
 }): Stage | null {
   // Three.js logs errors before throwing when it cannot create a context.
   // Acquire it ourselves and pass the same context and attributes through.
@@ -109,10 +113,12 @@ export function createStage({
   const onContextLost = (event: Event): void => {
     event.preventDefault();
     availability = nextWebGLAvailability(availability, "lost");
+    cssRenderer.domElement.style.visibility = "hidden";
+    onLost();
     clearTimeout(restoreTimer);
     restoreTimer = setTimeout(() => {
       availability = nextWebGLAvailability(availability, "timeout");
-      if (availability === "unavailable") {
+      if (availability === "expired") {
         onUnavailable();
       }
     }, CONTEXT_RESTORE_MS);
@@ -123,6 +129,7 @@ export function createStage({
     if (availability === "available") {
       renderer.render(scene, camera);
       cssRenderer.render(scene, camera);
+      cssRenderer.domElement.style.visibility = "";
       onRestored();
     }
   };
