@@ -8,6 +8,25 @@ const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:3000";
 // look brighter during the loading-cover cross-fade.
 const captureDpr = 1.35;
 const openPose = process.env.CAPTURE_POSE === "open";
+// Decimal byte budgets: closed LCP covers <= 80 KB; open fallback stills <= 60 KB.
+// Keep alpha lossless and preserve the capture geometry for the live handover.
+// Lossless/near-lossless RGB makes the closed covers several times too large.
+const webpOptions = {
+  alphaQuality: 100,
+  effort: 6,
+  quality: openPose ? 82 : 95,
+  smartSubsample: true,
+};
+const outputBudget = openPose ? 60_000 : 80_000;
+
+async function writeWebp(image, output) {
+  const { size } = await image.webp(webpOptions).toFile(output);
+  if (size > outputBudget) {
+    throw new Error(
+      `${output} is ${size} bytes (budget ${outputBudget}); review encoding quality before shipping.`,
+    );
+  }
+}
 const viewport = { height: 1000, width: 1758 };
 const referenceDpr = 4;
 const outputScale = captureDpr / referenceDpr;
@@ -116,14 +135,14 @@ async function captureTheme(page, theme) {
     .toBuffer();
   if (openPose) {
     const output = `public/models/testownik-device-stack-open-${theme}-v1.webp`;
-    await sharp(transparentStack)
-      .resize({
+    await writeWebp(
+      sharp(transparentStack).resize({
         width: 1600,
         height: 1136,
         fit: "inside",
-      })
-      .webp({ effort: 6, quality: 90, alphaQuality: 100 })
-      .toFile(output);
+      }),
+      output,
+    );
     return {
       dpr: effectiveDpr,
       output,
@@ -140,23 +159,23 @@ async function captureTheme(page, theme) {
     .toBuffer();
   const output = `public/models/testownik-device-stack-cover-${theme}-v9.webp`;
 
-  await sharp({
-    create: {
-      background: { alpha: 0, b: 0, g: 0, r: 0 },
-      channels: 4,
-      height: outputCanvas.height,
-      width: outputCanvas.width,
-    },
-  })
-    .composite([
+  await writeWebp(
+    sharp({
+      create: {
+        background: { alpha: 0, b: 0, g: 0, r: 0 },
+        channels: 4,
+        height: outputCanvas.height,
+        width: outputCanvas.width,
+      },
+    }).composite([
       {
         input: fittedStack,
         left: outputPlacement.left,
         top: outputPlacement.top,
       },
-    ])
-    .webp({ effort: 6, lossless: true })
-    .toFile(output);
+    ]),
+    output,
+  );
 
   const metadata = await sharp(output).metadata();
   if (!metadata.hasAlpha) {
