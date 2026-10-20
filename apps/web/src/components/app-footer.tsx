@@ -8,6 +8,7 @@ import { SolvroLogo } from "@/components/solvro-logo";
 const caveat = Caveat({
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export function AppFooter() {

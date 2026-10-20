@@ -18,6 +18,24 @@ export const metadata: Metadata = {
   },
   description:
     "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Testownik — uczysz się wszędzie",
+    description:
+      "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
+    url: "/",
+    type: "website",
+    locale: "pl_PL",
+    siteName: "Testownik Solvro",
+    images: [{ url: "/opengraph-image.png", alt: "Testownik Solvro" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/opengraph-image.png"],
+    title: "Testownik — uczysz się wszędzie",
+    description:
+      "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
+  },
 };
 
 export default async function HomePage({

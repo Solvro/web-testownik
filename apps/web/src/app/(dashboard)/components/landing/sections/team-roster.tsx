@@ -176,6 +176,7 @@ function Avatar({
       src={imageUrl}
       width={size}
       height={size}
+      loading="lazy"
       sizes={`${String(size)}px`}
       alt=""
       unoptimized
@@ -209,7 +210,7 @@ function EntryShell({
       href={href}
       target="_blank"
       rel="noreferrer"
-      aria-label={label}
+      title={label}
       className={cn(className, FOCUS_RING)}
     >
       {children}
@@ -231,7 +232,7 @@ function EntryName({
       <span
         className={cn(
           "min-w-0 font-semibold tracking-[-0.015em] break-words transition-colors duration-150",
-          linked && "group-hover/entry:text-primary",
+          linked && "group-hover/entry:text-landing-primary",
           className,
         )}
       >
@@ -240,7 +241,7 @@ function EntryName({
       {linked ? (
         <ArrowUpRight
           aria-hidden="true"
-          className="text-primary size-3.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/entry:opacity-100 group-focus-visible/entry:opacity-100"
+          className="text-landing-primary size-3.5 shrink-0 opacity-0 transition-opacity duration-150 group-hover/entry:opacity-100 group-focus-visible/entry:opacity-100"
         />
       ) : null}
     </span>
@@ -403,7 +404,7 @@ function OpenSourceMore({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "text-muted-foreground hover:text-primary inline-flex h-4 shrink-0 items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 lg:mt-3 [&_svg]:size-3.5",
+        "text-muted-foreground hover:text-landing-primary inline-flex h-4 shrink-0 items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 lg:mt-3 [&_svg]:size-3.5",
         FOCUS_RING,
       )}
     >
@@ -427,7 +428,7 @@ function OpenSourceUnavailable(): React.JSX.Element {
         target="_blank"
         rel="noreferrer"
         className={cn(
-          "text-foreground hover:text-primary inline-flex items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 [&_svg]:size-3.5",
+          "text-foreground hover:text-landing-primary inline-flex items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 [&_svg]:size-3.5",
           FOCUS_RING,
         )}
       >

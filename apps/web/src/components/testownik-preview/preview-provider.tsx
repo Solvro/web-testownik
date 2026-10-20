@@ -53,7 +53,11 @@ export function PreviewRuntime({
       >
         {children}
       </div>
-      <Toaster id={toasterId} position="bottom-center" />
+      <Toaster
+        id={toasterId}
+        position="bottom-center"
+        containerAriaLabel={`Powiadomienia podglądu ${toasterId}`}
+      />
     </QueryClientProvider>
   );
 }

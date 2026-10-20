@@ -368,6 +368,7 @@ export function QuestionCard({
                         <Button
                           variant="outline"
                           size="icon"
+                          aria-label="Poprzednie pytanie"
                           onClick={togglePreviousQuestion}
                         >
                           <Undo2 />

@@ -10,6 +10,7 @@ import { IBM_Plex_Mono, Unbounded } from "next/font/google";
 const unbounded = Unbounded({
   subsets: ["latin", "latin-ext"],
   display: "swap",
+  preload: false,
   variable: "--font-unbounded",
 });
 
@@ -17,6 +18,7 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   subsets: ["latin", "latin-ext"],
   display: "swap",
+  preload: false,
   variable: "--font-plex-mono",
 });
 

@@ -111,7 +111,7 @@ function DemoChat({
         <span className="bg-primary/10 grid size-9 shrink-0 place-items-center rounded-full">
           <BotMessageSquareIcon
             aria-hidden="true"
-            className="text-primary size-4.5"
+            className="text-landing-primary size-4.5"
           />
         </span>
         <div className="min-w-0 flex-1">

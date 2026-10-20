@@ -27,13 +27,20 @@ export function Faq(): React.JSX.Element {
           </p>
         </header>
 
-        <Accordion defaultValue={["faq-0"]} className="border-border border-t">
+        <Accordion
+          aria-label="Pytania i odpowiedzi"
+          defaultValue={["faq-0"]}
+          className="border-border border-t"
+        >
           {FAQ.map((item, index) => (
             <AccordionItem key={item.question} value={`faq-${String(index)}`}>
-              <AccordionTrigger className="hover:text-primary aria-expanded:text-primary gap-4 rounded-none py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!">
+              <AccordionTrigger className="hover:text-landing-primary aria-expanded:text-landing-primary gap-4 rounded-none py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!">
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground max-w-[44rem] pr-0 pb-5 text-[0.95rem] leading-[1.7] sm:pr-10 sm:pb-6 sm:text-[0.98rem]">
+              <AccordionContent
+                aria-label={item.question}
+                className="text-muted-foreground max-w-[44rem] pr-0 pb-5 text-[0.95rem] leading-[1.7] sm:pr-10 sm:pb-6 sm:text-[0.98rem]"
+              >
                 {item.answer}
               </AccordionContent>
             </AccordionItem>

@@ -62,7 +62,9 @@ function HeroContent({
         <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
         <h1 className="mt-3 max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight lg:flex lg:max-w-none lg:flex-col lg:text-[clamp(3.3rem,6.25vw,7.35rem)] lg:leading-[0.78] lg:whitespace-nowrap">
           Zapomnij o{" "}
-          <em className="text-primary not-italic">problemach z nauką</em>
+          <em className="text-landing-primary not-italic">
+            problemach z nauką
+          </em>
         </h1>
         <p className="text-muted-foreground mt-4 max-w-[28rem] text-sm leading-relaxed lg:mt-6 lg:max-w-[32rem] lg:text-[clamp(0.95rem,1.3vw,1.18rem)] lg:leading-[1.55]">
           <span className="lg:hidden">
@@ -79,7 +81,7 @@ function HeroContent({
       <a
         href="#features"
         className={cn(
-          "text-muted-foreground mt-6 ml-auto flex w-fit items-center gap-[0.45rem] rounded-xs text-[0.66rem] font-bold tracking-[0.1em] uppercase",
+          "text-muted-foreground mt-6 ml-auto flex min-h-11 w-fit items-center gap-[0.45rem] rounded-xs text-[0.66rem] font-bold tracking-[0.1em] uppercase",
           "lg:absolute lg:right-[2.2rem] lg:bottom-[1.15rem] lg:z-20 lg:mt-0",
           FOCUS_RING,
         )}

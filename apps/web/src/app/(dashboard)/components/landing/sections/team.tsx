@@ -57,7 +57,7 @@ export function Team({
             target="_blank"
             rel="noreferrer"
             className={cn(
-              "text-foreground hover:text-primary mt-4 inline-flex items-center gap-2 rounded-sm text-xs font-bold transition-[color,transform] duration-150 active:scale-[0.98] [&_svg]:size-3.5",
+              "text-foreground hover:text-landing-primary mt-4 inline-flex items-center gap-2 rounded-sm text-xs font-bold transition-[color,transform] duration-150 active:scale-[0.98] [&_svg]:size-3.5",
               FOCUS_RING,
             )}
           >

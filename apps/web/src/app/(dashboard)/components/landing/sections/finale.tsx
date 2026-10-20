@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { FOCUS_RING } from "../components/focus";
 import { LandingButton, LandingButtonLink } from "../components/landing-button";
 import { ParticleLogo } from "../components/particle-logo";
 import { monoLabelVariants } from "../components/typography-variants";
@@ -88,10 +89,26 @@ export function Finale({
         <span>TESTOWNIK © {new Date().getFullYear()}</span>
         <span>
           MADE BY{" "}
-          <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a> ·
-          KN SOLVRO
+          <a
+            href="https://github.com/Antoni-Czaplicki"
+            className={cn(
+              "inline-flex min-h-6 items-center rounded-sm",
+              FOCUS_RING,
+            )}
+          >
+            Antoni Czaplicki
+          </a>{" "}
+          · KN SOLVRO
         </span>
-        <Link href="/privacy-policy">PRYWATNOŚĆ</Link>
+        <Link
+          href="/privacy-policy"
+          className={cn(
+            "inline-flex min-h-11 items-center justify-center rounded-sm sm:min-h-6",
+            FOCUS_RING,
+          )}
+        >
+          PRYWATNOŚĆ
+        </Link>
       </footer>
     </section>
   );

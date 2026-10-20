@@ -83,9 +83,9 @@ export function LandingNav({
             setTheme(resolvedTheme === "dark" ? "light" : "dark");
           }}
           className={cn(
-            "border-border bg-card text-foreground relative grid size-[2.45rem] place-items-center rounded-full border transition-[background-color,border-color] duration-200",
+            "border-border bg-card text-foreground relative grid size-11 place-items-center rounded-full border transition-[background-color,border-color] duration-200",
             "hover:border-primary/40 hover:bg-secondary",
-            "sm:size-[2.65rem]",
+            "sm:size-11",
             FOCUS_RING,
           )}
         >
@@ -96,7 +96,7 @@ export function LandingNav({
         <LandingButton
           onClick={onStart}
           className={cn(
-            "min-h-[2.45rem] px-[0.9rem] text-[0.78rem] tracking-[0.02em] normal-case sm:min-h-11 sm:px-[1.15rem] sm:text-[0.86rem]",
+            "min-h-11 px-[0.9rem] text-[0.78rem] tracking-[0.02em] normal-case sm:min-h-11 sm:px-[1.15rem] sm:text-[0.86rem]",
             "transition-[gap,background-color] duration-200",
             "hover:gap-4",
             "active:translate-y-0 active:shadow-none",

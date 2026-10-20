@@ -135,7 +135,7 @@ export function MobileHeroBadges(): React.JSX.Element {
           key={id}
           className={cn(
             "lp-hero-chip border-border bg-card/90 absolute grid size-10 place-items-center rounded-xl border shadow-lg sm:size-12",
-            "[&_svg]:text-primary [&_svg]:size-5 sm:[&_svg]:size-6",
+            "[&_svg]:text-landing-primary [&_svg]:size-5 sm:[&_svg]:size-6",
             mobileClassName,
           )}
         >
@@ -159,7 +159,7 @@ export function HeroBadges(): React.JSX.Element {
             style={productBadgeStyle}
             className={cn(
               "border-border bg-card/92 text-muted-foreground absolute inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[0.72rem] font-medium whitespace-nowrap shadow-[0_1.2rem_2.4rem_-1.2rem_rgb(0_0_0/0.4)]",
-              "[&_svg]:text-primary [&_svg]:size-[0.85rem]",
+              "[&_svg]:text-landing-primary [&_svg]:size-[0.85rem]",
               className,
             )}
           >
@@ -190,7 +190,7 @@ export function HeroBadges(): React.JSX.Element {
             }
             className={cn(
               "border-border bg-card/90 absolute grid size-[3.35rem] place-items-center rounded-2xl border shadow-[0_1.5rem_2.8rem_-1.2rem_rgb(0_0_0/0.42)]",
-              "[&_svg]:text-primary [&_svg]:size-[1.45rem]",
+              "[&_svg]:text-landing-primary [&_svg]:size-[1.45rem]",
               className,
             )}
           >
