@@ -167,7 +167,7 @@ export function ProductShowcase(): React.JSX.Element {
                           {feature.label}
                         </span>
                       </div>
-                      <h3 className="mt-6 text-5xl leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8">
+                      <h3 className="mt-6 text-5xl leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8 lg:text-[clamp(2.5rem,3.35vw,3rem)]">
                         {feature.title}
                       </h3>
                       <p className="text-muted-foreground mt-6 text-[0.98rem] leading-[1.7]">
