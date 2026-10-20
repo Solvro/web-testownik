@@ -245,6 +245,8 @@ export function LandingTableOfContents(): React.JSX.Element {
     let frame = 0;
     let hideTimer = 0;
     let isPointerOverNavigation = false;
+    let sectionTops: { id: SectionId; top: number }[] = [];
+    let pageHeight = 0;
 
     const clearHideTimer = (): void => {
       if (hideTimer !== 0) {
@@ -278,21 +280,16 @@ export function LandingTableOfContents(): React.JSX.Element {
       }
 
       const marker = window.innerHeight * 0.34;
+      const scrollTop = window.scrollY;
       let nextActiveId: SectionId = SECTIONS[0].id;
 
-      for (const section of SECTIONS) {
-        const element = sectionReferences.current[section.id];
-        if (
-          element !== undefined &&
-          element.getBoundingClientRect().top <= marker
-        ) {
+      for (const section of sectionTops) {
+        if (section.top - scrollTop <= marker) {
           nextActiveId = section.id;
         }
       }
 
-      const isAtPageEnd =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 2;
+      const isAtPageEnd = window.innerHeight + scrollTop >= pageHeight - 2;
       setActiveSection(isAtPageEnd ? "footer" : nextActiveId);
     };
 
@@ -301,6 +298,26 @@ export function LandingTableOfContents(): React.JSX.Element {
         frame = window.requestAnimationFrame(update);
       }
     };
+
+    // Section sizes change when lazy content, fonts or an accordion settles.
+    // Cache document offsets then, rather than measuring six sections after
+    // the hero has changed its styles on every scroll frame.
+    const measureSections = (): void => {
+      const scrollTop = window.scrollY;
+      sectionTops = SECTIONS.flatMap(({ id }) => {
+        const element = sectionReferences.current[id];
+        return element === undefined
+          ? []
+          : [{ id, top: element.getBoundingClientRect().top + scrollTop }];
+      });
+      pageHeight = document.documentElement.scrollHeight;
+      scheduleUpdate();
+    };
+    const sizeObserver = new ResizeObserver(measureSections);
+    for (const element of Object.values(sectionReferences.current)) {
+      sizeObserver.observe(element);
+    }
+    sizeObserver.observe(document.body);
 
     const handlePointerMove = (event: PointerEvent): void => {
       const navigation = navigationReference.current;
@@ -339,16 +356,19 @@ export function LandingTableOfContents(): React.JSX.Element {
       }
     };
 
-    update();
+    measureSections();
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("resize", measureSections);
+    window.addEventListener("pageshow", measureSections);
     window.addEventListener("pointermove", handlePointerMove, {
       passive: true,
     });
 
     return () => {
       window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("resize", measureSections);
+      window.removeEventListener("pageshow", measureSections);
+      sizeObserver.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);
       clearHideTimer();
       if (frame !== 0) {

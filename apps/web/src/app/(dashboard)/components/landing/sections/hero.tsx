@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
 import { Eyebrow } from "../components/typography";
-import { HERO_PROGRESS } from "../hero-progress";
+import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
@@ -30,7 +30,7 @@ const HeroDesktopStage = lazy(async () => {
 /**
  * On desktop the copy leaves as the laptop opens. A plain CSS expression over
  * the published progress, so it follows the scroll without a React render per
- * frame. Below `lg` nothing publishes and the section pins the value at 0.
+ * frame. Below `lg` the progress publisher resets the copy to 0.
  */
 const copyStyle: CSSProperties = {
   opacity: `clamp(0, calc(1 - ${HERO_PROGRESS} * 3.8), 1)`,
@@ -56,6 +56,8 @@ function HeroContent({
       <LandingNav isStarting={isStarting} onStart={onStart} />
 
       <div
+        data-hero-progress
+        ref={attachHeroProgress}
         style={copyStyle}
         className="lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)] lg:z-10 lg:max-w-[min(64rem,82vw)]"
       >
@@ -141,7 +143,7 @@ export function Hero({
     <section
       id="start"
       ref={heroReference}
-      className="relative scroll-mt-4 [--landing-hero-progress:0] lg:h-[300vh] lg:min-h-[190rem]"
+      className="relative scroll-mt-4 lg:h-[300vh] lg:min-h-[190rem]"
     >
       {/* React hoists this into <head>; only wide viewports fetch the model. */}
       <link

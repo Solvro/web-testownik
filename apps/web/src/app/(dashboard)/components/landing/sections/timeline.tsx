@@ -169,15 +169,35 @@ export function Timeline(): React.JSX.Element {
       }
     };
 
+    // The timeline is several screens below the hero. Do not measure its
+    // items on every hero frame; catch up before it enters the viewport.
+    let isNearViewport = false;
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        isNearViewport = entry.isIntersecting;
+        if (isNearViewport) {
+          schedulePaint();
+        }
+      },
+      { rootMargin: "100px" },
+    );
+    visibilityObserver.observe(track);
+    const onScroll = (): void => {
+      if (isNearViewport) {
+        schedulePaint();
+      }
+    };
+
     schedulePaint();
-    window.addEventListener("scroll", schedulePaint, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", schedulePaint);
     reduceMotion.addEventListener("change", schedulePaint);
     const resizeObserver = new ResizeObserver(schedulePaint);
     resizeObserver.observe(track);
 
     return () => {
-      window.removeEventListener("scroll", schedulePaint);
+      window.removeEventListener("scroll", onScroll);
+      visibilityObserver.disconnect();
       window.removeEventListener("resize", schedulePaint);
       reduceMotion.removeEventListener("change", schedulePaint);
       if (frame !== 0) {

@@ -13,7 +13,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { HERO_PROGRESS } from "../hero-progress";
+import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 
 /**
  * Flat DOM that frames the device stack, deliberately rendered inside the
@@ -29,6 +29,8 @@ import { HERO_PROGRESS } from "../hero-progress";
 const productBadgeStyle: CSSProperties = {
   opacity: `clamp(0, calc((${HERO_PROGRESS} - 0.5) / 0.22), 1)`,
 };
+
+const studyBadgeReveal = `clamp(0, calc((0.46 - ${HERO_PROGRESS}) / 0.16), 1)`;
 
 interface ProductBadge {
   id: string;
@@ -156,6 +158,8 @@ export function HeroBadges(): React.JSX.Element {
         {PRODUCT_BADGES.map(({ id, icon: Icon, label, className }) => (
           <span
             key={id}
+            data-hero-progress
+            ref={attachHeroProgress}
             style={productBadgeStyle}
             className={cn(
               "border-border bg-card/92 text-muted-foreground absolute inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[0.72rem] font-medium whitespace-nowrap shadow-[0_1.2rem_2.4rem_-1.2rem_rgb(0_0_0/0.4)]",
@@ -176,18 +180,17 @@ export function HeroBadges(): React.JSX.Element {
         {STUDY_BADGES.map(({ id, icon: Icon, className, rotation }) => (
           <span
             key={id}
-            style={
-              {
-                // Fade runs backwards: fully out before the lid moves, gone by
-                // the time the laptop is open.
-                "--reveal": `clamp(0, calc((0.46 - ${HERO_PROGRESS}) / 0.16), 1)`,
-                opacity: "var(--reveal)",
-                transform:
-                  "translateY(calc((1 - var(--reveal)) * -1.4rem))" +
-                  ` rotate(${rotation})` +
-                  " scale(calc(0.72 + var(--reveal) * 0.28))",
-              } as CSSProperties
-            }
+            data-hero-progress
+            ref={attachHeroProgress}
+            style={{
+              // Fade runs backwards: fully out before the lid moves, gone by
+              // the time the laptop is open.
+              opacity: studyBadgeReveal,
+              transform:
+                `translateY(calc((1 - ${studyBadgeReveal}) * -1.4rem))` +
+                ` rotate(${rotation})` +
+                ` scale(calc(0.72 + ${studyBadgeReveal} * 0.28))`,
+            }}
             className={cn(
               "border-border bg-card/90 absolute grid size-[3.35rem] place-items-center rounded-2xl border shadow-[0_1.5rem_2.8rem_-1.2rem_rgb(0_0_0/0.42)]",
               "[&_svg]:text-landing-primary [&_svg]:size-[1.45rem]",

@@ -6,7 +6,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { HeroBubble } from "../components/hero-bubble";
 import { Eyebrow } from "../components/typography";
-import { HERO_PROGRESS } from "../hero-progress";
+import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { wordmarkDark, wordmarkLight } from "../logos";
 import { DeviceScene } from "../scene/device-scene";
 import { HeroBadges } from "./hero-badges";
@@ -51,6 +51,8 @@ export function HeroDesktopStage({
 
           <div
             aria-hidden="true"
+            data-hero-progress
+            ref={attachHeroProgress}
             style={isStatic ? { display: "none" } : openLogoStyle}
             className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
           >
@@ -74,6 +76,8 @@ export function HeroDesktopStage({
             <Eyebrow>PRZEWIŃ</Eyebrow>
             <span className="bg-border relative block h-px w-36 overflow-hidden">
               <span
+                data-hero-progress
+                ref={attachHeroProgress}
                 style={progressBarStyle}
                 className="bg-primary absolute inset-0 origin-left"
               />

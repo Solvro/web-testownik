@@ -1,41 +1,48 @@
 /**
- * The hero publishes its scroll progress (0 → 1, closed → fully open) as a CSS
- * custom property on the hero element, and announces every change on `window`.
- *
- * A DOM event rather than React state on purpose: the consumers are the WebGL
- * scene and the vendored CanvasUI `Glass`, neither of which renders through the
- * React tree that owns the value, and the value changes on every animation
- * frame while scrolling. Keeping it out of React state avoids re-rendering the
- * whole landing page 60 times a second.
+ * Scroll progress stays outside React. Only the animated elements subscribe;
+ * the CSS property is registered as non-inheriting in landing.css so changing
+ * a badge never restyles its SVG, text or the rest of the hero.
  */
 export const HERO_PROGRESS_PROPERTY = "--landing-hero-progress";
 export const HERO_PROGRESS_EVENT = "landing-hero-progress";
 export const HERO_PROGRESS = `var(${HERO_PROGRESS_PROPERTY}, 0)`;
 
 let cachedHeroProgress = 0;
+const targets = new Set<HTMLElement>();
 
-/** Latest progress written by `useHeroProgress`, readable without style recalc. */
+/** Latest progress, readable by Three.js without a computed-style read. */
 export function getHeroProgress(): number {
   return cachedHeroProgress;
 }
 
-/**
- * Publishes progress to CSS and notifies listeners. The event fires only when
- * the quantized value changes so Glass and Three.js are not woken redundantly.
- */
-export function publishHeroProgress(
-  element: HTMLElement,
-  progress: number,
-): void {
-  const clamped = Math.min(1, Math.max(0, progress));
-  const quantized = clamped.toFixed(4);
-  element.style.setProperty(HERO_PROGRESS_PROPERTY, quantized);
+/** React 19 callback ref: lazy-mounted targets immediately catch up. */
+export function attachHeroProgress(
+  element: HTMLElement | null,
+): (() => void) | undefined {
+  if (element === null) {
+    return;
+  }
+  targets.add(element);
+  element.style.setProperty(
+    HERO_PROGRESS_PROPERTY,
+    cachedHeroProgress.toString(),
+  );
+  return () => {
+    targets.delete(element);
+    element.style.removeProperty(HERO_PROGRESS_PROPERTY);
+  };
+}
 
-  const next = Number.parseFloat(quantized);
+/** Quantize before either DOM writes or the event, including at the endpoints. */
+export function publishHeroProgress(progress: number): void {
+  const next = Number.parseFloat(Math.min(1, Math.max(0, progress)).toFixed(4));
   if (next === cachedHeroProgress) {
     return;
   }
 
   cachedHeroProgress = next;
+  for (const element of targets) {
+    element.style.setProperty(HERO_PROGRESS_PROPERTY, next.toString());
+  }
   window.dispatchEvent(new Event(HERO_PROGRESS_EVENT));
 }
