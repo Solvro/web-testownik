@@ -62,9 +62,11 @@ export function ProductShowcase(): React.JSX.Element {
   return (
     <LandingSection
       id="features"
+      // The skip link's target: focusable so activation moves focus here.
+      tabIndex={-1}
       padding="showcase"
       showPlaceholder={false}
-      className="scroll-mt-4"
+      className="scroll-mt-4 outline-none"
     >
       <header className="grid grid-cols-1 items-end gap-x-20 gap-y-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
         <DisplayHeading className="mt-0">
