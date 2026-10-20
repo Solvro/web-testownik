@@ -13,10 +13,7 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
-import {
-  BARE_DOCUMENT_SHELL,
-  DOCUMENT_SHELL_HEADER,
-} from "@/lib/document-shell";
+import { shouldRenderBareDocument } from "@/lib/document-shell";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -82,7 +79,7 @@ export default async function RootLayout({
   // The landing's device-screen iframes bring their own providers; see
   // `lib/document-shell.ts`.
   const requestHeaders = await headers();
-  if (requestHeaders.get(DOCUMENT_SHELL_HEADER) === BARE_DOCUMENT_SHELL) {
+  if (shouldRenderBareDocument(requestHeaders)) {
     return (
       <html
         lang="pl"

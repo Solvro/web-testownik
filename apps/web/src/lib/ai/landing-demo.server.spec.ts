@@ -6,6 +6,7 @@ import { parseLandingDemoRequest } from "@/lib/ai/landing-demo";
 import {
   LANDING_DEMO_MAX_OUTPUT_TOKENS,
   LANDING_DEMO_RATE_LIMITS,
+  admitLandingDemoRequest,
   getClientKey,
   handleLandingDemoRequest,
   parseLandingAiModel,
@@ -65,6 +66,34 @@ function demoRequest(body: unknown, headers: Record<string, string> = {}) {
     headers: { "Content-Type": "application/json", ...headers },
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
+}
+
+async function admitDeferredClients(clientKeys: string[]) {
+  const controllers: ReadableStreamDefaultController<Uint8Array>[] = [];
+  const pending = clientKeys.map(async (clientKey) => {
+    const request = new Request("http://localhost/ai/landing-demo", {
+      method: "POST",
+      headers: { "x-forwarded-for": clientKey },
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controllers.push(controller);
+        },
+      }),
+      duplex: "half",
+    } as RequestInit & { duplex: "half" });
+    return admitLandingDemoRequest(request, {
+      maxBodyBytes: 16_384,
+      parse: parseLandingDemoRequest,
+    });
+  });
+  // All requests pass the preliminary peeks before any body finishes.
+  expect(mocks.getConfiguredAiModel).not.toHaveBeenCalled();
+  const bytes = new TextEncoder().encode(JSON.stringify({ prompt: "a" }));
+  for (const controller of controllers) {
+    controller.enqueue(bytes);
+    controller.close();
+  }
+  return Promise.all(pending);
 }
 
 describe("parseLandingDemoRequest", () => {
@@ -298,5 +327,57 @@ describe("handleLandingDemoRequest", () => {
     expect(limited.status).toBe(429);
     expect(limited.headers.get("Retry-After")).not.toBeNull();
     // 600 streamed responses; the default 5 s is tight on a busy machine.
+  }, 30_000);
+});
+
+describe("landing demo concurrent admission", () => {
+  beforeEach(() => {
+    resetRateLimitStore();
+    mocks.env.NEXT_PUBLIC_AI_ENABLED = true;
+    mocks.env.LANDING_AI_MODEL = undefined;
+    mocks.providerConfigured = true;
+    mocks.getConfiguredAiModel.mockReset();
+    mocks.getConfiguredAiModel.mockReturnValue(createMockModel());
+  });
+
+  it("admits only 600 of 5,600 distinct clients with deferred bodies", async () => {
+    const admissions = await admitDeferredClients(
+      Array.from(
+        { length: 5600 },
+        (_, index) =>
+          `10.0.${Math.floor(index / 250).toString()}.${(index % 250).toString()}`,
+      ),
+    );
+    expect(admissions.filter((result) => result.admitted)).toHaveLength(600);
+    const rejected = admissions.filter((result) => !result.admitted);
+    expect(rejected).toHaveLength(5000);
+    expect(rejected.every((result) => result.response.status === 429)).toBe(
+      true,
+    );
+    expect(mocks.getConfiguredAiModel).toHaveBeenCalledTimes(600);
+  }, 30_000);
+
+  it("returns global reservations when concurrent requests exhaust a client", async () => {
+    const admissions = await admitDeferredClients(
+      Array.from({ length: 600 }, () => "203.0.113.7"),
+    );
+    expect(admissions.filter((result) => result.admitted)).toHaveLength(30);
+    for (let index = 0; index < 570; index++) {
+      const admission = await admitLandingDemoRequest(
+        demoRequest(
+          { prompt: "a" },
+          {
+            "x-forwarded-for": `10.0.${Math.floor(index / 250).toString()}.${(index % 250).toString()}`,
+          },
+        ),
+        { maxBodyBytes: 16_384, parse: parseLandingDemoRequest },
+      );
+      expect(admission.admitted).toBe(true);
+    }
+    const rejected = await admitLandingDemoRequest(
+      demoRequest({ prompt: "a" }, { "x-forwarded-for": "198.51.100.1" }),
+      { maxBodyBytes: 16_384, parse: parseLandingDemoRequest },
+    );
+    expect(rejected.admitted).toBe(false);
   }, 30_000);
 });

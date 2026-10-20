@@ -10,6 +10,8 @@ export interface RateLimitOptions {
   limit: number;
   /** Window length in seconds. */
   window: number;
+  /** Only for fixed, server-defined buckets; never for client-controlled keys. */
+  nonEvictable?: boolean;
 }
 
 export interface RateLimitResult {
@@ -21,6 +23,11 @@ export interface RateLimitResult {
 }
 
 const rateLimitEntries = new Map<string, number[]>();
+const nonEvictableEntries = new Map<string, number[]>();
+
+function getEntries(options: RateLimitOptions) {
+  return options.nonEvictable === true ? nonEvictableEntries : rateLimitEntries;
+}
 const CLEANUP_INTERVAL_MS = 60_000;
 /** Upper bound on distinct keys kept in memory; the oldest bucket is dropped past it. */
 const MAX_ENTRIES = 5000;
@@ -32,15 +39,18 @@ function cleanup(now: number) {
     return;
   }
 
-  for (const [key, timestamps] of rateLimitEntries) {
-    const activeTimestamps = timestamps.filter((timestamp) => timestamp > now);
-    if (activeTimestamps.length === 0) {
-      rateLimitEntries.delete(key);
-    } else {
-      rateLimitEntries.set(key, activeTimestamps);
+  for (const entries of [rateLimitEntries, nonEvictableEntries]) {
+    for (const [key, timestamps] of entries) {
+      const activeTimestamps = timestamps.filter(
+        (timestamp) => timestamp > now,
+      );
+      if (activeTimestamps.length === 0) {
+        entries.delete(key);
+      } else {
+        entries.set(key, activeTimestamps);
+      }
     }
   }
-
   lastCleanup = now;
 }
 
@@ -55,8 +65,9 @@ export function checkRateLimit(
   const entryKey = `${scope}:${key}`;
 
   cleanup(now);
+  const entries = getEntries(options);
 
-  const activeTimestamps = (rateLimitEntries.get(entryKey) ?? []).filter(
+  const activeTimestamps = (entries.get(entryKey) ?? []).filter(
     (timestamp) => timestamp > now,
   );
 
@@ -73,13 +84,17 @@ export function checkRateLimit(
 
   const reset = now + windowMs;
   activeTimestamps.push(reset);
-  if (!rateLimitEntries.has(entryKey) && rateLimitEntries.size >= MAX_ENTRIES) {
+  if (
+    entries === rateLimitEntries &&
+    !entries.has(entryKey) &&
+    entries.size >= MAX_ENTRIES
+  ) {
     const oldestKey = rateLimitEntries.keys().next().value;
     if (oldestKey !== undefined) {
       rateLimitEntries.delete(oldestKey);
     }
   }
-  rateLimitEntries.set(entryKey, activeTimestamps);
+  entries.set(entryKey, activeTimestamps);
 
   const oldestReset = activeTimestamps[0] ?? reset;
   return {
@@ -101,7 +116,7 @@ export function peekRateLimit(
   const windowMs = Math.max(1, Math.floor(options.window)) * 1000;
   const now = Date.now();
   const activeTimestamps = (
-    rateLimitEntries.get(`${scope}:${userId}`) ?? []
+    getEntries(options).get(`${scope}:${userId}`) ?? []
   ).filter((timestamp) => timestamp > now);
   const oldestReset = activeTimestamps[0] ?? now + windowMs;
   return {
@@ -111,6 +126,18 @@ export function peekRateLimit(
     reset: oldestReset,
     retryAfter: Math.max(1, Math.ceil((oldestReset - now) / 1000)),
   };
+}
+
+/**
+ * Rolls back the latest successful check. Call synchronously, without an await
+ * between reserving and releasing, so another request cannot own that entry.
+ */
+export function releaseRateLimit(
+  key: string,
+  scope: string,
+  options: RateLimitOptions,
+): void {
+  getEntries(options).get(`${scope}:${key}`)?.pop();
 }
 
 export function createRateLimitHeaders(
@@ -138,5 +165,6 @@ export function createRateLimitExceededResponse(result: RateLimitResult) {
 
 export function resetRateLimitStore() {
   rateLimitEntries.clear();
+  nonEvictableEntries.clear();
   lastCleanup = Date.now();
 }

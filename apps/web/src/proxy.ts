@@ -7,6 +7,7 @@ import { AUTH_COOKIES } from "@/lib/auth";
 import { verifyAccessToken } from "@/lib/auth/server";
 import {
   BARE_DOCUMENT_SHELL,
+  DOCUMENT_PATHNAME_HEADER,
   DOCUMENT_SHELL_HEADER,
   isBareDocumentPath,
 } from "@/lib/document-shell";
@@ -77,14 +78,11 @@ async function tryRefreshTokens(
 /** See `lib/document-shell.ts`. */
 function nextWithDocumentShell(request: NextRequest): NextResponse {
   const isBare = isBareDocumentPath(request.nextUrl.pathname);
-  if (!isBare && !request.headers.has(DOCUMENT_SHELL_HEADER)) {
-    return NextResponse.next();
-  }
   const headers = new Headers(request.headers);
+  headers.delete(DOCUMENT_SHELL_HEADER);
+  headers.set(DOCUMENT_PATHNAME_HEADER, request.nextUrl.pathname);
   if (isBare) {
     headers.set(DOCUMENT_SHELL_HEADER, BARE_DOCUMENT_SHELL);
-  } else {
-    headers.delete(DOCUMENT_SHELL_HEADER);
   }
   return NextResponse.next({ request: { headers } });
 }
@@ -119,8 +117,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    // eslint-disable-next-line unicorn/prefer-string-raw
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json)$).*)",
-  ],
+  // Only Next.js internals bypass sanitization. App route parameters can have
+  // any extension; public assets also pass through so their headers are clean.
+  matcher: ["/((?!_next/).*)"],
 };

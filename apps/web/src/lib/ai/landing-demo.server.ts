@@ -11,6 +11,7 @@ import {
   checkRateLimit,
   createRateLimitExceededResponse,
   peekRateLimit,
+  releaseRateLimit,
 } from "@/lib/ai/rate-limit";
 
 export const DEFAULT_LANDING_AI_MODEL = "openai:gpt-5.6-luna";
@@ -20,7 +21,7 @@ export const LANDING_DEMO_MAX_OUTPUT_TOKENS = 220;
 /** 10-minute sliding windows: per visitor IP, and across all visitors. */
 export const LANDING_DEMO_RATE_LIMITS = {
   perClient: { limit: 30, window: 600 },
-  global: { limit: 600, window: 600 },
+  global: { limit: 600, window: 600, nonEvictable: true },
 } as const;
 
 const RATE_LIMIT_SCOPE = "ai-landing-demo";
@@ -140,9 +141,9 @@ export type LandingDemoAdmission<Body> =
  *
  * Limits are checked before the body is read, so an over-quota caller costs
  * nothing but a header lookup. The global cap is only peeked then: it is
- * consumed after the per-client check, so one noisy visitor is stopped by
- * their own bucket without allocating or eating into the shared allowance.
- * Requests rejected for their body do not count.
+ * reserved again after body parsing, before allocating any client state.
+ * The reservation and client check run synchronously; a client rejection
+ * releases the reservation. Requests rejected for their body do not count.
  */
 export async function admitLandingDemoRequest<Body>(
   request: Request,
@@ -197,14 +198,8 @@ export async function admitLandingDemoRequest<Body>(
     return reject(Response.json({ code: "invalid_request" }, { status: 400 }));
   }
 
-  const clientLimit = checkRateLimit(
-    clientKey,
-    RATE_LIMIT_SCOPE,
-    LANDING_DEMO_RATE_LIMITS.perClient,
-  );
-  if (!clientLimit.allowed) {
-    return reject(createRateLimitExceededResponse(clientLimit));
-  }
+  // No awaits between reserving the global budget and checking the client:
+  // deferred bodies must re-check quota, and rejected clients return it intact.
   const globalLimit = checkRateLimit(
     GLOBAL_RATE_LIMIT_KEY,
     RATE_LIMIT_SCOPE,
@@ -212,6 +207,19 @@ export async function admitLandingDemoRequest<Body>(
   );
   if (!globalLimit.allowed) {
     return reject(createRateLimitExceededResponse(globalLimit));
+  }
+  const clientLimit = checkRateLimit(
+    clientKey,
+    RATE_LIMIT_SCOPE,
+    LANDING_DEMO_RATE_LIMITS.perClient,
+  );
+  if (!clientLimit.allowed) {
+    releaseRateLimit(
+      GLOBAL_RATE_LIMIT_KEY,
+      RATE_LIMIT_SCOPE,
+      LANDING_DEMO_RATE_LIMITS.global,
+    );
+    return reject(createRateLimitExceededResponse(clientLimit));
   }
 
   return {
