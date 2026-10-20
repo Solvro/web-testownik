@@ -68,13 +68,9 @@ function HeroContent({
             problemach z nauką
           </em>
         </h1>
-        <p className="text-muted-foreground mt-4 max-w-[28rem] text-sm leading-relaxed lg:mt-6 lg:max-w-[32rem] lg:text-[clamp(0.95rem,1.3vw,1.18rem)] lg:leading-[1.55]">
-          <span className="lg:hidden">
-            Twórz i rozwiązuj quizy, śledź postępy i ucz się razem ze znajomymi.
-          </span>
-          <span className="hidden lg:inline">
-            Quizy, statystyki, oceny i wspólna nauka - zawsze pod ręką
-          </span>
+        <p className="text-muted-foreground mt-4 max-w-[28rem] text-sm leading-relaxed text-balance lg:mt-6 lg:max-w-[32rem] lg:text-[clamp(0.95rem,1.3vw,1.18rem)] lg:leading-[1.55]">
+          Twórz i&nbsp;rozwiązuj quizy, śledź postępy i&nbsp;oceny oraz ucz się
+          razem ze znajomymi.
         </p>
       </div>
 

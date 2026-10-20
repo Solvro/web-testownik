@@ -22,8 +22,8 @@ export function Faq(): React.JSX.Element {
             <em>Odpowiedzi.</em>
           </DisplayHeading>
           <p className="text-muted-foreground mt-6 max-w-[30rem] leading-[1.65]">
-            Jak zacząć naukę, tworzyć quizy i korzystać z pozostałych funkcji?
-            Odpowiadamy na najczęstsze pytania o Testownik.
+            Jak zacząć naukę, tworzyć quizy i&nbsp;korzystać z&nbsp;pozostałych
+            funkcji? Odpowiadamy na&nbsp;najczęstsze pytania o&nbsp;Testownik.
           </p>
         </header>
 
