@@ -36,7 +36,8 @@ const screenshotClip = openPose
 const screenshotStyle = `
   nextjs-portal,
   [data-testid*="devtools"],
-  button[aria-label*="TanStack"],
+  .tsqd-open-btn-container,
+  button[aria-label*="TanStack" i],
   button[aria-label*="Next.js"] {
     display: none !important;
   }
@@ -137,7 +138,7 @@ async function captureTheme(page, theme) {
     })
     .png()
     .toBuffer();
-  const output = `public/models/testownik-device-stack-cover-${theme}-v8.webp`;
+  const output = `public/models/testownik-device-stack-cover-${theme}-v9.webp`;
 
   await sharp({
     create: {
