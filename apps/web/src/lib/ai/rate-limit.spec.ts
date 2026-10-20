@@ -4,6 +4,8 @@ import {
   checkRateLimit,
   createRateLimitExceededResponse,
   createRateLimitHeaders,
+  peekRateLimit,
+  releaseRateLimit,
   resetRateLimitStore,
 } from "./rate-limit";
 
@@ -53,6 +55,33 @@ describe("checkRateLimit", () => {
 
     expect(checkRateLimit("user-2", "ai-chat", options).allowed).toBe(true);
     expect(checkRateLimit("user-1", "ai-explain", options).allowed).toBe(true);
+  });
+
+  it("keeps a fixed global bucket when client buckets are evicted", () => {
+    const global = { limit: 1, window: 600, nonEvictable: true };
+    checkRateLimit("global", "demo", global);
+    for (let index = 0; index < 5600; index++) {
+      checkRateLimit(index.toString(), "demo", { limit: 1, window: 600 });
+    }
+    expect(peekRateLimit("global", "demo", global).allowed).toBe(false);
+    expect(checkRateLimit("global", "demo", global).allowed).toBe(false);
+    vi.advanceTimersByTime(600_000);
+    expect(checkRateLimit("global", "demo", global).allowed).toBe(true);
+    resetRateLimitStore();
+    expect(peekRateLimit("global", "demo", global).remaining).toBe(1);
+  });
+
+  it("releases only the latest global reservation", () => {
+    const options = { limit: 2, window: 600, nonEvictable: true };
+    checkRateLimit("global", "demo", options);
+    vi.advanceTimersByTime(1000);
+    checkRateLimit("global", "demo", options);
+    releaseRateLimit("global", "demo", options);
+    expect(peekRateLimit("global", "demo", options)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+      retryAfter: 599,
+    });
   });
 
   it("allows new requests after the window expires", () => {
