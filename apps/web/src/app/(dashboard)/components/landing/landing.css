@@ -227,7 +227,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   --lp-iphone-rim: #e2e3e4;
   position: relative;
   width: 428px;
-  height: 868px;
+  height: 879px;
 }
 
 .dark .lp-iphone {
@@ -238,8 +238,8 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 .lp-iphone-frame {
   box-sizing: border-box;
   width: 428px;
-  height: 868px;
-  padding: 19px;
+  height: 879px;
+  padding: 18px;
   border: 1px solid var(--lp-iphone-edge);
   border-radius: 68px;
   background: #010101;
@@ -254,7 +254,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   position: relative;
   isolation: isolate;
   width: 390px;
-  height: 830px;
+  height: 841px;
   overflow: hidden;
   border-radius: 49px;
   background: var(--background);

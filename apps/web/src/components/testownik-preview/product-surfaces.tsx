@@ -195,12 +195,14 @@ function PreviewScreenShell({
   screen,
   className,
   standalone,
+  layout,
   children,
 }: {
   session: PreviewQuizSession;
   screen: PreviewScreen;
   className?: string;
   standalone: boolean;
+  layout?: "phone";
   children: ReactNode;
 }): React.JSX.Element {
   return (
@@ -209,6 +211,7 @@ function PreviewScreenShell({
         className={className}
         onNavigate={screen.navigate}
         standalone={standalone}
+        layout={layout}
       >
         <PreviewRuntime client={session.client} toasterId={screen.toasterId}>
           {children}
@@ -640,6 +643,7 @@ export function PhoneQuizSurface({
       session={session}
       screen={screen}
       standalone={standalone}
+      layout="phone"
     >
       <div className="bg-background text-foreground flex size-full flex-col">
         <PhoneStatusBar />

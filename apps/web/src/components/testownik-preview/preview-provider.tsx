@@ -120,11 +120,13 @@ export function PreviewSandbox({
   className,
   onNavigate,
   standalone = false,
+  layout,
 }: {
   children: ReactNode;
   className?: string;
   onNavigate?: (href: string) => void;
   standalone?: boolean;
+  layout?: "phone";
 }): React.JSX.Element {
   // Elements in state rather than refs: the context must update once they
   // attach so portals that opened early move into the screen.
@@ -132,7 +134,7 @@ export function PreviewSandbox({
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null,
   );
-  const surface: EmbeddedSurface = { root, portalContainer };
+  const surface: EmbeddedSurface = { root, portalContainer, layout };
 
   if (standalone) {
     return (
@@ -165,8 +167,10 @@ export function PreviewSandbox({
         "**:[view-transition-name:none]!",
         // Dialogs size themselves against the viewport (`dvh`, `sm:`); in a
         // screen the screen is the bound.
-        "**:data-[slot=alert-dialog-content]:max-h-[calc(100%-2rem)]! **:data-[slot=alert-dialog-content]:overflow-y-auto **:data-[slot=dialog-content]:max-h-[calc(100%-2rem)]!",
-        "@max-lg:**:data-[slot=alert-dialog-content]:max-w-[calc(100%-1.5rem)]! @max-lg:**:data-[slot=dialog-content]:max-w-[calc(100%-1.5rem)]!",
+        "**:data-[slot=alert-dialog-content]:overflow-y-auto",
+        layout === "phone"
+          ? "**:data-[slot=alert-dialog-content]:max-h-[85%]! **:data-[slot=alert-dialog-content]:max-w-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[85%]! **:data-[slot=dialog-content]:max-w-[calc(100%-2rem)]!"
+          : "**:data-[slot=alert-dialog-content]:max-h-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[calc(100%-2rem)]! @max-lg:**:data-[slot=alert-dialog-content]:max-w-[calc(100%-1.5rem)]! @max-lg:**:data-[slot=dialog-content]:max-w-[calc(100%-1.5rem)]!",
         className,
       )}
       onClickCapture={(event) => {

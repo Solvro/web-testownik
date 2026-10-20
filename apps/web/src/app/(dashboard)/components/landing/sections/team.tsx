@@ -49,8 +49,8 @@ export function Team({
         </div>
 
         <div className="border-border border-t pt-4 lg:border-t-0 lg:pt-0">
-          <p className="text-muted-foreground max-w-[32rem] text-sm leading-relaxed">
-            Czyli jak coś nie działa to na nich można zwalić
+          <p className="text-muted-foreground max-w-[32rem] text-sm leading-relaxed text-balance">
+            Czyli jak coś nie działa, to na&nbsp;nich można zwalić.
           </p>
           <a
             href={REPOSITORY_URL}

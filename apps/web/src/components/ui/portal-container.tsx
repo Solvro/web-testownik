@@ -15,6 +15,8 @@ import { createContext, use } from "react";
 export interface EmbeddedSurface {
   /** The box itself. Events and focus outside it do not belong to the surface. */
   root: HTMLElement | null;
+  /** Native layout of a CSS phone, independent of the outer viewport. */
+  layout?: "phone";
   /** Where overlays mount. `null` while it is still being attached. */
   portalContainer: HTMLElement | null;
 }
@@ -25,6 +27,10 @@ export const EmbeddedSurfaceContext = createContext<EmbeddedSurface | null>(
 
 export function useEmbeddedSurface(): EmbeddedSurface | null {
   return use(EmbeddedSurfaceContext);
+}
+
+export function useIsPhoneSurface(): boolean {
+  return useEmbeddedSurface()?.layout === "phone";
 }
 
 /**

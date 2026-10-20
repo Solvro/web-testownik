@@ -52,10 +52,10 @@ export function Finale({
 
       <p className="text-muted-foreground relative mt-8 max-w-[44rem] text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.55] sm:mt-[clamp(3rem,7vh,5rem)]">
         <span className="block text-balance">
-          Wejdź do aplikacji i poznaj nowy sposób na naukę
+          Wejdź do aplikacji i&nbsp;poznaj nowy sposób na&nbsp;naukę.
         </span>
         <span className="block text-balance">
-          Zawsze pod ręką dla ciebie i znajomych
+          Zawsze pod ręką dla Ciebie i&nbsp;znajomych.
         </span>
       </p>
 

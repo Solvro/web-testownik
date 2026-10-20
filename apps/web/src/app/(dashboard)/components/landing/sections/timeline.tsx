@@ -220,8 +220,8 @@ export function Timeline(): React.JSX.Element {
           <em>Potem produkt.</em>
         </DisplayHeading>
         <p className="text-muted-foreground mt-6 max-w-lg leading-[1.65] sm:mt-5">
-          Zweryfikowana historia projektu na podstawie oficjalnego portfolio KN
-          Solvro.
+          Zweryfikowana historia projektu na&nbsp;podstawie oficjalnego
+          portfolio KN Solvro.
         </p>
         <Link
           href={SOLVRO_PORTFOLIO_URL}
@@ -232,7 +232,7 @@ export function Timeline(): React.JSX.Element {
             FOCUS_RING,
           )}
         >
-          Pełna historia w portfolio Solvro
+          Pełna historia w&nbsp;portfolio Solvro
           <ArrowUpRight aria-hidden="true" />
         </Link>
       </header>
