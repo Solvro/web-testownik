@@ -160,11 +160,14 @@ export function DeviceStack({
     };
 
     const boot = async (): Promise<void> => {
-      if (!heroWebGLRetryPolicy.canAttempt()) {
-        fallback("creation-failed");
-        return;
-      }
       try {
+        // Inside the try: a broken module graph (seen once after a hot
+        // reload mid-merge) must end in the static fallback, not a silent
+        // cover with no screens.
+        if (!heroWebGLRetryPolicy.canAttempt()) {
+          fallback("creation-failed");
+          return;
+        }
         const { createDeviceStack } =
           await import("./three/create-device-stack");
         controller.signal.throwIfAborted();
