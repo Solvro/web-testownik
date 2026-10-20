@@ -61,7 +61,7 @@ function HeroContent({
         data-hero-progress={isStatic ? undefined : true}
         ref={isStatic ? undefined : attachHeroProgress}
         style={isStatic ? undefined : copyStyle}
-        className="lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)] lg:z-10 lg:max-w-[min(64rem,82vw)]"
+        className="lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)] lg:z-10 lg:max-w-[min(66rem,82vw)]"
       >
         <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
         <h1 className="mt-3 max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight lg:flex lg:max-w-none lg:flex-col lg:text-[clamp(3.3rem,6.25vw,7.35rem)] lg:leading-[0.78] lg:whitespace-nowrap">
