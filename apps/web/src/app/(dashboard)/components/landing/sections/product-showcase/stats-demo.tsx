@@ -349,7 +349,7 @@ export function StatsDemo(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="bg-background text-foreground flex h-[min(70svh,32rem)] min-h-80 min-w-0 flex-col overflow-hidden rounded-3xl border shadow-xl shadow-black/5 sm:h-full sm:min-h-140">
+    <div className="bg-background text-foreground [&_.recharts-surface:focus-visible]:outline-primary flex h-[min(70svh,32rem)] min-h-80 min-w-0 flex-col overflow-hidden rounded-3xl border shadow-xl shadow-black/5 sm:h-full sm:min-h-140 [&_.recharts-surface:focus-visible]:outline-2 [&_.recharts-surface:focus-visible]:outline-offset-[-2px] [&_.recharts-surface:focus-visible]:outline-solid">
       <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
         <strong className="block truncate text-sm sm:text-base">
           Statystyki: {QUIZ_TITLE}

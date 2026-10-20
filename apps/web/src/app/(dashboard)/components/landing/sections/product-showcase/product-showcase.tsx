@@ -3,10 +3,11 @@
 import { ArrowRightIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
 import { FOCUS_RING } from "../../components/focus";
 import { LandingButtonLink } from "../../components/landing-button";
 import { LandingSection } from "../../components/section";
@@ -58,6 +59,7 @@ const showcaseBackdropStyle: CSSProperties = {
 
 export function ProductShowcase(): React.JSX.Element {
   const [activeId, setActiveId] = useState<ShowcaseFeatureId>("quiz");
+  const keyboardSelectionReference = useRef<ShowcaseFeatureId | null>(null);
 
   return (
     <LandingSection
@@ -101,7 +103,15 @@ export function ProductShowcase(): React.JSX.Element {
                   type="button"
                   aria-expanded={active}
                   aria-controls={panelId}
-                  onClick={() => {
+                  onClick={(event) => {
+                    // The expanded desktop rail disappears. Keep keyboard
+                    // focus in the selected panel instead of dropping to body.
+                    if (
+                      event.detail === 0 &&
+                      window.matchMedia(DESKTOP_STAGE_QUERY).matches
+                    ) {
+                      keyboardSelectionReference.current = feature.id;
+                    }
                     setActiveId(feature.id);
                   }}
                   className={cn(
@@ -125,7 +135,23 @@ export function ProductShowcase(): React.JSX.Element {
                 {active ? (
                   <div
                     id={panelId}
-                    className="grid min-h-0 lg:h-full lg:grid-cols-[minmax(17rem,0.64fr)_minmax(0,1.65fr)]"
+                    ref={(panel) => {
+                      if (
+                        panel !== null &&
+                        keyboardSelectionReference.current === feature.id
+                      ) {
+                        keyboardSelectionReference.current = null;
+                        panel.focus({ preventScroll: true });
+                      }
+                    }}
+                    role="region"
+                    aria-label={feature.label}
+                    tabIndex={-1}
+                    className={cn(
+                      "grid min-h-0 lg:h-full lg:grid-cols-[minmax(17rem,0.64fr)_minmax(0,1.65fr)]",
+                      FOCUS_RING,
+                      "focus-visible:outline-offset-[-3px]",
+                    )}
                   >
                     <div
                       className={cn(
@@ -141,7 +167,7 @@ export function ProductShowcase(): React.JSX.Element {
                           {feature.label}
                         </span>
                       </div>
-                      <h3 className="mt-6 text-5xl leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8">
+                      <h3 className="mt-6 text-5xl leading-[0.98] font-[750] tracking-[-0.055em] lg:mt-8 lg:text-[clamp(2.5rem,3.35vw,3rem)]">
                         {feature.title}
                       </h3>
                       <p className="text-muted-foreground mt-6 text-[0.98rem] leading-[1.7]">

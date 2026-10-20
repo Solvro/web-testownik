@@ -254,9 +254,14 @@ export function LandingTableOfContents(): React.JSX.Element {
         hideTimer = 0;
       }
     };
-    const hideAfterIdle = (): void => {
+    const hideAfterIdle = (focusIsLeaving = false): void => {
       clearHideTimer();
-      if (isPointerOverNavigation) {
+      if (
+        isPointerOverNavigation ||
+        (!focusIsLeaving &&
+          navigationReference.current?.contains(document.activeElement) ===
+            true)
+      ) {
         return;
       }
 
@@ -271,6 +276,22 @@ export function LandingTableOfContents(): React.JSX.Element {
     const revealTemporarily = (): void => {
       setIsVisible(true);
       hideAfterIdle();
+    };
+
+    const handleFocusIn = (): void => {
+      clearHideTimer();
+      setIsVisible(true);
+    };
+    const handleFocusOut = (event: FocusEvent): void => {
+      if (
+        event.relatedTarget instanceof Node &&
+        navigationReference.current?.contains(event.relatedTarget) === true
+      ) {
+        return;
+      }
+      // During focusout the browser can still report the departing link as
+      // active. The related target above already tells us focus is leaving.
+      hideAfterIdle(true);
     };
 
     const update = (): void => {
@@ -357,6 +378,9 @@ export function LandingTableOfContents(): React.JSX.Element {
     };
 
     measureSections();
+    const navigation = navigationReference.current;
+    navigation?.addEventListener("focusin", handleFocusIn);
+    navigation?.addEventListener("focusout", handleFocusOut);
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
     window.addEventListener("resize", measureSections);
     window.addEventListener("pageshow", measureSections);
@@ -365,6 +389,8 @@ export function LandingTableOfContents(): React.JSX.Element {
     });
 
     return () => {
+      navigation?.removeEventListener("focusin", handleFocusIn);
+      navigation?.removeEventListener("focusout", handleFocusOut);
       window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", measureSections);
       window.removeEventListener("pageshow", measureSections);

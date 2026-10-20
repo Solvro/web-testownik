@@ -11,9 +11,8 @@ import {
   Share2Icon,
   SparklesIcon,
   TimerIcon,
-  XIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
@@ -30,6 +29,7 @@ import {
 import { QuizPreviewSurface } from "@/components/testownik-preview/product-surfaces";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
@@ -38,7 +38,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 import { getShowcaseExplanation, getShowcaseHint } from "./showcase-quiz";
 import { useShowcaseSession } from "./showcase-session-context";
@@ -135,9 +134,11 @@ function formatTimer(totalSeconds: number): string {
 function QuizShareOverlay({
   open,
   onClose,
+  triggerReference,
 }: {
   open: boolean;
   onClose: () => void;
+  triggerReference: React.RefObject<HTMLButtonElement | null>;
 }): React.JSX.Element | null {
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(
     AccessLevel.UNLISTED,
@@ -148,25 +149,6 @@ function QuizShareOverlay({
   const [groupsWithAccess, setGroupsWithAccess] = useState([INITIAL_GROUP]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
 
   const takenIds = new Set([
     CREATOR.id,
@@ -211,40 +193,24 @@ function QuizShareOverlay({
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-3 sm:p-4">
-      <button
-        type="button"
-        aria-label="Zamknij udostępnianie"
-        className="absolute inset-0 bg-black/40 supports-backdrop-filter:backdrop-blur-xs"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
         aria-labelledby="landing-share-title"
-        className={cn(
-          "bg-popover text-popover-foreground ring-foreground/10 relative z-10 grid w-full max-w-lg gap-3 rounded-xl p-4 text-sm ring-1 sm:gap-4 sm:p-5",
-          "max-h-full min-w-0",
-        )}
+        finalFocus={triggerReference}
+        className="max-w-lg min-w-0 gap-3 p-4 sm:max-w-lg sm:gap-4 sm:p-5"
+        overlayClassName="bg-black/40"
       >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="absolute top-3 right-3"
-          aria-label="Zamknij"
-          onClick={onClose}
-        >
-          <XIcon />
-        </Button>
-
         <div className="pr-8">
-          <h2
-            id="landing-share-title"
-            className="cn-font-heading text-lg leading-none font-semibold"
-          >
+          <DialogTitle id="landing-share-title">
             Udostępnij &quot;{QUIZ_TITLE}&quot;
-          </h2>
+          </DialogTitle>
         </div>
 
         <div className="min-w-0 space-y-3 sm:space-y-4">
@@ -254,6 +220,7 @@ function QuizShareOverlay({
               render={
                 <div className="relative w-full min-w-0">
                   <Input
+                    aria-label="Znajdź osobę lub grupę"
                     placeholder="Wpisz imię/nazwisko, grupę lub numer indeksu..."
                     value={searchQuery}
                     onChange={handleSearchInput}
@@ -386,8 +353,8 @@ function QuizShareOverlay({
             Kopiuj link
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -402,6 +369,7 @@ export function QuizDemo(): React.JSX.Element {
   const { view, state } = session;
   const elapsedSeconds = useStudyTimeValue(session.timer);
   const [shareOpen, setShareOpen] = useState(false);
+  const shareTriggerReference = useRef<HTMLButtonElement>(null);
   // The question the AI card is open for; moving on closes it.
   const [aiQuestionId, setAiQuestionId] = useState<string | null>(null);
   const [answerHints, setAnswerHints] = useState<AnswerHint[]>([]);
@@ -464,6 +432,7 @@ export function QuizDemo(): React.JSX.Element {
                   <TooltipContent>{aiLabel}</TooltipContent>
                 </Tooltip>
                 <Button
+                  ref={shareTriggerReference}
                   type="button"
                   size="icon-sm"
                   variant="outline"
@@ -542,6 +511,7 @@ export function QuizDemo(): React.JSX.Element {
 
           <QuizShareOverlay
             open={shareOpen}
+            triggerReference={shareTriggerReference}
             onClose={() => {
               setShareOpen(false);
             }}

@@ -62,7 +62,7 @@ function HeroContent({
         ref={isStatic ? undefined : attachHeroProgress}
         style={isStatic ? undefined : copyStyle}
         className={cn(
-          "lg:z-10 lg:max-w-[min(64rem,82vw)]",
+          "lg:z-10 lg:max-w-[min(66rem,82vw)]",
           isStatic
             ? "lg:relative lg:ml-[clamp(1.5rem,4vw,4.5rem)]"
             : "lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)]",
