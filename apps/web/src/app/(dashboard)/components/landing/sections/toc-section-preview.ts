@@ -348,7 +348,10 @@ function buildHeroPeek(
   }
 
   const stage = createStage(section.id, layout);
-  const heroHeight = Math.max(window.innerHeight, HERO_MIN_HEIGHT);
+  const isStatic = section.dataset.heroStatic === "true";
+  const heroHeight = isStatic
+    ? section.offsetHeight
+    : Math.max(window.innerHeight, HERO_MIN_HEIGHT);
   const fit = Math.min(1, layout.windowHeight / heroHeight);
 
   const hero = document.createElement("div");
@@ -374,7 +377,9 @@ function buildHeroPeek(
   deviceLayer.style.inset = `${HERO_DEVICE_TOP} 0 0 0`;
   deviceLayer.style.containerType = "size";
   const cover = document.createElement("div");
-  cover.className = DEVICE_COVER_CLASS;
+  cover.className = isStatic
+    ? "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]"
+    : DEVICE_COVER_CLASS;
   deviceLayer.append(cover);
 
   hero.append(headerClone, copyClone, deviceLayer);
@@ -693,10 +698,6 @@ export function warmTocSectionPreviews(
   const observers: MutationObserver[] = [];
   const listeners: [HTMLElement, string, () => void][] = [];
   for (const section of sections) {
-    // The hero peek is a still at progress zero; its live DOM is irrelevant.
-    if (section.peek === "hero") {
-      continue;
-    }
     const element = sectionElement(section.id);
     if (element === null) {
       continue;
@@ -714,6 +715,16 @@ export function warmTocSectionPreviews(
     // Text edits (`characterData`) are left out: the demo quiz's clock ticks
     // every second and would keep the showcase permanently dirty.
     const observer = new MutationObserver(markDirty);
+    // Only the live/static switch changes the hero still. Never observe its
+    // per-frame progress writes or the three live screen subtrees.
+    if (section.peek === "hero") {
+      observer.observe(element, {
+        attributes: true,
+        attributeFilter: ["data-hero-static"],
+      });
+      observers.push(observer);
+      continue;
+    }
     observer.observe(element, {
       subtree: true,
       childList: true,

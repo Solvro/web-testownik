@@ -124,6 +124,12 @@ A lost context gets 1.5 seconds to restore before the stage disposes the scene,
 unmounts the screens and enters the same terminal fallback. The scroll-to-open
 hint and lid progress disappear; the hero badges remain.
 
+The unavailable state belongs to `Hero`: after mounting, a failed desktop
+stage switches the hero to one viewport with fully visible copy and static
+study badges. No hero progress targets or scroll publisher remain active.
+The TOC observes the shorter section and rebuilds its hero peek with the open
+still when `data-hero-static` changes.
+
 Regenerate the fallback stills separately, keeping the closed loading covers:
 
 ```sh
