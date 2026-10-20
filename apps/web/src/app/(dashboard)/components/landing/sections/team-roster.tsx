@@ -199,7 +199,7 @@ function EntryShell({
   children: React.ReactNode;
 }): React.JSX.Element {
   const className =
-    "group/entry -m-1.5 flex min-w-0 items-center gap-3 rounded-md p-1.5";
+    "group/entry -m-1.5 flex min-w-0 items-start gap-3 rounded-md p-1.5";
 
   if (href === undefined) {
     return <div className={className}>{children}</div>;
@@ -359,18 +359,15 @@ function CreditRow({
   return (
     <section
       aria-labelledby={labelledBy}
-      className="lg:border-border grid grid-cols-1 gap-x-8 gap-y-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:border-t lg:py-7"
+      className="grid grid-cols-1 items-start gap-x-8 gap-y-4 py-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:py-7"
     >
-      <div className="flex min-h-4 items-center gap-3 lg:block">
+      <div className="flex min-h-4 flex-wrap items-start gap-x-3 gap-y-3">
         <h3 id={labelledBy} className="shrink-0 leading-none">
           <MonoLabel size="md" tone="default">
             {label}
           </MonoLabel>
         </h3>
-        <span
-          aria-hidden="true"
-          className="bg-border h-px min-w-0 flex-1 lg:hidden"
-        />
+        <span aria-hidden="true" className="bg-border h-px min-w-0 flex-1" />
         {aside}
       </div>
       {children}
@@ -391,7 +388,9 @@ function OpenSourceMore({
   pending: boolean;
 }): React.JSX.Element | null {
   if (pending) {
-    return <span aria-hidden="true" className="block h-4 shrink-0 lg:mt-3" />;
+    return (
+      <span aria-hidden="true" className="block h-4 shrink-0 lg:basis-full" />
+    );
   }
 
   if (hidden <= 0) {
@@ -404,7 +403,7 @@ function OpenSourceMore({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "text-muted-foreground hover:text-landing-primary inline-flex h-4 shrink-0 items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 lg:mt-3 [&_svg]:size-3.5",
+        "text-muted-foreground hover:text-landing-primary inline-flex h-4 shrink-0 items-center gap-1 rounded-sm text-xs font-semibold transition-colors duration-150 lg:basis-full [&_svg]:size-3.5",
         FOCUS_RING,
       )}
     >
@@ -494,50 +493,48 @@ function Masthead({
           </CreditRow>
         )}
 
-        {!failed && visibleCommunity?.length === 0 ? null : (
-          <CreditRow
-            label="Open source"
-            labelledBy="team-community"
-            aside={
-              <OpenSourceMore
-                hidden={hiddenCommunity}
-                pending={community === undefined}
-              />
-            }
-          >
-            {failed ? (
-              <OpenSourceUnavailable />
-            ) : (
-              <ul
-                aria-busy={community === undefined}
-                className={cn(
-                  "grid grid-cols-2 content-start gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4",
-                  COMMUNITY_MIN_HEIGHT,
-                )}
-              >
-                {visibleCommunity === undefined
-                  ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
-                      <li
-                        key={index}
-                        aria-hidden="true"
-                        className="flex h-9 items-center gap-3"
-                      >
-                        <Skeleton className="size-9 shrink-0 rounded-full" />
-                        <span className="flex flex-col gap-2">
-                          <Skeleton className="h-3 w-20" />
-                          <Skeleton className="h-2 w-12" />
-                        </span>
-                      </li>
-                    ))
-                  : visibleCommunity.map((contributor) => (
-                      <li key={contributor.login} className="min-w-0">
-                        <ContributorEntry contributor={contributor} />
-                      </li>
-                    ))}
-              </ul>
-            )}
-          </CreditRow>
-        )}
+        <CreditRow
+          label="Open source"
+          labelledBy="team-community"
+          aside={
+            <OpenSourceMore
+              hidden={hiddenCommunity}
+              pending={community === undefined}
+            />
+          }
+        >
+          {failed ? (
+            <OpenSourceUnavailable />
+          ) : (
+            <ul
+              aria-busy={community === undefined}
+              className={cn(
+                "grid grid-cols-2 content-start gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4",
+                COMMUNITY_MIN_HEIGHT,
+              )}
+            >
+              {visibleCommunity === undefined
+                ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
+                    <li
+                      key={index}
+                      aria-hidden="true"
+                      className="flex h-9 items-center gap-3"
+                    >
+                      <Skeleton className="size-9 shrink-0 rounded-full" />
+                      <span className="flex flex-col gap-2">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-2 w-12" />
+                      </span>
+                    </li>
+                  ))
+                : visibleCommunity.map((contributor) => (
+                    <li key={contributor.login} className="min-w-0">
+                      <ContributorEntry contributor={contributor} />
+                    </li>
+                  ))}
+            </ul>
+          )}
+        </CreditRow>
       </div>
     </div>
   );
