@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
-import { getLandingDemoTokenCounter } from "@/lib/ai/landing-demo-tokenizer.server";
+import {
+  getLandingDemoTokenCounter,
+  warmLandingDemoTokenizer,
+} from "@/lib/ai/landing-demo-tokenizer.server";
 
 vi.mock("server-only", () => ({}));
 
@@ -12,6 +15,24 @@ const source = (path: string) =>
 // len(encoding.encode(text, disallowed_special=())). Never derive expected
 // values with the counter under test.
 describe("landing demo tokenizer", () => {
+  it("warms once and shares the counter with concurrent and later requests", async () => {
+    const first = warmLandingDemoTokenizer();
+    const second = warmLandingDemoTokenizer();
+    const counter = getLandingDemoTokenCounter();
+    await expect(first).resolves.toBeUndefined();
+    await expect(second).resolves.toBeUndefined();
+    expect(await getLandingDemoTokenCounter()).toBe(await counter);
+    await expect(warmLandingDemoTokenizer()).resolves.toBeUndefined();
+  });
+
+  it("shares startup state across separately evaluated server module copies", async () => {
+    const counter = await getLandingDemoTokenCounter();
+    vi.resetModules();
+    const routeCopy = await import("./landing-demo-tokenizer.server");
+    await expect(routeCopy.warmLandingDemoTokenizer()).resolves.toBeUndefined();
+    expect(await routeCopy.getLandingDemoTokenCounter()).toBe(counter);
+  });
+
   it.each([
     ["ascii", "Hello, world!", 4],
     ["Polish", "Zażółć gęślą jaźń.", 12],
@@ -54,12 +75,22 @@ describe("landing demo tokenizer", () => {
 
   it("uses a conservative byte fallback when the ranks cannot load", async () => {
     vi.resetModules();
+    vi.stubGlobal("__testownikLandingDemoTokenizer", {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {
+      // Expected failure; keep the test output quiet while checking the warning.
+    });
     vi.doMock("js-tiktoken/ranks/o200k_base", () => {
       throw new Error("ranks unavailable");
     });
     try {
-      const { getLandingDemoTokenCounter: getFallback } =
-        await import("./landing-demo-tokenizer.server");
+      const {
+        getLandingDemoTokenCounter: getFallback,
+        warmLandingDemoTokenizer: warmFallback,
+      } = await import("./landing-demo-tokenizer.server");
+      const first = warmFallback();
+      const second = warmFallback();
+      await expect(first).resolves.toBeUndefined();
+      await expect(second).resolves.toBeUndefined();
       const count = await getFallback();
       expect(count("Hello, world!")).toBe(17);
       expect(count("Zażółć gęślą jaźń.")).toBe(36);
@@ -67,7 +98,13 @@ describe("landing demo tokenizer", () => {
       expect(count("👩‍💻👨‍👩‍👧‍👦".repeat(100))).toBe(4680);
       expect(count("𐐷𝄞😀".repeat(100))).toBe(1560);
       expect(await getFallback()).toBe(count);
+      await expect(warmFallback()).resolves.toBeUndefined();
+      expect(warn).toHaveBeenCalledExactlyOnceWith(
+        "Landing demo tokenizer unavailable; using byte fallback",
+      );
     } finally {
+      vi.unstubAllGlobals();
+      warn.mockRestore();
       vi.doUnmock("js-tiktoken/ranks/o200k_base");
       vi.resetModules();
     }

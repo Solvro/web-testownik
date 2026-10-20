@@ -5,11 +5,23 @@ export type DemoTokenCounter = (text: string) => number;
 const fallback: DemoTokenCounter = (text) =>
   Math.ceil(Buffer.byteLength(text, "utf8") * 1.3);
 
-let counterPromise: Promise<DemoTokenCounter> | undefined;
+// Next bundles instrumentation and route handlers separately. Share the promise
+// across those module copies, otherwise startup would warm a different encoder.
+const processState = globalThis as typeof globalThis & {
+  __testownikLandingDemoTokenizer?: {
+    counterPromise?: Promise<DemoTokenCounter>;
+  };
+};
+const state = (processState.__testownikLandingDemoTokenizer ??= {});
+
+/** Optional startup work; requests still share the same lazy load. */
+export async function warmLandingDemoTokenizer(): Promise<void> {
+  await getLandingDemoTokenCounter();
+}
 
 /** Local ranks only: no network fetch, and concurrent requests share one load. */
 export async function getLandingDemoTokenCounter(): Promise<DemoTokenCounter> {
-  counterPromise ??= Promise.all([
+  state.counterPromise ??= Promise.all([
     import("js-tiktoken/lite"),
     import("js-tiktoken/ranks/o200k_base"),
   ])
@@ -34,6 +46,11 @@ export async function getLandingDemoTokenCounter(): Promise<DemoTokenCounter> {
         return count;
       };
     })
-    .catch(() => fallback);
-  return counterPromise;
+    .catch(() => {
+      // This catch belongs to the shared promise, so a failed warm-up or lazy
+      // load logs once and every caller keeps the conservative fallback.
+      console.warn("Landing demo tokenizer unavailable; using byte fallback");
+      return fallback;
+    });
+  return state.counterPromise;
 }
