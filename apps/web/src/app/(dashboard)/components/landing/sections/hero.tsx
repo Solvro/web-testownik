@@ -171,6 +171,9 @@ export function Hero({
           <Suspense fallback={staticHero}>
             <HeroDesktopStage
               isStatic={isStatic}
+              onRestored={() => {
+                setIsStatic(false);
+              }}
               onUnavailable={() => {
                 setIsStatic(true);
               }}

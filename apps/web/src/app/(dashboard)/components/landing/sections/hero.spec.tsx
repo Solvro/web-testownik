@@ -23,8 +23,17 @@ vi.mock("../components/hero-bubble", () => ({
 vi.mock("./hero-phone", () => ({ HeroPhone: () => null }));
 vi.mock("./landing-nav", () => ({ LandingNav: () => <header /> }));
 vi.mock("../scene/device-scene", () => ({
-  DeviceScene: ({ onUnavailable }: { onUnavailable: () => void }) => (
-    <button onClick={onUnavailable}>Fail WebGL</button>
+  DeviceScene: ({
+    onUnavailable,
+    onRestored,
+  }: {
+    onUnavailable: () => void;
+    onRestored: () => void;
+  }) => (
+    <>
+      <button onClick={onUnavailable}>Fail WebGL</button>
+      <button onClick={onRestored}>Restore WebGL</button>
+    </>
   ),
 }));
 
@@ -66,4 +75,11 @@ it("replaces the reduced-motion runway with visible static copy and stops progre
   } finally {
     window.removeEventListener(HERO_PROGRESS_EVENT, listener);
   }
+
+  fireEvent.click(screen.getByRole("button", { name: "Restore WebGL" }));
+  expect(hero).toHaveAttribute("data-hero-static", "false");
+  expect(hero).toHaveClass("lg:min-h-[190rem]");
+  expect(copy).toHaveAttribute("data-hero-progress");
+  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("1");
+  expect(screen.getByText("PRZEWIŃ")).toBeInTheDocument();
 });

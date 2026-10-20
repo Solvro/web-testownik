@@ -33,10 +33,12 @@ export function HeroDesktopStage({
   children,
   isStatic,
   onUnavailable,
+  onRestored,
 }: {
   children: ReactNode;
   isStatic: boolean;
   onUnavailable: () => void;
+  onRestored: () => void;
 }): React.JSX.Element {
   return (
     <>
@@ -99,7 +101,11 @@ export function HeroDesktopStage({
        * stays sharp and the droplet passes underneath.
        */}
       <div className="pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30">
-        <DeviceScene isStatic={isStatic} onUnavailable={onUnavailable} />
+        <DeviceScene
+          isStatic={isStatic}
+          onUnavailable={onUnavailable}
+          onRestored={onRestored}
+        />
       </div>
     </>
   );
