@@ -95,11 +95,13 @@ export function LandingNav({
 
         <LandingButton
           onClick={onStart}
+          disabled={isStarting}
           className={cn(
             "min-h-11 px-[0.9rem] text-[0.78rem] tracking-[0.02em] normal-case sm:min-h-11 sm:px-[1.15rem] sm:text-[0.86rem]",
             "transition-[gap,background-color] duration-200",
             "hover:gap-4",
             "active:translate-y-0 active:shadow-none",
+            "disabled:pointer-events-none disabled:opacity-50",
           )}
         >
           {isStarting ? "Uruchamiam…" : "Zacznij"}
