@@ -2,7 +2,6 @@ import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import { HERO_PROGRESS_PROPERTY } from "../hero-progress";
 import type { LandingSectionPeek } from "../landing-sections";
 import { wordmarkDark } from "../logos";
-import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import {
   TOC_PREVIEW_OBSERVED_ATTRIBUTES,
   TocPreviewFreshness,
@@ -36,6 +35,9 @@ const PREVIEW_CACHE_LIMIT = 8;
 const HERO_MIN_HEIGHT = 42 * 16;
 /** `top-[5.3rem]`: the device layer starts below the hero navigation. */
 const HERO_DEVICE_TOP = "5.3rem";
+/** The open-pose still the static hero shows; see `hero-desktop-stage.tsx`. */
+const HERO_PEEK_COVER_CLASS =
+  "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]";
 /**
  * Marks the revealed stage. A class rather than a `data-*` attribute: the app
  * CSS has `:has([data-…])` rules, and an attribute flip they might match sends
@@ -376,10 +378,10 @@ function buildHeroPeek(
   deviceLayer.style.position = "absolute";
   deviceLayer.style.inset = `${HERO_DEVICE_TOP} 0 0 0`;
   deviceLayer.style.containerType = "size";
+  // Always the open pose: the peek stands for the section as a whole, and the
+  // visitor reaches the hero's resting state (devices open) by scrolling it.
   const cover = document.createElement("div");
-  cover.className = isStatic
-    ? "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]"
-    : DEVICE_COVER_CLASS;
+  cover.className = HERO_PEEK_COVER_CLASS;
   deviceLayer.append(cover);
 
   hero.append(headerClone, copyClone, deviceLayer);
