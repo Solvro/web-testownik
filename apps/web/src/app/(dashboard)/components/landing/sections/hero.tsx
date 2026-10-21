@@ -12,6 +12,7 @@ import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
+import { HeroFade } from "./hero-fade";
 import { HeroPhone } from "./hero-phone";
 import { LandingNav } from "./landing-nav";
 
@@ -140,6 +141,7 @@ export function Hero({
           </>
         }
       />
+      <HeroFade />
     </div>
   );
 

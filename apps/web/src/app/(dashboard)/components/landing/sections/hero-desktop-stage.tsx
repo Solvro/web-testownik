@@ -12,6 +12,7 @@ import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { wordmarkDark, wordmarkLight } from "../logos";
 import { DeviceScene } from "../scene/device-scene";
 import { HeroBadges } from "./hero-badges";
+import { HeroFade } from "./hero-fade";
 
 const progressBarStyle: CSSProperties = {
   transform: `scaleX(${HERO_PROGRESS})`,
@@ -131,6 +132,7 @@ export function HeroDesktopStage({
           )}
         </div>
       </HeroBubble>
+      <HeroFade />
 
       {/*
        * Outside the Bubble on purpose. The Bubble refracts through
