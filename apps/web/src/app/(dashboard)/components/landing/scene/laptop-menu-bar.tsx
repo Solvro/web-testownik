@@ -1,14 +1,15 @@
 /**
  * The macOS menu bar across the top of the hero MacBook's screen.
  *
- * Proportions follow a notched 14" MacBook Pro, whose display is 1512 pt wide
- * in its default scaling. Our screen host is 940 px wide, so 1 pt = 0.62 px:
+ * Proportions follow a notched 14" MacBook Pro, measured with NSScreen at its
+ * 1800 × 1169 pt scaling. Our screen host is 940 px wide, so 1 pt = 0.52 px:
  *
- * - the bar is 37 pt tall on notched displays (74 px at 2x, the band above
- *   the 16:10 area) → 23 px. The notch itself (34 pt, the built-in screen's
- *   top safe-area inset) is drawn by `.lp-screen-laptop::after` in
- *   landing.css at 21 px, so it overlays the middle of this bar;
- * - menu titles are 13 pt SF Pro → 8 px, with ~20 pt between titles → 12 px;
+ * - the bar is the band above the 16:10 area, i.e. the 38 pt safe-area top
+ *   (3.25% of the height) → 20 px. The notch itself is drawn by
+ *   `.lp-screen-laptop::after` in landing.css at 19 px, so it overlays the
+ *   middle of this bar;
+ * - menu titles are 13 pt SF Pro → 7–8 px, kept at 8 px for legibility, with
+ *   ~20 pt between titles → 12 px (titles read slightly large, by design);
  * - status items sit right of the notch in macOS's default order
  *   (battery, Wi-Fi, Spotlight, Control Center, then the clock).
  *
@@ -111,7 +112,7 @@ export function LaptopMenuBar(): React.JSX.Element {
   return (
     <div
       aria-hidden="true"
-      className="flex h-[23px] shrink-0 items-center justify-between bg-white/70 pr-[11px] pl-[13px] font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','Helvetica_Neue',Helvetica,Arial,sans-serif] text-[8px] leading-none font-medium tracking-[-0.01em] text-black/85 antialiased select-none dark:bg-black/35 dark:text-white/90"
+      className="flex h-[20px] shrink-0 items-center justify-between bg-white/70 pr-[11px] pl-[13px] font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','Helvetica_Neue',Helvetica,Arial,sans-serif] text-[8px] leading-none font-medium tracking-[-0.01em] text-black/85 antialiased select-none dark:bg-black/35 dark:text-white/90"
     >
       <div className="flex items-center gap-[12px]">
         <AppleLogo />

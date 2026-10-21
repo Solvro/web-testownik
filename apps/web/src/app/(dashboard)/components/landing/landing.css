@@ -162,21 +162,26 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * MacBook notch and camera, scaled from a 14" MacBook Pro (1512 pt wide →
- * 940 px, so 1 pt = 0.62 px): 34 pt tall → 21 px, under the 23 px menu bar
- * of `scene/laptop-menu-bar.tsx`. Its bottom corners are rounded, and where
- * its top meets the bezel the edge flares out in concave fillets, so the lit
- * area curves up into the bezel on both sides. One SVG draws both, plus the
- * lens; it is 8 px wider than the notch body to hold the fillets.
+ * MacBook notch and camera, scaled from a 14" MacBook Pro. Measured with
+ * NSScreen on one (1800 × 1169 pt scaling): the camera housing spans 220 pt
+ * of the 1800 pt width (12.2%) and the 38 pt safe-area top (3.25% of the
+ * height), which is also the menu bar's height. On our 940 × 611 px screen
+ * that is a 104 px wide, 19 px tall notch under the 20 px menu bar of
+ * `scene/laptop-menu-bar.tsx` (the system region has a hair of margin
+ * around the physical housing, so the body is a few px narrower than 12.2%).
+ * Its bottom corners are rounded, and where its top meets the bezel the edge
+ * flares out in concave fillets, so the lit area curves up into the bezel on
+ * both sides. One SVG draws both, plus the lens; it is 8 px wider than the
+ * notch body to hold the fillets.
  */
 .lp-screen-laptop::after {
   position: absolute;
   z-index: 30;
   top: 0;
   left: 50%;
-  width: 124px;
-  height: 21px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='124' height='21' viewBox='0 0 124 21'%3E%3Cdefs%3E%3CradialGradient id='l' cx='.42' cy='.38' r='.6'%3E%3Cstop offset='0' stop-color='%233a4250'/%3E%3Cstop offset='.48' stop-color='%230d1018'/%3E%3Cstop offset='1' stop-color='%23040404'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M0 0H124V3A4 4 0 0 0 120 7V15A6 6 0 0 1 114 21H10A6 6 0 0 1 4 15V7A4 4 0 0 0 0 3Z'/%3E%3Ccircle cx='62' cy='10' r='2.6' fill='url%28%23l%29'/%3E%3Ccircle cx='62' cy='10' r='3.1' fill='none' stroke='%23fff' stroke-opacity='.05' stroke-width='.6'/%3E%3C/svg%3E")
+  width: 112px;
+  height: 19px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='19' viewBox='0 0 112 19'%3E%3Cdefs%3E%3CradialGradient id='l' cx='.42' cy='.38' r='.6'%3E%3Cstop offset='0' stop-color='%233a4250'/%3E%3Cstop offset='.48' stop-color='%230d1018'/%3E%3Cstop offset='1' stop-color='%23040404'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M0 0H112V3A4 4 0 0 0 108 7V13.5A5.5 5.5 0 0 1 102.5 19H9.5A5.5 5.5 0 0 1 4 13.5V7A4 4 0 0 0 0 3Z'/%3E%3Ccircle cx='56' cy='9' r='2.4' fill='url%28%23l%29'/%3E%3Ccircle cx='56' cy='9' r='2.9' fill='none' stroke='%23fff' stroke-opacity='.05' stroke-width='.6'/%3E%3C/svg%3E")
     no-repeat;
   content: "";
   pointer-events: none;
