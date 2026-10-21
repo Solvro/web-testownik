@@ -10,6 +10,7 @@ import {
   PhoneQuizSurface,
   ProductAppChrome,
 } from "@/components/testownik-preview/product-surfaces";
+import { EmbeddedSurfaceContext } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
 import { LaptopMenuBar } from "./laptop-menu-bar";
@@ -65,11 +66,50 @@ function GlassScreen({
           size={60}
           targets={targets}
         >
-          {children}
+          <CapturedSurface>{children}</CapturedSurface>
         </Glass>
       ) : (
         children
       )}
+    </div>
+  );
+}
+
+/**
+ * The box html-in-canvas captures, declared as an embedded surface so the
+ * screen's menus and dialogs portal into it instead of the frame's body.
+ * Outside the captured subtree an open menu was invisible to the lens and,
+ * being outside the content element, counted as the pointer leaving it, so
+ * the lens vanished the moment a menu or dialog opened. `contain: paint`
+ * makes this box the containing block for the dialogs' fixed backdrops.
+ *
+ * Glass renders its children twice while the first capture is pending (the
+ * live copy and a visible stand-in), so the surface state lives here, per
+ * copy, rather than in GlassScreen.
+ */
+function CapturedSurface({
+  children,
+}: {
+  children: ReactNode;
+}): React.JSX.Element {
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
+    null,
+  );
+
+  return (
+    <div
+      ref={setRoot}
+      className="relative isolate size-full overflow-clip [contain:layout_paint_style]"
+    >
+      <EmbeddedSurfaceContext value={{ root, portalContainer }}>
+        {children}
+      </EmbeddedSurfaceContext>
+      <div
+        ref={setPortalContainer}
+        data-preview-portal=""
+        className="pointer-events-none absolute inset-0 z-50 overflow-clip *:pointer-events-auto *:has-data-[slot=tooltip-content]:pointer-events-none"
+      />
     </div>
   );
 }
