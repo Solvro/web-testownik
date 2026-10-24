@@ -103,7 +103,7 @@ describe("ProfileChangeNameForm", () => {
         screen.queryByRole("button", { name: "Zapisz" }),
       ).not.toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Zamknij" }),
+        screen.getByText("Zamknij", { selector: "button" }),
       ).toBeInTheDocument();
     });
 
@@ -122,7 +122,7 @@ describe("ProfileChangeNameForm", () => {
         screen.queryByRole("button", { name: "Zapisz" }),
       ).not.toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Zamknij" }),
+        screen.getByText("Zamknij", { selector: "button" }),
       ).toBeInTheDocument();
     });
 
