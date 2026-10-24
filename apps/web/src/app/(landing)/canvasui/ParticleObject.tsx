@@ -711,7 +711,7 @@ export function createParticleObject(
 
     const geometry = new THREE.BufferGeometry();
     const positionAttribute = new THREE.BufferAttribute(
-      [...sample.positions],
+      sample.positions.slice(),
       3,
     );
     positionAttribute.setUsage(THREE.DynamicDrawUsage);

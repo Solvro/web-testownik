@@ -248,7 +248,7 @@ export function supportsHtmlInCanvas(): boolean {
     return false;
   }
   const probe = document.createElement("canvas") as PaintableCanvas;
-  const context = probe.getContext("2d");
+  const context = probe.getContext("2d") as ElementImageContext | null;
   return Boolean(
     context &&
     typeof context.drawElementImage === "function" &&
@@ -274,7 +274,7 @@ export function createBubble(
     return null;
   }
 
-  const sourceContext = source.getContext("2d");
+  const sourceContext = source.getContext("2d") as ElementImageContext | null;
   const paintable = source as PaintableCanvas;
   const htmlInCanvas = Boolean(
     sourceContext &&
