@@ -9,8 +9,10 @@ import { cn } from "@/lib/utils";
 import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
+import { DeviceSceneBackdrop } from "../scene/device-scene-backdrop";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import { FOCUS_RING } from "../ui/focus";
+import { HeroBadges } from "./hero-badges";
 import { HeroFade } from "./hero-fade";
 import { HeroPhone } from "./hero-phone";
 import { LandingNav } from "./landing-nav";
@@ -123,8 +125,9 @@ export function Hero({
 
   /*
    * Phones keep this for good. On desktop it is the server render and the
-   * Suspense fallback; the placeholder holds the device cover in exactly the
-   * spot DeviceStack shows it, so the stage mounting does not move anything.
+   * Suspense fallback; the placeholder holds the device cover, the glow and
+   * the study chips in exactly the spots the stage shows them at the closed
+   * pose, so the stage mounting does not move or add anything.
    * Neither visual costs the other viewport a request: the phone loads its
    * screen only below `lg`, and a hidden element never fetches a background.
    */
@@ -141,7 +144,9 @@ export function Hero({
               aria-hidden="true"
               className="@container-[size] pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30 hidden lg:block"
             >
+              <DeviceSceneBackdrop isStatic />
               <div className={DEVICE_COVER_CLASS} />
+              <HeroBadges isStatic />
             </div>
           </>
         }

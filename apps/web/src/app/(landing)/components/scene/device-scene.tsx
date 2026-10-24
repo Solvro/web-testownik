@@ -1,38 +1,12 @@
 "use client";
 
 import { useRef } from "react";
-import type { CSSProperties } from "react";
 
-import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { setSatelliteHovered } from "../satellite-hover";
+import { DeviceSceneBackdrop } from "./device-scene-backdrop";
 import { DeviceScreenFrame } from "./device-screen-frame";
 import { DeviceStack } from "./device-stack";
 import { createScreenChannelName } from "./screen-frame-protocol";
-
-const glowStyle: CSSProperties = {
-  opacity: `calc(0.16 + ${HERO_PROGRESS} * 0.2)`,
-  transform: `translate(-50%, -50%) scale(calc(0.86 + ${HERO_PROGRESS} * 0.16))`,
-};
-
-function DeviceSceneBackdrop({
-  isStatic,
-}: {
-  isStatic: boolean;
-}): React.JSX.Element {
-  return (
-    <div
-      aria-hidden="true"
-      data-hero-progress={isStatic ? undefined : true}
-      ref={isStatic ? undefined : attachHeroProgress}
-      style={
-        isStatic
-          ? { opacity: 0.16, transform: "translate(-50%, -50%) scale(0.86)" }
-          : glowStyle
-      }
-      className="bg-primary/16 absolute top-[63%] left-[56%] hidden h-[25rem] w-[min(74vw,72rem)] rounded-full blur-[90px] lg:block"
-    />
-  );
-}
 
 function InteractiveDeviceStack({
   captureLoadingCover,

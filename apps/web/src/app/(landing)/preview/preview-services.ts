@@ -11,6 +11,7 @@ import type { UserService } from "@/services/user.service";
 
 import {
   PREVIEW_DIRECTORY,
+  PREVIEW_GROUPS,
   PREVIEW_HARDEST,
   PREVIEW_HOURLY,
   PREVIEW_QUIZ,
@@ -143,14 +144,24 @@ function offline<T extends object>(name: string, implemented: Partial<T>): T {
   }) as T;
 }
 
-const sharedWith: SharedQuiz[] = PREVIEW_SHARED_WITH.map((user, index) => ({
-  id: `shared-${user.id}`,
-  quiz: PREVIEW_QUIZ_METADATA,
-  access_level: AccessLevel.SHARED,
-  user,
-  group: null,
-  allow_edit: index === 0,
-}));
+const sharedWith: SharedQuiz[] = [
+  ...PREVIEW_SHARED_WITH.map((user, index) => ({
+    id: `shared-${user.id}`,
+    quiz: PREVIEW_QUIZ_METADATA,
+    access_level: AccessLevel.SHARED,
+    user,
+    group: null,
+    allow_edit: index === 0,
+  })),
+  {
+    id: `shared-${PREVIEW_GROUPS[0].id}`,
+    quiz: PREVIEW_QUIZ_METADATA,
+    access_level: AccessLevel.SHARED,
+    user: null,
+    group: PREVIEW_GROUPS[0],
+    allow_edit: false,
+  },
+];
 
 /** Questions kept by the services themselves, for a cache without a session. */
 function createLocalEditor(): PreviewQuizEditor {
@@ -233,9 +244,7 @@ export function createPreviewServices(
         PREVIEW_HARDEST.slice(0, limit),
     ),
     getQuizHourly: reply(() => PREVIEW_HOURLY),
-    // The share dialog gives groups remote placeholder avatars, so the
-    // preview has none.
-    getStudyGroups: reply(() => []),
+    getStudyGroups: reply(() => PREVIEW_GROUPS),
     getSharedQuizzesForQuiz: reply(() => sharedWith),
     searchUsers: reply((query: string) => {
       const needle = query.toLowerCase();

@@ -11,7 +11,8 @@ import type {
   Quiz,
   QuizMetadata,
 } from "@testownik/core/quiz/types";
-import type { User } from "@testownik/core/user/types";
+import { ACCOUNT_LEVEL } from "@testownik/core/user/types";
+import type { Group, Term, User } from "@testownik/core/user/types";
 
 /**
  * Fixtures for the landing-page device screens.
@@ -24,8 +25,12 @@ import type { User } from "@testownik/core/user/types";
 
 export const PREVIEW_QUIZ_ID = "landing-preview-quiz";
 
-/** Fixed instant so SSR and the client agree, and so charts never drift. */
-export const PREVIEW_NOW = new Date("2026-01-15T18:30:00.000Z");
+/**
+ * The preview's clock: today at a fixed hour (UTC), so the server and the
+ * client agree on the day while the charts always cover the last days.
+ */
+export const PREVIEW_NOW = new Date();
+PREVIEW_NOW.setUTCHours(18, 30, 0, 0);
 
 const day = (offset: number): string =>
   new Date(PREVIEW_NOW.getTime() - offset * 86_400_000).toISOString();
@@ -227,18 +232,24 @@ export const PREVIEW_QUIZ: Quiz = {
   questions: PREVIEW_QUESTIONS,
 };
 
-/** People the share dialog lists; no photos, so nothing is fetched. */
+/** Generated portraits, so the dialog shows faces without real people. */
+function avatar(name: string): string {
+  return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+}
+
+/** People the quiz is already shared with. */
 export const PREVIEW_SHARED_WITH: User[] = [
   {
     id: "u-1",
     full_name: "Ola Nowak",
-    photo: "",
+    photo: avatar("Ola Nowak"),
     student_number: "276431",
+    account_level: ACCOUNT_LEVEL.GOLD,
   },
   {
     id: "u-2",
     full_name: "Kuba Wiśniewski",
-    photo: "",
+    photo: avatar("Kuba Wiśniewski"),
     student_number: "281907",
   },
 ];
@@ -249,20 +260,125 @@ export const PREVIEW_DIRECTORY: User[] = [
   {
     id: "u-3",
     full_name: "Maja Kowalczyk",
-    photo: "",
+    photo: avatar("Maja Kowalczyk"),
     student_number: "279015",
+    account_level: ACCOUNT_LEVEL.SILVER,
   },
   {
     id: "u-4",
     full_name: "Michał Zieliński",
-    photo: "",
+    photo: avatar("Michał Zieliński"),
     student_number: "283344",
   },
   {
     id: "u-5",
     full_name: "Zuzanna Lewandowska",
-    photo: "",
+    photo: avatar("Zuzanna Lewandowska"),
     student_number: "274862",
+    account_level: ACCOUNT_LEVEL.GOLD,
+  },
+  {
+    id: "u-6",
+    full_name: "Bartek Kamiński",
+    photo: avatar("Bartek Kamiński"),
+    student_number: "285120",
+  },
+  {
+    id: "u-7",
+    full_name: "Natalia Wójcik",
+    photo: avatar("Natalia Wójcik"),
+    student_number: "277708",
+    account_level: ACCOUNT_LEVEL.BASIC,
+  },
+  {
+    id: "u-8",
+    full_name: "Filip Dąbrowski",
+    photo: avatar("Filip Dąbrowski"),
+    student_number: "282563",
+  },
+  {
+    id: "u-9",
+    full_name: "Hania Mazur",
+    photo: avatar("Hania Mazur"),
+    student_number: "280391",
+  },
+  {
+    id: "u-10",
+    full_name: "Szymon Krawczyk",
+    photo: avatar("Szymon Krawczyk"),
+    student_number: "275947",
+    account_level: ACCOUNT_LEVEL.SILVER,
+  },
+  {
+    id: "u-11",
+    full_name: "Julia Piotrowska",
+    photo: avatar("Julia Piotrowska"),
+    student_number: "284216",
+  },
+  {
+    id: "u-12",
+    full_name: "Marcel Grabowski",
+    photo: avatar("Marcel Grabowski"),
+    student_number: "278633",
+  },
+  {
+    id: "u-13",
+    full_name: "Lena Pawlak",
+    photo: avatar("Lena Pawlak"),
+    student_number: "286075",
+    account_level: ACCOUNT_LEVEL.BASIC,
+  },
+  {
+    id: "u-14",
+    full_name: "Igor Michalski",
+    photo: avatar("Igor Michalski"),
+    student_number: "273598",
+  },
+];
+
+const CURRENT_TERM: Term = {
+  id: "2026/27-Z",
+  name: "Semestr zimowy 2026/2027",
+  start_date: "2026-10-01",
+  end_date: "2027-02-28",
+  finish_date: "2027-02-28",
+  is_current: true,
+};
+
+const PREVIOUS_TERM: Term = {
+  id: "2025/26-L",
+  name: "Semestr letni 2025/2026",
+  start_date: "2026-02-23",
+  end_date: "2026-09-30",
+  finish_date: "2026-09-30",
+  is_current: false,
+};
+
+/** Study groups the share dialog offers; it gives them its own avatars. */
+export const PREVIEW_GROUPS: Group[] = [
+  {
+    id: "g-1",
+    name: "Techniki uczenia się, gr. 3",
+    term: CURRENT_TERM,
+    photo: "",
+  },
+  {
+    id: "g-2",
+    name: "Psychologia poznawcza, wykład",
+    term: CURRENT_TERM,
+    photo: "",
+  },
+  {
+    id: "g-3",
+    name: "Metodyka pracy umysłowej, gr. 1",
+    term: CURRENT_TERM,
+    photo: "",
+  },
+  {
+    id: "g-4",
+    name: "Statystyka dla psychologów, gr. 2",
+    term: PREVIOUS_TERM,
+    photo: "",
   },
 ];
 

@@ -60,14 +60,30 @@ const StudyTimeChart = dynamic(
   { ssr: false },
 );
 
+/*
+ * The demo's clock: dates are offsets from today (at noon UTC, so server and
+ * client agree on the day), so the stats always read as recent activity.
+ */
+const TODAY = new Date();
+TODAY.setUTCHours(12, 0, 0, 0);
+
+function daysAgo(days: number, hours: number, minutes: number): string {
+  const date = new Date(TODAY);
+  date.setUTCDate(date.getUTCDate() - days);
+  date.setUTCHours(hours, minutes, 0, 0);
+  return date.toISOString();
+}
+
+const LAST_ACTIVITY_AT = daysAgo(0, 7, 42);
+
 const METADATA: QuizMetadata = {
   id: QUIZ_ID,
   title: QUIZ_TITLE,
   description: "Praktyczny zestaw do samodzielnej nauki",
   creator: {
     id: "landing-creator",
-    full_name: "Antoni Czaplicki",
-    photo: "https://github.com/Antoni-Czaplicki.png",
+    full_name: "Tony Stark",
+    photo: "https://api.dicebear.com/9.x/avataaars/svg?seed=Tony%20Stark",
     student_number: "268431",
     account_type: ACCOUNT_TYPE.STUDENT,
     account_level: ACCOUNT_LEVEL.GOLD,
@@ -77,10 +93,10 @@ const METADATA: QuizMetadata = {
   is_anonymous: false,
   version: 1,
   can_edit: true,
-  created_at: "2026-02-12T14:18:00.000Z",
-  updated_at: "2026-06-21T09:05:00.000Z",
-  last_used_at: "2026-06-28T19:42:00.000Z",
-  question_count: 3,
+  created_at: daysAgo(136, 14, 18),
+  updated_at: daysAgo(7, 9, 5),
+  last_used_at: LAST_ACTIVITY_AT,
+  question_count: 67,
 };
 
 const ALL_STATS: QuizStats = {
@@ -95,7 +111,7 @@ const ALL_STATS: QuizStats = {
   average_study_time_seconds: 2796,
   sessions_count: 94,
   unique_users_count: 37,
-  last_activity_at: "2026-06-28T19:42:00.000Z",
+  last_activity_at: LAST_ACTIVITY_AT,
 };
 
 const MY_STATS: QuizStats = {
@@ -110,7 +126,7 @@ const MY_STATS: QuizStats = {
   average_study_time_seconds: 1380,
   sessions_count: 8,
   unique_users_count: null,
-  last_activity_at: "2026-06-28T19:42:00.000Z",
+  last_activity_at: LAST_ACTIVITY_AT,
 };
 
 function buildTimeline(
@@ -119,10 +135,9 @@ function buildTimeline(
   accuracy: number,
   minutesPerSession: number,
 ): TimelineEntry[] {
-  const today = new Date("2026-06-28T12:00:00.000Z");
   return seed.map((sessions_count, offsetFromEnd) => {
-    const date = new Date(today);
-    date.setUTCDate(today.getUTCDate() - (seed.length - 1 - offsetFromEnd));
+    const date = new Date(TODAY);
+    date.setUTCDate(TODAY.getUTCDate() - (seed.length - 1 - offsetFromEnd));
     const total_answers = sessions_count * answersPerSession;
     const correct_answers = Math.round((total_answers * accuracy) / 100);
     return {
@@ -141,8 +156,8 @@ const TIMELINE_ME = buildTimeline([0, 1, 1, 0, 1, 1, 1, 0, 1, 1], 23, 76, 23);
 const SESSIONS: SessionEntry[] = [
   {
     session_id: "s1",
-    started_at: "2026-06-10T18:10:00.000Z",
-    ended_at: "2026-06-10T18:34:00.000Z",
+    started_at: daysAgo(18, 18, 10),
+    ended_at: daysAgo(18, 18, 34),
     study_time_seconds: 1440,
     total_answers: 24,
     correct_answers: 16,
@@ -150,8 +165,8 @@ const SESSIONS: SessionEntry[] = [
   },
   {
     session_id: "s2",
-    started_at: "2026-06-15T17:40:00.000Z",
-    ended_at: "2026-06-15T18:05:00.000Z",
+    started_at: daysAgo(13, 17, 40),
+    ended_at: daysAgo(13, 18, 5),
     study_time_seconds: 1500,
     total_answers: 22,
     correct_answers: 17,
@@ -159,8 +174,8 @@ const SESSIONS: SessionEntry[] = [
   },
   {
     session_id: "s3",
-    started_at: "2026-06-21T16:08:00.000Z",
-    ended_at: "2026-06-21T16:29:00.000Z",
+    started_at: daysAgo(7, 16, 8),
+    ended_at: daysAgo(7, 16, 29),
     study_time_seconds: 1260,
     total_answers: 20,
     correct_answers: 16,
@@ -168,8 +183,8 @@ const SESSIONS: SessionEntry[] = [
   },
   {
     session_id: "s4",
-    started_at: "2026-06-26T18:22:00.000Z",
-    ended_at: "2026-06-26T18:48:00.000Z",
+    started_at: daysAgo(2, 18, 22),
+    ended_at: daysAgo(2, 18, 48),
     study_time_seconds: 1560,
     total_answers: 25,
     correct_answers: 20,
@@ -177,8 +192,8 @@ const SESSIONS: SessionEntry[] = [
   },
   {
     session_id: "s5",
-    started_at: "2026-06-28T19:12:00.000Z",
-    ended_at: "2026-06-28T19:42:00.000Z",
+    started_at: daysAgo(0, 7, 12),
+    ended_at: LAST_ACTIVITY_AT,
     study_time_seconds: 1800,
     total_answers: 17,
     correct_answers: 13,
@@ -354,9 +369,6 @@ export function StatsDemo(): React.JSX.Element {
         <strong className="block truncate text-sm sm:text-base">
           Statystyki: {QUIZ_TITLE}
         </strong>
-        <span className="text-muted-foreground mt-0.5 block text-xs">
-          Te same widoki, które masz w aplikacji
-        </span>
       </header>
 
       <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-1 sm:p-5 [&_[data-slot=card]]:min-w-0 [&_[data-slot=chart]]:max-w-full">

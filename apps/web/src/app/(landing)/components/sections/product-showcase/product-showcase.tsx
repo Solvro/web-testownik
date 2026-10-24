@@ -3,7 +3,7 @@
 import { ArrowRightIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,13 @@ const GradesDemo = dynamic(async () =>
 const StatsDemo = dynamic(async () =>
   import("./stats-demo").then((m) => m.StatsDemo),
 );
+
+/** Fetch the other panels while idle, so a switch never shows an empty one. */
+function preloadDemos(): void {
+  void import("./ai-demo");
+  void import("./grades-demo");
+  void import("./stats-demo");
+}
 
 function ShowcaseScene({
   feature,
@@ -61,6 +68,13 @@ export function ProductShowcase(): React.JSX.Element {
   const [activeId, setActiveId] = useState<ShowcaseFeatureId>("quiz");
   const keyboardSelectionReference = useRef<ShowcaseFeatureId | null>(null);
   const tapSelectionReference = useRef<ShowcaseFeatureId | null>(null);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(preloadDemos, 1500);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, []);
 
   return (
     <LandingSection
@@ -163,6 +177,9 @@ export function ProductShowcase(): React.JSX.Element {
                     tabIndex={-1}
                     className={cn(
                       "grid min-h-0 lg:h-full lg:grid-cols-[minmax(17rem,0.64fr)_minmax(0,1.65fr)]",
+                      // Fades and rises in behind the widening rail instead
+                      // of popping into place at once.
+                      "animate-[lp-panel-in_520ms_cubic-bezier(0.22,1,0.36,1)_80ms_both] motion-reduce:animate-none",
                       // Laid out at its final width from the first frame; the
                       // article's animating width only clips it. The three
                       // rails are 4.75rem each, plus this article's 1px border.

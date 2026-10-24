@@ -323,6 +323,21 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
+/* Hero badges drift up and down a little, each on its own phase. */
+@keyframes lp-float {
+  50% {
+    transform: translateY(-0.45rem);
+  }
+}
+
+/* A showcase panel settles in while the rail is still widening. */
+@keyframes lp-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
 /* The hero's scroll hint arrow. */
 @keyframes lp-nudge {
   50% {
