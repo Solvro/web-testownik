@@ -43,7 +43,6 @@ export function LandingNav({
   onStart,
   variant = "hero",
   hidden = false,
-  ref,
 }: {
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
   isAuthenticated: boolean;
@@ -52,14 +51,12 @@ export function LandingNav({
   variant?: "hero" | "compact";
   /** Compact only: slid away above the viewport. */
   hidden?: boolean;
-  ref?: React.Ref<HTMLElement>;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
   const compact = variant === "compact";
 
   return (
     <header
-      ref={ref}
       inert={hidden}
       aria-hidden={hidden}
       className={cn(

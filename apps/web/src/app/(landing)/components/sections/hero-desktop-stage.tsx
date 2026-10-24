@@ -10,13 +10,9 @@ import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { wordmarkDark, wordmarkLight } from "../logos";
 import { DeviceScene } from "../scene/device-scene";
 import { HeroBubble } from "../ui/hero-bubble";
-import { Eyebrow } from "../ui/typography";
 import { HeroBadges } from "./hero-badges";
 import { HeroFade } from "./hero-fade";
-
-const progressBarStyle: CSSProperties = {
-  transform: `scaleX(${HERO_PROGRESS})`,
-};
+import { HeroScrollHint } from "./hero-scroll-hint";
 
 const openLogoStyle: CSSProperties = {
   opacity: `clamp(0, calc((${HERO_PROGRESS} - 0.6) * 6), 1)`,
@@ -115,23 +111,7 @@ export function HeroDesktopStage({
             </div>
           )}
 
-          {isStatic ? null : (
-            <div
-              aria-hidden="true"
-              className="absolute bottom-[1.3rem] left-1/2 z-20 flex -translate-x-1/2 items-center gap-[0.8rem]"
-            >
-              <Eyebrow>PRZEWIŃ</Eyebrow>
-              <span className="bg-border relative block h-px w-36 overflow-hidden">
-                <span
-                  data-hero-progress
-                  ref={attachHeroProgress}
-                  style={progressBarStyle}
-                  className="bg-primary absolute inset-0 origin-left"
-                />
-              </span>
-              <Eyebrow>OTWÓRZ TESTOWNIK</Eyebrow>
-            </div>
-          )}
+          {isStatic ? null : <HeroScrollHint />}
         </div>
       </HeroBubble>
 

@@ -16,6 +16,7 @@ import { FOCUS_RING } from "../ui/focus";
 import { HeroBadges } from "./hero-badges";
 import { HeroFade } from "./hero-fade";
 import { HeroPhone } from "./hero-phone";
+import { HeroScrollHint } from "./hero-scroll-hint";
 
 /*
  * Bubble, WebGL scene and scroll progress. Requested only once the desktop
@@ -141,6 +142,7 @@ export function Hero({
               <DeviceSceneBackdrop isStatic />
               <StaticDeviceCover />
               <HeroBadges isStatic />
+              <HeroScrollHint isStatic />
             </div>
           </>
         }

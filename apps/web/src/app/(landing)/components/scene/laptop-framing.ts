@@ -44,15 +44,29 @@ export const OPEN_CORNERS: readonly Corner[] = [
 export const LID_TRAVEL_DEGREES = 111;
 
 /**
- * Vertical field of view of the hero camera, in degrees. The scene only runs
- * at `lg` and wider, so there is a single lens.
+ * Vertical field of view of the hero camera, in degrees, on a stage at least
+ * `REFERENCE_ASPECT` wide. Narrower stages keep the camera where it is and
+ * widen the lens instead (see `frameLaptop`).
  */
 export const CAMERA_FOV = 30;
+
+/**
+ * Aspect of the stage the closed cover was captured at. Any wider stage is
+ * height-limited and solves to the same camera; a narrower one would need
+ * the camera further back to fit the laptop's width, which changes the
+ * perspective and so the picture, and the still would no longer match the
+ * live render. Instead the camera stays at the reference distance and the
+ * field of view widens, which only scales the picture: the cover is a
+ * uniform scale of the live render at every stage size.
+ */
+export const REFERENCE_ASPECT = 1.758;
 
 export interface Framing {
   target: [number, number, number];
   distance: number;
   pitch: number;
+  /** Vertical field of view in degrees, `CAMERA_FOV` unless the stage is narrow. */
+  fov: number;
 }
 
 export interface ScreenRect {
@@ -99,7 +113,7 @@ function project(
   // z = (0,sin,cos). three.js looks down -z, hence the negated depth.
   const up = view[1] * cos - view[2] * sin;
   const depth = -(view[1] * sin + view[2] * cos);
-  const half = Math.tan(toRadians(CAMERA_FOV) / 2);
+  const half = Math.tan(toRadians(framing.fov) / 2);
   return {
     x: view[0] / depth / (half * aspect),
     y: up / depth / half,
@@ -132,17 +146,34 @@ export function frameLaptop({
   // so the same number here yields a visually smaller device.
   const fill = lerp(0.7, withSatellites ? 0.72 : 0.9, opening);
 
-  // Converge on the tightest distance that still keeps every corner inside.
-  let distance = 90;
-  for (let pass = 0; pass < 3; pass += 1) {
-    const framing: Framing = { target, distance, pitch };
+  const maxExtent = (framing: Framing, forAspect: number): number => {
     let extent = 0;
     for (const corner of corners) {
-      const point = project(corner, framing, aspect);
+      const point = project(corner, framing, forAspect);
       extent = Math.max(extent, Math.abs(point.x), Math.abs(point.y));
     }
+    return extent;
+  };
+
+  // Converge on the tightest distance that still keeps every corner inside
+  // the reference stage. Wider stages are bound by the same height; narrower
+  // ones keep this camera and widen the lens below.
+  let distance = 90;
+  for (let pass = 0; pass < 3; pass += 1) {
+    const extent = maxExtent(
+      { target, distance, pitch, fov: CAMERA_FOV },
+      REFERENCE_ASPECT,
+    );
     distance *= extent / fill;
   }
+
+  const overflow =
+    maxExtent({ target, distance, pitch, fov: CAMERA_FOV }, aspect) / fill;
+  const fov =
+    overflow > 1
+      ? (2 * Math.atan(Math.tan(toRadians(CAMERA_FOV) / 2) * overflow) * 180) /
+        Math.PI
+      : CAMERA_FOV;
 
   // Panning eye and target together shifts the subject in frame without
   // distorting the perspective, leaving headline room while closed.
@@ -152,7 +183,7 @@ export function frameLaptop({
     target[2],
   ];
 
-  return { framing: { target: panned, distance, pitch }, corners };
+  return { framing: { target: panned, distance, pitch, fov }, corners };
 }
 
 /** Screen-space box the posed laptop occupies, in CSS pixels. */

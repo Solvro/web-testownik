@@ -35,28 +35,37 @@ export function LandingPage({
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
-  const [heroNav, setHeroNav] = useState<HTMLElement | null>(null);
   const [isHeroNavGone, setIsHeroNavGone] = useState(false);
 
-  // The hero header can remount when the desktop stage replaces the static
-  // hero, hence the element in state rather than a ref.
+  // The hero header sits at the top of the hero's stage (sticky on desktop).
+  // The compact bar takes over as soon as that top leaves the viewport, so
+  // the two cross over. Measured on scroll rather than observed: the header
+  // lives inside the Bubble's html-in-canvas subtree, which intersection
+  // observers do not track reliably.
   useEffect(() => {
-    if (heroNav === null) {
+    const stage = heroReference.current?.querySelector(":scope > div");
+    if (!(stage instanceof HTMLElement)) {
       return;
     }
-    // The compact bar slides in as soon as the hero header starts to leave,
-    // so the two cross over instead of leaving a gap.
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsHeroNavGone(entry.intersectionRatio < 1);
-      },
-      { threshold: 1 },
-    );
-    observer.observe(heroNav);
-    return () => {
-      observer.disconnect();
+    let frame = 0;
+    const measure = (): void => {
+      frame = 0;
+      setIsHeroNavGone(stage.getBoundingClientRect().top < 0);
     };
-  }, [heroNav]);
+    const schedule = (): void => {
+      frame ||= window.requestAnimationFrame(measure);
+    };
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    schedule();
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame !== 0) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, []);
 
   return (
     <div
@@ -89,7 +98,6 @@ export function LandingPage({
         heroReference={heroReference}
         nav={
           <LandingNav
-            ref={setHeroNav}
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}

@@ -220,6 +220,12 @@ export function createChoreography({
         targetZ + Math.cos(framing.pitch) * distance,
       );
       camera.lookAt(targetX, targetY, targetZ);
+      // Narrow stages zoom out through the lens, not the distance, so the
+      // live picture stays a scale of the captured cover.
+      if (camera.fov !== framing.fov) {
+        camera.fov = framing.fov;
+        camera.updateProjectionMatrix();
+      }
       // The only scene-graph matrix pass per frame: both renderers skip
       // theirs (see `stage.ts`), and the screen-facing test reads the result
       // before they run.
