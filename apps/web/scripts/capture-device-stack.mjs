@@ -8,16 +8,16 @@ const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:3000";
 // look brighter during the loading-cover cross-fade.
 const captureDpr = 1.35;
 const openPose = process.env.CAPTURE_POSE === "open";
-// Decimal byte budgets: closed LCP covers <= 80 KB; open fallback stills <= 60 KB.
-// Keep alpha lossless and preserve the capture geometry for the live handover.
-// Lossless/near-lossless RGB makes the closed covers several times too large.
+// Decimal byte budget for both poses: <= 60 KB per file. Keep alpha lossless
+// and preserve the capture geometry for the live handover. Lossless or
+// near-lossless RGB makes the closed covers several times too large.
 const webpOptions = {
   alphaQuality: 100,
   effort: 6,
-  quality: openPose ? 82 : 95,
+  quality: openPose ? 82 : 90,
   smartSubsample: true,
 };
-const outputBudget = openPose ? 60_000 : 80_000;
+const outputBudget = 60_000;
 
 async function writeWebp(image, output) {
   const { size } = await image.webp(webpOptions).toFile(output);
@@ -28,29 +28,14 @@ async function writeWebp(image, output) {
   }
 }
 const viewport = { height: 1000, width: 1758 };
-const referenceDpr = 4;
-const outputScale = captureDpr / referenceDpr;
-const outputCanvas = {
-  height: Math.round(2068 * outputScale),
-  width: Math.round(2914 * outputScale),
-};
-const outputPlacement = {
-  height: Math.round(1432 * outputScale),
-  left: Math.round(52 * outputScale),
-  top: Math.round(346 * outputScale),
-  width: Math.round(2686 * outputScale),
-};
 
 const themes = /** @type {const} */ (["light", "dark"]);
 
+// The closed cover is cropped from the whole viewport to the cover's own box
+// (see `coverCrop`); the open still is trimmed to its silhouette.
 const screenshotClip = openPose
   ? { x: 0, y: 85, width: viewport.width, height: viewport.height - 85 }
-  : {
-      height: 830,
-      width: viewport.width - 320,
-      x: 160,
-      y: 120,
-    };
+  : { x: 0, y: 0, width: viewport.width, height: viewport.height };
 
 const screenshotStyle = `
   nextjs-portal,
@@ -121,7 +106,6 @@ async function captureTheme(page, theme) {
   }
 
   const alphaSource = await captureTransparentStack(page);
-  const screenshot = alphaSource;
   const sourceMetadata = await sharp(alphaSource).metadata();
   const sourceStats = await sharp(alphaSource).stats();
 
@@ -129,11 +113,11 @@ async function captureTheme(page, theme) {
     throw new Error(`${theme} source capture does not contain transparency`);
   }
 
-  const transparentStack = await sharp(screenshot)
-    .trim({ background: { alpha: 0, b: 0, g: 0, r: 0 } })
-    .png()
-    .toBuffer();
   if (openPose) {
+    const transparentStack = await sharp(alphaSource)
+      .trim({ background: { alpha: 0, b: 0, g: 0, r: 0 } })
+      .png()
+      .toBuffer();
     const output = `public/models/testownik-device-stack-open-${theme}-v1.webp`;
     await writeWebp(
       sharp(transparentStack).resize({
@@ -149,33 +133,11 @@ async function captureTheme(page, theme) {
       source: await sharp(transparentStack).metadata(),
     };
   }
-  const fittedStack = await sharp(transparentStack)
-    .resize({
-      fit: "fill",
-      height: outputPlacement.height,
-      width: outputPlacement.width,
-    })
-    .png()
-    .toBuffer();
-  const output = `public/models/testownik-device-stack-cover-${theme}-v9.webp`;
-
-  await writeWebp(
-    sharp({
-      create: {
-        background: { alpha: 0, b: 0, g: 0, r: 0 },
-        channels: 4,
-        height: outputCanvas.height,
-        width: outputCanvas.width,
-      },
-    }).composite([
-      {
-        input: fittedStack,
-        left: outputPlacement.left,
-        top: outputPlacement.top,
-      },
-    ]),
-    output,
-  );
+  const crop = await coverCrop(page, effectiveDpr, sourceMetadata);
+  const coverStill = await sharp(alphaSource).extract(crop).png().toBuffer();
+  await assertTransparentBorder(coverStill, theme);
+  const output = `public/models/testownik-device-stack-closed-${theme}-v1.webp`;
+  await writeWebp(sharp(coverStill), output);
 
   const metadata = await sharp(output).metadata();
   if (!metadata.hasAlpha) {
@@ -185,8 +147,60 @@ async function captureTheme(page, theme) {
   return {
     dpr: effectiveDpr,
     output,
-    source: await sharp(transparentStack).metadata(),
+    source: await sharp(coverStill).metadata(),
   };
+}
+
+/**
+ * `DeviceStack` stretches the cover over the box `laptopScreenRect` solves for
+ * the stage, so the still must be exactly that box of the live render: no
+ * trim, no resize. The camera distance is bound by the frame's height at every
+ * desktop aspect, so the render is the same picture at every viewport, only
+ * scaled with that box.
+ */
+async function coverCrop(page, dpr, sourceMetadata) {
+  const box = await page.locator("[data-device-cover]").boundingBox();
+  if (box === null) {
+    throw new Error("The device cover is not laid out.");
+  }
+  const left = Math.round(box.x * dpr);
+  const top = Math.round(box.y * dpr);
+  const crop = {
+    left,
+    top,
+    width: Math.round((box.x + box.width) * dpr) - left,
+    height: Math.round((box.y + box.height) * dpr) - top,
+  };
+  if (
+    crop.left < 0 ||
+    crop.top < 0 ||
+    crop.left + crop.width > sourceMetadata.width ||
+    crop.top + crop.height > sourceMetadata.height
+  ) {
+    throw new Error(
+      `The cover box ${JSON.stringify(box)} does not fit the capture viewport.`,
+    );
+  }
+  return crop;
+}
+
+/** A silhouette touching the crop's edge would be cut off in the cover. */
+async function assertTransparentBorder(image, theme) {
+  const { data, info } = await sharp(image)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const alpha = (x, y) => data[(y * info.width + x) * info.channels + 3];
+  for (let x = 0; x < info.width; x += 1) {
+    if (alpha(x, 0) > 0 || alpha(x, info.height - 1) > 0) {
+      throw new Error(`${theme} device stack overflows the cover box.`);
+    }
+  }
+  for (let y = 0; y < info.height; y += 1) {
+    if (alpha(0, y) > 0 || alpha(info.width - 1, y) > 0) {
+      throw new Error(`${theme} device stack overflows the cover box.`);
+    }
+  }
 }
 
 const browser = await chromium.launch({

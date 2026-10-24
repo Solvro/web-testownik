@@ -291,6 +291,7 @@ export function DeviceStack({
        */}
       <div
         ref={coverReference}
+        data-device-cover=""
         aria-hidden="true"
         className={cn(
           showOpenStill
