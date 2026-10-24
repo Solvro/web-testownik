@@ -1,3 +1,7 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
+
 /**
  * The macOS menu bar across the top of the hero MacBook's screen.
  *
@@ -13,9 +17,11 @@
  * - status items sit right of the notch in macOS's default order
  *   (battery, Wi-Fi, Spotlight, Control Center, then the clock).
  *
- * The clock uses macOS's Polish format, "weekday. day month time". The date
- * is fixed rather than live: 9 January 2007, 9:41, the moment of Apple's
- * iPhone keynote that every Apple product shot shows.
+ * The clock shows the visitor's current date and time in macOS's Polish
+ * format, "wt. 9 sty 9:41": abbreviated weekday, day, abbreviated month and
+ * H:mm. It only exists on the client and ticks on each minute boundary; the
+ * server and the hydration pass render an invisible stand-in of the same
+ * shape, so the markup matches and the status items do not shift.
  *
  * The bar is translucent like the real material, but has no backdrop blur:
  * nothing scrolls beneath it here, and a backdrop filter inside the CSS3D
@@ -23,6 +29,65 @@
  */
 
 const MENU_BAR_ITEMS = ["Plik", "Edycja", "Widok", "Okno", "Pomoc"] as const;
+
+const MINUTE_MS = 60_000;
+
+const CLOCK_FORMAT = new Intl.DateTimeFormat("pl-PL", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/** "wt. 9 sty 9:41", dropping the commas Intl puts between the groups. */
+function formatMenuBarClock(date: Date): string {
+  const parts = CLOCK_FORMAT.formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((candidate) => candidate.type === type)?.value ?? "";
+  return `${part("weekday")} ${part("day")} ${part("month")} ${part("hour")}:${part("minute")}`;
+}
+
+/** Notifies on every minute boundary, starting with the next one. */
+function subscribeToMinutes(onMinute: () => void): () => void {
+  let interval: ReturnType<typeof setInterval> | undefined;
+  const timeout = setTimeout(
+    () => {
+      onMinute();
+      interval = setInterval(onMinute, MINUTE_MS);
+    },
+    MINUTE_MS - (Date.now() % MINUTE_MS),
+  );
+  return () => {
+    clearTimeout(timeout);
+    clearInterval(interval);
+  };
+}
+
+/** The current minute, as a stable snapshot between ticks. */
+function getCurrentMinute(): number {
+  return Math.floor(Date.now() / MINUTE_MS);
+}
+
+function getServerMinute(): null {
+  return null;
+}
+
+function MenuBarClock(): React.JSX.Element {
+  const minute = useSyncExternalStore(
+    subscribeToMinutes,
+    getCurrentMinute,
+    getServerMinute,
+  );
+
+  return minute === null ? (
+    <span className="invisible ml-[1px] tabular-nums">wt. 9 sty 9:41</span>
+  ) : (
+    <span className="ml-[1px] tabular-nums">
+      {formatMenuBarClock(new Date(minute * MINUTE_MS))}
+    </span>
+  );
+}
 
 /**
  * Apple logo from Simple Icons (simpleicons.org, `apple`, CC0-1.0). The
@@ -126,7 +191,7 @@ export function LaptopMenuBar(): React.JSX.Element {
         <WifiGlyph />
         <SpotlightGlyph />
         <ControlCenterGlyph />
-        <span className="ml-[1px] tabular-nums">wt. 9 sty 9:41</span>
+        <MenuBarClock />
       </div>
     </div>
   );
