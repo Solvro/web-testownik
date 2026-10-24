@@ -437,6 +437,13 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
+/* The hero's scroll hint arrow. */
+@keyframes lp-nudge {
+  50% {
+    transform: translateY(0.28rem);
+  }
+}
+
 /* TOC section peek — arrive soft, leave with a quick pop. */
 @keyframes lp-toc-preview-in {
   from {

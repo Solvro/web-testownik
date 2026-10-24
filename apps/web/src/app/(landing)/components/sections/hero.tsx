@@ -96,7 +96,7 @@ function HeroContent({
       >
         <ChevronDown
           aria-hidden="true"
-          className="animate-lp-nudge size-4 motion-reduce:animate-none"
+          className="size-4 animate-[lp-nudge_1.6s_ease-in-out_infinite] motion-reduce:animate-none"
         />
         Poznaj produkt
       </a>
