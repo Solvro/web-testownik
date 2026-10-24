@@ -4,7 +4,7 @@ import { createContext, use } from "react";
 
 /**
  * A surface that renders the app's components inside a bounded box rather than
- * as the page — the device screens on the landing page are the case in point.
+ * as the page (a device mock-up on a marketing page, for example).
  *
  * Outside such a surface nothing changes: the context is `null`, overlays
  * portal to `document.body` and keep their usual modality. Inside one, the
@@ -15,8 +15,6 @@ import { createContext, use } from "react";
 export interface EmbeddedSurface {
   /** The box itself. Events and focus outside it do not belong to the surface. */
   root: HTMLElement | null;
-  /** Native layout of a CSS phone, independent of the outer viewport. */
-  layout?: "phone";
   /** Where overlays mount. `null` while it is still being attached. */
   portalContainer: HTMLElement | null;
 }
@@ -27,10 +25,6 @@ export const EmbeddedSurfaceContext = createContext<EmbeddedSurface | null>(
 
 export function useEmbeddedSurface(): EmbeddedSurface | null {
   return use(EmbeddedSurfaceContext);
-}
-
-export function useIsPhoneSurface(): boolean {
-  return useEmbeddedSurface()?.layout === "phone";
 }
 
 /**

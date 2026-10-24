@@ -7,7 +7,6 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   useEmbeddedSurface,
-  useIsPhoneSurface,
   usePortalContainer,
 } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
@@ -70,7 +69,6 @@ function DialogContent({
   showCloseButton?: boolean;
   overlayClassName?: string;
 }) {
-  const isPhoneSurface = useIsPhoneSurface();
   return (
     <DialogPortal>
       <DialogOverlay className={overlayClassName} />
@@ -79,7 +77,6 @@ function DialogContent({
         className={cn(
           "bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid max-h-[85dvh] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl p-6 text-sm ring-1 duration-100 outline-none sm:max-w-md",
           "data-nested-dialog-open:pointer-events-none data-nested-dialog-open:scale-[0.95] data-nested-dialog-open:blur-xs data-nested-dialog-open:brightness-95",
-          isPhoneSurface && "[&_input]:text-base",
           className,
         )}
         {...props}
@@ -123,13 +120,11 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
 }) {
-  const isPhoneSurface = useIsPhoneSurface();
   return (
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-xl p-6 pt-2",
-        !isPhoneSurface && "sm:flex-row sm:justify-end",
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-xl p-6 pt-2 sm:flex-row sm:justify-end",
         className,
       )}
       {...props}

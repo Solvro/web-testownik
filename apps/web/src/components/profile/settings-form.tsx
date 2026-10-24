@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useIsPhoneSurface } from "@/components/ui/portal-container";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +15,6 @@ export function SettingsForm({
   onSettingChange,
   variant = "card",
 }: SettingsFormProps & { variant?: "card" | "plain" }) {
-  const isPhoneSurface = useIsPhoneSurface();
   const initialReoccurrences = settings.initial_reoccurrences;
   const wrongAnswerReoccurrences = settings.wrong_answer_reoccurrences;
   const maxQuestionReoccurrences = settings.max_question_reoccurrences;
@@ -44,10 +42,8 @@ export function SettingsForm({
     >
       <div className="grid gap-2">
         <div
-          className={cn(
-            "flex flex-col justify-between gap-2",
-            !isPhoneSurface && "md:flex-row",
-          )}
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
         >
           <Label
             className="text-sm font-medium"
@@ -101,10 +97,8 @@ export function SettingsForm({
       </div>
       <div className="grid gap-2">
         <div
-          className={cn(
-            "flex flex-col justify-between gap-2",
-            !isPhoneSurface && "md:flex-row",
-          )}
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
         >
           <Label
             className="text-sm font-medium"
@@ -158,10 +152,8 @@ export function SettingsForm({
       </div>
       <div className="grid gap-2">
         <div
-          className={cn(
-            "flex flex-col justify-between gap-2",
-            !isPhoneSurface && "md:flex-row",
-          )}
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
         >
           <Label
             className="text-sm font-medium"
@@ -169,12 +161,7 @@ export function SettingsForm({
           >
             Ogranicz maksymalną liczbę powtórzeń
           </Label>
-          <div
-            className={cn(
-              "flex items-center justify-start gap-2",
-              !isPhoneSurface && "md:justify-center",
-            )}
-          >
+          <div className="flex items-center justify-start gap-2 md:justify-center">
             <div className="mr-2 flex items-center justify-center">
               <Switch
                 id="max-question-reoccurrences-switch"
@@ -188,10 +175,8 @@ export function SettingsForm({
       </div>
       <div className="grid gap-2">
         <div
-          className={cn(
-            "flex flex-col justify-between gap-2",
-            !isPhoneSurface && "md:flex-row",
-          )}
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
         >
           <Label
             className="text-sm font-medium"
