@@ -14,13 +14,13 @@ import { LandingPage } from "./components/landing/landing-page";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Testownik — uczysz się wszędzie",
+    absolute: "Testownik - uczysz się wszędzie",
   },
   description:
     "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Testownik — uczysz się wszędzie",
+    title: "Testownik - uczysz się wszędzie",
     description:
       "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
     url: "/",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/opengraph-image.png"],
-    title: "Testownik — uczysz się wszędzie",
+    title: "Testownik - uczysz się wszędzie",
     description:
       "Quizy, oceny, statystyki, AI i wspólna biblioteka. Cała sesja w jednym Testowniku.",
   },
@@ -57,5 +57,10 @@ export default async function HomePage({
 
   // Deliberately not awaited: the contributor rail streams into the team
   // section, so three GitHub calls cannot delay the hero.
-  return <LandingPage contributors={getContributorsSSR()} />;
+  return (
+    <LandingPage
+      contributors={getContributorsSSR()}
+      isAuthenticated={user != null}
+    />
+  );
 }

@@ -42,7 +42,12 @@ vi.mock("../scene/device-scene", () => ({
 function Harness(): React.JSX.Element {
   const reference = useRef<HTMLElement>(null);
   return (
-    <Hero heroReference={reference} isStarting={false} onStart={vi.fn()} />
+    <Hero
+      heroReference={reference}
+      isAuthenticated={false}
+      isStarting={false}
+      onStart={vi.fn()}
+    />
   );
 }
 

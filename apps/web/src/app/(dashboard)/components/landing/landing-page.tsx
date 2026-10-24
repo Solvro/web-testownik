@@ -26,9 +26,12 @@ import { Timeline } from "./sections/timeline";
  */
 export function LandingPage({
   contributors,
+  isAuthenticated,
 }: {
   /** Unresolved: the team rail streams in rather than holding up the hero. */
   contributors: Promise<GitHubContributor[]>;
+  /** Signed-in visitors only reach the page at `/?landing=true`. */
+  isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
@@ -56,6 +59,7 @@ export function LandingPage({
       <LandingTableOfContents />
       <Hero
         heroReference={heroReference}
+        isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={start}
       />
@@ -63,7 +67,11 @@ export function LandingPage({
       <Faq />
       <Timeline />
       <Team contributors={contributors} />
-      <Finale isStarting={isStarting} onStart={start} />
+      <Finale
+        isAuthenticated={isAuthenticated}
+        isStarting={isStarting}
+        onStart={start}
+      />
     </div>
   );
 }

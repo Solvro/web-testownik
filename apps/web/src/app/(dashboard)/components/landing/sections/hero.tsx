@@ -7,7 +7,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../components/focus";
-import { Eyebrow } from "../components/typography";
 import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
@@ -44,11 +43,13 @@ const copyStyle: CSSProperties = {
  * absolutely over the sticky stage. `visual` sits between copy and link.
  */
 function HeroContent({
+  isAuthenticated,
   isStarting,
   onStart,
   visual,
   isStatic = false,
 }: {
+  isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
   visual?: ReactNode;
@@ -56,7 +57,11 @@ function HeroContent({
 }): React.JSX.Element {
   return (
     <>
-      <LandingNav isStarting={isStarting} onStart={onStart} />
+      <LandingNav
+        isAuthenticated={isAuthenticated}
+        isStarting={isStarting}
+        onStart={onStart}
+      />
 
       <div
         data-hero-progress={isStatic ? undefined : true}
@@ -69,8 +74,7 @@ function HeroContent({
             : "lg:absolute lg:top-[calc(5.3rem+clamp(2rem,5vh,4rem))] lg:left-[clamp(1.5rem,4vw,4.5rem)]",
         )}
       >
-        <Eyebrow>TESTOWNIK / TEN OD ANTKA</Eyebrow>
-        <h1 className="mt-3 max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight lg:flex lg:max-w-none lg:flex-col lg:text-[clamp(3.3rem,6.25vw,7.35rem)] lg:leading-[0.78] lg:whitespace-nowrap">
+        <h1 className="max-w-[26rem] text-[clamp(2.2rem,10vw,3.5rem)] leading-[0.95] font-extrabold tracking-tight lg:flex lg:max-w-none lg:flex-col lg:text-[clamp(3.3rem,6.25vw,7.35rem)] lg:leading-[0.78] lg:whitespace-nowrap">
           Zapomnij o{" "}
           <em className="text-landing-primary not-italic">
             problemach z nauką
@@ -104,10 +108,12 @@ function HeroContent({
 
 export function Hero({
   heroReference,
+  isAuthenticated,
   isStarting,
   onStart,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
+  isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
 }): React.JSX.Element {
@@ -127,6 +133,7 @@ export function Hero({
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
       <HeroContent
+        isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={onStart}
         visual={
@@ -186,6 +193,7 @@ export function Hero({
               }}
             >
               <HeroContent
+                isAuthenticated={isAuthenticated}
                 isStarting={isStarting}
                 onStart={onStart}
                 isStatic={isStatic}

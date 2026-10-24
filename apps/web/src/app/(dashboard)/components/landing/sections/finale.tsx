@@ -18,9 +18,12 @@ const gridBackdropStyle: CSSProperties = {
 };
 
 export function Finale({
+  isAuthenticated,
   isStarting,
   onStart,
 }: {
+  /** Signed-in visitors (at `/?landing=true`) get one way back to the app. */
+  isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
 }): React.JSX.Element {
@@ -59,25 +62,39 @@ export function Finale({
         </span>
       </p>
 
-      <div className="relative mt-8 flex w-full flex-col gap-[0.8rem] sm:w-auto sm:flex-row">
-        <LandingButtonLink
-          href="/login?redirect=%2Fquizzes"
-          size="large"
-          className="w-full sm:w-auto"
-        >
-          Zaloguj się
-          <ArrowUpRight aria-hidden="true" />
-        </LandingButtonLink>
-        <LandingButton
-          size="large"
-          variant="onDark"
-          onClick={onStart}
-          disabled={isStarting}
-          className="w-full sm:w-auto"
-        >
-          {isStarting ? "Uruchamiam Testownik…" : "Zacznij jako gość"}
-          <ArrowRight aria-hidden="true" />
-        </LandingButton>
+      {/* Above the particle canvas, which would otherwise drift over it. */}
+      <div className="relative z-10 mt-8 flex w-full flex-col gap-[0.8rem] sm:w-auto sm:flex-row">
+        {isAuthenticated ? (
+          <LandingButtonLink
+            href="/quizzes"
+            size="large"
+            className="w-full sm:w-auto"
+          >
+            Otwórz Testownik
+            <ArrowUpRight aria-hidden="true" />
+          </LandingButtonLink>
+        ) : (
+          <>
+            <LandingButtonLink
+              href="/login?redirect=%2Fquizzes"
+              size="large"
+              className="w-full sm:w-auto"
+            >
+              Zaloguj się
+              <ArrowUpRight aria-hidden="true" />
+            </LandingButtonLink>
+            <LandingButton
+              size="large"
+              variant="onDark"
+              onClick={onStart}
+              disabled={isStarting}
+              className="w-full sm:w-auto"
+            >
+              {isStarting ? "Uruchamiam Testownik…" : "Zacznij jako gość"}
+              <ArrowRight aria-hidden="true" />
+            </LandingButton>
+          </>
+        )}
       </div>
 
       <footer
