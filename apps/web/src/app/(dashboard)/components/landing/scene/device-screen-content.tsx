@@ -13,6 +13,7 @@ import {
 import { EmbeddedSurfaceContext } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
+import { useSupportsHtmlInCanvas } from "../hooks/use-html-in-canvas";
 import { LaptopMenuBar } from "./laptop-menu-bar";
 
 /**
@@ -37,6 +38,11 @@ const TabletLiveCharts = lazy(async () => {
  * keeps it out of the loading covers, which are captured untouched.
  * (Shrinking the hero Bubble on hover is the page's job; the frame element
  * sees the same enter and leave.)
+ *
+ * Without html-in-canvas (Safari, Firefox, Chrome without the origin trial)
+ * or when WebGL2 fails, there is no lens at all: the screen renders its
+ * children directly, never through Glass. The server and the hydration pass
+ * render that plain screen too.
  */
 function GlassScreen({
   children,
@@ -48,6 +54,9 @@ function GlassScreen({
   onFirstEngage?: () => void;
 }): React.JSX.Element {
   const [engaged, setEngaged] = useState(false);
+  const supportsHtmlInCanvas = useSupportsHtmlInCanvas();
+  const [isUnavailable, setIsUnavailable] = useState(false);
+  const hasLens = engaged && supportsHtmlInCanvas && !isUnavailable;
 
   return (
     <div
@@ -59,12 +68,15 @@ function GlassScreen({
         }
       }}
     >
-      {engaged ? (
+      {hasLens ? (
         <Glass
           // CanvasUI appends the output canvas after the content it refracts.
           className="size-full [&>canvas:last-child]:z-4"
           size={60}
           targets={targets}
+          onUnavailable={() => {
+            setIsUnavailable(true);
+          }}
         >
           <CapturedSurface>{children}</CapturedSurface>
         </Glass>

@@ -3,6 +3,7 @@
 import {
   type ReactNode,
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   useSyncExternalStore,
@@ -731,6 +732,8 @@ export interface BubbleProps extends BubbleOptions {
   captureHtml?: boolean;
   enabled?: boolean;
   style?: React.CSSProperties;
+  /** Called when the WebGL2 context cannot be created, so nothing renders. */
+  onUnavailable?: () => void;
 }
 
 const emptySubscribe = () => () => {};
@@ -741,6 +744,7 @@ export function Bubble({
   captureHtml = true,
   enabled = true,
   style,
+  onUnavailable,
   ...options
 }: BubbleProps) {
   const sourceRef = useRef<HTMLCanvasElement>(null);
@@ -756,6 +760,9 @@ export function Bubble({
     supportsHtmlInCanvas,
     () => false,
   );
+  const reportUnavailable = useEffectEvent(() => {
+    onUnavailable?.();
+  });
   const native = captureHtml && supported && !failed;
 
   useEffect(() => {
@@ -779,7 +786,10 @@ export function Bubble({
       },
       initialOptions,
     );
-    if (native && !instanceRef.current) setFailed(true);
+    if (!instanceRef.current) {
+      reportUnavailable();
+      if (native) setFailed(true);
+    }
     return () => {
       active = false;
       instanceRef.current?.destroy();

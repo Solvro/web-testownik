@@ -3,6 +3,7 @@
 import {
   type ReactNode,
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   useSyncExternalStore,
@@ -668,6 +669,8 @@ export interface GlassProps extends GlassOptions {
   style?: React.CSSProperties;
   /** When false the magnifier is not initialized until enabled again. */
   enabled?: boolean;
+  /** Called when the WebGL2 context cannot be created, so nothing renders. */
+  onUnavailable?: () => void;
 }
 
 const emptySubscribe = () => () => {};
@@ -677,6 +680,7 @@ export function Glass({
   className,
   style,
   enabled = true,
+  onUnavailable,
   ...options
 }: GlassProps) {
   const sourceRef = useRef<HTMLCanvasElement>(null);
@@ -692,6 +696,9 @@ export function Glass({
     supportsHtmlInCanvas,
     () => false,
   );
+  const reportUnavailable = useEffectEvent(() => {
+    onUnavailable?.();
+  });
   const native = enabled && supported && !failed;
 
   useEffect(() => {
@@ -721,7 +728,10 @@ export function Glass({
       },
       initialOptions,
     );
-    if (native && !instanceRef.current) setFailed(true);
+    if (!instanceRef.current) {
+      reportUnavailable();
+      if (native) setFailed(true);
+    }
     return () => {
       active = false;
       instanceRef.current?.destroy();
