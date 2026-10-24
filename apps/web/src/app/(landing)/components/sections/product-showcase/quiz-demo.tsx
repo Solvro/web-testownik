@@ -15,13 +15,16 @@ import {
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  PreviewAiExplanationCard,
+  PreviewAiHintCard,
+} from "@/app/(landing)/preview/preview-ai-cards";
 import { PREVIEW_QUIZ } from "@/app/(landing)/preview/preview-fixtures";
 import {
   PreviewRuntime,
   PreviewSandbox,
 } from "@/app/(landing)/preview/preview-provider";
 import { QuizPreviewSurface } from "@/app/(landing)/preview/product-surfaces";
-import { AiExplanationCard, AiHintCard } from "@/components/ai/ai-explain-card";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { useStudyTimeValue } from "@/components/quiz/hooks/use-study-timer";
 import { AccessLevelSelector } from "@/components/quiz/share-quiz-dialog/access-level-selector";
@@ -493,17 +496,15 @@ export function QuizDemo(): React.JSX.Element {
             />
             {aiOpen ? (
               checked ? (
-                <AiExplanationCard
-                  question={question}
+                <PreviewAiExplanationCard
+                  explanation={getShowcaseExplanation(question)}
                   onClose={closeAi}
-                  preview={getShowcaseExplanation(question)}
                 />
               ) : (
-                <AiHintCard
-                  question={question}
+                <PreviewAiHintCard
+                  hint={getShowcaseHint(question)}
                   onClose={closeAi}
                   onAnswerHints={setAnswerHints}
-                  preview={getShowcaseHint(question)}
                 />
               )
             ) : null}
