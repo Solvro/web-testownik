@@ -8,117 +8,51 @@ import type {
 /**
  * Input a device screen hands back to the page around it.
  *
- * A wheel over an iframe stays in that iframe, so once the iPhone's list ended
- * (or over a screen with nothing to scroll) the page did not move. The frame's
- * root therefore never chains natively (`overscroll-behavior: none` on its
- * `html`, see `ScreenFrameDocument`), and every wheel no scroller under the
- * pointer can take is posted to the page instead, which scrolls itself. A wheel
- * is either used inside or forwarded, so nothing scrolls twice.
+ * A wheel over an iframe stays in that iframe, so over a screen with nothing to
+ * scroll the page did not move. Every wheel over a part of the screen that has
+ * no scroller at all in that axis is therefore posted to the page, which
+ * scrolls itself.
+ *
+ * A wheel over a scroller stays with it, also once it has reached its end,
+ * as a scroll gesture over a page's inner scroller does: the scroller bounces
+ * at its edge (its `overscroll-behavior` is left at `auto`) and the page does
+ * not start moving underneath. The frame's root does not chain natively either
+ * (`overscroll-behavior: none` on its `html`, see `ScreenFrameDocument`), so a
+ * wheel is either used inside or forwarded, never both.
  *
  * The page also gets no pointer events while the pointer is over a frame, so
  * the frame reports where it is, once per animation frame, for the hero
  * Bubble to follow.
  */
 
-const NOT_SCROLLABLE = 0;
-const CAN_SCROLL = 1;
-const AT_EDGE = 2;
-
-/** Can `element` itself scroll further by `delta` along one axis? */
-function scrollAxis(
-  overflow: string,
-  position: number,
-  size: number,
-  client: number,
-  delta: number,
-): number {
-  if (delta === 0 || size - client < 1) {
-    return NOT_SCROLLABLE;
-  }
-  if (overflow !== "auto" && overflow !== "scroll") {
-    return NOT_SCROLLABLE;
-  }
-  const canScroll = delta < 0 ? position > 0.5 : position + client < size - 0.5;
-  return canScroll ? CAN_SCROLL : AT_EDGE;
+/** Is `overflow` a user-scrollable value? `hidden` and `clip` are not. */
+function isScrollable(overflow: string): boolean {
+  return overflow === "auto" || overflow === "scroll";
 }
 
 /**
- * The innermost scroller the previous wheel passed through, and where it was.
- *
- * With only passive listeners the browser may apply a wheel's scroll before
- * or after the event reaches script, so a scroller found at its edge may
- * have got there with this very event. It counts as stuck only once it sits
- * at the edge without having moved since the previous wheel; that costs at
- * most one event of delay at the edge and never scrolls both the screen and
- * the page with one event.
- */
-let lastScroller: Element | null = null;
-let lastScrollLeft = 0;
-let lastScrollTop = 0;
-
-/**
  * Walks up from the wheel's target to the frame's root and reports, per axis
- * (bit 1 for x, bit 2 for y), whether anything on the way uses the delta.
- * Elements that do not overflow are rejected on their scroll sizes alone, so
- * only an actual scroller costs a computed-style lookup.
+ * (bit 1 for x, bit 2 for y), whether anything on the way is a scroller in
+ * that axis. Where it is already at its end does not matter: the wheel is its
+ * to keep. Elements that do not overflow are rejected on their scroll sizes
+ * alone, so only an actual scroller costs a computed-style lookup.
  */
-function consumedAxes(
-  target: EventTarget | null,
-  deltaX: number,
-  deltaY: number,
-): number {
+function consumedAxes(target: EventTarget | null): number {
   let consumed = 0;
-  let innermost: Element | null = null;
   let element = target instanceof Element ? target : null;
   while (element !== null && consumed !== 3) {
     const overflowsX = element.scrollWidth - element.clientWidth >= 1;
     const overflowsY = element.scrollHeight - element.clientHeight >= 1;
     if (overflowsX || overflowsY) {
       const style = getComputedStyle(element);
-      const x =
-        (consumed & 1) === 0
-          ? scrollAxis(
-              style.overflowX,
-              element.scrollLeft,
-              element.scrollWidth,
-              element.clientWidth,
-              deltaX,
-            )
-          : NOT_SCROLLABLE;
-      const y =
-        (consumed & 2) === 0
-          ? scrollAxis(
-              style.overflowY,
-              element.scrollTop,
-              element.scrollHeight,
-              element.clientHeight,
-              deltaY,
-            )
-          : NOT_SCROLLABLE;
-      if (x !== NOT_SCROLLABLE || y !== NOT_SCROLLABLE) {
-        // Only the innermost scroller can have taken this event's scroll
-        // before script saw it: the screens' scrollers contain their
-        // overscroll, so nothing outside them moves with it.
-        const settled =
-          innermost !== null ||
-          (element === lastScroller &&
-            element.scrollLeft === lastScrollLeft &&
-            element.scrollTop === lastScrollTop);
-        if (x === CAN_SCROLL || (x === AT_EDGE && !settled)) {
-          consumed |= 1;
-        }
-        if (y === CAN_SCROLL || (y === AT_EDGE && !settled)) {
-          consumed |= 2;
-        }
-        innermost ??= element;
+      if (overflowsX && isScrollable(style.overflowX)) {
+        consumed |= 1;
+      }
+      if (overflowsY && isScrollable(style.overflowY)) {
+        consumed |= 2;
       }
     }
     element = element.parentElement;
-  }
-  lastScroller = innermost;
-  if (innermost !== null) {
-    lastScrollLeft = innermost.scrollLeft;
-    lastScrollTop = innermost.scrollTop;
   }
   return consumed;
 }
@@ -154,7 +88,7 @@ export function forwardScreenInput(): () => void {
     if (event.ctrlKey) {
       return;
     }
-    const consumed = consumedAxes(event.target, event.deltaX, event.deltaY);
+    const consumed = consumedAxes(event.target);
     const deltaX = (consumed & 1) === 0 ? event.deltaX : 0;
     const deltaY = (consumed & 2) === 0 ? event.deltaY : 0;
     if (deltaX === 0 && deltaY === 0) {
