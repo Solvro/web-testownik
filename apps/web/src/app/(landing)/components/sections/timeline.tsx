@@ -228,7 +228,7 @@ export function Timeline(): React.JSX.Element {
           target="_blank"
           rel="noreferrer"
           className={cn(
-            "text-landing-primary inline-flex w-fit items-center gap-2 text-[0.8rem] font-bold transition-[gap,color] duration-300 hover:gap-3 [&_svg]:size-4",
+            "text-primary inline-flex w-fit items-center gap-2 text-[0.8rem] font-bold transition-[gap,color] duration-300 hover:gap-3 [&_svg]:size-4",
             FOCUS_RING,
           )}
         >
@@ -288,7 +288,7 @@ export function Timeline(): React.JSX.Element {
 
                 <time
                   className={cn(
-                    "text-landing-primary mt-1 block text-xs font-bold tracking-[0.12em] capitalize motion-reduce:opacity-100",
+                    "text-primary mt-1 block text-xs font-bold tracking-[0.12em] capitalize motion-reduce:opacity-100",
                     isVisible ? "lp-story-date" : "opacity-0",
                   )}
                 >

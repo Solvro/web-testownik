@@ -11,7 +11,7 @@ export const monoLabelVariants = cva("font-landing-mono font-bold uppercase", {
     tone: {
       default: "text-foreground",
       muted: "text-muted-foreground",
-      primary: "text-landing-primary",
+      primary: "text-primary",
       subtle: "text-foreground/55",
     },
   },
