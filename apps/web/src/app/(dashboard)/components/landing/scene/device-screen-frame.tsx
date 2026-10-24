@@ -256,6 +256,8 @@ export function DeviceScreenFrame({
       ref={frameReference}
       src={source}
       title={TITLES[device]}
+      // A preview, not part of the page's keyboard path: Tab skips the frame.
+      tabIndex={-1}
       data-surface-ready={isReady}
       // The stack mounts the screens only once the hero is near the
       // viewport and the model has loaded, so `lazy` defers nothing on

@@ -12,6 +12,42 @@ const HeroPhoneScreen = lazy(async () => {
   return { default: loaded.HeroPhoneScreen };
 });
 
+const FOCUSABLE =
+  'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
+
+/**
+ * Keeps the live preview out of the page's Tab order while leaving it usable
+ * by pointer and touch: every focusable descendant, including ones the quiz
+ * mounts or re-renders later, gets `tabindex="-1"`. Those stay focusable on
+ * click, so a tapped control behaves normally; Tab simply never lands inside.
+ * A React 19 ref callback, so the observer goes away with the element.
+ */
+function skipSequentialFocus(
+  root: HTMLElement | null,
+): (() => void) | undefined {
+  if (root === null) {
+    return undefined;
+  }
+  const demote = (): void => {
+    for (const element of root.querySelectorAll<HTMLElement>(FOCUSABLE)) {
+      if (element.tabIndex >= 0) {
+        element.tabIndex = -1;
+      }
+    }
+  };
+  demote();
+  const observer = new MutationObserver(demote);
+  observer.observe(root, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["tabindex", "href", "contenteditable"],
+  });
+  return () => {
+    observer.disconnect();
+  };
+}
+
 const blankScreen = (
   <div aria-hidden="true" className="bg-background size-full" />
 );
@@ -49,7 +85,7 @@ export function HeroPhone({
       >
         <div className="lp-iphone origin-top-left [scale:var(--lp-phone-scale)]">
           <div className="lp-iphone-frame">
-            <div className="lp-iphone-screen">
+            <div ref={skipSequentialFocus} className="lp-iphone-screen">
               {isCompact ? (
                 <Suspense fallback={blankScreen}>
                   <HeroPhoneScreen />
