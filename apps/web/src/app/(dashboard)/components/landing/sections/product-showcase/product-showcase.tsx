@@ -60,6 +60,7 @@ const showcaseBackdropStyle: CSSProperties = {
 export function ProductShowcase(): React.JSX.Element {
   const [activeId, setActiveId] = useState<ShowcaseFeatureId>("quiz");
   const keyboardSelectionReference = useRef<ShowcaseFeatureId | null>(null);
+  const tapSelectionReference = useRef<ShowcaseFeatureId | null>(null);
 
   return (
     <LandingSection
@@ -77,14 +78,13 @@ export function ProductShowcase(): React.JSX.Element {
           <em>działa nauka.</em>
         </DisplayHeading>
         <p className="text-muted-foreground max-w-[34rem] text-[1.05rem] leading-[1.65]">
-          To nie są zrzuty ekranu. Wybieraj odpowiedzi, rozmawiaj z asystentem,
-          zmieniaj oceny i sprawdzaj statystyki — dokładnie tak, jak w
-          Testowniku.
+          Quizy, asystent AI, średnia ocen i&nbsp;statystyki. Wszystko działa na
+          żywo.
         </p>
       </header>
 
       <ShowcaseSessionProvider>
-        <div className="border-border bg-card mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[47rem]">
+        <div className="border-border bg-card @container mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[47rem]">
           {SHOWCASE_FEATURES.map((feature, index) => {
             const active = feature.id === activeId;
             const panelId = `landing-feature-${feature.id}`;
@@ -94,7 +94,7 @@ export function ProductShowcase(): React.JSX.Element {
               <article
                 key={feature.id}
                 className={cn(
-                  "border-border relative min-w-0 border-b last:border-b-0 lg:h-full lg:border-r lg:border-b-0 lg:last:border-r-0",
+                  "border-border relative min-w-0 border-b last:border-b-0 lg:h-full lg:overflow-hidden lg:border-r lg:border-b-0 lg:last:border-r-0",
                   "transition-[width,flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   active ? "lg:flex-1" : "lg:w-[4.75rem] lg:flex-none",
                 )}
@@ -104,13 +104,17 @@ export function ProductShowcase(): React.JSX.Element {
                   aria-expanded={active}
                   aria-controls={panelId}
                   onClick={(event) => {
+                    const desktop =
+                      window.matchMedia(DESKTOP_STAGE_QUERY).matches;
                     // The expanded desktop rail disappears. Keep keyboard
                     // focus in the selected panel instead of dropping to body.
-                    if (
-                      event.detail === 0 &&
-                      window.matchMedia(DESKTOP_STAGE_QUERY).matches
-                    ) {
+                    if (event.detail === 0 && desktop) {
                       keyboardSelectionReference.current = feature.id;
+                    }
+                    // In the stacked accordion the closing card above can
+                    // push the opened one far down; bring its header back up.
+                    if (event.detail !== 0 && !desktop && !active) {
+                      tapSelectionReference.current = feature.id;
                     }
                     setActiveId(feature.id);
                   }}
@@ -136,12 +140,22 @@ export function ProductShowcase(): React.JSX.Element {
                   <div
                     id={panelId}
                     ref={(panel) => {
-                      if (
-                        panel !== null &&
-                        keyboardSelectionReference.current === feature.id
-                      ) {
+                      if (panel === null) {
+                        return;
+                      }
+                      if (keyboardSelectionReference.current === feature.id) {
                         keyboardSelectionReference.current = null;
                         panel.focus({ preventScroll: true });
+                      }
+                      if (tapSelectionReference.current === feature.id) {
+                        tapSelectionReference.current = null;
+                        const reduceMotion = window.matchMedia(
+                          "(prefers-reduced-motion: reduce)",
+                        ).matches;
+                        panel.parentElement?.scrollIntoView({
+                          block: "start",
+                          behavior: reduceMotion ? "auto" : "smooth",
+                        });
                       }
                     }}
                     role="region"
@@ -149,6 +163,12 @@ export function ProductShowcase(): React.JSX.Element {
                     tabIndex={-1}
                     className={cn(
                       "grid min-h-0 lg:h-full lg:grid-cols-[minmax(17rem,0.64fr)_minmax(0,1.65fr)]",
+                      // Laid out at its final width from the first frame; the
+                      // article's animating width only clips it. The three
+                      // rails are 4.75rem each, plus this article's 1px border.
+                      index === SHOWCASE_FEATURES.length - 1
+                        ? "lg:w-[calc(100cqw-14.25rem)]"
+                        : "lg:w-[calc(100cqw-14.25rem-1px)]",
                       FOCUS_RING,
                       "focus-visible:outline-offset-[-3px]",
                     )}
@@ -180,9 +200,6 @@ export function ProductShowcase(): React.JSX.Element {
                         <span className="truncate">{feature.cta}</span>
                         <ArrowRightIcon aria-hidden="true" />
                       </LandingButtonLink>
-                      <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
-                        Przejdź do pełnej wersji
-                      </p>
                     </div>
 
                     <div

@@ -141,7 +141,7 @@ function usePreviewScreen(session: PreviewQuizSession) {
       if (href.endsWith("/stats")) {
         setView("stats");
       } else if (href.startsWith("/search-in-quiz/")) {
-        notify("To tylko podgląd — wyszukiwarka pytań działa w aplikacji.");
+        notify("To tylko podgląd. Wyszukiwarka pytań działa w aplikacji.");
       } else if (href.startsWith(`/quiz/`)) {
         setView("quiz");
       }
