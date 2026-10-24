@@ -17,19 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useEmbeddedSurface } from "@/components/ui/portal-container";
 
 interface FocusModeOnboardingDialogProps {
   open: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onConfirmAndHide: () => void;
-  /**
-   * Render as a plain dialog instead of an alert dialog. Alert dialogs are
-   * always modal and lock the document's scroll, which is right in the app but
-   * wrong inside an embedded preview, where the dialog must stay within its
-   * screen and leave the page around it alone.
-   */
-  embedded?: boolean;
 }
 
 function OnboardingCopy(): React.JSX.Element {
@@ -61,8 +55,11 @@ export function FocusModeOnboardingDialog({
   onCancel,
   onConfirm,
   onConfirmAndHide,
-  embedded = false,
 }: FocusModeOnboardingDialogProps): React.JSX.Element {
+  // Alert dialogs are always modal and lock the document's scroll. Inside an
+  // embedded surface the dialog has to leave the page around it alone, so it
+  // falls back to a plain dialog there.
+  const embedded = useEmbeddedSurface() !== null;
   const handleOpenChange = (nextOpen: boolean): void => {
     if (!nextOpen) {
       onCancel();
