@@ -156,8 +156,10 @@ export function Hero({
       ref={heroReference}
       data-hero-static={isStatic}
       className={cn(
-        // Names the view timeline the open-laptop wordmark animates on.
-        "relative scroll-mt-4 lg:[view-timeline:--lp-hero_block]",
+        // Names the view timeline the open-laptop wordmark animates on. The
+        // inset would otherwise default to the root's scroll padding, and the
+        // `view-timeline` shorthand would reset it in Chrome.
+        "relative scroll-mt-4 lg:[view-timeline-inset:0] lg:[view-timeline-name:--lp-hero]",
         isStatic
           ? "lg:h-[100svh] lg:min-h-[36rem]"
           : "lg:h-[300vh] lg:min-h-[190rem]",
