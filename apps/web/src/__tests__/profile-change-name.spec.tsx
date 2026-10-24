@@ -276,7 +276,9 @@ describe("ProfileChangeNameForm", () => {
         await user.type(screen.getByLabelText("Imię"), "a");
         await user.click(screen.getByRole("button", { name: "Zapisz" }));
 
-        await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+        await waitFor(() => {
+          expect(onClose).toHaveBeenCalledOnce();
+        });
         expect(mocks.refresh).toHaveBeenCalledOnce();
         expect(mocks.toastWarning).toHaveBeenCalledExactlyOnceWith(
           "Nazwę zapisano. Może minąć chwila, zanim zaktualizuje się w menu.",
