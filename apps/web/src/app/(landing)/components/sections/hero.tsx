@@ -156,7 +156,8 @@ export function Hero({
       ref={heroReference}
       data-hero-static={isStatic}
       className={cn(
-        "relative scroll-mt-4",
+        // Names the view timeline the open-laptop wordmark animates on.
+        "relative scroll-mt-4 lg:[view-timeline:--lp-hero_block]",
         isStatic
           ? "lg:h-[100svh] lg:min-h-[36rem]"
           : "lg:h-[300vh] lg:min-h-[190rem]",

@@ -100,7 +100,7 @@ export function HeroDesktopStage({
               data-hero-progress
               ref={attachHeroProgress}
               style={openLogoStyle}
-              className="absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)] transition-opacity duration-[120ms]"
+              className="lp-hero-open-logo absolute top-[clamp(5.5rem,10vh,8rem)] left-1/2 z-6 w-[clamp(13rem,17vw,20rem)]"
             >
               <Image
                 src={wordmarkLight}

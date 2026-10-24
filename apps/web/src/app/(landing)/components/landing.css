@@ -75,8 +75,18 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   isolation: isolate;
 }
 
+/*
+ * The droplet. Masked over the same stretch `HeroFade` fades the grid, so it
+ * settles into the page with the grid instead of staying crisp over the exit,
+ * while the copy and the scroll hint, which are DOM, do not fade.
+ */
 .lp-bubble-capture > canvas:last-of-type {
   z-index: 80;
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - clamp(7rem, 22vh, 13rem)),
+    transparent
+  );
 }
 
 /* The closed lid keeps the laptop screen inert, down into its frame. */
@@ -429,6 +439,43 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
+  }
+}
+
+/*
+ * The wordmark over the open laptop follows the hero's own view timeline, so
+ * it moves on the compositor in step with the scroll instead of one frame
+ * behind it with the JS-published progress. `contain` runs from the hero's
+ * top reaching the top of the viewport to its bottom reaching the bottom, the
+ * same travel `useHeroProgress` measures. Keyframes mirror its inline
+ * progress style, which remains the fallback.
+ */
+@keyframes lp-hero-open-logo {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 1.5rem) scale(0.96);
+  }
+  60% {
+    opacity: 0;
+    transform: translate(-50%, 0.6rem) scale(0.984);
+  }
+  76.67% {
+    opacity: 1;
+    transform: translate(-50%, 0.35rem) scale(0.9907);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-hero-open-logo {
+      animation: lp-hero-open-logo linear both;
+      animation-timeline: --lp-hero;
+      animation-range: contain;
+    }
   }
 }
 
