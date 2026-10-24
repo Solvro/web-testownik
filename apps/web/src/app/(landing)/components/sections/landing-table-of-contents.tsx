@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 import { LANDING_SECTIONS } from "../landing-sections";
+import { scrollToLandingSection } from "../scroll-to-section";
 import { FOCUS_RING } from "../ui/focus";
 import {
   TOC_PREVIEW_GAP,
@@ -480,12 +481,7 @@ export function LandingTableOfContents(): React.JSX.Element {
     boomPreview();
     setActiveSection(id);
     event.currentTarget.blur();
-    target.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-      block: "start",
-    });
+    scrollToLandingSection(target);
     window.history.replaceState(null, "", `#${id}`);
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
+import { useDeviceCoverPlacement } from "../scene/device-cover-placement";
 import { DeviceSceneBackdrop } from "../scene/device-scene-backdrop";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import { FOCUS_RING } from "../ui/focus";
@@ -38,6 +39,13 @@ const copyStyle: CSSProperties = {
   opacity: `clamp(0, calc(1 - ${HERO_PROGRESS} * 3.8), 1)`,
   transform: `translateY(calc(${HERO_PROGRESS} * -4rem))`,
 };
+
+/** The pre-mount cover, placed by the same solver as the stack's own. */
+function StaticDeviceCover(): React.JSX.Element {
+  const coverReference = useRef<HTMLDivElement>(null);
+  useDeviceCoverPlacement(coverReference);
+  return <div ref={coverReference} className={DEVICE_COVER_CLASS} />;
+}
 
 /**
  * The hero copy, navigation and "Poznaj produkt" link, rendered exactly once
@@ -145,7 +153,7 @@ export function Hero({
               className="@container-[size] pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30 hidden lg:block"
             >
               <DeviceSceneBackdrop isStatic />
-              <div className={DEVICE_COVER_CLASS} />
+              <StaticDeviceCover />
               <HeroBadges isStatic />
             </div>
           </>

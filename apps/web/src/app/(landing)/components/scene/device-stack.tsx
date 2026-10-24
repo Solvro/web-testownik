@@ -13,7 +13,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 import { DESKTOP_STAGE_QUERY } from "../breakpoints";
-import { laptopScreenRect } from "./laptop-framing";
+import { placeDeviceCover } from "./device-cover-placement";
 import { DEVICE_COVER_CLASS, SCENE_CLASS } from "./scene-classes";
 import { ScreenProjectionContext } from "./screen-projection";
 import type { ProjectScreenPoint } from "./screen-projection";
@@ -107,11 +107,7 @@ export function DeviceStack({
         cover.removeAttribute("style");
         return;
       }
-      const rect = laptopScreenRect(width, height);
-      cover.style.left = `${(rect.left + rect.width / 2).toFixed(2)}px`;
-      cover.style.top = `${rect.top.toFixed(2)}px`;
-      cover.style.width = `${rect.width.toFixed(2)}px`;
-      cover.style.height = `${rect.height.toFixed(2)}px`;
+      placeDeviceCover(cover, width, height);
     };
 
     const observer = new ResizeObserver(place);

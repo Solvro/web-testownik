@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { LANDING_SECTIONS } from "../landing-sections";
 import { wordmarkDark, wordmarkLight } from "../logos";
+import { scrollToLandingSection } from "../scroll-to-section";
 import { FOCUS_RING } from "../ui/focus";
 import { LandingButton, LandingButtonLink } from "../ui/landing-button";
 
@@ -73,6 +74,15 @@ export function LandingNav({
           <a
             key={link.href}
             href={link.href}
+            onClick={(event) => {
+              const target = document.querySelector(link.href);
+              if (!(target instanceof HTMLElement)) {
+                return;
+              }
+              event.preventDefault();
+              scrollToLandingSection(target);
+              window.history.replaceState(null, "", link.href);
+            }}
             className={cn(
               "text-foreground/80 hover:text-foreground relative rounded-md px-3 py-2 text-[0.92rem] font-semibold tracking-[-0.01em] transition-[color,transform] duration-200",
               "hover:-translate-y-px active:translate-y-0",

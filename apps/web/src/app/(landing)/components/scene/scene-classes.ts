@@ -24,10 +24,12 @@ export const SCENE_CLASS = {
 } as const satisfies Record<string, string>;
 
 /**
- * The loading still of the closed device stack, placed in container-height
- * units so the server-rendered position already agrees with the camera
- * solver. Shared by `DeviceStack` and the hero's pre-mount placeholder so the
- * hand-off between them is pixel-identical. Needs an `@container-[size]` parent.
+ * The loading still of the closed device stack. The classes are the
+ * server-rendered guess at the camera solver's box: exact for stages wider
+ * than about 4:3, where the laptop is height-limited, and close for narrower
+ * ones, where it is width-limited. `placeDeviceCover` replaces them with the
+ * solved rectangle on the client. Shared by `DeviceStack` and the hero's
+ * pre-mount placeholder. Needs an `@container-[size]` parent.
  *
  * A background image rather than an <img>: below `lg` the placeholder is
  * `display: none`, and a hidden element does not fetch its background.
@@ -35,7 +37,7 @@ export const SCENE_CLASS = {
  * pose, the field of view or the framing constants change.
  */
 export const DEVICE_COVER_CLASS = [
-  "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[63.42%] w-[89.35cqh] -translate-x-1/2",
+  "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[min(63.42cqh,47.7cqw)] w-[min(89.35cqh,64.4cqw)] -translate-x-1/2",
   "bg-[url(/models/testownik-device-stack-closed-light-v1.webp)] bg-size-[100%_100%]",
   "dark:bg-[url(/models/testownik-device-stack-closed-dark-v1.webp)]",
 ].join(" ");
