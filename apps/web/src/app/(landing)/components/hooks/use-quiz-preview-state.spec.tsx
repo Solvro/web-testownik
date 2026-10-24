@@ -39,6 +39,19 @@ function headerMenu(): HTMLElement {
   return screen.getAllByRole("button", { name: "Więcej opcji quizu" })[0];
 }
 
+/**
+ * The action row docked at the bottom of the phone screen. The question
+ * card's own row is hidden by the screen's CSS, which the test DOM does not
+ * apply, so queries for the quiz controls are scoped to the docked one.
+ */
+function dockedActions(container: ParentNode = document): HTMLElement {
+  const row = container.querySelector<HTMLElement>("[data-phone-quiz-actions]");
+  if (row === null) {
+    throw new Error("missing docked action row");
+  }
+  return row;
+}
+
 function portalLayer(): HTMLElement {
   const layer = document.querySelector<HTMLElement>("[data-preview-portal]");
   if (layer === null) {
@@ -76,24 +89,67 @@ describe("phone quiz preview", () => {
     await user.click(
       screen.getByRole("button", { name: /aktywne przypominanie i powtórki/ }),
     );
-    await user.click(screen.getByRole("button", { name: "Sprawdź odpowiedź" }));
+    const actions = within(dockedActions());
+    await user.click(
+      actions.getByRole("button", { name: "Sprawdź odpowiedź" }),
+    );
     expect(screen.getByText("Poprawna odpowiedź!")).toBeInTheDocument();
     expect(screen.getByText("72/119")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Następne pytanie" }));
+    await user.click(actions.getByRole("button", { name: "Następne pytanie" }));
     expect(screen.getByText(/^Pytanie 97\./)).toBeInTheDocument();
 
-    // Back (an icon button with a tooltip) shows the answer just given,
-    // checked; then returns.
-    const back = document.querySelector("button:has(svg.lucide-undo-2)");
-    expect(back).not.toBeNull();
-    await user.click(back as HTMLElement);
+    // Back shows the answer just given, checked; then returns.
+    await user.click(
+      actions.getByRole("button", { name: "Poprzednie pytanie" }),
+    );
     expect(screen.getByText(/^Pytanie 83\./)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Powrót do pytań" }));
+    await user.click(actions.getByRole("button", { name: "Powrót do pytań" }));
     expect(screen.getByText(/^Pytanie 97\./)).toBeInTheDocument();
 
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it("hides the question card's own action row behind the docked one", () => {
+    render(<PhonePreview />);
+
+    const cardRow = document.querySelector("[data-slot=question-card-actions]");
+    expect(cardRow).not.toBeNull();
+    // The screen hides it with a variant on an ancestor, not a prop.
+    let ancestor = cardRow?.parentElement ?? null;
+    while (
+      ancestor !== null &&
+      !ancestor.classList.contains(
+        "[&_[data-slot=question-card-actions]]:hidden",
+      )
+    ) {
+      ancestor = ancestor.parentElement;
+    }
+    expect(ancestor).not.toBeNull();
+    expect(dockedActions()).not.toContainElement(cardRow as HTMLElement);
+  });
+
+  it.each([false, true])(
+    "lays out and mounts overlays inside the phone screen (standalone: %s)",
+    async (standalone) => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <PhonePreview syncChannel={standalone ? "spec-layout" : undefined} />,
+      );
+
+      const sandbox = container.querySelector("[data-preview-sandbox]");
+      expect(sandbox?.className).toContain(
+        "[&_[data-slot=dialog-footer]]:flex-col-reverse",
+      );
+      await user.click(headerMenu());
+      const menu = await screen.findByRole("menu");
+      expect(sandbox).toContainElement(menu);
+      await user.click(
+        await screen.findByRole("menuitem", { name: "Udostępnij quiz" }),
+      );
+      expect(sandbox).toContainElement(await screen.findByRole("dialog"));
+    },
+  );
 
   it("opens the share dialog from fixtures without the clipboard or the API", async () => {
     const user = userEvent.setup();
@@ -167,13 +223,21 @@ describe("phone quiz preview", () => {
           name: /aktywne przypominanie i powtórki/,
         }),
       );
-      await user.click(left.getByRole("button", { name: "Sprawdź odpowiedź" }));
+      await user.click(
+        within(dockedActions(first.container)).getByRole("button", {
+          name: "Sprawdź odpowiedź",
+        }),
+      );
       expect(left.getByText("Poprawna odpowiedź!")).toBeInTheDocument();
       expect(await right.findByText("Poprawna odpowiedź!")).toBeInTheDocument();
       expect(right.getByText("72/119")).toBeInTheDocument();
 
       // And back the other way.
-      await user.click(right.getByRole("button", { name: "Następne pytanie" }));
+      await user.click(
+        within(dockedActions(second.container)).getByRole("button", {
+          name: "Następne pytanie",
+        }),
+      );
       expect(await left.findByText(/^Pytanie 97\./)).toBeInTheDocument();
 
       // A screen that joins late adopts the session so far.

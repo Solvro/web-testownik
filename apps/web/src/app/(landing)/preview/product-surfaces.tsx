@@ -103,6 +103,9 @@ const QUIZ_DENSITY: Record<Density, string> = {
     "flex flex-col text-[0.62em]",
     "[&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
     "[&_[data-slot=card-header]]:px-3 [&_[data-slot=card-content]]:px-3",
+    // The phone docks the card's action row at the bottom of its screen
+    // instead (`PhoneQuizActions`).
+    "[&_[data-slot=question-card-actions]]:hidden",
   ),
 };
 
@@ -258,8 +261,6 @@ export function QuizPreviewSurface({
         canGoBack={view.canGoBack}
         isHistoryQuestion={view.isHistoryQuestion}
         answerHints={answerHints}
-        // The phone docks the same controls at the bottom of its screen.
-        hideActions={density === "phone"}
       />
     </div>
   );
@@ -601,7 +602,10 @@ function PhoneQuizActions({
   const { view } = session;
 
   return (
-    <div className="bg-background flex shrink-0 justify-end gap-2 px-[0.8rem] pt-2 pb-5 text-[0.62em]">
+    <div
+      data-phone-quiz-actions=""
+      className="bg-background flex shrink-0 justify-end gap-2 px-[0.8rem] pt-2 pb-5 text-[0.62em]"
+    >
       {view.isHistoryQuestion ? (
         <Button variant="outline" onClick={session.back}>
           Powrót do pytań
