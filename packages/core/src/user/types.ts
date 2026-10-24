@@ -40,6 +40,8 @@ export interface User {
 }
 
 export interface UserData extends Omit<User, "photo"> {
+  first_name: string;
+  last_name: string;
   photo: string | null;
   default_photo?: string | null;
   email: string | null;
