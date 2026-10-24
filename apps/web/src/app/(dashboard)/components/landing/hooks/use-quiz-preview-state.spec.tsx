@@ -111,7 +111,7 @@ describe("phone quiz preview", () => {
     );
 
     expect(
-      await screen.findByText(/w aplikacji link trafi do schowka/),
+      await screen.findByText(/W aplikacji link trafi do schowka/),
     ).toBeInTheDocument();
     expect(writeText).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
