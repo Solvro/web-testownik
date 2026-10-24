@@ -5,6 +5,12 @@ import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth";
 import { verifyAccessToken } from "@/lib/auth/server";
+import {
+  BARE_DOCUMENT_SHELL,
+  DOCUMENT_PATHNAME_HEADER,
+  DOCUMENT_SHELL_HEADER,
+  isBareDocumentPath,
+} from "@/lib/document-shell";
 
 /**
  * Forward Set-Cookie headers from backend response to Next.js response.
@@ -69,11 +75,28 @@ async function tryRefreshTokens(
   }
 }
 
+/** See `lib/document-shell.ts`. */
+function nextWithDocumentShell(request: NextRequest): NextResponse {
+  const isBare = isBareDocumentPath(request.nextUrl.pathname);
+  const headers = new Headers(request.headers);
+  headers.delete(DOCUMENT_SHELL_HEADER);
+  headers.set(DOCUMENT_PATHNAME_HEADER, request.nextUrl.pathname);
+  if (isBare) {
+    headers.set(DOCUMENT_SHELL_HEADER, BARE_DOCUMENT_SHELL);
+  }
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function proxy(request: NextRequest) {
+  // The landing's device screens never need the session.
+  if (isBareDocumentPath(request.nextUrl.pathname)) {
+    return nextWithDocumentShell(request);
+  }
+
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
 
-  const response = NextResponse.next();
+  const response = nextWithDocumentShell(request);
 
   if (accessToken !== undefined && accessToken !== "") {
     const payload = await verifyAccessToken(accessToken);
@@ -94,8 +117,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    // eslint-disable-next-line unicorn/prefer-string-raw
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json)$).*)",
-  ],
+  // Only Next.js internals bypass sanitization. App route parameters can have
+  // any extension; public assets also pass through so their headers are clean.
+  matcher: ["/((?!_next/).*)"],
 };

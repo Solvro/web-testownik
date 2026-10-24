@@ -232,6 +232,7 @@ function UserChatMessage({
 
 function AssistantChatMessage({
   message,
+  originQuestionId,
   running,
   lengthLimited,
   requestDisabled,
@@ -240,6 +241,7 @@ function AssistantChatMessage({
   clearError,
 }: {
   message: UIMessage;
+  originQuestionId: string | null;
   running: boolean;
   lengthLimited: boolean;
   requestDisabled: boolean;
@@ -290,6 +292,7 @@ function AssistantChatMessage({
                     <ChatTool
                       key={toolPart.toolCallId ?? `tool-${index.toString()}`}
                       part={toolPart}
+                      originQuestionId={originQuestionId}
                       interrupted={lengthLimited}
                     />
                   );
@@ -368,6 +371,7 @@ function AssistantChatMessage({
 
 export function ChatMessage({
   message,
+  originQuestionId,
   running,
   lengthLimited,
   requestDisabled,
@@ -379,6 +383,7 @@ export function ChatMessage({
   status,
 }: {
   message: UIMessage;
+  originQuestionId: string | null;
   running: boolean;
   lengthLimited: boolean;
   requestDisabled: boolean;
@@ -401,6 +406,7 @@ export function ChatMessage({
   ) : (
     <AssistantChatMessage
       message={message}
+      originQuestionId={originQuestionId}
       running={running}
       lengthLimited={lengthLimited}
       requestDisabled={requestDisabled}

@@ -19,7 +19,10 @@ export function AccessLevelSelector({
   onChange,
 }: AccessLevelSelectorProps) {
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-stretch justify-center gap-2 py-1 sm:gap-2 md:flex-nowrap">
+    <div
+      data-slot="access-level-selector"
+      className="flex w-full min-w-0 flex-wrap items-stretch justify-center gap-2 py-1 sm:gap-2 md:flex-nowrap"
+    >
       {levels.map((level) => {
         const isSelected = value === level.value;
         const isHighlighted = value >= level.value;

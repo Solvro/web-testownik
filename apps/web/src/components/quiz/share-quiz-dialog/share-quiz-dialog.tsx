@@ -30,7 +30,7 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import { getQuizService } from "@/services";
+import { servicesFor, useServices } from "@/services/client-services";
 
 interface ShareQuizDialogProps {
   open: boolean;
@@ -50,6 +50,7 @@ export function ShareQuizDialog({
   const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
   const canShareQuiz = checkPermission(PermissionAction.SHARE_QUIZZES);
   const router = useRouter();
+  const { quiz: quizService, clipboard } = useServices();
 
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(quiz.visibility);
 
@@ -77,8 +78,8 @@ export function ShareQuizDialog({
 
   const { data: userGroups, isLoading: isUserGroupsLoading } = useQuery({
     queryKey: ["study-groups"],
-    queryFn: async () => {
-      const groups = await getQuizService().getStudyGroups();
+    queryFn: async ({ client }) => {
+      const groups = await servicesFor(client).quiz.getStudyGroups();
       return groups.map((group) => ({
         ...group,
         photo: `https://ui-avatars.com/api/?background=random&name=${
@@ -95,8 +96,8 @@ export function ShareQuizDialog({
   /* eslint-disable react-you-might-not-need-an-effect/no-event-handler */
   const { data: sharedData, isLoading: isSharedDataLoading } = useQuery({
     queryKey: ["shared-quiz", quiz.id],
-    queryFn: async () =>
-      await getQuizService().getSharedQuizzesForQuiz(quiz.id),
+    queryFn: async ({ client }) =>
+      await servicesFor(client).quiz.getSharedQuizzesForQuiz(quiz.id),
     enabled: open && canShareQuiz,
     staleTime: 0,
   });
@@ -148,7 +149,7 @@ export function ShareQuizDialog({
     setSearchResultsLoading(true);
     try {
       // Fetch users
-      const users = await getQuizService().searchUsers(query);
+      const users = await quizService.searchUsers(query);
       let data: (User | Group)[] = [...users];
 
       // Filter groups by the query
@@ -277,6 +278,10 @@ export function ShareQuizDialog({
     );
   };
 
+  const copyLink = async () => {
+    await clipboard.copyLink(`${window.location.origin}/quiz/${quiz.id}`);
+  };
+
   // -------------- Save Handler -------------- //
   const handleSave = async () => {
     if (isSaving) {
@@ -285,7 +290,7 @@ export function ShareQuizDialog({
     try {
       setIsSaving(true);
       // 1) Update quiz metadata (visibility, allow_anonymous, is_anonymous)
-      const quizResponse = await getQuizService().updateQuiz(quiz.id, {
+      const quizResponse = await quizService.updateQuiz(quiz.id, {
         visibility: accessLevel,
         allow_anonymous: allowAnonymous && accessLevel >= AccessLevel.UNLISTED,
         is_anonymous: isCreatorAnonymous,
@@ -319,18 +324,18 @@ export function ShareQuizDialog({
         if (rUser.shared_quiz_id == null) {
           continue;
         }
-        await getQuizService().deleteSharedQuiz(rUser.shared_quiz_id);
+        await quizService.deleteSharedQuiz(rUser.shared_quiz_id);
       }
 
       for (const rGroup of removedGroups) {
         if (rGroup.shared_quiz_id == null) {
           continue;
         }
-        await getQuizService().deleteSharedQuiz(rGroup.shared_quiz_id);
+        await quizService.deleteSharedQuiz(rGroup.shared_quiz_id);
       }
 
       for (const aUser of addedUsers) {
-        await getQuizService().shareQuizWithUser(
+        await quizService.shareQuizWithUser(
           quiz.id,
           aUser.id,
           aUser.allow_edit || false,
@@ -338,7 +343,7 @@ export function ShareQuizDialog({
       }
 
       for (const aGroup of addedGroups) {
-        await getQuizService().shareQuizWithGroup(
+        await quizService.shareQuizWithGroup(
           quiz.id,
           aGroup.id,
           aGroup.allow_edit || false,
@@ -350,7 +355,7 @@ export function ShareQuizDialog({
         if (cUser.shared_quiz_id == null) {
           continue;
         }
-        await getQuizService().updateSharedQuiz(
+        await quizService.updateSharedQuiz(
           cUser.shared_quiz_id,
           cUser.allow_edit,
         );
@@ -360,7 +365,7 @@ export function ShareQuizDialog({
         if (cGroup.shared_quiz_id == null) {
           continue;
         }
-        await getQuizService().updateSharedQuiz(
+        await quizService.updateSharedQuiz(
           cGroup.shared_quiz_id,
           cGroup.allow_edit,
         );
@@ -499,18 +504,16 @@ export function ShareQuizDialog({
         >
           <Button
             variant="outline"
-            onClick={async () => {
-              await navigator.clipboard.writeText(
-                `${window.location.origin}/quiz/${quiz.id}`,
-              );
-              toast.success("Skopiowano link do quizu");
-            }}
+            onClick={copyLink}
             className="hidden sm:inline-flex"
           >
             <Link2Icon className="size-4" />
             Kopiuj link
           </Button>
-          <div className="flex flex-wrap-reverse gap-2">
+          <div
+            data-slot="share-quiz-actions"
+            className="flex flex-wrap-reverse gap-2"
+          >
             <DialogClose
               render={
                 <Button
@@ -533,12 +536,7 @@ export function ShareQuizDialog({
           <Button
             variant="link"
             size="sm"
-            onClick={async () => {
-              await navigator.clipboard.writeText(
-                `${window.location.origin}/quiz/${quiz.id}`,
-              );
-              toast.success("Skopiowano link do quizu");
-            }}
+            onClick={copyLink}
             className="sm:hidden"
           >
             <Link2Icon className="size-4" />

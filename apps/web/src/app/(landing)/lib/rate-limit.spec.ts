@@ -1,0 +1,123 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  checkRateLimit,
+  createRateLimitExceededResponse,
+  createRateLimitHeaders,
+  peekRateLimit,
+  releaseRateLimit,
+  resetRateLimitStore,
+} from "./rate-limit";
+
+vi.mock("server-only", () => ({}));
+
+describe("checkRateLimit", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    resetRateLimitStore();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("allows requests up to the configured limit", () => {
+    const options = { limit: 2, window: 60 };
+
+    expect(checkRateLimit("user-1", "ai-chat", options)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+    });
+    expect(checkRateLimit("user-1", "ai-chat", options)).toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+  });
+
+  it("blocks requests after the configured limit", () => {
+    const options = { limit: 2, window: 60 };
+
+    checkRateLimit("user-1", "ai-chat", options);
+    checkRateLimit("user-1", "ai-chat", options);
+
+    expect(checkRateLimit("user-1", "ai-chat", options)).toMatchObject({
+      allowed: false,
+      remaining: 0,
+      retryAfter: 60,
+    });
+  });
+
+  it("tracks keys and scopes independently", () => {
+    const options = { limit: 1, window: 60 };
+
+    checkRateLimit("user-1", "ai-chat", options);
+
+    expect(checkRateLimit("user-2", "ai-chat", options).allowed).toBe(true);
+    expect(checkRateLimit("user-1", "ai-explain", options).allowed).toBe(true);
+  });
+
+  it("keeps a fixed global bucket when client buckets are evicted", () => {
+    const global = { limit: 1, window: 600, nonEvictable: true };
+    checkRateLimit("global", "demo", global);
+    for (let index = 0; index < 5600; index++) {
+      checkRateLimit(index.toString(), "demo", { limit: 1, window: 600 });
+    }
+    expect(peekRateLimit("global", "demo", global).allowed).toBe(false);
+    expect(checkRateLimit("global", "demo", global).allowed).toBe(false);
+    vi.advanceTimersByTime(600_000);
+    expect(checkRateLimit("global", "demo", global).allowed).toBe(true);
+    resetRateLimitStore();
+    expect(peekRateLimit("global", "demo", global).remaining).toBe(1);
+  });
+
+  it("releases only the latest global reservation", () => {
+    const options = { limit: 2, window: 600, nonEvictable: true };
+    checkRateLimit("global", "demo", options);
+    vi.advanceTimersByTime(1000);
+    checkRateLimit("global", "demo", options);
+    releaseRateLimit("global", "demo", options);
+    expect(peekRateLimit("global", "demo", options)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+      retryAfter: 599,
+    });
+  });
+
+  it("allows new requests after the window expires", () => {
+    const options = { limit: 1, window: 60 };
+
+    checkRateLimit("user-1", "ai-chat", options);
+    vi.advanceTimersByTime(60_000);
+
+    expect(checkRateLimit("user-1", "ai-chat", options)).toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+  });
+
+  it("creates standard rate limit headers", () => {
+    const result = checkRateLimit("user-1", "ai-chat", {
+      limit: 2,
+      window: 60,
+    });
+
+    expect(createRateLimitHeaders(result)).toEqual({
+      "X-RateLimit-Limit": "2",
+      "X-RateLimit-Remaining": "1",
+    });
+  });
+
+  it("creates a 429 response with Retry-After", async () => {
+    const options = { limit: 1, window: 90 };
+    checkRateLimit("user-1", "ai-chat", options);
+    vi.advanceTimersByTime(30_000);
+    const response = createRateLimitExceededResponse(
+      checkRateLimit("user-1", "ai-chat", options),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(await response.text()).toContain("60 s");
+  });
+});
