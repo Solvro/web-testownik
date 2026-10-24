@@ -1,7 +1,7 @@
 # Landing-page device assets
 
 Everything in this directory is used only by the landing-page hero
-(`src/app/(dashboard)/components/landing/`).
+(`src/app/(landing)/components/`).
 
 ## `device-stack.glb`
 

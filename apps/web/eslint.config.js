@@ -20,9 +20,9 @@ export default await solvro(
   },
   {
     ignores: [
-      "src/components/canvasui/canvas-bubble.tsx",
-      "src/components/canvasui/Glass.tsx",
-      "src/components/canvasui/ParticleObject.tsx",
+      "src/app/(landing)/canvasui/canvas-bubble.tsx",
+      "src/app/(landing)/canvasui/Glass.tsx",
+      "src/app/(landing)/canvasui/ParticleObject.tsx",
     ],
   },
 );

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { register } from "./instrumentation";
 
 const warm = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/ai/landing-demo-tokenizer.server", () => ({
+vi.mock("@/app/(landing)/lib/landing-demo-tokenizer.server", () => ({
   warmLandingDemoTokenizer: warm,
 }));
 

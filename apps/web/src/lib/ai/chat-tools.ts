@@ -1,7 +1,7 @@
 import type { Question } from "@testownik/core/quiz/types";
 import { z } from "zod";
 
-import { LANDING_DEMO_CHAT_TOOL_LIMITS as DEMO_LIMITS } from "@/lib/ai/landing-demo-chat";
+import { LANDING_DEMO_CHAT_TOOL_LIMITS as DEMO_LIMITS } from "@/app/(landing)/lib/landing-demo-chat";
 
 /**
  * The assistant's tools, shared by the app's chat (`/ai/chat`) and the

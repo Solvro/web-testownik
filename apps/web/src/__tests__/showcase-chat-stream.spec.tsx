@@ -4,9 +4,9 @@ import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AiDemo } from "@/app/(dashboard)/components/landing/sections/product-showcase/ai-demo";
-import { ShowcaseSessionProvider } from "@/app/(dashboard)/components/landing/sections/product-showcase/showcase-session";
-import { useShowcaseSession } from "@/app/(dashboard)/components/landing/sections/product-showcase/showcase-session-context";
+import { AiDemo } from "@/app/(landing)/components/sections/product-showcase/ai-demo";
+import { ShowcaseSessionProvider } from "@/app/(landing)/components/sections/product-showcase/showcase-session";
+import { useShowcaseSession } from "@/app/(landing)/components/sections/product-showcase/showcase-session-context";
 
 function Tabs() {
   const [aiOpen, setAiOpen] = useState(true);

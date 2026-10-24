@@ -9,14 +9,14 @@ import type { UIMessage } from "ai";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
-import { AiChatProvider } from "@/components/ai/ai-chat-context";
-import { invalidateAIUsage } from "@/hooks/use-ai-usage";
-import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
   LANDING_DEMO_CHAT_ENDPOINT,
   LANDING_DEMO_CHAT_LIMITS,
   trimLandingDemoChatHistory,
-} from "@/lib/ai/landing-demo-chat";
+} from "@/app/(landing)/lib/landing-demo-chat";
+import { AiChatProvider } from "@/components/ai/ai-chat-context";
+import { invalidateAIUsage } from "@/hooks/use-ai-usage";
+import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import {
   AI_RESPONSE_HEADERS,
   parseQuotaExceededResponse,

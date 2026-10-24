@@ -5,10 +5,10 @@ import type { Question } from "@testownik/core/quiz/types";
 import type { UIMessage } from "ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PREVIEW_QUESTION } from "@/app/(landing)/preview/preview-fixtures";
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
 import type { ChatRuntimeValue } from "@/components/ai/chat-runtime";
 import { ChatThread } from "@/components/ai/chat-thread";
-import { PREVIEW_QUESTION } from "@/components/testownik-preview/preview-fixtures";
 
 const { updateQuestion } = vi.hoisted(() => ({ updateQuestion: vi.fn() }));
 vi.mock("@/services/client-services", () => ({
