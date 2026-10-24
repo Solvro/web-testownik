@@ -32,7 +32,7 @@ export function Team({
   return (
     <section
       id="team"
-      className="bg-background relative isolate w-full scroll-mt-4 px-4 pt-16 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pb-16"
+      className="bg-background relative isolate w-full scroll-mt-4 px-4 pt-12 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pt-14 sm:pb-10"
     >
       <div
         aria-hidden="true"

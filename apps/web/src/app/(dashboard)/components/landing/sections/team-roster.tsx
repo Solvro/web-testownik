@@ -18,11 +18,11 @@ const COMMUNITY_LIMIT = 12;
 const SKELETON_COUNT = 6;
 /*
  * The open source row reserves the height of COMMUNITY_LIMIT entries (36 px
- * rows, 16 px gaps) at every column count, so the skeleton, the resolved list
+ * rows, 12 px gaps) at every column count, so the skeleton, the resolved list
  * and the error state take the same space without rendering empty slots.
  */
 const COMMUNITY_MIN_HEIGHT =
-  "min-h-[calc(6*2.25rem+5*1rem)] md:min-h-[calc(4*2.25rem+3*1rem)] xl:min-h-[calc(3*2.25rem+2*1rem)]";
+  "min-h-[calc(6*2.25rem+5*0.75rem)] md:min-h-[calc(4*2.25rem+3*0.75rem)] xl:min-h-[calc(2*2.25rem+1*0.75rem)]";
 
 /** Masthead order: who decides, who builds, who makes it look and sound good. */
 const TEAM_ORDER: readonly ProjectTeam[] = [
@@ -33,6 +33,9 @@ const TEAM_ORDER: readonly ProjectTeam[] = [
   "UX/UI",
   "Promo",
 ];
+
+/** Teams this small share a masthead line with a neighbour on wide screens. */
+const HALF_ROW_LIMIT = 2;
 
 /** Roles credited with a pill rather than plain text. */
 const LEAD_ROLES = new Set(["Tech Lead", "Product Owner", "Project Manager"]);
@@ -273,7 +276,7 @@ function MemberEntry({
   const role = compact ? `${member.team} · ${member.role}` : member.role;
 
   return (
-    <EntryShell href={href} label={`${member.name}, ${role} — otwórz profil`}>
+    <EntryShell href={href} label={`${member.name}, ${role}: otwórz profil`}>
       <Avatar
         imageUrl={memberImageUrl(member, size)}
         name={member.name}
@@ -324,7 +327,7 @@ function ContributorEntry({
   return (
     <EntryShell
       href={contributor.html_url}
-      label={`@${contributor.login}, ${commits} — otwórz profil`}
+      label={`@${contributor.login}, ${commits}: otwórz profil`}
     >
       <Avatar
         imageUrl={contributorAvatarUrl(contributor, 36)}
@@ -349,17 +352,22 @@ function CreditRow({
   label,
   labelledBy,
   aside,
+  className,
   children,
 }: {
   label: string;
   labelledBy: string;
   aside?: React.ReactNode;
+  className?: string;
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
     <section
       aria-labelledby={labelledBy}
-      className="grid grid-cols-1 items-start gap-x-8 gap-y-4 py-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:py-7"
+      className={cn(
+        "grid grid-cols-1 items-start gap-x-8 gap-y-3 py-4 lg:grid-cols-[11rem_minmax(0,1fr)] lg:py-3.5",
+        className,
+      )}
     >
       <div className="flex min-h-4 flex-wrap items-start gap-x-3 gap-y-3">
         <h3 id={labelledBy} className="shrink-0 leading-none">
@@ -454,18 +462,23 @@ function Masthead({
     community === undefined ? 0 : community.length - COMMUNITY_LIMIT;
 
   return (
-    <div className="mt-10 sm:mt-14">
-      <MonoLabel size="xs" className="block">
-        {ACTIVE_MEMBERS.length}{" "}
-        {pluralize(ACTIVE_MEMBERS.length, "osoba", "osoby", "osób")} ·{" "}
-        {TEAM_GROUPS.length}{" "}
-        {pluralize(TEAM_GROUPS.length, "zespół", "zespoły", "zespołów")}
-      </MonoLabel>
-
-      <div className="mt-3 lg:mt-4">
+    <div className="mt-6 sm:mt-8">
+      <div className="xl:grid xl:grid-cols-2 xl:gap-x-12">
         {TEAM_GROUPS.map(({ team, members }) => (
-          <CreditRow key={team} label={team} labelledBy={labelId(team)}>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <CreditRow
+            key={team}
+            label={team}
+            labelledBy={labelId(team)}
+            className={
+              members.length > HALF_ROW_LIMIT ? "xl:col-span-2" : undefined
+            }
+          >
+            <ul
+              className={cn(
+                "grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3",
+                members.length <= HALF_ROW_LIMIT && "xl:grid-cols-2",
+              )}
+            >
               {members.map((member) => (
                 <li key={member.name} className="min-w-0">
                   <MemberEntry member={member} githubByLogin={githubByLogin} />
@@ -476,10 +489,10 @@ function Masthead({
         ))}
       </div>
 
-      <div className="lg:border-border mt-2 lg:mt-8 lg:border-t">
+      <div className="lg:border-border lg:mt-3 lg:border-t">
         {ALUMNI_MEMBERS.length === 0 ? null : (
           <CreditRow label="Ex zespół" labelledBy="team-alumni">
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
               {ALUMNI_MEMBERS.map((member) => (
                 <li key={member.name} className="min-w-0">
                   <MemberEntry
@@ -509,7 +522,7 @@ function Masthead({
             <ul
               aria-busy={community === undefined}
               className={cn(
-                "grid grid-cols-2 content-start gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4",
+                "grid grid-cols-2 content-start gap-x-6 gap-y-3 md:grid-cols-3 xl:grid-cols-6",
                 COMMUNITY_MIN_HEIGHT,
               )}
             >

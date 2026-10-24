@@ -13,7 +13,7 @@ import {
   PREVIEW_GRADE_SUMMARY,
 } from "@/components/testownik-preview/preview-grades";
 
-const COURSES = PREVIEW_COURSE_VIEWS.slice(0, 4);
+const COURSES = PREVIEW_COURSE_VIEWS;
 
 export function GradesDemo(): React.JSX.Element {
   const [whatIf, setWhatIf] = useState<Record<string, number>>({});

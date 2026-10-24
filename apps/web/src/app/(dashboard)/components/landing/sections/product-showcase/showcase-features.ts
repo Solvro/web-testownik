@@ -22,15 +22,15 @@ export const SHOWCASE_FEATURES: readonly ShowcaseFeature[] = [
     label: "AI",
     title: "Asystent, który zna Twój quiz.",
     description:
-      "Nie zaczynasz rozmowy od tłumaczenia kontekstu. Asystent widzi aktywne pytanie, odpowiedzi i cały zestaw – wyjaśnia, podpowiada i tworzy lepsze pytania dokładnie tam, gdzie się uczysz.",
+      "Nie zaczynasz rozmowy od tłumaczenia kontekstu. Asystent widzi aktywne pytanie, odpowiedzi i cały zestaw. Wyjaśnia, podpowiada i tworzy lepsze pytania dokładnie tam, gdzie się uczysz.",
     cta: "Zapytaj we własnym quizie",
   },
   {
     id: "grades",
     label: "Średnia ocena",
-    title: "Każda ocena od razu pokazuje, co zmienia.",
+    title: "Średnia prosto z USOSa.",
     description:
-      "Oceny i ECTS układają się w czytelny obraz semestru. Kliknij dowolny wynik w symulatorze i zobacz na żywo, jak zmieni się Twoja średnia – bez arkusza i ręcznego liczenia.",
+      "Oceny i punkty ECTS same wpadają z USOSa, bez przepisywania. Symulator pokazuje na żywo, jak kolejna ocena przesunie Twoją średnią, więc od razu wiesz, ile możesz zyskać albo stracić.",
     cta: "Policz swoją średnią",
   },
   {
@@ -38,7 +38,7 @@ export const SHOWCASE_FEATURES: readonly ShowcaseFeature[] = [
     label: "Statystyki",
     title: "Wiesz, co naprawdę umiesz.",
     description:
-      "Sesje, odpowiedzi, czas nauki i pytania, na których najczęściej się mylisz – dla Ciebie i dla całej grupy, która korzysta z tego samego quizu.",
+      "Sesje, odpowiedzi, czas nauki i pytania, na których najczęściej się mylisz. Widzisz je dla siebie i dla całej grupy, która korzysta z tego samego quizu.",
     cta: "Zobacz statystyki quizu",
   },
 ];

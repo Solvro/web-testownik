@@ -82,7 +82,7 @@ const STATIC_AI = new Map<string, StaticAi>([
       "Godzina przerwy po 25 minutach nauki rozbija całą sesję.",
       "Bez przerw koncentracja spada z każdym kolejnym blokiem.",
     ],
-    "W technice Pomodoro po 25 minutach skupionej pracy robisz **około 5 minut** przerwy, a dłuższą (15–30 minut) dopiero po czterech blokach. Krótka przerwa pozwala odpocząć, ale nie wybija z rytmu.",
+    "W technice Pomodoro po 25 minutach skupionej pracy robisz **około 5 minut** przerwy, a dłuższą (od 15 do 30 minut) dopiero po czterech blokach. Krótka przerwa pozwala odpocząć, ale nie wybija z rytmu.",
   ),
   staticAi(
     "q-27",
@@ -110,7 +110,7 @@ const STATIC_AI = new Map<string, StaticAi>([
     [
       "Test bez notatek pokazuje, **co naprawdę pamiętasz**.",
       "Wyjaśnienie własnymi słowami szybko ujawnia luki.",
-      "Podkreślanie łatwo pomylić z nauką — to wciąż czytanie.",
+      "Podkreślanie łatwo pomylić z nauką, a to wciąż czytanie.",
       "Przepisywanie porządkuje notatki, ale nie sprawdza pamięci.",
     ],
     "Iluzję znajomości wykrywa tylko próba **odtworzenia materiału bez podglądu**: test z pamięci albo wyjaśnienie tematu własnymi słowami. Podkreślanie i przepisywanie dają złudzenie, że materiał jest opanowany.",
@@ -118,7 +118,7 @@ const STATIC_AI = new Map<string, StaticAi>([
   staticAi(
     PREVIEW_QUESTION.id,
     [
-      "Czytanie jest bierne — rozpoznajesz tekst, ale nie sprawdzasz pamięci.",
+      "Czytanie jest bierne: rozpoznajesz tekst, ale nie sprawdzasz pamięci.",
       "Jedna sesja przed egzaminem szybko wyparowuje.",
       "Tu musisz **samodzielnie przypominać** i wracać w odstępach.",
       "Podkreślanie zaznacza fragmenty, ale słabo utrwala.",
@@ -129,7 +129,7 @@ const STATIC_AI = new Map<string, StaticAi>([
   staticAi(
     "q-97",
     [
-      "Zapominanie jest najszybsze **zaraz po nauce** — wtedy warto wrócić.",
+      "Zapominanie jest najszybsze **zaraz po nauce**, więc wtedy warto wrócić.",
       "Tydzień przed egzaminem większość materiału już ulotni się z pamięci.",
       "Czekanie do końca materiału oznacza powtórkę po długiej przerwie.",
       "Trudności pojawiają się dopiero, gdy jest już za późno.",

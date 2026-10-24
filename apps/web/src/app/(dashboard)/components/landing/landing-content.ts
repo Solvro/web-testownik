@@ -57,7 +57,7 @@ export const FAQ: readonly FaqEntry[] = [
   {
     question: "Czy muszę zakładać konto, żeby zacząć?",
     answer:
-      "Nie. Możesz wejść jako gość i od razu rozwiązać albo stworzyć quiz. Konto gościa jest tymczasowe, a jego dane są usuwane po 30 dniach bez aktywności – zalogowanie pozwala zachować postępy na dłużej i korzystać ze wszystkich funkcji.",
+      "Nie. Możesz wejść jako gość i od razu rozwiązać albo stworzyć quiz. Konto gościa jest tymczasowe, a jego dane są usuwane po 30 dniach bez aktywności. Zalogowanie pozwala zachować postępy na dłużej i korzystać ze wszystkich funkcji.",
   },
   {
     question: "Jak przenieść własne materiały do Testownika?",
@@ -87,7 +87,7 @@ export const FAQ: readonly FaqEntry[] = [
   {
     question: "Czy Testownik pomaga też z ocenami?",
     answer:
-      "Tak. Widok ocen łączy wyniki i punkty ECTS w czytelne podsumowanie semestru, a symulator pokazuje, jak kolejna ocena wpłynie na średnią – bez osobnego arkusza i ręcznego liczenia.",
+      "Tak. Widok ocen łączy wyniki i punkty ECTS w czytelne podsumowanie semestru, a symulator pokazuje, jak kolejna ocena wpłynie na średnią, bez osobnego arkusza i ręcznego liczenia.",
   },
   {
     question: "Czy mogę wyłączyć funkcje AI?",

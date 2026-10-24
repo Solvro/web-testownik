@@ -168,7 +168,7 @@ export const PREVIEW_QUESTIONS: Question[] = [
 /** The AI hint the laptop's side panel shows for each sample question. */
 export const PREVIEW_AI_HINTS: Record<string, string> = {
   "q-12":
-    "Krótka przerwa ma dać odpocząć, ale **nie wybić z rytmu** — wystarczy kilka minut.",
+    "Krótka przerwa ma dać odpocząć, ale **nie wybić z rytmu**. Wystarczy kilka minut.",
   "q-27":
     "Szukaj metod, w których musisz **wydobyć wiedzę z pamięci**, a nie tylko ją zobaczyć.",
   "q-41": "Pomyśl o tym, co dzieje się z pamięcią **między sesjami** nauki.",

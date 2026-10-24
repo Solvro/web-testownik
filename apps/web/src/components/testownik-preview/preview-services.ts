@@ -246,7 +246,7 @@ export function createPreviewServices(
       );
     }),
     updateQuiz: reply((_quizId: string, data: Partial<Quiz>) => {
-      notify("To tylko podgląd — udostępnianie nie zostało zapisane.");
+      notify("To tylko podgląd. Udostępnianie nie zostało zapisane.");
       return { ...PREVIEW_QUIZ, ...data };
     }),
     // The dialog ignores what these return; nothing is shared for real.
@@ -257,7 +257,7 @@ export function createPreviewServices(
       // Nothing to delete.
     }),
     copyQuiz: reply(() => {
-      notify("To tylko podgląd — quiz nie został skopiowany.");
+      notify("To tylko podgląd. Quiz nie został skopiowany.");
       return PREVIEW_QUIZ;
     }),
   });
@@ -274,7 +274,7 @@ export function createPreviewServices(
 
   const clipboard = offline<ClipboardService>("clipboard", {
     copyLink: reply(() => {
-      notify("To tylko podgląd — w aplikacji link trafi do schowka.");
+      notify("To tylko podgląd. W aplikacji link trafi do schowka.");
     }),
   });
 
