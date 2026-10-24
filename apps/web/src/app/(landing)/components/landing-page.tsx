@@ -10,6 +10,7 @@ import "./landing.css";
 import { Faq } from "./sections/faq";
 import { Finale } from "./sections/finale";
 import { Hero } from "./sections/hero";
+import { LandingNav } from "./sections/landing-nav";
 import { LandingTableOfContents } from "./sections/landing-table-of-contents";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
@@ -55,12 +56,12 @@ export function LandingPage({
         Przejdź do treści
       </a>
       <LandingTableOfContents />
-      <Hero
-        heroReference={heroReference}
+      <LandingNav
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={start}
       />
+      <Hero heroReference={heroReference} />
       <ProductShowcase />
       <Faq />
       <Timeline />

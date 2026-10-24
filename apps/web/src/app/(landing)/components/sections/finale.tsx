@@ -32,7 +32,7 @@ export function Finale({
     // the dark token set rather than hard-coding colours.
     <section
       id="footer"
-      className="dark bg-background text-foreground relative flex scroll-mt-4 flex-col items-center justify-start overflow-hidden px-8 pt-8 pb-8 text-center sm:justify-center sm:pt-28 md:min-h-[100svh]"
+      className="dark bg-background text-foreground relative flex scroll-mt-[5.5rem] flex-col items-center justify-start overflow-hidden px-8 pt-8 pb-8 text-center sm:scroll-mt-[6.3rem] sm:justify-center sm:pt-28 md:min-h-[100svh]"
     >
       <div
         aria-hidden="true"

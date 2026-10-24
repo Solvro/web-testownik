@@ -23,7 +23,6 @@ vi.mock("../ui/hero-bubble", () => ({
   HeroBubble: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 vi.mock("./hero-phone", () => ({ HeroPhone: () => null }));
-vi.mock("./landing-nav", () => ({ LandingNav: () => <header /> }));
 vi.mock("../scene/device-scene", () => ({
   DeviceScene: ({
     onUnavailable,
@@ -41,14 +40,7 @@ vi.mock("../scene/device-scene", () => ({
 
 function Harness(): React.JSX.Element {
   const reference = useRef<HTMLElement>(null);
-  return (
-    <Hero
-      heroReference={reference}
-      isAuthenticated={false}
-      isStarting={false}
-      onStart={vi.fn()}
-    />
-  );
+  return <Hero heroReference={reference} />;
 }
 
 afterEach(() => {

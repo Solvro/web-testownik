@@ -208,7 +208,7 @@ export function Timeline(): React.JSX.Element {
     <LandingSection
       id="story"
       showPlaceholder={false}
-      className="mb-12 grid scroll-mt-4 grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
+      className="mb-12 grid scroll-mt-[5.5rem] grid-cols-1 gap-14 sm:scroll-mt-[6.3rem] lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
       <header className="self-start lg:sticky lg:top-20">
         <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">

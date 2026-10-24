@@ -29,8 +29,10 @@ const START_BUTTON_CLASS = cn(
 );
 
 /**
- * The landing's own header. It floats over the hero rather than participating in
- * the app shell, whose navbar is hidden for this route (see landing.css).
+ * The landing's own header, fixed over the whole page rather than
+ * participating in the app shell, whose navbar is hidden for this route (see
+ * landing.css). Sections below the hero offset their scroll targets by its
+ * height.
  */
 export function LandingNav({
   isAuthenticated,
@@ -45,7 +47,7 @@ export function LandingNav({
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <header className="border-border/70 absolute top-0 left-0 z-50 grid h-[4.5rem] w-full grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:h-[5.3rem] sm:px-[1.4rem] lg:px-[2.2rem]">
+    <header className="border-border/70 bg-background/70 fixed inset-x-0 top-0 z-50 grid h-[4.5rem] grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:h-[5.3rem] sm:px-[1.4rem] lg:px-[2.2rem]">
       <Link
         href="/?landing=true"
         aria-label="Testownik"

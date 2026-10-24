@@ -16,7 +16,6 @@ import { FOCUS_RING } from "../ui/focus";
 import { HeroBadges } from "./hero-badges";
 import { HeroFade } from "./hero-fade";
 import { HeroPhone } from "./hero-phone";
-import { LandingNav } from "./landing-nav";
 
 /*
  * Bubble, WebGL scene and scroll progress. Requested only once the desktop
@@ -48,31 +47,19 @@ function StaticDeviceCover(): React.JSX.Element {
 }
 
 /**
- * The hero copy, navigation and "Poznaj produkt" link, rendered exactly once
+ * The hero copy and "Poznaj produkt" link, rendered exactly once
  * whichever stage hosts it. Below `lg` it flows; at `lg` it is laid out
  * absolutely over the sticky stage. `visual` sits between copy and link.
  */
 function HeroContent({
-  isAuthenticated,
-  isStarting,
-  onStart,
   visual,
   isStatic = false,
 }: {
-  isAuthenticated: boolean;
-  isStarting: boolean;
-  onStart: () => void;
   visual?: ReactNode;
   isStatic?: boolean;
 }): React.JSX.Element {
   return (
     <>
-      <LandingNav
-        isAuthenticated={isAuthenticated}
-        isStarting={isStarting}
-        onStart={onStart}
-      />
-
       <div
         data-hero-progress={isStatic ? undefined : true}
         ref={isStatic ? undefined : attachHeroProgress}
@@ -116,14 +103,8 @@ function HeroContent({
 
 export function Hero({
   heroReference,
-  isAuthenticated,
-  isStarting,
-  onStart,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
-  isAuthenticated: boolean;
-  isStarting: boolean;
-  onStart: () => void;
 }): React.JSX.Element {
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
@@ -142,9 +123,6 @@ export function Hero({
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
       <HeroContent
-        isAuthenticated={isAuthenticated}
-        isStarting={isStarting}
-        onStart={onStart}
         visual={
           <>
             <HeroPhone className="lg:hidden" />
@@ -206,12 +184,7 @@ export function Hero({
                 setIsStatic(true);
               }}
             >
-              <HeroContent
-                isAuthenticated={isAuthenticated}
-                isStarting={isStarting}
-                onStart={onStart}
-                isStatic={isStatic}
-              />
+              <HeroContent isStatic={isStatic} />
             </HeroDesktopStage>
           </Suspense>
         ) : (
