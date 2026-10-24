@@ -17,7 +17,6 @@ import { TimelineTooltip } from "./timeline-tooltip";
 interface ScoreChartProps {
   quizId: string;
   canViewAll: boolean;
-  animated?: boolean;
 }
 
 const chartConfig = {
@@ -61,11 +60,7 @@ function getDaysThroughToday(startDateKey: string): string[] {
   });
 }
 
-export function ScoreChart({
-  quizId,
-  canViewAll,
-  animated = true,
-}: ScoreChartProps) {
+export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
   const [mode, setMode] = useState<ChartMode>("sessions");
   const canUseSessions = scope === "me";
@@ -228,7 +223,6 @@ export function ScoreChart({
             stroke="var(--color-accuracy)"
             strokeWidth={2}
             dot={data.filter((d) => d.accuracy !== null).length <= 15}
-            isAnimationActive={animated}
           />
         </LineChart>
       </ChartContainer>
