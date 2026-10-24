@@ -49,9 +49,9 @@ output is deterministic.
 After regenerating, compare the hero with the previous model in the closed and
 fully open pose (`?landing=true&capture=devices&captureProgress=0` and `…=1`,
 see `capture/capture-request.ts`). If the closed pose moved, regenerate the
-covers below. If `screens.test.ts` fails, re-derive the placements with
-`scene/three/display-plane.ts` and paste the new values into
-`scene/three/screens.ts`.
+covers below. If `screens.test.ts` fails, its assertion report prints the
+newly measured position, scale and height of each display mesh; paste those
+into `SCREEN_PLACEMENT` in `scene/three/screens.ts`.
 
 ## `testownik-device-stack-closed-{light,dark}-v1.webp`
 
