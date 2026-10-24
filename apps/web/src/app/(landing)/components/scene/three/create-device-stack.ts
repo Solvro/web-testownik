@@ -308,10 +308,11 @@ export async function createDeviceStack({
     // facing value grows about one unit per radian, so a fade on facing
     // alone switches the screen on within a dozen degrees of hinge travel.
     // The facing test only gates the back of the lid; the ramp itself
-    // follows the lid opening, over a third of its travel.
+    // follows the lid opening, lit from soon after the lid lifts (a real
+    // MacBook only sleeps once nearly shut) and fully bright by half way.
     const laptopVisibility = Math.min(
       screenFacing(laptop.object, camera, ...laptop.fade),
-      smoothstep(0.3, 0.64, opening),
+      smoothstep(0.1, 0.5, opening),
     );
     // Facing the camera is not enough: for the first half of the hinge travel
     // the panel is still physically behind the lid. Keeping the host inert

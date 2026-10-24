@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -40,6 +41,8 @@ export function LandingNav({
   isStarting: boolean;
   onStart: () => void;
 }): React.JSX.Element {
+  const { resolvedTheme, setTheme } = useTheme();
+
   return (
     <header className="border-border/70 absolute top-0 left-0 z-50 grid h-[4.5rem] w-full grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:h-[5.3rem] sm:px-[1.4rem] lg:px-[2.2rem]">
       <Link
@@ -83,6 +86,22 @@ export function LandingNav({
       </nav>
 
       <div className="col-start-2 flex items-center justify-end gap-2 justify-self-end min-[1030px]:col-start-3 sm:gap-3">
+        <button
+          type="button"
+          aria-label="Zmień motyw"
+          onClick={() => {
+            setTheme(resolvedTheme === "dark" ? "light" : "dark");
+          }}
+          className={cn(
+            "border-border bg-card text-foreground relative grid size-11 place-items-center rounded-full border transition-[background-color,border-color] duration-200",
+            "hover:border-primary/40 hover:bg-secondary",
+            FOCUS_RING,
+          )}
+        >
+          <Sun aria-hidden="true" className="absolute w-4 dark:hidden" />
+          <Moon aria-hidden="true" className="absolute hidden w-4 dark:block" />
+        </button>
+
         {isAuthenticated ? (
           <LandingButtonLink href="/quizzes" className={START_BUTTON_CLASS}>
             Otwórz Testownik

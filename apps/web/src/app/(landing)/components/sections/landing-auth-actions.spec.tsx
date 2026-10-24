@@ -23,7 +23,9 @@ describe("LandingNav", () => {
     expect(screen.getByRole("button", { name: "Zacznij" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Zaloguj" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Dołącz" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Zmień motyw" })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Zmień motyw" }),
+    ).toBeInTheDocument();
   });
 
   it("links signed-in visitors straight to their quizzes", () => {
