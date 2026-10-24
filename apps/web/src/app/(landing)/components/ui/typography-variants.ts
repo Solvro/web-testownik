@@ -1,6 +1,6 @@
 import { cva } from "class-variance-authority";
 
-export const monoLabelVariants = cva("font-landing-mono font-bold uppercase", {
+export const monoLabelVariants = cva("font-bold uppercase", {
   variants: {
     size: {
       "2xs": "text-[0.55rem] tracking-[0.08em]",

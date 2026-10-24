@@ -35,7 +35,7 @@ export function DisplayHeading({
   return (
     <h2
       className={cn(
-        "font-landing mt-4 text-[clamp(2.7rem,13vw,4.4rem)] leading-[0.9] font-[740] tracking-[-0.068em]",
+        "mt-4 text-[clamp(2.7rem,13vw,4.4rem)] leading-[0.9] font-[740] tracking-[-0.068em]",
         "sm:text-[clamp(3rem,6vw,6.7rem)]",
         "[&_em]:text-primary [&_em]:not-italic",
         className,

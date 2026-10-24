@@ -254,7 +254,7 @@ function EntryName({
 /** Always rendered so the roster keeps its height when commit counts arrive. */
 function CommitMeta({ count }: { count?: number }): React.JSX.Element {
   return (
-    <span className="font-landing-mono text-muted-foreground block h-4 text-[0.62rem] leading-4 tracking-[0.04em]">
+    <span className="text-muted-foreground block h-4 text-[0.62rem] leading-4 tracking-[0.04em]">
       {count === undefined ? null : formatCommitCount(count)}
     </span>
   );

@@ -565,7 +565,7 @@ export function LandingTableOfContents(): React.JSX.Element {
                   />
                   <span
                     className={cn(
-                      "font-landing-mono w-0 overflow-hidden text-[0.58rem] tabular-nums opacity-0 transition-[width,opacity] duration-200 group-hover/link:w-4 group-hover/link:opacity-45 group-focus-visible/link:w-4 group-focus-visible/link:opacity-45 motion-reduce:transition-none",
+                      "w-0 overflow-hidden text-[0.58rem] tabular-nums opacity-0 transition-[width,opacity] duration-200 group-hover/link:w-4 group-hover/link:opacity-45 group-focus-visible/link:w-4 group-focus-visible/link:opacity-45 motion-reduce:transition-none",
                       isPreviewActive && "w-4 opacity-45",
                     )}
                   >
@@ -651,10 +651,10 @@ export function LandingTableOfContents(): React.JSX.Element {
                           index !== previewIndex && "invisible",
                         )}
                       >
-                        <span className="font-landing-mono text-muted-foreground text-[0.62rem] tabular-nums">
+                        <span className="text-muted-foreground text-[0.62rem] tabular-nums">
                           {String(index + 1).padStart(2, "0")}
                         </span>
-                        <span className="font-landing text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
+                        <span className="text-foreground truncate text-[0.78rem] font-semibold tracking-[-0.02em]">
                           {section.label}
                         </span>
                       </div>
