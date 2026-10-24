@@ -71,10 +71,7 @@ export function ScreenFrameDocument({
     };
     window.addEventListener("message", onMessage);
 
-    // Wheel and pointer input the page needs back; see `screen-frame-input.ts`.
-    // The root must not chain the wheel natively as well.
-    const root = document.documentElement;
-    root.style.overscrollBehavior = "none";
+    // The pointer position the page needs back; see `screen-frame-input.ts`.
     const stopForwarding = forwardScreenInput();
 
     // Two frames: the first commits the screen, the second has painted it.
@@ -95,7 +92,6 @@ export function ScreenFrameDocument({
       cancelAnimationFrame(frame);
       window.removeEventListener("message", onMessage);
       stopForwarding();
-      root.style.overscrollBehavior = "";
     };
   }, [device]);
 

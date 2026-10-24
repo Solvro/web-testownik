@@ -30,18 +30,15 @@ tooltip providers.
 `scene/screen-frame-protocol.ts` defines validated, same-origin `postMessage`
 traffic; receivers also check the source window. The URL supplies initial theme
 and quiz channel. The page posts `theme`; frames post `ready` after two animation
-frames, `wheel` for unused wheel axes, and `pointer`/`pointerleave`. Each frame
-has an eight-second readiness escape hatch if its ready message never arrives.
-The stack waits for all three ready surfaces to remain stable before revealing.
+frames and `pointer`/`pointerleave`. Each frame has an eight-second readiness
+escape hatch if its ready message never arrives. The stack waits for all three
+ready surfaces to remain stable before revealing.
 
-`scene/screen-frame-input.ts` keeps a wheel with the scroller under the pointer,
-also at its end (the scroller bounces, the page does not move), and forwards a
-wheel only where the screen has no scroller in that axis. The frame root never
-chains natively. All three parent listeners share `page-scroll-ownership.ts`
-to tell forwarded scrolls from browser scrolls and drop duplicate input during
-native chaining.
+Wheel input is left to the browser: a gesture stays with the screen scroller
+it started on and chains to the page past it, as over any iframe.
 
-Pointer positions are sent at most once per animation frame in screen pixels.
+Pointer positions are sent at most once per animation frame in screen pixels
+(`scene/screen-frame-input.ts`).
 `DeviceStack` provides `projectScreenPoint`, which maps them through the CSS3D
 object and camera into page coordinates; `scene/device-screen-frame.tsx`
 replays a window `pointermove` for the hero Bubble. The tablet and phone Glass

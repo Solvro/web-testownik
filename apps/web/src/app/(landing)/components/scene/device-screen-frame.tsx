@@ -3,12 +3,10 @@
 import { use, useEffect, useRef, useState } from "react";
 
 import { setSatelliteHovered } from "../satellite-hover";
-import { pageScrollOwnership } from "./page-scroll-ownership";
 import {
   SCREEN_FRAME_SOURCE,
   parseScreenFrameMessage,
   screenFrameUrl,
-  wheelDeltaToPixels,
 } from "./screen-frame-protocol";
 import type {
   ScreenDevice,
@@ -55,10 +53,12 @@ function pageTheme(): ScreenTheme {
  * Pointer events and `inert` come from the host, which the scene toggles
  * while a screen is hidden or the lid is closed.
  *
- * The frame hands back the input the page would otherwise lose to it (see
- * `screen-frame-input.ts`): the wheel it cannot use scrolls the page, and its
- * pointer is projected through the 3D screen and replayed on the page as a
- * `pointermove`, so the hero Bubble follows the cursor across the devices.
+ * The frame hands back the pointer the page would otherwise lose to it (see
+ * `screen-frame-input.ts`): it is projected through the 3D screen and
+ * replayed on the page as a `pointermove`, so the hero Bubble follows the
+ * cursor across the devices. Wheel input is the browser's: a gesture stays
+ * with a screen's own scroller and chains to the page past it, as over any
+ * iframe.
  */
 export function DeviceScreenFrame({
   device,
@@ -133,23 +133,6 @@ export function DeviceScreenFrame({
       );
     };
 
-    // --- Wheel ---------------------------------------------------------
-    // Chrome sometimes hands a frame's wheel to the page itself: always for
-    // the tilted MacBook screen, now and then for the satellites, and no
-    // `overscroll-behavior` or `preventDefault` in the frame stops it. A page
-    // scroll that was not ours means the browser is chaining this gesture,
-    // and forwarded wheels are dropped while it does. (When the browser only
-    // starts chaining after the first forwarded wheel, that one tick lands
-    // twice; telling that apart from the browser taking over the next wheel
-    // is not possible from here, and undoing it undershoots as often.)
-    const onPageScroll = (): void => {
-      pageScrollOwnership.observePageScroll(
-        window.scrollX,
-        window.scrollY,
-        performance.now(),
-      );
-    };
-
     const onMessage = (event: MessageEvent<unknown>): void => {
       if (
         event.origin !== window.location.origin ||
@@ -163,32 +146,6 @@ export function DeviceScreenFrame({
           if (message.device === device) {
             setIsReady(true);
           }
-          break;
-        }
-        case "wheel": {
-          // The frame only posts what nothing inside it could scroll. Where
-          // the browser chains that wheel to the page by itself, the page
-          // has already moved without us; scrolling again would double it.
-          if (pageScrollOwnership.isNativeChaining(performance.now())) {
-            break;
-          }
-          window.scrollBy(
-            wheelDeltaToPixels(
-              message.deltaX,
-              message.deltaMode,
-              window.innerWidth,
-            ),
-            wheelDeltaToPixels(
-              message.deltaY,
-              message.deltaMode,
-              window.innerHeight,
-            ),
-          );
-          pageScrollOwnership.recordForwardedScroll(
-            window.scrollX,
-            window.scrollY,
-            performance.now(),
-          );
           break;
         }
         case "pointer": {
@@ -211,7 +168,6 @@ export function DeviceScreenFrame({
       }
     };
     window.addEventListener("message", onMessage);
-    window.addEventListener("scroll", onPageScroll, { passive: true });
     window.addEventListener("pointermove", onPagePointer, { passive: true });
     window.addEventListener("pointerover", onPagePointer, { passive: true });
     const timeout = window.setTimeout(() => {
@@ -242,7 +198,6 @@ export function DeviceScreenFrame({
 
     return () => {
       window.removeEventListener("message", onMessage);
-      window.removeEventListener("scroll", onPageScroll);
       window.removeEventListener("pointermove", onPagePointer);
       window.removeEventListener("pointerover", onPagePointer);
       window.clearTimeout(goneTimeout);
