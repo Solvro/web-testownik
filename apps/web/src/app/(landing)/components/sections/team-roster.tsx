@@ -20,9 +20,22 @@ const SKELETON_COUNT = 6;
  * The open source row reserves the height of COMMUNITY_LIMIT entries (36 px
  * rows, 12 px gaps) at every column count, so the skeleton, the resolved list
  * and the error state take the same space without rendering empty slots.
+ * Below `sm` every credit list is one horizontally scrolling row.
  */
 const COMMUNITY_MIN_HEIGHT =
-  "min-h-[calc(6*2.25rem+5*0.75rem)] md:min-h-[calc(4*2.25rem+3*0.75rem)] xl:min-h-[calc(2*2.25rem+1*0.75rem)]";
+  "min-h-9 sm:min-h-[calc(6*2.25rem+5*0.75rem)] md:min-h-[calc(4*2.25rem+3*0.75rem)] xl:min-h-[calc(2*2.25rem+1*0.75rem)]";
+
+/*
+ * Credit lists: a snap-scrolling row that bleeds to the screen edges on
+ * phones, a grid from `sm` up. Every team uses the same column count at each
+ * width, so avatars and names line up down the masthead. The vertical padding
+ * keeps an entry's hover box (which extends past its content) inside the
+ * scroller's clip.
+ */
+const CREDIT_LIST_CLASS =
+  "-mx-4 -my-1.5 flex snap-x snap-mandatory gap-x-6 gap-y-3 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-1.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
+const CREDIT_ITEM_CLASS =
+  "min-w-0 max-sm:w-44 max-sm:shrink-0 max-sm:snap-start";
 
 /** Masthead order: who decides, who builds, who makes it look and sound good. */
 const TEAM_ORDER: readonly ProjectTeam[] = [
@@ -33,9 +46,6 @@ const TEAM_ORDER: readonly ProjectTeam[] = [
   "UX/UI",
   "Promo",
 ];
-
-/** Teams this small share a masthead line with a neighbour on wide screens. */
-const HALF_ROW_LIMIT = 2;
 
 /** Roles credited with a pill rather than plain text. */
 const LEAD_ROLES = new Set(["Tech Lead", "Product Owner", "Project Manager"]);
@@ -425,7 +435,10 @@ function OpenSourceMore({
 function OpenSourceUnavailable(): React.JSX.Element {
   return (
     <div
-      className={cn("flex flex-col items-start gap-2", COMMUNITY_MIN_HEIGHT)}
+      className={cn(
+        "flex flex-col items-start justify-center gap-2",
+        COMMUNITY_MIN_HEIGHT,
+      )}
     >
       <p className="text-muted-foreground text-sm">
         Nie udało się pobrać listy z GitHuba.
@@ -463,24 +476,17 @@ function Masthead({
 
   return (
     <div className="mt-6 sm:mt-8">
-      <div className="xl:grid xl:grid-cols-2 xl:gap-x-12">
+      <div>
         {TEAM_GROUPS.map(({ team, members }) => (
-          <CreditRow
-            key={team}
-            label={team}
-            labelledBy={labelId(team)}
-            className={
-              members.length > HALF_ROW_LIMIT ? "xl:col-span-2" : undefined
-            }
-          >
+          <CreditRow key={team} label={team} labelledBy={labelId(team)}>
             <ul
               className={cn(
-                "grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3",
-                members.length <= HALF_ROW_LIMIT && "xl:grid-cols-2",
+                CREDIT_LIST_CLASS,
+                "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
               )}
             >
               {members.map((member) => (
-                <li key={member.name} className="min-w-0">
+                <li key={member.name} className={CREDIT_ITEM_CLASS}>
                   <MemberEntry member={member} githubByLogin={githubByLogin} />
                 </li>
               ))}
@@ -492,9 +498,14 @@ function Masthead({
       <div className="lg:border-border lg:mt-3 lg:border-t">
         {ALUMNI_MEMBERS.length === 0 ? null : (
           <CreditRow label="Ex zespół" labelledBy="team-alumni">
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
+            <ul
+              className={cn(
+                CREDIT_LIST_CLASS,
+                "sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4",
+              )}
+            >
               {ALUMNI_MEMBERS.map((member) => (
-                <li key={member.name} className="min-w-0">
+                <li key={member.name} className={CREDIT_ITEM_CLASS}>
                   <MemberEntry
                     compact
                     member={member}
@@ -522,7 +533,8 @@ function Masthead({
             <ul
               aria-busy={community === undefined}
               className={cn(
-                "grid grid-cols-2 content-start gap-x-6 gap-y-3 md:grid-cols-3 xl:grid-cols-6",
+                CREDIT_LIST_CLASS,
+                "content-start sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
                 COMMUNITY_MIN_HEIGHT,
               )}
             >
@@ -531,7 +543,10 @@ function Masthead({
                     <li
                       key={index}
                       aria-hidden="true"
-                      className="flex h-9 items-center gap-3"
+                      className={cn(
+                        CREDIT_ITEM_CLASS,
+                        "flex h-9 items-center gap-3",
+                      )}
                     >
                       <Skeleton className="size-9 shrink-0 rounded-full" />
                       <span className="flex flex-col gap-2">
@@ -541,7 +556,7 @@ function Masthead({
                     </li>
                   ))
                 : visibleCommunity.map((contributor) => (
-                    <li key={contributor.login} className="min-w-0">
+                    <li key={contributor.login} className={CREDIT_ITEM_CLASS}>
                       <ContributorEntry contributor={contributor} />
                     </li>
                   ))}
