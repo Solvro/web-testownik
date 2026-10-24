@@ -29,11 +29,11 @@ const COMMUNITY_MIN_HEIGHT =
  * Credit lists: a snap-scrolling row that bleeds to the screen edges on
  * phones, a grid from `sm` up. Every team uses the same column count at each
  * width, so avatars and names line up down the masthead. The vertical padding
- * keeps an entry's hover box (which extends past its content) inside the
- * scroller's clip.
+ * keeps an entry's hover box (which extends 6 px past its content) and its
+ * focus ring (2 px, offset 2 px) inside the scroller's clip.
  */
 const CREDIT_LIST_CLASS =
-  "-mx-4 -my-1.5 flex snap-x snap-mandatory gap-x-6 gap-y-3 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-1.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
+  "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-6 gap-y-3 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
 const CREDIT_ITEM_CLASS =
   "min-w-0 max-sm:w-44 max-sm:shrink-0 max-sm:snap-start";
 

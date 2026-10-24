@@ -137,14 +137,20 @@ export function forwardScreenInput(): () => void {
     if (event.ctrlKey) {
       return;
     }
-    const kept = gestures.route(
-      ...findScrollers(event.target, event.deltaX, event.deltaY),
-      event.timeStamp,
-    );
+    const [x, y] = findScrollers(event.target, event.deltaX, event.deltaY);
+    const kept = gestures.route(x, y, event.timeStamp);
     const deltaX = (kept & 1) === 0 ? event.deltaX : 0;
     const deltaY = (kept & 2) === 0 ? event.deltaY : 0;
     if (deltaX === 0 && deltaY === 0) {
       return;
+    }
+    // A page-owned gesture that reverses over the scroller it started at
+    // the end of would also move that scroller natively; only the page may.
+    if (
+      (deltaX !== 0 && x === AXIS_CAN_SCROLL) ||
+      (deltaY !== 0 && y === AXIS_CAN_SCROLL)
+    ) {
+      event.preventDefault();
     }
     wheel.deltaX = deltaX;
     wheel.deltaY = deltaY;
@@ -176,7 +182,7 @@ export function forwardScreenInput(): () => void {
     parent.postMessage(leave, origin);
   };
 
-  window.addEventListener("wheel", onWheel, { passive: true });
+  window.addEventListener("wheel", onWheel, { passive: false });
   window.addEventListener("pointermove", onPointerMove, { passive: true });
   window.addEventListener("pointerout", onPointerOut, { passive: true });
 
