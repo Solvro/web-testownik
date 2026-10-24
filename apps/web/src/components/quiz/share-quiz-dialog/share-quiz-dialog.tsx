@@ -27,7 +27,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { useIsPhoneSurface } from "@/components/ui/portal-container";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
@@ -46,7 +45,6 @@ export function ShareQuizDialog({
   quiz,
   setQuiz,
 }: ShareQuizDialogProps) {
-  const isPhoneSurface = useIsPhoneSurface();
   const { checkPermission, user: currentUser } = useContext(AppContext);
 
   const isGuest = currentUser?.account_type === ACCOUNT_TYPE.GUEST;
@@ -500,24 +498,27 @@ export function ShareQuizDialog({
         )}
         <DialogFooter
           className={cn(
-            !isPhoneSurface && "sm:flex-row sm:justify-between",
+            "sm:flex-row sm:justify-between",
             !canShareQuiz && "hidden",
           )}
         >
           <Button
             variant="outline"
             onClick={copyLink}
-            className={cn("hidden", !isPhoneSurface && "sm:inline-flex")}
+            className="hidden sm:inline-flex"
           >
             <Link2Icon className="size-4" />
             Kopiuj link
           </Button>
-          <div className="flex flex-wrap-reverse gap-2">
+          <div
+            data-slot="share-quiz-actions"
+            className="flex flex-wrap-reverse gap-2"
+          >
             <DialogClose
               render={
                 <Button
                   variant="outline"
-                  className={cn("w-full", !isPhoneSurface && "sm:w-auto")}
+                  className="w-full sm:w-auto"
                   disabled={isSaving}
                 >
                   Anuluj
@@ -525,7 +526,7 @@ export function ShareQuizDialog({
               }
             ></DialogClose>
             <Button
-              className={cn("w-full", !isPhoneSurface && "sm:w-auto")}
+              className="w-full sm:w-auto"
               onClick={handleSave}
               disabled={isSaving}
             >
@@ -536,7 +537,7 @@ export function ShareQuizDialog({
             variant="link"
             size="sm"
             onClick={copyLink}
-            className={cn(!isPhoneSurface && "sm:hidden")}
+            className="sm:hidden"
           >
             <Link2Icon className="size-4" />
             Kopiuj link

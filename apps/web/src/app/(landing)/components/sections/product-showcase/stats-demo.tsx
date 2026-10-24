@@ -371,10 +371,10 @@ export function StatsDemo(): React.JSX.Element {
         {chartsReady ? (
           <>
             <div className="grid min-w-0 grid-cols-1 gap-4 *:min-w-0 xl:grid-cols-2">
-              <SessionsChart quizId={QUIZ_ID} canViewAll animated={false} />
-              <HourlyChart quizId={QUIZ_ID} canViewAll animated={false} />
-              <ScoreChart quizId={QUIZ_ID} canViewAll animated={false} />
-              <StudyTimeChart quizId={QUIZ_ID} canViewAll animated={false} />
+              <SessionsChart quizId={QUIZ_ID} canViewAll />
+              <HourlyChart quizId={QUIZ_ID} canViewAll />
+              <ScoreChart quizId={QUIZ_ID} canViewAll />
+              <StudyTimeChart quizId={QUIZ_ID} canViewAll />
             </div>
             <HardestQuestionsPreview />
           </>

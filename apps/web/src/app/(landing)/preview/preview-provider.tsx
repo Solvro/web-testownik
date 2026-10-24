@@ -10,6 +10,7 @@ import type { EmbeddedSurface } from "@/components/ui/portal-container";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
+import { PHONE_SURFACE_LAYOUT } from "./phone-surface-layout";
 import {
   createPreviewClient,
   createTabletClient,
@@ -114,6 +115,10 @@ function cancelNavigation(
  * `standalone` is for a surface that is a document of its own (the desktop
  * hero's device-screen iframes): the frame already is the boundary, so the box
  * only cancels links, and overlays portal to the frame's `body` as in the app.
+ *
+ * `layout="phone"` lays the app's components out as on a phone whatever the
+ * viewport (`PHONE_SURFACE_LAYOUT`). Those variants only reach what renders
+ * inside the box, so a phone keeps its own portal layer even when standalone.
  */
 export function PreviewSandbox({
   children,
@@ -134,19 +139,23 @@ export function PreviewSandbox({
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null,
   );
-  const surface: EmbeddedSurface = { root, portalContainer, layout };
+  const surface: EmbeddedSurface = { root, portalContainer };
+  const isPhone = layout === "phone";
+  const linkHandlers = {
+    onClickCapture: (event: MouseEvent<HTMLElement>) => {
+      cancelNavigation(event, onNavigate);
+    },
+    onAuxClickCapture: (event: MouseEvent<HTMLElement>) => {
+      cancelNavigation(event);
+    },
+  };
 
-  if (standalone) {
+  if (standalone && !isPhone) {
     return (
       <div
         data-preview-sandbox=""
         className={cn("relative size-full", className)}
-        onClickCapture={(event) => {
-          cancelNavigation(event, onNavigate);
-        }}
-        onAuxClickCapture={(event) => {
-          cancelNavigation(event);
-        }}
+        {...linkHandlers}
       >
         {children}
       </div>
@@ -158,27 +167,27 @@ export function PreviewSandbox({
       ref={setRoot}
       data-preview-sandbox=""
       className={cn(
-        // `contain: paint` and the container query make this box the
-        // containing block for `position: fixed`, so dialog backdrops cover
-        // the screen and not the page.
-        "@container relative isolate size-full overflow-clip [contain:layout_paint_style]",
-        // A named view transition would lift a piece of the screen out of
-        // the device during a page navigation.
-        "**:[view-transition-name:none]!",
-        // Dialogs size themselves against the viewport (`dvh`, `sm:`); in a
-        // screen the screen is the bound.
-        "**:data-[slot=alert-dialog-content]:overflow-y-auto",
-        layout === "phone"
-          ? "**:data-[slot=alert-dialog-content]:max-h-[85%]! **:data-[slot=alert-dialog-content]:max-w-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[85%]! **:data-[slot=dialog-content]:max-w-[calc(100%-2rem)]!"
-          : "**:data-[slot=alert-dialog-content]:max-h-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[calc(100%-2rem)]! @max-lg:**:data-[slot=alert-dialog-content]:max-w-[calc(100%-1.5rem)]! @max-lg:**:data-[slot=dialog-content]:max-w-[calc(100%-1.5rem)]!",
+        standalone
+          ? "relative size-full"
+          : [
+              // `contain: paint` and the container query make this box the
+              // containing block for `position: fixed`, so dialog backdrops
+              // cover the screen and not the page.
+              "@container relative isolate size-full overflow-clip [contain:layout_paint_style]",
+              // A named view transition would lift a piece of the screen out
+              // of the device during a page navigation.
+              "**:[view-transition-name:none]!",
+              // Dialogs size themselves against the viewport (`dvh`, `sm:`);
+              // in a screen the screen is the bound.
+              "**:data-[slot=alert-dialog-content]:overflow-y-auto",
+              isPhone
+                ? "**:data-[slot=alert-dialog-content]:max-h-[85%]! **:data-[slot=alert-dialog-content]:max-w-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[85%]! **:data-[slot=dialog-content]:max-w-[calc(100%-2rem)]!"
+                : "**:data-[slot=alert-dialog-content]:max-h-[calc(100%-2rem)]! **:data-[slot=dialog-content]:max-h-[calc(100%-2rem)]! @max-lg:**:data-[slot=alert-dialog-content]:max-w-[calc(100%-1.5rem)]! @max-lg:**:data-[slot=dialog-content]:max-w-[calc(100%-1.5rem)]!",
+            ],
+        isPhone && PHONE_SURFACE_LAYOUT,
         className,
       )}
-      onClickCapture={(event) => {
-        cancelNavigation(event, onNavigate);
-      }}
-      onAuxClickCapture={(event) => {
-        cancelNavigation(event);
-      }}
+      {...linkHandlers}
     >
       <EmbeddedSurfaceContext value={surface}>
         {children}

@@ -92,26 +92,10 @@ export function TabletLiveCharts({
           visible ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
-        <SessionsChart
-          quizId={PREVIEW_QUIZ_ID}
-          canViewAll={false}
-          animated={false}
-        />
-        <ScoreChart
-          quizId={PREVIEW_QUIZ_ID}
-          canViewAll={false}
-          animated={false}
-        />
-        <StudyTimeChart
-          quizId={PREVIEW_QUIZ_ID}
-          canViewAll={false}
-          animated={false}
-        />
-        <HourlyChart
-          quizId={PREVIEW_QUIZ_ID}
-          canViewAll={false}
-          animated={false}
-        />
+        <SessionsChart quizId={PREVIEW_QUIZ_ID} canViewAll={false} />
+        <ScoreChart quizId={PREVIEW_QUIZ_ID} canViewAll={false} />
+        <StudyTimeChart quizId={PREVIEW_QUIZ_ID} canViewAll={false} />
+        <HourlyChart quizId={PREVIEW_QUIZ_ID} canViewAll={false} />
       </div>
     </PreviewDataProvider>
   );

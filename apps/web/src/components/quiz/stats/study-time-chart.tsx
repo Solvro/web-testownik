@@ -17,7 +17,6 @@ import { TimelineTooltip } from "./timeline-tooltip";
 interface StudyTimeChartProps {
   quizId: string;
   canViewAll: boolean;
-  animated?: boolean;
 }
 
 const chartConfig = {
@@ -67,11 +66,7 @@ function getDaysThroughToday(startDateKey: string): string[] {
   });
 }
 
-export function StudyTimeChart({
-  quizId,
-  canViewAll,
-  animated = true,
-}: StudyTimeChartProps) {
+export function StudyTimeChart({ quizId, canViewAll }: StudyTimeChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
   const [mode, setMode] = useState<ChartMode>("sessions");
   const canUseSessions = scope === "me";
@@ -248,7 +243,6 @@ export function StudyTimeChart({
                   : d.avgTime !== null,
               ).length <= 15
             }
-            isAnimationActive={animated}
           />
         </LineChart>
       </ChartContainer>

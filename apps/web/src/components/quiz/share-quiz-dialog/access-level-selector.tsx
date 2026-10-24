@@ -1,6 +1,5 @@
 import { EarthIcon, Link2Icon, LockIcon, UsersIcon } from "lucide-react";
 
-import { useIsPhoneSurface } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
 interface AccessLevelSelectorProps {
@@ -19,13 +18,10 @@ export function AccessLevelSelector({
   value,
   onChange,
 }: AccessLevelSelectorProps) {
-  const isPhoneSurface = useIsPhoneSurface();
   return (
     <div
-      className={cn(
-        "flex w-full min-w-0 flex-wrap items-stretch justify-center gap-2 py-1",
-        !isPhoneSurface && "md:flex-nowrap",
-      )}
+      data-slot="access-level-selector"
+      className="flex w-full min-w-0 flex-wrap items-stretch justify-center gap-2 py-1 sm:gap-2 md:flex-nowrap"
     >
       {levels.map((level) => {
         const isSelected = value === level.value;
@@ -40,8 +36,7 @@ export function AccessLevelSelector({
             }}
             className={cn(
               "group relative flex min-w-0 flex-1 basis-0 cursor-pointer flex-col items-center select-none",
-              !isPhoneSurface &&
-                "md:min-w-20 md:flex-none md:basis-auto md:px-3",
+              "md:min-w-20 md:flex-none md:basis-auto md:px-3",
               "rounded-lg p-2 transition-all duration-300 ease-in-out",
               !isHighlighted &&
                 !isSelected &&
@@ -55,8 +50,7 @@ export function AccessLevelSelector({
           >
             <level.icon
               className={cn(
-                "size-5 transition-all duration-300",
-                !isPhoneSurface && "sm:size-6",
+                "size-5 transition-all duration-300 sm:size-6",
                 isHighlighted
                   ? "text-blue-600 dark:text-blue-400"
                   : "text-gray-400 dark:text-gray-500",
@@ -66,10 +60,8 @@ export function AccessLevelSelector({
             />
             <span
               className={cn(
-                "mt-2 w-full truncate text-center whitespace-nowrap",
-                !isPhoneSurface && "md:w-auto md:whitespace-normal",
-                "text-xs transition-colors",
-                !isPhoneSurface && "sm:text-sm",
+                "mt-2 w-full truncate text-center whitespace-nowrap md:w-auto md:whitespace-normal",
+                "text-xs transition-colors sm:text-sm",
                 isHighlighted
                   ? "text-blue-700 dark:text-blue-400"
                   : "text-gray-500 dark:text-gray-300",
