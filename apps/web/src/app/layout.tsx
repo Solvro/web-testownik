@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { shouldRenderBareDocument } from "@/lib/document-shell";
+import { OriginTrialMetas } from "@/lib/origin-trials";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -87,6 +88,9 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={hankenGrotesk.className}
       >
+        <head>
+          <OriginTrialMetas />
+        </head>
         <body className="bg-background overflow-hidden">{children}</body>
       </html>
     );
@@ -101,6 +105,7 @@ export default async function RootLayout({
       className={hankenGrotesk.className}
     >
       <head>
+        <OriginTrialMetas />
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
