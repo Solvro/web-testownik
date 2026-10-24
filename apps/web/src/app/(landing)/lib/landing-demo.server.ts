@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import "server-only";
 
 import { parseLandingDemoRequest } from "@/app/(landing)/lib/landing-demo";
+import { buildLandingDemoSystemPrompt } from "@/app/(landing)/lib/landing-demo-prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
@@ -12,7 +13,6 @@ import { PREVIEW_QUESTION } from "@/app/(landing)/preview/preview-fixtures";
 import { env } from "@/env";
 import { getConfiguredAiModel, isAiProviderConfigured } from "@/lib/ai/model";
 import type { AiModelProvider } from "@/lib/ai/models";
-import { buildLandingDemoSystemPrompt } from "@/lib/ai/prompts";
 
 export const DEFAULT_LANDING_AI_MODEL = "openai:gpt-5.6-luna";
 

@@ -13,22 +13,23 @@ import {
 import {
   LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
   LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS,
+  buildLandingDemoChatTools,
   countLandingDemoChatInputTokens,
   handleLandingDemoChatRequest,
 } from "@/app/(landing)/lib/landing-demo-chat.server";
+import { buildLandingDemoChatSystemPrompt } from "@/app/(landing)/lib/landing-demo-prompts";
 import { getLandingDemoTokenCounter } from "@/app/(landing)/lib/landing-demo-tokenizer.server";
 import {
   LANDING_DEMO_RATE_LIMITS,
   handleLandingDemoRequest,
 } from "@/app/(landing)/lib/landing-demo.server";
 import { resetRateLimitStore } from "@/app/(landing)/lib/rate-limit";
-import { PREVIEW_QUIZ } from "@/app/(landing)/preview/preview-fixtures";
 import { buildChatModelMessages } from "@/lib/ai/chat-messages";
-import { buildChatTools, buildLandingDemoChatTools } from "@/lib/ai/chat-tools";
 import {
-  CURRENT_QUESTION_CONTEXT_MARKER,
-  buildChatSystemPrompt,
-} from "@/lib/ai/prompts";
+  TOOL_OUTPUT_TOO_LARGE_ERROR,
+  buildChatTools,
+} from "@/lib/ai/chat-tools";
+import { CURRENT_QUESTION_CONTEXT_MARKER } from "@/lib/ai/prompts";
 import { estimateJsonTokens } from "@/lib/ai/request-validation";
 
 const mocks = vi.hoisted(() => ({
@@ -468,7 +469,7 @@ describe("handleLandingDemoChatRequest", () => {
       },
     });
     const previousEstimate = estimateJsonTokens({
-      system: buildChatSystemPrompt(PREVIEW_QUIZ, 0, undefined, true, true),
+      system: buildLandingDemoChatSystemPrompt(0),
       messages: expanded,
     });
     expect(previousEstimate).toBeLessThan(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
@@ -656,7 +657,7 @@ describe("handleLandingDemoChatRequest", () => {
     ).toBeGreaterThan(LANDING_DEMO_CHAT_MAX_INPUT_TOKENS);
   });
 
-  it("caps demo list pages at 20 previews of 180 characters and keeps pagination accurate", () => {
+  it("caps demo list pages at 20 previews cut at 180 characters and keeps pagination accurate", () => {
     const questions = Array.from({ length: 60 }, (_, index) =>
       question(index + 1, "x".repeat(2000)),
     );
@@ -674,9 +675,9 @@ describe("handleLandingDemoChatRequest", () => {
       expect(page.matched).toBe(60);
       expect(page.next_offset).toBe(40);
       expect(page.questions[0].order).toBe(21);
-      expect(page.questions.every((item) => item.text.length === 180)).toBe(
-        true,
-      );
+      expect(
+        page.questions.every((item) => item.text === `${"x".repeat(180)}…`),
+      ).toBe(true);
     }
     const full = JSON.parse(
       buildChatTools({ questions, canEdit: true }).list_questions.execute({}),
@@ -704,7 +705,9 @@ describe("handleLandingDemoChatRequest", () => {
       tools.generate_practice_questions.execute({ questions: [proposed] }),
       tools.edit_question.execute(proposed),
     ]) {
-      expect(output).toBe('{"error":"demo_tool_output_too_large"}');
+      expect(output).toBe(
+        JSON.stringify({ error: TOOL_OUTPUT_TOO_LARGE_ERROR }),
+      );
     }
     const authenticated = buildChatTools({
       questions: [largeQuestion],

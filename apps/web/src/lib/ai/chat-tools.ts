@@ -1,13 +1,10 @@
 import type { Question } from "@testownik/core/quiz/types";
 import { z } from "zod";
 
-import { LANDING_DEMO_CHAT_TOOL_LIMITS as DEMO_LIMITS } from "@/app/(landing)/lib/landing-demo-chat";
-
 /**
- * The assistant's tools, shared by the app's chat (`/ai/chat`) and the
- * landing page's demo chat (`/ai/landing-demo/chat`). They only read the
- * questions sent with the request; anything that changes a quiz is proposed
- * to the client, which applies it after the user confirms.
+ * The assistant's tools. They only read the questions sent with the request;
+ * anything that changes a quiz is proposed to the client, which applies it
+ * after the user confirms.
  */
 
 const practiceQuestionSchema = z.object({
@@ -74,11 +71,61 @@ const listQuestionsSchema = z.object({
     .describe("Liczba pasujących pytań do pominięcia przy stronicowaniu"),
 });
 
-function truncateQuestionPreview(text: string): string {
-  return text.length > 180 ? `${text.slice(0, 180)}…` : text;
+/**
+ * Bounds on what the tools return. Results become model input on the next
+ * inference step; a bound left out is not applied.
+ */
+export interface ChatToolLimits {
+  /** Questions on a `list_questions` page when the model asks for no count. */
+  defaultListQuestions: number;
+  /** The most questions on a page, whatever the model asks for. */
+  maxListQuestions?: number;
+  /** Characters of each question in a list; longer ones end with "…". */
+  listPreviewLength: number;
+  maxQuestionTextLength?: number;
+  maxAnswers?: number;
+  maxAnswerTextLength?: number;
+  maxExplanationLength?: number;
+  /** A result over this budget is replaced by an error for the model. */
+  maxOutput?: { tokens: number; countTokens: (text: string) => number };
 }
 
-function buildQuizTools(questions: Question[], demo = false) {
+export const DEFAULT_CHAT_TOOL_LIMITS: ChatToolLimits = {
+  defaultListQuestions: 50,
+  listPreviewLength: 180,
+};
+
+export const TOOL_OUTPUT_TOO_LARGE_ERROR = "tool_output_too_large";
+
+function truncate(text: string, length: number | undefined): string {
+  return length === undefined ? text : text.slice(0, length);
+}
+
+function truncateQuestionPreview(text: string, length: number): string {
+  return text.length > length ? `${text.slice(0, length)}…` : text;
+}
+
+function boundOutput<T>(
+  limits: ChatToolLimits,
+  execute: (input: T) => string,
+): (input: T) => string {
+  const { maxOutput } = limits;
+  if (maxOutput === undefined) {
+    return execute;
+  }
+  return (input: T) => {
+    const output = execute(input);
+    return maxOutput.countTokens(output) <= maxOutput.tokens
+      ? output
+      : JSON.stringify({ error: TOOL_OUTPUT_TOO_LARGE_ERROR });
+  };
+}
+
+/** The tools that read the quiz and propose new questions. */
+export function buildQuizTools(
+  questions: Question[],
+  limits: ChatToolLimits = DEFAULT_CHAT_TOOL_LIMITS,
+) {
   return {
     generate_practice_questions: {
       description:
@@ -89,99 +136,102 @@ function buildQuizTools(questions: Question[], demo = false) {
           .min(1)
           .describe("Lista wygenerowanych pytań"),
       }),
-      execute: (arguments_: {
-        questions: z.infer<typeof practiceQuestionSchema>[];
-      }) => {
-        return JSON.stringify(arguments_);
-      },
+      execute: boundOutput(
+        limits,
+        (arguments_: { questions: z.infer<typeof practiceQuestionSchema>[] }) =>
+          JSON.stringify(arguments_),
+      ),
     },
     list_questions: {
       description:
         "Pobierz listę pytań z quizu jako krótkie podglądy. Użyj tego, gdy użytkownik prosi o listę pytań, przegląd quizu, wyszukanie podobnych pytań lub potrzebujesz kontekstu z wielu pytań.",
       inputSchema: listQuestionsSchema,
-      execute: (arguments_: z.infer<typeof listQuestionsSchema>) => {
-        const query = arguments_.query?.trim().toLowerCase() ?? "";
-        const matchingQuestions = questions
-          .toSorted((a, b) => a.order - b.order)
-          .filter((q) =>
-            query === "" ? true : q.text.toLowerCase().includes(query),
+      execute: boundOutput(
+        limits,
+        (arguments_: z.infer<typeof listQuestionsSchema>) => {
+          const query = arguments_.query?.trim().toLowerCase() ?? "";
+          const matchingQuestions = questions
+            .toSorted((a, b) => a.order - b.order)
+            .filter((q) =>
+              query === "" ? true : q.text.toLowerCase().includes(query),
+            );
+          const limit = Math.min(
+            arguments_.limit ?? limits.defaultListQuestions,
+            limits.maxListQuestions ?? Number.POSITIVE_INFINITY,
           );
-        const limit = demo
-          ? Math.min(
-              arguments_.limit ?? DEMO_LIMITS.maxListQuestions,
-              DEMO_LIMITS.maxListQuestions,
-            )
-          : (arguments_.limit ?? 50);
-        const offset = arguments_.offset ?? 0;
-        const page = matchingQuestions.slice(offset, offset + limit);
-        const nextOffset =
-          offset + limit < matchingQuestions.length ? offset + limit : null;
+          const offset = arguments_.offset ?? 0;
+          const page = matchingQuestions.slice(offset, offset + limit);
+          const nextOffset =
+            offset + limit < matchingQuestions.length ? offset + limit : null;
 
-        return JSON.stringify({
-          total: questions.length,
-          matched: matchingQuestions.length,
-          returned: page.length,
-          offset,
-          next_offset: nextOffset,
-          questions: page.map((q) => ({
-            order: q.order,
-            text: demo
-              ? q.text.slice(0, DEMO_LIMITS.maxListPreviewLength)
-              : truncateQuestionPreview(q.text),
-            answer_count: q.answers.length,
-            multiple: q.multiple,
-            has_explanation:
-              q.explanation !== undefined && q.explanation.trim() !== "",
-          })),
-        });
-      },
+          return JSON.stringify({
+            total: questions.length,
+            matched: matchingQuestions.length,
+            returned: page.length,
+            offset,
+            next_offset: nextOffset,
+            questions: page.map((q) => ({
+              order: q.order,
+              text: truncateQuestionPreview(q.text, limits.listPreviewLength),
+              answer_count: q.answers.length,
+              multiple: q.multiple,
+              has_explanation:
+                q.explanation !== undefined && q.explanation.trim() !== "",
+            })),
+          });
+        },
+      ),
     },
     get_question: {
       description:
         "Pobierz pełne szczegóły konkretnego pytania z quizu (treść, odpowiedzi, wyjaśnienie). Użyj tego, gdy użytkownik pyta o konkretne pytanie z quizu (np. 'pokaż pytanie 5', 'wyjaśnij pytanie nr 12').",
       inputSchema: getQuestionSchema,
-      execute: (arguments_: z.infer<typeof getQuestionSchema>) => {
-        const question = questions.find(
-          (q) => q.order === arguments_.question_order,
-        );
-        if (question === undefined) {
-          return JSON.stringify({
-            error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${questions.length.toString()} pytań.`,
-          });
-        }
+      execute: boundOutput(
+        limits,
+        (arguments_: z.infer<typeof getQuestionSchema>) => {
+          const question = questions.find(
+            (q) => q.order === arguments_.question_order,
+          );
+          if (question === undefined) {
+            return JSON.stringify({
+              error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${questions.length.toString()} pytań.`,
+            });
+          }
 
-        return JSON.stringify({
-          order: question.order,
-          text: demo
-            ? question.text.slice(0, DEMO_LIMITS.maxQuestionTextLength)
-            : question.text,
-          explanation:
-            (demo
-              ? question.explanation?.slice(0, DEMO_LIMITS.maxExplanationLength)
-              : question.explanation) ?? null,
-          multiple: question.multiple,
-          answers: question.answers
-            .slice(0, demo ? DEMO_LIMITS.maxAnswers : undefined)
-            .map((a) => ({
-              text: demo
-                ? a.text.slice(0, DEMO_LIMITS.maxAnswerTextLength)
-                : a.text,
+          return JSON.stringify({
+            order: question.order,
+            text: truncate(question.text, limits.maxQuestionTextLength),
+            explanation:
+              question.explanation === undefined
+                ? null
+                : truncate(question.explanation, limits.maxExplanationLength),
+            multiple: question.multiple,
+            answers: question.answers.slice(0, limits.maxAnswers).map((a) => ({
+              text: truncate(a.text, limits.maxAnswerTextLength),
               is_correct: a.is_correct,
             })),
-        });
-      },
+          });
+        },
+      ),
     },
   };
 }
 
-const editQuestionTool = {
-  description:
-    "Zaproponuj edycję aktualnego pytania quizowego. Użyj tego, gdy student prosi o poprawienie, ulepszenie lub zmianę treści pytania, odpowiedzi lub wyjaśnienia. Edycja musi zostać zatwierdzona przez użytkownika przed zastosowaniem.",
-  inputSchema: editQuestionSchema,
-  execute: (arguments_: z.infer<typeof editQuestionSchema>) => {
-    return JSON.stringify(arguments_);
-  },
-};
+/** Proposes an edit of the current question, applied once the user confirms. */
+export function buildEditQuestionTool(
+  limits: ChatToolLimits = DEFAULT_CHAT_TOOL_LIMITS,
+) {
+  return {
+    description:
+      "Zaproponuj edycję aktualnego pytania quizowego. Użyj tego, gdy student prosi o poprawienie, ulepszenie lub zmianę treści pytania, odpowiedzi lub wyjaśnienia. Edycja musi zostać zatwierdzona przez użytkownika przed zastosowaniem.",
+    inputSchema: editQuestionSchema,
+    execute: boundOutput(
+      limits,
+      (arguments_: z.infer<typeof editQuestionSchema>) =>
+        JSON.stringify(arguments_),
+    ),
+  };
+}
 
 const disableAiTool = {
   description:
@@ -205,50 +255,15 @@ const disableAiTool = {
 export function buildChatTools({
   questions,
   canEdit,
+  limits = DEFAULT_CHAT_TOOL_LIMITS,
 }: {
   questions: Question[];
   canEdit: boolean;
+  limits?: ChatToolLimits;
 }) {
   return {
-    ...buildQuizTools(questions),
-    ...(canEdit ? { edit_question: editQuestionTool } : {}),
+    ...buildQuizTools(questions, limits),
+    ...(canEdit ? { edit_question: buildEditQuestionTool(limits) } : {}),
     disable_ai: disableAiTool,
-  };
-}
-
-/**
- * The landing demo's tools. The visitor owns the demo quiz, so it can be
- * edited; there are no settings to switch AI off in.
- */
-export function buildLandingDemoChatTools(
-  questions: Question[],
-  countTokens: (text: string) => number,
-) {
-  function boundOutput<T>(execute: (input: T) => string) {
-    return (input: T) => {
-      const output = execute(input);
-      return countTokens(output) <= DEMO_LIMITS.maxOutputTokens
-        ? output
-        : JSON.stringify({ error: "demo_tool_output_too_large" });
-    };
-  }
-  const tools = buildQuizTools(questions, true);
-  return {
-    generate_practice_questions: {
-      ...tools.generate_practice_questions,
-      execute: boundOutput(tools.generate_practice_questions.execute),
-    },
-    list_questions: {
-      ...tools.list_questions,
-      execute: boundOutput(tools.list_questions.execute),
-    },
-    get_question: {
-      ...tools.get_question,
-      execute: boundOutput(tools.get_question.execute),
-    },
-    edit_question: {
-      ...editQuestionTool,
-      execute: boundOutput(editQuestionTool.execute),
-    },
   };
 }

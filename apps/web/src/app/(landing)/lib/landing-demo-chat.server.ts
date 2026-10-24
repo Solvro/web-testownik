@@ -1,3 +1,4 @@
+import type { Question } from "@testownik/core/quiz/types";
 import type { ModelMessage } from "ai";
 import { stepCountIs, streamText } from "ai";
 import "server-only";
@@ -5,17 +6,18 @@ import { z } from "zod";
 
 import {
   LANDING_DEMO_CHAT_LIMITS,
+  LANDING_DEMO_CHAT_TOOL_LIMITS,
   parseLandingDemoChatRequest,
 } from "@/app/(landing)/lib/landing-demo-chat";
+import { buildLandingDemoChatSystemPrompt } from "@/app/(landing)/lib/landing-demo-prompts";
 import { getLandingDemoTokenCounter } from "@/app/(landing)/lib/landing-demo-tokenizer.server";
 import {
   LANDING_DEMO_PROVIDER_OPTIONS,
   admitLandingDemoRequest,
 } from "@/app/(landing)/lib/landing-demo.server";
-import { PREVIEW_QUIZ } from "@/app/(landing)/preview/preview-fixtures";
 import { buildChatModelMessages } from "@/lib/ai/chat-messages";
-import { buildLandingDemoChatTools } from "@/lib/ai/chat-tools";
-import { buildChatSystemPrompt } from "@/lib/ai/prompts";
+import { buildEditQuestionTool, buildQuizTools } from "@/lib/ai/chat-tools";
+import type { ChatToolLimits } from "@/lib/ai/chat-tools";
 
 export const LANDING_DEMO_CHAT_MAX_INPUT_TOKENS = 6000;
 
@@ -25,14 +27,32 @@ export const LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS = 800;
 /** A tool call and the answer that follows it, and one step to spare. */
 export const LANDING_DEMO_CHAT_MAX_STEPS = 3;
 
-function buildDemoSystemPrompt(questionCount: number) {
-  return buildChatSystemPrompt(
-    { title: PREVIEW_QUIZ.title, description: PREVIEW_QUIZ.description },
-    questionCount,
-    undefined,
-    true,
-    true,
-  );
+/**
+ * The app chat's tools on the visitor's copy of the sample quiz, with results
+ * bounded in tokens. The visitor owns that copy, so it can be edited; there
+ * are no settings to switch AI off in, so no `disable_ai`.
+ */
+export function buildLandingDemoChatTools(
+  questions: Question[],
+  countTokens: (text: string) => number,
+) {
+  const limits: ChatToolLimits = {
+    defaultListQuestions: LANDING_DEMO_CHAT_TOOL_LIMITS.maxListQuestions,
+    maxListQuestions: LANDING_DEMO_CHAT_TOOL_LIMITS.maxListQuestions,
+    listPreviewLength: LANDING_DEMO_CHAT_TOOL_LIMITS.maxListPreviewLength,
+    maxQuestionTextLength: LANDING_DEMO_CHAT_TOOL_LIMITS.maxQuestionTextLength,
+    maxAnswers: LANDING_DEMO_CHAT_TOOL_LIMITS.maxAnswers,
+    maxAnswerTextLength: LANDING_DEMO_CHAT_TOOL_LIMITS.maxAnswerTextLength,
+    maxExplanationLength: LANDING_DEMO_CHAT_TOOL_LIMITS.maxExplanationLength,
+    maxOutput: {
+      tokens: LANDING_DEMO_CHAT_TOOL_LIMITS.maxOutputTokens,
+      countTokens,
+    },
+  };
+  return {
+    ...buildQuizTools(questions, limits),
+    edit_question: buildEditQuestionTool(limits),
+  };
 }
 
 // These schemas do not depend on the visitor's quiz. Count them once with the
@@ -57,7 +77,9 @@ async function createInputTokenCounter(questionCount: number) {
     ),
   );
   const fixedTokens =
-    toolSchemaTokens + countText(buildDemoSystemPrompt(questionCount)) + 4;
+    toolSchemaTokens +
+    countText(buildLandingDemoChatSystemPrompt(questionCount)) +
+    4;
   return (messages: ModelMessage[]) =>
     fixedTokens +
     messages.reduce((total, message) => {
@@ -106,7 +128,7 @@ export async function handleLandingDemoChatRequest(
   const { messages, question, questions, questionContextSnapshots } =
     admission.body;
 
-  const system = buildDemoSystemPrompt(questions.length);
+  const system = buildLandingDemoChatSystemPrompt(questions.length);
   const countInputTokens = await createInputTokenCounter(questions.length);
   const countText = await getLandingDemoTokenCounter();
   let recentMessages = messages;
