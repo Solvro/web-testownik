@@ -31,6 +31,8 @@ export const ACCOUNT_LEVEL_LABELS: Record<AccountLevel, string> = {
 export interface User {
   id: string;
   full_name: string;
+  first_name?: string;
+  last_name?: string;
   photo: string;
   student_number: string;
   account_type?: AccountType;
@@ -38,6 +40,8 @@ export interface User {
 }
 
 export interface UserData extends Omit<User, "photo"> {
+  first_name: string;
+  last_name: string;
   photo: string | null;
   default_photo?: string | null;
   email: string | null;

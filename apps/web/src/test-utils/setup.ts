@@ -7,6 +7,12 @@ import { server } from "./mocks/server";
 
 process.env.NEXT_PUBLIC_API_URL = "http://test.local";
 
+const jsdomWindow = (
+  globalThis as typeof globalThis & { jsdom: { window: Window } }
+).jsdom.window;
+vi.stubGlobal("localStorage", jsdomWindow.localStorage);
+vi.stubGlobal("sessionStorage", jsdomWindow.sessionStorage);
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
