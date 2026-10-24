@@ -67,6 +67,8 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     linear-gradient(90deg, var(--border) 1px, transparent 1px),
     var(--background) !important;
   background-size: 5rem 5rem !important;
+  /* Lets `HeroFade` (at -z-1) paint over the grid but under all content. */
+  isolation: isolate;
 }
 
 .lp-bubble-capture > canvas:last-of-type {
@@ -402,8 +404,8 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  */
 @keyframes lp-hero-phone-rise {
   from {
-    translate: 0 1.75rem;
-    rotate: -4deg;
+    translate: 0 1rem;
+    rotate: -1.5deg;
   }
   to {
     translate: 0 0;

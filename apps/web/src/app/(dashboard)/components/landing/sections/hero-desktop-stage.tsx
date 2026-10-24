@@ -59,6 +59,8 @@ export function HeroDesktopStage({
        * beneath the device layer.
        */}
       <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">
+        {/* Over the grid, beneath the copy and the scroll hint. */}
+        <HeroFade />
         {/* Keep the copy mounted across context loss and restoration. */}
         <div
           className={
@@ -132,7 +134,6 @@ export function HeroDesktopStage({
           )}
         </div>
       </HeroBubble>
-      <HeroFade />
 
       {/*
        * Outside the Bubble on purpose. The Bubble refracts through
