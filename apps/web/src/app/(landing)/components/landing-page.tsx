@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,23 @@ export function LandingPage({
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
+  const [heroNav, setHeroNav] = useState<HTMLElement | null>(null);
+  const [isHeroNavGone, setIsHeroNavGone] = useState(false);
+
+  // The hero header can remount when the desktop stage replaces the static
+  // hero, hence the element in state rather than a ref.
+  useEffect(() => {
+    if (heroNav === null) {
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsHeroNavGone(!entry.isIntersecting);
+    });
+    observer.observe(heroNav);
+    return () => {
+      observer.disconnect();
+    };
+  }, [heroNav]);
 
   return (
     <div
@@ -57,11 +74,23 @@ export function LandingPage({
       </a>
       <LandingTableOfContents />
       <LandingNav
+        variant="compact"
+        hidden={!isHeroNavGone}
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={start}
       />
-      <Hero heroReference={heroReference} />
+      <Hero
+        heroReference={heroReference}
+        nav={
+          <LandingNav
+            ref={setHeroNav}
+            isAuthenticated={isAuthenticated}
+            isStarting={isStarting}
+            onStart={start}
+          />
+        }
+      />
       <ProductShowcase />
       <Faq />
       <Timeline />

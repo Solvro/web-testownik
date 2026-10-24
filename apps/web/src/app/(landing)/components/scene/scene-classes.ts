@@ -25,11 +25,13 @@ export const SCENE_CLASS = {
 
 /**
  * The loading still of the closed device stack. The classes are the
- * server-rendered guess at the camera solver's box: exact for stages wider
- * than about 4:3, where the laptop is height-limited, and close for narrower
- * ones, where it is width-limited. `placeDeviceCover` replaces them with the
- * solved rectangle on the client. Shared by `DeviceStack` and the hero's
- * pre-mount placeholder. Needs an `@container-[size]` parent.
+ * server-rendered guess at the camera solver's box, within a few pixels at
+ * any aspect: the box is height-limited on stages wider than about 4:3 and
+ * width-limited below, and its vertical centre sits at 67.8% of the stage
+ * either way (the solver pans the laptop down by a fixed share of the view).
+ * `placeDeviceCover` replaces the guess with the solved rectangle on the
+ * client. Shared by `DeviceStack` and the hero's pre-mount placeholder. Needs
+ * an `@container-[size]` parent.
  *
  * A background image rather than an <img>: below `lg` the placeholder is
  * `display: none`, and a hidden element does not fetch its background.
@@ -37,7 +39,7 @@ export const SCENE_CLASS = {
  * pose, the field of view or the framing constants change.
  */
 export const DEVICE_COVER_CLASS = [
-  "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[min(63.42cqh,47.7cqw)] w-[min(89.35cqh,64.4cqw)] -translate-x-1/2",
+  "pointer-events-none absolute top-[calc(67.8%-min(63.42cqh,47.7cqw)/2)] left-1/2 z-1 h-[min(63.42cqh,47.7cqw)] w-[min(89.35cqh,64.4cqw)] -translate-x-1/2",
   "bg-[url(/models/testownik-device-stack-closed-light-v1.webp)] bg-size-[100%_100%]",
   "dark:bg-[url(/models/testownik-device-stack-closed-dark-v1.webp)]",
 ].join(" ");

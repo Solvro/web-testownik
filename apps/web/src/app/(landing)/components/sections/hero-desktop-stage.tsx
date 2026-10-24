@@ -30,8 +30,8 @@ const openLogoStyle: CSSProperties = {
  * module lazily once `DESKTOP_STAGE_QUERY` matches, so smaller viewports never
  * download it.
  *
- * `children` is the shared hero copy. It renders inside the Bubble so the
- * droplet refracts it; the fixed header sits above the Bubble, outside it.
+ * `children` is the shared hero copy and header. It renders inside the Bubble
+ * so the droplet refracts it.
  */
 export function HeroDesktopStage({
   children,
@@ -55,7 +55,7 @@ export function HeroDesktopStage({
     <>
       {/*
        * The Bubble is its own stacking context (z-1) so the droplet can paint
-       * above the copy it refracts while the whole bubble still stays
+       * above the header it refracts while the whole bubble still stays
        * beneath the device layer.
        */}
       <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">

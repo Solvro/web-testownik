@@ -47,19 +47,23 @@ function StaticDeviceCover(): React.JSX.Element {
 }
 
 /**
- * The hero copy and "Poznaj produkt" link, rendered exactly once
+ * The header, hero copy and "Poznaj produkt" link, rendered exactly once
  * whichever stage hosts it. Below `lg` it flows; at `lg` it is laid out
  * absolutely over the sticky stage. `visual` sits between copy and link.
  */
 function HeroContent({
+  nav,
   visual,
   isStatic = false,
 }: {
+  nav?: ReactNode;
   visual?: ReactNode;
   isStatic?: boolean;
 }): React.JSX.Element {
   return (
     <>
+      {nav}
+
       <div
         data-hero-progress={isStatic ? undefined : true}
         ref={isStatic ? undefined : attachHeroProgress}
@@ -103,8 +107,11 @@ function HeroContent({
 
 export function Hero({
   heroReference,
+  nav,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
+  /** The hero variant of the header, refracted by the Bubble on desktop. */
+  nav?: ReactNode;
 }): React.JSX.Element {
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
@@ -123,6 +130,7 @@ export function Hero({
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
       <HeroContent
+        nav={nav}
         visual={
           <>
             <HeroPhone className="lg:hidden" />
@@ -184,7 +192,7 @@ export function Hero({
                 setIsStatic(true);
               }}
             >
-              <HeroContent isStatic={isStatic} />
+              <HeroContent nav={nav} isStatic={isStatic} />
             </HeroDesktopStage>
           </Suspense>
         ) : (
