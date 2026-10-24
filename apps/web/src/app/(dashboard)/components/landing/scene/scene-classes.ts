@@ -18,6 +18,6 @@ export const SCENE_CLASS = {
  */
 export const DEVICE_COVER_CLASS = [
   "pointer-events-none absolute top-[36.38%] left-1/2 z-1 h-[63.42%] w-[89.35cqh] -translate-x-1/2",
-  "bg-[url(/models/testownik-device-stack-cover-light-v9.webp)] bg-size-[100%_100%]",
-  "dark:bg-[url(/models/testownik-device-stack-cover-dark-v9.webp)]",
+  "bg-[url(/models/testownik-device-stack-closed-light-v1.webp)] bg-size-[100%_100%]",
+  "dark:bg-[url(/models/testownik-device-stack-closed-dark-v1.webp)]",
 ].join(" ");

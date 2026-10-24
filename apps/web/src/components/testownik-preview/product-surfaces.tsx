@@ -586,11 +586,11 @@ interface StandaloneProps {
  * The iPhone screen. Below the status bar it is an ordinary scrolling list
  * stacked like the app's mobile quiz page: the header, the question (at least
  * a screen tall, answer controls at its bottom), the AI hint and the quiz
- * info card. In the mobile hero it keeps the browser's default scroll
- * chaining, so once the list ends the page carries on. In the desktop hero's
- * iframe the list contains its overscroll and the frame posts the wheel it
- * cannot use to the page instead (`scene/screen-frame-input.ts` in the
- * landing), which ends the same way without the frame's own root scrolling.
+ * info card. It keeps the browser's default overscroll, so it bounces at its
+ * ends. In the mobile hero a new gesture at an end then scrolls the page; in
+ * the desktop hero's iframe the wheel stays with the list, and only a wheel
+ * over a part of the screen with nothing to scroll reaches the page
+ * (`scene/screen-frame-input.ts` in the landing).
  */
 /**
  * The quiz card's action row, docked at the bottom of the phone screen so it
@@ -649,11 +649,8 @@ export function PhoneQuizSurface({
         <PhoneStatusBar />
         <div
           data-preview-scroll=""
-          className={cn(
-            // The bottom inset keeps the card's corners clear of the screen's.
-            "min-h-0 flex-1 touch-pan-y overflow-y-auto px-[0.55rem] pt-1 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none]",
-            standalone ? "overscroll-contain" : "overscroll-auto",
-          )}
+          // The bottom inset keeps the card's corners clear of the screen's.
+          className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-auto px-[0.55rem] pt-1 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none]"
         >
           {screen.view === "stats" ? (
             <div className="px-1 text-[0.8em]">
@@ -704,7 +701,7 @@ export function ProductAppChrome({
         className={cn(
           "size-full min-h-0 p-4",
           screen.view === "stats"
-            ? "overflow-y-auto overscroll-contain"
+            ? "overflow-y-auto overscroll-auto"
             : "overflow-hidden",
         )}
       >
