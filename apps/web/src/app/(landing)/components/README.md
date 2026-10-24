@@ -67,8 +67,11 @@ another shared session and `ChatRuntime` above its tabs
 (`product-showcase/showcase-session.tsx`), so answers, chat history and assistant
 question edits survive tab changes; it is independent of the hero.
 
-The showcase uses the app's `ChatRuntime`/`ChatThread` in demo mode against
-`/ai/landing-demo/chat`, with the app prompt and bounded question tools. Tool
+The showcase uses the app's `ChatRuntime`/`ChatThread` with its own transport
+(`createShowcaseChatTransport` in `product-showcase/showcase-chat.ts`: trimmed
+history, no usage reporting, an offline "explain" fallback) against
+`/ai/landing-demo/chat`, with the app prompt plus `landing-demo-prompts.ts`
+rules and the app's question tools under the demo's limits. Tool
 cards save/edit questions through the session's preview services. The public
 route shares admission with `/ai/landing-demo`: AI must be enabled and the
 provider configured; `LANDING_AI_MODEL` selects `provider:model` (default

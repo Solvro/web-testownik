@@ -2,6 +2,13 @@ import type { Question } from "@testownik/core/quiz/types";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import type { UIMessage } from "ai";
 
+import {
+  LANDING_DEMO_CHAT_ENDPOINT,
+  LANDING_DEMO_CHAT_LIMITS,
+  trimLandingDemoChatHistory,
+} from "@/app/(landing)/lib/landing-demo-chat";
+import type { ChatRuntimeTransport } from "@/components/ai/chat-runtime";
+
 import { getShowcaseExplanation } from "./showcase-quiz";
 
 const EXPLAIN_PROMPT = "Wyjaśnij to pytanie";
@@ -75,4 +82,47 @@ export function explainOffline(
       },
     }),
   });
+}
+
+/**
+ * The app's chat runtime against the public demo endpoint: no account, so no
+ * usage to report, and only the recent history and the quiz's first questions
+ * are sent. Failures are reported; when the endpoint is down, "explain" still
+ * gets the question's explanation.
+ */
+export function createShowcaseChatTransport(
+  onFailure: (failure: Failure | null) => void,
+): ChatRuntimeTransport {
+  return {
+    api: LANDING_DEMO_CHAT_ENDPOINT,
+    prepareBody: (request) => {
+      const messages = trimLandingDemoChatHistory(request.messages);
+      const sentIds = new Set(messages.map((message) => message.id));
+      return {
+        messages,
+        questionContextSnapshots: request.questionContextSnapshots.filter(
+          (snapshot) => sentIds.has(snapshot.messageId),
+        ),
+        question: request.question,
+        questions: request.questions.slice(
+          0,
+          LANDING_DEMO_CHAT_LIMITS.maxQuestions,
+        ),
+      };
+    },
+    onResponse: (response, request) => {
+      onFailure(
+        response.ok
+          ? null
+          : {
+              status: response.status,
+              retryAfter: response.headers.get("Retry-After"),
+            },
+      );
+      return response.status >= 500
+        ? explainOffline(request.messages, request.question)
+        : undefined;
+    },
+    reportsUsage: false,
+  };
 }

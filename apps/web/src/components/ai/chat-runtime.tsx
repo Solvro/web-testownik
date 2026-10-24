@@ -9,11 +9,6 @@ import type { UIMessage } from "ai";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
-import {
-  LANDING_DEMO_CHAT_ENDPOINT,
-  LANDING_DEMO_CHAT_LIMITS,
-  trimLandingDemoChatHistory,
-} from "@/app/(landing)/lib/landing-demo-chat";
 import { AiChatProvider } from "@/components/ai/ai-chat-context";
 import { invalidateAIUsage } from "@/hooks/use-ai-usage";
 import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
@@ -30,6 +25,68 @@ export interface ChatRuntimeValue extends UseChatHelpers<UIMessage> {
 }
 
 const USAGE_REPORT_SETTLE_DELAY_MS = 500;
+
+/** One send: what `useChat` sends and the chat's context at that moment. */
+export interface ChatRequest {
+  id: string;
+  /** The whole history, ending on the turn being sent. */
+  messages: UIMessage[];
+  trigger: "submit-message" | "regenerate-message";
+  messageId: string | undefined;
+  requestMetadata: unknown;
+  /** Extra body passed to `sendMessage`. */
+  body: object | undefined;
+  /** The question each user turn in `messages` was asked about. */
+  questionContextSnapshots: QuestionContextSnapshot[];
+  quizId: string;
+  quiz: { title: string; description: string };
+  question: Question | null;
+  questions: Question[];
+  userName?: string;
+  canEdit: boolean;
+  selectedModel?: string | null;
+  conversationId: string;
+}
+
+/** Where the chat sends its requests and what it sends. */
+export interface ChatRuntimeTransport {
+  api: string;
+  /** The JSON body of one request. */
+  prepareBody: (request: ChatRequest) => object;
+  /**
+   * Every response, before the chat reads it. A returned response is read
+   * instead (e.g. a canned reply when the endpoint is unavailable).
+   */
+  onResponse?: (
+    response: Response,
+    request: ChatRequest,
+  ) => Response | undefined;
+  /** Replies count towards the user's AI usage, refreshed after each one. */
+  reportsUsage: boolean;
+}
+
+/** The app's assistant at `/ai/chat`. */
+const APP_CHAT_TRANSPORT: ChatRuntimeTransport = {
+  api: "/ai/chat",
+  prepareBody: (request) => ({
+    ...request.body,
+    id: request.id,
+    messages: request.messages,
+    trigger: request.trigger,
+    messageId: request.messageId,
+    metadata: request.requestMetadata,
+    questionContextSnapshots: request.questionContextSnapshots,
+    quiz: request.quiz,
+    question: request.question,
+    questions: request.questions,
+    userName: request.userName,
+    canEdit: request.canEdit,
+    quizId: request.quizId,
+    conversationId: request.conversationId,
+    config: { modelName: request.selectedModel },
+  }),
+  reportsUsage: true,
+};
 
 function getSubmittedUserMessageId({
   trigger,
@@ -63,29 +120,18 @@ interface ChatRuntimeProps {
   canEdit: boolean;
   selectedModel?: string | null;
   children: (runtime: ChatRuntimeValue) => ReactNode;
+  /** Called with the body of a quota-exceeded response. */
   onQuotaExceeded?: (body: QuotaExceededBody) => void;
+  /** Called with the model a reply came from, read from its headers. */
   onModelResolved?: (
     model: string,
     quotaTier: string | null,
     fallbackResetAt: string | null,
   ) => void;
-  /**
-   * The landing page's public demo (`LANDING_DEMO_CHAT_ENDPOINT`): no account,
-   * so no quota, usage or model headers, and a trimmed request.
-   */
-  demo?: boolean;
-  /**
-   * Every response, before the chat reads it (e.g. to explain a 429). A
-   * returned response is read instead, which lets a demo answer offline.
-   */
-  onResponse?: (
-    response: Response,
-    sent: { messages: UIMessage[] },
-  ) => Response | undefined;
+  /** Defaults to the app's assistant at `/ai/chat`, reporting usage. */
+  transport?: ChatRuntimeTransport;
   /** Replaces the default suggestions on the empty chat. */
   suggestions?: readonly string[];
-  /** The conversation to continue, read once. */
-  initialMessages?: UIMessage[];
 }
 
 type TransportContext = Pick<
@@ -98,44 +144,40 @@ type TransportContext = Pick<
   | "selectedModel"
   | "onQuotaExceeded"
   | "onModelResolved"
-  | "onResponse"
->;
+> & { transport: ChatRuntimeTransport };
 
 /** Imperative SDK callbacks own the mutable session; React subscribes to snapshots. */
 function createRuntimeTransport({
-  demo,
   quizId,
   initialContext,
 }: {
-  demo: boolean;
   quizId: string;
   initialContext: TransportContext;
 }) {
   let context = initialContext;
-  let sentMessages: UIMessage[] = [];
+  let lastRequest: ChatRequest | null = null;
   let snapshotList: QuestionContextSnapshot[] = [];
   const questionSnapshots = new Map<string, QuestionContextSnapshot>();
   const conversationId = crypto.randomUUID();
   const listeners = new Set<() => void>();
   const transport = new DefaultChatTransport<UIMessage>({
-    api: demo ? LANDING_DEMO_CHAT_ENDPOINT : "/ai/chat",
+    api: initialContext.transport.api,
     fetch: async (input, init) => {
       const fetched = await fetch(input, init);
       const response =
-        context.onResponse?.(fetched, {
-          messages: sentMessages,
-        }) ?? fetched;
-      if (demo) {
-        return response;
+        (lastRequest === null
+          ? undefined
+          : context.transport.onResponse?.(fetched, lastRequest)) ?? fetched;
+      if (context.onQuotaExceeded !== undefined) {
+        const quotaBody = await parseQuotaExceededResponse(response);
+        if (quotaBody !== null) {
+          context.onQuotaExceeded(quotaBody);
+        }
       }
-      const quotaBody = await parseQuotaExceededResponse(response);
-      if (quotaBody !== null) {
-        context.onQuotaExceeded?.(quotaBody);
-      }
-      if (response.ok) {
+      if (response.ok && context.onModelResolved !== undefined) {
         const resolvedModel = response.headers.get(AI_RESPONSE_HEADERS.model);
         if (resolvedModel !== null) {
-          context.onModelResolved?.(
+          context.onModelResolved(
             resolvedModel,
             response.headers.get(AI_RESPONSE_HEADERS.quotaTier),
             response.headers.get(AI_RESPONSE_HEADERS.fallbackResetAt),
@@ -145,7 +187,6 @@ function createRuntimeTransport({
       return response;
     },
     prepareSendMessagesRequest: (options) => {
-      sentMessages = options.messages;
       const messageIds = new Set(options.messages.map((message) => message.id));
       for (const messageId of questionSnapshots.keys()) {
         if (!messageIds.has(messageId)) {
@@ -177,43 +218,28 @@ function createRuntimeTransport({
         listener();
       }
       const current = context;
-
-      if (demo) {
-        const messages = trimLandingDemoChatHistory(options.messages);
-        const sentIds = new Set(messages.map((message) => message.id));
-        return {
-          body: {
-            messages,
-            questionContextSnapshots: snapshots.filter((snapshot) =>
-              sentIds.has(snapshot.messageId),
-            ),
-            question: current.question,
-            questions: current.questions.slice(
-              0,
-              LANDING_DEMO_CHAT_LIMITS.maxQuestions,
-            ),
-          },
-        };
-      }
+      const request: ChatRequest = {
+        id: options.id,
+        messages: options.messages,
+        trigger: options.trigger,
+        messageId: options.messageId,
+        requestMetadata: options.requestMetadata,
+        body: options.body,
+        questionContextSnapshots: snapshots,
+        quizId,
+        quiz: current.quiz,
+        question: current.question,
+        questions: current.questions,
+        userName: current.userName,
+        canEdit: current.canEdit,
+        selectedModel: current.selectedModel,
+        conversationId,
+      };
+      lastRequest = request;
 
       return {
-        body: {
-          ...options.body,
-          id: options.id,
-          messages: options.messages,
-          trigger: options.trigger,
-          messageId: options.messageId,
-          metadata: options.requestMetadata,
-          questionContextSnapshots: snapshots,
-          quiz: current.quiz,
-          question: current.question,
-          questions: current.questions,
-          userName: current.userName,
-          canEdit: current.canEdit,
-          quizId,
-          conversationId,
-          config: { modelName: current.selectedModel },
-        },
+        api: current.transport.api,
+        body: current.transport.prepareBody(request),
       };
     },
   });
@@ -222,6 +248,7 @@ function createRuntimeTransport({
     updateContext(next: TransportContext) {
       context = next;
     },
+    reportsUsage: () => context.transport.reportsUsage,
     getSnapshot: () => snapshotList,
     subscribe: (listener: () => void) => {
       listeners.add(listener);
@@ -243,10 +270,8 @@ export function ChatRuntime({
   children,
   onQuotaExceeded,
   onModelResolved,
-  demo = false,
-  onResponse,
+  transport = APP_CHAT_TRANSPORT,
   suggestions: suggestionsOverride,
-  initialMessages,
 }: ChatRuntimeProps) {
   const queryClient = useQueryClient();
   const usageRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -259,7 +284,6 @@ export function ChatRuntime({
   // eslint-disable-next-line react/hook-use-state
   const [transportStore] = useState(() =>
     createRuntimeTransport({
-      demo,
       quizId,
       initialContext: {
         quiz,
@@ -270,7 +294,7 @@ export function ChatRuntime({
         selectedModel,
         onQuotaExceeded,
         onModelResolved,
-        onResponse,
+        transport,
       },
     }),
   );
@@ -284,7 +308,7 @@ export function ChatRuntime({
       selectedModel,
       onQuotaExceeded,
       onModelResolved,
-      onResponse,
+      transport,
     });
   }, [
     transportStore,
@@ -296,7 +320,7 @@ export function ChatRuntime({
     selectedModel,
     onQuotaExceeded,
     onModelResolved,
-    onResponse,
+    transport,
   ]);
   const questionContextSnapshots = useSyncExternalStore(
     transportStore.subscribe,
@@ -306,7 +330,6 @@ export function ChatRuntime({
 
   const chat = useChat({
     transport: transportStore.transport,
-    messages: initialMessages,
     onFinish: ({ message, finishReason }) => {
       setLengthLimitedMessageIds((current) => {
         if (finishReason !== "length" && !current.has(message.id)) {
@@ -321,7 +344,7 @@ export function ChatRuntime({
         return next;
       });
 
-      if (demo) {
+      if (!transportStore.reportsUsage()) {
         return;
       }
       if (usageRefreshTimerRef.current !== null) {

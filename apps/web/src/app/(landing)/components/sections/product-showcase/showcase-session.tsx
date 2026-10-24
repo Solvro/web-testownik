@@ -8,7 +8,7 @@ import { PREVIEW_QUIZ } from "@/app/(landing)/preview/preview-fixtures";
 import { ChatRuntime } from "@/components/ai/chat-runtime";
 
 import { useQuizPreviewState } from "../../hooks/use-quiz-preview-state";
-import { SUGGESTIONS, explainOffline } from "./showcase-chat";
+import { SUGGESTIONS, createShowcaseChatTransport } from "./showcase-chat";
 import type { Failure } from "./showcase-chat";
 import { SHOWCASE_QUIZ, SHOWCASE_STUDY_TIME_SECONDS } from "./showcase-quiz";
 import { ShowcaseSessionContext } from "./showcase-session-context";
@@ -30,30 +30,18 @@ export function ShowcaseSessionProvider({
     studyTimeSeconds: SHOWCASE_STUDY_TIME_SECONDS,
   });
   const [chatFailure, setChatFailure] = useState<Failure | null>(null);
+  const transport = createShowcaseChatTransport(setChatFailure);
 
   return (
     <QueryClientProvider client={quiz.client}>
       <ChatRuntime
-        demo
         quizId={PREVIEW_QUIZ.id}
         quiz={PREVIEW_QUIZ}
         question={quiz.view.question}
         questions={quiz.state.questions}
         canEdit
+        transport={transport}
         suggestions={SUGGESTIONS}
-        onResponse={(response, sent) => {
-          setChatFailure(
-            response.ok
-              ? null
-              : {
-                  status: response.status,
-                  retryAfter: response.headers.get("Retry-After"),
-                },
-          );
-          return response.status >= 500
-            ? explainOffline(sent.messages, quiz.view.question)
-            : undefined;
-        }}
       >
         {(chatRuntime) => (
           <ShowcaseSessionContext

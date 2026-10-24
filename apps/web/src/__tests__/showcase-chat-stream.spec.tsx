@@ -90,7 +90,18 @@ describe("showcase chat lifetime", () => {
     });
     const originalQuestionId = screen.getByTestId("snapshot").textContent;
     expect(originalQuestionId).not.toBe("");
-    const signal = fetchMock.mock.calls[0][1]?.signal;
+    const [endpoint, init] = fetchMock.mock.calls[0];
+    expect(endpoint).toBe("/ai/landing-demo/chat");
+    // The demo transport sends only what the public endpoint accepts.
+    expect(
+      Object.keys(JSON.parse(init?.body as string) as object).toSorted(),
+    ).toEqual([
+      "messages",
+      "question",
+      "questionContextSnapshots",
+      "questions",
+    ]);
+    const signal = init?.signal;
     expect(signal).toBeInstanceOf(AbortSignal);
     expect(signal?.aborted).toBe(false);
     await user.click(screen.getByRole("button", { name: "Switch tab" }));
