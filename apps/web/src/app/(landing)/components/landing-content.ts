@@ -16,8 +16,6 @@ export interface FaqEntry {
   answer: string;
 }
 
-export const SOLVRO_PORTFOLIO_URL =
-  "https://solvro.pwr.edu.pl/en/portfolio/testownik/";
 export const REPOSITORY_URL = "https://github.com/Solvro/web-testownik";
 
 export const STORY: readonly TimelineEntry[] = [

@@ -1,13 +1,10 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { SOLVRO_PORTFOLIO_URL, STORY } from "../landing-content";
-import { FOCUS_RING } from "../ui/focus";
+import { STORY } from "../landing-content";
 import { LandingSection } from "../ui/section";
 import { DisplayHeading } from "../ui/typography";
 
@@ -219,22 +216,6 @@ export function Timeline(): React.JSX.Element {
           <br />
           <em>Potem produkt.</em>
         </DisplayHeading>
-        <p className="text-muted-foreground mt-6 max-w-lg leading-[1.65] sm:mt-5">
-          Zweryfikowana historia projektu na&nbsp;podstawie oficjalnego
-          portfolio KN Solvro.
-        </p>
-        <Link
-          href={SOLVRO_PORTFOLIO_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={cn(
-            "text-primary inline-flex w-fit items-center gap-2 text-[0.8rem] font-bold transition-[gap,color] duration-300 hover:gap-3 [&_svg]:size-4",
-            FOCUS_RING,
-          )}
-        >
-          Pełna historia w&nbsp;portfolio Solvro
-          <ArrowUpRight aria-hidden="true" />
-        </Link>
       </header>
 
       <div ref={trackReference} className="relative ml-2 pb-12 sm:ml-4 lg:ml-0">
