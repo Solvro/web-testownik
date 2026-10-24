@@ -44,9 +44,14 @@ export function LandingPage({
     if (heroNav === null) {
       return;
     }
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsHeroNavGone(!entry.isIntersecting);
-    });
+    // The compact bar slides in as soon as the hero header starts to leave,
+    // so the two cross over instead of leaving a gap.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsHeroNavGone(entry.intersectionRatio < 1);
+      },
+      { threshold: 1 },
+    );
     observer.observe(heroNav);
     return () => {
       observer.disconnect();
