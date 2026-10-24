@@ -18,12 +18,15 @@ const COMMUNITY_LIMIT = 12;
 const SKELETON_COUNT = 6;
 /*
  * The open source row reserves the height of COMMUNITY_LIMIT entries (36 px
- * rows, 12 px gaps) at every column count, so the skeleton, the resolved list
+ * rows, 20 px gaps) at every column count, so the skeleton, the resolved list
  * and the error state take the same space without rendering empty slots.
  * Below `sm` every credit list is one horizontally scrolling row.
  */
 const COMMUNITY_MIN_HEIGHT =
-  "min-h-9 sm:min-h-[calc(6*2.25rem+5*0.75rem)] md:min-h-[calc(4*2.25rem+3*0.75rem)] xl:min-h-[calc(2*2.25rem+1*0.75rem)]";
+  "min-h-9 sm:min-h-[calc(6*2.25rem+5*1.25rem)] lg:min-h-[calc(4*2.25rem+3*1.25rem)] xl:min-h-[calc(3*2.25rem+2*1.25rem)]";
+
+/** One column count for every credit list, so rows never look misaligned. */
+const CREDIT_COLUMNS = "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 /*
  * Credit lists: a snap-scrolling row that bleeds to the screen edges on
@@ -33,7 +36,7 @@ const COMMUNITY_MIN_HEIGHT =
  * focus ring (2 px, offset 2 px) inside the scroller's clip.
  */
 const CREDIT_LIST_CLASS =
-  "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-6 gap-y-3 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
+  "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-6 gap-y-5 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
 const CREDIT_ITEM_CLASS =
   "min-w-0 max-sm:w-44 max-sm:shrink-0 max-sm:snap-start";
 
@@ -375,7 +378,7 @@ function CreditRow({
     <section
       aria-labelledby={labelledBy}
       className={cn(
-        "grid grid-cols-1 items-start gap-x-8 gap-y-3 py-4 lg:grid-cols-[11rem_minmax(0,1fr)] lg:py-3.5",
+        "grid grid-cols-1 items-start gap-x-8 gap-y-4 py-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:py-7",
         className,
       )}
     >
@@ -479,12 +482,7 @@ function Masthead({
       <div>
         {TEAM_GROUPS.map(({ team, members }) => (
           <CreditRow key={team} label={team} labelledBy={labelId(team)}>
-            <ul
-              className={cn(
-                CREDIT_LIST_CLASS,
-                "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-              )}
-            >
+            <ul className={cn(CREDIT_LIST_CLASS, CREDIT_COLUMNS)}>
               {members.map((member) => (
                 <li key={member.name} className={CREDIT_ITEM_CLASS}>
                   <MemberEntry member={member} githubByLogin={githubByLogin} />
@@ -495,15 +493,10 @@ function Masthead({
         ))}
       </div>
 
-      <div className="lg:border-border lg:mt-3 lg:border-t">
+      <div className="lg:border-border lg:mt-4 lg:border-t">
         {ALUMNI_MEMBERS.length === 0 ? null : (
           <CreditRow label="Ex zespół" labelledBy="team-alumni">
-            <ul
-              className={cn(
-                CREDIT_LIST_CLASS,
-                "sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4",
-              )}
-            >
+            <ul className={cn(CREDIT_LIST_CLASS, CREDIT_COLUMNS)}>
               {ALUMNI_MEMBERS.map((member) => (
                 <li key={member.name} className={CREDIT_ITEM_CLASS}>
                   <MemberEntry
@@ -534,7 +527,8 @@ function Masthead({
               aria-busy={community === undefined}
               className={cn(
                 CREDIT_LIST_CLASS,
-                "content-start sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
+                CREDIT_COLUMNS,
+                "content-start",
                 COMMUNITY_MIN_HEIGHT,
               )}
             >
