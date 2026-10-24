@@ -449,7 +449,7 @@ export function QuizDemo(): React.JSX.Element {
                 <div className="text-muted-foreground flex items-center gap-1.5 text-sm font-semibold tabular-nums">
                   <TimerIcon
                     aria-hidden="true"
-                    className="text-landing-primary size-4 animate-pulse"
+                    className="text-primary size-4 animate-pulse"
                   />
                   {formatTimer(elapsedSeconds)}
                 </div>

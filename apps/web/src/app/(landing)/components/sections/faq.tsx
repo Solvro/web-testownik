@@ -34,7 +34,7 @@ export function Faq(): React.JSX.Element {
         >
           {FAQ.map((item, index) => (
             <AccordionItem key={item.question} value={`faq-${String(index)}`}>
-              <AccordionTrigger className="hover:text-landing-primary aria-expanded:text-landing-primary gap-4 rounded-none py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!">
+              <AccordionTrigger className="hover:text-primary aria-expanded:text-primary gap-4 rounded-none py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!">
                 {item.question}
               </AccordionTrigger>
               <AccordionContent

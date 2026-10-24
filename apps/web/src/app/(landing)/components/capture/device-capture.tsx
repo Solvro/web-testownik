@@ -5,7 +5,6 @@ import { useLayoutEffect } from "react";
 import { cn } from "@/lib/utils";
 
 import { publishHeroProgress } from "../hero-progress";
-import { landingFontVariables } from "../landing-fonts";
 import "../landing.css";
 import { DeviceScene } from "../scene/device-scene";
 import "./capture-document.css";
@@ -58,7 +57,6 @@ export function DeviceCapture({
         request.background === "green" && "bg-[#0f0]",
         request.background === "white" && "bg-white",
         theme === "dark" && "dark",
-        landingFontVariables,
       )}
     >
       {/* Matches the real hero's device-layer box, minus the navigation. */}

@@ -1,13 +1,15 @@
 # Landing page
 
 The anonymous `/` route renders `LandingPage`; signed-in visitors can open
-`/?landing=true`. `landing-page.tsx` composes the sections. The landing's own
-styles are imported only by the landing and its screen documents, never
-globally, and hold only what Tailwind cannot express (the registered progress
-property, keyframes, the CSS iPhone chrome, selectors on CanvasUI nodes).
-`breakpoints.ts` keeps browser queries aligned with Tailwind: below `lg` the
-hero uses the CSS phone and its own quiz session; at `lg` it lazily mounts
-`hero-desktop-stage.tsx` and the device stack.
+`/?landing=true`. `landing-page.tsx` composes the sections with the app's
+own color tokens and fonts. Styling is Tailwind utilities, including on the
+DOM the scene and TOC create (`scene/scene-classes.ts`,
+`sections/toc-section-preview.ts`); `landing.css`, imported only by the
+landing and its capture harness, keeps the registered progress property,
+keyframes, scroll-driven animation, app-shell and CanvasUI selectors and the
+device pseudo-element chrome. `breakpoints.ts` keeps browser queries
+aligned with Tailwind: below `lg` the hero uses the CSS phone and its own quiz
+session; at `lg` it lazily mounts `hero-desktop-stage.tsx` and the device stack.
 
 ## Device screens and input
 

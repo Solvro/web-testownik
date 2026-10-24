@@ -128,7 +128,7 @@ export function ProductShowcase(): React.JSX.Element {
                     "focus-visible:outline-offset-[-3px]",
                   )}
                 >
-                  <span className="text-landing-primary text-sm font-bold tabular-nums">
+                  <span className="text-primary text-sm font-bold tabular-nums">
                     {number}
                   </span>
                   <span className="text-sm font-bold lg:mt-auto lg:rotate-180 lg:[writing-mode:vertical-rl]">
@@ -180,10 +180,10 @@ export function ProductShowcase(): React.JSX.Element {
                       )}
                     >
                       <div className="hidden items-center gap-3 lg:flex">
-                        <span className="text-landing-primary text-sm font-bold tabular-nums">
+                        <span className="text-primary text-sm font-bold tabular-nums">
                           {number}
                         </span>
-                        <span className="text-landing-primary hidden text-sm font-bold lg:inline">
+                        <span className="text-primary hidden text-sm font-bold lg:inline">
                           {feature.label}
                         </span>
                       </div>

@@ -6,11 +6,15 @@
 }
 
 /*
- * Rules for elements outside the landing's JSX and DOM created by CanvasUI,
- * and CSS3DRenderer. Everything rendered by React stays in
- * Tailwind utilities.
+ * Only what Tailwind utilities cannot express: the app shell around the
+ * landing, DOM created by CanvasUI and Next.js, pseudo-element chrome,
+ * keyframes and scroll-driven animation. Everything else lives in utilities
+ * on the elements themselves, including the DOM the device stack creates
+ * (`scene/scene-classes.ts`) and the TOC peek stages
+ * (`sections/toc-section-preview.ts`).
  */
 
+/* The root layout's shell, which the landing replaces. */
 body:has([data-landing-page]) {
   background: var(--background);
   scrollbar-color: var(--primary) var(--background);
@@ -75,46 +79,10 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   z-index: 80;
 }
 
-.lp-screen-layer {
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms linear;
-}
-
-[data-model-ready="true"] .lp-screen-layer {
-  opacity: 1;
-}
-
-[data-cover-only="true"] .lp-screen-layer {
-  opacity: 0 !important;
-}
-
-.lp-screen-laptop,
-.lp-screen-tablet,
-.lp-screen-phone {
-  overflow: hidden;
-  background: var(--background);
-  backface-visibility: hidden;
-  pointer-events: auto;
-  /* attachScreen gives each host an explicit native width and height. */
-  contain: size layout paint;
-  will-change: transform, opacity;
-}
-
-/*
- * Each host holds one iframe (`scene/device-screen-frame.tsx`), a document of
- * its own, so nothing inside can paint, portal or scroll past the device. The
- * host's `pointer-events` and `inert` reach into the frame.
- */
-.lp-screen-laptop > *,
-.lp-screen-tablet > *,
-.lp-screen-phone > * {
-  width: 100%;
-  height: 100%;
+/* The closed lid keeps the laptop screen inert, down into its frame. */
+.lp-screen-laptop[inert],
+.lp-screen-laptop[inert] * {
+  pointer-events: none !important;
 }
 
 /*
@@ -128,18 +96,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * Clipping the content to a radius and painting a black ring on the same
  * curve anti-aliases two coincident edges, which leaves a light seam along
  * the corner. This way only the ring's inner edge is anti-aliased.
- */
-.lp-screen-laptop {
-  --lp-laptop-ring: 3px;
-  --lp-laptop-radius: 12.3px;
-}
-
-.lp-screen-laptop[inert],
-.lp-screen-laptop[inert] * {
-  pointer-events: none !important;
-}
-
-/*
+ *
  * The thin black border every MacBook display has between the lit area and
  * the bezel. The overlay is inset by the ring width with the matching inner
  * radius, and its spread shadow fills everything between it and the host's
@@ -150,6 +107,8 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * edge.
  */
 .lp-screen-laptop::before {
+  --lp-laptop-ring: 3px;
+  --lp-laptop-radius: 12.3px;
   --lp-laptop-inner-radius: calc(
     var(--lp-laptop-radius) - var(--lp-laptop-ring)
   );
@@ -190,21 +149,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   transform: translateX(-50%);
 }
 
-.lp-screen-tablet,
-.lp-screen-phone {
-  transition: opacity 120ms linear;
-}
-
-.lp-screen-tablet {
-  border-radius: 16px;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 38%);
-}
-
-.lp-screen-phone {
-  border-radius: 64px;
-  box-shadow: inset 0 0 0 2px rgb(0 0 0 / 48%);
-}
-
 /* iPhone Dynamic Island. */
 .lp-screen-phone::after {
   position: absolute;
@@ -226,47 +170,10 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * github.com/picturepan2/devices.css) with `lp-` names. Vendored rather than
  * imported: the package ships every device (~50 KB) and its reset sets
  * `display: block` on every descendant of `.device`, which would override the
- * Tailwind display utilities of the live screen inside. Silver in light, space
- * black in dark; the screen follows the page theme on its own.
+ * Tailwind display utilities of the live screen inside. The body, frame,
+ * screen, island and side buttons are utilities in `sections/hero-phone.tsx`,
+ * which also sets `--lp-iphone-edge` per theme; these are its pseudo-elements.
  */
-.lp-iphone {
-  --lp-iphone-edge: #c8cacb;
-  --lp-iphone-rim: #e2e3e4;
-  position: relative;
-  width: 428px;
-  height: 879px;
-}
-
-.dark .lp-iphone {
-  --lp-iphone-edge: #5c5956;
-  --lp-iphone-rim: #76726f;
-}
-
-.lp-iphone-frame {
-  box-sizing: border-box;
-  width: 428px;
-  height: 879px;
-  padding: 18px;
-  border: 1px solid var(--lp-iphone-edge);
-  border-radius: 68px;
-  background: #010101;
-  box-shadow:
-    inset 0 0 4px 2px white,
-    inset 0 0 0 6px var(--lp-iphone-rim),
-    0 2.6rem 4rem -1.6rem rgb(0 0 0 / 38%);
-}
-
-/* Its own stacking context so the screen's z-indexed UI stays under the island. */
-.lp-iphone-screen {
-  position: relative;
-  isolation: isolate;
-  width: 390px;
-  height: 841px;
-  overflow: hidden;
-  border-radius: 49px;
-  background: var(--background);
-}
-
 .lp-iphone-stripe::before,
 .lp-iphone-stripe::after,
 .lp-iphone-bands::before,
@@ -319,18 +226,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   left: 86px;
 }
 
-/* Dynamic Island. */
-.lp-iphone-island {
-  position: absolute;
-  top: 29px;
-  left: 50%;
-  width: 120px;
-  height: 35px;
-  margin-left: -60px;
-  border-radius: 20px;
-  background: #010101;
-}
-
 .lp-iphone-sensors::after {
   top: 30px;
   left: 50%;
@@ -359,27 +254,14 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   box-shadow: 0 0 1px 1px rgb(255 255 255 / 5%);
 }
 
-/* Action button, then volume up and down. */
-.lp-iphone-buttons,
-.lp-iphone-buttons::before,
-.lp-iphone-buttons::after,
-.lp-iphone-power {
-  position: absolute;
-  width: 3px;
-  border-radius: 2px;
-  background: var(--lp-iphone-edge);
-}
-
-.lp-iphone-buttons {
-  top: 115px;
-  left: -2px;
-  height: 32px;
-}
-
+/* Volume up and down, below the action button. */
 .lp-iphone-buttons::before,
 .lp-iphone-buttons::after {
   left: 0;
+  width: 3px;
   height: 62px;
+  border-radius: 2px;
+  background: var(--lp-iphone-edge);
 }
 
 .lp-iphone-buttons::after {
@@ -388,12 +270,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 
 .lp-iphone-buttons::before {
   top: 140px;
-}
-
-.lp-iphone-power {
-  top: 200px;
-  right: -2px;
-  height: 100px;
 }
 
 /*
@@ -437,7 +313,14 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-/* TOC section peek — arrive soft, leave with a quick pop. */
+/* The hero's scroll hint arrow. */
+@keyframes lp-nudge {
+  50% {
+    transform: translateY(0.28rem);
+  }
+}
+
+/* TOC section peek: arrive soft, leave with a quick pop. */
 @keyframes lp-toc-preview-in {
   from {
     opacity: 0;
@@ -475,15 +358,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-.lp-toc-preview-in {
-  animation: lp-toc-preview-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.lp-toc-preview-boom {
-  animation: lp-toc-preview-boom 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  pointer-events: none;
-}
-
 .lp-toc-preview-boom::before,
 .lp-toc-preview-boom::after {
   position: absolute;
@@ -506,30 +380,18 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   animation-delay: 40ms;
 }
 
-.lp-toc-preview-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-  background: var(--background);
-  color: var(--foreground);
-  transform-origin: top left;
-  pointer-events: none;
-  user-select: none;
-  contain: layout paint style;
+@media (prefers-reduced-motion: reduce) {
+  .lp-toc-preview-boom::before,
+  .lp-toc-preview-boom::after {
+    animation: none;
+  }
 }
 
 /*
- * Built peeks stay mounted in the card; parked ones keep their layout but skip
- * rendering, so revealing one is a single class flip. `visibility` hides the
- * parked stage's own background, which `content-visibility` still paints.
+ * A peek is a still: no entrance, nudge or hover motion inside the clone.
+ * Utilities cannot reach the clone's descendants' own pseudo-elements without
+ * `before:`/`after:` variants, which would give every node one.
  */
-.lp-toc-preview-stage:not(.lp-toc-preview-active) {
-  visibility: hidden;
-  content-visibility: hidden;
-}
-
-/* A peek is a still: no entrance, nudge or hover motion inside the clone. */
 .lp-toc-preview-stage *,
 .lp-toc-preview-stage *::before,
 .lp-toc-preview-stage *::after {
@@ -539,18 +401,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   scroll-behavior: auto !important;
 }
 
-/*
- * A re-cloned peek replacing the one on screen fades in over it in the same
- * box; the stale stage underneath is removed once covered.
- */
+/* A re-cloned peek fades in over the stale one, which is removed once covered. */
 @keyframes lp-toc-preview-fresh {
   from {
     opacity: 0;
   }
-}
-
-.lp-toc-preview-stage.lp-toc-preview-fresh {
-  animation: lp-toc-preview-fresh 100ms ease-out both;
 }
 
 @keyframes lp-story-date-in {
@@ -577,33 +432,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-.lp-story-date {
-  animation: lp-story-date-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.lp-story-description {
-  animation: lp-story-description-in 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-toc-preview-in,
-  .lp-toc-preview-stage.lp-toc-preview-fresh,
-  .lp-toc-preview-boom,
-  .lp-toc-preview-boom::before,
-  .lp-toc-preview-boom::after {
-    animation: none;
-  }
-
-  .lp-story-date,
-  .lp-story-description {
-    animation: none;
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-
-/* These targets animate only transform/opacity; preserve their painted contents. */
+/*
+ * These targets animate only transform/opacity; preserve their painted
+ * contents. Keyed to the attribute that registers a progress target, so the
+ * static fallback (which drops it) also drops the layer promotion.
+ */
 @media (min-width: 1024px) {
   [data-hero-progress] {
     will-change: transform, opacity;

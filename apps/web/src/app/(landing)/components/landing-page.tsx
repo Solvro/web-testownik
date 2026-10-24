@@ -6,7 +6,6 @@ import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
 import { useGuestStart } from "./hooks/use-guest-start";
-import { landingFontVariables } from "./landing-fonts";
 import "./landing.css";
 import { Faq } from "./sections/faq";
 import { Finale } from "./sections/finale";
@@ -44,7 +43,6 @@ export function LandingPage({
         "group/landing bg-background text-foreground w-full min-w-0 overflow-clip",
         // Tapping a control on the page should not flash the platform highlight.
         "[&_a]:[-webkit-tap-highlight-color:transparent] [&_button]:[-webkit-tap-highlight-color:transparent]",
-        landingFontVariables,
       )}
     >
       <a
