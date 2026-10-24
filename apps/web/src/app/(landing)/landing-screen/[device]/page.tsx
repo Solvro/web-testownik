@@ -33,7 +33,7 @@ export default async function LandingScreenPage({
   }
   return (
     <main>
-      <h1 className="sr-only">Podgląd Testownika — {device}</h1>
+      <h1 className="sr-only">Podgląd Testownika: {device}</h1>
       <ScreenFrameDocument request={request} />
     </main>
   );
