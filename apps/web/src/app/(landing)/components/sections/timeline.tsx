@@ -289,7 +289,9 @@ export function Timeline(): React.JSX.Element {
                 <time
                   className={cn(
                     "text-primary mt-1 block text-xs font-bold tracking-[0.12em] capitalize motion-reduce:opacity-100",
-                    isVisible ? "lp-story-date" : "opacity-0",
+                    isVisible
+                      ? "animate-[lp-story-date-in_420ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
+                      : "opacity-0",
                   )}
                 >
                   {event.date}
@@ -298,7 +300,9 @@ export function Timeline(): React.JSX.Element {
                 <p
                   className={cn(
                     "text-muted-foreground mt-2 max-w-xl leading-[1.7] motion-reduce:opacity-100",
-                    isVisible ? "lp-story-description" : "opacity-0",
+                    isVisible
+                      ? "animate-[lp-story-description-in_650ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
+                      : "opacity-0",
                   )}
                   style={{
                     animationDelay: `${(TYPE_START + [...segmenter.segment(event.title)].length * TYPE_STEP + 220).toString()}ms`,

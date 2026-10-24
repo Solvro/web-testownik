@@ -1,9 +1,13 @@
 # Landing page
 
 The anonymous `/` route renders `LandingPage`; signed-in visitors can open
-`/?landing=true`. `landing-page.tsx` composes the sections; `landing-theme.css`
-owns theme/font tokens and `landing.css` the registered progress property,
-CanvasUI/CSS3D selectors and CSS phone. `breakpoints.ts` keeps browser queries
+`/?landing=true`. `landing-page.tsx` composes the sections with the app's
+own color tokens and fonts. Styling is Tailwind utilities, including on the
+DOM the scene and TOC create (`scene/scene-classes.ts`,
+`sections/toc-section-preview.ts`); `landing.css`, imported only by the
+landing and its capture harness, keeps the registered progress property,
+keyframes, scroll-driven animation, app-shell and CanvasUI selectors and the
+device pseudo-element chrome. `breakpoints.ts` keeps browser queries
 aligned with Tailwind: below `lg` the hero uses the CSS phone and its own quiz
 session; at `lg` it lazily mounts `hero-desktop-stage.tsx` and the device stack.
 

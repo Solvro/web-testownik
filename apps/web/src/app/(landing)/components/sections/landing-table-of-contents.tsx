@@ -616,11 +616,13 @@ export function LandingTableOfContents(): React.JSX.Element {
             >
               <div
                 className={cn(
-                  "relative",
+                  "relative motion-reduce:animate-none",
+                  // Arrive soft, leave with a quick pop; the pop's two burst
+                  // rings are `.lp-toc-preview-boom` pseudo-elements.
                   previewMounted &&
                     (previewBooming
-                      ? "lp-toc-preview-boom"
-                      : "lp-toc-preview-in"),
+                      ? "lp-toc-preview-boom pointer-events-none animate-[lp-toc-preview-boom_360ms_cubic-bezier(0.2,0.8,0.2,1)_both]"
+                      : "animate-[lp-toc-preview-in_220ms_cubic-bezier(0.22,1,0.36,1)_both]"),
                 )}
               >
                 <div className="border-border bg-background relative rounded-xl border p-2 shadow-[0_18px_50px_-28px_oklch(0_0_0/0.55)]">

@@ -45,7 +45,17 @@ const HERO_PEEK_COVER_CLASS =
  */
 const ACTIVE_CLASS = "lp-toc-preview-active";
 /** Fades a refreshed stage in over the stale one it replaces. */
-const FRESH_CLASS = "lp-toc-preview-fresh";
+const FRESH_CLASS = "animate-[lp-toc-preview-fresh_100ms_ease-out_both]";
+/**
+ * Built peeks stay mounted in the card; parked ones keep their layout but skip
+ * rendering, so revealing one is a single class flip. `visibility` hides the
+ * parked stage's own background, which `content-visibility` still paints.
+ * `.lp-toc-preview-stage` in landing.css stills every animation inside.
+ */
+const STAGE_CLASS = [
+  "lp-toc-preview-stage bg-background text-foreground pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none contain-layout contain-paint contain-style motion-reduce:animate-none",
+  "not-[.lp-toc-preview-active]:invisible not-[.lp-toc-preview-active]:[content-visibility:hidden]",
+].join(" ");
 /** `lp-toc-preview-fresh` duration plus a frame of slack. */
 const CROSSFADE_MS = 100 + 20;
 /** At most one rebuild per section per this many milliseconds. */
@@ -216,7 +226,7 @@ function syncShadowTheme(): void {
 function createStage(sectionId: string, layout: TocPreviewLayout): HTMLElement {
   const stage = document.createElement("div");
   stage.dataset.tocPreviewStage = sectionId;
-  stage.className = "lp-toc-preview-stage";
+  stage.className = STAGE_CLASS;
   stage.inert = true;
   stage.setAttribute("aria-hidden", "true");
   stage.style.width = px(layout.layoutWidth);

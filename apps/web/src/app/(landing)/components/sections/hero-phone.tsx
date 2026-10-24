@@ -53,8 +53,9 @@ const blankScreen = (
 );
 
 /**
- * The hero visual below `lg`: an iPhone drawn entirely in CSS (see `.lp-iphone`
- * in landing.css) running the same live quiz as the desktop stage. No image,
+ * The hero visual below `lg`: an iPhone drawn entirely in CSS (the antenna
+ * lines, sensors and volume buttons are the `.lp-iphone-*` pseudo-elements in
+ * landing.css) running the same live quiz as the desktop stage. No image,
  * no model, no WebGL. The scroll choreography is a CSS scroll-driven animation
  * on `.lp-hero-phone` and `.lp-hero-chip`.
  *
@@ -83,9 +84,20 @@ export function HeroPhone({
         aria-label="iPhone z quizem w Testowniku"
         className="lp-hero-phone absolute inset-0"
       >
-        <div className="lp-iphone origin-top-left [scale:var(--lp-phone-scale)]">
-          <div className="lp-iphone-frame">
-            <div ref={skipSequentialFocus} className="lp-iphone-screen">
+        <div
+          className={cn(
+            "relative h-[879px] w-[428px] origin-top-left [scale:var(--lp-phone-scale)]",
+            // Silver in light, space black in dark; the screen follows the
+            // page theme on its own.
+            "[--lp-iphone-edge:#c8cacb] [--lp-iphone-rim:#e2e3e4] dark:[--lp-iphone-edge:#5c5956] dark:[--lp-iphone-rim:#76726f]",
+          )}
+        >
+          <div className="box-border h-[879px] w-[428px] rounded-[68px] border border-(--lp-iphone-edge) bg-[#010101] p-[18px] shadow-[inset_0_0_4px_2px_white,inset_0_0_0_6px_var(--lp-iphone-rim),0_2.6rem_4rem_-1.6rem_rgb(0_0_0/38%)]">
+            {/* Its own stacking context so the screen's z-indexed UI stays under the island. */}
+            <div
+              ref={skipSequentialFocus}
+              className="bg-background relative isolate h-[841px] w-[390px] overflow-hidden rounded-[49px]"
+            >
               {isCompact ? (
                 <Suspense fallback={blankScreen}>
                   <HeroPhoneScreen />
@@ -96,10 +108,21 @@ export function HeroPhone({
             </div>
           </div>
           <div aria-hidden="true" className="lp-iphone-stripe" />
-          <div aria-hidden="true" className="lp-iphone-island" />
+          {/* Dynamic Island. */}
+          <div
+            aria-hidden="true"
+            className="absolute top-[29px] left-1/2 -ml-[60px] h-[35px] w-[120px] rounded-[20px] bg-[#010101]"
+          />
           <div aria-hidden="true" className="lp-iphone-sensors" />
-          <div aria-hidden="true" className="lp-iphone-buttons" />
-          <div aria-hidden="true" className="lp-iphone-power" />
+          {/* Action button; volume up and down are its pseudo-elements. */}
+          <div
+            aria-hidden="true"
+            className="lp-iphone-buttons absolute top-[115px] -left-[2px] h-8 w-[3px] rounded-[2px] bg-(--lp-iphone-edge)"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute top-[200px] -right-[2px] h-[100px] w-[3px] rounded-[2px] bg-(--lp-iphone-edge)"
+          />
           <div aria-hidden="true" className="lp-iphone-bands" />
         </div>
       </div>
