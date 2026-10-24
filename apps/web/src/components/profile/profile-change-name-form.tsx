@@ -21,31 +21,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpdateUserProfile } from "@/hooks/use-user-profile";
+import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
 
 export interface ProfileChangeNameFormProps {
   userData: UserData;
   onClose: () => void;
-  open?: boolean;
 }
 
 export function ProfileChangeNameForm({
   userData,
   onClose,
-  open = true,
 }: ProfileChangeNameFormProps) {
   const router = useRouter();
   const updateUserProfile = useUpdateUserProfile();
-
-  const canChangeName = userData.account_type === ACCOUNT_TYPE.EMAIL;
+  const canChangeName = hasPermission(
+    userData.account_type,
+    PermissionAction.EDIT_PROFILE_NAME,
+    userData.account_level,
+  );
   const isGuest = userData.account_type === ACCOUNT_TYPE.GUEST;
 
-  const fullNameParts = userData.full_name.split(" ");
-  const initialFirstName = (userData.first_name ?? fullNameParts[0]).trim();
-  const initialLastName = (
-    userData.last_name ?? fullNameParts.slice(1).join(" ")
-  ).trim();
+  const initialFirstName = userData.first_name.trim();
+  const initialLastName = userData.last_name.trim();
 
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
@@ -80,14 +79,6 @@ export function ProfileChangeNameForm({
       setError("Wprowadź imię lub nazwisko.");
       return;
     }
-    if (trimmedFirst.length > 30) {
-      setError("Imię może mieć maksymalnie 30 znaków.");
-      return;
-    }
-    if (trimmedLast.length > 51) {
-      setError("Nazwisko może mieć maksymalnie 51 znaków.");
-      return;
-    }
 
     if (isUnchanged) {
       onClose();
@@ -105,32 +96,32 @@ export function ProfileChangeNameForm({
     } catch (error_: unknown) {
       console.error("Failed to update profile name:", error_);
       setError("Nie udało się zaktualizować nazwy profilu. Spróbuj ponownie.");
-      toast.error("Wystąpił błąd podczas zapisywania profilu.");
       setSaving(false);
       return;
     }
 
+    let refreshed = false;
     try {
-      const refreshed = await getUserService().refreshToken();
-      if (!refreshed) {
-        toast.warning(
-          "Nazwę zapisano. Może minąć chwila, zanim zaktualizuje się w menu.",
-        );
-      }
+      refreshed = await getUserService().refreshToken();
     } catch {
+      // The profile was saved even if refreshing the session failed.
+    }
+
+    if (refreshed) {
+      toast.success("Zapisano zmiany w profilu.");
+    } else {
       toast.warning(
         "Nazwę zapisano. Może minąć chwila, zanim zaktualizuje się w menu.",
       );
     }
 
     router.refresh();
-    toast.success("Zapisano zmiany w profilu.");
     onClose();
   };
 
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(isOpen) => {
         if (!isOpen && !saving) {
           onClose();
@@ -205,11 +196,19 @@ export function ProfileChangeNameForm({
         </div>
 
         {canChangeName ? (
-          <form onSubmit={handleSave} className="space-y-4">
+          <form
+            id="profile-change-name-form"
+            onSubmit={handleSave}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="first_name">Imię</Label>
               <Input
                 id="first_name"
+                aria-invalid={error !== null}
+                aria-describedby={
+                  error === null ? undefined : "profile-name-error"
+                }
                 value={firstName}
                 onChange={(event) => {
                   setFirstName(event.target.value);
@@ -226,6 +225,10 @@ export function ProfileChangeNameForm({
               <Label htmlFor="last_name">Nazwisko</Label>
               <Input
                 id="last_name"
+                aria-invalid={error !== null}
+                aria-describedby={
+                  error === null ? undefined : "profile-name-error"
+                }
                 value={lastName}
                 onChange={(event) => {
                   setLastName(event.target.value);
@@ -238,11 +241,21 @@ export function ProfileChangeNameForm({
                 maxLength={51}
               />
             </div>
+            <button
+              type="submit"
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
           </form>
         ) : null}
 
         {error === null ? null : (
-          <p role="alert" className="text-destructive text-sm">
+          <p
+            id="profile-name-error"
+            role="alert"
+            className="text-destructive text-sm"
+          >
             {error}
           </p>
         )}
@@ -271,9 +284,9 @@ export function ProfileChangeNameForm({
             </Button>
             {canChangeName ? (
               <Button
-                type="button"
+                type="submit"
+                form="profile-change-name-form"
                 disabled={saving || isUnchanged || isEmpty}
-                onClick={() => void handleSave()}
               >
                 {saving ? "Zapisywanie…" : "Zapisz"}
               </Button>
@@ -284,5 +297,3 @@ export function ProfileChangeNameForm({
     </Dialog>
   );
 }
-
-export const ProfileChangeNameDialog = ProfileChangeNameForm;
