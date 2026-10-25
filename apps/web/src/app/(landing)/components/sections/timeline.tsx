@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { STORY } from "../landing-content";
+import { STORY, STORY_HEADING } from "../landing-content";
 import { LandingSection } from "../ui/section";
 import { DisplayHeading } from "../ui/typography";
+import { UpdateNote } from "./update-note";
 
 const MARKER_OFFSET = 12;
 const REVEAL_TAIL = 16;
@@ -210,12 +211,11 @@ export function Timeline(): React.JSX.Element {
       showPlaceholder={false}
       className="mb-12 grid scroll-mt-[5rem] grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
-      <header className="self-start lg:sticky lg:top-20">
+      <header className="min-w-0 self-start">
         <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">
-          Najpierw egzamin.
-          <br />
-          <em>Potem produkt.</em>
+          {STORY_HEADING}
         </DisplayHeading>
+        <UpdateNote />
       </header>
 
       <div ref={trackReference} className="relative ml-2 pb-12 sm:ml-4 lg:ml-0">
