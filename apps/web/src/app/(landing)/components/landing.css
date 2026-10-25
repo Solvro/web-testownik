@@ -63,6 +63,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * captured subtree needs this opaque background.
  */
 .lp-hero-grid,
+.lp-bubble-capture,
 .lp-bubble-capture > canvas > div,
 .lp-bubble-capture > div:not([class]),
 .lp-bubble-capture > div {
@@ -76,12 +77,25 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * The droplet. Masked over the same stretch `HeroFade` fades the grid, so it
- * settles into the page with the grid instead of staying crisp over the exit,
- * while the copy and the scroll hint, which are DOM, do not fade.
+ * The content canvas sits under the fixed header (z-50 in the stage) and is
+ * clipped under it: the header's capture copy is drawn into the canvas for
+ * the droplet, and must not show through the header's blur. The strip shows
+ * the grid the Bubble itself paints. 5.3rem is the header's hero height at
+ * `lg`, the only width the Bubble exists at.
+ */
+.lp-bubble-capture > canvas:first-of-type {
+  z-index: 1;
+  clip-path: inset(5.3rem 0 0 0);
+}
+
+/*
+ * The droplet, over the header. Masked over the same stretch `HeroFade` fades
+ * the grid, so it settles into the page with the grid instead of staying
+ * crisp over the exit, while the copy and the scroll hint, which are DOM, do
+ * not fade.
  */
 .lp-bubble-capture > canvas:last-of-type {
-  z-index: 80;
+  z-index: 60;
   mask-image: linear-gradient(
     to bottom,
     black calc(100% - clamp(7rem, 22vh, 13rem)),
@@ -288,14 +302,19 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * Each chip sets its own `--lp-chip-drift`. Without scroll-timeline support,
  * or with reduced motion, both stay in the resting pose (no offset).
  */
+/* The phone starts leaning left, stands straight halfway and ends leaning
+   a little right, so it reads naturally as it rises. */
 @keyframes lp-hero-phone-rise {
   from {
     translate: 0 1rem;
-    rotate: -1.5deg;
+    rotate: -3.5deg;
+  }
+  50% {
+    rotate: 0deg;
   }
   to {
     translate: 0 0;
-    rotate: 0deg;
+    rotate: 2.5deg;
   }
 }
 
@@ -314,7 +333,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     .lp-hero-chip {
       animation: lp-hero-phone-rise linear both;
       animation-timeline: scroll(root block);
-      animation-range: 0 65vh;
+      animation-range: 0 80vh;
     }
 
     .lp-hero-chip {
@@ -332,15 +351,14 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * The header swap, driven by the hero's view timeline so it lands on the
- * exact scroll pixel on the compositor, however fast the page moves, and
- * already at first paint when the page loads scrolled. The hero header
- * starts leaving when the hero's stage does: at the hero's top below `lg`,
- * at its bottom on desktop, where the stage is sticky. The compact bar's
- * dock shows from the next pixel (the hero header is the one at rest) and
- * settles into its own size one hero-header height later, through the style
- * query below so the shrink itself stays a timed transition. `LandingPage` mirrors all of this from a scroll handler
- * for browsers without scroll-driven animations.
+ * The header settles from the hero's view timeline, so it lands on the exact
+ * scroll pixel the stage starts to leave, however fast the page moves, and
+ * is already right at first paint when the page loads scrolled: at the hero's
+ * top below `lg`, at its bottom on desktop, where the stage is sticky. The
+ * stage carries the flag; the style query turns it into `--lp-nav-t` on the
+ * header so the shrink itself stays a timed transition. `LandingPage`
+ * mirrors this from a scroll handler where scroll-driven animations are
+ * missing.
  */
 @property --lp-nav-settled {
   syntax: "<integer>";
@@ -348,61 +366,55 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   initial-value: 0;
 }
 
-@keyframes lp-nav-dock-shown {
-  from,
-  to {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-@keyframes lp-nav-dock-settled {
+@keyframes lp-nav-settled {
   from,
   to {
     --lp-nav-settled: 1;
   }
 }
 
-@keyframes lp-nav-hero-gone {
-  from,
-  to {
-    visibility: hidden;
+/*
+ * Settling also lifts the header above the device layer (z-70) and hides the
+ * droplet: as the stage leaves, the devices would otherwise cross over the
+ * bar, and the droplet is no longer wanted over it. At the settle pixel the
+ * devices are still a full header height below the bar, so the flip is
+ * invisible. Mirrored on the attribute for the scroll-handler fallback.
+ */
+@container style(--lp-nav-settled: 1) {
+  [data-landing-nav="fixed"] {
+    --lp-nav-t: 1;
+    z-index: 80;
+  }
+
+  /* Opacity: the Bubble sets the canvas's visibility inline. */
+  .lp-bubble-capture > canvas:last-of-type {
+    opacity: 0;
   }
 }
 
-@container style(--lp-nav-settled: 1) {
-  [data-landing-nav="compact"] {
-    --lp-nav-t: 1;
-  }
+[data-landing-nav="fixed"][data-settled="true"] {
+  z-index: 80;
+}
+
+[data-landing-nav="fixed"][data-settled="true"]
+  ~ *
+  .lp-bubble-capture
+  > canvas:last-of-type,
+[data-landing-nav="fixed"][data-settled="true"]
+  ~ .lp-bubble-capture
+  > canvas:last-of-type {
+  opacity: 0;
 }
 
 @supports (animation-timeline: view()) {
-  [data-landing-nav-dock] {
-    animation:
-      lp-nav-dock-shown linear forwards,
-      lp-nav-dock-settled linear forwards;
-    animation-timeline: --lp-hero;
-    animation-range-start:
-      exit-crossing 1px,
-      exit-crossing calc(var(--lp-nav-hero-h) + 1px);
-    animation-range-end: exit-crossing 100%;
-  }
-
-  [data-landing-nav="hero"] {
-    animation: lp-nav-hero-gone linear forwards;
+  [data-hero-stage] {
+    animation: lp-nav-settled linear forwards;
     animation-timeline: --lp-hero;
     animation-range: exit-crossing 1px exit-crossing 100%;
   }
 
   @media (min-width: 64rem) {
-    [data-landing-nav-dock] {
-      animation-range-start:
-        exit 1px,
-        exit calc(var(--lp-nav-hero-h) + 1px);
-      animation-range-end: exit 100%;
-    }
-
-    [data-landing-nav="hero"] {
+    [data-hero-stage] {
       animation-range: exit 1px exit 100%;
     }
   }

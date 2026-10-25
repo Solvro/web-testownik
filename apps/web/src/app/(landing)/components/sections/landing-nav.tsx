@@ -13,7 +13,6 @@ import { wordmarkDark, wordmarkLight } from "../logos";
 import { scrollToLandingSection } from "../scroll-to-section";
 import { FOCUS_RING } from "../ui/focus";
 import { LandingButton, LandingButtonLink } from "../ui/landing-button";
-import { NAV_VARIABLES } from "./landing-nav-variables";
 
 /*
  * The closing section keeps its TOC entry, but the header already carries the
@@ -30,17 +29,27 @@ const START_BUTTON_CLASS = cn(
   "active:translate-y-0 active:shadow-none",
 );
 
-const NAV_TRANSITION =
-  "[transition:--lp-nav-t_480ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 /*
- * Both variants paint a soft gradient over whatever is beneath. The solid
- * tint (and, on the compact bar, the blur) is a layer whose opacity follows
- * the shrink, so it fades in and out with it. The hero header never blurs:
- * a backdrop blur inside the Bubble's canvas samples past the canvas edge
- * and paints a dark band.
+ * Every dimension that differs between the hero look and the settled bar is
+ * a hero value minus a shrink scaled by `--lp-nav-t` (0 over the hero, 1
+ * once settled), registered in landing.css so flipping it transitions every
+ * dimension together. It eases only once the visitor has touched the page: a
+ * reload restores the scroll position after the first style pass, and the
+ * header has to land there, not slide there. `LandingPage` sets the flag.
  */
-const NAV_SURFACE =
-  "[background-image:linear-gradient(to_bottom,var(--color-background),transparent)]";
+const NAV_VARIABLES =
+  "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
+const NAV_TRANSITION =
+  "group-data-[nav-live=true]/landing:[transition:--lp-nav-t_480ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+/*
+ * The header blurs what is beneath it. Over the hero that is the grid, whose
+ * blurred lines read as a soft haze that fades out at the top and the sides
+ * (`NAV_HAZE`); once settled, a solid tint comes in (`NAV_TINT`). Both layers
+ * follow the shrink, so the look changes with the size.
+ */
+const NAV_SURFACE = "backdrop-blur-[18px]";
+const NAV_HAZE =
+  "pointer-events-none absolute inset-0 -z-10 opacity-[calc(1-var(--lp-nav-t))] [background-image:linear-gradient(to_bottom,var(--color-background),transparent_1.6rem),linear-gradient(to_right,var(--color-background),transparent_3rem),linear-gradient(to_left,var(--color-background),transparent_3rem)]";
 const NAV_TINT =
   "bg-background/75 pointer-events-none absolute inset-0 -z-10 opacity-(--lp-nav-t)";
 const NAV_HEIGHT =
@@ -52,33 +61,33 @@ const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 
 /**
  * The landing's own header; the app shell's navbar is hidden for this route
- * (see landing.css). It renders twice: the `hero` variant sits at the top of
- * the hero, inside the Bubble's captured subtree so the droplet refracts it,
- * and stays put through the hero's sticky travel. The moment that header
- * starts to scroll out, the `compact` variant takes its place, fixed, with
- * exactly its geometry; once the hero header would have left entirely it
- * settles into its own size. Sections offset their scroll targets by the
- * settled height. `LandingPage` owns the swap: it docks the compact bar and
- * flips visibility, inertness and `data-settled` from the DOM. The hero
- * variant is rendered twice while the Bubble warms up, so it finds the
- * copies by `data-landing-nav` rather than a ref.
+ * (see landing.css). One fixed bar for the whole page, rendered inside the
+ * hero's stage so it can sit between the Bubble's two canvases: over the
+ * content canvas, under the droplet. The droplet refracts a `capture` copy
+ * of it that only exists inside the html-in-canvas subtree (invisible and
+ * inert anywhere else), while the content canvas is clipped under the bar
+ * so the copy never shows through the blur. Over the hero it has the hero
+ * size; once the stage starts to leave it settles into its own
+ * (`data-settled`, set by landing.css from the hero's view timeline, or by
+ * `LandingPage` where scroll-driven animations are missing). Sections offset
+ * their scroll targets by the settled height.
  */
 export function LandingNav({
   ref,
   isAuthenticated,
   isStarting,
   onStart,
-  variant = "hero",
+  capture = false,
 }: {
   ref?: React.Ref<HTMLElement>;
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
   isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
-  variant?: "hero" | "compact";
+  /** The Bubble's capture-only copy. */
+  capture?: boolean;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
-  const compact = variant === "compact";
   // One underline glides between the hovered (or focused) section links.
   const [underline, setUnderline] = useState<{
     left: number;
@@ -99,25 +108,22 @@ export function LandingNav({
   return (
     <header
       ref={ref}
-      data-landing-nav={variant}
-      // The hero header shows first; `LandingPage` flips both once it swaps.
-      inert={compact}
-      aria-hidden={compact}
+      data-landing-nav={capture ? "capture" : "fixed"}
+      inert={capture}
+      aria-hidden={capture}
       className={cn(
-        "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
+        "border-border/70 inset-x-0 top-0 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
         NAV_VARIABLES,
         NAV_TRANSITION,
         NAV_HEIGHT,
         NAV_SURFACE,
-        compact
-          ? "relative w-full data-[settled=true]:[--lp-nav-t:1]"
-          : "absolute top-0 left-0 w-full",
+        capture
+          ? "invisible absolute [canvas_&]:visible"
+          : "fixed data-[settled=true]:[--lp-nav-t:1]",
       )}
     >
-      <span
-        aria-hidden="true"
-        className={cn(NAV_TINT, compact && "backdrop-blur-[18px]")}
-      />
+      <span aria-hidden="true" className={NAV_HAZE} />
+      <span aria-hidden="true" className={NAV_TINT} />
       <Link
         href="/?landing=true"
         aria-label="Testownik"

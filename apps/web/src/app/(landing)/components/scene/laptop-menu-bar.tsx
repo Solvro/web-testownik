@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCurrentMinute } from "../../lib/current-minute";
 
 /**
  * The macOS menu bar across the top of the hero MacBook's screen.
@@ -30,8 +30,6 @@ import { useSyncExternalStore } from "react";
 
 const MENU_BAR_ITEMS = ["Plik", "Edycja", "Widok", "Okno", "Pomoc"] as const;
 
-const MINUTE_MS = 60_000;
-
 const CLOCK_FORMAT = new Intl.DateTimeFormat("pl-PL", {
   weekday: "short",
   day: "numeric",
@@ -48,44 +46,13 @@ function formatMenuBarClock(date: Date): string {
   return `${part("weekday")} ${part("day")} ${part("month")} ${part("hour")}:${part("minute")}`;
 }
 
-/** Notifies on every minute boundary, starting with the next one. */
-function subscribeToMinutes(onMinute: () => void): () => void {
-  let interval: ReturnType<typeof setInterval> | undefined;
-  const timeout = setTimeout(
-    () => {
-      onMinute();
-      interval = setInterval(onMinute, MINUTE_MS);
-    },
-    MINUTE_MS - (Date.now() % MINUTE_MS),
-  );
-  return () => {
-    clearTimeout(timeout);
-    clearInterval(interval);
-  };
-}
-
-/** The current minute, as a stable snapshot between ticks. */
-function getCurrentMinute(): number {
-  return Math.floor(Date.now() / MINUTE_MS);
-}
-
-function getServerMinute(): null {
-  return null;
-}
-
 function MenuBarClock(): React.JSX.Element {
-  const minute = useSyncExternalStore(
-    subscribeToMinutes,
-    getCurrentMinute,
-    getServerMinute,
-  );
+  const now = useCurrentMinute();
 
-  return minute === null ? (
+  return now === null ? (
     <span className="invisible ml-[1px] tabular-nums">wt. 9 sty 9:41</span>
   ) : (
-    <span className="ml-[1px] tabular-nums">
-      {formatMenuBarClock(new Date(minute * MINUTE_MS))}
-    </span>
+    <span className="ml-[1px] tabular-nums">{formatMenuBarClock(now)}</span>
   );
 }
 

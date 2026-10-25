@@ -55,6 +55,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
+import { useCurrentMinute } from "../lib/current-minute";
 import {
   PREVIEW_AI_HINTS,
   PREVIEW_QUIZ,
@@ -423,14 +424,31 @@ function QuizPageSurface({
   );
 }
 
-/** iOS status bar, laid out around the Dynamic Island like the real one. */
+const STATUS_BAR_CLOCK = new Intl.DateTimeFormat("pl-PL", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/**
+ * iOS status bar, laid out around the Dynamic Island like the real one. The
+ * clock is the visitor's, like the MacBook's menu bar; the server renders an
+ * invisible stand-in of the same width.
+ */
 function PhoneStatusBar(): React.JSX.Element {
+  const now = useCurrentMinute();
   return (
     <div
       aria-hidden="true"
       className="grid h-[54px] flex-none grid-cols-[1fr_126px_1fr] items-center text-[15px] leading-none font-semibold tracking-[-0.01em]"
     >
-      <span className="justify-self-center pl-2">9:41</span>
+      <span
+        className={cn(
+          "justify-self-center pl-2 tabular-nums",
+          now === null && "invisible",
+        )}
+      >
+        {now === null ? "9:41" : STATUS_BAR_CLOCK.format(now)}
+      </span>
       <span />
       <div className="inline-flex items-center gap-[6px] justify-self-center pr-2 [&>svg]:block [&>svg]:h-[11px] [&>svg]:w-[17px] [&>svg]:fill-current">
         <svg viewBox="0 0 18 12">

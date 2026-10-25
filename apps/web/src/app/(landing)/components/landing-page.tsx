@@ -11,7 +11,6 @@ import { Faq } from "./sections/faq";
 import { Finale } from "./sections/finale";
 import { Hero } from "./sections/hero";
 import { LandingNav } from "./sections/landing-nav";
-import { NAV_VARIABLES } from "./sections/landing-nav-variables";
 import { LandingTableOfContents } from "./sections/landing-table-of-contents";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
@@ -35,106 +34,53 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
-  const dockReference = useRef<HTMLDivElement>(null);
   const { isStarting, start } = useGuestStart();
 
-  // The hero header sits at the top of the hero's stage (sticky on desktop).
-  // From the first pixel that top is gone the compact bar's dock shows in
-  // its place with the same geometry; once the hero header would have left
-  // entirely the bar shrinks to its own size (`data-settled`). Where
-  // scroll-driven animations exist, landing.css does both from the hero's
-  // view timeline, in step with the compositor at any scroll speed and
-  // before hydration; this handler is the fallback for the rest and owns
-  // what CSS cannot: inertness, the hero header's visibility and the
-  // hand-back mid-shrink. It reads one rect per scroll and writes only when
-  // the state flips, so nothing inside the Bubble's html-in-canvas subtree
-  // changes while the page scrolls.
+  // The header settles once the hero's stage starts to leave the viewport.
+  // Where scroll-driven animations exist landing.css does that from the
+  // hero's view timeline; this handler is the fallback for the rest, and
+  // owns the flag that lets the shrink ease only after the first
+  // interaction. It reads one rect per scroll and writes only when the state
+  // flips.
   useEffect(() => {
-    const stage = heroReference.current?.querySelector(":scope > div");
-    const dock = dockReference.current;
-    const compactNav =
-      dock?.querySelector<HTMLElement>('[data-landing-nav="compact"]') ?? null;
+    const hero = heroReference.current;
+    const stage = hero?.querySelector("[data-hero-stage]");
+    const nav = hero?.querySelector('[data-landing-nav="fixed"]');
     if (
+      hero === null ||
       !(stage instanceof HTMLElement) ||
-      dock === null ||
-      compactNav === null
+      !(nav instanceof HTMLElement)
     ) {
       return;
     }
-    let heroNavHeight = 0;
-    let wasGone: boolean | null = null;
     let wasSettled: boolean | null = null;
-    const remeasure = (): void => {
-      // The compact bar shares the hero header's geometry: its hero height
-      // is the one dimension that never changes with the shrink.
-      const heroHeight =
-        getComputedStyle(compactNav).getPropertyValue("--lp-nav-hero-h");
-      heroNavHeight =
-        Number.parseFloat(heroHeight) *
-        Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-    };
     const measure = (): void => {
-      if (!(heroNavHeight > 0)) {
-        // The stylesheet can land after the first pass.
-        remeasure();
-      }
-      const scrolledPast = -stage.getBoundingClientRect().top;
-      const gone = scrolledPast >= 1;
-      if (gone !== wasGone) {
-        const heroNavs = stage.querySelectorAll<HTMLElement>(
-          '[data-landing-nav="hero"]',
-        );
-        // Handing back mid-shrink (a quick scroll up): the hero header picks
-        // up the bar's current size and finishes the shrink back itself.
-        if (wasGone === true && !gone) {
-          const current = Number.parseFloat(
-            getComputedStyle(compactNav).getPropertyValue("--lp-nav-t"),
-          );
-          if (current > 0.001) {
-            for (const heroNav of heroNavs) {
-              heroNav.animate(
-                [{ "--lp-nav-t": current }, { "--lp-nav-t": 0 }] as Keyframe[],
-                {
-                  duration: 480 * current,
-                  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-                },
-              );
-            }
-          }
-        }
-        wasGone = gone;
-        for (const heroNav of heroNavs) {
-          heroNav.style.visibility = gone ? "hidden" : "";
-          heroNav.inert = gone;
-          heroNav.setAttribute("aria-hidden", String(gone));
-        }
-        dock.style.opacity = gone ? "1" : "";
-        dock.style.pointerEvents = gone ? "auto" : "";
-        compactNav.inert = !gone;
-        compactNav.setAttribute("aria-hidden", String(!gone));
-      }
-      const settled = scrolledPast >= heroNavHeight + 1;
+      const settled = stage.getBoundingClientRect().top <= -1;
       if (settled !== wasSettled) {
         wasSettled = settled;
-        compactNav.dataset.settled = String(settled);
+        nav.dataset.settled = String(settled);
       }
     };
-    const onResize = (): void => {
-      remeasure();
-      measure();
-    };
-    // The first pass lands on whatever the page loaded at, without easing.
-    compactNav.style.transition = "none";
-    onResize();
-    const frame = window.requestAnimationFrame(() => {
-      compactNav.style.transition = "";
-    });
+    measure();
     window.addEventListener("scroll", measure, { passive: true });
-    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("resize", measure, { passive: true });
+    const root = hero.parentElement;
+    const liveEvents = ["wheel", "touchstart", "keydown", "pointerdown"];
+    const goLive = (): void => {
+      root?.setAttribute("data-nav-live", "true");
+      for (const type of liveEvents) {
+        window.removeEventListener(type, goLive);
+      }
+    };
+    for (const type of liveEvents) {
+      window.addEventListener(type, goLive, { passive: true });
+    }
     return () => {
       window.removeEventListener("scroll", measure);
-      window.removeEventListener("resize", onResize);
-      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", measure);
+      for (const type of liveEvents) {
+        window.removeEventListener(type, goLive);
+      }
     };
   }, []);
 
@@ -144,8 +90,6 @@ export function LandingPage({
       data-landing-page
       className={cn(
         "group/landing bg-background text-foreground w-full min-w-0 overflow-clip",
-        // Lets the compact bar's dock follow the hero's view timeline.
-        "[timeline-scope:--lp-hero]",
         // Tapping a control on the page should not flash the platform highlight.
         "[&_a]:[-webkit-tap-highlight-color:transparent] [&_button]:[-webkit-tap-highlight-color:transparent]",
       )}
@@ -160,27 +104,18 @@ export function LandingPage({
         Przejdź do treści
       </a>
       <LandingTableOfContents />
-      {/* Shown by landing.css (scroll-driven) or the effect above. */}
-      <div
-        ref={dockReference}
-        data-landing-nav-dock
-        className={cn(
-          "pointer-events-none fixed inset-x-0 top-0 z-50 opacity-0",
-          // Its settle range is one hero-header height into the swap.
-          NAV_VARIABLES,
-        )}
-      >
-        <LandingNav
-          variant="compact"
-          isAuthenticated={isAuthenticated}
-          isStarting={isStarting}
-          onStart={start}
-        />
-      </div>
       <Hero
         heroReference={heroReference}
         nav={
           <LandingNav
+            isAuthenticated={isAuthenticated}
+            isStarting={isStarting}
+            onStart={start}
+          />
+        }
+        captureNav={
+          <LandingNav
+            capture
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}

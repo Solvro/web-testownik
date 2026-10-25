@@ -52,22 +52,23 @@ function StaticDeviceCover(): React.JSX.Element {
 }
 
 /**
- * The header, hero copy and "Poznaj produkt" link, rendered exactly once
- * whichever stage hosts it. Below `lg` it flows; at `lg` it is laid out
+ * The hero copy and "Poznaj produkt" link, rendered exactly once whichever
+ * stage hosts it. Below `lg` it flows; at `lg` it is laid out
  * absolutely over the sticky stage. `visual` sits between copy and link.
  */
 function HeroContent({
-  nav,
+  captureNav,
   visual,
   isStatic = false,
 }: {
-  nav?: ReactNode;
+  /** The header copy the Bubble refracts; only the desktop stage has one. */
+  captureNav?: ReactNode;
   visual?: ReactNode;
   isStatic?: boolean;
 }): React.JSX.Element {
   return (
     <>
-      {nav}
+      {captureNav}
 
       <div
         data-hero-progress={isStatic ? undefined : true}
@@ -113,10 +114,13 @@ function HeroContent({
 export function Hero({
   heroReference,
   nav,
+  captureNav,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
-  /** The hero variant of the header, refracted by the Bubble on desktop. */
+  /** The page header: fixed, but rendered inside the stage (see LandingNav). */
   nav?: ReactNode;
+  /** Its capture-only copy for the Bubble. */
+  captureNav?: ReactNode;
 }): React.JSX.Element {
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
@@ -165,7 +169,6 @@ export function Hero({
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
       <HeroContent
-        nav={nav}
         visual={
           <>
             <HeroPhone className="lg:hidden" />
@@ -213,13 +216,18 @@ export function Hero({
         media="(min-width: 1024px)"
       />
       <div
+        data-hero-stage
         className={cn(
-          "relative lg:h-[100svh] lg:overflow-hidden",
+          // Its own stacking context, above the sections that follow, so the
+          // fixed header inside it (z-50) stays over the page, between the
+          // Bubble's canvases. Sticky would make one anyway at `lg`.
+          "relative z-50 lg:h-[100svh] lg:overflow-hidden",
           isStatic
             ? "lg:h-[100svh] lg:min-h-[36rem]"
             : "lg:sticky lg:top-0 lg:min-h-[42rem]",
         )}
       >
+        {nav}
         {isDesktop ? (
           <Suspense fallback={staticHero}>
             <HeroDesktopStage
@@ -234,7 +242,7 @@ export function Hero({
                 setIsStageReady(true);
               }}
             >
-              <HeroContent nav={nav} isStatic={isStatic} />
+              <HeroContent captureNav={captureNav} isStatic={isStatic} />
             </HeroDesktopStage>
           </Suspense>
         ) : (
