@@ -101,6 +101,7 @@ export function LandingNav({
   return (
     <header
       ref={ref}
+      data-landing-nav={variant}
       inert={hidden}
       aria-hidden={hidden}
       className={cn(

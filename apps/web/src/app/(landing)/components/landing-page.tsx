@@ -34,7 +34,6 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
-  const heroNavReference = useRef<HTMLElement>(null);
   const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
   const [isHeroNavGone, setIsHeroNavGone] = useState(false);
@@ -45,9 +44,11 @@ export function LandingPage({
   // with the same geometry; once the hero header would have left entirely
   // the bar shrinks to its own size (`settled`). Measured on scroll rather
   // than observed: the header lives inside the Bubble's html-in-canvas
-  // subtree, which intersection observers do not track reliably. The swap
-  // is written to the DOM in the scroll handler itself so it lands in the
-  // same frame as the scroll; the state only follows for `inert`.
+  // subtree, which intersection observers do not track reliably, and which
+  // renders it twice while the capture warms up, so it is queried rather
+  // than held in a ref. The swap is written to the DOM in the scroll handler
+  // itself so it lands in the same frame as the scroll; the state only
+  // follows for `inert`.
   useEffect(() => {
     const stage = heroReference.current?.querySelector(":scope > div");
     if (!(stage instanceof HTMLElement)) {
@@ -56,35 +57,43 @@ export function LandingPage({
     let wasGone = false;
     const measure = (): void => {
       const scrolledPast = -stage.getBoundingClientRect().top;
-      const heroNav = heroNavReference.current;
+      const heroNavs = [
+        ...stage.querySelectorAll<HTMLElement>('[data-landing-nav="hero"]'),
+      ];
       const compactNav = compactNavReference.current;
       const gone = scrolledPast > 0;
       // Handing back mid-shrink (a quick scroll up): the hero header picks
       // up the bar's current size and finishes the shrink back itself.
-      if (wasGone && !gone && heroNav !== null && compactNav !== null) {
+      if (wasGone && !gone && compactNav !== null) {
         const current = Number.parseFloat(
           getComputedStyle(compactNav).getPropertyValue("--lp-nav-t"),
         );
         if (current > 0.001) {
-          heroNav.animate(
-            [{ "--lp-nav-t": current }, { "--lp-nav-t": 0 }] as Keyframe[],
-            {
-              duration: 480 * current,
-              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-            },
-          );
+          for (const heroNav of heroNavs) {
+            heroNav.animate(
+              [{ "--lp-nav-t": current }, { "--lp-nav-t": 0 }] as Keyframe[],
+              {
+                duration: 480 * current,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              },
+            );
+          }
         }
       }
       wasGone = gone;
-      if (heroNav !== null) {
+      let heroNavHeight = 0;
+      for (const heroNav of heroNavs) {
         heroNav.style.visibility = gone ? "hidden" : "";
+        // Not `offsetHeight`: it reads 0 inside the Bubble's layoutsubtree.
+        heroNavHeight = Math.max(
+          heroNavHeight,
+          heroNav.getBoundingClientRect().height,
+        );
       }
       if (compactNav !== null) {
         compactNav.style.visibility = gone ? "visible" : "";
       }
       setIsHeroNavGone(gone);
-      // Not `offsetHeight`: it reads 0 inside the Bubble's layoutsubtree.
-      const heroNavHeight = heroNav?.getBoundingClientRect().height ?? 0;
       setIsNavSettled(heroNavHeight > 0 && scrolledPast >= heroNavHeight);
     };
     window.addEventListener("scroll", measure, { passive: true });
@@ -130,7 +139,6 @@ export function LandingPage({
         heroReference={heroReference}
         nav={
           <LandingNav
-            ref={heroNavReference}
             hidden={isHeroNavGone}
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
