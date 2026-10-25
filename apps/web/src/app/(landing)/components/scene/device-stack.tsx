@@ -300,7 +300,7 @@ export function DeviceStack({
           showOpenStill
             ? "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] z-1 bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]"
             : DEVICE_COVER_CLASS,
-          "transition-opacity delay-150 duration-150",
+          "transition-opacity duration-150",
           "group-data-[model-ready=true]/stack:opacity-0",
           "group-data-[cover-only=true]/stack:opacity-100!",
           "group-data-[context-lost=true]/stack:opacity-100!",

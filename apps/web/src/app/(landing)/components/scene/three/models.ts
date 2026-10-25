@@ -2,6 +2,7 @@ import type { Mesh, Object3D } from "three";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+import { DEVICE_MODELS_URL } from "../device-models-url";
 import { disposeObject, isMesh } from "./utils";
 
 /**
@@ -10,8 +11,6 @@ import { disposeObject, isMesh } from "./utils";
  * blanked the displays, re-parented the MacBook lid onto its hinge and named
  * every node the hero needs; `public/models/README.md` records the details.
  */
-export const DEVICE_MODELS_URL = "/models/device-stack.glb";
-
 export interface DeviceModels {
   laptop: {
     root: Object3D;

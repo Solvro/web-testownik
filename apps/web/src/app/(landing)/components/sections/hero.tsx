@@ -15,6 +15,7 @@ import {
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
 import { useDeviceCoverPlacement } from "../scene/device-cover-placement";
+import { DEVICE_MODELS_URL } from "../scene/device-models-url";
 import { DeviceSceneBackdrop } from "../scene/device-scene-backdrop";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import { FOCUS_RING } from "../ui/focus";
@@ -166,7 +167,7 @@ export function Hero({
     }
     const timeout = window.setTimeout(() => {
       setIsStageSettled(true);
-    }, 1400);
+    }, 1250);
     return () => {
       window.clearTimeout(timeout);
     };
@@ -223,7 +224,7 @@ export function Hero({
       {/* React hoists this into <head>; only wide viewports fetch the model. */}
       <link
         rel="preload"
-        href="/models/device-stack.glb"
+        href={DEVICE_MODELS_URL}
         as="fetch"
         type="model/gltf-binary"
         crossOrigin="anonymous"
