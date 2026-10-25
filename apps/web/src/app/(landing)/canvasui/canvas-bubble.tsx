@@ -34,6 +34,8 @@ export interface BubbleElements {
   content: HTMLElement;
   output: HTMLCanvasElement;
   onContentReady?: () => void;
+  /** Called after each frame is drawn into `output`, while it can be read. */
+  onRender?: (output: HTMLCanvasElement) => void;
 }
 
 export interface BubbleInstance {
@@ -261,7 +263,7 @@ export function createBubble(
   options: BubbleOptions = {},
 ): BubbleInstance | null {
   const config = { ...DEFAULTS, ...options };
-  const { source, content, output, onContentReady } = elements;
+  const { source, content, output, onContentReady, onRender } = elements;
 
   const gl = output.getContext("webgl2", {
     alpha: true,
@@ -426,6 +428,11 @@ export function createBubble(
   }
 
   function render() {
+    draw();
+    onRender?.(output);
+  }
+
+  function draw() {
     uploadContent();
     const dpr = output.width / Math.max(output.clientWidth, 1);
     gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
@@ -756,6 +763,8 @@ export interface BubbleProps extends BubbleOptions {
   style?: React.CSSProperties;
   /** Called when the WebGL2 context cannot be created, so nothing renders. */
   onUnavailable?: () => void;
+  /** Called after each frame is drawn into the output canvas. */
+  onRender?: (output: HTMLCanvasElement) => void;
 }
 
 const emptySubscribe = () => () => {};
@@ -767,6 +776,7 @@ export function Bubble({
   enabled = true,
   style,
   onUnavailable,
+  onRender,
   ...options
 }: BubbleProps) {
   const sourceRef = useRef<HTMLCanvasElement>(null);
@@ -784,6 +794,9 @@ export function Bubble({
   );
   const reportUnavailable = useEffectEvent(() => {
     onUnavailable?.();
+  });
+  const handleRender = useEffectEvent((canvas: HTMLCanvasElement) => {
+    onRender?.(canvas);
   });
   const native = captureHtml && supported && !failed;
 
@@ -809,6 +822,7 @@ export function Bubble({
             setContentReady(true);
           }
         },
+        onRender: handleRender,
       },
       initialOptions,
     );

@@ -34,9 +34,12 @@ import {
 export function HeroBubble({
   children,
   className,
+  onRender,
 }: {
   children: ReactNode;
   className?: string;
+  /** After each droplet frame, with the output canvas still readable. */
+  onRender?: (output: HTMLCanvasElement) => void;
 }): React.JSX.Element {
   const hasFinePointer = useHasFinePointer();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -78,6 +81,7 @@ export function HeroBubble({
         setIsUnavailable(true);
       }}
       className={className}
+      onRender={onRender}
       fallbackOpacity={1}
       size={compact ? 16 : 30}
       trail={compact ? 6 : 24}

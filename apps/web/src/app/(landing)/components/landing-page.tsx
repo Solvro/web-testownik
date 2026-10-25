@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import { Faq } from "./sections/faq";
 import { Finale } from "./sections/finale";
 import { Hero } from "./sections/hero";
 import { LandingNav } from "./sections/landing-nav";
+import { NAV_HOVER_NONE } from "./sections/landing-nav-hover";
+import type { NavHover } from "./sections/landing-nav-hover";
 import { LandingTableOfContents } from "./sections/landing-table-of-contents";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
@@ -34,34 +36,31 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
-  const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
+  // Hover on the real header, mirrored into the copy the Bubble refracts.
+  const [navHover, setNavHover] = useState<NavHover>(NAV_HOVER_NONE);
 
-  // The compact bar slides in once the hero header has scrolled out of the
-  // hero's stage (sticky on desktop). Where scroll-driven animations exist
-  // landing.css does that from the hero's view timeline, on the compositor
-  // and already at first paint; this handler is the fallback for the rest
-  // and keeps the bar inert while it waits above the viewport. One rect per
-  // scroll, written only when the state flips.
+  // The header shrinks as the hero's stage leaves the viewport. Where
+  // scroll-driven animations exist landing.css does that from the hero's
+  // view timeline; this handler is the fallback for the rest. It reads one
+  // rect per scroll and writes only when the state flips.
   useEffect(() => {
-    const stage = heroReference.current?.querySelector(":scope > div");
-    const compactNav = compactNavReference.current;
-    if (!(stage instanceof HTMLElement) || compactNav === null) {
+    const hero = heroReference.current;
+    const stage = hero?.querySelector("[data-hero-stage]");
+    const nav = hero?.querySelector('[data-landing-nav="fixed"]');
+    if (
+      hero === null ||
+      !(stage instanceof HTMLElement) ||
+      !(nav instanceof HTMLElement)
+    ) {
       return;
     }
-    let wasShown: boolean | null = null;
+    let wasSettled: boolean | null = null;
     const measure = (): void => {
-      const heroHeight =
-        Number.parseFloat(
-          getComputedStyle(compactNav).getPropertyValue("--lp-nav-hero-h"),
-        ) *
-        Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const shown = -stage.getBoundingClientRect().top >= heroHeight;
-      if (shown !== wasShown) {
-        wasShown = shown;
-        compactNav.dataset.shown = String(shown);
-        compactNav.inert = !shown;
-        compactNav.setAttribute("aria-hidden", String(!shown));
+      const settled = stage.getBoundingClientRect().top <= -1;
+      if (settled !== wasSettled) {
+        wasSettled = settled;
+        nav.dataset.settled = String(settled);
       }
     };
     measure();
@@ -79,8 +78,6 @@ export function LandingPage({
       data-landing-page
       className={cn(
         "group/landing bg-background text-foreground w-full min-w-0 overflow-clip",
-        // Lets the compact bar follow the hero's view timeline.
-        "[timeline-scope:--lp-hero]",
         // Tapping a control on the page should not flash the platform highlight.
         "[&_a]:[-webkit-tap-highlight-color:transparent] [&_button]:[-webkit-tap-highlight-color:transparent]",
       )}
@@ -95,13 +92,6 @@ export function LandingPage({
         Przejdź do treści
       </a>
       <LandingTableOfContents />
-      <LandingNav
-        ref={compactNavReference}
-        variant="compact"
-        isAuthenticated={isAuthenticated}
-        isStarting={isStarting}
-        onStart={start}
-      />
       <Hero
         heroReference={heroReference}
         nav={
@@ -109,6 +99,17 @@ export function LandingPage({
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}
+            hover={navHover}
+            onHoverChange={setNavHover}
+          />
+        }
+        captureNav={
+          <LandingNav
+            capture
+            isAuthenticated={isAuthenticated}
+            isStarting={isStarting}
+            onStart={start}
+            hover={navHover}
           />
         }
       />

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -43,6 +43,38 @@ export function HeroDesktopStage({
   onReady: () => void;
 }): React.JSX.Element {
   const resetFallback = useEffectEvent(onRestored);
+  const lensStripReference = useRef<HTMLCanvasElement>(null);
+  // The droplet canvas sits under the fixed header, so the header can stay
+  // above the device layer in every frame. Its top strip is copied here, a
+  // canvas above the header, so the droplet still passes over the bar.
+  const copyLensStrip = (output: HTMLCanvasElement): void => {
+    const strip = lensStripReference.current;
+    const context = strip?.getContext("2d") ?? null;
+    if (strip === null || context === null) {
+      return;
+    }
+    const height = Math.round(
+      (strip.clientHeight * output.width) / Math.max(output.clientWidth, 1),
+    );
+    if (strip.width !== output.width || strip.height !== height) {
+      strip.width = output.width;
+      strip.height = height;
+    }
+    context.clearRect(0, 0, strip.width, strip.height);
+    if (height > 0 && output.width > 0) {
+      context.drawImage(
+        output,
+        0,
+        0,
+        output.width,
+        height,
+        0,
+        0,
+        strip.width,
+        height,
+      );
+    }
+  };
   useEffect(() => {
     // A new desktop scene gets a fresh chance after a mobile viewport visit.
     // DeviceStack retains the page-wide creation-failure budget.
@@ -52,11 +84,14 @@ export function HeroDesktopStage({
   return (
     <>
       {/*
-       * The Bubble is its own stacking context (z-1) so the droplet can paint
-       * above the header it refracts while the whole bubble still stays
-       * beneath the device layer.
+       * Not a stacking context of its own: landing.css layers its content
+       * canvas and its droplet canvas under the fixed header, beneath the
+       * device layer.
        */}
-      <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">
+      <HeroBubble
+        className="lp-bubble-capture absolute! inset-0"
+        onRender={copyLensStrip}
+      >
         {/* Over the grid, beneath the copy and the scroll hint. */}
         <HeroFade />
         {/* Keep the copy mounted across context loss and restoration. */}
@@ -117,6 +152,14 @@ export function HeroDesktopStage({
         </div>
       </HeroBubble>
 
+      {/* The droplet over the header: 5.3rem is the header's hero height at `lg`. */}
+      <canvas
+        ref={lensStripReference}
+        data-hero-lens-strip
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 z-90 h-[5.3rem] w-full"
+      />
+
       {/*
        * Outside the Bubble on purpose. The Bubble refracts through
        * html-in-canvas, which cannot host a nested WebGL canvas and would
@@ -127,7 +170,7 @@ export function HeroDesktopStage({
       <div
         aria-hidden={isStatic ? true : undefined}
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30",
+          "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-70",
           isStatic && "invisible",
         )}
       >
