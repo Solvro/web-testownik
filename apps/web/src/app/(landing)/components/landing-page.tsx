@@ -34,34 +34,47 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
+  const heroNavReference = useRef<HTMLElement>(null);
   const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
   const [isHeroNavGone, setIsHeroNavGone] = useState(false);
+  const [isNavSettled, setIsNavSettled] = useState(false);
 
   // The hero header sits at the top of the hero's stage (sticky on desktop).
   // As soon as that top leaves the viewport the compact bar takes its place
-  // with the same geometry and shrinks over the next stretch of scroll
-  // (`--lp-nav-t`, see `LandingNav`). Measured on scroll rather than
-  // observed: the header lives inside the Bubble's html-in-canvas subtree,
-  // which intersection observers do not track reliably.
+  // with the same geometry; once the hero header would have left entirely
+  // the bar shrinks to its own size (`settled`). Measured on scroll rather
+  // than observed: the header lives inside the Bubble's html-in-canvas
+  // subtree, which intersection observers do not track reliably.
   useEffect(() => {
     const stage = heroReference.current?.querySelector(":scope > div");
     if (!(stage instanceof HTMLElement)) {
       return;
     }
     let frame = 0;
+    let wasGone = false;
     const measure = (): void => {
       frame = 0;
       const scrolledPast = -stage.getBoundingClientRect().top;
+      const heroNav = heroNavReference.current;
       const compactNav = compactNavReference.current;
-      if (compactNav !== null) {
-        const travel = Math.max(compactNav.offsetHeight, 1);
-        compactNav.style.setProperty(
-          "--lp-nav-t",
-          Math.min(1, Math.max(0, scrolledPast / travel)).toFixed(3),
-        );
+      const gone = scrolledPast > 0;
+      // Handing back mid-shrink (a quick scroll up): the hero header picks
+      // up the bar's current size and finishes the transition itself.
+      if (wasGone && !gone && heroNav !== null && compactNav !== null) {
+        const current =
+          getComputedStyle(compactNav).getPropertyValue("--lp-nav-t");
+        if (Number.parseFloat(current) > 0.001) {
+          heroNav.style.transition = "none";
+          heroNav.style.setProperty("--lp-nav-t", current);
+          void heroNav.offsetHeight;
+          heroNav.style.transition = "";
+          heroNav.style.removeProperty("--lp-nav-t");
+        }
       }
-      setIsHeroNavGone(scrolledPast > 0);
+      wasGone = gone;
+      setIsHeroNavGone(gone);
+      setIsNavSettled(scrolledPast >= (heroNav?.offsetHeight ?? 0));
     };
     const schedule = (): void => {
       frame ||= window.requestAnimationFrame(measure);
@@ -102,6 +115,7 @@ export function LandingPage({
         ref={compactNavReference}
         variant="compact"
         hidden={!isHeroNavGone}
+        settled={isNavSettled}
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={start}
@@ -110,6 +124,7 @@ export function LandingPage({
         heroReference={heroReference}
         nav={
           <LandingNav
+            ref={heroNavReference}
             hidden={isHeroNavGone}
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}

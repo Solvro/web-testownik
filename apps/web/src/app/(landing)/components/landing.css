@@ -324,6 +324,13 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /* Hero badges drift up and down a little, each on its own phase. */
+/* Lets the landing header's hero-to-compact shrink transition (see LandingNav). */
+@property --lp-nav-t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 @keyframes lp-float {
   50% {
     transform: translateY(-0.45rem);

@@ -32,11 +32,14 @@ const START_BUTTON_CLASS = cn(
 /*
  * Every dimension that differs between the hero header and the compact bar
  * is a hero value minus a shrink scaled by `--lp-nav-t` (0 in the hero, 1
- * once settled), so the two variants are pixel-identical at 0 and the compact
- * bar morphs continuously with the scroll (see `LandingPage`).
+ * once settled), so the two variants are pixel-identical at 0. The property
+ * is registered in landing.css, so flipping it transitions every dimension
+ * together.
  */
 const NAV_VARIABLES =
-  "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] [--lp-nav-t:0] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
+  "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
+const NAV_TRANSITION =
+  "[transition:--lp-nav-t_480ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 const NAV_HEIGHT =
   "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
 const NAV_BACKGROUND =
@@ -52,9 +55,9 @@ const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
  * the hero, inside the Bubble's captured subtree so the droplet refracts it,
  * and stays put through the hero's sticky travel. The moment that header
  * starts to scroll out, the `compact` variant takes its place, fixed, with
- * exactly its geometry, and shrinks to its own as the scroll continues;
- * sections offset their scroll targets by the settled height. Whichever is
- * hidden is inert.
+ * exactly its geometry; once the hero header would have left entirely it
+ * settles into its own size. Sections offset their scroll targets by the
+ * settled height. Whichever is hidden is inert.
  */
 export function LandingNav({
   ref,
@@ -63,6 +66,7 @@ export function LandingNav({
   onStart,
   variant = "hero",
   hidden = false,
+  settled = false,
 }: {
   ref?: React.Ref<HTMLElement>;
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
@@ -72,6 +76,8 @@ export function LandingNav({
   variant?: "hero" | "compact";
   /** The other variant is showing. */
   hidden?: boolean;
+  /** Compact only: shrunk to its own size rather than the hero header's. */
+  settled?: boolean;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
   const compact = variant === "compact";
@@ -100,9 +106,11 @@ export function LandingNav({
       className={cn(
         "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
         NAV_VARIABLES,
+        NAV_TRANSITION,
         NAV_HEIGHT,
         NAV_BACKGROUND,
         compact ? "fixed inset-x-0 top-0" : "absolute top-0 left-0 w-full",
+        settled && "[--lp-nav-t:1]",
         hidden && "invisible",
       )}
     >
