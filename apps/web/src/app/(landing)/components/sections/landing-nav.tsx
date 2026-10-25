@@ -54,8 +54,10 @@ const NAV_TINT =
   "bg-background/75 pointer-events-none absolute inset-0 -z-10 opacity-[min(1,calc(var(--lp-nav-t)*3))]";
 const NAV_HEIGHT =
   "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
+// Laid out at the hero size and scaled down with the bar: a box that changes
+// size re-lays out and re-rasterises the SVG every frame, which stutters.
 const LOGO_SIZE =
-  "h-[calc(2.2rem_-_0.2rem_*_var(--lp-nav-t))] w-[calc(7.7rem_-_0.7rem_*_var(--lp-nav-t))] sm:w-[calc(10rem_-_2rem_*_var(--lp-nav-t))]";
+  "h-[2.2rem] w-[8.75rem] origin-left [scale:calc(1_-_0.2_*_var(--lp-nav-t))] sm:w-[10rem]";
 const TOGGLE_SIZE = "size-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 

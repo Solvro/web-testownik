@@ -9,6 +9,10 @@ The MacBook, iPad and iPhone in one meshopt-compressed binary glTF (807 KB,
 440 KB gzip), loaded by `scene/three/models.ts` with three's `GLTFLoader` and
 `MeshoptDecoder`. It is a build artefact: regenerate it, do not edit it by hand.
 
+Everything under `/models/` is served as immutable (`next.config.ts`); the
+model is requested with a `?v=` query from `scene/device-models-url.ts`, so bump
+it after regenerating.
+
 The export bakes in every fix-up, so the runtime only looks nodes up by name:
 
 | Node             | What it is                                                |

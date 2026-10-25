@@ -117,6 +117,11 @@ export function LandingPage({
           />
         }
       />
+      {/*
+       * No Suspense around these: a boundary this large is outlined by the
+       * server renderer, so the section would stream in after the shell with
+       * zero height first, breaking scroll restoration on reload.
+       */}
       <ProductShowcase />
       <Faq />
       <Timeline />
