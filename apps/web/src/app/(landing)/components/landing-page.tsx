@@ -60,16 +60,19 @@ export function LandingPage({
       const compactNav = compactNavReference.current;
       const gone = scrolledPast > 0;
       // Handing back mid-shrink (a quick scroll up): the hero header picks
-      // up the bar's current size and finishes the transition itself.
+      // up the bar's current size and finishes the shrink back itself.
       if (wasGone && !gone && heroNav !== null && compactNav !== null) {
-        const current =
-          getComputedStyle(compactNav).getPropertyValue("--lp-nav-t");
-        if (Number.parseFloat(current) > 0.001) {
-          heroNav.style.transition = "none";
-          heroNav.style.setProperty("--lp-nav-t", current);
-          void heroNav.offsetHeight;
-          heroNav.style.transition = "";
-          heroNav.style.removeProperty("--lp-nav-t");
+        const current = Number.parseFloat(
+          getComputedStyle(compactNav).getPropertyValue("--lp-nav-t"),
+        );
+        if (current > 0.001) {
+          heroNav.animate(
+            [{ "--lp-nav-t": current }, { "--lp-nav-t": 0 }] as Keyframe[],
+            {
+              duration: 480 * current,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            },
+          );
         }
       }
       wasGone = gone;
