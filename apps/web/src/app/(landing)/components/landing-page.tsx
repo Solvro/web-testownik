@@ -83,7 +83,9 @@ export function LandingPage({
         compactNav.style.visibility = gone ? "visible" : "";
       }
       setIsHeroNavGone(gone);
-      setIsNavSettled(scrolledPast >= (heroNav?.offsetHeight ?? 0));
+      // Not `offsetHeight`: it reads 0 inside the Bubble's layoutsubtree.
+      const heroNavHeight = heroNav?.getBoundingClientRect().height ?? 0;
+      setIsNavSettled(heroNavHeight > 0 && scrolledPast >= heroNavHeight);
     };
     window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
