@@ -40,6 +40,13 @@ const NAV_VARIABLES =
   "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
 const NAV_TRANSITION =
   "[transition:--lp-nav-t_480ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+/*
+ * In the hero the header is a soft gradient over the grid with no blur: a
+ * backdrop blur inside the Bubble's canvas samples past the canvas edge and
+ * paints a dark band. The blur and the solid tint ramp in with the shrink.
+ */
+const NAV_SURFACE =
+  "[background-image:linear-gradient(to_bottom,var(--color-background),transparent)] backdrop-blur-[calc(18px_*_var(--lp-nav-t))]";
 const NAV_HEIGHT =
   "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
 const NAV_BACKGROUND =
@@ -57,7 +64,9 @@ const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
  * starts to scroll out, the `compact` variant takes its place, fixed, with
  * exactly its geometry; once the hero header would have left entirely it
  * settles into its own size. Sections offset their scroll targets by the
- * settled height. Whichever is hidden is inert.
+ * settled height. Whichever is hidden is inert. The hero variant is rendered
+ * twice while the Bubble warms up, so `LandingPage` finds the copies by
+ * `data-landing-nav` rather than a ref.
  */
 export function LandingNav({
   ref,
@@ -66,7 +75,6 @@ export function LandingNav({
   onStart,
   variant = "hero",
   hidden = false,
-  settled = false,
 }: {
   ref?: React.Ref<HTMLElement>;
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
@@ -76,8 +84,6 @@ export function LandingNav({
   variant?: "hero" | "compact";
   /** The other variant is showing. */
   hidden?: boolean;
-  /** Compact only: shrunk to its own size rather than the hero header's. */
-  settled?: boolean;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
   const compact = variant === "compact";
@@ -105,13 +111,17 @@ export function LandingNav({
       inert={hidden}
       aria-hidden={hidden}
       className={cn(
-        "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
+        "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
         NAV_VARIABLES,
         NAV_TRANSITION,
         NAV_HEIGHT,
+        NAV_SURFACE,
         NAV_BACKGROUND,
-        compact ? "fixed inset-x-0 top-0" : "absolute top-0 left-0 w-full",
-        settled && "[--lp-nav-t:1]",
+        // `LandingPage` drives the compact bar's visibility, inertness and
+        // `data-settled` straight from its scroll handler.
+        compact
+          ? "fixed inset-x-0 top-0 data-[settled=true]:[--lp-nav-t:1]"
+          : "absolute top-0 left-0 w-full",
         hidden && "invisible",
       )}
     >

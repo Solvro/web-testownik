@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
@@ -36,19 +36,16 @@ export function LandingPage({
   const heroReference = useRef<HTMLElement>(null);
   const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
-  const [isHeroNavGone, setIsHeroNavGone] = useState(false);
-  const [isNavSettled, setIsNavSettled] = useState(false);
 
   // The hero header sits at the top of the hero's stage (sticky on desktop).
   // As soon as that top leaves the viewport the compact bar takes its place
   // with the same geometry; once the hero header would have left entirely
-  // the bar shrinks to its own size (`settled`). Measured on scroll rather
-  // than observed: the header lives inside the Bubble's html-in-canvas
-  // subtree, which intersection observers do not track reliably, and which
-  // renders it twice while the capture warms up, so it is queried rather
-  // than held in a ref. The swap is written to the DOM in the scroll handler
-  // itself so it lands in the same frame as the scroll; the state only
-  // follows for `inert`.
+  // the bar shrinks to its own size (`data-settled`). Measured on scroll
+  // rather than observed: the header lives inside the Bubble's html-in-canvas
+  // subtree, which intersection observers do not track reliably. Everything
+  // is written to the DOM from the scroll handler itself, with no React
+  // state: the swap lands in the same frame as the scroll, and nothing
+  // re-renders (and re-captures the Bubble) while the page scrolls.
   useEffect(() => {
     const stage = heroReference.current?.querySelector(":scope > div");
     if (!(stage instanceof HTMLElement)) {
@@ -84,6 +81,8 @@ export function LandingPage({
       let heroNavHeight = 0;
       for (const heroNav of heroNavs) {
         heroNav.style.visibility = gone ? "hidden" : "";
+        heroNav.inert = gone;
+        heroNav.setAttribute("aria-hidden", String(gone));
         // Not `offsetHeight`: it reads 0 inside the Bubble's layoutsubtree.
         heroNavHeight = Math.max(
           heroNavHeight,
@@ -92,9 +91,12 @@ export function LandingPage({
       }
       if (compactNav !== null) {
         compactNav.style.visibility = gone ? "visible" : "";
+        compactNav.inert = !gone;
+        compactNav.setAttribute("aria-hidden", String(!gone));
+        compactNav.dataset.settled = String(
+          heroNavHeight > 0 && scrolledPast >= heroNavHeight,
+        );
       }
-      setIsHeroNavGone(gone);
-      setIsNavSettled(heroNavHeight > 0 && scrolledPast >= heroNavHeight);
     };
     window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
@@ -129,8 +131,7 @@ export function LandingPage({
       <LandingNav
         ref={compactNavReference}
         variant="compact"
-        hidden={!isHeroNavGone}
-        settled={isNavSettled}
+        hidden
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}
         onStart={start}
@@ -139,7 +140,6 @@ export function LandingPage({
         heroReference={heroReference}
         nav={
           <LandingNav
-            hidden={isHeroNavGone}
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}
