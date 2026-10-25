@@ -92,8 +92,8 @@ export function ProductShowcase(): React.JSX.Element {
           <em>działa nauka.</em>
         </DisplayHeading>
         <p className="text-muted-foreground max-w-[34rem] text-[1.05rem] leading-[1.65]">
-          Quizy, asystent AI, średnia ocen i&nbsp;statystyki. Wszystko działa na
-          żywo.
+          Quizy, asystent AI, średnia ocen i&nbsp;statystyki to tylko kilka
+          z&nbsp;wielu funkcji.
         </p>
       </header>
 

@@ -123,7 +123,7 @@ export function Hero({
   const isDesktop = useIsDesktopViewport();
   const [isStatic, setIsStatic] = useState(false);
   const [isStageReady, setIsStageReady] = useState(false);
-  const [isCatchingUp, setIsCatchingUp] = useState(false);
+  const [isStageSettled, setIsStageSettled] = useState(false);
   useHeroProgress(heroReference, isDesktop && !isStatic);
 
   // Until the stack is ready the copy, badges and hint stay at the closed
@@ -137,16 +137,18 @@ export function Hero({
     };
   }, [holdProgress]);
 
-  // Released targets glide to the real progress alongside the scene's own
-  // catch-up (see `data-hero-catching-up` in landing.css).
+  // Once ready, the stack opens from the closed pose to the scrolled progress
+  // and publishes each frame to the DOM targets itself (see
+  // `setHeroProgressOverride`); the scroll-driven wordmark waits for that
+  // travel to finish (cover handoff plus the longest catch-up).
   useEffect(() => {
     if (!isStageReady) {
+      setIsStageSettled(false);
       return;
     }
-    setIsCatchingUp(true);
     const timeout = window.setTimeout(() => {
-      setIsCatchingUp(false);
-    }, 1500);
+      setIsStageSettled(true);
+    }, 1400);
     return () => {
       window.clearTimeout(timeout);
     };
@@ -189,7 +191,7 @@ export function Hero({
       ref={heroReference}
       data-hero-static={isStatic}
       data-hero-ready={isStageReady}
-      data-hero-catching-up={isCatchingUp}
+      data-hero-settled={isStageSettled}
       className={cn(
         // Names the view timeline the open-laptop wordmark animates on. The
         // inset would otherwise default to the root's scroll padding, and the

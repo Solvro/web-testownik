@@ -1,7 +1,11 @@
 import { Group, MathUtils, Vector3 } from "three";
 import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
-import { HERO_PROGRESS_EVENT, getHeroProgress } from "../../hero-progress";
+import {
+  HERO_PROGRESS_EVENT,
+  getHeroProgress,
+  setHeroProgressOverride,
+} from "../../hero-progress";
 import type { ScreenDevice } from "../screen-frame-protocol";
 import { createChoreography } from "./choreography";
 import { disposeModels, loadDeviceModels } from "./models";
@@ -209,6 +213,7 @@ export async function createDeviceStack({
       return;
     }
     disposed = true;
+    setHeroProgressOverride(null);
     if (frame !== 0) {
       window.cancelAnimationFrame(frame);
     }
@@ -302,7 +307,10 @@ export async function createDeviceStack({
       return;
     }
 
-    const { opening } = choreography.apply(progressForFrame(), width, height);
+    const progress = progressForFrame();
+    // The copy and badges follow the devices through loading and catch-up.
+    setHeroProgressOverride(progressMode === "scroll" ? null : progress);
+    const { opening } = choreography.apply(progress, width, height);
 
     // The panel is edge-on to the camera when it first faces it, where the
     // facing value grows about one unit per radian, so a fade on facing

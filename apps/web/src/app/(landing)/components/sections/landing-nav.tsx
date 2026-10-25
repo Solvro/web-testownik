@@ -24,33 +24,53 @@ const SECTION_LINKS = LANDING_SECTIONS.filter(({ id }) => id !== "footer").map(
 
 const START_BUTTON_CLASS = cn(
   "px-[0.9rem] text-[0.78rem] tracking-[0.02em] normal-case sm:px-[1.15rem] sm:text-[0.86rem]",
-  "transition-[gap,background-color,min-height] duration-300",
+  "transition-[gap,background-color] duration-300",
   "hover:gap-4",
   "active:translate-y-0 active:shadow-none",
 );
+
+/*
+ * Every dimension that differs between the hero header and the compact bar
+ * is a hero value minus a shrink scaled by `--lp-nav-t` (0 in the hero, 1
+ * once settled), so the two variants are pixel-identical at 0 and the compact
+ * bar morphs continuously with the scroll (see `LandingPage`).
+ */
+const NAV_VARIABLES =
+  "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] [--lp-nav-t:0] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
+const NAV_HEIGHT =
+  "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
+const NAV_BACKGROUND =
+  "[background-color:color-mix(in_oklab,var(--color-background)_calc(75%_*_var(--lp-nav-t)),transparent)]";
+const LOGO_SIZE =
+  "h-[calc(2.2rem_-_0.2rem_*_var(--lp-nav-t))] w-[calc(7.7rem_-_0.7rem_*_var(--lp-nav-t))] sm:w-[calc(10rem_-_2rem_*_var(--lp-nav-t))]";
+const TOGGLE_SIZE = "size-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
+const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 
 /**
  * The landing's own header; the app shell's navbar is hidden for this route
  * (see landing.css). It renders twice: the `hero` variant sits at the top of
  * the hero, inside the Bubble's captured subtree so the droplet refracts it,
- * and stays put through the hero's sticky travel. As it scrolls out of view
- * the `compact` variant fades in over it at the same height and shrinks to
- * its own, fixed over the rest of the page; sections offset their scroll
- * targets by its height. Whichever is hidden is inert.
+ * and stays put through the hero's sticky travel. The moment that header
+ * starts to scroll out, the `compact` variant takes its place, fixed, with
+ * exactly its geometry, and shrinks to its own as the scroll continues;
+ * sections offset their scroll targets by the settled height. Whichever is
+ * hidden is inert.
  */
 export function LandingNav({
+  ref,
   isAuthenticated,
   isStarting,
   onStart,
   variant = "hero",
   hidden = false,
 }: {
+  ref?: React.Ref<HTMLElement>;
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
   isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
   variant?: "hero" | "compact";
-  /** Compact only: slid away above the viewport. */
+  /** The other variant is showing. */
   hidden?: boolean;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
@@ -74,29 +94,24 @@ export function LandingNav({
 
   return (
     <header
+      ref={ref}
       inert={hidden}
       aria-hidden={hidden}
       className={cn(
         "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur-[18px] min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
-        compact
-          ? cn(
-              "bg-background/75 fixed inset-x-0 top-0 transition-[height,opacity] duration-300 ease-out motion-reduce:transition-none",
-              // Hidden, it already sits where the hero header is, at its
-              // height, so appearing reads as that header detaching and
-              // settling into the smaller bar.
-              hidden ? "h-[4.5rem] opacity-0 sm:h-[5.3rem]" : "h-16",
-            )
-          : "absolute top-0 left-0 h-[4.5rem] w-full sm:h-[5.3rem]",
+        NAV_VARIABLES,
+        NAV_HEIGHT,
+        NAV_BACKGROUND,
+        compact ? "fixed inset-x-0 top-0" : "absolute top-0 left-0 w-full",
+        hidden && "invisible",
       )}
     >
       <Link
         href="/?landing=true"
         aria-label="Testownik"
         className={cn(
-          "relative block justify-self-start rounded-xs transition-[width,height] duration-300 ease-out motion-reduce:transition-none",
-          compact && !hidden
-            ? "h-8 w-[7rem] sm:w-[8rem]"
-            : "h-[2.2rem] w-[7.7rem] sm:w-40",
+          "relative block justify-self-start rounded-xs",
+          LOGO_SIZE,
           FOCUS_RING,
         )}
       >
@@ -169,9 +184,9 @@ export function LandingNav({
             setTheme(resolvedTheme === "dark" ? "light" : "dark");
           }}
           className={cn(
-            "border-border bg-card text-foreground relative grid place-items-center rounded-full border transition-[background-color,border-color,width,height] duration-300 ease-out motion-reduce:transition-none",
+            "border-border bg-card text-foreground relative grid place-items-center rounded-full border transition-[background-color,border-color] duration-300",
             "hover:border-primary/40 hover:bg-secondary",
-            compact && !hidden ? "size-10" : "size-11",
+            TOGGLE_SIZE,
             FOCUS_RING,
           )}
         >
@@ -182,12 +197,7 @@ export function LandingNav({
         {isAuthenticated ? (
           <LandingButtonLink
             href="/quizzes"
-            className={cn(
-              START_BUTTON_CLASS,
-              compact && !hidden
-                ? "min-h-10 sm:min-h-10"
-                : "min-h-11 sm:min-h-11",
-            )}
+            className={cn(START_BUTTON_CLASS, BUTTON_HEIGHT)}
           >
             Otwórz Testownik
             <ArrowUpRight aria-hidden="true" />
@@ -198,9 +208,7 @@ export function LandingNav({
             disabled={isStarting}
             className={cn(
               START_BUTTON_CLASS,
-              compact && !hidden
-                ? "min-h-10 sm:min-h-10"
-                : "min-h-11 sm:min-h-11",
+              BUTTON_HEIGHT,
               "disabled:pointer-events-none disabled:opacity-50",
             )}
           >

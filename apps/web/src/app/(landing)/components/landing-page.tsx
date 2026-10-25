@@ -34,14 +34,16 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
+  const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
   const [isHeroNavGone, setIsHeroNavGone] = useState(false);
 
   // The hero header sits at the top of the hero's stage (sticky on desktop).
-  // The compact bar takes over as soon as that top leaves the viewport, so
-  // the two cross over. Measured on scroll rather than observed: the header
-  // lives inside the Bubble's html-in-canvas subtree, which intersection
-  // observers do not track reliably.
+  // As soon as that top leaves the viewport the compact bar takes its place
+  // with the same geometry and shrinks over the next stretch of scroll
+  // (`--lp-nav-t`, see `LandingNav`). Measured on scroll rather than
+  // observed: the header lives inside the Bubble's html-in-canvas subtree,
+  // which intersection observers do not track reliably.
   useEffect(() => {
     const stage = heroReference.current?.querySelector(":scope > div");
     if (!(stage instanceof HTMLElement)) {
@@ -50,7 +52,16 @@ export function LandingPage({
     let frame = 0;
     const measure = (): void => {
       frame = 0;
-      setIsHeroNavGone(stage.getBoundingClientRect().top < 0);
+      const scrolledPast = -stage.getBoundingClientRect().top;
+      const compactNav = compactNavReference.current;
+      if (compactNav !== null) {
+        const travel = Math.max(compactNav.offsetHeight, 1);
+        compactNav.style.setProperty(
+          "--lp-nav-t",
+          Math.min(1, Math.max(0, scrolledPast / travel)).toFixed(3),
+        );
+      }
+      setIsHeroNavGone(scrolledPast > 0);
     };
     const schedule = (): void => {
       frame ||= window.requestAnimationFrame(measure);
@@ -88,6 +99,7 @@ export function LandingPage({
       </a>
       <LandingTableOfContents />
       <LandingNav
+        ref={compactNavReference}
         variant="compact"
         hidden={!isHeroNavGone}
         isAuthenticated={isAuthenticated}
@@ -98,6 +110,7 @@ export function LandingPage({
         heroReference={heroReference}
         nav={
           <LandingNav
+            hidden={isHeroNavGone}
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}
