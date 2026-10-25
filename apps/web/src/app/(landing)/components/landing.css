@@ -331,6 +331,83 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   initial-value: 0;
 }
 
+/*
+ * The header swap, driven by the hero's view timeline so it lands on the
+ * exact scroll pixel on the compositor, however fast the page moves, and
+ * already at first paint when the page loads scrolled. The hero header
+ * starts leaving when the hero's stage does: at the hero's top below `lg`,
+ * at its bottom on desktop, where the stage is sticky. The compact bar's
+ * dock shows from the next pixel (the hero header is the one at rest) and
+ * settles into its own size one hero-header height later, through the style
+ * query below so the shrink itself stays a timed transition. `LandingPage` mirrors all of this from a scroll handler
+ * for browsers without scroll-driven animations.
+ */
+@property --lp-nav-settled {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes lp-nav-dock-shown {
+  from,
+  to {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@keyframes lp-nav-dock-settled {
+  from,
+  to {
+    --lp-nav-settled: 1;
+  }
+}
+
+@keyframes lp-nav-hero-gone {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+
+@container style(--lp-nav-settled: 1) {
+  [data-landing-nav="compact"] {
+    --lp-nav-t: 1;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  [data-landing-nav-dock] {
+    animation:
+      lp-nav-dock-shown linear forwards,
+      lp-nav-dock-settled linear forwards;
+    animation-timeline: --lp-hero;
+    animation-range-start:
+      exit-crossing 1px,
+      exit-crossing calc(var(--lp-nav-hero-h) + 1px);
+    animation-range-end: exit-crossing 100%;
+  }
+
+  [data-landing-nav="hero"] {
+    animation: lp-nav-hero-gone linear forwards;
+    animation-timeline: --lp-hero;
+    animation-range: exit-crossing 1px exit-crossing 100%;
+  }
+
+  @media (min-width: 64rem) {
+    [data-landing-nav-dock] {
+      animation-range-start:
+        exit 1px,
+        exit calc(var(--lp-nav-hero-h) + 1px);
+      animation-range-end: exit 100%;
+    }
+
+    [data-landing-nav="hero"] {
+      animation-range: exit 1px exit 100%;
+    }
+  }
+}
+
 @keyframes lp-float {
   50% {
     transform: translateY(-0.45rem);

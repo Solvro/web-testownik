@@ -193,10 +193,11 @@ export function Hero({
       data-hero-ready={isStageReady}
       data-hero-settled={isStageSettled}
       className={cn(
-        // Names the view timeline the open-laptop wordmark animates on. The
-        // inset would otherwise default to the root's scroll padding, and the
-        // `view-timeline` shorthand would reset it in Chrome.
-        "relative scroll-mt-4 lg:[view-timeline-inset:0] lg:[view-timeline-name:--lp-hero]",
+        // Names the view timeline the open-laptop wordmark and the header
+        // swap animate on. The inset would otherwise default to the root's
+        // scroll padding, and the `view-timeline` shorthand would reset it
+        // in Chrome.
+        "relative scroll-mt-4 [view-timeline-inset:0] [view-timeline-name:--lp-hero]",
         isStatic
           ? "lg:h-[100svh] lg:min-h-[36rem]"
           : "lg:h-[300vh] lg:min-h-[190rem]",

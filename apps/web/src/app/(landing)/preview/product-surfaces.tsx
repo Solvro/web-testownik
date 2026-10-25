@@ -604,7 +604,7 @@ function PhoneQuizActions({
   return (
     <div
       data-phone-quiz-actions=""
-      className="bg-background flex shrink-0 justify-end gap-2 pt-2 pr-2.5 pb-3.5 pl-[0.8rem] text-[0.62em]"
+      className="bg-background flex shrink-0 justify-end gap-2 pt-2 pr-[1.15rem] pb-5 pl-[0.8rem] text-[0.62em]"
     >
       {view.isHistoryQuestion ? (
         <Button variant="outline" onClick={session.back}>
