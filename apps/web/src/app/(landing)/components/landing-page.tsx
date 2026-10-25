@@ -45,16 +45,16 @@ export function LandingPage({
   // with the same geometry; once the hero header would have left entirely
   // the bar shrinks to its own size (`settled`). Measured on scroll rather
   // than observed: the header lives inside the Bubble's html-in-canvas
-  // subtree, which intersection observers do not track reliably.
+  // subtree, which intersection observers do not track reliably. The swap
+  // is written to the DOM in the scroll handler itself so it lands in the
+  // same frame as the scroll; the state only follows for `inert`.
   useEffect(() => {
     const stage = heroReference.current?.querySelector(":scope > div");
     if (!(stage instanceof HTMLElement)) {
       return;
     }
-    let frame = 0;
     let wasGone = false;
     const measure = (): void => {
-      frame = 0;
       const scrolledPast = -stage.getBoundingClientRect().top;
       const heroNav = heroNavReference.current;
       const compactNav = compactNavReference.current;
@@ -73,21 +73,22 @@ export function LandingPage({
         }
       }
       wasGone = gone;
+      if (heroNav !== null) {
+        heroNav.style.visibility = gone ? "hidden" : "";
+      }
+      if (compactNav !== null) {
+        compactNav.style.visibility = gone ? "visible" : "";
+      }
       setIsHeroNavGone(gone);
       setIsNavSettled(scrolledPast >= (heroNav?.offsetHeight ?? 0));
     };
-    const schedule = (): void => {
-      frame ||= window.requestAnimationFrame(measure);
-    };
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule, { passive: true });
-    schedule();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure, { passive: true });
+    const frame = window.requestAnimationFrame(measure);
     return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      if (frame !== 0) {
-        window.cancelAnimationFrame(frame);
-      }
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+      window.cancelAnimationFrame(frame);
     };
   }, []);
 
