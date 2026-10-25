@@ -88,8 +88,8 @@ export function LandingNav({
   /** The Bubble's capture-only copy. */
   capture?: boolean;
   hover?: NavHover;
-  /** The real bar reports here; the copy only reads `hover`. */
-  onHoverChange?: (hover: NavHover) => void;
+  /** The real bar reports changes here; the copy only reads `hover`. */
+  onHoverChange?: (patch: Partial<NavHover>) => void;
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
   // One underline glides between the hovered (or focused) section links.
@@ -99,16 +99,15 @@ export function LandingNav({
   ): void => {
     const link = event.currentTarget;
     onHoverChange?.({
-      ...hover,
       link: href,
       underline: { left: link.offsetLeft + 12, width: link.offsetWidth - 24 },
     });
   };
   const hideUnderline = (): void => {
-    onHoverChange?.({ ...hover, link: null });
+    onHoverChange?.({ link: null });
   };
   const setControl = (control: NavHover["control"]): void => {
-    onHoverChange?.({ ...hover, control });
+    onHoverChange?.({ control });
   };
   const { underline } = hover;
 

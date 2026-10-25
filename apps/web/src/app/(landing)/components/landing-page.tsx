@@ -100,7 +100,11 @@ export function LandingPage({
             isStarting={isStarting}
             onStart={start}
             hover={navHover}
-            onHoverChange={setNavHover}
+            onHoverChange={(patch) => {
+              // Merged on the latest state: a link's leave and a control's
+              // enter can land in the same batch.
+              setNavHover((current) => ({ ...current, ...patch }));
+            }}
           />
         }
         captureNav={
