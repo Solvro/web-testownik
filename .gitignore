@@ -26,6 +26,6 @@ dist-ssr
 coverage
 .next
 .eslintcache
-/tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
 .env
 next-env.d.ts

@@ -1,0 +1,158 @@
+import type { Metadata } from "next";
+import { Hanken_Grotesk } from "next/font/google";
+import { headers } from "next/headers";
+import Script from "next/script";
+import { Suspense } from "react";
+
+import { Alerts } from "@/components/alerts";
+import { AppFooter } from "@/components/app-footer";
+import { ErrorHandler } from "@/components/error-handler";
+import { GuestAlert } from "@/components/guest-alert";
+import { MaintenanceWrapper } from "@/components/maintenance";
+import { Navbar } from "@/components/navbar";
+import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/env";
+import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import { shouldRenderBareDocument } from "@/lib/document-shell";
+import { OriginTrialMetas } from "@/lib/origin-trials";
+
+import "./globals.css";
+import { Providers } from "./providers";
+
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "Testownik Solvro",
+    template: "%s - Testownik Solvro",
+  },
+  description:
+    "Przygotuj się do sesji z Testownikiem Solvro! Twórz quizy, testuj się i dziel zestawy z innymi. Nauka do egzaminów nigdy nie była łatwiejsza!",
+  creator: "KN Solvro",
+  alternates: {
+    canonical: env.NEXT_PUBLIC_SITE_URL,
+  },
+  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+  robots: "index, follow",
+  openGraph: {
+    title: "Testownik Solvro - Twoje narzędzie do nauki",
+    description:
+      "Przygotuj się do sesji z Testownikiem! Twórz quizy, testuj się i dziel się quizami z innymi. Nauka jeszcze nigdy nie była tak prosta.",
+    type: "website",
+    locale: "pl_PL",
+  },
+  icons: {
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/favicon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Testownik Solvro",
+      url: env.NEXT_PUBLIC_SITE_URL,
+    }),
+  },
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  // The landing's device-screen iframes bring their own providers; see
+  // `lib/document-shell.ts`.
+  const requestHeaders = await headers();
+  if (shouldRenderBareDocument(requestHeaders)) {
+    return (
+      <html
+        lang="pl"
+        data-landing-screen-document
+        suppressHydrationWarning
+        className={hankenGrotesk.className}
+      >
+        <head>
+          <OriginTrialMetas />
+        </head>
+        <body className="bg-background overflow-hidden">{children}</body>
+      </html>
+    );
+  }
+
+  const user = await getServerCurrentUser();
+
+  return (
+    <html
+      lang="pl"
+      suppressHydrationWarning
+      className={hankenGrotesk.className}
+    >
+      <head>
+        <OriginTrialMetas />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Testownik Solvro",
+              url: env.NEXT_PUBLIC_SITE_URL,
+            }),
+          }}
+        />
+      </head>
+      <body className="bg-background to-background bg-linear-to-b from-(--background-gradient-from)/50 to-[5rem] bg-no-repeat dark:bg-linear-0 dark:from-0% dark:to-0%">
+        <Providers initialUser={user}>
+          <div
+            className="mx-auto flex min-h-dvh w-full max-w-screen-xl flex-col gap-4 px-4 pb-24"
+            id="container"
+          >
+            <Navbar />
+            <MaintenanceWrapper>
+              <Suspense>
+                <ErrorHandler />
+                <GuestAlert />
+                <Alerts />
+              </Suspense>
+              <main>{children}</main>
+            </MaintenanceWrapper>
+          </div>
+          <Toaster richColors />
+          <AppFooter />
+        </Providers>
+        <Script
+          src="https://analytics.solvro.pl/script.js"
+          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
+          strategy="lazyOnload"
+        />
+        <Script
+          src="https://analytics.solvro.pl/recorder.js"
+          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          data-sample-rate="1"
+          data-mask-level="moderate"
+          data-max-duration="300000"
+          strategy="lazyOnload"
+        />
+      </body>
+    </html>
+  );
+}
