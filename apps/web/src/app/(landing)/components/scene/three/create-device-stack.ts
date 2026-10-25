@@ -1,4 +1,4 @@
-import { Group, MathUtils, Vector3 } from "three";
+import { Group, MathUtils, Object3D, Vector3 } from "three";
 import type { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 
 import {
@@ -13,7 +13,8 @@ import type { DeviceModels } from "./models";
 import {
   SATELLITE_RIG,
   SCREEN_PLACEMENT,
-  attachScreen,
+  anchorScreen,
+  createScreen,
   screenFacing,
 } from "./screens";
 import { createStage } from "./stage";
@@ -52,7 +53,10 @@ export interface DeviceStackOptions {
   pixelRatio?: number;
   /** Aborting before the models resolve tears everything down instead. */
   signal: AbortSignal;
-  /** Called after CSS3DRenderer has attached and sized the portal hosts. */
+  /**
+   * Called once CSS3DRenderer has attached and sized the portal hosts, which
+   * is before the model loads: the screens' documents load meanwhile.
+   */
   onHostsAttached: () => void;
   /** Called once the live surfaces have settled and been composited. */
   onReady: () => void;
@@ -196,6 +200,37 @@ export async function createDeviceStack({
   let width = 1;
   let height = 1;
 
+  // --- Screens ------------------------------------------------------------
+  // The hosts go into the CSS3D layer now, sized and at the origin, so the
+  // three iframes load in parallel with the model instead of after it. The
+  // layer is transparent until the stack is ready, so nothing shows.
+  const screenHolder = new Object3D();
+  scene.add(screenHolder);
+  const laptopScreen = createScreen(
+    screenHolder,
+    hosts.laptop,
+    SCREEN_PLACEMENT.laptop,
+  );
+  const tabletScreen = createScreen(
+    screenHolder,
+    hosts.tablet,
+    SCREEN_PLACEMENT.tablet,
+  );
+  const phoneScreen = createScreen(
+    screenHolder,
+    hosts.phone,
+    SCREEN_PLACEMENT.phone,
+  );
+  const initial = canvas.getBoundingClientRect();
+  stage.setSize(
+    Math.max(1, Math.round(initial.width)),
+    Math.max(1, Math.round(initial.height)),
+  );
+  stage.cssRenderer.render(scene, camera);
+  // Portal content must mount only after CSS3DRenderer has connected and sized
+  // its hosts, so each screen's iframe starts at its final size.
+  onHostsAttached();
+
   let models: DeviceModels;
   try {
     models = await loadDeviceModels(signal);
@@ -232,11 +267,7 @@ export async function createDeviceStack({
 
   // --- Devices ------------------------------------------------------------
   scene.add(models.laptop.root);
-  const laptopScreen = attachScreen(
-    models.laptop.display,
-    hosts.laptop,
-    SCREEN_PLACEMENT.laptop,
-  );
+  anchorScreen(models.laptop.display, laptopScreen);
 
   const tabletRig = new Group();
   const phoneRig = new Group();
@@ -248,16 +279,9 @@ export async function createDeviceStack({
     rig.add(device.root);
     scene.add(rig);
   }
-  const tabletScreen = attachScreen(
-    models.tablet.display,
-    hosts.tablet,
-    SCREEN_PLACEMENT.tablet,
-  );
-  const phoneScreen = attachScreen(
-    models.phone.display,
-    hosts.phone,
-    SCREEN_PLACEMENT.phone,
-  );
+  anchorScreen(models.tablet.display, tabletScreen);
+  anchorScreen(models.phone.display, phoneScreen);
+  scene.remove(screenHolder);
 
   const choreography = createChoreography({
     camera,
@@ -379,12 +403,7 @@ export async function createDeviceStack({
   window.addEventListener(HERO_PROGRESS_EVENT, schedule);
 
   isVisible = true;
-  const initial = canvas.getBoundingClientRect();
   resize(initial.width, initial.height);
-
-  // Portal content must mount only after CSS3DRenderer has connected and sized
-  // its hosts, so each screen's iframe starts at its final size.
-  onHostsAttached();
 
   // The screens are iframes that load on their own; each marks itself
   // `data-surface-ready` once it has painted (the iPad with its still

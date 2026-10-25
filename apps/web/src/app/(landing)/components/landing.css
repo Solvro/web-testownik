@@ -307,14 +307,14 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * Each chip sets its own `--lp-chip-drift`. Without scroll-timeline support,
  * or with reduced motion, both stay in the resting pose (no offset).
  */
-/* The phone starts leaning left, stands straight halfway and ends leaning
-   a little right, so it reads naturally as it rises. */
+/* The phone starts leaning left, stands straight a quarter of the way in and
+   ends leaning a little right, so it reads naturally as it rises. */
 @keyframes lp-hero-phone-rise {
   from {
     translate: 0 1rem;
     rotate: -3.5deg;
   }
-  50% {
+  25% {
     rotate: 0deg;
   }
   to {

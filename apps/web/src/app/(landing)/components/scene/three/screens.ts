@@ -118,9 +118,14 @@ export const SATELLITE_RIG = {
   },
 } as const satisfies Record<string, SatelliteRig>;
 
-/** Sizes the host and anchors it to the display mesh. */
-export function attachScreen(
-  display: Mesh,
+/**
+ * Sizes the host and builds its `CSS3DObject` under `holder`, a stand-in in
+ * the scene for a display mesh that has not loaded yet. Rendering once from
+ * here puts the host in the CSS3D layer, so its iframe can start loading
+ * before the model arrives; `anchorScreen` moves it onto the mesh later.
+ */
+export function createScreen(
+  holder: Object3D,
   host: HTMLElement,
   placement: ScreenPlacement,
 ): CSS3DObject {
@@ -131,8 +136,23 @@ export function attachScreen(
   object.position.fromArray(placement.position);
   object.quaternion.fromArray(placement.quaternion);
   object.scale.setScalar(placement.scale);
-  display.add(object);
+  holder.add(object);
   return object;
+}
+
+/**
+ * Re-parents the screen onto its display mesh without `Object3D.remove`:
+ * CSS3DObject pulls its element out of the DOM on `removed`, and an iframe
+ * that leaves the DOM reloads, which would throw away the document that has
+ * been loading since `createScreen`.
+ */
+export function anchorScreen(display: Mesh, object: CSS3DObject): void {
+  const holder = object.parent;
+  if (holder !== null) {
+    holder.children.splice(holder.children.indexOf(object), 1);
+    object.parent = null;
+  }
+  display.add(object);
 }
 
 const facingNormal = new Vector3();

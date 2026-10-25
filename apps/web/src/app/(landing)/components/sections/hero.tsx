@@ -6,6 +6,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import {
   HERO_PROGRESS,
   attachHeroProgress,
@@ -33,6 +34,19 @@ const HeroDesktopStage = lazy(async () => {
   const loaded = await import("./hero-desktop-stage");
   return { default: loaded.HeroDesktopStage };
 });
+
+/*
+ * On a wide viewport both desktop chunks start downloading as soon as this
+ * module evaluates, in parallel and ahead of hydration, rather than one after
+ * the other once the hero has mounted and the stack has booted.
+ */
+if (
+  typeof window !== "undefined" &&
+  window.matchMedia(DESKTOP_STAGE_QUERY).matches
+) {
+  void import("./hero-desktop-stage");
+  void import("../scene/three/create-device-stack");
+}
 
 /**
  * On desktop the copy leaves as the laptop opens. A plain CSS expression over
