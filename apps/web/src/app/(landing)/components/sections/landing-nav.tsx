@@ -30,65 +30,51 @@ const START_BUTTON_CLASS = cn(
 );
 
 /*
- * Every dimension that differs between the hero look and the settled bar is
- * a hero value minus a shrink scaled by `--lp-nav-t` (0 over the hero, 1
- * once settled), registered in landing.css so flipping it transitions every
- * dimension together. It eases only once the visitor has touched the page: a
- * reload restores the scroll position after the first style pass, and the
- * header has to land there, not slide there. `LandingPage` sets the flag.
+ * The hero header blurs the grid beneath it; inside the Bubble's canvas the
+ * blur softens into a haze at the top and the sides, which `HERO_HAZE`
+ * stands in for until the capture is live (it hides inside the canvas).
+ * `--lp-nav-hero-h` is the hero header's height, which the compact bar's
+ * entrance in landing.css keys off.
  */
-const NAV_VARIABLES =
-  "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
-const NAV_TRANSITION =
-  "group-data-[nav-live=true]/landing:[transition:--lp-nav-t_480ms_cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+const HERO_CLASS =
+  "absolute top-0 left-0 h-[4.5rem] w-full backdrop-blur-[18px] sm:h-[5.3rem]";
+const HERO_HAZE =
+  "pointer-events-none absolute inset-0 -z-10 [background-image:linear-gradient(to_bottom,var(--color-background),transparent_1.6rem),linear-gradient(to_right,var(--color-background),transparent_3rem),linear-gradient(to_left,var(--color-background),transparent_3rem)] [canvas_&]:hidden";
 /*
- * The header blurs what is beneath it. Over the hero that is the grid, whose
- * blurred lines read as a soft haze that fades out at the top and the sides
- * (`NAV_HAZE`); once settled, a solid tint comes in (`NAV_TINT`), ahead of
- * the shrink so the devices leaving under the bar never dim its links. Both
- * layers follow the shrink, so the look changes with the size.
+ * The compact bar waits above the viewport and slides in once the hero
+ * header has left: landing.css drives `translate` from the hero's view
+ * timeline; `data-shown` is the scroll-handler fallback.
  */
-const NAV_SURFACE = "backdrop-blur-[18px]";
-const NAV_HAZE =
-  "pointer-events-none absolute inset-0 -z-10 opacity-[calc(1-var(--lp-nav-t))] [background-image:linear-gradient(to_bottom,var(--color-background),transparent_1.6rem),linear-gradient(to_right,var(--color-background),transparent_3rem),linear-gradient(to_left,var(--color-background),transparent_3rem)]";
-const NAV_TINT =
-  "bg-background/75 pointer-events-none absolute inset-0 -z-10 opacity-[min(1,calc(var(--lp-nav-t)*3))]";
-const NAV_HEIGHT =
-  "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
-const LOGO_SIZE =
-  "h-[calc(2.2rem_-_0.2rem_*_var(--lp-nav-t))] w-[calc(7.7rem_-_0.7rem_*_var(--lp-nav-t))] sm:w-[calc(10rem_-_2rem_*_var(--lp-nav-t))]";
-const TOGGLE_SIZE = "size-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
-const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
+const COMPACT_CLASS =
+  "bg-background/75 fixed inset-x-0 top-0 h-16 -translate-y-full backdrop-blur-[18px] transition-[translate] duration-300 ease-out data-[shown=true]:translate-y-0 motion-reduce:transition-none [--lp-nav-hero-h:4.5rem] sm:[--lp-nav-hero-h:5.3rem]";
 
 /**
  * The landing's own header; the app shell's navbar is hidden for this route
- * (see landing.css). One fixed bar for the whole page, rendered inside the
- * hero's stage so it can sit between the Bubble's two canvases: over the
- * content canvas, under the droplet. The droplet refracts a `capture` copy
- * of it that only exists inside the html-in-canvas subtree (invisible and
- * inert anywhere else), while the content canvas is clipped under the bar
- * so the copy never shows through the blur. Over the hero it has the hero
- * size; once the stage starts to leave it settles into its own
- * (`data-settled`, set by landing.css from the hero's view timeline, or by
- * `LandingPage` where scroll-driven animations are missing). Sections offset
- * their scroll targets by the settled height.
+ * (see landing.css). It renders twice. The `hero` variant sits at the top of
+ * the hero, inside the Bubble's captured subtree so the droplet refracts it,
+ * stays put through the hero's sticky travel and then scrolls out with the
+ * stage like the rest of the hero. Once it has left, the `compact` variant
+ * slides in from above and stays fixed. Nothing is swapped or hidden on the
+ * way, so no scroll speed can catch the page without a header. Sections
+ * offset their scroll targets by the compact height. The compact bar is
+ * inert while it waits above the viewport.
  */
 export function LandingNav({
   ref,
   isAuthenticated,
   isStarting,
   onStart,
-  capture = false,
+  variant = "hero",
 }: {
   ref?: React.Ref<HTMLElement>;
   /** Signed-in visitors (at `/?landing=true`) go straight to their quizzes. */
   isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
-  /** The Bubble's capture-only copy. */
-  capture?: boolean;
+  variant?: "hero" | "compact";
 }): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme();
+  const compact = variant === "compact";
   // One underline glides between the hovered (or focused) section links.
   const [underline, setUnderline] = useState<{
     left: number;
@@ -109,28 +95,22 @@ export function LandingNav({
   return (
     <header
       ref={ref}
-      data-landing-nav={capture ? "capture" : "fixed"}
-      inert={capture}
-      aria-hidden={capture}
+      data-landing-nav={variant}
+      // The compact bar starts inert; `LandingPage` flips it as it slides in.
+      inert={compact}
+      aria-hidden={compact}
       className={cn(
-        "border-border/70 inset-x-0 top-0 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
-        NAV_VARIABLES,
-        NAV_TRANSITION,
-        NAV_HEIGHT,
-        NAV_SURFACE,
-        capture
-          ? "invisible absolute [canvas_&]:visible"
-          : "fixed data-[settled=true]:[--lp-nav-t:1]",
+        "border-border/70 z-50 grid grid-cols-[1fr_auto] items-center border-b px-4 min-[1030px]:grid-cols-[1fr_auto_1fr] sm:px-[1.4rem] lg:px-[2.2rem]",
+        compact ? COMPACT_CLASS : HERO_CLASS,
       )}
     >
-      <span aria-hidden="true" className={NAV_HAZE} />
-      <span aria-hidden="true" className={NAV_TINT} />
+      {compact ? null : <span aria-hidden="true" className={HERO_HAZE} />}
       <Link
         href="/?landing=true"
         aria-label="Testownik"
         className={cn(
           "relative block justify-self-start rounded-xs",
-          LOGO_SIZE,
+          compact ? "h-8 w-28 sm:w-32" : "h-[2.2rem] w-[7.7rem] sm:w-40",
           FOCUS_RING,
         )}
       >
@@ -205,7 +185,7 @@ export function LandingNav({
           className={cn(
             "border-border bg-card text-foreground relative grid place-items-center rounded-full border transition-[background-color,border-color] duration-300",
             "hover:border-primary/40 hover:bg-secondary",
-            TOGGLE_SIZE,
+            compact ? "size-10" : "size-11",
             FOCUS_RING,
           )}
         >
@@ -216,7 +196,10 @@ export function LandingNav({
         {isAuthenticated ? (
           <LandingButtonLink
             href="/quizzes"
-            className={cn(START_BUTTON_CLASS, BUTTON_HEIGHT)}
+            className={cn(
+              START_BUTTON_CLASS,
+              compact ? "min-h-10" : "min-h-11",
+            )}
           >
             Otwórz Testownik
             <ArrowUpRight aria-hidden="true" />
@@ -227,7 +210,7 @@ export function LandingNav({
             disabled={isStarting}
             className={cn(
               START_BUTTON_CLASS,
-              BUTTON_HEIGHT,
+              compact ? "min-h-10" : "min-h-11",
               "disabled:pointer-events-none disabled:opacity-50",
             )}
           >

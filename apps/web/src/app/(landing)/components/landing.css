@@ -63,7 +63,6 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * captured subtree needs this opaque background.
  */
 .lp-hero-grid,
-.lp-bubble-capture,
 .lp-bubble-capture > canvas > div,
 .lp-bubble-capture > div:not([class]),
 .lp-bubble-capture > div {
@@ -76,32 +75,13 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   isolation: isolate;
 }
 
-/* Not a stacking context: its canvases are layered around the fixed header. */
-.lp-bubble-capture {
-  isolation: auto;
-}
-
 /*
- * The content canvas sits under the fixed header (z-50 in the stage) and is
- * clipped under it: the header's capture copy is drawn into the canvas for
- * the droplet, and must not show through the header's blur. The strip shows
- * the grid the Bubble itself paints. 5.3rem is the header's hero height at
- * `lg`, the only width the Bubble exists at.
- */
-.lp-bubble-capture > canvas:first-of-type {
-  z-index: 1;
-  clip-path: inset(5.3rem 0 0 0);
-}
-
-/*
- * The droplet, over the header. Masked over the same stretch `HeroFade` fades
- * the grid, so it settles into the page with the grid instead of staying
- * crisp over the exit, while the copy and the scroll hint, which are DOM, do
- * not fade.
+ * The droplet. Masked over the same stretch `HeroFade` fades the grid, so it
+ * settles into the page with the grid instead of staying crisp over the exit,
+ * while the copy and the scroll hint, which are DOM, do not fade.
  */
 .lp-bubble-capture > canvas:last-of-type {
-  z-index: 60;
-  transition: opacity 300ms;
+  z-index: 80;
   mask-image: linear-gradient(
     to bottom,
     black calc(100% - clamp(7rem, 22vh, 13rem)),
@@ -349,102 +329,36 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /* Hero badges drift up and down a little, each on its own phase. */
-/* Lets the landing header's hero-to-compact shrink transition (see LandingNav). */
-@property --lp-nav-t {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
 /*
- * The header settles from the hero's view timeline, so it lands on the exact
- * scroll pixel the stage starts to leave, however fast the page moves, and
- * is already right at first paint when the page loads scrolled: at the hero's
- * top below `lg`, at its bottom on desktop, where the stage is sticky. The
- * stage carries the flag; the style query turns it into `--lp-nav-t` on the
- * header so the shrink itself stays a timed transition. `LandingPage`
- * mirrors this from a scroll handler where scroll-driven animations are
- * missing.
+ * The compact header's entrance, from the hero's view timeline so it runs on
+ * the compositor and is already right at first paint when the page loads
+ * scrolled. The hero header leaves with the hero's stage: from the hero's
+ * top below `lg`, from its bottom on desktop, where the stage is sticky.
+ * The bar starts sliding in once the hero header has fully left and is in
+ * place 6rem of scroll later. `LandingPage` mirrors this with `data-shown`
+ * where scroll-driven animations are missing.
  */
-@property --lp-nav-settled {
-  syntax: "<integer>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@keyframes lp-nav-settled {
-  from,
+@keyframes lp-nav-compact-in {
+  from {
+    translate: 0 -100%;
+  }
   to {
-    --lp-nav-settled: 1;
+    translate: 0 0;
   }
-}
-
-@container style(--lp-nav-settled: 1) {
-  [data-landing-nav="fixed"] {
-    --lp-nav-t: 1;
-  }
-}
-
-/*
- * Well before the stage leaves, while it is still pinned and nothing moves,
- * the header is lifted above the device layer (z-70) and the droplet is let
- * go: as the stage leaves, the devices cross under the bar, and no header
- * is refracted by then. Done this early because the flip is main-thread
- * work: at the exit pixel itself a fast flick could carry the compositor
- * past both the flip and the bar's height in one frame. Below `lg` there is
- * no device layer, so the flip is tied to settling. Mirrored on attributes
- * for the scroll-handler fallback.
- */
-@property --lp-nav-lift {
-  syntax: "<integer>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@keyframes lp-nav-lift {
-  from,
-  to {
-    --lp-nav-lift: 1;
-  }
-}
-
-@container style(--lp-nav-lift: 1) {
-  [data-landing-nav="fixed"] {
-    z-index: 80;
-  }
-
-  /* Opacity: the Bubble sets the canvas's visibility inline. */
-  .lp-bubble-capture > canvas:last-of-type {
-    opacity: 0;
-  }
-}
-
-[data-landing-nav="fixed"][data-lifted="true"] {
-  z-index: 80;
-}
-
-[data-landing-nav="fixed"][data-lifted="true"]
-  ~ .lp-bubble-capture
-  > canvas:last-of-type {
-  opacity: 0;
 }
 
 @supports (animation-timeline: view()) {
-  [data-hero-stage] {
-    animation:
-      lp-nav-settled linear forwards,
-      lp-nav-lift linear forwards;
+  [data-landing-nav="compact"] {
+    animation: lp-nav-compact-in linear both;
     animation-timeline: --lp-hero;
-    animation-range-start: exit-crossing 1px;
-    animation-range-end: exit-crossing 100%;
+    animation-range: exit-crossing var(--lp-nav-hero-h) exit-crossing
+      calc(var(--lp-nav-hero-h) + 6rem);
   }
 
   @media (min-width: 64rem) {
-    [data-hero-stage] {
-      animation-range-start:
-        exit 1px,
-        contain 60%;
-      animation-range-end: exit 100%;
+    [data-landing-nav="compact"] {
+      animation-range: exit var(--lp-nav-hero-h) exit
+        calc(var(--lp-nav-hero-h) + 6rem);
     }
   }
 }

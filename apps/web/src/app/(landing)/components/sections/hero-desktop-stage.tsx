@@ -52,11 +52,11 @@ export function HeroDesktopStage({
   return (
     <>
       {/*
-       * Not a stacking context of its own: landing.css layers its content
-       * canvas under the fixed header and its droplet canvas over it, both
+       * The Bubble is its own stacking context (z-1) so the droplet can paint
+       * above the header it refracts while the whole bubble still stays
        * beneath the device layer.
        */}
-      <HeroBubble className="lp-bubble-capture absolute! inset-0">
+      <HeroBubble className="lp-bubble-capture absolute! inset-0 z-1">
         {/* Over the grid, beneath the copy and the scroll hint. */}
         <HeroFade />
         {/* Keep the copy mounted across context loss and restoration. */}
@@ -127,7 +127,7 @@ export function HeroDesktopStage({
       <div
         aria-hidden={isStatic ? true : undefined}
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-70",
+          "pointer-events-none absolute inset-x-0 top-[5.3rem] bottom-0 z-30",
           isStatic && "invisible",
         )}
       >

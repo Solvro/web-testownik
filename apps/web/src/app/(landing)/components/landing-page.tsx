@@ -34,64 +34,42 @@ export function LandingPage({
   isAuthenticated: boolean;
 }): React.JSX.Element {
   const heroReference = useRef<HTMLElement>(null);
+  const compactNavReference = useRef<HTMLElement>(null);
   const { isStarting, start } = useGuestStart();
 
-  // The header settles once the hero's stage starts to leave the viewport.
-  // Where scroll-driven animations exist landing.css does that from the
-  // hero's view timeline; this handler is the fallback for the rest, and
-  // owns the flag that lets the shrink ease only after the first
-  // interaction. It reads one rect per scroll and writes only when the state
-  // flips.
+  // The compact bar slides in once the hero header has scrolled out of the
+  // hero's stage (sticky on desktop). Where scroll-driven animations exist
+  // landing.css does that from the hero's view timeline, on the compositor
+  // and already at first paint; this handler is the fallback for the rest
+  // and keeps the bar inert while it waits above the viewport. One rect per
+  // scroll, written only when the state flips.
   useEffect(() => {
-    const hero = heroReference.current;
-    const stage = hero?.querySelector("[data-hero-stage]");
-    const nav = hero?.querySelector('[data-landing-nav="fixed"]');
-    if (
-      hero === null ||
-      !(stage instanceof HTMLElement) ||
-      !(nav instanceof HTMLElement)
-    ) {
+    const stage = heroReference.current?.querySelector(":scope > div");
+    const compactNav = compactNavReference.current;
+    if (!(stage instanceof HTMLElement) || compactNav === null) {
       return;
     }
-    let wasSettled: boolean | null = null;
-    let wasLifted: boolean | null = null;
+    let wasShown: boolean | null = null;
     const measure = (): void => {
-      const heroRect = hero.getBoundingClientRect();
-      const stageRect = stage.getBoundingClientRect();
-      const settled = stageRect.top <= -1;
-      // 60% of the stage's pinned travel (none below `lg`, where it is the
-      // same pixel as settling); see landing.css.
-      const travel = heroRect.height - stageRect.height;
-      const lifted = travel > 0 ? -heroRect.top >= 0.6 * travel : settled;
-      if (settled !== wasSettled) {
-        wasSettled = settled;
-        nav.dataset.settled = String(settled);
-      }
-      if (lifted !== wasLifted) {
-        wasLifted = lifted;
-        nav.dataset.lifted = String(lifted);
+      const heroHeight =
+        Number.parseFloat(
+          getComputedStyle(compactNav).getPropertyValue("--lp-nav-hero-h"),
+        ) *
+        Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const shown = -stage.getBoundingClientRect().top >= heroHeight;
+      if (shown !== wasShown) {
+        wasShown = shown;
+        compactNav.dataset.shown = String(shown);
+        compactNav.inert = !shown;
+        compactNav.setAttribute("aria-hidden", String(!shown));
       }
     };
     measure();
     window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
-    const root = hero.parentElement;
-    const liveEvents = ["wheel", "touchstart", "keydown", "pointerdown"];
-    const goLive = (): void => {
-      root?.setAttribute("data-nav-live", "true");
-      for (const type of liveEvents) {
-        window.removeEventListener(type, goLive);
-      }
-    };
-    for (const type of liveEvents) {
-      window.addEventListener(type, goLive, { passive: true });
-    }
     return () => {
       window.removeEventListener("scroll", measure);
       window.removeEventListener("resize", measure);
-      for (const type of liveEvents) {
-        window.removeEventListener(type, goLive);
-      }
     };
   }, []);
 
@@ -101,6 +79,8 @@ export function LandingPage({
       data-landing-page
       className={cn(
         "group/landing bg-background text-foreground w-full min-w-0 overflow-clip",
+        // Lets the compact bar follow the hero's view timeline.
+        "[timeline-scope:--lp-hero]",
         // Tapping a control on the page should not flash the platform highlight.
         "[&_a]:[-webkit-tap-highlight-color:transparent] [&_button]:[-webkit-tap-highlight-color:transparent]",
       )}
@@ -115,18 +95,17 @@ export function LandingPage({
         Przejdź do treści
       </a>
       <LandingTableOfContents />
+      <LandingNav
+        ref={compactNavReference}
+        variant="compact"
+        isAuthenticated={isAuthenticated}
+        isStarting={isStarting}
+        onStart={start}
+      />
       <Hero
         heroReference={heroReference}
         nav={
           <LandingNav
-            isAuthenticated={isAuthenticated}
-            isStarting={isStarting}
-            onStart={start}
-          />
-        }
-        captureNav={
-          <LandingNav
-            capture
             isAuthenticated={isAuthenticated}
             isStarting={isStarting}
             onStart={start}

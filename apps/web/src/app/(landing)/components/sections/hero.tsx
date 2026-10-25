@@ -52,23 +52,22 @@ function StaticDeviceCover(): React.JSX.Element {
 }
 
 /**
- * The hero copy and "Poznaj produkt" link, rendered exactly once whichever
- * stage hosts it. Below `lg` it flows; at `lg` it is laid out
+ * The header, hero copy and "Poznaj produkt" link, rendered exactly once
+ * whichever stage hosts it. Below `lg` it flows; at `lg` it is laid out
  * absolutely over the sticky stage. `visual` sits between copy and link.
  */
 function HeroContent({
-  captureNav,
+  nav,
   visual,
   isStatic = false,
 }: {
-  /** The header copy the Bubble refracts; only the desktop stage has one. */
-  captureNav?: ReactNode;
+  nav?: ReactNode;
   visual?: ReactNode;
   isStatic?: boolean;
 }): React.JSX.Element {
   return (
     <>
-      {captureNav}
+      {nav}
 
       <div
         data-hero-progress={isStatic ? undefined : true}
@@ -114,13 +113,10 @@ function HeroContent({
 export function Hero({
   heroReference,
   nav,
-  captureNav,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
-  /** The page header: fixed, but rendered inside the stage (see LandingNav). */
+  /** The hero variant of the header, refracted by the Bubble on desktop. */
   nav?: ReactNode;
-  /** Its capture-only copy for the Bubble. */
-  captureNav?: ReactNode;
 }): React.JSX.Element {
   // False on the server and during hydration: the server markup is always the
   // static hero below, so there is nothing to mismatch.
@@ -169,6 +165,7 @@ export function Hero({
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
       <HeroContent
+        nav={nav}
         visual={
           <>
             <HeroPhone className="lg:hidden" />
@@ -196,8 +193,8 @@ export function Hero({
       data-hero-ready={isStageReady}
       data-hero-settled={isStageSettled}
       className={cn(
-        // Names the view timeline the open-laptop wordmark and the header
-        // swap animate on. The inset would otherwise default to the root's
+        // Names the view timeline the open-laptop wordmark and the compact
+        // header animate on. The inset would otherwise default to the root's
         // scroll padding, and the `view-timeline` shorthand would reset it
         // in Chrome.
         "relative scroll-mt-4 [view-timeline-inset:0] [view-timeline-name:--lp-hero]",
@@ -216,18 +213,13 @@ export function Hero({
         media="(min-width: 1024px)"
       />
       <div
-        data-hero-stage
         className={cn(
-          // Its own stacking context, above the sections that follow, so the
-          // fixed header inside it (z-50) stays over the page, between the
-          // Bubble's canvases. Sticky would make one anyway at `lg`.
-          "relative z-50 lg:h-[100svh] lg:overflow-hidden",
+          "relative lg:h-[100svh] lg:overflow-hidden",
           isStatic
             ? "lg:h-[100svh] lg:min-h-[36rem]"
             : "lg:sticky lg:top-0 lg:min-h-[42rem]",
         )}
       >
-        {nav}
         {isDesktop ? (
           <Suspense fallback={staticHero}>
             <HeroDesktopStage
@@ -242,7 +234,7 @@ export function Hero({
                 setIsStageReady(true);
               }}
             >
-              <HeroContent captureNav={captureNav} isStatic={isStatic} />
+              <HeroContent nav={nav} isStatic={isStatic} />
             </HeroDesktopStage>
           </Suspense>
         ) : (
