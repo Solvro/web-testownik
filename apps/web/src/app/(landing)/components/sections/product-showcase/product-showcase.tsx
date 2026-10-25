@@ -83,7 +83,7 @@ export function ProductShowcase(): React.JSX.Element {
       tabIndex={-1}
       padding="showcase"
       showPlaceholder={false}
-      className="scroll-mt-[4.5rem] outline-none"
+      className="scroll-mt-[5rem] outline-none"
     >
       <header className="grid grid-cols-1 items-end gap-x-20 gap-y-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
         <DisplayHeading className="mt-0">

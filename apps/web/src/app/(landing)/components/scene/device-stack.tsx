@@ -51,10 +51,13 @@ export function DeviceStack({
   phoneContent,
   onUnavailable,
   onRestored,
+  onReady,
 }: {
   className?: string;
   onUnavailable?: () => void;
   onRestored?: () => void;
+  /** The model and all three screens are up; the cover is fading out. */
+  onReady?: () => void;
   /** Capture harness: hold the still cover and hide every live surface. */
   coverOnly?: boolean;
   pixelRatio?: number;
@@ -81,6 +84,9 @@ export function DeviceStack({
   });
   const reportRestored = useEffectEvent(() => {
     onRestored?.();
+  });
+  const reportReady = useEffectEvent(() => {
+    onReady?.();
   });
   const stackReference = useRef<DeviceStackInstance | null>(null);
   // Reads whichever stack is current; it only captures the ref, so the
@@ -196,6 +202,7 @@ export function DeviceStack({
               setIsReady(true);
               // Also covers a fresh desktop mount after a mobile resize.
               reportRestored();
+              reportReady();
             }
           },
         });

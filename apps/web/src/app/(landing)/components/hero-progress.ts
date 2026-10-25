@@ -8,7 +8,13 @@ export const HERO_PROGRESS_EVENT = "landing-hero-progress";
 export const HERO_PROGRESS = `var(${HERO_PROGRESS_PROPERTY}, 0)`;
 
 let cachedHeroProgress = 0;
+/** While held, the DOM targets stay at 0 (the stack is still loading). */
+let isHeld = false;
 const targets = new Set<HTMLElement>();
+
+function shownProgress(): number {
+  return isHeld ? 0 : cachedHeroProgress;
+}
 
 /** Latest progress, readable by Three.js without a computed-style read. */
 export function getHeroProgress(): number {
@@ -23,10 +29,7 @@ export function attachHeroProgress(
     return;
   }
   targets.add(element);
-  element.style.setProperty(
-    HERO_PROGRESS_PROPERTY,
-    cachedHeroProgress.toString(),
-  );
+  element.style.setProperty(HERO_PROGRESS_PROPERTY, shownProgress().toString());
   return () => {
     targets.delete(element);
     element.style.removeProperty(HERO_PROGRESS_PROPERTY);
@@ -41,8 +44,28 @@ export function publishHeroProgress(progress: number): void {
   }
 
   cachedHeroProgress = next;
-  for (const element of targets) {
-    element.style.setProperty(HERO_PROGRESS_PROPERTY, next.toString());
+  if (!isHeld) {
+    for (const element of targets) {
+      element.style.setProperty(HERO_PROGRESS_PROPERTY, next.toString());
+    }
   }
   window.dispatchEvent(new Event(HERO_PROGRESS_EVENT));
+}
+
+/**
+ * Keeps the copy, badges and other DOM targets at the closed pose while the
+ * device stack is still loading, whatever the scroll position; the scene
+ * itself does the same and catches up once ready. Releasing re-applies the
+ * real progress at once, so the hero styles the catch-up with a transition.
+ * `getHeroProgress` always reports the real value.
+ */
+export function setHeroProgressHold(held: boolean): void {
+  if (held === isHeld) {
+    return;
+  }
+  isHeld = held;
+  const shown = shownProgress().toString();
+  for (const element of targets) {
+    element.style.setProperty(HERO_PROGRESS_PROPERTY, shown);
+  }
 }

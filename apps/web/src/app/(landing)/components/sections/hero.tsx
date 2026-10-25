@@ -1,12 +1,16 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { Suspense, lazy, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
+import {
+  HERO_PROGRESS,
+  attachHeroProgress,
+  setHeroProgressHold,
+} from "../hero-progress";
 import { useHeroProgress } from "../hooks/use-hero-progress";
 import { useIsDesktopViewport } from "../hooks/use-prefers-reduced-motion";
 import { useDeviceCoverPlacement } from "../scene/device-cover-placement";
@@ -118,7 +122,35 @@ export function Hero({
   // static hero below, so there is nothing to mismatch.
   const isDesktop = useIsDesktopViewport();
   const [isStatic, setIsStatic] = useState(false);
+  const [isStageReady, setIsStageReady] = useState(false);
+  const [isCatchingUp, setIsCatchingUp] = useState(false);
   useHeroProgress(heroReference, isDesktop && !isStatic);
+
+  // Until the stack is ready the copy, badges and hint stay at the closed
+  // pose whatever the scroll position, like the scene under its cover; the
+  // static fallback has no scene to wait for.
+  const holdProgress = isDesktop && !isStatic && !isStageReady;
+  useEffect(() => {
+    setHeroProgressHold(holdProgress);
+    return () => {
+      setHeroProgressHold(false);
+    };
+  }, [holdProgress]);
+
+  // Released targets glide to the real progress alongside the scene's own
+  // catch-up (see `data-hero-catching-up` in landing.css).
+  useEffect(() => {
+    if (!isStageReady) {
+      return;
+    }
+    setIsCatchingUp(true);
+    const timeout = window.setTimeout(() => {
+      setIsCatchingUp(false);
+    }, 1500);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [isStageReady]);
 
   /*
    * Phones keep this for good. On desktop it is the server render and the
@@ -156,6 +188,8 @@ export function Hero({
       id="start"
       ref={heroReference}
       data-hero-static={isStatic}
+      data-hero-ready={isStageReady}
+      data-hero-catching-up={isCatchingUp}
       className={cn(
         // Names the view timeline the open-laptop wordmark animates on. The
         // inset would otherwise default to the root's scroll padding, and the
@@ -192,6 +226,9 @@ export function Hero({
               }}
               onUnavailable={() => {
                 setIsStatic(true);
+              }}
+              onReady={() => {
+                setIsStageReady(true);
               }}
             >
               <HeroContent nav={nav} isStatic={isStatic} />

@@ -27,13 +27,16 @@ vi.mock("../scene/device-scene", () => ({
   DeviceScene: ({
     onUnavailable,
     onRestored,
+    onReady,
   }: {
     onUnavailable: () => void;
     onRestored: () => void;
+    onReady: () => void;
   }) => (
     <>
       <button onClick={onUnavailable}>Fail WebGL</button>
       <button onClick={onRestored}>Restore WebGL</button>
+      <button onClick={onReady}>Stack ready</button>
     </>
   ),
 }));
@@ -89,8 +92,14 @@ it("replaces the reduced-motion runway with visible static copy and stops progre
   expect(hero).toHaveAttribute("data-hero-static", "false");
   expect(hero).toHaveClass("lg:min-h-[190rem]");
   expect(copy).toHaveAttribute("data-hero-progress");
-  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("1");
   expect(screen.getByText("PRZEWIŃ")).toBeInTheDocument();
+  // The stack is loading again: the copy holds the closed pose, whatever the
+  // (reduced-motion, pinned) progress says, until the scene is ready.
+  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("0");
+  expect(hero).toHaveAttribute("data-hero-ready", "false");
+  fireEvent.click(screen.getByRole("button", { name: "Stack ready" }));
+  expect(hero).toHaveAttribute("data-hero-ready", "true");
+  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("1");
 });
 
 it("resets the static fallback when the desktop stage remounts", async () => {

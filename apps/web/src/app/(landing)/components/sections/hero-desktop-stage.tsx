@@ -34,11 +34,13 @@ export function HeroDesktopStage({
   isStatic,
   onUnavailable,
   onRestored,
+  onReady,
 }: {
   children: ReactNode;
   isStatic: boolean;
   onUnavailable: () => void;
   onRestored: () => void;
+  onReady: () => void;
 }): React.JSX.Element {
   const resetFallback = useEffectEvent(onRestored);
   useEffect(() => {
@@ -133,6 +135,7 @@ export function HeroDesktopStage({
           isStatic={isStatic}
           onUnavailable={onUnavailable}
           onRestored={onRestored}
+          onReady={onReady}
         />
       </div>
     </>

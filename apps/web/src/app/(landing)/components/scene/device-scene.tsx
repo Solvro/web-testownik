@@ -13,11 +13,13 @@ function InteractiveDeviceStack({
   capturePixelRatio,
   onUnavailable,
   onRestored,
+  onReady,
 }: {
   captureLoadingCover?: boolean;
   capturePixelRatio?: number;
   onUnavailable?: () => void;
   onRestored?: () => void;
+  onReady?: () => void;
 }): React.JSX.Element {
   // The laptop and the iPhone share their quiz over this channel. The
   // frames only mount once the stack has attached its hosts, which is
@@ -30,6 +32,7 @@ function InteractiveDeviceStack({
     <DeviceStack
       onUnavailable={onUnavailable}
       onRestored={onRestored}
+      onReady={onReady}
       coverOnly={captureLoadingCover}
       pixelRatio={capturePixelRatio}
       laptopContent={<DeviceScreenFrame device="laptop" channel={channel} />}
@@ -56,6 +59,7 @@ export function DeviceScene({
   capturePixelRatio,
   onUnavailable,
   onRestored,
+  onReady,
 }: {
   captureLoadingCover?: boolean;
   captureMode?: boolean;
@@ -63,6 +67,7 @@ export function DeviceScene({
   capturePixelRatio?: number;
   onUnavailable?: () => void;
   onRestored?: () => void;
+  onReady?: () => void;
 }): React.JSX.Element {
   return (
     <div
@@ -84,6 +89,7 @@ export function DeviceScene({
         <InteractiveDeviceStack
           onUnavailable={onUnavailable}
           onRestored={onRestored}
+          onReady={onReady}
           captureLoadingCover={captureLoadingCover}
           capturePixelRatio={capturePixelRatio}
         />
