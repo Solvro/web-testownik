@@ -360,6 +360,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  * scroll itself as the hero's stage leaves (from the hero's top below `lg`,
  * from its bottom on desktop, where the stage is sticky), over 7rem of
  * travel, and is already right at first paint when the page loads scrolled.
+ * Phones skip it and keep the settled size throughout.
  * The droplet strip above the bar goes with the stage. Without scroll-driven
  * animations, `LandingPage` flags `data-settled` and the property
  * transitions instead.
@@ -380,11 +381,20 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-@supports (animation-timeline: view()) {
+/* Phones keep one size: the bar is always the settled one there. */
+@media (max-width: 39.99rem) {
   [data-landing-nav="fixed"] {
-    animation: lp-nav-shrink linear both;
-    animation-timeline: --lp-hero;
-    animation-range: exit-crossing 0px exit-crossing 7rem;
+    --lp-nav-t: 1;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (min-width: 40rem) {
+    [data-landing-nav="fixed"] {
+      animation: lp-nav-shrink linear both;
+      animation-timeline: --lp-hero;
+      animation-range: exit-crossing 0px exit-crossing 7rem;
+    }
   }
 
   @media (min-width: 64rem) {

@@ -31,16 +31,17 @@ const CREDIT_COLUMNS = "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 /*
  * Credit lists: a snap-scrolling row that bleeds to the screen edges on
  * phones, a grid from `sm` up. Every team uses the same column count at each
- * width, so avatars and names line up down the masthead. On phones an entry
- * is 60vw wide, so the next one always shows about half past the first and a
- * row reads as scrollable rather than complete. The vertical padding keeps an
+ * width, so avatars and names line up down the masthead. On phones two
+ * entries fit with a slice of the third past the edge, so a row reads as
+ * scrollable rather than complete; entries stack avatar over name there so
+ * the role pills still fit. The vertical padding keeps an
  * entry's hover box (which extends 6 px past its content) and its focus ring
  * (2 px, offset 2 px) inside the scroller's clip.
  */
 const CREDIT_LIST_CLASS =
-  "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-6 gap-y-5 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
+  "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-4 gap-y-5 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:gap-x-6 sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
 const CREDIT_ITEM_CLASS =
-  "min-w-0 max-sm:w-[60vw] max-sm:shrink-0 max-sm:snap-start";
+  "min-w-0 max-sm:w-[calc(50vw-3.1rem)] max-sm:shrink-0 max-sm:snap-start";
 
 /** Masthead order: who decides, who builds, who makes it look and sound good. */
 const TEAM_ORDER: readonly ProjectTeam[] = [
@@ -217,7 +218,7 @@ function EntryShell({
   children: React.ReactNode;
 }): React.JSX.Element {
   const className =
-    "group/entry -m-1.5 flex min-w-0 items-start gap-3 rounded-md p-1.5";
+    "group/entry -m-1.5 flex min-w-0 items-start gap-3 rounded-md p-1.5 max-sm:flex-col max-sm:gap-2";
 
   if (href === undefined) {
     return <div className={className}>{children}</div>;
