@@ -33,7 +33,7 @@ const getCurrentScrollProgress = (): number =>
   MathUtils.clamp(getHeroProgress(), 0, 1);
 
 /** Lets the live screens settle and the cover disappear before catch-up begins. */
-const COVER_HANDOFF_MS = 170;
+const COVER_HANDOFF_MS = 320;
 const CATCH_UP_THRESHOLD = 0.025;
 
 type ProgressMode = "loading" | "catching-up" | "scroll";

@@ -167,7 +167,7 @@ export function Hero({
     }
     const timeout = window.setTimeout(() => {
       setIsStageSettled(true);
-    }, 1250);
+    }, 1400);
     return () => {
       window.clearTimeout(timeout);
     };
