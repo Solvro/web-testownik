@@ -44,14 +44,15 @@ const NAV_TRANSITION =
 /*
  * The header blurs what is beneath it. Over the hero that is the grid, whose
  * blurred lines read as a soft haze that fades out at the top and the sides
- * (`NAV_HAZE`); once settled, a solid tint comes in (`NAV_TINT`). Both layers
- * follow the shrink, so the look changes with the size.
+ * (`NAV_HAZE`); once settled, a solid tint comes in (`NAV_TINT`), ahead of
+ * the shrink so the devices leaving under the bar never dim its links. Both
+ * layers follow the shrink, so the look changes with the size.
  */
 const NAV_SURFACE = "backdrop-blur-[18px]";
 const NAV_HAZE =
   "pointer-events-none absolute inset-0 -z-10 opacity-[calc(1-var(--lp-nav-t))] [background-image:linear-gradient(to_bottom,var(--color-background),transparent_1.6rem),linear-gradient(to_right,var(--color-background),transparent_3rem),linear-gradient(to_left,var(--color-background),transparent_3rem)]";
 const NAV_TINT =
-  "bg-background/75 pointer-events-none absolute inset-0 -z-10 opacity-(--lp-nav-t)";
+  "bg-background/75 pointer-events-none absolute inset-0 -z-10 opacity-[min(1,calc(var(--lp-nav-t)*3))]";
 const NAV_HEIGHT =
   "h-[calc(var(--lp-nav-hero-h)_-_var(--lp-nav-shrink)_*_var(--lp-nav-t))]";
 const LOGO_SIZE =

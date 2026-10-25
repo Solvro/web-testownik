@@ -54,11 +54,22 @@ export function LandingPage({
       return;
     }
     let wasSettled: boolean | null = null;
+    let wasLifted: boolean | null = null;
     const measure = (): void => {
-      const settled = stage.getBoundingClientRect().top <= -1;
+      const heroRect = hero.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const settled = stageRect.top <= -1;
+      // 60% of the stage's pinned travel (none below `lg`, where it is the
+      // same pixel as settling); see landing.css.
+      const travel = heroRect.height - stageRect.height;
+      const lifted = travel > 0 ? -heroRect.top >= 0.6 * travel : settled;
       if (settled !== wasSettled) {
         wasSettled = settled;
         nav.dataset.settled = String(settled);
+      }
+      if (lifted !== wasLifted) {
+        wasLifted = lifted;
+        nav.dataset.lifted = String(lifted);
       }
     };
     measure();

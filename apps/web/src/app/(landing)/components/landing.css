@@ -76,6 +76,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   isolation: isolate;
 }
 
+/* Not a stacking context: its canvases are layered around the fixed header. */
+.lp-bubble-capture {
+  isolation: auto;
+}
+
 /*
  * The content canvas sits under the fixed header (z-50 in the stage) and is
  * clipped under it: the header's capture copy is drawn into the canvas for
@@ -96,6 +101,7 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
  */
 .lp-bubble-capture > canvas:last-of-type {
   z-index: 60;
+  transition: opacity 300ms;
   mask-image: linear-gradient(
     to bottom,
     black calc(100% - clamp(7rem, 22vh, 13rem)),
@@ -373,16 +379,37 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-/*
- * Settling also lifts the header above the device layer (z-70) and hides the
- * droplet: as the stage leaves, the devices would otherwise cross over the
- * bar, and the droplet is no longer wanted over it. At the settle pixel the
- * devices are still a full header height below the bar, so the flip is
- * invisible. Mirrored on the attribute for the scroll-handler fallback.
- */
 @container style(--lp-nav-settled: 1) {
   [data-landing-nav="fixed"] {
     --lp-nav-t: 1;
+  }
+}
+
+/*
+ * Well before the stage leaves, while it is still pinned and nothing moves,
+ * the header is lifted above the device layer (z-70) and the droplet is let
+ * go: as the stage leaves, the devices cross under the bar, and no header
+ * is refracted by then. Done this early because the flip is main-thread
+ * work: at the exit pixel itself a fast flick could carry the compositor
+ * past both the flip and the bar's height in one frame. Below `lg` there is
+ * no device layer, so the flip is tied to settling. Mirrored on attributes
+ * for the scroll-handler fallback.
+ */
+@property --lp-nav-lift {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes lp-nav-lift {
+  from,
+  to {
+    --lp-nav-lift: 1;
+  }
+}
+
+@container style(--lp-nav-lift: 1) {
+  [data-landing-nav="fixed"] {
     z-index: 80;
   }
 
@@ -392,15 +419,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-[data-landing-nav="fixed"][data-settled="true"] {
+[data-landing-nav="fixed"][data-lifted="true"] {
   z-index: 80;
 }
 
-[data-landing-nav="fixed"][data-settled="true"]
-  ~ *
-  .lp-bubble-capture
-  > canvas:last-of-type,
-[data-landing-nav="fixed"][data-settled="true"]
+[data-landing-nav="fixed"][data-lifted="true"]
   ~ .lp-bubble-capture
   > canvas:last-of-type {
   opacity: 0;
@@ -408,14 +431,20 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 
 @supports (animation-timeline: view()) {
   [data-hero-stage] {
-    animation: lp-nav-settled linear forwards;
+    animation:
+      lp-nav-settled linear forwards,
+      lp-nav-lift linear forwards;
     animation-timeline: --lp-hero;
-    animation-range: exit-crossing 1px exit-crossing 100%;
+    animation-range-start: exit-crossing 1px;
+    animation-range-end: exit-crossing 100%;
   }
 
   @media (min-width: 64rem) {
     [data-hero-stage] {
-      animation-range: exit 1px exit 100%;
+      animation-range-start:
+        exit 1px,
+        contain 60%;
+      animation-range-end: exit 100%;
     }
   }
 }
