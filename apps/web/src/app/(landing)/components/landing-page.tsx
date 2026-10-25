@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
@@ -118,29 +118,19 @@ export function LandingPage({
         }
       />
       {/*
-       * Each section below the hero is its own Suspense boundary: all of it is
-       * server-rendered, but React hydrates boundaries after the rest of the
-       * tree, so the hero and its device stack come up first.
+       * No Suspense around these: a boundary this large is outlined by the
+       * server renderer, so the section would stream in after the shell with
+       * zero height first, breaking scroll restoration on reload.
        */}
-      <Suspense>
-        <ProductShowcase />
-      </Suspense>
-      <Suspense>
-        <Faq />
-      </Suspense>
-      <Suspense>
-        <Timeline />
-      </Suspense>
-      <Suspense>
-        <Team contributors={contributors} />
-      </Suspense>
-      <Suspense>
-        <Finale
-          isAuthenticated={isAuthenticated}
-          isStarting={isStarting}
-          onStart={start}
-        />
-      </Suspense>
+      <ProductShowcase />
+      <Faq />
+      <Timeline />
+      <Team contributors={contributors} />
+      <Finale
+        isAuthenticated={isAuthenticated}
+        isStarting={isStarting}
+        onStart={start}
+      />
     </div>
   );
 }
