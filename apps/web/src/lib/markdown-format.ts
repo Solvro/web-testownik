@@ -20,24 +20,54 @@ const inlineMarkers: Partial<Record<MarkdownFormat, string[]>> = {
   math: ["$"],
 };
 
-/** Positions of `marker` in `line` which can open or close a span. */
+/**
+ * Positions of `marker` in `line` which can open or close a span. A run of
+ * the marker's character is read as a whole: `****` is two bold markers
+ * around nothing, while `***` could be bold or italic and counts as neither.
+ */
 function markerPositions(line: string, marker: string) {
   const positions: number[] = [];
-  let index = line.indexOf(marker);
-  while (index !== -1) {
-    const before = line[index - 1];
-    const after = line[index + marker.length];
-    // A single `*`, `_` or `$` is not part of `**` or `$$`.
-    const doubled =
-      marker.length === 1 &&
-      marker !== "`" &&
-      (before === marker || after === marker);
-    if (!doubled && !(marker === "**" && (before === "*" || after === "*"))) {
-      positions.push(index);
+  const char = marker[0];
+  let index = 0;
+  while (index < line.length) {
+    if (line[index] !== char) {
+      index++;
+      continue;
     }
-    index = line.indexOf(marker, index + marker.length);
+    let run = 1;
+    while (line[index + run] === char) {
+      run++;
+    }
+    if (marker === "**") {
+      if (run % 2 === 0) {
+        for (let offset = 0; offset < run; offset += 2) {
+          positions.push(index + offset);
+        }
+      }
+    } else if (marker === "*") {
+      // Two or more are bold.
+      if (run === 1) {
+        positions.push(index);
+      }
+    } else if (marker === "`" || run <= 2) {
+      // `__` and `$$` are empty spans; longer runs are not markers.
+      for (let offset = 0; offset < run; offset++) {
+        positions.push(index + offset);
+      }
+    }
+    index += run;
   }
   return positions;
+}
+
+/** The line containing `start`, as offsets into `value`. */
+function lineAt(value: string, start: number) {
+  const lineStart = start === 0 ? 0 : value.lastIndexOf("\n", start - 1) + 1;
+  const newline = value.indexOf("\n", lineStart);
+  return {
+    lineStart,
+    line: value.slice(lineStart, newline === -1 ? value.length : newline),
+  };
 }
 
 /**
@@ -50,9 +80,7 @@ function enclosingSpan(
   end: number,
   marker: string,
 ) {
-  const lineStart = start === 0 ? 0 : value.lastIndexOf("\n", start - 1) + 1;
-  const newline = value.indexOf("\n", lineStart);
-  const line = value.slice(lineStart, newline === -1 ? value.length : newline);
+  const { lineStart, line } = lineAt(value, start);
   const positions = markerPositions(line, marker);
   for (let index = 0; index + 1 < positions.length; index += 2) {
     const open = lineStart + positions[index];
@@ -73,6 +101,108 @@ export function activeInlineFormats(value: string, start: number, end: number) {
   );
 }
 
+const linePrefixes = {
+  h1: "# ",
+  h2: "## ",
+  h3: "### ",
+  quote: "> ",
+  bullet: "- ",
+  numbered: "1. ",
+};
+
+type LineFormat = keyof typeof linePrefixes;
+
+function isLineFormat(format: MarkdownFormat): format is LineFormat {
+  return format in linePrefixes;
+}
+
+function hasLinePrefix(line: string, format: LineFormat) {
+  return format === "numbered"
+    ? /^\d+\. /.test(line)
+    : line.startsWith(linePrefixes[format]);
+}
+
+/** The whole lines touched by the selection. */
+function selectedLines(value: string, start: number, end: number) {
+  const lineStart = start === 0 ? 0 : value.lastIndexOf("\n", start - 1) + 1;
+  const nextNewline = value.indexOf("\n", Math.max(start, end - 1));
+  const lineEnd = nextNewline === -1 ? value.length : nextNewline;
+  return {
+    lineStart,
+    lineEnd,
+    lines: value.slice(lineStart, lineEnd).split("\n"),
+  };
+}
+
+const fences = { codeBlock: "```", mathBlock: "$$" };
+
+/**
+ * The fenced block whose fence lines surround the selection, as the offsets
+ * of those lines, or null.
+ */
+function enclosingFence(
+  value: string,
+  start: number,
+  end: number,
+  fence: string,
+) {
+  let open: { start: number; end: number } | null = null;
+  let position = 0;
+  for (const line of value.split("\n")) {
+    const lineEnd = position + line.length;
+    if (line.startsWith(fence)) {
+      if (open === null) {
+        open = { start: position, end: lineEnd };
+      } else {
+        if (open.end < start && end < position) {
+          return { open, close: { start: position, end: lineEnd } };
+        }
+        open = null;
+      }
+    }
+    position = lineEnd + 1;
+  }
+  return null;
+}
+
+/** The `[text](url)` link around the selection on its line, or null. */
+function enclosingLink(value: string, start: number, end: number) {
+  const { lineStart, line } = lineAt(value, start);
+  for (const match of line.matchAll(/\[([^\]]*)\]\([^)]*\)/g)) {
+    const open = lineStart + match.index;
+    const close = open + match[0].length;
+    if (open <= start && end <= close) {
+      return { open, close, text: match[1] };
+    }
+  }
+  return null;
+}
+
+/** The block formats applied to the selected lines, or around the caret. */
+export function activeBlockFormats(value: string, start: number, end: number) {
+  const { lines } = selectedLines(value, start, end);
+  const active: MarkdownFormat[] = (
+    Object.keys(linePrefixes) as LineFormat[]
+  ).filter((format) => lines.every((line) => hasLinePrefix(line, format)));
+  for (const [format, fence] of Object.entries(fences)) {
+    if (enclosingFence(value, start, end, fence) !== null) {
+      active.push(format as MarkdownFormat);
+    }
+  }
+  if (enclosingLink(value, start, end) !== null) {
+    active.push("link");
+  }
+  return active;
+}
+
+/** All formats which apply to the selection or caret. */
+export function activeFormats(value: string, start: number, end: number) {
+  return [
+    ...activeInlineFormats(value, start, end),
+    ...activeBlockFormats(value, start, end),
+  ];
+}
+
 export function formatMarkdownSelection(
   value: string,
   start: number,
@@ -81,6 +211,14 @@ export function formatMarkdownSelection(
 ) {
   const selected = value.slice(start, end);
   if (format === "link") {
+    const link = enclosingLink(value, start, end);
+    if (link !== null) {
+      return {
+        value: value.slice(0, link.open) + link.text + value.slice(link.close),
+        start: link.open,
+        end: link.open + link.text.length,
+      };
+    }
     // Leave the URL placeholder selected so it can be typed over directly.
     const prefix = `${value.slice(0, start)}[${selected}](`;
     return {
@@ -140,6 +278,21 @@ export function formatMarkdownSelection(
         };
       }
     }
+    // Inside a fenced block: remove its fence lines.
+    const fence = (fences as Partial<Record<MarkdownFormat, string>>)[format];
+    const block =
+      fence === undefined ? null : enclosingFence(value, start, end, fence);
+    if (block !== null) {
+      const removed = block.open.end + 1 - block.open.start;
+      return {
+        value:
+          value.slice(0, block.open.start) +
+          value.slice(block.open.end + 1, block.close.start - 1) +
+          value.slice(block.close.end),
+        start: start - removed,
+        end: end - removed,
+      };
+    }
     return {
       value:
         value.slice(0, start) + prefix + selected + suffix + value.slice(end),
@@ -147,22 +300,12 @@ export function formatMarkdownSelection(
       end: end + prefix.length,
     };
   }
-  const lineStart = start === 0 ? 0 : value.lastIndexOf("\n", start - 1) + 1;
-  const nextNewline = value.indexOf("\n", Math.max(start, end - 1));
-  const lineEnd = nextNewline === -1 ? value.length : nextNewline;
-  const lines = value.slice(lineStart, lineEnd).split("\n");
-  const prefixes = {
-    h1: "# ",
-    h2: "## ",
-    h3: "### ",
-    quote: "> ",
-    bullet: "- ",
-    numbered: "1. ",
-  };
-  const prefix = prefixes[format as keyof typeof prefixes];
-  const allFormatted = lines.every((line) =>
-    format === "numbered" ? /^\d+\. /.test(line) : line.startsWith(prefix),
-  );
+  if (!isLineFormat(format)) {
+    return { value, start, end };
+  }
+  const { lineStart, lineEnd, lines } = selectedLines(value, start, end);
+  const prefix = linePrefixes[format];
+  const allFormatted = lines.every((line) => hasLinePrefix(line, format));
   const replacement = lines
     .map((line, index) => {
       if (allFormatted) {
@@ -171,7 +314,7 @@ export function formatMarkdownSelection(
           : line.slice(prefix.length);
       }
       const cleanLine = /^h[123]$/.test(format)
-        ? line.replace(/^#{1,3} /, "")
+        ? line.replace(/^#{1,6} /, "")
         : line;
       return (
         (format === "numbered" ? `${String(index + 1)}. ` : prefix) + cleanLine

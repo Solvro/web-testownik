@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activeBlockFormats,
   activeInlineFormats,
   formatMarkdownSelection,
 } from "./markdown-format";
@@ -112,5 +113,43 @@ describe("Markdown selection formatting", () => {
     expect([result.start, result.end]).toEqual([12, 16]);
     // Markers on another line do not count.
     expect(activeInlineFormats("**a\nb**", 4, 4)).toEqual([]);
+  });
+
+  it("reports empty spans around the caret", () => {
+    expect(activeInlineFormats("a****b", 3, 3)).toEqual(["bold"]);
+    expect(activeInlineFormats("a__b", 2, 2)).toEqual(["italic"]);
+    expect(activeInlineFormats("a``b", 2, 2)).toEqual(["code"]);
+    expect(activeInlineFormats("a$$b", 2, 2)).toEqual(["math"]);
+    expect(activeInlineFormats("***x***", 4, 4)).toEqual([]);
+    expect(formatMarkdownSelection("a****b", 3, 3, "bold")).toEqual({
+      value: "ab",
+      start: 1,
+      end: 1,
+    });
+  });
+
+  it("reports block formats on the selected lines and inside blocks", () => {
+    expect(activeBlockFormats("> a\n> b\nc", 0, 5)).toEqual(["quote"]);
+    expect(activeBlockFormats("> a\n> b\nc", 0, 9)).toEqual([]);
+    expect(activeBlockFormats("## Tytuł", 3, 3)).toEqual(["h2"]);
+    expect(activeBlockFormats("1. a\n2. b", 0, 9)).toEqual(["numbered"]);
+    expect(activeBlockFormats("x\n```js\nkod\n```\ny", 8, 8)).toEqual([
+      "codeBlock",
+    ]);
+    expect(activeBlockFormats("x\n```js\nkod\n```\ny", 0, 0)).toEqual([]);
+    expect(activeBlockFormats("$$\n\n$$", 3, 3)).toEqual(["mathBlock"]);
+    expect(activeBlockFormats("zob. [tu](url) i", 7, 7)).toEqual(["link"]);
+    expect(activeBlockFormats("zob. [tu](url) i", 15, 15)).toEqual([]);
+  });
+
+  it("removes a fenced block or a link from inside", () => {
+    expect(
+      formatMarkdownSelection("x\n```\nkod\n```\ny", 7, 9, "codeBlock"),
+    ).toEqual({ value: "x\nkod\ny", start: 3, end: 5 });
+    expect(formatMarkdownSelection("a [tekst](url) b", 5, 5, "link")).toEqual({
+      value: "a tekst b",
+      start: 2,
+      end: 7,
+    });
   });
 });

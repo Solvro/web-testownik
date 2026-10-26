@@ -72,7 +72,7 @@ it("applies block formats from the menu", async () => {
   textarea.setSelectionRange(0, 9);
   await user.click(screen.getByRole("button", { name: "Więcej formatowania" }));
   await user.click(
-    await screen.findByRole("menuitem", { name: "Lista numerowana" }),
+    await screen.findByRole("menuitemcheckbox", { name: "Lista numerowana" }),
   );
   // The format is applied once the menu has closed.
   await waitFor(() => {
@@ -91,7 +91,7 @@ it("keeps showing the source while the formatting menu is open", async () => {
   textarea.setSelectionRange(0, 8);
   await user.click(screen.getByRole("button", { name: "Więcej formatowania" }));
   // The browser moves focus into the open menu; jsdom needs a hand.
-  const item = await screen.findByRole("menuitem", { name: "Cytat" });
+  const item = await screen.findByRole("menuitemcheckbox", { name: "Cytat" });
   item.focus();
   expect(textarea).not.toHaveFocus();
   expect(container.querySelector("strong")).toBeNull();

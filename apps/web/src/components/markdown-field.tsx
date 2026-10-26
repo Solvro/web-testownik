@@ -6,6 +6,9 @@ import {
   CodeIcon,
   CodeXmlIcon,
   EllipsisIcon,
+  Heading1Icon,
+  Heading2Icon,
+  Heading3Icon,
   HeadingIcon,
   ItalicIcon,
   LinkIcon,
@@ -34,10 +37,7 @@ import type {
   RefObject,
 } from "react";
 
-import {
-  activeInlineFormats,
-  formatMarkdownSelection,
-} from "@/lib/markdown-format";
+import { activeFormats, formatMarkdownSelection } from "@/lib/markdown-format";
 import type { MarkdownFormat } from "@/lib/markdown-format";
 import { cn } from "@/lib/utils";
 
@@ -45,8 +45,11 @@ import { MarkdownRenderer } from "./markdown-renderer";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { KbdShortcut } from "./ui/kbd-shortcut";
@@ -208,6 +211,7 @@ export function MarkdownField({
   // The selection when focus left for the toolbar; a textarea does not show
   // its selection without focus, so it is drawn underneath instead.
   const [selection, setSelection] = useState<[number, number] | null>(null);
+  const selectionRef = useRef<HTMLSpanElement>(null);
   const held = toolbar?.heldId === id;
   const rendered = markdown && !focused && !held && hasMarkdownMarkup(value);
   const shownSelection = held && !focused ? selection : null;
@@ -225,6 +229,21 @@ export function MarkdownField({
       }
     };
   }, [activeTarget]);
+
+  // A background covers only the glyphs; the browser's own selection fills
+  // the line, so the highlight is padded out to the line height.
+  useLayoutEffect(() => {
+    const span = selectionRef.current;
+    if (span === null) {
+      return;
+    }
+    span.style.paddingBlock = "";
+    const glyphs = [...span.getClientRects()].at(0)?.height ?? 0;
+    const lineHeight = Number.parseFloat(getComputedStyle(span).lineHeight);
+    if (lineHeight > glyphs) {
+      span.style.paddingBlock = `${String((lineHeight - glyphs) / 2)}px`;
+    }
+  }, [shownSelection]);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -269,7 +288,7 @@ export function MarkdownField({
           )}
         >
           {value.slice(0, shownSelection[0])}
-          <span className="bg-primary/20 rounded-xs">
+          <span ref={selectionRef} className="bg-primary/20">
             {value.slice(shownSelection[0], shownSelection[1])}
           </span>
           {value.slice(shownSelection[1])}
@@ -382,16 +401,26 @@ const inlineFormats: {
   { format: "math", label: "Wzór LaTeX", icon: SigmaIcon },
 ];
 
-const blockFormats: {
+interface MenuFormat {
   format: MarkdownFormat;
   label: string;
   icon: LucideIcon;
-}[] = [
+}
+
+const blockFormats: MenuFormat[] = [
   { format: "link", label: "Link", icon: LinkIcon },
   { format: "bullet", label: "Lista punktowana", icon: ListIcon },
   { format: "numbered", label: "Lista numerowana", icon: ListOrderedIcon },
   { format: "quote", label: "Cytat", icon: QuoteIcon },
-  { format: "h3", label: "Nagłówek", icon: HeadingIcon },
+];
+
+const headingFormats: MenuFormat[] = [
+  { format: "h1", label: "Nagłówek 1", icon: Heading1Icon },
+  { format: "h2", label: "Nagłówek 2", icon: Heading2Icon },
+  { format: "h3", label: "Nagłówek 3", icon: Heading3Icon },
+];
+
+const fencedFormats: MenuFormat[] = [
   { format: "codeBlock", label: "Blok kodu", icon: CodeIcon },
   { format: "mathBlock", label: "Blok wzoru", icon: PiIcon },
 ];
@@ -485,11 +514,7 @@ export function MarkdownToolbar({
           menuRef.current?.contains(focus) === true);
       setHeldId?.(enabled ? field.id : null);
       const active = enabled
-        ? activeInlineFormats(
-            field.value,
-            field.selectionStart,
-            field.selectionEnd,
-          )
+        ? activeFormats(field.value, field.selectionStart, field.selectionEnd)
         : [];
       setState((current) =>
         current.enabled === enabled &&
@@ -521,6 +546,22 @@ export function MarkdownToolbar({
     }
   }
 
+  // Checked when the format is already applied around the caret, so picking
+  // it removes the format again.
+  const menuItem = ({ format, label: title, icon: Icon }: MenuFormat) => (
+    <DropdownMenuCheckboxItem
+      key={format}
+      checked={state.active.includes(format)}
+      closeOnClick
+      onClick={() => {
+        pendingFormat.current = format;
+      }}
+    >
+      <Icon />
+      {title}
+    </DropdownMenuCheckboxItem>
+  );
+
   // Disabled buttons stay focusable, so the keyboard always reaches the
   // toolbar; they are marked `aria-disabled` and their clicks are dropped.
   const buttonClassName =
@@ -535,18 +576,6 @@ export function MarkdownToolbar({
       // Also for clicks landing on the toolbar itself, such as on a button
       // which just became disabled under a fast series of undo clicks.
       onMouseDown={keepFocus}
-      // Base UI moves with the arrow keys only.
-      onKeyDown={(event) => {
-        if (event.key === "Home" || event.key === "End") {
-          const items = [
-            ...event.currentTarget.querySelectorAll<HTMLElement>(
-              "button:not(:disabled)",
-            ),
-          ];
-          items.at(event.key === "Home" ? 0 : -1)?.focus();
-          event.preventDefault();
-        }
-      }}
     >
       {history === undefined ? null : (
         <>
@@ -683,17 +712,17 @@ export function MarkdownToolbar({
               // click outside, which keeps the focus where it landed.
               finalFocus={() => activeTarget?.current ?? false}
             >
-              {blockFormats.map(({ format, label: title, icon: Icon }) => (
-                <DropdownMenuItem
-                  key={format}
-                  onClick={() => {
-                    pendingFormat.current = format;
-                  }}
-                >
-                  <Icon />
-                  {title}
-                </DropdownMenuItem>
-              ))}
+              {blockFormats.map((item) => menuItem(item))}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <HeadingIcon />
+                  Nagłówek
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-44">
+                  {headingFormats.map((item) => menuItem(item))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {fencedFormats.map((item) => menuItem(item))}
             </DropdownMenuContent>
           </DropdownMenu>
         </>
