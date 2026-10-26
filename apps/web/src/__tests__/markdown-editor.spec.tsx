@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { ClipboardEvent } from "react";
@@ -69,6 +75,31 @@ it("applies block formats from the menu", async () => {
     await screen.findByRole("menuitem", { name: "Lista numerowana" }),
   );
   expect(textarea).toHaveValue("1. jeden\n2. dwa");
+});
+
+it("keeps showing the source while the formatting menu is open", async () => {
+  const user = userEvent.setup();
+  const { container } = render(<Editor initialValue="**Róża**" />);
+  const textarea = screen.getByRole<HTMLTextAreaElement>("textbox", {
+    name: "Odpowiedź 1",
+  });
+  await user.click(textarea);
+  textarea.setSelectionRange(0, 8);
+  await user.click(screen.getByRole("button", { name: "Więcej formatowania" }));
+  // The browser moves focus into the open menu; jsdom needs a hand.
+  (await screen.findByRole("menuitem", { name: "Cytat" })).focus();
+  expect(textarea).not.toHaveFocus();
+  expect(container.querySelector("strong")).toBeNull();
+  expect(textarea).toHaveValue("**Róża**");
+
+  await user.keyboard("{Escape}");
+  await waitFor(() => {
+    expect(textarea).toHaveFocus();
+  });
+  expect(container.querySelector("strong")).toBeNull();
+
+  await user.click(document.body);
+  expect(container.querySelector("strong")).toHaveTextContent("Róża");
 });
 
 it("supports formatting shortcuts and selects the link address", async () => {

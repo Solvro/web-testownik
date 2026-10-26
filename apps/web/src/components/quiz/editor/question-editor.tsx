@@ -27,6 +27,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FieldError } from "@/components/ui/field";
+import { Kbd } from "@/components/ui/kbd";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { AnswerEditor } from "./answer-editor";
@@ -377,32 +383,47 @@ export function QuestionEditor({
             </DropdownMenu>
           </div>
           <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
-              aria-label={`Usuń pytanie ${number}`}
-              title="Usuń pytanie"
-              disabled={disabled || count <= 1 || isUploading}
-              onClick={onRemove}
-            >
-              <Trash2Icon />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
-              aria-label={`Zwiń pytanie ${number}`}
-              aria-expanded
-              aria-keyshortcuts="Escape"
-              data-question-toggle
-              title="Zwiń (Esc)"
-              onClick={onCollapse}
-            >
-              <ChevronUpIcon />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
+                    aria-label={`Usuń pytanie ${number}`}
+                    disabled={disabled || count <= 1 || isUploading}
+                    onClick={onRemove}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">Usuń pytanie</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
+                    aria-label={`Zwiń pytanie ${number}`}
+                    aria-expanded
+                    aria-keyshortcuts="Escape"
+                    data-question-toggle
+                    onClick={onCollapse}
+                  >
+                    <ChevronUpIcon />
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">
+                Zwiń
+                <Kbd>Esc</Kbd>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </header>
 
@@ -444,7 +465,7 @@ export function QuestionEditor({
                             className="flex-1"
                             minHeight="2.5rem"
                             markdown={markdown}
-                            inputClassName="scroll-mb-4 py-1.5 text-lg leading-relaxed sm:text-xl"
+                            inputClassName="scroll-mb-4 py-1.5 text-base leading-relaxed"
                           />
                           {questionImage ? null : (
                             // Each field has its own image button, which

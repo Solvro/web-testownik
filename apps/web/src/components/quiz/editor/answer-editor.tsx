@@ -7,6 +7,11 @@ import type { ClipboardEvent } from "react";
 import { MarkdownField } from "@/components/markdown-field";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { ImageButton, ImageDropZone, ImagePreview } from "./image";
@@ -200,20 +205,28 @@ export function AnswerEditor({
                           className="text-muted-foreground hover:text-foreground"
                         />
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label={`Usuń odpowiedź ${number}`}
-                        title="Usuń odpowiedź"
-                        disabled={!canDelete || isUploading || disabled}
-                        onClick={() => {
-                          onRemove();
-                        }}
-                      >
-                        <XIcon />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              aria-label={`Usuń odpowiedź ${number}`}
+                              disabled={!canDelete || isUploading || disabled}
+                              onClick={() => {
+                                onRemove();
+                              }}
+                            >
+                              <XIcon />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent side="bottom">
+                          Usuń odpowiedź
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                   <div id={`answer-error-${answer.id}`} className="pl-11">
