@@ -12,6 +12,7 @@ const GUEST_EXCLUDED_ROUTES = [
   "/oauth",
   "/login-otp",
   "/privacy-policy",
+  "/terms",
   "/wrapped",
 ];
 
