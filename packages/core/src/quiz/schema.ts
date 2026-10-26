@@ -1,5 +1,7 @@
 import * as z from "zod";
 
+import { OPEN_MATCHINGS, QUESTION_TYPES } from "./types";
+import type { QuestionType } from "./types";
 import { formatValidationError } from "./validation";
 
 export const answerFormSchema = z
@@ -40,25 +42,70 @@ export const SINGLE_CHOICE_ERROR =
 export const SINGLE_CHOICE_REQUIRED_ERROR =
   "Jednokrotny wybór wymaga zaznaczenia poprawnej odpowiedzi";
 
-/**
- * The error of the question's answers against its choice type, or null.
- * Single choice needs exactly one correct answer.
- */
-export function choiceTypeError(question: {
-  multiple: boolean;
-  answers: { is_correct: boolean }[];
+/** Error of a true/false question without exactly two answers. */
+export const TRUE_FALSE_COUNT_ERROR =
+  "Pytanie Prawda/Fałsz ma dokładnie dwie odpowiedzi";
+
+/** Error of a true/false question without exactly one correct answer. */
+export const TRUE_FALSE_CORRECT_ERROR =
+  "Pytanie Prawda/Fałsz wymaga zaznaczenia jednej poprawnej odpowiedzi";
+
+/** Error of an open question with an answer which is not accepted. */
+export const OPEN_CORRECT_ERROR =
+  "Każda odpowiedź pytania otwartego jest akceptowana jako poprawna";
+
+/** Error of an open question with an image in an answer. */
+export const OPEN_IMAGE_ERROR =
+  "Odpowiedzi pytania otwartego nie mogą zawierać zdjęć";
+
+function answerHasImage(answer: {
+  image?: string | null;
+  image_url?: string | null;
+  image_upload?: string | null;
 }) {
-  if (question.multiple) {
-    return null;
-  }
+  return [answer.image, answer.image_url, answer.image_upload].some(
+    (value) => typeof value === "string" && value !== "",
+  );
+}
+
+/**
+ * The error of the question's answers against its type, or null. Single
+ * choice and true/false need exactly one correct answer, true/false exactly
+ * two answers, and an open question accepts every answer without images.
+ */
+export function questionTypeError(question: {
+  type: QuestionType;
+  answers: {
+    is_correct: boolean;
+    image?: string | null;
+    image_url?: string | null;
+    image_upload?: string | null;
+  }[];
+}) {
   const correct = question.answers.filter((answer) => answer.is_correct).length;
-  if (correct > 1) {
-    return SINGLE_CHOICE_ERROR;
+  switch (question.type) {
+    case "single_choice": {
+      if (correct > 1) {
+        return SINGLE_CHOICE_ERROR;
+      }
+      return correct === 0 ? SINGLE_CHOICE_REQUIRED_ERROR : null;
+    }
+    case "true_false": {
+      if (question.answers.length !== 2) {
+        return TRUE_FALSE_COUNT_ERROR;
+      }
+      return correct === 1 ? null : TRUE_FALSE_CORRECT_ERROR;
+    }
+    case "open": {
+      if (question.answers.some((answer) => answerHasImage(answer))) {
+        return OPEN_IMAGE_ERROR;
+      }
+      return correct === question.answers.length ? null : OPEN_CORRECT_ERROR;
+    }
+    case "multiple_choice": {
+      return null;
+    }
   }
-  if (correct === 0) {
-    return SINGLE_CHOICE_REQUIRED_ERROR;
-  }
-  return null;
 }
 
 export const questionFormSchema = z
@@ -67,7 +114,9 @@ export const questionFormSchema = z
     order: z.number(),
     text: z.string(),
     explanation: z.string().optional(),
-    multiple: z.boolean(),
+    type: z.enum(QUESTION_TYPES),
+    shuffle_answers: z.boolean(),
+    open_matching: z.enum(OPEN_MATCHINGS),
     is_ai_generated: z.boolean().optional(),
     /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
     is_markdown_enabled: z.boolean().optional(),
@@ -98,7 +147,7 @@ export const questionFormSchema = z
     },
   )
   .superRefine((data, context) => {
-    const error = choiceTypeError(data);
+    const error = questionTypeError(data);
     if (error !== null) {
       context.addIssue({ code: "custom", message: error, path: ["answers"] });
     }

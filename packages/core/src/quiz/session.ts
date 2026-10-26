@@ -3,6 +3,7 @@
  */
 import { DEFAULT_USER_SETTINGS } from "../user/types";
 import type { UserSettings } from "../user/types";
+import { gradeResponse } from "./grading";
 import { getDeterministicShuffle } from "./shuffle";
 import type {
   AnswerRecord,
@@ -115,23 +116,44 @@ function getAnswerShuffleSeed(
   return `${seed ?? "question"}-${questionId}-${appearanceNumber.toString()}`;
 }
 
+/**
+ * Whether the answers show in a random order. True/false keeps its "true"
+ * label first; an open question has nothing to shuffle.
+ */
+export function shufflesAnswers(
+  question: Pick<Question, "type" | "shuffle_answers">,
+) {
+  return (
+    question.shuffle_answers &&
+    question.type !== "true_false" &&
+    question.type !== "open"
+  );
+}
+
+/** The answers in the order shown for the given appearance of the question. */
+function orderAnswers(question: Question, seed: string): Question {
+  return {
+    ...question,
+    answers: shufflesAnswers(question)
+      ? getDeterministicShuffle(question.answers, seed)
+      : question.answers.toSorted((a, b) => a.order - b.order),
+  };
+}
+
 export function getQuestionWithShuffledAnswers(
   question: Question,
   answers: AnswerRecord[],
   seed?: string,
   questionChecked = false,
 ): Question {
-  return {
-    ...question,
-    answers: getDeterministicShuffle(
-      question.answers,
-      getAnswerShuffleSeed(
-        seed,
-        question.id,
-        getQuestionAppearanceNumber(question.id, answers, questionChecked),
-      ),
+  return orderAnswers(
+    question,
+    getAnswerShuffleSeed(
+      seed,
+      question.id,
+      getQuestionAppearanceNumber(question.id, answers, questionChecked),
     ),
-  };
+  );
 }
 
 export function getAnsweredQuestionWithShuffledAnswers(
@@ -144,13 +166,10 @@ export function getAnsweredQuestionWithShuffledAnswers(
     answers.filter((answer) => answer.question === question.id).length,
   );
 
-  return {
-    ...question,
-    answers: getDeterministicShuffle(
-      question.answers,
-      getAnswerShuffleSeed(seed, question.id, appearanceNumber),
-    ),
-  };
+  return orderAnswers(
+    question,
+    getAnswerShuffleSeed(seed, question.id, appearanceNumber),
+  );
 }
 
 /**
@@ -227,23 +246,14 @@ export function pickNextQuestion({
 }
 
 /**
- * Determine if answer is correct by comparing selected answers with correct answers.
+ * Whether the response answers the question correctly: the selected answer
+ * IDs of a choice question, or the typed text of an open one.
  */
 export function checkAnswerCorrectness(
   question: Question,
   selectedAnswers: string[],
 ): boolean {
-  const correctAnswerIds = question.answers
-    .filter((a) => a.is_correct)
-    .map((a) => a.id);
-
-  const selectedSet = new Set(selectedAnswers);
-  const correctSet = new Set(correctAnswerIds);
-
-  return (
-    selectedSet.size === correctSet.size &&
-    [...selectedSet].every((id) => correctSet.has(id))
-  );
+  return gradeResponse(question, selectedAnswers);
 }
 
 export function createAnswerRecord(
@@ -258,6 +268,17 @@ export function createAnswerRecord(
     selected_answers: selectedAnswers,
     was_correct: wasCorrect,
   };
+}
+
+/**
+ * The record of a flashcard the learner graded themselves: no response, only
+ * whether they knew it. Counts like any other answer towards the progress.
+ */
+export function createSelfAssessmentRecord(
+  questionId: string,
+  knew: boolean,
+): AnswerRecord {
+  return createAnswerRecord(questionId, [], knew);
 }
 
 export function deriveSettings(

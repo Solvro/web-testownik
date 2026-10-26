@@ -13,7 +13,9 @@ const makeQuestion = (id: string): Question => ({
   id,
   order: 1,
   text: id,
-  multiple: false,
+  type: "single_choice",
+  shuffle_answers: true,
+  open_matching: "exact",
   answers: ["a", "b", "c", "d"].map((suffix, index) => ({
     id: `${id}-${suffix}`,
     order: index + 1,
@@ -57,6 +59,35 @@ describe("session-utils answer shuffling", () => {
       "q2-c",
       "q2-a",
       "q2-b",
+    ]);
+  });
+
+  it("keeps the answer order when the question does not shuffle", () => {
+    const fixed = getQuestionWithShuffledAnswers(
+      { ...makeQuestion("q1"), shuffle_answers: false },
+      [],
+      "session-1",
+    );
+    const trueFalse = getQuestionWithShuffledAnswers(
+      {
+        ...makeQuestion("q1"),
+        type: "true_false",
+        answers: makeQuestion("q1").answers.slice(0, 2).toReversed(),
+      },
+      [],
+      "session-1",
+    );
+
+    expect(fixed.answers.map((answer) => answer.id)).toEqual([
+      "q1-a",
+      "q1-b",
+      "q1-c",
+      "q1-d",
+    ]);
+    // The "true" label is answer one, whatever the array order.
+    expect(trueFalse.answers.map((answer) => answer.id)).toEqual([
+      "q1-a",
+      "q1-b",
     ]);
   });
 
