@@ -57,7 +57,7 @@ import { imageUpdates, useEditorImage } from "./use-editor-image";
 
 /** A borderless field which shows its edges on hover and focus. */
 const quietField =
-  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 focus-within:bg-transparent focus-within:ring-2 focus-within:ring-primary";
+  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 focus-within:bg-transparent focus-within:ring-2 focus-within:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
 
 export function QuestionEditor({
   hidden = false,
@@ -473,7 +473,7 @@ export function QuestionEditor({
                             <ImageButton
                               {...imageProps}
                               target="pytania"
-                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
+                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:group-has-data-held/question:opacity-100"
                             />
                           )}
                         </div>
@@ -559,7 +559,7 @@ export function QuestionEditor({
 
           <form.Field name={`${path}.explanation`}>
             {(field) => (
-              <div className="bg-muted/50 dark:bg-input/20 focus-within:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow focus-within:ring-2 sm:flex-row sm:items-start">
+              <div className="bg-muted/50 dark:bg-input/20 focus-within:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow focus-within:ring-2 has-data-held:ring-2 sm:flex-row sm:items-start">
                 <label
                   htmlFor={`explanation-${questionId}`}
                   className="shrink-0 py-0.5 leading-relaxed font-semibold"

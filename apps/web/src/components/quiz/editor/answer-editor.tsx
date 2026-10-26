@@ -105,7 +105,7 @@ export function AnswerEditor({
                     data-correct={answer.is_correct}
                     className={cn(
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
-                      "focus-within:ring-primary focus-within:ring-2",
+                      "focus-within:ring-primary has-data-held:ring-primary focus-within:ring-2 has-data-held:ring-2",
                       answer.is_correct
                         ? conflict
                           ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"
@@ -197,7 +197,7 @@ export function AnswerEditor({
                         }}
                       />
                     </div>
-                    <div className="flex shrink-0 items-center gap-0.5 p-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/answer:opacity-100 pointer-fine:group-hover/answer:opacity-100">
+                    <div className="flex shrink-0 items-center gap-0.5 p-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/answer:opacity-100 pointer-fine:group-hover/answer:opacity-100 pointer-fine:group-has-data-held/answer:opacity-100">
                       {withImage ? null : (
                         <ImageButton
                           {...imageProps}

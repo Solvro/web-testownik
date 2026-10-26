@@ -254,6 +254,8 @@ export function MarkdownField({
     <div
       className={cn("relative min-w-0", className)}
       data-slot="markdown-field"
+      // Lets a wrapper keep its focus styling while the toolbar formats this field.
+      data-held={held ? "" : undefined}
     >
       {rendered ? (
         <div
@@ -442,6 +444,8 @@ export function MarkdownToolbar({
   const setHeldId = toolbar?.setHeldId;
   const toolbarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  // A format picked from the menu, applied once the menu has closed.
+  const pendingFormat = useRef<MarkdownFormat | null>(null);
   const focusIndex = useRef(0);
   const [state, setState] = useState<{
     enabled: boolean;
@@ -627,7 +631,19 @@ export function MarkdownToolbar({
             ),
           )}
           {children}
-          <DropdownMenu>
+          <DropdownMenu
+            modal={false}
+            // Formatting focuses the field. Done while the menu is still
+            // open, that counts as focus leaving the menu, which makes Base UI
+            // skip returning focus, so the field would end up unfocused.
+            onOpenChangeComplete={(open) => {
+              const format = pendingFormat.current;
+              if (!open && format !== null) {
+                pendingFormat.current = null;
+                apply(format);
+              }
+            }}
+          >
             <ToolbarTooltip
               label="Więcej formatowania"
               render={
@@ -651,19 +667,15 @@ export function MarkdownToolbar({
             <DropdownMenuContent
               ref={menuRef}
               className="w-52"
-              // Closing with the keyboard goes back to the field; a click
-              // either formats, which focuses the field, or lands elsewhere.
-              finalFocus={(closeType) =>
-                closeType === "keyboard"
-                  ? (activeTarget?.current ?? false)
-                  : false
-              }
+              // Closing goes back to the field. Base UI ignores this for a
+              // click outside, which keeps the focus where it landed.
+              finalFocus={() => activeTarget?.current ?? false}
             >
               {blockFormats.map(({ format, label: title, icon: Icon }) => (
                 <DropdownMenuItem
                   key={format}
                   onClick={() => {
-                    apply(format);
+                    pendingFormat.current = format;
                   }}
                 >
                   <Icon />

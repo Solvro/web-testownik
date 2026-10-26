@@ -51,7 +51,7 @@ export function MarkdownEditor({
     <MarkdownToolbarProvider>
       <div
         className={cn(
-          "border-input focus-within:border-ring focus-within:ring-ring/50 dark:bg-input/30 min-w-0 rounded-lg border bg-transparent transition-[color,box-shadow] focus-within:ring-3",
+          "border-input focus-within:border-ring focus-within:ring-ring/50 has-data-held:border-ring has-data-held:ring-ring/50 dark:bg-input/30 min-w-0 rounded-lg border bg-transparent transition-[color,box-shadow] focus-within:ring-3 has-data-held:ring-3",
           invalid && "border-destructive",
           disabled && "opacity-50",
           className,
