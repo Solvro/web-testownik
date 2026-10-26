@@ -227,6 +227,11 @@ describe("Markdown selection formatting", () => {
     ).toBe(String.raw`\\x tail`);
     expect(activeBlockFormats(String.raw`\![x](url)`, 3, 3)).toEqual(["link"]);
     expect(activeBlockFormats("[a[b]c](url)", 2, 2)).toEqual(["link"]);
+    // A link cannot hold another link: the outer brackets are text.
+    expect(formatMarkdownSelection("[[x](a)](b)", 2, 2, "link").value).toBe(
+      "[x](b)",
+    );
+    expect(activeBlockFormats("[[x](a)](b)", 9, 9)).toEqual([]);
   });
 
   it("removes a fenced block or a link from inside", () => {

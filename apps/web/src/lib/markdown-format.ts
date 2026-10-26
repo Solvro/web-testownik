@@ -250,13 +250,19 @@ function closingDelimiter(
   return -1;
 }
 
+interface Link {
+  open: number;
+  close: number;
+  text: string;
+}
+
 /**
- * The `[text](url)` link around the selection on its line, or null. The
- * text and the address may hold nested brackets or parentheses and escaped
- * characters; an image `![alt](src)` and an escaped `\[` are not links.
+ * The links on a line: `[text](url)`, where the text and the address may
+ * hold nested brackets or parentheses and escaped characters. An image
+ * `![alt](src)` and an escaped `\[` are not links, and neither is a pair
+ * of brackets around another link, as a link cannot contain one.
  */
-function enclosingLink(value: string, start: number, end: number) {
-  const { lineStart, line } = lineAt(value, start);
+function* linksIn(line: string): Generator<Link> {
   for (let index = 0; index < line.length; index++) {
     if (
       line[index] !== "[" ||
@@ -273,10 +279,27 @@ function enclosingLink(value: string, start: number, end: number) {
     if (afterAddress === -1) {
       continue;
     }
-    const open = lineStart + index;
-    const close = lineStart + afterAddress;
+    const text = line.slice(index + 1, afterText - 1);
+    if (hasLink(text)) {
+      continue;
+    }
+    yield { open: index, close: afterAddress, text };
+    index = afterAddress - 1;
+  }
+}
+
+function hasLink(text: string) {
+  return linksIn(text).next().done !== true;
+}
+
+/** The link around the selection on its line, or null. */
+function enclosingLink(value: string, start: number, end: number) {
+  const { lineStart, line } = lineAt(value, start);
+  for (const link of linksIn(line)) {
+    const open = lineStart + link.open;
+    const close = lineStart + link.close;
     if (open <= start && end <= close) {
-      return { open, close, text: line.slice(index + 1, afterText - 1) };
+      return { open, close, text: link.text };
     }
   }
   return null;
