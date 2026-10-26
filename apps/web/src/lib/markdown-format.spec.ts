@@ -142,6 +142,33 @@ describe("Markdown selection formatting", () => {
     expect(activeBlockFormats("zob. [tu](url) i", 15, 15)).toEqual([]);
   });
 
+  it("tells fence lines from inline math and longer code fences", () => {
+    expect(activeBlockFormats("$$x$$\ntekst\n$$y$$", 7, 7)).toEqual([]);
+    expect(
+      formatMarkdownSelection("$$x$$\ntekst\n$$y$$", 7, 7, "mathBlock").value,
+    ).toBe("$$x$$\nt\n$$\n\n$$\nekst\n$$y$$");
+    expect(activeBlockFormats("````\n```\nx\n```\n````", 9, 9)).toEqual([
+      "codeBlock",
+    ]);
+    expect(
+      formatMarkdownSelection("````\n```\nx\n```\n````", 9, 9, "codeBlock")
+        .value,
+    ).toBe("```\nx\n```");
+    expect(activeBlockFormats("```js\nkod\n```", 7, 7)).toEqual(["codeBlock"]);
+  });
+
+  it("leaves images and parenthesised addresses alone when removing a link", () => {
+    const link = "[wiki](https://example.com/Foo_(bar)) i";
+    expect(activeBlockFormats(link, 2, 2)).toEqual(["link"]);
+    expect(formatMarkdownSelection(link, 2, 2, "link").value).toBe("wiki i");
+    expect(activeBlockFormats("![alt](obraz.png)", 3, 3)).toEqual([]);
+    expect(formatMarkdownSelection("![alt](obraz.png)", 3, 3, "link")).toEqual({
+      value: "![a[](url)lt](obraz.png)",
+      start: 4,
+      end: 4,
+    });
+  });
+
   it("removes a fenced block or a link from inside", () => {
     expect(
       formatMarkdownSelection("x\n```\nkod\n```\ny", 7, 9, "codeBlock"),

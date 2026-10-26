@@ -137,6 +137,27 @@ function selectedLines(value: string, start: number, end: number) {
 const fences = { codeBlock: "```", mathBlock: "$$" };
 
 /**
+ * The length of the fence a line opens, or 0. A code fence is three or more
+ * backticks, optionally followed by a language; a math fence is `$$` alone,
+ * as `$$x$$` on one line is inline math.
+ */
+function openingFence(line: string, fence: string) {
+  if (fence === "$$") {
+    return line.trim() === "$$" ? 2 : 0;
+  }
+  const match = /^(`{3,})[^`]*$/.exec(line);
+  return match === null ? 0 : match[1].length;
+}
+
+/** Whether a line closes a fence of `length` characters. */
+function closesFence(line: string, fence: string, length: number) {
+  const trimmed = line.trim();
+  return fence === "$$"
+    ? trimmed === "$$"
+    : /^`{3,}$/.test(trimmed) && trimmed.length >= length;
+}
+
+/**
  * The fenced block whose fence lines surround the selection, as the offsets
  * of those lines, or null.
  */
@@ -146,33 +167,43 @@ function enclosingFence(
   end: number,
   fence: string,
 ) {
-  let open: { start: number; end: number } | null = null;
+  let open: { start: number; end: number; length: number } | null = null;
   let position = 0;
   for (const line of value.split("\n")) {
     const lineEnd = position + line.length;
-    if (line.startsWith(fence)) {
-      if (open === null) {
-        open = { start: position, end: lineEnd };
-      } else {
-        if (open.end < start && end < position) {
-          return { open, close: { start: position, end: lineEnd } };
-        }
-        open = null;
+    if (open === null) {
+      const length = openingFence(line, fence);
+      if (length > 0) {
+        open = { start: position, end: lineEnd, length };
       }
+    } else if (closesFence(line, fence, open.length)) {
+      if (open.end < start && end < position) {
+        return { open, close: { start: position, end: lineEnd } };
+      }
+      open = null;
     }
     position = lineEnd + 1;
   }
   return null;
 }
 
-/** The `[text](url)` link around the selection on its line, or null. */
+/**
+ * The `[text](url)` link around the selection on its line, or null. The
+ * address may hold one level of parentheses; an image `![alt](src)` is not
+ * a link.
+ */
 function enclosingLink(value: string, start: number, end: number) {
   const { lineStart, line } = lineAt(value, start);
-  for (const match of line.matchAll(/\[([^\]]*)\]\([^)]*\)/g)) {
+  for (const match of line.matchAll(
+    /(!?)\[([^\]]*)\]\((?:[^()\s]|\([^()]*\))*\)/g,
+  )) {
+    if (match[1] === "!") {
+      continue;
+    }
     const open = lineStart + match.index;
     const close = open + match[0].length;
     if (open <= start && end <= close) {
-      return { open, close, text: match[1] };
+      return { open, close, text: match[2] };
     }
   }
   return null;

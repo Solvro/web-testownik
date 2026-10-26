@@ -132,17 +132,17 @@ function replaceValue(textarea: HTMLTextAreaElement, next: string) {
   }
 }
 
-function formatTextarea(textarea: HTMLTextAreaElement, format: MarkdownFormat) {
+function formatTextarea(
+  textarea: HTMLTextAreaElement,
+  format: MarkdownFormat,
+  // A textarea keeps its selection after losing focus.
+  start = textarea.selectionStart,
+  end = textarea.selectionEnd,
+) {
   if (textarea.disabled || textarea.readOnly) {
     return;
   }
-  // A textarea keeps its selection after losing focus.
-  const result = formatMarkdownSelection(
-    textarea.value,
-    textarea.selectionStart,
-    textarea.selectionEnd,
-    format,
-  );
+  const result = formatMarkdownSelection(textarea.value, start, end, format);
   replaceValue(textarea, result.value);
   textarea.setSelectionRange(result.start, result.end);
 }
@@ -492,8 +492,14 @@ export function MarkdownToolbar({
   const setHeldId = toolbar?.setHeldId;
   const toolbarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  // A format picked from the menu, applied once the menu has closed.
-  const pendingFormat = useRef<MarkdownFormat | null>(null);
+  // A format picked from the menu, applied once the menu has closed, to the
+  // field and selection it was picked for, should focus move meanwhile.
+  const pendingFormat = useRef<{
+    format: MarkdownFormat;
+    textarea: HTMLTextAreaElement;
+    start: number;
+    end: number;
+  } | null>(null);
   const [state, setState] = useState<{
     enabled: boolean;
     active: MarkdownFormat[];
@@ -564,7 +570,15 @@ export function MarkdownToolbar({
       checked={state.active.includes(format)}
       closeOnClick
       onClick={() => {
-        pendingFormat.current = format;
+        const textarea = activeTarget?.current;
+        if (textarea?.isConnected === true) {
+          pendingFormat.current = {
+            format,
+            textarea,
+            start: textarea.selectionStart,
+            end: textarea.selectionEnd,
+          };
+        }
       }}
     >
       <Icon />
@@ -685,10 +699,17 @@ export function MarkdownToolbar({
             // open, that counts as focus leaving the menu, which makes Base UI
             // skip returning focus, so the field would end up unfocused.
             onOpenChangeComplete={(open) => {
-              const format = pendingFormat.current;
-              if (!open && format !== null) {
+              const pending = pendingFormat.current;
+              if (!open && pending !== null) {
                 pendingFormat.current = null;
-                apply(format);
+                if (pending.textarea.isConnected) {
+                  formatTextarea(
+                    pending.textarea,
+                    pending.format,
+                    pending.start,
+                    pending.end,
+                  );
+                }
               }
             }}
           >
