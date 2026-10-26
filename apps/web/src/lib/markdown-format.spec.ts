@@ -169,6 +169,28 @@ describe("Markdown selection formatting", () => {
     });
   });
 
+  it("treats deeply indented fences as content and honours escapes in links", () => {
+    expect(
+      formatMarkdownSelection(
+        "```\nalpha\n    ```\nbeta\n```",
+        4,
+        9,
+        "codeBlock",
+      ).value,
+    ).toBe("alpha\n    ```\nbeta");
+    expect(activeBlockFormats("```\nx\n   ```", 4, 4)).toEqual(["codeBlock"]);
+    expect(
+      formatMarkdownSelection(
+        String.raw`[x](https://e.com/a\)b) i`,
+        1,
+        1,
+        "link",
+      ).value,
+    ).toBe("x i");
+    expect(activeBlockFormats(String.raw`\[x](url)`, 2, 2)).toEqual([]);
+    expect(activeBlockFormats(String.raw`[a\]b](url)`, 2, 2)).toEqual(["link"]);
+  });
+
   it("removes a fenced block or a link from inside", () => {
     // Selecting the content with its trailing newline still counts as inside.
     expect(formatMarkdownSelection("```\nabc\n```", 4, 8, "codeBlock")).toEqual(

@@ -143,18 +143,22 @@ const fences = { codeBlock: "```", mathBlock: "$$" };
  */
 function openingFence(line: string, fence: string) {
   if (fence === "$$") {
-    return line.trim() === "$$" ? 2 : 0;
+    return /^ {0,3}\$\$\s*$/.test(line) ? 2 : 0;
   }
-  const match = /^(`{3,})[^`]*$/.exec(line);
+  const match = /^ {0,3}(`{3,})[^`]*$/.exec(line);
   return match === null ? 0 : match[1].length;
 }
 
-/** Whether a line closes a fence of `length` characters. */
+/**
+ * Whether a line closes a fence of `length` characters. Like the opening,
+ * it may be indented by up to three spaces; deeper indentation is content.
+ */
 function closesFence(line: string, fence: string, length: number) {
-  const trimmed = line.trim();
-  return fence === "$$"
-    ? trimmed === "$$"
-    : /^`{3,}$/.test(trimmed) && trimmed.length >= length;
+  if (fence === "$$") {
+    return /^ {0,3}\$\$\s*$/.test(line);
+  }
+  const match = /^ {0,3}(`{3,})\s*$/.exec(line);
+  return match !== null && match[1].length >= length;
 }
 
 /**
@@ -190,15 +194,15 @@ function enclosingFence(
 
 /**
  * The `[text](url)` link around the selection on its line, or null. The
- * address may hold one level of parentheses; an image `![alt](src)` is not
- * a link.
+ * address may hold one level of parentheses and escaped characters; an
+ * image `![alt](src)` and an escaped `\\[` are not links.
  */
 function enclosingLink(value: string, start: number, end: number) {
   const { lineStart, line } = lineAt(value, start);
   for (const match of line.matchAll(
-    /(!?)\[([^\]]*)\]\((?:[^()\s]|\([^()]*\))*\)/g,
+    /([!\\]?)\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()\s\\]|\([^()]*\))*\)/g,
   )) {
-    if (match[1] === "!") {
+    if (match[1] !== "") {
       continue;
     }
     const open = lineStart + match.index;
