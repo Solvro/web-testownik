@@ -506,12 +506,22 @@ export function MarkdownToolbar({
     const update = () => {
       const field = activeTarget?.current ?? null;
       const focus = document.activeElement;
+      // Submenus are portalled next to the menu, not inside it; Base UI
+      // marks every popup of the tree with the root's id.
+      const menu = menuRef.current;
+      const owner = menu?.dataset.rootownerid;
+      const inMenu =
+        menu !== null &&
+        focus !== null &&
+        (menu.contains(focus) ||
+          (owner !== undefined &&
+            focus.closest(`[data-rootownerid="${owner}"]`) !== null));
       const enabled =
         field !== null &&
         field.isConnected &&
         (focus === field ||
           toolbarRef.current?.contains(focus) === true ||
-          menuRef.current?.contains(focus) === true);
+          inMenu);
       setHeldId?.(enabled ? field.id : null);
       const active = enabled
         ? activeFormats(field.value, field.selectionStart, field.selectionEnd)

@@ -128,11 +128,12 @@ export function AnswerEditor({
                       }
                       disabled={disabled}
                       onClick={onToggleCorrect}
-                      className="focus-visible:ring-primary flex size-11 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-2 disabled:cursor-not-allowed"
+                      className="group/correct flex size-11 shrink-0 items-center justify-center outline-none disabled:cursor-not-allowed"
                     >
                       <span
                         className={cn(
-                          "flex size-5 items-center justify-center border-2 transition-colors",
+                          // The focus ring hugs the box, not the hit area.
+                          "group-focus-visible/correct:ring-ring/50 flex size-5 items-center justify-center border-2 transition-colors group-focus-visible/correct:ring-3",
                           multiple ? "rounded-[5px]" : "rounded-full",
                           answer.is_correct
                             ? conflict
