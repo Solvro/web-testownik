@@ -207,6 +207,28 @@ describe("Markdown selection formatting", () => {
     ).toBe("![alt](src)");
   });
 
+  it("does not unwrap literal fences inside another block", () => {
+    expect(
+      formatMarkdownSelection("````\n```\nx\n```\n````", 9, 10, "codeBlock"),
+    ).toEqual({ value: "```\nx\n```", start: 4, end: 5 });
+    expect(
+      formatMarkdownSelection("```\n$$\nabc\n$$\n```", 7, 10, "mathBlock")
+        .value,
+    ).toBe("```\n$$\n\n$$\nabc\n$$\n\n$$\n```");
+  });
+
+  it("scans links with escapes and nesting", () => {
+    expect(
+      formatMarkdownSelection(String.raw`[x](foo(a\)b)c) tail`, 1, 1, "link")
+        .value,
+    ).toBe("x tail");
+    expect(
+      formatMarkdownSelection(String.raw`\\[x](url) tail`, 3, 3, "link").value,
+    ).toBe(String.raw`\\x tail`);
+    expect(activeBlockFormats(String.raw`\![x](url)`, 3, 3)).toEqual(["link"]);
+    expect(activeBlockFormats("[a[b]c](url)", 2, 2)).toEqual(["link"]);
+  });
+
   it("removes a fenced block or a link from inside", () => {
     // Selecting the content with its trailing newline still counts as inside.
     expect(formatMarkdownSelection("```\nabc\n```", 4, 8, "codeBlock")).toEqual(

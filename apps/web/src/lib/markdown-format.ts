@@ -202,35 +202,81 @@ function enclosingBlock(value: string, start: number, end: number) {
   return null;
 }
 
-/** The enclosing fenced block when it is of `kind`, or null. */
-function enclosingFence(
-  value: string,
-  start: number,
-  end: number,
-  kind: FenceKind,
+/** Whether the character at `index` is escaped by an odd run of backslashes. */
+function isEscaped(line: string, index: number) {
+  let backslashes = 0;
+  while (
+    index - backslashes - 1 >= 0 &&
+    line[index - backslashes - 1] === "\\"
+  ) {
+    backslashes++;
+  }
+  return backslashes % 2 === 1;
+}
+
+/**
+ * The index after the delimiter closing the one at `index`, skipping escaped
+ * characters and nested pairs, or -1.
+ */
+function closingDelimiter(
+  line: string,
+  index: number,
+  open: string,
+  close: string,
 ) {
-  const block = enclosingBlock(value, start, end);
-  return block?.kind === kind ? block : null;
+  let depth = 0;
+  for (let position = index; position < line.length; position++) {
+    switch (line[position]) {
+      case "\\": {
+        position++;
+        break;
+      }
+      case open: {
+        depth++;
+        break;
+      }
+      case close: {
+        depth--;
+        if (depth === 0) {
+          return position + 1;
+        }
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
+  return -1;
 }
 
 /**
  * The `[text](url)` link around the selection on its line, or null. The
- * text may hold an image or another bracket pair, the address one level of
- * parentheses, and both escaped characters; an image `![alt](src)` and an
- * escaped `\\[` are not links.
+ * text and the address may hold nested brackets or parentheses and escaped
+ * characters; an image `![alt](src)` and an escaped `\[` are not links.
  */
 function enclosingLink(value: string, start: number, end: number) {
   const { lineStart, line } = lineAt(value, start);
-  for (const match of line.matchAll(
-    /([!\\]?)\[((?:\\.|[^\][\\]|\[[^\]]*\])*)\]\((?:\\.|[^()\s\\]|\([^()]*\))*\)/g,
-  )) {
-    if (match[1] !== "") {
+  for (let index = 0; index < line.length; index++) {
+    if (
+      line[index] !== "[" ||
+      isEscaped(line, index) ||
+      (line[index - 1] === "!" && !isEscaped(line, index - 1))
+    ) {
       continue;
     }
-    const open = lineStart + match.index;
-    const close = open + match[0].length;
+    const afterText = closingDelimiter(line, index, "[", "]");
+    if (afterText === -1 || line[afterText] !== "(") {
+      continue;
+    }
+    const afterAddress = closingDelimiter(line, afterText, "(", ")");
+    if (afterAddress === -1) {
+      continue;
+    }
+    const open = lineStart + index;
+    const close = lineStart + afterAddress;
     if (open <= start && end <= close) {
-      return { open, close, text: match[2] };
+      return { open, close, text: line.slice(index + 1, afterText - 1) };
     }
   }
   return null;
@@ -302,10 +348,28 @@ export function formatMarkdownSelection(
   const wrapper = wrappers[format];
   if (wrapper !== undefined) {
     const [prefix, suffix] = wrapper;
+    // A fenced block is judged by its fence lines, not by the text next to
+    // the selection, which could be a block's literal content.
+    const fenced = format === "codeBlock" || format === "mathBlock";
+    const block = fenced ? enclosingBlock(value, start, end) : null;
+    if (block !== null && block.kind === format) {
+      const removed = block.open.end + 1 - block.open.start;
+      return {
+        value:
+          value.slice(0, block.open.start) +
+          value.slice(block.open.end + 1, block.close.start - 1) +
+          value.slice(block.close.end),
+        start: start - removed,
+        end: end - removed,
+      };
+    }
+    const literal = block !== null;
     const surrounding =
+      !literal &&
       value.slice(Math.max(0, start - prefix.length), start) === prefix &&
       value.slice(end, end + suffix.length) === suffix;
     const inside =
+      !literal &&
       selected.startsWith(prefix) &&
       selected.endsWith(suffix) &&
       selected.length >= prefix.length + suffix.length;
@@ -341,22 +405,6 @@ export function formatMarkdownSelection(
           end: end - marker.length,
         };
       }
-    }
-    // Inside a fenced block of this kind: remove its fence lines.
-    const block =
-      format === "codeBlock" || format === "mathBlock"
-        ? enclosingFence(value, start, end, format)
-        : null;
-    if (block !== null) {
-      const removed = block.open.end + 1 - block.open.start;
-      return {
-        value:
-          value.slice(0, block.open.start) +
-          value.slice(block.open.end + 1, block.close.start - 1) +
-          value.slice(block.close.end),
-        start: start - removed,
-        end: end - removed,
-      };
     }
     return {
       value:
