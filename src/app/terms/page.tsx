@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Regulamin",
 };
 
-export function TermsPageDraft() {
+export default function TermsPage() {
   return (
     <Card>
       <CardHeader className="text-center">
@@ -27,8 +27,8 @@ export function TermsPageDraft() {
           niniejszego regulaminu.
         </p>
         <p>
-          3. Serwis przeznaczony jest wyłącznie dla studentów Politechniki
-          Wrocławskiej, którzy logują się za pomocą konta USOS.
+          3. Serwis jest platformą edukacyjną dostępną dla użytkowników
+          korzystających z udostępnionych metod logowania lub trybu gościa.
         </p>
 
         <h2 id="zakres-uslug">2. Zakres usług</h2>

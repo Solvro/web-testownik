@@ -1,6 +1,7 @@
 "use client";
 
 import { Caveat } from "next/font/google";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { SolvroLogo } from "@/components/solvro-logo";
@@ -29,6 +30,10 @@ export function AppFooter() {
             KN Solvro
           </a>
         </div>
+        <nav aria-label="Informacje prawne" className="flex flex-wrap gap-3">
+          <Link href="/terms">Regulamin</Link>
+          <Link href="/privacy-policy">Prywatność</Link>
+        </nav>
         <span className="text-foreground">
           © {new Date().getFullYear()}{" "}
           <a href="https://github.com/Antoni-Czaplicki">Antoni Czaplicki</a>
