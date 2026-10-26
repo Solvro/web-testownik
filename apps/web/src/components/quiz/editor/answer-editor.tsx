@@ -105,7 +105,8 @@ export function AnswerEditor({
                     data-correct={answer.is_correct}
                     className={cn(
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
-                      "focus-within:ring-primary has-data-held:ring-primary focus-within:ring-2 has-data-held:ring-2",
+                      // Rings for the text field only; the buttons inside show their own focus.
+                      "has-[textarea:focus]:ring-primary has-data-held:ring-primary has-data-held:ring-2 has-[textarea:focus]:ring-2",
                       answer.is_correct
                         ? conflict
                           ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"

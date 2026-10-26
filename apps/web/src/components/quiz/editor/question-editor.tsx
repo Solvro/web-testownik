@@ -55,9 +55,12 @@ import {
 import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
 
-/** A borderless field which shows its edges on hover and focus. */
+/**
+ * A borderless field which shows its edges on hover and while its text field
+ * has focus. The buttons inside show their own focus instead.
+ */
 const quietField =
-  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 focus-within:bg-transparent focus-within:ring-2 focus-within:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
+  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
 
 export function QuestionEditor({
   hidden = false,
@@ -585,7 +588,7 @@ export function QuestionEditor({
 
           <form.Field name={`${path}.explanation`}>
             {(field) => (
-              <div className="bg-muted/50 dark:bg-input/20 focus-within:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow focus-within:ring-2 has-data-held:ring-2 sm:flex-row sm:items-start">
+              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-2 has-[textarea:focus]:ring-2 sm:flex-row sm:items-start">
                 <label
                   htmlFor={`explanation-${questionId}`}
                   className="shrink-0 py-0.5 leading-relaxed font-semibold"
