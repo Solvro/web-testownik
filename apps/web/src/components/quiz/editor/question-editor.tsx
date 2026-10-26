@@ -71,6 +71,7 @@ export function QuestionEditor({
   count,
   number = String(index + 1),
   embedded = false,
+  minAnswers = 1,
   onNext,
   onAdd,
   onRemove,
@@ -93,6 +94,8 @@ export function QuestionEditor({
   number?: string;
   /** Inside a dialog: no frame, and the header sticks to the scroll area. */
   embedded?: boolean;
+  /** Answers cannot be removed below this count. */
+  minAnswers?: number;
   onNext: () => void;
   onAdd: () => void;
   /** Without it there is no delete button. */
@@ -183,7 +186,11 @@ export function QuestionEditor({
     const answers = form.getFieldValue(`${path}.answers`);
     const position = answers.findIndex((answer) => answer.id === answerId);
     const removed = answers.at(position);
-    if (position === -1 || removed === undefined) {
+    if (
+      position === -1 ||
+      removed === undefined ||
+      answers.length <= minAnswers
+    ) {
       return;
     }
     const neighbour =
@@ -544,7 +551,7 @@ export function QuestionEditor({
                   answerIndex={answerIndex}
                   multiple={question.multiple}
                   conflict={conflict}
-                  canDelete={question.answers.length > 1}
+                  canDelete={question.answers.length > minAnswers}
                   disabled={disabled}
                   onToggleCorrect={() => {
                     toggleCorrect(answer.id);

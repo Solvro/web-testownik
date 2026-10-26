@@ -252,6 +252,7 @@ function QuickEditQuestionForm({
           questionId={question.id}
           count={1}
           number={String(question.order)}
+          minAnswers={minAnswers}
           onNext={() => {
             void save();
           }}

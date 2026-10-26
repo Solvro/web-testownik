@@ -177,7 +177,8 @@ function enclosingFence(
         open = { start: position, end: lineEnd, length };
       }
     } else if (closesFence(line, fence, open.length)) {
-      if (open.end < start && end < position) {
+      // The selection may end with the newline before the closing fence.
+      if (open.end < start && end <= position) {
         return { open, close: { start: position, end: lineEnd } };
       }
       open = null;

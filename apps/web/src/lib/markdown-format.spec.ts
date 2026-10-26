@@ -170,6 +170,10 @@ describe("Markdown selection formatting", () => {
   });
 
   it("removes a fenced block or a link from inside", () => {
+    // Selecting the content with its trailing newline still counts as inside.
+    expect(formatMarkdownSelection("```\nabc\n```", 4, 8, "codeBlock")).toEqual(
+      { value: "abc", start: 0, end: 4 },
+    );
     expect(
       formatMarkdownSelection("x\n```\nkod\n```\ny", 7, 9, "codeBlock"),
     ).toEqual({ value: "x\nkod\ny", start: 3, end: 5 });
