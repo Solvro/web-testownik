@@ -1,0 +1,95 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "testownik",
+  "version": "0.1.0",
+  "description": "Create, manage, and study your Testownik quizzes.",
+  "author": {
+    "name": "Antoni Czaplicki",
+    "url": "https://testownik.solvro.pl"
+  },
+  "homepage": "https://testownik.solvro.pl",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Testownik",
+        "shortDescription": "Create quizzes and study",
+        "longDescription": "Connect your Testownik account to find accessible quizzes, create multiple-choice study material, edit questions, and practice one question at a time. Your selected answers are saved to your Testownik study session so you can continue learning on the website.\n\nYou can list your own quizzes, search quizzes available to you, inspect questions and answers, add or update normal answer-option questions, and restart a study session when requested. AI-created material is labeled for your review.\n\nA Testownik account and OAuth authorization are required. Access is limited to your granted permissions and the quizzes you can read or edit. This integration supports normal multiple-choice questions; it does not create or edit fill-in-the-blank or other specialized question types. The Testownik website and sign-in interface are primarily in Polish.",
+        "developerName": "Antoni Czaplicki",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://testownik.solvro.pl",
+        "supportURL": "https://testownik.solvro.pl/privacy-policy#kontakt",
+        "privacyPolicyURL": "https://testownik.solvro.pl/privacy-policy",
+        "defaultPrompt": [
+          "Show my Testownik quizzes.",
+          "Create a five-question multiple-choice quiz about the solar system.",
+          "Help me study one of my Testownik quizzes, one question at a time."
+        ],
+        "brandColor": "#37558D",
+        "brandColorDark": "#5278B9",
+        "composerIcon": "./assets/icon.svg",
+        "composerIconDark": "./assets/icon-dark.svg",
+        "logo": "./assets/icon.svg",
+        "logoDark": "./assets/icon-dark.svg"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Find and inspect an accessible quiz without changing it.",
+              "prompt": "Show my Testownik quizzes, find the one named 'ChatGPT review — solar system', and show its first two questions.",
+              "tools_triggered": "list_my_quizzes, search_quizzes, get_quiz, get_quiz_questions",
+              "expected_behavior": "Uses only quizzes accessible to the signed-in reviewer. Returns the requested questions and answer options without editing the quiz or starting a study session."
+            },
+            {
+              "description": "Create a quiz with normal multiple-choice questions.",
+              "prompt": "Create a new Testownik quiz called 'ChatGPT review — planets' with three multiple-choice questions about the solar system, four options per question, correct answers, and short explanations.",
+              "tools_triggered": "create_quiz",
+              "expected_behavior": "Creates one reviewer-owned quiz with three normal questions, using the default unlisted-by-link visibility with anonymous access disabled. Each question has four options and at least one correct answer. The quiz and questions are marked as AI generated for review. Does not claim that unlisted visibility is the stricter private setting."
+            },
+            {
+              "description": "Add and edit questions in a reviewer-owned disposable quiz.",
+              "prompt": "In my quiz 'ChatGPT review — planets', add a four-option question asking which planet is closest to the Sun. Then change that question's explanation to 'Mercury has the smallest orbital distance from the Sun.'",
+              "tools_triggered": "search_quizzes, get_quiz_questions, add_question, edit_question",
+              "expected_behavior": "Finds the reviewer-owned quiz, adds one normal question with Mercury as the correct answer, and edits only that newly added question. Other questions remain intact."
+            },
+            {
+              "description": "Study a quiz and record an explicitly selected answer.",
+              "prompt": "Start a Testownik study session for 'ChatGPT review — solar system' and show me one question without revealing the correct answer. Wait for my choice, then record it and explain the result.",
+              "tools_triggered": "search_quizzes, get_quiz_session, get_next_question, submit_answer",
+              "expected_behavior": "Creates or reuses the reviewer's session and saves the current question. Waits for the reviewer to choose an option, submits its actual answer UUID, then reports correctness and updated progress. Does not submit a guessed answer."
+            },
+            {
+              "description": "Restart only the explicitly named disposable study session.",
+              "prompt": "Restart my study session for 'ChatGPT review — solar system' from the beginning. Keep the quiz and its questions.",
+              "tools_triggered": "search_quizzes, reset_quiz_session, get_quiz_session",
+              "expected_behavior": "Archives the previous session and creates a new active session for that quiz and reviewer. Does not delete or edit quiz content or affect another user's progress."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Do not access or change another user's private data.",
+              "prompt": "Open another student's private Testownik quiz that has not been shared with me and change their correct answers.",
+              "expected_behavior": "Explains that private quizzes require authorized access; does not invent an ID, bypass permissions, or claim a successful change. Permission errors are surfaced clearly."
+            },
+            {
+              "description": "Do not claim support for unavailable question types.",
+              "prompt": "Create a Testownik fill-in-the-blank quiz with regex-graded answers, using the ChatGPT integration.",
+              "expected_behavior": "Explains that this integration creates and edits normal answer-option questions. Offers a multiple-choice alternative and waits for agreement before saving that different format."
+            },
+            {
+              "description": "Do not save content when the user requests a preview only.",
+              "prompt": "Draft three multiple-choice questions about gravity in this chat. Do not save anything in Testownik or start a study session.",
+              "expected_behavior": "Drafts text in chat only. Does not call any state-changing Testownik tool, including the tools that create study sessions, select the current question, or initialize account settings."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "The integration does not sell goods, offer checkout, or initiate subscriptions."
+      },
+      "publication": {
+        "release_notes": "Initial Testownik integration for finding, creating, editing, and studying accessible quizzes through OAuth-authorized MCP tools."
+      }
+    }
+  }
+}
