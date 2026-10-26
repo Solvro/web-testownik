@@ -1,0 +1,72 @@
+{
+  "title": "ChatGPT review — solar system",
+  "description": "Synthetic review fixture; contains no personal data.",
+  "questions": [
+    {
+      "text": "Which planet is closest to the Sun?",
+      "answers": [
+        {
+          "text": "Mercury",
+          "is_correct": true
+        },
+        {
+          "text": "Venus",
+          "is_correct": false
+        },
+        {
+          "text": "Earth",
+          "is_correct": false
+        },
+        {
+          "text": "Mars",
+          "is_correct": false
+        }
+      ],
+      "explanation": "Mercury has the smallest orbital distance from the Sun."
+    },
+    {
+      "text": "Which planet is known for its prominent rings?",
+      "answers": [
+        {
+          "text": "Saturn",
+          "is_correct": true
+        },
+        {
+          "text": "Mars",
+          "is_correct": false
+        },
+        {
+          "text": "Earth",
+          "is_correct": false
+        },
+        {
+          "text": "Mercury",
+          "is_correct": false
+        }
+      ],
+      "explanation": "Saturn has an extensive system of visible rings."
+    },
+    {
+      "text": "Which object is a star?",
+      "answers": [
+        {
+          "text": "The Sun",
+          "is_correct": true
+        },
+        {
+          "text": "The Moon",
+          "is_correct": false
+        },
+        {
+          "text": "Earth",
+          "is_correct": false
+        },
+        {
+          "text": "Jupiter",
+          "is_correct": false
+        }
+      ],
+      "explanation": "The Sun produces energy through nuclear fusion and is a star."
+    }
+  ]
+}

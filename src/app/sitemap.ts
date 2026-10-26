@@ -24,5 +24,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.3,
     },
+    {
+      url: `${env.NEXT_PUBLIC_SITE_URL}/terms`,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
   ];
 }

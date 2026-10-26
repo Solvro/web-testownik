@@ -5,6 +5,16 @@ const s3Url = new URL(process.env.S3_URL ?? "https://s3.b.solvro.pl");
 const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ["sharp"],
+  // Next.js requires an async hook even though these headers are static.
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async headers() {
+    return [
+      {
+        source: "/.well-known/openai-apps-challenge",
+        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
+      },
+    ];
+  },
   images: {
     dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
     remotePatterns: [

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "testownik": {
+      "type": "streamable-http",
+      "url": "https://testownik.solvro.pl/api/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "cimd"
+            },
+            "baseScopes": [
+              "quizzes:read",
+              "quizzes:write",
+              "study:read",
+              "study:write",
+              "user:read"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
