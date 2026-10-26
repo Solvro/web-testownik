@@ -161,29 +161,39 @@ function closesFence(line: string, fence: string, length: number) {
   return match !== null && match[1].length >= length;
 }
 
+type FenceKind = keyof typeof fences;
+
 /**
- * The fenced block whose fence lines surround the selection, as the offsets
- * of those lines, or null.
+ * The fenced block whose fence lines surround the selection, as its kind and
+ * the offsets of those lines, or null. Fences inside another block are its
+ * content, so only the outermost block counts.
  */
-function enclosingFence(
-  value: string,
-  start: number,
-  end: number,
-  fence: string,
-) {
-  let open: { start: number; end: number; length: number } | null = null;
+function enclosingBlock(value: string, start: number, end: number) {
+  let open: {
+    kind: FenceKind;
+    start: number;
+    end: number;
+    length: number;
+  } | null = null;
   let position = 0;
   for (const line of value.split("\n")) {
     const lineEnd = position + line.length;
     if (open === null) {
-      const length = openingFence(line, fence);
-      if (length > 0) {
-        open = { start: position, end: lineEnd, length };
+      for (const kind of Object.keys(fences) as FenceKind[]) {
+        const length = openingFence(line, fences[kind]);
+        if (length > 0) {
+          open = { kind, start: position, end: lineEnd, length };
+          break;
+        }
       }
-    } else if (closesFence(line, fence, open.length)) {
+    } else if (closesFence(line, fences[open.kind], open.length)) {
       // The selection may end with the newline before the closing fence.
       if (open.end < start && end <= position) {
-        return { open, close: { start: position, end: lineEnd } };
+        return {
+          kind: open.kind,
+          open,
+          close: { start: position, end: lineEnd },
+        };
       }
       open = null;
     }
@@ -192,15 +202,27 @@ function enclosingFence(
   return null;
 }
 
+/** The enclosing fenced block when it is of `kind`, or null. */
+function enclosingFence(
+  value: string,
+  start: number,
+  end: number,
+  kind: FenceKind,
+) {
+  const block = enclosingBlock(value, start, end);
+  return block?.kind === kind ? block : null;
+}
+
 /**
  * The `[text](url)` link around the selection on its line, or null. The
- * address may hold one level of parentheses and escaped characters; an
- * image `![alt](src)` and an escaped `\\[` are not links.
+ * text may hold an image or another bracket pair, the address one level of
+ * parentheses, and both escaped characters; an image `![alt](src)` and an
+ * escaped `\\[` are not links.
  */
 function enclosingLink(value: string, start: number, end: number) {
   const { lineStart, line } = lineAt(value, start);
   for (const match of line.matchAll(
-    /([!\\]?)\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()\s\\]|\([^()]*\))*\)/g,
+    /([!\\]?)\[((?:\\.|[^\][\\]|\[[^\]]*\])*)\]\((?:\\.|[^()\s\\]|\([^()]*\))*\)/g,
   )) {
     if (match[1] !== "") {
       continue;
@@ -214,17 +236,23 @@ function enclosingLink(value: string, start: number, end: number) {
   return null;
 }
 
-/** The block formats applied to the selected lines, or around the caret. */
-export function activeBlockFormats(value: string, start: number, end: number) {
+/**
+ * The block formats applied to the selected lines, or around the caret.
+ * Inside a fenced block, Markdown is content, so only the block counts.
+ */
+export function activeBlockFormats(
+  value: string,
+  start: number,
+  end: number,
+): MarkdownFormat[] {
+  const block = enclosingBlock(value, start, end);
+  if (block !== null) {
+    return [block.kind];
+  }
   const { lines } = selectedLines(value, start, end);
   const active: MarkdownFormat[] = (
     Object.keys(linePrefixes) as LineFormat[]
   ).filter((format) => lines.every((line) => hasLinePrefix(line, format)));
-  for (const [format, fence] of Object.entries(fences)) {
-    if (enclosingFence(value, start, end, fence) !== null) {
-      active.push(format as MarkdownFormat);
-    }
-  }
   if (enclosingLink(value, start, end) !== null) {
     active.push("link");
   }
@@ -314,10 +342,11 @@ export function formatMarkdownSelection(
         };
       }
     }
-    // Inside a fenced block: remove its fence lines.
-    const fence = (fences as Partial<Record<MarkdownFormat, string>>)[format];
+    // Inside a fenced block of this kind: remove its fence lines.
     const block =
-      fence === undefined ? null : enclosingFence(value, start, end, fence);
+      format === "codeBlock" || format === "mathBlock"
+        ? enclosingFence(value, start, end, format)
+        : null;
     if (block !== null) {
       const removed = block.open.end + 1 - block.open.start;
       return {

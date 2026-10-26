@@ -191,6 +191,22 @@ describe("Markdown selection formatting", () => {
     expect(activeBlockFormats(String.raw`[a\]b](url)`, 2, 2)).toEqual(["link"]);
   });
 
+  it("reads fences inside another block as content and keeps a linked image", () => {
+    const nested = "```\n$$\nabc\n$$\n```";
+    expect(activeBlockFormats(nested, 8, 8)).toEqual(["codeBlock"]);
+    expect(
+      formatMarkdownSelection(nested, 8, 8, "mathBlock").value.startsWith(
+        "```\n$$\n",
+      ),
+    ).toBe(true);
+    expect(activeBlockFormats("```\n# nie nagłówek\n```", 6, 6)).toEqual([
+      "codeBlock",
+    ]);
+    expect(
+      formatMarkdownSelection("[![alt](src)](cel)", 2, 2, "link").value,
+    ).toBe("![alt](src)");
+  });
+
   it("removes a fenced block or a link from inside", () => {
     // Selecting the content with its trailing newline still counts as inside.
     expect(formatMarkdownSelection("```\nabc\n```", 4, 8, "codeBlock")).toEqual(
