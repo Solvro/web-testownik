@@ -248,5 +248,9 @@ it("exposes invalid and disabled field states", () => {
     <MarkdownEditor value="" onChange={vi.fn()} label="Treść" disabled />,
   );
   expect(screen.getByRole("textbox", { name: "Treść" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Pogrubienie" })).toBeDisabled();
+  // Toolbar buttons stay focusable while disabled.
+  expect(screen.getByRole("button", { name: "Pogrubienie" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
 });

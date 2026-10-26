@@ -1,5 +1,6 @@
 "use client";
 
+import { Toolbar } from "@base-ui/react/toolbar";
 import {
   BoldIcon,
   CodeIcon,
@@ -38,7 +39,6 @@ import {
   formatMarkdownSelection,
 } from "@/lib/markdown-format";
 import type { MarkdownFormat } from "@/lib/markdown-format";
-import { moveRovingFocus } from "@/lib/roving-focus";
 import { cn } from "@/lib/utils";
 
 import { MarkdownRenderer } from "./markdown-renderer";
@@ -50,7 +50,6 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { KbdShortcut } from "./ui/kbd-shortcut";
-import { Separator } from "./ui/separator";
 import { Toggle } from "./ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
@@ -426,18 +425,13 @@ function ToolbarTooltip({
   );
 }
 
-function toolbarItems(toolbar: HTMLElement | null) {
-  return toolbar === null
-    ? []
-    : [...toolbar.querySelectorAll<HTMLElement>("button:not(:disabled)")];
-}
-
 /**
  * Formatting buttons for the field inside the provider that was focused last.
  * They work while that field, or the toolbar itself, has focus, and show
- * which inline formats surround the caret. Otherwise they are marked
- * `aria-disabled` but keep their tab stop, so the keyboard can reach them. `children` sit after the inline
- * buttons, before the menu.
+ * which inline formats surround the caret. Otherwise they are disabled but
+ * stay focusable, so the keyboard can still reach the toolbar. `children`
+ * sit after the inline buttons, before the menu, and should be
+ * `Toolbar.Button`s to join the arrow-key navigation.
  */
 export interface ToolbarHistory {
   canUndo: boolean;
@@ -471,7 +465,6 @@ export function MarkdownToolbar({
   const menuRef = useRef<HTMLDivElement>(null);
   // A format picked from the menu, applied once the menu has closed.
   const pendingFormat = useRef<MarkdownFormat | null>(null);
-  const focusIndex = useRef(0);
   const [state, setState] = useState<{
     enabled: boolean;
     active: MarkdownFormat[];
@@ -519,16 +512,6 @@ export function MarkdownToolbar({
     };
   }, [activeTarget, setHeldId]);
 
-  // One tab stop for the toolbar. The buttons include `children`, so their
-  // tab order is set on the DOM rather than through props.
-  useLayoutEffect(() => {
-    const items = toolbarItems(toolbarRef.current);
-    const current = Math.min(focusIndex.current, items.length - 1);
-    for (const [index, item] of items.entries()) {
-      item.tabIndex = index === current ? 0 : -1;
-    }
-  });
-
   const inactive = disabled || !state.enabled;
 
   function apply(format: MarkdownFormat) {
@@ -538,33 +521,31 @@ export function MarkdownToolbar({
     }
   }
 
-  // Inactive buttons stay in the tab order, so Shift+Tab from a field reaches
-  // the toolbar; they only look and act disabled.
+  // Disabled buttons stay focusable, so the keyboard always reaches the
+  // toolbar; they are marked `aria-disabled` and their clicks are dropped.
   const buttonClassName =
     "text-muted-foreground hover:text-foreground pointer-coarse:size-10 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
   return (
-    <div
+    <Toolbar.Root
       ref={toolbarRef}
-      role="toolbar"
       aria-label={label}
-      aria-orientation="horizontal"
+      disabled={disabled}
       className={cn("flex min-w-0 items-center gap-0.5", className)}
       // Also for clicks landing on the toolbar itself, such as on a button
       // which just became disabled under a fast series of undo clicks.
       onMouseDown={keepFocus}
-      onFocus={(event) => {
-        const items = toolbarItems(event.currentTarget);
-        const index = items.indexOf(event.target);
-        if (index !== -1) {
-          focusIndex.current = index;
-          for (const [other, item] of items.entries()) {
-            item.tabIndex = other === index ? 0 : -1;
-          }
-        }
-      }}
+      // Base UI moves with the arrow keys only.
       onKeyDown={(event) => {
-        moveRovingFocus(event, "button:not(:disabled)", "horizontal");
+        if (event.key === "Home" || event.key === "End") {
+          const items = [
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              "button:not(:disabled)",
+            ),
+          ];
+          items.at(event.key === "Home" ? 0 : -1)?.focus();
+          event.preventDefault();
+        }
       }}
     >
       {history === undefined ? null : (
@@ -594,29 +575,29 @@ export function MarkdownToolbar({
               label={title}
               shortcut={shortcut}
               render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className={buttonClassName}
-                  aria-label={title}
-                  aria-keyshortcuts={keys}
-                  disabled={disabled}
-                  aria-disabled={!can}
-                  onMouseDown={keepFocus}
+                <Toolbar.Button
+                  disabled={!can}
                   onClick={() => {
-                    if (can) {
-                      history[command]();
-                    }
+                    history[command]();
                   }}
-                >
-                  <Icon />
-                </Button>
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={buttonClassName}
+                      aria-label={title}
+                      aria-keyshortcuts={keys}
+                    >
+                      <Icon />
+                    </Button>
+                  }
+                />
               }
             />
           ))}
           {formatting ? (
-            <Separator orientation="vertical" className="mx-0.5 h-4" />
+            <Toolbar.Separator className="bg-border mx-0.5 h-4 w-px shrink-0" />
           ) : null}
         </>
       )}
@@ -629,31 +610,31 @@ export function MarkdownToolbar({
                 label={title}
                 shortcut={shortcut}
                 render={
-                  <Toggle
-                    size="sm"
-                    className={cn(
-                      buttonClassName,
-                      // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
-                      "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
-                    )}
-                    aria-label={title}
-                    aria-keyshortcuts={
-                      shortcut === undefined
-                        ? undefined
-                        : `Control+${shortcut.suffix}`
+                  <Toolbar.Button
+                    disabled={inactive}
+                    render={
+                      <Toggle
+                        size="sm"
+                        className={cn(
+                          buttonClassName,
+                          // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
+                          "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
+                        )}
+                        aria-label={title}
+                        aria-keyshortcuts={
+                          shortcut === undefined
+                            ? undefined
+                            : `Control+${shortcut.suffix}`
+                        }
+                        pressed={state.active.includes(format)}
+                        onPressedChange={() => {
+                          apply(format);
+                        }}
+                      >
+                        <Icon />
+                      </Toggle>
                     }
-                    disabled={disabled}
-                    aria-disabled={inactive}
-                    pressed={state.active.includes(format)}
-                    onMouseDown={keepFocus}
-                    onPressedChange={() => {
-                      if (!inactive) {
-                        apply(format);
-                      }
-                    }}
-                  >
-                    <Icon />
-                  </Toggle>
+                  />
                 }
               />
             ),
@@ -675,19 +656,22 @@ export function MarkdownToolbar({
             <ToolbarTooltip
               label="Więcej formatowania"
               render={
-                <DropdownMenuTrigger
+                <Toolbar.Button
+                  disabled={inactive}
                   render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className={buttonClassName}
-                      aria-label="Więcej formatowania"
-                      disabled={disabled || inactive}
-                      onMouseDown={keepFocus}
-                    >
-                      <EllipsisIcon />
-                    </Button>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className={buttonClassName}
+                          aria-label="Więcej formatowania"
+                        >
+                          <EllipsisIcon />
+                        </Button>
+                      }
+                    />
                   }
                 />
               }
@@ -714,6 +698,6 @@ export function MarkdownToolbar({
           </DropdownMenu>
         </>
       ) : null}
-    </div>
+    </Toolbar.Root>
   );
 }
