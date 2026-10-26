@@ -206,8 +206,12 @@ export function MarkdownField({
   // The refs stay the same across renders, unlike the context object.
   const activeTarget = toolbar?.active;
   const [focused, setFocused] = useState(false);
+  // The selection when focus left for the toolbar; a textarea does not show
+  // its selection without focus, so it is drawn underneath instead.
+  const [selection, setSelection] = useState<[number, number] | null>(null);
   const held = toolbar?.heldId === id;
   const rendered = markdown && !focused && !held && hasMarkdownMarkup(value);
+  const shownSelection = held && !focused ? selection : null;
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -257,6 +261,22 @@ export function MarkdownField({
       // Lets a wrapper keep its focus styling while the toolbar formats this field.
       data-held={held ? "" : undefined}
     >
+      {shownSelection === null ? null : (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 overflow-hidden break-words whitespace-pre-wrap text-transparent",
+            inputClassName,
+          )}
+        >
+          {value.slice(0, shownSelection[0])}
+          <span className="bg-primary/20 rounded-xs">
+            {value.slice(shownSelection[0], shownSelection[1])}
+          </span>
+          {value.slice(shownSelection[1])}
+          {"\n"}
+        </div>
+      )}
       {rendered ? (
         <div
           aria-hidden="true"
@@ -295,7 +315,13 @@ export function MarkdownField({
           }
           onFocus?.();
         }}
-        onBlur={() => {
+        onBlur={(event) => {
+          const { selectionStart, selectionEnd } = event.currentTarget;
+          setSelection(
+            selectionStart === selectionEnd
+              ? null
+              : [selectionStart, selectionEnd],
+          );
           setFocused(false);
           onBlur?.();
         }}
@@ -377,9 +403,8 @@ function keepFocus(event: { preventDefault: () => void }) {
 }
 
 /**
- * A tooltip beside a toolbar button, with its shortcut. It opens to the
- * right, away from the text being edited, and lets the pointer through, so
- * the next button can be reached while it is still showing.
+ * A tooltip above a toolbar button, with its shortcut. It lets the pointer
+ * through, so the next button can be reached while it is still showing.
  */
 function ToolbarTooltip({
   label,
@@ -393,7 +418,7 @@ function ToolbarTooltip({
   return (
     <Tooltip disableHoverablePopup>
       <TooltipTrigger render={render} />
-      <TooltipContent side="right" className="pointer-events-none">
+      <TooltipContent side="top" className="pointer-events-none">
         {label}
         {shortcut === undefined ? null : <KbdShortcut {...shortcut} />}
       </TooltipContent>
@@ -525,6 +550,9 @@ export function MarkdownToolbar({
       aria-label={label}
       aria-orientation="horizontal"
       className={cn("flex min-w-0 items-center gap-0.5", className)}
+      // Also for clicks landing on the toolbar itself, such as on a button
+      // which just became disabled under a fast series of undo clicks.
+      onMouseDown={keepFocus}
       onFocus={(event) => {
         const items = toolbarItems(event.currentTarget);
         const index = items.indexOf(event.target);

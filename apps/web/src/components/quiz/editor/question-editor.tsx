@@ -66,6 +66,8 @@ export function QuestionEditor({
   index,
   questionId,
   count,
+  number = String(index + 1),
+  embedded = false,
   onNext,
   onAdd,
   onRemove,
@@ -84,10 +86,16 @@ export function QuestionEditor({
   index: number;
   questionId: string;
   count: number;
+  /** The number shown and read out; by default the position in the form. */
+  number?: string;
+  /** Inside a dialog: no frame, and the header sticks to the scroll area. */
+  embedded?: boolean;
   onNext: () => void;
   onAdd: () => void;
-  onRemove: () => void;
-  onCollapse: () => void;
+  /** Without it there is no delete button. */
+  onRemove?: () => void;
+  /** Without it there is no collapse button, and Escape is left alone. */
+  onCollapse?: () => void;
   onUploadStart: () => void;
   onUploadEnd: () => void;
 }) {
@@ -113,7 +121,6 @@ export function QuestionEditor({
     return null;
   }
   const path = `questions[${String(index)}]` as `questions[${number}]`;
-  const number = String(index + 1);
   const isLast = index === count - 1;
   const imageProps = {
     image: question.image,
@@ -279,7 +286,11 @@ export function QuestionEditor({
         hidden={hidden}
         data-testid="question-editor"
         aria-label={`Pytanie ${number}`}
-        className="bg-card border-primary/60 ring-primary/15 rounded-xl border ring-3"
+        className={cn(
+          embedded
+            ? "bg-popover"
+            : "bg-card border-primary/60 ring-primary/15 rounded-xl border ring-3",
+        )}
         onKeyDown={(event) => {
           // Ignore keys from menus and dialogs portalled out of the card.
           if (
@@ -288,7 +299,11 @@ export function QuestionEditor({
           ) {
             return;
           }
-          if (event.key === "Escape" && !event.defaultPrevented) {
+          if (
+            event.key === "Escape" &&
+            !event.defaultPrevented &&
+            onCollapse !== undefined
+          ) {
             event.preventDefault();
             onCollapse();
             return;
@@ -320,7 +335,14 @@ export function QuestionEditor({
           }
         }}
       >
-        <header className="bg-card/95 supports-backdrop-filter:bg-card/80 border-border z-20 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-xl border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:sticky sm:top-14 sm:px-4">
+        <header
+          className={cn(
+            "border-border z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:px-4",
+            embedded
+              ? "bg-popover/95 supports-backdrop-filter:bg-popover/80 sticky top-0"
+              : "bg-card/95 supports-backdrop-filter:bg-card/80 rounded-t-xl sm:sticky sm:top-14",
+          )}
+        >
           <h2
             aria-label={`Pytanie ${number}`}
             className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
@@ -382,48 +404,52 @@ export function QuestionEditor({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
-                    aria-label={`Usuń pytanie ${number}`}
-                    disabled={disabled || count <= 1 || isUploading}
-                    onClick={onRemove}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                }
-              />
-              <TooltipContent side="bottom">Usuń pytanie</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
-                    aria-label={`Zwiń pytanie ${number}`}
-                    aria-expanded
-                    aria-keyshortcuts="Escape"
-                    data-question-toggle
-                    onClick={onCollapse}
-                  >
-                    <ChevronUpIcon />
-                  </Button>
-                }
-              />
-              <TooltipContent side="bottom">
-                Zwiń
-                <Kbd>Esc</Kbd>
-              </TooltipContent>
-            </Tooltip>
+          <div className="ml-auto flex items-center gap-0.5 empty:hidden sm:ml-0">
+            {onRemove === undefined ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
+                      aria-label={`Usuń pytanie ${number}`}
+                      disabled={disabled || count <= 1 || isUploading}
+                      onClick={onRemove}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Usuń pytanie</TooltipContent>
+              </Tooltip>
+            )}
+            {onCollapse === undefined ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
+                      aria-label={`Zwiń pytanie ${number}`}
+                      aria-expanded
+                      aria-keyshortcuts="Escape"
+                      data-question-toggle
+                      onClick={onCollapse}
+                    >
+                      <ChevronUpIcon />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  Zwiń
+                  <Kbd>Esc</Kbd>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </header>
 

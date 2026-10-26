@@ -223,9 +223,7 @@ export function AnswerEditor({
                             </Button>
                           }
                         />
-                        <TooltipContent side="bottom">
-                          Usuń odpowiedź
-                        </TooltipContent>
+                        <TooltipContent>Usuń odpowiedź</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
