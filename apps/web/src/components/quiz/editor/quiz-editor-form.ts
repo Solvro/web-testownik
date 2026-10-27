@@ -11,6 +11,7 @@ import {
   questionTypeError,
   quizFormSchema,
 } from "@testownik/core/quiz/schema";
+import { TRUE_FALSE_LABELS } from "@testownik/core/quiz/types";
 import type { QuestionType, Quiz } from "@testownik/core/quiz/types";
 import { toast } from "sonner";
 
@@ -262,12 +263,19 @@ export function questionIssue(question: QuestionFormData) {
   return null;
 }
 
+function renumberAnswers(answers: AnswerFormData[]) {
+  return answers.map((answer, index) =>
+    answer.order === index + 1 ? answer : { ...answer, order: index + 1 },
+  );
+}
+
 /**
  * Sets the question type and fits the answers to it. Between the choice types
  * the answers are left as they are: a single-choice question with several
  * correct ones shows as a conflict until it is fixed. True/false keeps the
  * first two answers as its labels, or starts with the default ones when they
- * are empty. An open question accepts every answer and drops their images.
+ * are empty; leaving it drops the default labels, which mean nothing
+ * elsewhere. An open question accepts every answer and drops their images.
  */
 export function withQuestionType(
   question: QuestionFormData,
@@ -301,12 +309,19 @@ export function withQuestionType(
       })),
     };
   }
+  const defaultLabels = new Set<string>(TRUE_FALSE_LABELS);
+  const kept =
+    question.type === "true_false"
+      ? question.answers.filter(
+          (answer) =>
+            !defaultLabels.has(answer.text.trim()) || hasImage(answer),
+        )
+      : question.answers;
   if (type === "open") {
     return {
       ...changed,
-      answers: (question.answers.length === 0
-        ? [createAnswer(1)]
-        : question.answers
+      answers: renumberAnswers(
+        kept.length === 0 ? [createAnswer(1)] : kept,
       ).map((answer) => ({
         ...answer,
         is_correct: true,
@@ -318,7 +333,12 @@ export function withQuestionType(
       })),
     };
   }
-  return changed;
+  // A choice question starts with two answers to fill in.
+  const padded = [...kept];
+  while (padded.length < 2) {
+    padded.push(createAnswer(padded.length + 1));
+  }
+  return { ...changed, answers: renumberAnswers(padded) };
 }
 
 /** Previous question types by question ID, for undoing `withQuestionType`. */

@@ -1,10 +1,12 @@
 "use client";
 
+import { gradeResponse } from "@testownik/core/quiz/grading";
 import { LoaderCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { OpenAnswer } from "@/components/quiz/answers/open-answer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,14 +48,19 @@ export function QuestionQuizCard({
   }, [questionData]);
 
   const toggleAnswer = (answerId: string) => {
-    if (!enableEdit) {
+    if (!enableEdit || questionData === undefined) {
       return;
     }
-    setSelectedAnswers((previous) =>
-      previous.includes(answerId)
-        ? previous.filter((id) => id !== answerId)
-        : [...previous, answerId],
-    );
+    const selected = selectedAnswers.includes(answerId);
+    if (questionData.type === "multiple_choice") {
+      setSelectedAnswers((previous) =>
+        selected
+          ? previous.filter((id) => id !== answerId)
+          : [...previous, answerId],
+      );
+    } else {
+      setSelectedAnswers(selected ? [] : [answerId]);
+    }
   };
 
   const checkAnswers = () => {
@@ -61,19 +68,11 @@ export function QuestionQuizCard({
       return;
     }
 
-    let isCorrect = true;
-
-    for (const answer of questionData.answers) {
-      const isSelected = selectedAnswers.includes(answer.id);
-      if (
-        (isSelected && !answer.is_correct) ||
-        (!isSelected && answer.is_correct)
-      ) {
-        isCorrect = false;
-      }
-    }
-
-    setResult(isCorrect ? "Poprawna odpowiedź!" : "Niepoprawna odpowiedź.");
+    setResult(
+      gradeResponse(questionData, selectedAnswers)
+        ? "Poprawna odpowiedź!"
+        : "Niepoprawna odpowiedź.",
+    );
     setEnableEdit(false);
   };
 
@@ -148,29 +147,46 @@ export function QuestionQuizCard({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2">
-              {questionData.answers.map((answer) => (
-                <button
-                  key={answer.id}
-                  onClick={() => {
-                    toggleAnswer(answer.id);
-                  }}
-                  disabled={!enableEdit}
-                  className={cn(
-                    "bg-input dark:bg-background w-full justify-start rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
-                    computeAnswerVariant(
-                      selectedAnswers.includes(answer.id),
-                      Boolean(result),
-                      answer.is_correct,
-                    ),
-                  )}
-                >
-                  <MarkdownRenderer className="pointer-events-none text-sm">
-                    {answer.text}
-                  </MarkdownRenderer>
-                </button>
-              ))}
-            </div>
+            {questionData.type === "open" ? (
+              <OpenAnswer
+                question={questionData}
+                response={selectedAnswers[0] ?? ""}
+                checked={!enableEdit}
+                onChange={(response) => {
+                  setSelectedAnswers(response === "" ? [] : [response]);
+                }}
+                onSubmit={checkAnswers}
+              />
+            ) : (
+              <div
+                className={cn(
+                  "grid gap-2",
+                  questionData.type === "true_false" && "grid-cols-2",
+                )}
+              >
+                {questionData.answers.map((answer) => (
+                  <button
+                    key={answer.id}
+                    onClick={() => {
+                      toggleAnswer(answer.id);
+                    }}
+                    disabled={!enableEdit}
+                    className={cn(
+                      "bg-input dark:bg-background w-full justify-start rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed",
+                      computeAnswerVariant(
+                        selectedAnswers.includes(answer.id),
+                        Boolean(result),
+                        answer.is_correct,
+                      ),
+                    )}
+                  >
+                    <MarkdownRenderer className="pointer-events-none text-sm">
+                      {answer.text}
+                    </MarkdownRenderer>
+                  </button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </div>
       </ScrollArea>

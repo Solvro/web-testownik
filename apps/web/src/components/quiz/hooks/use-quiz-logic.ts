@@ -102,9 +102,11 @@ export function useQuizLogic({
     nextQuestionOverride?: Question | null,
     force?: boolean,
   ) => {
+    // A checked question is not checked again, also when a peer reports the
+    // check this tab already made.
     if (
       currentQuestionRef.current == null ||
-      (force === false && questionChecked)
+      (force !== true && questionChecked)
     ) {
       return;
     }

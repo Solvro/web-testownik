@@ -98,6 +98,26 @@ export function QuizHistoryDialog({
                           height={question.image_height}
                           className="mb-4 max-h-40 w-fit max-w-full rounded object-contain"
                         />
+                        {answer.selected_answers.length === 0 ? (
+                          <p className="text-muted-foreground mb-2 text-sm italic">
+                            {answer.was_correct
+                              ? "Fiszka oceniona jako znana"
+                              : "Bez odpowiedzi"}
+                          </p>
+                        ) : null}
+                        {question.type === "open" &&
+                        answer.selected_answers.length > 0 ? (
+                          <p
+                            className={cn(
+                              "mb-2 text-sm",
+                              answer.was_correct
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-red-600 dark:text-red-400",
+                            )}
+                          >
+                            Wpisano: {answer.selected_answers[0]}
+                          </p>
+                        ) : null}
                         {question.answers.map((ans) => {
                           return (
                             <div
@@ -105,7 +125,9 @@ export function QuizHistoryDialog({
                               className={cn(
                                 "mb-2 flex flex-col gap-1",
                                 computeAnswerVariantText(
-                                  answer.selected_answers.includes(ans.id),
+                                  question.type === "open"
+                                    ? answer.was_correct
+                                    : answer.selected_answers.includes(ans.id),
                                   true,
                                   ans.is_correct,
                                 ),

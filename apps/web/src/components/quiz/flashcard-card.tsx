@@ -83,7 +83,12 @@ export function FlashcardCard({
       pointerId: event.pointerId,
       moved: false,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // A synthetic pointer cannot be captured; the swipe still works while
+      // the pointer stays over the card.
+    }
     setDragging(true);
   };
 
