@@ -51,11 +51,27 @@ export function FlashcardCard({
   const [dragging, setDragging] = useState(false);
   const [leaving, setLeaving] = useState<"left" | "right" | null>(null);
   const leavingRef = useRef(false);
+  const leaveTimer = useRef<number | null>(null);
+  const onGradeRef = useRef(onGrade);
   const gesture = useRef<{
     x: number;
     pointerId: number;
     moved: boolean;
   } | null>(null);
+
+  useEffect(() => {
+    onGradeRef.current = onGrade;
+  });
+
+  // A card removed mid-swipe, by a mode change or a peer, grades nothing.
+  useEffect(
+    () => () => {
+      if (leaveTimer.current !== null) {
+        window.clearTimeout(leaveTimer.current);
+      }
+    },
+    [],
+  );
 
   const grade = (knew: boolean) => {
     if (leavingRef.current) {
@@ -63,8 +79,9 @@ export function FlashcardCard({
     }
     leavingRef.current = true;
     setLeaving(knew ? "right" : "left");
-    window.setTimeout(() => {
-      onGrade(knew);
+    leaveTimer.current = window.setTimeout(() => {
+      leaveTimer.current = null;
+      onGradeRef.current(knew);
     }, LEAVE_DURATION);
   };
 
@@ -131,7 +148,8 @@ export function FlashcardCard({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (isInputElement(target) || isModalOpen()) {
+      // A held key must not grade card after card.
+      if (event.repeat || isInputElement(target) || isModalOpen()) {
         return;
       }
       const onButton = target.tagName.toLowerCase() === "button";
@@ -163,7 +181,9 @@ export function FlashcardCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-    // Both handlers read refs, so one registration lasts the card's life.
+    // `flip` and `grade` only touch refs and state setters, and `grade`
+    // reaches the latest `onGrade` through its ref, so one registration
+    // lasts the card's life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -321,6 +341,7 @@ export function FlashcardCard({
           variant="outline"
           size="lg"
           className="border-red-500/40 text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          disabled={leaving !== null}
           onClick={() => {
             grade(false);
           }}
@@ -350,6 +371,7 @@ export function FlashcardCard({
           variant="outline"
           size="lg"
           className="border-green-500/40 text-green-700 hover:bg-green-500/10 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+          disabled={leaving !== null}
           onClick={() => {
             grade(true);
           }}
@@ -366,6 +388,7 @@ export function FlashcardCard({
           variant="ghost"
           size="sm"
           className="text-muted-foreground"
+          disabled={leaving !== null}
           onClick={onShowAnswers}
         >
           <ListChecksIcon />

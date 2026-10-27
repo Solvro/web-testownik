@@ -70,6 +70,8 @@ interface ResetProgressMessage {
 interface AnswerCheckedMessage {
   type: "answer_checked";
   nextQuestion: Question | null;
+  /** The record made; peers apply it instead of grading on their own. */
+  record?: AnswerRecord;
 }
 interface PingMessage {
   type: "ping";
@@ -105,7 +107,10 @@ interface UseQuizContinuityOptions {
     studyTime?: number;
   }) => void;
   onQuestionUpdate: (q: Question | null, selected: string[]) => void;
-  onAnswerChecked: (nextQuestion: Question | null) => void;
+  onAnswerChecked: (
+    nextQuestion: Question | null,
+    record?: AnswerRecord,
+  ) => void;
   onResetProgress: (session: QuizSession) => void;
 }
 
@@ -277,7 +282,7 @@ export function useQuizContinuity({
         break;
       }
       case "answer_checked": {
-        onAnswerChecked(data.nextQuestion);
+        onAnswerChecked(data.nextQuestion, data.record);
         break;
       }
       case "reset_progress": {
@@ -311,7 +316,7 @@ export function useQuizContinuity({
         break;
       }
       case "answer_checked": {
-        onAnswerChecked(data.nextQuestion);
+        onAnswerChecked(data.nextQuestion, data.record);
         broadcastExcept(conn, data);
         break;
       }
@@ -519,8 +524,11 @@ export function useQuizContinuity({
       isDisconnectedRef.current = false;
       emitDisconnectPreferenceChange();
     },
-    sendAnswerChecked: (nextQuestion: Question | null) => {
-      broadcast({ type: "answer_checked", nextQuestion });
+    sendAnswerChecked: (
+      nextQuestion: Question | null,
+      record?: AnswerRecord,
+    ) => {
+      broadcast({ type: "answer_checked", nextQuestion, record });
     },
     sendQuestionUpdate: (
       question: Question | null,

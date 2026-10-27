@@ -20,6 +20,7 @@ export function OpenAnswer({
   question,
   response,
   checked,
+  graded = null,
   onChange,
   onSubmit,
 }: {
@@ -27,57 +28,67 @@ export function OpenAnswer({
   /** The typed text, or "" before typing. */
   response: string;
   checked: boolean;
+  /** The recorded grade of a history entry, instead of grading `response`. */
+  graded?: boolean | null;
   onChange: (response: string) => void;
   onSubmit: () => void;
 }) {
   const accepted = acceptedAnswers(question);
   const correct =
-    checked && gradeResponse(question, response === "" ? [] : [response]);
-  const exact = correct && matchesOpenAnswer(response, accepted, "exact");
+    checked &&
+    (graded ?? gradeResponse(question, response === "" ? [] : [response]));
+  const exact =
+    correct &&
+    response !== "" &&
+    matchesOpenAnswer(response, accepted, "exact");
   const markdown = question.is_markdown_enabled !== false;
+  // A skipped question or a self-graded flashcard has nothing typed to show.
+  const showInput = !(checked && response === "");
 
   return (
     <div className="space-y-3">
-      <Input
-        key={`open-answer-${question.id}`}
-        id={`open-answer-${question.id}`}
-        aria-label="Twoja odpowiedź"
-        value={response}
-        disabled={checked}
-        autoFocus={!checked}
-        autoComplete="off"
-        autoCapitalize="none"
-        placeholder="Wpisz odpowiedź i naciśnij Enter"
-        onChange={(event) => {
-          onChange(event.target.value);
-        }}
-        onKeyDown={(event) => {
-          if (
-            event.key === "Enter" &&
-            !event.nativeEvent.isComposing &&
-            response.trim() !== ""
-          ) {
-            event.preventDefault();
-            onSubmit();
-          }
-        }}
-        className={cn(
-          "h-12 text-base md:text-base",
-          checked &&
-            (correct
-              ? "border-green-500 bg-green-500/10 text-green-700 disabled:opacity-100 dark:text-green-400"
-              : "border-red-500 bg-red-500/10 text-red-700 disabled:opacity-100 dark:text-red-400"),
-        )}
-      />
+      {showInput ? (
+        <Input
+          key={`open-answer-${question.id}`}
+          id={`open-answer-${question.id}`}
+          aria-label="Twoja odpowiedź"
+          value={response}
+          disabled={checked}
+          autoFocus={!checked}
+          autoComplete="off"
+          autoCapitalize="none"
+          placeholder="Wpisz odpowiedź i naciśnij Enter"
+          onChange={(event) => {
+            onChange(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" &&
+              !event.nativeEvent.isComposing &&
+              response.trim() !== ""
+            ) {
+              event.preventDefault();
+              onSubmit();
+            }
+          }}
+          className={cn(
+            "h-12 text-base md:text-base",
+            checked &&
+              (correct
+                ? "border-green-500 bg-green-500/10 text-green-700 disabled:opacity-100 dark:text-green-400"
+                : "border-red-500 bg-red-500/10 text-red-700 disabled:opacity-100 dark:text-red-400"),
+          )}
+        />
+      ) : null}
       {checked ? (
         <div className="space-y-2 text-sm">
-          {correct && !exact ? (
+          {correct && !exact && response !== "" ? (
             <p className="text-muted-foreground flex items-center gap-1.5">
               <SparklesIcon className="size-3.5 shrink-0" aria-hidden="true" />
               Zaliczono z tolerancją literówek.
             </p>
           ) : null}
-          {correct && exact ? null : (
+          {correct && (exact || response === "") ? null : (
             <div className="space-y-1.5">
               <p className="text-muted-foreground">
                 {accepted.length === 1

@@ -54,6 +54,7 @@ import { useQuestionHistory } from "./question-history";
 import {
   canMutate,
   createAnswer,
+  fitAnswerToType,
   hasImage,
   picksOneAnswer,
   updateQuestion,
@@ -229,6 +230,15 @@ export function QuestionEditor({
           if (!canMutate(form)) {
             return;
           }
+          // The type may have changed since: true/false has no room, an
+          // open question accepts the answer.
+          const latest = form
+            .getFieldValue("questions")
+            .find((item) => item.id === questionId);
+          if (latest?.type === "true_false") {
+            toast.info("Pytanie Prawda/Fałsz ma dokładnie dwie odpowiedzi.");
+            return;
+          }
           updateQuestion(form, questionId, (current) =>
             current.answers.some((answer) => answer.id === answerId)
               ? current
@@ -238,7 +248,7 @@ export function QuestionEditor({
                     .toSpliced(
                       Math.min(position, current.answers.length),
                       0,
-                      removed,
+                      fitAnswerToType(removed, current.type),
                     )
                     .map((answer, order) => ({ ...answer, order: order + 1 })),
                 },

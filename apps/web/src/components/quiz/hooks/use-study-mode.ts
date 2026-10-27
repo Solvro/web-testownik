@@ -2,6 +2,8 @@ import type { StudyMode } from "@testownik/core/quiz/types";
 import { useSyncExternalStore } from "react";
 
 const listeners = new Set<() => void>();
+// The modes chosen in this page, for when local storage refuses to write.
+const memory = new Map<string, StudyMode>();
 
 function storageKey(quizId: string) {
   return `quiz-study-mode:${quizId}`;
@@ -18,12 +20,14 @@ function subscribe(listener: () => void) {
 
 function readMode(quizId: string): StudyMode {
   try {
-    return localStorage.getItem(storageKey(quizId)) === "flashcards"
-      ? "flashcards"
-      : "quiz";
+    const stored = localStorage.getItem(storageKey(quizId));
+    if (stored === "flashcards" || stored === "quiz") {
+      return stored;
+    }
   } catch {
-    return "quiz";
+    // Private browsing may refuse; fall back to what was chosen here.
   }
+  return memory.get(quizId) ?? "quiz";
 }
 
 /**
@@ -37,10 +41,11 @@ export function useStudyMode(quizId: string) {
     () => "quiz" as StudyMode,
   );
   const setMode = (next: StudyMode) => {
+    memory.set(quizId, next);
     try {
       localStorage.setItem(storageKey(quizId), next);
     } catch {
-      // Private browsing may refuse; the mode then lasts until a reload.
+      // Kept in memory for this page only.
     }
     for (const listener of listeners) {
       listener();

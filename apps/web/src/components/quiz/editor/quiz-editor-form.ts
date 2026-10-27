@@ -333,6 +333,10 @@ export function withQuestionType(
       })),
     };
   }
+  // Between the choice types the answers stay as they are.
+  if (kept === question.answers && kept.length >= 2) {
+    return changed;
+  }
   // A choice question starts with two answers to fill in.
   const padded = [...kept];
   while (padded.length < 2) {
@@ -376,7 +380,11 @@ export function restoreQuestionTypes(
     if (before === undefined || before.type === question.type) {
       return question;
     }
-    const rewrote = question.type === "true_false" || question.type === "open";
+    // Repeating the change on the remembered answers tells whether it
+    // rewrote them; between the choice types they are kept as they are.
+    const rewrote =
+      withQuestionType({ ...question, ...before }, question.type).answers !==
+      before.answers;
     return {
       ...question,
       type: before.type,
@@ -384,4 +392,25 @@ export function restoreQuestionTypes(
       answers: rewrote ? before.answers : question.answers,
     };
   });
+}
+
+/**
+ * An answer put back into a question after its type may have changed: an
+ * open question accepts it and shows no image.
+ */
+export function fitAnswerToType(
+  answer: AnswerFormData,
+  type: QuestionType,
+): AnswerFormData {
+  return type === "open"
+    ? {
+        ...answer,
+        is_correct: true,
+        image: null,
+        image_url: null,
+        image_upload: null,
+        image_width: null,
+        image_height: null,
+      }
+    : answer;
 }

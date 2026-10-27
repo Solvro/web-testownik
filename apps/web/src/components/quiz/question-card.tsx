@@ -285,6 +285,7 @@ export function QuestionCard({
             question={question}
             response={selectedAnswers[0] ?? ""}
             checked={questionChecked}
+            graded={wasCorrect}
             onChange={(response) => {
               setSelectedAnswers(response === "" ? [] : [response]);
             }}

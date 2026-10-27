@@ -1,5 +1,6 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { gradeResponse } from "@testownik/core/quiz/grading";
 import {
   DEFAULT_QUESTION_TYPE_FIELDS,
   inferChoiceType,
@@ -28,6 +29,7 @@ import * as z from "zod";
 import { useAiChatContext } from "@/components/ai/ai-chat-context";
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { OpenAnswer } from "@/components/quiz/answers/open-answer";
 import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { quizDetailQueryKey } from "@/components/quiz/helpers/utils";
 import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
@@ -245,6 +247,7 @@ function QuestionCard({
   const queryClient = useQueryClient();
   const [showExplanation, setShowExplanation] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [checked, setChecked] = useState(false);
   const [individuallySaved, setIndividuallySaved] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -258,8 +261,18 @@ function QuestionCard({
   const saved = isBulkSaved || individuallySaved;
   const answers = visibleQuestion.answers.toSorted((a, b) => a.order - b.order);
   const isComplete = isQuestionComplete(visibleQuestion);
-  const isMultiple =
-    isComplete && answers.filter((answer) => answer.is_correct).length > 1;
+  const isOpen = visibleQuestion.type === "open";
+  const isMultiple = visibleQuestion.type === "multiple_choice";
+  // The practice response in the shape the grader takes.
+  const response = isOpen
+    ? typedAnswer.trim() === ""
+      ? []
+      : [typedAnswer]
+    : selectedAnswers.flatMap((index) => {
+        const answer = answers[index];
+        return answer === undefined ? [] : [answer.id];
+      });
+  const isCorrect = checked && gradeResponse(visibleQuestion, response);
   const hasExplanation = Boolean(visibleQuestion.explanation?.trim());
 
   const { isPending: isSaving, mutateAsync: saveToQuiz } = useMutation({
@@ -311,7 +324,7 @@ function QuestionCard({
   };
 
   const handleCheck = () => {
-    if (selectedAnswers.length === 0) {
+    if (response.length === 0) {
       return;
     }
     setChecked(true);
@@ -365,7 +378,16 @@ function QuestionCard({
         ) : null}
       </CardHeader>
       <CardContent className="space-y-1.5 pt-0">
-        {hasAnswers
+        {isOpen && isComplete ? (
+          <OpenAnswer
+            question={visibleQuestion}
+            response={typedAnswer}
+            checked={checked}
+            onChange={setTypedAnswer}
+            onSubmit={handleCheck}
+          />
+        ) : null}
+        {hasAnswers && !isOpen
           ? answers.map((answer, index) => {
               if (answer.text === "" && !hasImageValue(answer)) {
                 return null;
@@ -411,12 +433,7 @@ function QuestionCard({
 
         {checked ? (
           <div className="pt-1 text-sm">
-            {selectedAnswers.every(
-              (index) => answers[index]?.is_correct ?? false,
-            ) &&
-            answers.every(
-              (a, index) => !a.is_correct || selectedAnswers.includes(index),
-            ) ? (
+            {isCorrect ? (
               <p className="font-medium text-green-600 dark:text-green-400">
                 Poprawna odpowiedź!
               </p>
@@ -433,7 +450,7 @@ function QuestionCard({
             size="sm"
             className="mt-2 w-full"
             onClick={handleCheck}
-            disabled={selectedAnswers.length === 0}
+            disabled={response.length === 0}
           >
             Sprawdź odpowiedź
           </Button>

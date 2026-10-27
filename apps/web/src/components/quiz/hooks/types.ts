@@ -45,8 +45,11 @@ export interface UseQuizLogicResult {
   actions: {
     nextAction: () => void;
     skipQuestion: () => void;
-    /** Records a flashcard the learner graded themselves and moves on. */
-    gradeSelf: (knew: boolean) => void;
+    /**
+     * Records a flashcard the learner graded themselves and moves on. With
+     * `questionId`, only while that question is still the current one.
+     */
+    gradeSelf: (knew: boolean, questionId?: string) => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
     onQuestionDeleted: (

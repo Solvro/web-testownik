@@ -134,6 +134,9 @@ function buildEditedQuestion(
     ...answer,
     order: index + 1,
   }));
+  // An edit which says nothing about the type keeps it: rewording an open
+  // question must not turn it into a choice.
+  const type = isQuestionType(edit.type) ? edit.type : question.type;
 
   return {
     ...DEFAULT_QUESTION_TYPE_FIELDS,
@@ -143,9 +146,9 @@ function buildEditedQuestion(
     image: edit.image ?? edit.image_url ?? question.image,
     image_url: edit.image_url ?? question.image_url,
     image_upload: edit.image_upload ?? question.image_upload,
-    type: isQuestionType(edit.type) ? edit.type : inferChoiceType(answers),
+    type,
     shuffle_answers:
-      edit.type === "true_false"
+      type === "true_false"
         ? false
         : (edit.shuffle_answers ?? question.shuffle_answers),
     open_matching: edit.open_matching ?? question.open_matching,

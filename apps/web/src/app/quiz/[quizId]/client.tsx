@@ -117,17 +117,21 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   } = actions;
 
   const [studyMode, setStudyMode] = useStudyMode(quizId);
-  // The question answered as in the quiz although flashcards are on.
-  const [revealedQuestionId, setRevealedQuestionId] = useState<string | null>(
-    null,
-  );
+  // One appearance of a question in this session: a repeated question gets
+  // a fresh card, and a reveal applies to this appearance only.
+  const attemptKey =
+    currentQuestion === null
+      ? null
+      : `${quiz.current_session?.id ?? "local"}:${currentQuestion.id}:${String(answers.length)}`;
+  // The appearance answered as in the quiz although flashcards are on.
+  const [revealedAttempt, setRevealedAttempt] = useState<string | null>(null);
   const showFlashcard =
     studyMode === "flashcards" &&
     currentQuestion !== null &&
     !isQuizFinished &&
     !isHistoryQuestion &&
     !questionChecked &&
-    revealedQuestionId !== currentQuestion.id;
+    revealedAttempt !== attemptKey;
 
   const {
     isApproved: externalImagesApproved,
@@ -371,17 +375,17 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                 </Card>
               ) : showFlashcard ? (
                 <FlashcardCard
-                  key={currentQuestion.id}
+                  key={attemptKey}
                   question={currentQuestion}
                   answers={answers}
                   onGrade={(knew) => {
                     handleQuizActivity(() => {
-                      gradeSelf(knew);
+                      gradeSelf(knew, currentQuestion.id);
                     });
                   }}
                   onShowAnswers={() => {
                     resetInactivityTimer();
-                    setRevealedQuestionId(currentQuestion.id);
+                    setRevealedAttempt(attemptKey);
                   }}
                 />
               ) : (

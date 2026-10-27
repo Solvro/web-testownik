@@ -99,6 +99,20 @@ describe("restoreQuestionTypes", () => {
     expect(restored.answers).toEqual(question.answers);
   });
 
+  it("puts back the labels dropped when leaving true/false", () => {
+    const trueFalse = { ...createQuestion(1, "true_false"), text: "Pytanie" };
+    const previous = rememberQuestionTypes([trueFalse]);
+    const single = withQuestionType(trueFalse, "single_choice");
+    expect(single.answers.map((answer) => answer.text)).toEqual(["", ""]);
+    const [restored] = restoreQuestionTypes([single], previous);
+    expect(restored.type).toBe("true_false");
+    expect(restored.shuffle_answers).toBe(false);
+    expect(restored.answers.map((answer) => answer.text)).toEqual([
+      "Prawda",
+      "Fałsz",
+    ]);
+  });
+
   it("keeps the answers edited after a change between choice types", () => {
     const question = choice("multiple_choice", [0, 2]);
     const previous = rememberQuestionTypes([question]);
