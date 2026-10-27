@@ -345,6 +345,25 @@ export function withQuestionType(
   return { ...changed, answers: renumberAnswers(padded) };
 }
 
+/** Whether two answer lists hold the same answers in the same order. */
+function sameAnswers(a: AnswerFormData[], b: AnswerFormData[]) {
+  return (
+    a.length === b.length &&
+    a.every((answer, index) => {
+      const other = b[index];
+      return (
+        answer.id === other.id &&
+        answer.order === other.order &&
+        answer.text === other.text &&
+        answer.is_correct === other.is_correct &&
+        answer.image === other.image &&
+        answer.image_url === other.image_url &&
+        answer.image_upload === other.image_upload
+      );
+    })
+  );
+}
+
 /** Previous question types by question ID, for undoing `withQuestionType`. */
 export type QuestionTypes = Map<
   string,
@@ -381,10 +400,12 @@ export function restoreQuestionTypes(
       return question;
     }
     // Repeating the change on the remembered answers tells whether it
-    // rewrote them; between the choice types they are kept as they are.
-    const rewrote =
-      withQuestionType({ ...question, ...before }, question.type).answers !==
-      before.answers;
+    // rewrote them; a change which left them as they were, such as one
+    // between the choice types, keeps the edits made since.
+    const rewrote = !sameAnswers(
+      withQuestionType({ ...question, ...before }, question.type).answers,
+      before.answers,
+    );
     return {
       ...question,
       type: before.type,

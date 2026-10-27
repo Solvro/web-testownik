@@ -113,6 +113,26 @@ describe("restoreQuestionTypes", () => {
     ]);
   });
 
+  it("keeps edits made after leaving true/false with custom labels", () => {
+    const trueFalse = { ...createQuestion(1, "true_false"), text: "Pytanie" };
+    trueFalse.answers[0].text = "Tak";
+    trueFalse.answers[1].text = "Nie";
+    const previous = rememberQuestionTypes([trueFalse]);
+    const single = withQuestionType(trueFalse, "single_choice");
+    const edited = {
+      ...single,
+      answers: single.answers.map((answer, index) =>
+        index === 0 ? { ...answer, text: "Zdecydowanie tak" } : answer,
+      ),
+    };
+    const [restored] = restoreQuestionTypes([edited], previous);
+    expect(restored.type).toBe("true_false");
+    expect(restored.answers.map((answer) => answer.text)).toEqual([
+      "Zdecydowanie tak",
+      "Nie",
+    ]);
+  });
+
   it("keeps the answers edited after a change between choice types", () => {
     const question = choice("multiple_choice", [0, 2]);
     const previous = rememberQuestionTypes([question]);

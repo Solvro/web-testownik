@@ -157,14 +157,17 @@ export function useQuizLogic({
     record: AnswerRecord,
     nextQuestion: Question | null,
   ) => {
-    if (answersRef.current.some((answer) => answer.id === record.id)) {
-      return;
-    }
-    const { nextQuestion: nextQ } = sessionActions.recordAnswer(
+    const { nextQuestion: nextQ, duplicate } = sessionActions.recordAnswer(
       record,
       getCurrentStudyTime(),
       nextQuestion,
     );
+    if (duplicate) {
+      return;
+    }
+    // The card shows the peer's selection with the grade it was given.
+    selectedAnswersRef.current = record.selected_answers;
+    sessionActions.setSelectedAnswers(record.selected_answers);
     nextQuestionRef.current = nextQ;
   };
 
@@ -351,9 +354,13 @@ export function useQuizLogic({
           : (answers.find((a) => a.question === historyQuestionId)
               ?.selected_answers ?? []),
       questionChecked: historyQuestion == null ? questionChecked : true,
+      // The grade as recorded, so that a check made on another device shows
+      // the same result here.
       wasCorrect:
         historyQuestion == null
-          ? null
+          ? questionChecked && answers[0]?.question === currentQuestion?.id
+            ? answers[0].was_correct
+            : null
           : (answers.find((a) => a.question === historyQuestionId)
               ?.was_correct ?? null),
       isQuizFinished,

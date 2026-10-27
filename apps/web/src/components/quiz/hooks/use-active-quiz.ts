@@ -74,7 +74,20 @@ export function useActiveQuiz(quizId: string) {
     answer: AnswerRecord,
     studyTime: number,
     nextQuestionOverride?: Question | null,
-  ): { nextQuestion: Question | null } => {
+  ): { nextQuestion: Question | null; duplicate: boolean } => {
+    // A record delivered twice, such as a replayed peer message, is kept once
+    // and changes nothing. The cache is read directly: the rendered answers
+    // can lag behind a record stored a moment ago.
+    const cached = queryClient.getQueryData<QuizWithUserProgress>(
+      quizDetailQueryKey(quizId),
+    );
+    if (
+      cached?.current_session?.answers.some(
+        (existing) => existing.id === answer.id,
+      ) === true
+    ) {
+      return { nextQuestion: null, duplicate: true };
+    }
     const updatedAnswers = [answer, ...answers];
     const next =
       nextQuestionOverride ??
@@ -107,7 +120,7 @@ export function useActiveQuiz(quizId: string) {
       nextQuestionId: next?.id ?? null,
     }));
 
-    return { nextQuestion: next };
+    return { nextQuestion: next, duplicate: false };
   };
 
   const advanceQuestion = (overrideNextQuestionId?: string | null) => {
