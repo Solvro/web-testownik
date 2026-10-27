@@ -168,7 +168,10 @@ export function FlashcardCard({
   }, []);
 
   const markdown = question.is_markdown_enabled !== false;
-  const correct = question.answers.filter((answer) => answer.is_correct);
+  // The back lists the correct answers in the author's order, not shuffled.
+  const correct = question.answers
+    .filter((answer) => answer.is_correct)
+    .toSorted((a, b) => a.order - b.order);
   const appearances = getQuestionAnsweredCount(question.id, false, answers);
   const knowStrength = Math.min(1, Math.max(0, offset / SWIPE_THRESHOLD));
   const forgetStrength = Math.min(1, Math.max(0, -offset / SWIPE_THRESHOLD));
