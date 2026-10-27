@@ -87,6 +87,9 @@ export function editDistance(a: string, b: string) {
   return distance[rows - 1][columns - 1];
 }
 
+/** Beyond this many code points the similar comparison only checks equality. */
+const LONG_ANSWER = 512;
+
 /** Whether `typed` matches one of the `accepted` answers under `matching`. */
 export function matchesOpenAnswer(
   typed: string,
@@ -100,10 +103,29 @@ export function matchesOpenAnswer(
     );
   }
   const simplified = simplifyAnswerText(typed);
+  const typedLength = codePoints(simplified);
   return accepted.some((answer) => {
     const expected = simplifyAnswerText(answer);
-    return editDistance(simplified, expected) <= typoAllowance(expected.length);
+    const expectedLength = codePoints(expected);
+    // Long texts are compared as they are: the distance is quadratic.
+    if (typedLength > LONG_ANSWER || expectedLength > LONG_ANSWER) {
+      return simplified === expected;
+    }
+    const allowance = typoAllowance(expectedLength);
+    return (
+      Math.abs(typedLength - expectedLength) <= allowance &&
+      editDistance(simplified, expected) <= allowance
+    );
   });
+}
+
+/** The length in code points, like the backend's Python strings. */
+function codePoints(text: string) {
+  let count = 0;
+  for (const _ of text) {
+    count++;
+  }
+  return count;
 }
 
 /** The answers a choice question counts as correct, in `answers` order. */
@@ -126,6 +148,10 @@ export function acceptedAnswers(question: GradableQuestion) {
  * nothing when the question was skipped.
  */
 export function gradeResponse(question: GradableQuestion, response: string[]) {
+  // A skipped question is never right, also when nothing is correct.
+  if (response.length === 0) {
+    return false;
+  }
   if (question.type === "open") {
     const typed = response.at(0);
     return (

@@ -88,5 +88,18 @@
     "expected": "Jan Kochanowski",
     "typed": "Kochanowski",
     "match": false
+  },
+  {
+    "mode": "exact",
+    "expected": "Warszawa",
+    "typed": "﻿Warszawa",
+    "match": true
+  },
+  { "mode": "similar", "expected": "𐐨𐐩b", "typed": "𐐨𐐩a", "match": false },
+  {
+    "mode": "similar",
+    "expected": "abcdefgh",
+    "typed": "abcdefghijk",
+    "match": false
   }
 ]

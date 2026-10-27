@@ -97,6 +97,17 @@ describe("gradeResponse", () => {
     expect(gradeResponse(question, [])).toBe(false);
   });
 
+  it("never counts a skipped question as right", () => {
+    expect(gradeResponse(choice("multiple_choice", []), [])).toBe(false);
+    expect(gradeResponse(open("exact", ""), [])).toBe(false);
+  });
+
+  it("compares long answers for equality only", () => {
+    const long = "a".repeat(600);
+    expect(gradeResponse(open("similar", long), [long])).toBe(true);
+    expect(gradeResponse(open("similar", long), [`${long}b`])).toBe(false);
+  });
+
   it("grades true/false like any other choice", () => {
     expect(gradeResponse(choice("true_false", ["b"]), ["b"])).toBe(true);
     expect(gradeResponse(choice("true_false", ["b"]), ["a"])).toBe(false);
