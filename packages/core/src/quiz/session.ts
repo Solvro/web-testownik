@@ -136,7 +136,7 @@ function orderAnswers(question: Question, seed: string): Question {
     ...question,
     answers: shufflesAnswers(question)
       ? getDeterministicShuffle(question.answers, seed)
-      : question.answers.toSorted((a, b) => a.order - b.order),
+      : [...question.answers].sort((a, b) => a.order - b.order),
   };
 }
 
