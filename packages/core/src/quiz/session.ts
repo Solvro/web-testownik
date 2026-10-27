@@ -29,7 +29,7 @@ export function getRemainingAttempts(
   // Filter answers for this question, sorted by time
   const questionAnswers = answers
     .filter((a) => a.question === questionId)
-    .toSorted(
+    .sort(
       (a, b) =>
         new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime(),
     );
@@ -260,9 +260,11 @@ export function createAnswerRecord(
   questionId: string,
   selectedAnswers: string[],
   wasCorrect: boolean,
+  // Native callers supply an Expo UUID; browser callers use Web Crypto.
+  id: string = crypto.randomUUID(),
 ): AnswerRecord {
   return {
-    id: crypto.randomUUID(),
+    id,
     question: questionId,
     answered_at: new Date().toISOString(),
     selected_answers: selectedAnswers,
@@ -277,8 +279,9 @@ export function createAnswerRecord(
 export function createSelfAssessmentRecord(
   questionId: string,
   knew: boolean,
+  id?: string,
 ): AnswerRecord {
-  return createAnswerRecord(questionId, [], knew);
+  return createAnswerRecord(questionId, [], knew, id);
 }
 
 export function deriveSettings(

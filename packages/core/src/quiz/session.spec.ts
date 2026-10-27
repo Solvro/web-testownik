@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_USER_SETTINGS } from "../user/types";
 import {
+  createAnswerRecord,
+  createSelfAssessmentRecord,
   ensureQuizCurrentQuestion,
   getQuestionWithShuffledAnswers,
   resolveCurrentQuestion,
@@ -22,6 +24,28 @@ const makeQuestion = (id: string): Question => ({
     text: suffix,
     is_correct: index === 0,
   })),
+});
+
+it("accepts native-generated record IDs without global Web Crypto", () => {
+  vi.stubGlobal("crypto", null);
+  try {
+    expect(
+      createAnswerRecord("q", ["typed"], true, "native-answer"),
+    ).toMatchObject({
+      id: "native-answer",
+      selected_answers: ["typed"],
+      was_correct: true,
+    });
+    expect(createSelfAssessmentRecord("q", false, "native-card")).toMatchObject(
+      {
+        id: "native-card",
+        selected_answers: [],
+        was_correct: false,
+      },
+    );
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
 
 const makeAnswer = (
