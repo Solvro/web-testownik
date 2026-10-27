@@ -3,12 +3,8 @@ import type { Question, QuestionType } from "./types";
 /** The type fields of a question built from legacy or generated content. */
 export const DEFAULT_QUESTION_TYPE_FIELDS = {
   type: "single_choice",
-  shuffle_answers: true,
   open_matching: "exact",
-} as const satisfies Pick<
-  Question,
-  "type" | "shuffle_answers" | "open_matching"
->;
+} as const satisfies Pick<Question, "type" | "open_matching">;
 
 /**
  * The choice type implied by the correct answers: multiple choice when more

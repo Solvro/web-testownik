@@ -40,7 +40,6 @@ export function createQuestion(
     order,
     text: "",
     type,
-    shuffle_answers: type !== "true_false",
     open_matching: "exact",
     is_markdown_enabled: true,
     answers:

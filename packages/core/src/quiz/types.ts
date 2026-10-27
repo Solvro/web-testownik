@@ -71,11 +71,6 @@ export interface Question {
   text: string;
   explanation?: string;
   type: QuestionType;
-  /**
-   * Whether the answers show in a random order. Ignored for true/false, whose
-   * first answer is always the "true" label and second the "false" label.
-   */
-  shuffle_answers: boolean;
   /** Only read for open questions. */
   open_matching: OpenMatching;
   is_ai_generated?: boolean;
@@ -187,7 +182,6 @@ export interface QuizVersionQuestion {
   text: string;
   explanation: string;
   type: QuestionType;
-  shuffle_answers: boolean;
   open_matching: OpenMatching;
   is_markdown_enabled?: boolean;
   image: string | null;

@@ -41,7 +41,6 @@ type CreateQuestionData = Pick<
   Question,
   | "text"
   | "type"
-  | "shuffle_answers"
   | "open_matching"
   | "image_url"
   | "image_upload"
@@ -377,7 +376,6 @@ export class QuizService extends BaseApiService {
       text: data.text,
       explanation: data.explanation ?? "",
       type: data.type,
-      shuffle_answers: data.shuffle_answers,
       open_matching: data.open_matching,
       ...imageFields,
       is_markdown_enabled: true,
@@ -407,7 +405,6 @@ export class QuizService extends BaseApiService {
           text: q.text,
           explanation: q.explanation ?? "",
           type: q.type,
-          shuffle_answers: q.shuffle_answers,
           open_matching: q.open_matching,
           ...imageFields,
           is_markdown_enabled: true,

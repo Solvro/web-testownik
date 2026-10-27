@@ -15,7 +15,6 @@ export const mockQuiz = {
       order: 1,
       text: "What is 2+2?",
       type: "single_choice",
-      shuffle_answers: true,
       open_matching: "exact",
       answers: [
         { id: "mock-answer-uuid-1", order: 1, text: "4", is_correct: true },

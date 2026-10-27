@@ -37,7 +37,6 @@ describe("withQuestionType", () => {
       { ...question, answers: [] },
       "true_false",
     );
-    expect(trueFalse.shuffle_answers).toBe(false);
     expect(trueFalse.answers.map((answer) => answer.text)).toEqual([
       "Prawda",
       "Fałsz",
@@ -67,7 +66,6 @@ describe("withQuestionType", () => {
 
     const single = withQuestionType(trueFalse, "single_choice");
     expect(single.answers.map((answer) => answer.text)).toEqual(["", ""]);
-    expect(single.shuffle_answers).toBe(false);
   });
 
   it("keeps edited true/false labels as answers of the new type", () => {
@@ -106,7 +104,6 @@ describe("restoreQuestionTypes", () => {
     expect(single.answers.map((answer) => answer.text)).toEqual(["", ""]);
     const [restored] = restoreQuestionTypes([single], previous);
     expect(restored.type).toBe("true_false");
-    expect(restored.shuffle_answers).toBe(false);
     expect(restored.answers.map((answer) => answer.text)).toEqual([
       "Prawda",
       "Fałsz",

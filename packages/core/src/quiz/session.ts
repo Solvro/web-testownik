@@ -120,13 +120,9 @@ function getAnswerShuffleSeed(
  * Whether the answers show in a random order. True/false keeps its "true"
  * label first; an open question has nothing to shuffle.
  */
-export function shufflesAnswers(
-  question: Pick<Question, "type" | "shuffle_answers">,
-) {
+export function shufflesAnswers(question: Pick<Question, "type">) {
   return (
-    question.shuffle_answers &&
-    question.type !== "true_false" &&
-    question.type !== "open"
+    question.type === "single_choice" || question.type === "multiple_choice"
   );
 }
 

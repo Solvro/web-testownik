@@ -1425,7 +1425,6 @@ describe("Quiz editor", () => {
         text: item.text,
         explanation: "",
         type: item.type,
-        shuffle_answers: item.shuffle_answers,
         open_matching: item.open_matching,
         image: null,
         answers: item.answers.map((answer) => ({

@@ -115,7 +115,6 @@ export const questionFormSchema = z
     text: z.string(),
     explanation: z.string().optional(),
     type: z.enum(QUESTION_TYPES),
-    shuffle_answers: z.boolean(),
     open_matching: z.enum(OPEN_MATCHINGS),
     is_ai_generated: z.boolean().optional(),
     /** Whether the text, answers and explanation render as Markdown. Defaults to true. */

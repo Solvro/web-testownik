@@ -38,7 +38,6 @@ export function isQuestion(value: unknown): value is Question {
     isOptionalBoundedString(question.explanation, MAX_EXPLANATION_LENGTH) &&
     isOptionalBoundedString(question.image, MAX_IMAGE_URL_LENGTH) &&
     isQuestionType(question.type) &&
-    typeof question.shuffle_answers === "boolean" &&
     (question.open_matching === "exact" ||
       question.open_matching === "similar") &&
     Array.isArray(question.answers) &&

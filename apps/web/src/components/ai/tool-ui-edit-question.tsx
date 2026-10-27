@@ -63,7 +63,6 @@ interface EditedAnswer {
 
 interface EditedQuestion {
   type?: Question["type"];
-  shuffle_answers?: boolean;
   open_matching?: Question["open_matching"];
   text?: string;
   answers?: EditedAnswer[];
@@ -146,10 +145,6 @@ function buildEditedQuestion(
     image_url: edit.image_url ?? question.image_url,
     image_upload: edit.image_upload ?? question.image_upload,
     type,
-    shuffle_answers:
-      type === "true_false"
-        ? false
-        : (edit.shuffle_answers ?? question.shuffle_answers),
     open_matching: edit.open_matching ?? question.open_matching,
     answers,
   };
@@ -169,11 +164,6 @@ function buildDiffSections(
       label: "Typ pytania",
       before: QUESTION_TYPE_LABELS[beforeQuestion.type],
       after: QUESTION_TYPE_LABELS[afterQuestion.type],
-    },
-    {
-      label: "Losowanie odpowiedzi",
-      before: String(beforeQuestion.shuffle_answers),
-      after: String(afterQuestion.shuffle_answers),
     },
     {
       label: "Dopasowanie odpowiedzi",

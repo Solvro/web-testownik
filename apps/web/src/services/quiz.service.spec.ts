@@ -61,7 +61,6 @@ describe("question creation", () => {
     const question = {
       text: "Question",
       type: "open" as const,
-      shuffle_answers: false,
       open_matching: "similar" as const,
       answers: [{ text: "Answer", is_correct: true }],
     };

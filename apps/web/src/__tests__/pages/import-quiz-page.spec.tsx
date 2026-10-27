@@ -158,7 +158,6 @@ describe("ImportQuizPage", () => {
             ],
             order: 1,
             type: "single_choice",
-            shuffle_answers: true,
             open_matching: "exact",
           },
           {
@@ -168,7 +167,6 @@ describe("ImportQuizPage", () => {
             answers: [{ id: "a2", text: "A", is_correct: true, order: 1 }],
             order: 2,
             type: "single_choice",
-            shuffle_answers: true,
             open_matching: "exact",
           },
           {
@@ -179,7 +177,6 @@ describe("ImportQuizPage", () => {
             answers: [{ id: "a3", text: "A", is_correct: true, order: 1 }],
             order: 3,
             type: "single_choice",
-            shuffle_answers: true,
             open_matching: "exact",
           },
         ],

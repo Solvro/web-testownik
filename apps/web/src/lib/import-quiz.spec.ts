@@ -36,7 +36,6 @@ describe("extractImagesToUpload", () => {
         ],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -46,7 +45,6 @@ describe("extractImagesToUpload", () => {
         answers: [],
         order: 2,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -75,7 +73,6 @@ describe("extractImagesToUpload", () => {
         answers: [],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -111,7 +108,6 @@ describe("extractImagesToUpload", () => {
         ],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -140,7 +136,6 @@ describe("extractImagesToUpload", () => {
         answers: [],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -171,7 +166,6 @@ describe("extractImagesToUpload", () => {
         ],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -190,7 +184,6 @@ describe("extractImagesToUpload", () => {
         answers: [],
         order: 1,
         type: "single_choice",
-        shuffle_answers: true,
         open_matching: "exact",
         explanation: "",
       },
@@ -224,7 +217,6 @@ describe("uploadDataUrlImages", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
           answers: [
@@ -272,7 +264,6 @@ describe("uploadDataUrlImages", () => {
           order: 1,
           text: "Question 1",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
           answers: [
@@ -321,7 +312,6 @@ describe("uploadDataUrlImages", () => {
           order: 1,
           text: "Question 1",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image_url: "data:image/png;base64,aW1hZ2UtYnl0ZXM=",
           answers: [
@@ -367,7 +357,6 @@ describe("uploadDataUrlImages", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image_url: "https://example.test/image.png",
           answers: [
@@ -409,7 +398,6 @@ describe("prepareQuizForSubmission", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image: "http://example.com/image.png",
           image_url: null,
@@ -446,7 +434,6 @@ describe("prepareQuizForSubmission", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image: null,
           image_url: "http://example.com/url.png",
@@ -487,7 +474,6 @@ describe("prepareQuizForSubmission", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image: null,
           image_url: "http://example.com/url.png",
@@ -528,7 +514,6 @@ describe("prepareQuizForSubmission", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image: null,
           image_url: null,
@@ -565,7 +550,6 @@ describe("prepareQuizForSubmission", () => {
           text: "Question 1",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           image: null,
           image_url: "",
@@ -605,7 +589,6 @@ describe("TXT question type mapping", () => {
       const question = parseQuestion(lines, "1.txt", 1);
       expect(question).toMatchObject({
         type: "true_false",
-        shuffle_answers: false,
         open_matching: "exact",
         answers: [
           {
@@ -635,7 +618,6 @@ describe("TXT question type mapping", () => {
       : [template, "Question", "A", "B"];
     expect(parseQuestion(lines, "1.txt", 1)).toMatchObject({
       type,
-      shuffle_answers: true,
       open_matching: "exact",
     });
   });
@@ -657,7 +639,6 @@ describe("JSON legacy question type mapping", () => {
       };
       expect(normalizeQuestionTypeFields(question)).toEqual({
         type,
-        shuffle_answers: true,
         open_matching: "exact",
       });
     },
@@ -668,13 +649,11 @@ describe("JSON legacy question type mapping", () => {
       normalizeQuestionTypeFields({
         type: "open",
         multiple: true,
-        shuffle_answers: false,
         open_matching: "similar",
         answers: [{ is_correct: true }],
       }),
     ).toEqual({
       type: "open",
-      shuffle_answers: false,
       open_matching: "similar",
     });
   });
@@ -710,12 +689,17 @@ describe.each([
 
     test.each([
       { type: "unknown" },
-      { shuffle_answers: "true" },
       { open_matching: "fuzzy" },
       { multiple: "false" },
     ])("rejects invalid type fields %j", (fields) => {
       expect(validate(quiz(fields))).not.toBeNull();
     });
+    test.each([true, false, "true", null, { obsolete: true }])(
+      "ignores the obsolete shuffle setting %j",
+      (shuffle_answers) => {
+        expect(validate(quiz({ shuffle_answers }))).toBeNull();
+      },
+    );
     test("requires two true/false answers and at least one open answer", () => {
       expect(validate(quiz({ type: "true_false" }))).toContain(
         "dokładnie dwie",
@@ -733,7 +717,81 @@ describe.each([
   },
 );
 
-test("JSON import sends only the normalized type fields to the API", async () => {
+test.each([true, false, "obsolete", null])(
+  "JSON import strips shuffle_answers=%j and sends normalized type fields",
+  async (shuffle_answers) => {
+    let payload: { questions: Record<string, unknown>[] } | undefined;
+    server.use(
+      http.post("*/quizzes/", async ({ request }) => {
+        payload = (await request.json()) as {
+          questions: Record<string, unknown>[];
+        };
+        return HttpResponse.json({ id: "imported", ...payload });
+      }),
+    );
+    const { result } = renderHook(() => useImportQuiz());
+    const question = {
+      text: "Question",
+      answers: [{ text: "A", is_correct: true }],
+    };
+    const quiz = {
+      title: "Mapping",
+      questions: [
+        { ...question, multiple: true, shuffle_answers },
+        { ...question, multiple: false },
+        {
+          ...question,
+          multiple: false,
+          answers: [...question.answers, { text: "B", is_correct: true }],
+        },
+        {
+          ...question,
+          answers: [...question.answers, { text: "B", is_correct: true }],
+        },
+        {
+          ...question,
+          multiple: true,
+          type: "open",
+          open_matching: "similar",
+        },
+        {
+          ...question,
+          type: "true_false",
+          answers: [...question.answers, { text: "B", is_correct: false }],
+        },
+      ],
+    };
+    act(() => {
+      result.current.handleUploadTypeChange("json");
+    });
+    result.current.monacoEditorRef.current = {
+      getValue: () => JSON.stringify(quiz),
+    };
+    await act(async () => {
+      await result.current.handleImport();
+    });
+    expect(result.current.error).toBeNull();
+    expect(
+      payload?.questions.map(({ type, open_matching }) => ({
+        type,
+        open_matching,
+      })),
+    ).toEqual([
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "single_choice", open_matching: "exact" },
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "open", open_matching: "similar" },
+      { type: "true_false", open_matching: "exact" },
+    ]);
+    for (const imported of payload?.questions ?? []) {
+      expect(imported).not.toHaveProperty("multiple");
+      expect(imported).not.toHaveProperty("shuffle_answers");
+    }
+  },
+);
+
+test("legacy JSON import strips the obsolete shuffle setting", async () => {
   let payload: { questions: Record<string, unknown>[] } | undefined;
   server.use(
     http.post("*/quizzes/", async ({ request }) => {
@@ -744,64 +802,34 @@ test("JSON import sends only the normalized type fields to the API", async () =>
     }),
   );
   const { result } = renderHook(() => useImportQuiz());
-  const question = {
-    text: "Question",
-    answers: [{ text: "A", is_correct: true }],
-  };
-  const quiz = {
-    title: "Mapping",
-    questions: [
-      { ...question, multiple: true },
-      { ...question, multiple: false },
-      {
-        ...question,
-        multiple: false,
-        answers: [...question.answers, { text: "B", is_correct: true }],
-      },
-      {
-        ...question,
-        answers: [...question.answers, { text: "B", is_correct: true }],
-      },
-      {
-        ...question,
-        multiple: true,
-        type: "open",
-        shuffle_answers: false,
-        open_matching: "similar",
-      },
-      {
-        ...question,
-        type: "true_false",
-        shuffle_answers: true,
-        answers: [...question.answers, { text: "B", is_correct: false }],
-      },
-    ],
-  };
   act(() => {
     result.current.handleUploadTypeChange("json");
   });
   result.current.monacoEditorRef.current = {
-    getValue: () => JSON.stringify(quiz),
+    getValue: () =>
+      JSON.stringify({
+        title: "Legacy quiz",
+        questions: [
+          {
+            question: "Question",
+            shuffle_answers: "obsolete",
+            type: "open",
+            open_matching: "similar",
+            answers: [{ answer: "Answer", correct: true }],
+          },
+        ],
+      }),
   };
   await act(async () => {
     await result.current.handleImport();
   });
   expect(result.current.error).toBeNull();
-  expect(
-    payload?.questions.map(({ type, shuffle_answers, open_matching }) => ({
-      type,
-      shuffle_answers,
-      open_matching,
-    })),
-  ).toEqual([
-    { type: "multiple_choice", shuffle_answers: true, open_matching: "exact" },
-    { type: "single_choice", shuffle_answers: true, open_matching: "exact" },
-    { type: "multiple_choice", shuffle_answers: true, open_matching: "exact" },
-    { type: "multiple_choice", shuffle_answers: true, open_matching: "exact" },
-    { type: "open", shuffle_answers: false, open_matching: "similar" },
-    { type: "true_false", shuffle_answers: false, open_matching: "exact" },
-  ]);
-  for (const imported of payload?.questions ?? []) {
-    expect(imported).not.toHaveProperty("multiple");
-  }
+  expect(payload?.questions).toHaveLength(1);
+  expect(payload?.questions[0]).toMatchObject({
+    type: "open",
+    open_matching: "similar",
+    text: "Question",
+    answers: [{ text: "Answer", is_correct: true }],
+  });
+  expect(payload?.questions[0]).not.toHaveProperty("shuffle_answers");
 });

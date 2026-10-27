@@ -25,7 +25,7 @@ const ALLOWED_QUESTION_KEYS = [
   "explanation",
   "multiple",
   "type",
-  "shuffle_answers",
+  "shuffle_answers", // Ignored for older exports.
   "open_matching",
   "is_ai_generated",
   "image", // Also allowed for backward compatibility
@@ -112,12 +112,6 @@ export const validateQuiz = (input: unknown): string | null => {
     }
     if (q.type !== undefined && !isQuestionType(q.type)) {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
-    }
-    if (
-      q.shuffle_answers !== undefined &&
-      typeof q.shuffle_answers !== "boolean"
-    ) {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "shuffle_answers" w formacie logicznym (true/false).`;
     }
     if (
       q.open_matching !== undefined &&

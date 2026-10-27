@@ -27,7 +27,6 @@ describe("validateQuizForm", () => {
           text: "", // Missing text
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           answers: [{ id: "a1", order: 1, text: "a1", is_correct: true }],
         },
@@ -53,7 +52,6 @@ describe("validateQuizForm", () => {
           text: "Question text",
           explanation: "",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           answers: [
             { id: "a1", order: 1, text: "", is_correct: true }, // Missing text

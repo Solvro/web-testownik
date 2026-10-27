@@ -571,11 +571,9 @@ function ImportQuizPageContent(): React.JSX.Element {
                           podstawie liczby poprawnych odpowiedzi.
                         </li>
                         <li>
-                          <TypographyInlineCode>
-                            shuffle_answers
-                          </TypographyInlineCode>{" "}
-                          – czy losować odpowiedzi; domyślnie true, dla
-                          true_false zawsze false (opcjonalne).
+                          Odpowiedzi pytań single_choice i multiple_choice są
+                          zawsze losowane. Pytania true_false i open zachowują
+                          kolejność odpowiedzi.
                         </li>
                         <li>
                           <TypographyInlineCode>
@@ -642,7 +640,6 @@ function ImportQuizPageContent(): React.JSX.Element {
             "order": 1,
             "text": "Ile wynosi 2 + 2?",
             "type": "single_choice",
-            "shuffle_answers": true,
             "open_matching": "exact",
             "explanation": "2 + 2 = 4.",
             "answers": [
@@ -662,7 +659,6 @@ function ImportQuizPageContent(): React.JSX.Element {
             "order": 2,
             "text": "Które liczby są parzyste?",
             "type": "multiple_choice",
-            "shuffle_answers": true,
             "open_matching": "exact",
             "answers": [
                 {
@@ -686,7 +682,6 @@ function ImportQuizPageContent(): React.JSX.Element {
             "order": 3,
             "text": "Ziemia krąży wokół Słońca.",
             "type": "true_false",
-            "shuffle_answers": false,
             "open_matching": "exact",
             "answers": [
                 {
@@ -705,7 +700,6 @@ function ImportQuizPageContent(): React.JSX.Element {
             "order": 4,
             "text": "Jakie miasto jest stolicą Polski?",
             "type": "open",
-            "shuffle_answers": true,
             "open_matching": "similar",
             "answers": [
                 {

@@ -25,10 +25,6 @@ const practiceQuestionSchema = z.object({
     .describe(
       "Typ pytania: single_choice, multiple_choice, true_false lub open",
     ),
-  shuffle_answers: z
-    .boolean()
-    .optional()
-    .describe("Losowanie odpowiedzi; false dla true_false"),
   open_matching: z
     .enum(["exact", "similar"])
     .optional()
@@ -61,10 +57,6 @@ const editQuestionSchema = z.object({
     .describe(
       "Typ pytania: single_choice, multiple_choice, true_false lub open",
     ),
-  shuffle_answers: z
-    .boolean()
-    .optional()
-    .describe("Losowanie odpowiedzi; false dla true_false"),
   open_matching: z
     .enum(["exact", "similar"])
     .optional()
@@ -377,7 +369,6 @@ export async function POST(request: Request) {
                   text: truncateQuestionPreview(q.text),
                   answer_count: q.answers.length,
                   type: q.type,
-                  shuffle_answers: q.shuffle_answers,
                   open_matching: q.open_matching,
                   has_explanation:
                     q.explanation !== undefined && q.explanation.trim() !== "",
@@ -404,7 +395,6 @@ export async function POST(request: Request) {
                 text: question.text,
                 explanation: question.explanation ?? null,
                 type: question.type,
-                shuffle_answers: question.shuffle_answers,
                 open_matching: question.open_matching,
                 answers: question.answers.map((a) => ({
                   text: a.text,

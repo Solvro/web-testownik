@@ -67,7 +67,6 @@ describe("Migration", () => {
         mockLegacyGuestQuiz.questions[0].question,
       );
       expect(firstQuestion.type).toBe("multiple_choice");
-      expect(firstQuestion.shuffle_answers).toBe(true);
       expect(firstQuestion.open_matching).toBe("exact");
       expect(firstQuestion).not.toHaveProperty("multiple");
       // Legacy id becomes 'order' in new format

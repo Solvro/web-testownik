@@ -287,7 +287,6 @@ export function withQuestionType(
   const changed = {
     ...question,
     type,
-    shuffle_answers: type === "true_false" ? false : question.shuffle_answers,
   };
   if (type === "true_false") {
     const kept = question.answers.slice(0, 2);
@@ -367,7 +366,7 @@ function sameAnswers(a: AnswerFormData[], b: AnswerFormData[]) {
 /** Previous question types by question ID, for undoing `withQuestionType`. */
 export type QuestionTypes = Map<
   string,
-  Pick<QuestionFormData, "type" | "shuffle_answers" | "answers">
+  Pick<QuestionFormData, "type" | "answers">
 >;
 
 /** The types and answers of the questions, to restore after a bulk change. */
@@ -379,7 +378,6 @@ export function rememberQuestionTypes(
       question.id,
       {
         type: question.type,
-        shuffle_answers: question.shuffle_answers,
         answers: question.answers,
       },
     ]),
@@ -409,7 +407,6 @@ export function restoreQuestionTypes(
     return {
       ...question,
       type: before.type,
-      shuffle_answers: before.shuffle_answers,
       answers: rewrote ? before.answers : question.answers,
     };
   });

@@ -11,11 +11,10 @@ import type { LegacyQuiz } from "@/types/quiz-legacy";
 /** Normalize type fields from current JSON or legacy exports/local storage. */
 export function normalizeQuestionTypeFields(question: {
   type?: unknown;
-  shuffle_answers?: unknown;
   open_matching?: unknown;
   multiple?: unknown;
   answers: { is_correct: boolean }[];
-}): Pick<Question, "type" | "shuffle_answers" | "open_matching"> {
+}): Pick<Question, "type" | "open_matching"> {
   const type = isQuestionType(question.type)
     ? question.type
     : question.multiple === true
@@ -24,12 +23,6 @@ export function normalizeQuestionTypeFields(question: {
   return {
     ...DEFAULT_QUESTION_TYPE_FIELDS,
     type,
-    shuffle_answers:
-      type === "true_false"
-        ? false
-        : typeof question.shuffle_answers === "boolean"
-          ? question.shuffle_answers
-          : true,
     open_matching: question.open_matching === "similar" ? "similar" : "exact",
   };
 }

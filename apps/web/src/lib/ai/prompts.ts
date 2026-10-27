@@ -42,7 +42,7 @@ Zasady:
 - Wyrażenia matematyczne ZAWSZE otaczaj znakami dolara: $x \cdot y$ (inline) lub $$wzór$$ (block). Nigdy nie pisz surowych komend LaTeX bez delimitera $.
 - Możesz pomagać w zrozumieniu materiału, wyjaśniać pojęcia.
 - Generowane i edytowane pytania opisuj polem type: single_choice (jedna poprawna odpowiedź), multiple_choice (wielokrotny wybór), true_false (dokładnie dwie odpowiedzi: order 1 to prawda, order 2 to fałsz; jedna poprawna) lub open (co najmniej jedna akceptowana odpowiedź w answers, wszystkie is_correct=true, bez zdjęć odpowiedzi). Przy edycji zachowaj typ, chyba że użytkownik prosi o jego zmianę.
-- Pole shuffle_answers określa losowanie odpowiedzi (domyślnie true, dla true_false zawsze false). Pole open_matching dotyczy tylko pytań open: exact (domyślnie) lub similar (dopasowanie z tolerancją). Zawsze podawaj type podczas generowania i edycji pytania.
+- Odpowiedzi single_choice i multiple_choice są zawsze losowane, a true_false i open zachowują kolejność. Pole open_matching dotyczy tylko pytań open: exact (domyślnie) lub similar (dopasowanie z tolerancją). Zawsze podawaj type podczas generowania i edycji pytania.
 - Jeśli użytkownik prosi o pytanie treningowe, podobne pytanie lub chce się przetestować, użyj narzędzia generate_practice_questions aby wygenerować interaktywne pytania. Możesz wygenerować jedno lub wiele pytań w jednym wywołaniu. Dostosuj liczbę do prośby użytkownika.
 - Jeśli użytkownik prosi o listę pytań, przegląd pytań, wyszukanie podobnych pytań lub kontekst całego quizu, użyj narzędzia list_questions zamiast zgadywać z pamięci rozmowy.
 - Jeśli użytkownik pyta o konkretne pytanie z quizu (np. "pokaż pytanie 5", "wyjaśnij pytanie nr 12"), użyj narzędzia get_question aby pobrać pełne szczegóły tego pytania.
@@ -72,7 +72,7 @@ ${intro}
 
 Aktualne pytanie (nr ${question.order.toString()}):
 ${question.text}
-Typ: ${question.type}; shuffle_answers: ${String(question.shuffle_answers)}; open_matching: ${question.open_matching}
+Typ: ${question.type}; open_matching: ${question.open_matching}
 
 Odpowiedzi:
 ${formatAnswers(question)}`;
@@ -105,7 +105,7 @@ export function buildQuestionExplanationUserPrompt(question: Question): string {
 
 Pytanie:
 ${question.text}
-Typ: ${question.type}; shuffle_answers: ${String(question.shuffle_answers)}; open_matching: ${question.open_matching}
+Typ: ${question.type}; open_matching: ${question.open_matching}
 
 Odpowiedzi:
 ${formatAnswers(question)}`;
@@ -123,7 +123,7 @@ export function buildQuestionHintUserPrompt(question: Question): string {
 
 Pytanie:
 ${question.text}
-Typ: ${question.type}; shuffle_answers: ${String(question.shuffle_answers)}; open_matching: ${question.open_matching}
+Typ: ${question.type}; open_matching: ${question.open_matching}
 
 Odpowiedzi:
 ${formatAnswersWithoutCorrectness(question)}

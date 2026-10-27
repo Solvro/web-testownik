@@ -13,7 +13,6 @@ const makeQuestion = (id: string): Question => ({
   order: 1,
   text: id,
   type: "single_choice",
-  shuffle_answers: true,
   open_matching: "exact",
   answers: [],
 });

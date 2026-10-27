@@ -20,7 +20,6 @@ const currentQuiz: Quiz = {
       order: 1,
       text: "Question?",
       type: "single_choice",
-      shuffle_answers: true,
       open_matching: "exact",
       answers: [
         {
@@ -78,7 +77,6 @@ describe("migrateLegacyGuestQuizzes", () => {
           order: 1,
           text: "Question?",
           type: "single_choice",
-          shuffle_answers: true,
           open_matching: "exact",
           explanation: undefined,
           image_url: null,
@@ -103,9 +101,10 @@ describe("migrateLegacyGuestQuizzes", () => {
     const storedQuiz = {
       ...currentQuiz,
       questions: currentQuiz.questions.map(
-        ({ type, shuffle_answers, open_matching, ...question }) => ({
+        ({ type, open_matching, ...question }) => ({
           ...question,
           multiple: false,
+          shuffle_answers: "obsolete",
           answers: [
             ...question.answers,
             { id: "a-2", order: 2, text: "Another answer", is_correct: true },
@@ -128,10 +127,10 @@ describe("migrateLegacyGuestQuizzes", () => {
     };
     expect(payload.questions[0]).toMatchObject({
       type: "multiple_choice",
-      shuffle_answers: true,
       open_matching: "exact",
     });
     expect(payload.questions[0]).not.toHaveProperty("multiple");
+    expect(payload.questions[0]).not.toHaveProperty("shuffle_answers");
   });
 
   it("migrates legacy quizzes automatically", async () => {

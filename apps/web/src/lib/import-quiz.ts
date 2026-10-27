@@ -48,7 +48,6 @@ function txtQuestionTypeFields(answers: Answer[], isTrueFalse: boolean) {
   }
   return {
     type: isTrueFalse ? ("true_false" as const) : inferChoiceType(answers),
-    shuffle_answers: !isTrueFalse,
     open_matching: "exact" as const,
   };
 }
@@ -834,16 +833,10 @@ export const useImportQuiz = () => {
       };
       type RawQuestion = Omit<
         Question,
-        | "id"
-        | "order"
-        | "answers"
-        | "type"
-        | "shuffle_answers"
-        | "open_matching"
+        "id" | "order" | "answers" | "type" | "open_matching"
       > &
-        Partial<
-          Pick<Question, "type" | "shuffle_answers" | "open_matching">
-        > & {
+        Partial<Pick<Question, "type" | "open_matching">> & {
+          shuffle_answers?: unknown;
           multiple?: boolean;
           order?: number;
           answers: RawAnswer[];
@@ -865,7 +858,7 @@ export const useImportQuiz = () => {
       const normalizedQuiz: Quiz = {
         ...quizData,
         questions: quizData.questions.map((q, qIndex) => {
-          const { image: qImage, multiple, ...qRest } = q;
+          const { image: qImage, multiple, shuffle_answers, ...qRest } = q;
           return {
             ...qRest,
             image_url: q.image_url ?? qImage,

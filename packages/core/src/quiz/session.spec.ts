@@ -16,7 +16,6 @@ const makeQuestion = (id: string): Question => ({
   order: 1,
   text: id,
   type: "single_choice",
-  shuffle_answers: true,
   open_matching: "exact",
   answers: ["a", "b", "c", "d"].map((suffix, index) => ({
     id: `${id}-${suffix}`,
@@ -60,35 +59,44 @@ const makeAnswer = (
 });
 
 describe("session-utils answer shuffling", () => {
-  it("uses question id in the answer shuffle seed", () => {
-    const first = getQuestionWithShuffledAnswers(
-      makeQuestion("q1"),
-      [],
-      "session-1",
-    );
-    const second = getQuestionWithShuffledAnswers(
-      makeQuestion("q2"),
-      [],
-      "session-1",
-    );
+  it.each(["single_choice", "multiple_choice"] as const)(
+    "shuffles %s answers using the question id in the seed",
+    (type) => {
+      const first = getQuestionWithShuffledAnswers(
+        { ...makeQuestion("q1"), type },
+        [],
+        "session-1",
+      );
+      const second = getQuestionWithShuffledAnswers(
+        { ...makeQuestion("q2"), type },
+        [],
+        "session-1",
+      );
 
-    expect(first.answers.map((answer) => answer.id)).toEqual([
-      "q1-a",
-      "q1-d",
-      "q1-b",
-      "q1-c",
-    ]);
-    expect(second.answers.map((answer) => answer.id)).toEqual([
-      "q2-d",
-      "q2-c",
-      "q2-a",
-      "q2-b",
-    ]);
-  });
+      expect(first.answers.map((answer) => answer.id)).toEqual([
+        "q1-a",
+        "q1-d",
+        "q1-b",
+        "q1-c",
+      ]);
+      expect(second.answers.map((answer) => answer.id)).toEqual([
+        "q2-d",
+        "q2-c",
+        "q2-a",
+        "q2-b",
+      ]);
+    },
+  );
 
-  it("keeps the answer order when the question does not shuffle", () => {
+  it("keeps the answer order for open and true/false questions", () => {
     const fixed = getQuestionWithShuffledAnswers(
-      { ...makeQuestion("q1"), shuffle_answers: false },
+      {
+        ...makeQuestion("q1"),
+        type: "open",
+        answers: [...makeQuestion("q1").answers].sort(
+          (a, b) => b.order - a.order,
+        ),
+      },
       [],
       "session-1",
     );
@@ -96,7 +104,9 @@ describe("session-utils answer shuffling", () => {
       {
         ...makeQuestion("q1"),
         type: "true_false",
-        answers: makeQuestion("q1").answers.slice(0, 2).toReversed(),
+        answers: makeQuestion("q1")
+          .answers.slice(0, 2)
+          .sort((a, b) => b.order - a.order),
       },
       [],
       "session-1",

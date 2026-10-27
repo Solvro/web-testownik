@@ -66,7 +66,6 @@ interface GeneratedAnswer {
 
 interface GeneratedQuestion {
   type?: Question["type"];
-  shuffle_answers?: boolean;
   open_matching?: Question["open_matching"];
   text?: string;
   answers?: GeneratedAnswer[];
@@ -131,7 +130,6 @@ const questionPayloadSchema = z
   .object({
     text: z.string(),
     type: z.enum(QUESTION_TYPES).optional(),
-    shuffle_answers: z.boolean().optional(),
     open_matching: z.enum(OPEN_MATCHINGS).optional(),
     explanation: z.string().optional(),
     image: z.string().nullable().optional(),
@@ -170,11 +168,6 @@ const questionPayloadSchema = z
       explanation: question.explanation ?? "",
       ...DEFAULT_QUESTION_TYPE_FIELDS,
       type: question.type ?? inferChoiceType(answers),
-      shuffle_answers:
-        question.type === "true_false"
-          ? false
-          : (question.shuffle_answers ??
-            DEFAULT_QUESTION_TYPE_FIELDS.shuffle_answers),
       open_matching:
         question.open_matching ?? DEFAULT_QUESTION_TYPE_FIELDS.open_matching,
       is_ai_generated: true,
@@ -211,11 +204,6 @@ function toQuestionDraft(
     type: isQuestionType(question.type)
       ? question.type
       : inferChoiceType(answers),
-    shuffle_answers:
-      question.type === "true_false"
-        ? false
-        : (question.shuffle_answers ??
-          DEFAULT_QUESTION_TYPE_FIELDS.shuffle_answers),
     open_matching:
       question.open_matching ?? DEFAULT_QUESTION_TYPE_FIELDS.open_matching,
     is_ai_generated: true,

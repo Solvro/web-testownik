@@ -45,7 +45,6 @@ function laterChange(
     now.text === question.text &&
     (now.explanation ?? "") === question.explanation &&
     now.type === question.type &&
-    now.shuffle_answers === question.shuffle_answers &&
     now.open_matching === question.open_matching &&
     now.answers.length === question.answers.length &&
     now.answers.every((answer, index) => {
