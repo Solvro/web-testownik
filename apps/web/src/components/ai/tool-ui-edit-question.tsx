@@ -2,7 +2,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_QUESTION_TYPE_FIELDS,
-  inferChoiceType,
   isQuestionType,
 } from "@testownik/core/quiz/question";
 import { prepareQuestionForSubmission } from "@testownik/core/quiz/schema";

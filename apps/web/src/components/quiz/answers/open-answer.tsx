@@ -54,6 +54,7 @@ export function OpenAnswer({
           aria-label="Twoja odpowiedź"
           value={response}
           disabled={checked}
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- The question is answered by typing here; the field is the page's one input and appears with the question.
           autoFocus={!checked}
           autoComplete="off"
           autoCapitalize="none"

@@ -38,7 +38,7 @@ export function useStudyMode(quizId: string) {
   const mode = useSyncExternalStore(
     subscribe,
     () => readMode(quizId),
-    () => "quiz" as StudyMode,
+    () => "quiz",
   );
   const setMode = (next: StudyMode) => {
     memory.set(quizId, next);

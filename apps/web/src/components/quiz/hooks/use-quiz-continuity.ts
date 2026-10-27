@@ -150,6 +150,7 @@ export function useQuizContinuity({
   // This tab, so that it never connects to or listens to itself: a host
   // left behind by a previous initialisation would otherwise relay this
   // tab's own messages back to it.
+  // eslint-disable-next-line react/hook-use-state -- Drawn once; never set.
   const [instanceId] = useState(() => crypto.randomUUID());
   const peerRef = useRef<Peer | null>(null);
   // Peers created but not yet open; closing destroys them too.

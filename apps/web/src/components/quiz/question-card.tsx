@@ -190,9 +190,8 @@ export function QuestionCard({
     questionChecked && (wasCorrect ?? gradeResponse(question, selectedAnswers));
   // A record without a response is a skipped question, or a flashcard the
   // learner graded themselves.
-  const status = !questionChecked
-    ? null
-    : correct
+  const status = questionChecked
+    ? correct
       ? noResponse
         ? "Fiszka oceniona jako znana"
         : "Poprawna odpowiedź!"
@@ -202,7 +201,8 @@ export function QuestionCard({
           : open
             ? "Nie podano odpowiedzi"
             : "Nie wybrano odpowiedzi"
-        : "Niepoprawna odpowiedź.";
+        : "Niepoprawna odpowiedź."
+    : null;
 
   const answersCount = getQuestionAnsweredCount(
     question.id,

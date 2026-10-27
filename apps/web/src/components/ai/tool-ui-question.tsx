@@ -269,7 +269,7 @@ function QuestionCard({
       ? []
       : [typedAnswer]
     : selectedAnswers.flatMap((index) => {
-        const answer = answers[index];
+        const answer = answers.at(index);
         return answer === undefined ? [] : [answer.id];
       });
   const isCorrect = checked && gradeResponse(visibleQuestion, response);

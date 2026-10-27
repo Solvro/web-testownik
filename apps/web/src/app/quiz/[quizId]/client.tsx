@@ -336,7 +336,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             {quiz.questions.length === 0 ? null : (
               <Tabs
                 value={studyMode}
-                onValueChange={(value) => {
+                onValueChange={(value: unknown) => {
                   if (value === "quiz" || value === "flashcards") {
                     resetInactivityTimer();
                     setStudyMode(value);

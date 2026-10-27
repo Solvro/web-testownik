@@ -111,7 +111,7 @@ export function FlashcardCard({
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const current = gesture.current;
-    if (current === null || current.pointerId !== event.pointerId) {
+    if (current?.pointerId !== event.pointerId) {
       return;
     }
     const dx = event.clientX - current.x;
@@ -123,7 +123,7 @@ export function FlashcardCard({
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     const current = gesture.current;
-    if (current === null || current.pointerId !== event.pointerId) {
+    if (current?.pointerId !== event.pointerId) {
       return;
     }
     gesture.current = null;
@@ -184,7 +184,6 @@ export function FlashcardCard({
     // `flip` and `grade` only touch refs and state setters, and `grade`
     // reaches the latest `onGrade` through its ref, so one registration
     // lasts the card's life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markdown = question.is_markdown_enabled !== false;
@@ -202,8 +201,10 @@ export function FlashcardCard({
 
   return (
     <div className="select-none" data-testid="flashcard">
+      {/* Above the neighbouring columns, so that a card dragged or thrown
+          sideways passes over the quiz info instead of under it. */}
       <div
-        className="relative touch-pan-y"
+        className="relative z-10 touch-pan-y"
         style={{
           transform,
           opacity: leaving === null ? 1 : 0,
@@ -217,7 +218,6 @@ export function FlashcardCard({
         onPointerCancel={onPointerCancel}
       >
         <div className="perspective-distant">
-          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- Pointer events on the parent flip and swipe; the keyboard is handled globally and by the buttons below. */}
           <div
             role="group"
             aria-label={`Fiszka: pytanie ${String(question.order)}, ${flipped ? "odpowiedź" : "pytanie"}`}

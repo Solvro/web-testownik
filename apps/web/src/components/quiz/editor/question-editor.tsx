@@ -443,7 +443,7 @@ export function QuestionEditor({
                   <>
                     <DropdownMenuRadioGroup
                       value={question.open_matching}
-                      onValueChange={(value) => {
+                      onValueChange={(value: unknown) => {
                         if (value === "exact" || value === "similar") {
                           updateQuestion(form, questionId, (current) => ({
                             ...current,
