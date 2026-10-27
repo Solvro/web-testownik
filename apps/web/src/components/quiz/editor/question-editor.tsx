@@ -68,7 +68,7 @@ import { imageUpdates, useEditorImage } from "./use-editor-image";
  * has focus. The buttons inside show their own focus instead.
  */
 const quietField =
-  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
+  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50 has-data-held:bg-transparent has-data-held:ring-3 has-data-held:ring-ring/50";
 
 export function QuestionEditor({
   hidden = false,
@@ -464,19 +464,7 @@ export function QuestionEditor({
                     </DropdownMenuRadioGroup>
                     <DropdownMenuSeparator />
                   </>
-                ) : trueFalse ? null : (
-                  <DropdownMenuCheckboxItem
-                    checked={question.shuffle_answers}
-                    onCheckedChange={(checked) => {
-                      updateQuestion(form, questionId, (current) => ({
-                        ...current,
-                        shuffle_answers: checked,
-                      }));
-                    }}
-                  >
-                    Losowa kolejność odpowiedzi
-                  </DropdownMenuCheckboxItem>
-                )}
+                ) : null}
                 <DropdownMenuCheckboxItem
                   checked={markdown}
                   onCheckedChange={(checked) => {
@@ -623,15 +611,6 @@ export function QuestionEditor({
             }
             className="space-y-2"
           >
-            {open || trueFalse ? (
-              <p className="text-muted-foreground text-sm">
-                {trueFalse
-                  ? "Pierwsza odpowiedź oznacza prawdę, druga fałsz. Etykiety można zmienić; ich kolejność nie jest losowana."
-                  : question.open_matching === "similar"
-                    ? "Wpisana odpowiedź jest zaliczana, gdy pasuje do jednej z poniższych, także z drobnymi literówkami, bez znaków diakrytycznych i interpunkcji."
-                    : "Wpisana odpowiedź jest zaliczana, gdy jest taka sama jak jedna z poniższych. Wielkość liter i odstępy nie mają znaczenia."}
-              </p>
-            ) : null}
             <form.Field name={`${path}.answers`}>
               {(answersField) => <FieldError errors={answersField.errors} />}
             </form.Field>
@@ -698,11 +677,20 @@ export function QuestionEditor({
                 {open ? "Dodaj akceptowaną odpowiedź" : "Dodaj odpowiedź"}
               </Button>
             )}
+            {open || trueFalse ? (
+              <p className="text-muted-foreground px-1 text-xs">
+                {trueFalse
+                  ? "Pierwsza odpowiedź oznacza prawdę, druga fałsz."
+                  : question.open_matching === "similar"
+                    ? "Zaliczane są też odpowiedzi z drobnymi literówkami."
+                    : "Zaliczana jest tylko dokładna odpowiedź."}
+              </p>
+            ) : null}
           </section>
 
           <form.Field name={`${path}.explanation`}>
             {(field) => (
-              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-2 has-[textarea:focus]:ring-2 sm:flex-row sm:items-start">
+              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-ring/50 has-data-held:ring-ring/50 flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-3 has-[textarea:focus]:ring-3 sm:flex-row sm:items-start">
                 <label
                   htmlFor={`explanation-${questionId}`}
                   className="shrink-0 py-0.5 leading-relaxed font-semibold"

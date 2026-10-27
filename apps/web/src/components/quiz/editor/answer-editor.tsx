@@ -123,14 +123,15 @@ export function AnswerEditor({
                     data-correct={answer.is_correct}
                     className={cn(
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
-                      // Rings for the text field only; the buttons inside show their own focus.
-                      "has-[textarea:focus]:ring-primary has-data-held:ring-primary has-data-held:ring-2 has-[textarea:focus]:ring-2",
+                      // Focus as on an Input, for the text field only; the buttons inside show their own focus.
+                      "has-[textarea:focus]:border-ring has-[textarea:focus]:ring-ring/50 has-data-held:border-ring has-data-held:ring-ring/50 has-data-held:ring-3 has-[textarea:focus]:ring-3",
                       marked
                         ? conflict
                           ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"
                           : "border-green-600/45 bg-green-500/[0.07] dark:border-green-400/40 dark:bg-green-400/10"
                         : "border-border hover:border-foreground/20 dark:bg-input/20",
-                      invalid && "border-destructive",
+                      invalid &&
+                        "border-destructive ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40 ring-3",
                     )}
                   >
                     {accepted ? (
