@@ -353,12 +353,14 @@ export function QuestionEditor({
               : "bg-card/95 supports-backdrop-filter:bg-card/80 rounded-t-xl sm:sticky sm:top-14",
           )}
         >
-          <h2
-            aria-label={`Pytanie ${number}`}
-            className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
-          >
-            {number}
-          </h2>
+          {embedded ? null : (
+            <h2
+              aria-label={`Pytanie ${number}`}
+              className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
+            >
+              {number}
+            </h2>
+          )}
           <div className="order-last flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:order-none sm:w-auto sm:flex-1">
             <MarkdownToolbar
               disabled={disabled}
@@ -366,6 +368,12 @@ export function QuestionEditor({
               formatting={markdown}
               className="bg-muted/60 dark:bg-input/30 rounded-lg p-0.5"
             />
+            {embedded ? (
+              // The dialog has no title row, so the number sits by the options.
+              <span className="text-muted-foreground ml-auto text-sm tabular-nums">
+                Pytanie {number}
+              </span>
+            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -463,7 +471,12 @@ export function QuestionEditor({
           </div>
         </header>
 
-        <div className="space-y-5 px-4 pt-5 pb-6 sm:pr-6 sm:pl-15 sm:**:scroll-mt-14">
+        <div
+          className={cn(
+            "space-y-5 px-4 pt-5 pb-6 sm:**:scroll-mt-14",
+            embedded ? "sm:px-6" : "sm:pr-6 sm:pl-15",
+          )}
+        >
           <ImageDropZone
             disabled={isUploading || disabled}
             label="Upuść zdjęcie do pytania"
@@ -509,7 +522,8 @@ export function QuestionEditor({
                             <ImageButton
                               {...imageProps}
                               target="pytania"
-                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:group-has-data-held/question:opacity-100"
+                              // Centred on the first line, which is 26px tall; the button is 32px.
+                              className="text-muted-foreground hover:text-foreground mt-0.75 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:group-has-data-held/question:opacity-100"
                             />
                           )}
                         </div>

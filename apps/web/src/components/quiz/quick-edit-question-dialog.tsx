@@ -267,7 +267,7 @@ function QuickEditQuestionForm({
           }}
         />
       </div>
-      <DialogFooter className="border-border mx-0 mb-0 flex-row items-center justify-between gap-2 border-t px-4 py-3 sm:justify-between">
+      <DialogFooter className="border-border mx-0 mb-0 flex-row flex-wrap items-center justify-between gap-2 border-t px-4 py-3 sm:justify-between">
         <div className="flex items-center gap-1">
           {hideDelete ? null : (
             <AlertDialog>
@@ -320,7 +320,7 @@ function QuickEditQuestionForm({
             />
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Anuluj
           </Button>
