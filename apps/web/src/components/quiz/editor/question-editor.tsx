@@ -27,6 +27,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FieldError } from "@/components/ui/field";
+import { Kbd } from "@/components/ui/kbd";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { AnswerEditor } from "./answer-editor";
@@ -49,9 +55,12 @@ import {
 import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
 
-/** A borderless field which shows its edges on hover and focus. */
+/**
+ * A borderless field which shows its edges on hover and while its text field
+ * has focus. The buttons inside show their own focus instead.
+ */
 const quietField =
-  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 focus-within:bg-transparent focus-within:ring-2 focus-within:ring-primary";
+  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
 
 export function QuestionEditor({
   hidden = false,
@@ -60,6 +69,9 @@ export function QuestionEditor({
   index,
   questionId,
   count,
+  number = String(index + 1),
+  embedded = false,
+  minAnswers = 1,
   onNext,
   onAdd,
   onRemove,
@@ -78,10 +90,18 @@ export function QuestionEditor({
   index: number;
   questionId: string;
   count: number;
+  /** The number shown and read out; by default the position in the form. */
+  number?: string;
+  /** Inside a dialog: no frame, and the header sticks to the scroll area. */
+  embedded?: boolean;
+  /** Answers cannot be removed below this count. */
+  minAnswers?: number;
   onNext: () => void;
   onAdd: () => void;
-  onRemove: () => void;
-  onCollapse: () => void;
+  /** Without it there is no delete button. */
+  onRemove?: () => void;
+  /** Without it there is no collapse button, and Escape is left alone. */
+  onCollapse?: () => void;
   onUploadStart: () => void;
   onUploadEnd: () => void;
 }) {
@@ -107,7 +127,6 @@ export function QuestionEditor({
     return null;
   }
   const path = `questions[${String(index)}]` as `questions[${number}]`;
-  const number = String(index + 1);
   const isLast = index === count - 1;
   const imageProps = {
     image: question.image,
@@ -167,7 +186,11 @@ export function QuestionEditor({
     const answers = form.getFieldValue(`${path}.answers`);
     const position = answers.findIndex((answer) => answer.id === answerId);
     const removed = answers.at(position);
-    if (position === -1 || removed === undefined) {
+    if (
+      position === -1 ||
+      removed === undefined ||
+      answers.length <= minAnswers
+    ) {
       return;
     }
     const neighbour =
@@ -273,7 +296,11 @@ export function QuestionEditor({
         hidden={hidden}
         data-testid="question-editor"
         aria-label={`Pytanie ${number}`}
-        className="bg-card border-primary/60 ring-primary/15 rounded-xl border ring-3"
+        className={cn(
+          embedded
+            ? "bg-popover"
+            : "bg-card border-primary/60 ring-primary/15 rounded-xl border ring-3",
+        )}
         onKeyDown={(event) => {
           // Ignore keys from menus and dialogs portalled out of the card.
           if (
@@ -282,7 +309,11 @@ export function QuestionEditor({
           ) {
             return;
           }
-          if (event.key === "Escape" && !event.defaultPrevented) {
+          if (
+            event.key === "Escape" &&
+            !event.defaultPrevented &&
+            onCollapse !== undefined
+          ) {
             event.preventDefault();
             onCollapse();
             return;
@@ -314,13 +345,22 @@ export function QuestionEditor({
           }
         }}
       >
-        <header className="bg-card/95 supports-backdrop-filter:bg-card/80 border-border z-20 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-t-xl border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:sticky sm:top-14 sm:px-4">
-          <h2
-            aria-label={`Pytanie ${number}`}
-            className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
-          >
-            {number}
-          </h2>
+        <header
+          className={cn(
+            "border-border z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-2.5 supports-backdrop-filter:backdrop-blur-md sm:px-4",
+            embedded
+              ? "bg-popover/95 supports-backdrop-filter:bg-popover/80 sticky top-0"
+              : "bg-card/95 supports-backdrop-filter:bg-card/80 rounded-t-xl sm:sticky sm:top-14",
+          )}
+        >
+          {embedded ? null : (
+            <h2
+              aria-label={`Pytanie ${number}`}
+              className="w-7 shrink-0 font-semibold tabular-nums sm:ml-1"
+            >
+              {number}
+            </h2>
+          )}
           <div className="order-last flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:order-none sm:w-auto sm:flex-1">
             <MarkdownToolbar
               disabled={disabled}
@@ -328,6 +368,12 @@ export function QuestionEditor({
               formatting={markdown}
               className="bg-muted/60 dark:bg-input/30 rounded-lg p-0.5"
             />
+            {embedded ? (
+              // The dialog has no title row, so the number sits by the options.
+              <span className="text-muted-foreground ml-auto text-sm tabular-nums">
+                Pytanie {number}
+              </span>
+            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -376,37 +422,61 @@ export function QuestionEditor({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="ml-auto flex items-center gap-0.5 sm:ml-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
-              aria-label={`Usuń pytanie ${number}`}
-              title="Usuń pytanie"
-              disabled={disabled || count <= 1 || isUploading}
-              onClick={onRemove}
-            >
-              <Trash2Icon />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
-              aria-label={`Zwiń pytanie ${number}`}
-              aria-expanded
-              aria-keyshortcuts="Escape"
-              data-question-toggle
-              title="Zwiń (Esc)"
-              onClick={onCollapse}
-            >
-              <ChevronUpIcon />
-            </Button>
+          <div className="ml-auto flex items-center gap-0.5 empty:hidden sm:ml-0">
+            {onRemove === undefined ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-destructive pointer-coarse:size-10"
+                      aria-label={`Usuń pytanie ${number}`}
+                      disabled={disabled || count <= 1 || isUploading}
+                      onClick={onRemove}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Usuń pytanie</TooltipContent>
+              </Tooltip>
+            )}
+            {onCollapse === undefined ? null : (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-foreground pointer-coarse:size-10"
+                      aria-label={`Zwiń pytanie ${number}`}
+                      aria-expanded
+                      aria-keyshortcuts="Escape"
+                      data-question-toggle
+                      onClick={onCollapse}
+                    >
+                      <ChevronUpIcon />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  Zwiń
+                  <Kbd>Esc</Kbd>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </header>
 
-        <div className="space-y-5 px-4 pt-5 pb-6 sm:pr-6 sm:pl-15 sm:**:scroll-mt-14">
+        <div
+          className={cn(
+            "space-y-5 px-4 pt-5 pb-6 sm:**:scroll-mt-14",
+            embedded ? "sm:px-6" : "sm:pr-6 sm:pl-15",
+          )}
+        >
           <ImageDropZone
             disabled={isUploading || disabled}
             label="Upuść zdjęcie do pytania"
@@ -444,7 +514,7 @@ export function QuestionEditor({
                             className="flex-1"
                             minHeight="2.5rem"
                             markdown={markdown}
-                            inputClassName="scroll-mb-4 py-1.5 text-lg leading-relaxed sm:text-xl"
+                            inputClassName="scroll-mb-4 py-1.5 text-base leading-relaxed"
                           />
                           {questionImage ? null : (
                             // Each field has its own image button, which
@@ -452,7 +522,8 @@ export function QuestionEditor({
                             <ImageButton
                               {...imageProps}
                               target="pytania"
-                              className="text-muted-foreground hover:text-foreground mt-1.5 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100"
+                              // Centred on the first line, which is 26px tall; the button is 32px.
+                              className="text-muted-foreground hover:text-foreground mt-0.75 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:group-has-data-held/question:opacity-100"
                             />
                           )}
                         </div>
@@ -494,7 +565,7 @@ export function QuestionEditor({
                   answerIndex={answerIndex}
                   multiple={question.multiple}
                   conflict={conflict}
-                  canDelete={question.answers.length > 1}
+                  canDelete={question.answers.length > minAnswers}
                   disabled={disabled}
                   onToggleCorrect={() => {
                     toggleCorrect(answer.id);
@@ -538,7 +609,7 @@ export function QuestionEditor({
 
           <form.Field name={`${path}.explanation`}>
             {(field) => (
-              <div className="bg-muted/50 dark:bg-input/20 focus-within:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow focus-within:ring-2 sm:flex-row sm:items-start">
+              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-2 has-[textarea:focus]:ring-2 sm:flex-row sm:items-start">
                 <label
                   htmlFor={`explanation-${questionId}`}
                   className="shrink-0 py-0.5 leading-relaxed font-semibold"

@@ -1,10 +1,14 @@
 "use client";
 
+import { Toolbar } from "@base-ui/react/toolbar";
 import {
   BoldIcon,
   CodeIcon,
   CodeXmlIcon,
   EllipsisIcon,
+  Heading1Icon,
+  Heading2Icon,
+  Heading3Icon,
   HeadingIcon,
   ItalicIcon,
   LinkIcon,
@@ -28,32 +32,43 @@ import {
 import type {
   ClipboardEvent,
   KeyboardEvent,
+  ReactElement,
   ReactNode,
   RefObject,
 } from "react";
 
 import {
-  activeInlineFormats,
+  activeFormats,
   formatMarkdownSelection,
+  literalBlock,
 } from "@/lib/markdown-format";
 import type { MarkdownFormat } from "@/lib/markdown-format";
-import { moveRovingFocus } from "@/lib/roving-focus";
 import { cn } from "@/lib/utils";
 
 import { MarkdownRenderer } from "./markdown-renderer";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Separator } from "./ui/separator";
+import { KbdShortcut } from "./ui/kbd-shortcut";
 import { Toggle } from "./ui/toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface MarkdownToolbarTargets {
   /** The field that was focused last. */
   active: RefObject<HTMLTextAreaElement | null>;
+  /**
+   * Id of the field the toolbar is formatting while the toolbar or its menu
+   * has focus, so that field keeps showing its source.
+   */
+  heldId: string | null;
+  setHeldId: (id: string | null) => void;
 }
 
 const MarkdownToolbarContext = createContext<MarkdownToolbarTargets | null>(
@@ -63,8 +78,9 @@ const MarkdownToolbarContext = createContext<MarkdownToolbarTargets | null>(
 /** Lets one toolbar format whichever field inside it was focused last. */
 export function MarkdownToolbarProvider({ children }: { children: ReactNode }) {
   const active = useRef<HTMLTextAreaElement>(null);
+  const [heldId, setHeldId] = useState<string | null>(null);
   return (
-    <MarkdownToolbarContext value={{ active }}>
+    <MarkdownToolbarContext value={{ active, heldId, setHeldId }}>
       {children}
     </MarkdownToolbarContext>
   );
@@ -120,17 +136,17 @@ function replaceValue(textarea: HTMLTextAreaElement, next: string) {
   }
 }
 
-function formatTextarea(textarea: HTMLTextAreaElement, format: MarkdownFormat) {
+function formatTextarea(
+  textarea: HTMLTextAreaElement,
+  format: MarkdownFormat,
+  // A textarea keeps its selection after losing focus.
+  start = textarea.selectionStart,
+  end = textarea.selectionEnd,
+) {
   if (textarea.disabled || textarea.readOnly) {
     return;
   }
-  // A textarea keeps its selection after losing focus.
-  const result = formatMarkdownSelection(
-    textarea.value,
-    textarea.selectionStart,
-    textarea.selectionEnd,
-    format,
-  );
+  const result = formatMarkdownSelection(textarea.value, start, end, format);
   replaceValue(textarea, result.value);
   textarea.setSelectionRange(result.start, result.end);
 }
@@ -168,7 +184,9 @@ export interface MarkdownFieldProps {
 /**
  * An auto-growing Markdown textarea. While it is not focused, text with
  * Markdown or LaTeX shows as it will in the quiz; the transparent textarea
- * stays on top, so clicking or tabbing into it edits the source.
+ * stays on top, so clicking or tabbing into it edits the source. The source
+ * also stays while the toolbar formats this field, so opening its menu does
+ * not flip the field to the rendered view.
  */
 export function MarkdownField({
   id,
@@ -194,7 +212,13 @@ export function MarkdownField({
   // The refs stay the same across renders, unlike the context object.
   const activeTarget = toolbar?.active;
   const [focused, setFocused] = useState(false);
-  const rendered = markdown && !focused && hasMarkdownMarkup(value);
+  // The selection when focus left for the toolbar; a textarea does not show
+  // its selection without focus, so it is drawn underneath instead.
+  const [selection, setSelection] = useState<[number, number] | null>(null);
+  const selectionRef = useRef<HTMLSpanElement>(null);
+  const held = toolbar?.heldId === id;
+  const rendered = markdown && !focused && !held && hasMarkdownMarkup(value);
+  const shownSelection = held && !focused ? selection : null;
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -209,6 +233,21 @@ export function MarkdownField({
       }
     };
   }, [activeTarget]);
+
+  // A background covers only the glyphs; the browser's own selection fills
+  // the line, so the highlight is padded out to the line height.
+  useLayoutEffect(() => {
+    const span = selectionRef.current;
+    if (span === null) {
+      return;
+    }
+    span.style.paddingBlock = "";
+    const glyphs = [...span.getClientRects()].at(0)?.height ?? 0;
+    const lineHeight = Number.parseFloat(getComputedStyle(span).lineHeight);
+    if (lineHeight > glyphs) {
+      span.style.paddingBlock = `${String((lineHeight - glyphs) / 2)}px`;
+    }
+  }, [shownSelection]);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -241,7 +280,25 @@ export function MarkdownField({
     <div
       className={cn("relative min-w-0", className)}
       data-slot="markdown-field"
+      // Lets a wrapper keep its focus styling while the toolbar formats this field.
+      data-held={held ? "" : undefined}
     >
+      {shownSelection === null ? null : (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 overflow-hidden break-words whitespace-pre-wrap text-transparent",
+            inputClassName,
+          )}
+        >
+          {value.slice(0, shownSelection[0])}
+          <span ref={selectionRef} className="bg-primary/20">
+            {value.slice(shownSelection[0], shownSelection[1])}
+          </span>
+          {value.slice(shownSelection[1])}
+          {"\n"}
+        </div>
+      )}
       {rendered ? (
         <div
           aria-hidden="true"
@@ -280,7 +337,13 @@ export function MarkdownField({
           }
           onFocus?.();
         }}
-        onBlur={() => {
+        onBlur={(event) => {
+          const { selectionStart, selectionEnd } = event.currentTarget;
+          setSelection(
+            selectionStart === selectionEnd
+              ? null
+              : [selectionStart, selectionEnd],
+          );
           setFocused(false);
           onBlur?.();
         }}
@@ -309,27 +372,59 @@ export function MarkdownField({
   );
 }
 
+interface Shortcut {
+  macKey?: string;
+  winKey?: string;
+  suffix: string;
+}
+
 const inlineFormats: {
   format: MarkdownFormat;
   label: string;
+  shortcut?: Shortcut;
   icon: LucideIcon;
 }[] = [
-  { format: "bold", label: "Pogrubienie", icon: BoldIcon },
-  { format: "italic", label: "Kursywa", icon: ItalicIcon },
-  { format: "code", label: "Kod", icon: CodeXmlIcon },
+  {
+    format: "bold",
+    label: "Pogrubienie",
+    shortcut: { suffix: "B" },
+    icon: BoldIcon,
+  },
+  {
+    format: "italic",
+    label: "Kursywa",
+    shortcut: { suffix: "I" },
+    icon: ItalicIcon,
+  },
+  {
+    format: "code",
+    label: "Kod",
+    shortcut: { suffix: "E" },
+    icon: CodeXmlIcon,
+  },
   { format: "math", label: "Wzór LaTeX", icon: SigmaIcon },
 ];
 
-const blockFormats: {
+interface MenuFormat {
   format: MarkdownFormat;
   label: string;
   icon: LucideIcon;
-}[] = [
+}
+
+const blockFormats: MenuFormat[] = [
   { format: "link", label: "Link", icon: LinkIcon },
   { format: "bullet", label: "Lista punktowana", icon: ListIcon },
   { format: "numbered", label: "Lista numerowana", icon: ListOrderedIcon },
   { format: "quote", label: "Cytat", icon: QuoteIcon },
-  { format: "h3", label: "Nagłówek", icon: HeadingIcon },
+];
+
+const headingFormats: MenuFormat[] = [
+  { format: "h1", label: "Nagłówek 1", icon: Heading1Icon },
+  { format: "h2", label: "Nagłówek 2", icon: Heading2Icon },
+  { format: "h3", label: "Nagłówek 3", icon: Heading3Icon },
+];
+
+const fencedFormats: MenuFormat[] = [
   { format: "codeBlock", label: "Blok kodu", icon: CodeIcon },
   { format: "mathBlock", label: "Blok wzoru", icon: PiIcon },
 ];
@@ -339,18 +434,37 @@ function keepFocus(event: { preventDefault: () => void }) {
   event.preventDefault();
 }
 
-function toolbarItems(toolbar: HTMLElement | null) {
-  return toolbar === null
-    ? []
-    : [...toolbar.querySelectorAll<HTMLElement>("button:not(:disabled)")];
+/**
+ * A tooltip above a toolbar button, with its shortcut. It lets the pointer
+ * through, so the next button can be reached while it is still showing.
+ */
+function ToolbarTooltip({
+  label,
+  shortcut,
+  render,
+}: {
+  label: string;
+  shortcut?: Shortcut;
+  render: ReactElement;
+}) {
+  return (
+    <Tooltip disableHoverablePopup>
+      <TooltipTrigger render={render} />
+      <TooltipContent side="top" className="pointer-events-none">
+        {label}
+        {shortcut === undefined ? null : <KbdShortcut {...shortcut} />}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 /**
  * Formatting buttons for the field inside the provider that was focused last.
  * They work while that field, or the toolbar itself, has focus, and show
- * which inline formats surround the caret. Otherwise they are marked
- * `aria-disabled` but keep their tab stop, so the keyboard can reach them. `children` sit after the inline
- * buttons, before the menu.
+ * which inline formats surround the caret. Otherwise they are disabled but
+ * stay focusable, so the keyboard can still reach the toolbar. `children`
+ * sit after the inline buttons, before the menu, and should be
+ * `Toolbar.Button`s to join the arrow-key navigation.
  */
 export interface ToolbarHistory {
   canUndo: boolean;
@@ -377,36 +491,63 @@ export function MarkdownToolbar({
   children?: ReactNode;
 }) {
   const toolbar = use(MarkdownToolbarContext);
+  // The refs and the setter stay the same across renders, unlike the context object.
+  const activeTarget = toolbar?.active;
+  const setHeldId = toolbar?.setHeldId;
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const focusIndex = useRef(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // A format picked from the menu, applied once the menu has closed, to the
+  // field and selection it was picked for, should focus move meanwhile.
+  const pendingFormat = useRef<{
+    format: MarkdownFormat;
+    textarea: HTMLTextAreaElement;
+    start: number;
+    end: number;
+  } | null>(null);
   const [state, setState] = useState<{
     enabled: boolean;
     active: MarkdownFormat[];
-  }>({ enabled: false, active: [] });
+    /** The fenced block the caret is in, where only that block can change. */
+    literal: MarkdownFormat | null;
+  }>({ enabled: false, active: [], literal: null });
 
-  // Follows focus and the caret: the buttons are enabled while the field or
-  // the toolbar has focus, and pressed inside the formats around the caret.
+  // Follows focus and the caret: the buttons are enabled while the field, the
+  // toolbar or its menu has focus, and pressed inside the formats around the
+  // caret. The field is told it is held, so it keeps showing its source.
   useEffect(() => {
     const update = () => {
-      const field = toolbar?.active.current ?? null;
+      const field = activeTarget?.current ?? null;
       const focus = document.activeElement;
+      // Submenus are portalled next to the menu, not inside it; Base UI
+      // marks every popup of the tree with the root's id.
+      const menu = menuRef.current;
+      const owner = menu?.dataset.rootownerid;
+      const inMenu =
+        menu !== null &&
+        focus !== null &&
+        (menu.contains(focus) ||
+          (owner !== undefined &&
+            focus.closest(`[data-rootownerid="${owner}"]`) !== null));
       const enabled =
         field !== null &&
         field.isConnected &&
-        (focus === field || toolbarRef.current?.contains(focus) === true);
+        (focus === field ||
+          toolbarRef.current?.contains(focus) === true ||
+          inMenu);
+      setHeldId?.(enabled ? field.id : null);
       const active = enabled
-        ? activeInlineFormats(
-            field.value,
-            field.selectionStart,
-            field.selectionEnd,
-          )
+        ? activeFormats(field.value, field.selectionStart, field.selectionEnd)
         : [];
+      const literal = enabled
+        ? literalBlock(field.value, field.selectionStart, field.selectionEnd)
+        : null;
       setState((current) =>
         current.enabled === enabled &&
+        current.literal === literal &&
         current.active.length === active.length &&
         current.active.every((format, index) => format === active[index])
           ? current
-          : { enabled, active },
+          : { enabled, active, literal },
       );
     };
     document.addEventListener("focusin", update);
@@ -418,147 +559,218 @@ export function MarkdownToolbar({
       document.removeEventListener("focusout", update);
       document.removeEventListener("selectionchange", update);
       document.removeEventListener("input", update, true);
+      setHeldId?.(null);
     };
-  }, [toolbar]);
-
-  // One tab stop for the toolbar. The buttons include `children`, so their
-  // tab order is set on the DOM rather than through props.
-  useLayoutEffect(() => {
-    const items = toolbarItems(toolbarRef.current);
-    const current = Math.min(focusIndex.current, items.length - 1);
-    for (const [index, item] of items.entries()) {
-      item.tabIndex = index === current ? 0 : -1;
-    }
-  });
+  }, [activeTarget, setHeldId]);
 
   const inactive = disabled || !state.enabled;
+  // Inside a fenced block, Markdown is content: only that block can change.
+  const literal = state.literal !== null;
 
   function apply(format: MarkdownFormat) {
-    const active = toolbar?.active.current;
+    const active = activeTarget?.current;
     if (active?.isConnected === true) {
       formatTextarea(active, format);
     }
   }
 
-  // Inactive buttons stay in the tab order, so Shift+Tab from a field reaches
-  // the toolbar; they only look and act disabled.
+  // Checked when the format is already applied around the caret, so picking
+  // it removes the format again.
+  const menuItem = ({ format, label: title, icon: Icon }: MenuFormat) => (
+    <DropdownMenuCheckboxItem
+      key={format}
+      checked={state.active.includes(format)}
+      disabled={literal ? state.literal !== format : false}
+      closeOnClick
+      onClick={() => {
+        const textarea = activeTarget?.current;
+        if (textarea?.isConnected === true) {
+          pendingFormat.current = {
+            format,
+            textarea,
+            start: textarea.selectionStart,
+            end: textarea.selectionEnd,
+          };
+        }
+      }}
+    >
+      <Icon />
+      {title}
+    </DropdownMenuCheckboxItem>
+  );
+
+  // Disabled buttons stay focusable, so the keyboard always reaches the
+  // toolbar; they are marked `aria-disabled` and their clicks are dropped.
   const buttonClassName =
     "text-muted-foreground hover:text-foreground pointer-coarse:size-10 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
   return (
-    <div
+    <Toolbar.Root
       ref={toolbarRef}
-      role="toolbar"
       aria-label={label}
-      aria-orientation="horizontal"
+      disabled={disabled}
       className={cn("flex min-w-0 items-center gap-0.5", className)}
-      onFocus={(event) => {
-        const items = toolbarItems(event.currentTarget);
-        const index = items.indexOf(event.target);
-        if (index !== -1) {
-          focusIndex.current = index;
-          for (const [other, item] of items.entries()) {
-            item.tabIndex = other === index ? 0 : -1;
-          }
-        }
-      }}
-      onKeyDown={(event) => {
-        moveRovingFocus(event, "button:not(:disabled)", "horizontal");
-      }}
+      // Also for clicks landing on the toolbar itself, such as on a button
+      // which just became disabled under a fast series of undo clicks.
+      onMouseDown={keepFocus}
     >
       {history === undefined ? null : (
         <>
           {(
             [
-              ["undo", "Cofnij", "Control+Z", Undo2Icon, history.canUndo],
-              ["redo", "Ponów", "Control+Shift+Z", Redo2Icon, history.canRedo],
+              [
+                "undo",
+                "Cofnij",
+                "Control+Z",
+                { suffix: "Z" },
+                Undo2Icon,
+                history.canUndo,
+              ],
+              [
+                "redo",
+                "Ponów",
+                "Control+Shift+Z",
+                { macKey: "⇧ ⌘", winKey: "Ctrl + Shift +", suffix: "Z" },
+                Redo2Icon,
+                history.canRedo,
+              ],
             ] as const
-          ).map(([command, title, keys, Icon, can]) => (
-            <Button
+          ).map(([command, title, keys, shortcut, Icon, can]) => (
+            <ToolbarTooltip
               key={command}
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className={buttonClassName}
-              aria-label={title}
-              aria-keyshortcuts={keys}
-              title={title}
-              disabled={disabled}
-              aria-disabled={!can}
-              onMouseDown={keepFocus}
-              onClick={() => {
-                if (can) {
-                  history[command]();
-                }
-              }}
-            >
-              <Icon />
-            </Button>
+              label={title}
+              shortcut={shortcut}
+              render={
+                <Toolbar.Button
+                  disabled={!can}
+                  onClick={() => {
+                    history[command]();
+                  }}
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={buttonClassName}
+                      aria-label={title}
+                      aria-keyshortcuts={keys}
+                    >
+                      <Icon />
+                    </Button>
+                  }
+                />
+              }
+            />
           ))}
           {formatting ? (
-            <Separator orientation="vertical" className="mx-0.5 h-4" />
+            <Toolbar.Separator className="bg-border mx-0.5 h-4 w-px shrink-0" />
           ) : null}
         </>
       )}
       {formatting ? (
         <>
-          {inlineFormats.map(({ format, label: title, icon: Icon }) => (
-            <Toggle
-              key={format}
-              size="sm"
-              className={cn(
-                buttonClassName,
-                // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
-                "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
-              )}
-              aria-label={title}
-              title={title}
-              disabled={disabled}
-              aria-disabled={inactive}
-              pressed={state.active.includes(format)}
-              onMouseDown={keepFocus}
-              onPressedChange={() => {
-                if (!inactive) {
-                  apply(format);
+          {inlineFormats.map(
+            ({ format, label: title, shortcut, icon: Icon }) => (
+              <ToolbarTooltip
+                key={format}
+                label={title}
+                shortcut={shortcut}
+                render={
+                  <Toolbar.Button
+                    disabled={inactive || literal}
+                    render={
+                      <Toggle
+                        size="sm"
+                        className={cn(
+                          buttonClassName,
+                          // Tinted with the primary colour, which stands out on the muted toolbar in both themes.
+                          "aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/25 size-8 px-0",
+                        )}
+                        aria-label={title}
+                        aria-keyshortcuts={
+                          shortcut === undefined
+                            ? undefined
+                            : `Control+${shortcut.suffix}`
+                        }
+                        pressed={state.active.includes(format)}
+                        onPressedChange={() => {
+                          apply(format);
+                        }}
+                      >
+                        <Icon />
+                      </Toggle>
+                    }
+                  />
                 }
-              }}
-            >
-              <Icon />
-            </Toggle>
-          ))}
+              />
+            ),
+          )}
           {children}
-          <DropdownMenu>
-            <DropdownMenuTrigger
+          <DropdownMenu
+            modal={false}
+            // Formatting focuses the field. Done while the menu is still
+            // open, that counts as focus leaving the menu, which makes Base UI
+            // skip returning focus, so the field would end up unfocused.
+            onOpenChangeComplete={(open) => {
+              const pending = pendingFormat.current;
+              if (!open && pending !== null) {
+                pendingFormat.current = null;
+                if (pending.textarea.isConnected) {
+                  formatTextarea(
+                    pending.textarea,
+                    pending.format,
+                    pending.start,
+                    pending.end,
+                  );
+                }
+              }
+            }}
+          >
+            <ToolbarTooltip
+              label="Więcej formatowania"
               render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className={buttonClassName}
-                  aria-label="Więcej formatowania"
-                  title="Więcej formatowania"
-                  disabled={disabled || inactive}
-                >
-                  <EllipsisIcon />
-                </Button>
+                <Toolbar.Button
+                  disabled={inactive}
+                  render={
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className={buttonClassName}
+                          aria-label="Więcej formatowania"
+                        >
+                          <EllipsisIcon />
+                        </Button>
+                      }
+                    />
+                  }
+                />
               }
             />
-            <DropdownMenuContent className="w-52" finalFocus={false}>
-              {blockFormats.map(({ format, label: title, icon: Icon }) => (
-                <DropdownMenuItem
-                  key={format}
-                  onClick={() => {
-                    apply(format);
-                  }}
-                >
-                  <Icon />
-                  {title}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent
+              ref={menuRef}
+              className="w-52"
+              // Closing goes back to the field. Base UI ignores this for a
+              // click outside, which keeps the focus where it landed.
+              finalFocus={() => activeTarget?.current ?? false}
+            >
+              {blockFormats.map((item) => menuItem(item))}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled={literal}>
+                  <HeadingIcon />
+                  Nagłówek
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-44">
+                  {headingFormats.map((item) => menuItem(item))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {fencedFormats.map((item) => menuItem(item))}
             </DropdownMenuContent>
           </DropdownMenu>
         </>
       ) : null}
-    </div>
+    </Toolbar.Root>
   );
 }

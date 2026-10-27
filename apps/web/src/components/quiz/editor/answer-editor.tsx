@@ -7,6 +7,11 @@ import type { ClipboardEvent } from "react";
 import { MarkdownField } from "@/components/markdown-field";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { ImageButton, ImageDropZone, ImagePreview } from "./image";
@@ -100,7 +105,8 @@ export function AnswerEditor({
                     data-correct={answer.is_correct}
                     className={cn(
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
-                      "focus-within:ring-primary focus-within:ring-2",
+                      // Rings for the text field only; the buttons inside show their own focus.
+                      "has-[textarea:focus]:ring-primary has-data-held:ring-primary has-data-held:ring-2 has-[textarea:focus]:ring-2",
                       answer.is_correct
                         ? conflict
                           ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"
@@ -122,11 +128,12 @@ export function AnswerEditor({
                       }
                       disabled={disabled}
                       onClick={onToggleCorrect}
-                      className="focus-visible:ring-primary flex size-11 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-2 disabled:cursor-not-allowed"
+                      className="group/correct flex size-11 shrink-0 items-center justify-center outline-none disabled:cursor-not-allowed"
                     >
                       <span
                         className={cn(
-                          "flex size-5 items-center justify-center border-2 transition-colors",
+                          // The focus ring hugs the box, not the hit area.
+                          "group-focus-visible/correct:ring-ring/50 flex size-5 items-center justify-center border-2 transition-colors group-focus-visible/correct:ring-3",
                           multiple ? "rounded-[5px]" : "rounded-full",
                           answer.is_correct
                             ? conflict
@@ -192,7 +199,7 @@ export function AnswerEditor({
                         }}
                       />
                     </div>
-                    <div className="flex shrink-0 items-center gap-0.5 p-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/answer:opacity-100 pointer-fine:group-hover/answer:opacity-100">
+                    <div className="flex shrink-0 items-center gap-0.5 p-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/answer:opacity-100 pointer-fine:group-hover/answer:opacity-100 pointer-fine:group-has-data-held/answer:opacity-100">
                       {withImage ? null : (
                         <ImageButton
                           {...imageProps}
@@ -200,20 +207,26 @@ export function AnswerEditor({
                           className="text-muted-foreground hover:text-foreground"
                         />
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label={`Usuń odpowiedź ${number}`}
-                        title="Usuń odpowiedź"
-                        disabled={!canDelete || isUploading || disabled}
-                        onClick={() => {
-                          onRemove();
-                        }}
-                      >
-                        <XIcon />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              aria-label={`Usuń odpowiedź ${number}`}
+                              disabled={!canDelete || isUploading || disabled}
+                              onClick={() => {
+                                onRemove();
+                              }}
+                            >
+                              <XIcon />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Usuń odpowiedź</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                   <div id={`answer-error-${answer.id}`} className="pl-11">

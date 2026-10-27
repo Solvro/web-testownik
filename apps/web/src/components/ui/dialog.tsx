@@ -23,6 +23,14 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
+/**
+ * A nested dialog's overlay is invisible: the outer one already dims the
+ * page. It is still rendered, as it is what catches the dismissing click,
+ * which the outer overlay would otherwise swallow.
+ */
+const nestedOverlay =
+  "[[data-slot=dialog-portal]_[data-slot=dialog-portal]_&]:bg-transparent [[data-slot=dialog-portal]_[data-slot=dialog-portal]_&]:backdrop-blur-none";
+
 function DialogOverlay({
   className,
   ...props
@@ -30,8 +38,10 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
+      forceRender
       className={cn(
         "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs",
+        nestedOverlay,
         className,
       )}
       {...props}
