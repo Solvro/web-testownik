@@ -214,7 +214,7 @@ describe("Markdown selection formatting", () => {
     expect(
       formatMarkdownSelection("```\n$$\nabc\n$$\n```", 7, 10, "mathBlock")
         .value,
-    ).toBe("```\n$$\n\n$$\nabc\n$$\n\n$$\n```");
+    ).toBe("```\n$$\nabc\n$$\n```");
   });
 
   it("scans links with escapes and nesting", () => {
@@ -232,6 +232,26 @@ describe("Markdown selection formatting", () => {
       "[x](b)",
     );
     expect(activeBlockFormats("[[x](a)](b)", 9, 9)).toEqual([]);
+  });
+
+  it("treats Markdown inside a fenced block or a code span as content", () => {
+    const code = "```java\nclass B **implements** I\n```";
+    expect(activeInlineFormats(code, 13, 13)).toEqual([]);
+    expect(activeBlockFormats(code, 13, 13)).toEqual(["codeBlock"]);
+    expect(formatMarkdownSelection(code, 10, 20, "bold")).toEqual({
+      value: code,
+      start: 10,
+      end: 20,
+    });
+    expect(formatMarkdownSelection(code, 10, 10, "quote")).toEqual({
+      value: code,
+      start: 10,
+      end: 10,
+    });
+    expect(formatMarkdownSelection(code, 10, 10, "codeBlock").value).toBe(
+      "class B **implements** I",
+    );
+    expect(activeInlineFormats("a `**b**` c", 5, 5)).toEqual(["code"]);
   });
 
   it("removes a fenced block or a link from inside", () => {

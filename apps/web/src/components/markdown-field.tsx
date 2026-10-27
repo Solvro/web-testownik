@@ -37,7 +37,11 @@ import type {
   RefObject,
 } from "react";
 
-import { activeFormats, formatMarkdownSelection } from "@/lib/markdown-format";
+import {
+  activeFormats,
+  formatMarkdownSelection,
+  literalBlock,
+} from "@/lib/markdown-format";
 import type { MarkdownFormat } from "@/lib/markdown-format";
 import { cn } from "@/lib/utils";
 
@@ -503,7 +507,9 @@ export function MarkdownToolbar({
   const [state, setState] = useState<{
     enabled: boolean;
     active: MarkdownFormat[];
-  }>({ enabled: false, active: [] });
+    /** The fenced block the caret is in, where only that block can change. */
+    literal: MarkdownFormat | null;
+  }>({ enabled: false, active: [], literal: null });
 
   // Follows focus and the caret: the buttons are enabled while the field, the
   // toolbar or its menu has focus, and pressed inside the formats around the
@@ -532,12 +538,16 @@ export function MarkdownToolbar({
       const active = enabled
         ? activeFormats(field.value, field.selectionStart, field.selectionEnd)
         : [];
+      const literal = enabled
+        ? literalBlock(field.value, field.selectionStart, field.selectionEnd)
+        : null;
       setState((current) =>
         current.enabled === enabled &&
+        current.literal === literal &&
         current.active.length === active.length &&
         current.active.every((format, index) => format === active[index])
           ? current
-          : { enabled, active },
+          : { enabled, active, literal },
       );
     };
     document.addEventListener("focusin", update);
@@ -554,6 +564,8 @@ export function MarkdownToolbar({
   }, [activeTarget, setHeldId]);
 
   const inactive = disabled || !state.enabled;
+  // Inside a fenced block, Markdown is content: only that block can change.
+  const literal = state.literal !== null;
 
   function apply(format: MarkdownFormat) {
     const active = activeTarget?.current;
@@ -568,6 +580,7 @@ export function MarkdownToolbar({
     <DropdownMenuCheckboxItem
       key={format}
       checked={state.active.includes(format)}
+      disabled={literal ? state.literal !== format : false}
       closeOnClick
       onClick={() => {
         const textarea = activeTarget?.current;
@@ -664,7 +677,7 @@ export function MarkdownToolbar({
                 shortcut={shortcut}
                 render={
                   <Toolbar.Button
-                    disabled={inactive}
+                    disabled={inactive || literal}
                     render={
                       <Toggle
                         size="sm"
@@ -745,7 +758,7 @@ export function MarkdownToolbar({
             >
               {blockFormats.map((item) => menuItem(item))}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger disabled={literal}>
                   <HeadingIcon />
                   Nagłówek
                 </DropdownMenuSubTrigger>

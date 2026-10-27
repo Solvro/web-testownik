@@ -92,12 +92,25 @@ function enclosingSpan(
   return null;
 }
 
-/** The inline formats whose markers surround the selection or caret. */
-export function activeInlineFormats(value: string, start: number, end: number) {
-  return (Object.keys(inlineMarkers) as MarkdownFormat[]).filter((format) =>
-    (inlineMarkers[format] ?? []).some(
-      (marker) => enclosingSpan(value, start, end, marker) !== null,
-    ),
+/**
+ * The inline formats whose markers surround the selection or caret. Inside
+ * a fenced block there are none, and inside a code span only the code.
+ */
+export function activeInlineFormats(
+  value: string,
+  start: number,
+  end: number,
+): MarkdownFormat[] {
+  if (enclosingBlock(value, start, end) !== null) {
+    return [];
+  }
+  const inCode = enclosingSpan(value, start, end, "`") !== null;
+  return (Object.keys(inlineMarkers) as MarkdownFormat[]).filter(
+    (format) =>
+      (!inCode || format === "code") &&
+      (inlineMarkers[format] ?? []).some(
+        (marker) => enclosingSpan(value, start, end, marker) !== null,
+      ),
   );
 }
 
@@ -336,6 +349,14 @@ export function activeFormats(value: string, start: number, end: number) {
   ];
 }
 
+/**
+ * The fenced block the selection is inside, if any. Markdown is content
+ * there, so only that block can be formatted: toggling it off.
+ */
+export function literalBlock(value: string, start: number, end: number) {
+  return enclosingBlock(value, start, end)?.kind ?? null;
+}
+
 export function formatMarkdownSelection(
   value: string,
   start: number,
@@ -343,6 +364,10 @@ export function formatMarkdownSelection(
   format: MarkdownFormat,
 ) {
   const selected = value.slice(start, end);
+  const literal = literalBlock(value, start, end);
+  if (literal !== null && literal !== format) {
+    return { value, start, end };
+  }
   if (format === "link") {
     const link = enclosingLink(value, start, end);
     if (link !== null) {
@@ -386,13 +411,10 @@ export function formatMarkdownSelection(
         end: end - removed,
       };
     }
-    const literal = block !== null;
     const surrounding =
-      !literal &&
       value.slice(Math.max(0, start - prefix.length), start) === prefix &&
       value.slice(end, end + suffix.length) === suffix;
     const inside =
-      !literal &&
       selected.startsWith(prefix) &&
       selected.endsWith(suffix) &&
       selected.length >= prefix.length + suffix.length;
