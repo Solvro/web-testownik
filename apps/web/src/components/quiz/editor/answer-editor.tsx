@@ -1,6 +1,8 @@
 "use client";
 
 import type { AnswerFormData } from "@testownik/core/quiz/schema";
+import { TRUE_FALSE_LABELS } from "@testownik/core/quiz/types";
+import type { QuestionType } from "@testownik/core/quiz/types";
 import { CheckIcon, XIcon } from "lucide-react";
 import type { ClipboardEvent } from "react";
 
@@ -26,7 +28,7 @@ export function AnswerEditor({
   questionIndex,
   answer,
   answerIndex,
-  multiple,
+  type,
   conflict = false,
   canDelete,
   disabled,
@@ -44,7 +46,12 @@ export function AnswerEditor({
   questionIndex: number;
   answer: AnswerFormData;
   answerIndex: number;
-  multiple: boolean;
+  /**
+   * Multiple choice shows checkboxes, the other choice types radios. An open
+   * question's answers are all accepted, so they have no mark and no image;
+   * a true/false question's answers are its two fixed labels.
+   */
+  type: QuestionType;
   /** Single choice with several correct answers: the marks show as wrong. */
   conflict?: boolean;
   canDelete: boolean;
@@ -83,10 +90,21 @@ export function AnswerEditor({
   };
   const number = String(answer.order);
   const withImage = hasImage(answer);
+  const accepted = type === "open";
+  const fixedLabel = type === "true_false";
+  const allowImage = !accepted && !fixedLabel;
+  const label = accepted
+    ? `Akceptowana odpowiedź ${number}`
+    : `Odpowiedź ${number}`;
+  const placeholder = fixedLabel
+    ? (TRUE_FALSE_LABELS[answerIndex] ?? label)
+    : label;
+  // Accepted answers are all correct, which needs no colour.
+  const marked = answer.is_correct && !accepted;
 
   return (
     <ImageDropZone
-      disabled={isUploading || disabled}
+      disabled={isUploading || disabled || !allowImage}
       id={`answer-${answer.id}`}
       label="Upuść zdjęcie do odpowiedzi"
       onFileDrop={(file) => {
@@ -107,7 +125,7 @@ export function AnswerEditor({
                       "group/answer bg-card flex min-w-0 items-start rounded-lg border transition-[border-color,background-color,box-shadow]",
                       // Rings for the text field only; the buttons inside show their own focus.
                       "has-[textarea:focus]:ring-primary has-data-held:ring-primary has-data-held:ring-2 has-[textarea:focus]:ring-2",
-                      answer.is_correct
+                      marked
                         ? conflict
                           ? "border-destructive/50 bg-destructive/[0.06] dark:bg-destructive/15"
                           : "border-green-600/45 bg-green-500/[0.07] dark:border-green-400/40 dark:bg-green-400/10"
@@ -115,43 +133,54 @@ export function AnswerEditor({
                       invalid && "border-destructive",
                     )}
                   >
-                    <button
-                      type="button"
-                      aria-pressed={answer.is_correct}
-                      aria-label={`Poprawna odpowiedź ${number}`}
-                      title={
-                        answer.is_correct
-                          ? conflict
-                            ? "Jedna z kilku poprawnych odpowiedzi w pytaniu jednokrotnego wyboru. Kliknij, aby odznaczyć."
-                            : "Poprawna odpowiedź. Kliknij, aby odznaczyć."
-                          : "Oznacz jako poprawną"
-                      }
-                      disabled={disabled}
-                      onClick={onToggleCorrect}
-                      className="group/correct flex size-11 shrink-0 items-center justify-center outline-none disabled:cursor-not-allowed"
-                    >
+                    {accepted ? (
                       <span
-                        className={cn(
-                          // The focus ring hugs the box, not the hit area.
-                          "group-focus-visible/correct:ring-ring/50 flex size-5 items-center justify-center border-2 transition-colors group-focus-visible/correct:ring-3",
-                          multiple ? "rounded-[5px]" : "rounded-full",
+                        className="text-muted-foreground flex size-11 shrink-0 items-center justify-center"
+                        title="Akceptowana odpowiedź"
+                      >
+                        <CheckIcon className="size-4" aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-pressed={answer.is_correct}
+                        aria-label={`Poprawna odpowiedź ${number}`}
+                        title={
                           answer.is_correct
                             ? conflict
-                              ? "border-destructive bg-destructive text-white"
-                              : "border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500"
-                            : "border-muted-foreground/80 group-hover/answer:border-muted-foreground",
-                        )}
+                              ? "Jedna z kilku poprawnych odpowiedzi w pytaniu jednokrotnego wyboru. Kliknij, aby odznaczyć."
+                              : "Poprawna odpowiedź. Kliknij, aby odznaczyć."
+                            : "Oznacz jako poprawną"
+                        }
+                        disabled={disabled}
+                        onClick={onToggleCorrect}
+                        className="group/correct flex size-11 shrink-0 items-center justify-center outline-none disabled:cursor-not-allowed"
                       >
-                        {answer.is_correct ? (
-                          <CheckIcon className="size-3.5" strokeWidth={3} />
-                        ) : null}
-                      </span>
-                    </button>
+                        <span
+                          className={cn(
+                            // The focus ring hugs the box, not the hit area.
+                            "group-focus-visible/correct:ring-ring/50 flex size-5 items-center justify-center border-2 transition-colors group-focus-visible/correct:ring-3",
+                            type === "multiple_choice"
+                              ? "rounded-[5px]"
+                              : "rounded-full",
+                            answer.is_correct
+                              ? conflict
+                                ? "border-destructive bg-destructive text-white"
+                                : "border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500"
+                              : "border-muted-foreground/80 group-hover/answer:border-muted-foreground",
+                          )}
+                        >
+                          {answer.is_correct ? (
+                            <CheckIcon className="size-3.5" strokeWidth={3} />
+                          ) : null}
+                        </span>
+                      </button>
+                    )}
                     <div className="min-w-0 flex-1">
                       <MarkdownField
                         id={`answer-text-${answer.id}`}
-                        label={`Odpowiedź ${number}`}
-                        placeholder={`Odpowiedź ${number}`}
+                        label={label}
+                        placeholder={placeholder}
                         value={field.value}
                         disabled={disabled}
                         invalid={invalid}
@@ -162,7 +191,9 @@ export function AnswerEditor({
                         minHeight="2.75rem"
                         markdown={markdown}
                         onPaste={(event) => {
-                          handlePaste(event);
+                          if (allowImage) {
+                            handlePaste(event);
+                          }
                           if (!event.defaultPrevented && onPasteLines(event)) {
                             event.preventDefault();
                           }
@@ -200,7 +231,7 @@ export function AnswerEditor({
                       />
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 p-1.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within/answer:opacity-100 pointer-fine:group-hover/answer:opacity-100 pointer-fine:group-has-data-held/answer:opacity-100">
-                      {withImage ? null : (
+                      {withImage || !allowImage ? null : (
                         <ImageButton
                           {...imageProps}
                           target={`odpowiedzi ${number}`}

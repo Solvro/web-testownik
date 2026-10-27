@@ -157,7 +157,9 @@ describe("ImportQuizPage", () => {
               },
             ],
             order: 1,
-            multiple: false,
+            type: "single_choice",
+            shuffle_answers: true,
+            open_matching: "exact",
           },
           {
             id: "q2",
@@ -165,7 +167,9 @@ describe("ImportQuizPage", () => {
             image_url: "new.png",
             answers: [{ id: "a2", text: "A", is_correct: true, order: 1 }],
             order: 2,
-            multiple: false,
+            type: "single_choice",
+            shuffle_answers: true,
+            open_matching: "exact",
           },
           {
             id: "q3",
@@ -174,7 +178,9 @@ describe("ImportQuizPage", () => {
             image_url: "correct_url.png",
             answers: [{ id: "a3", text: "A", is_correct: true, order: 1 }],
             order: 3,
-            multiple: false,
+            type: "single_choice",
+            shuffle_answers: true,
+            open_matching: "exact",
           },
         ],
       };

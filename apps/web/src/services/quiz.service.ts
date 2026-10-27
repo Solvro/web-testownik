@@ -40,7 +40,9 @@ type CreateQuestionAnswerData = Pick<
 type CreateQuestionData = Pick<
   Question,
   | "text"
-  | "multiple"
+  | "type"
+  | "shuffle_answers"
+  | "open_matching"
   | "image_url"
   | "image_upload"
   | "is_ai_generated"
@@ -301,12 +303,17 @@ export class QuizService extends BaseApiService {
     answer: AnswerRecord,
     studyTime: number,
     nextQuestionId: string | null,
+    selfAssessment?: boolean,
   ): Promise<AnswerRecord> {
     const response = await this.post<AnswerRecord>(
       `quizzes/${quizId}/answer/`,
       {
         question_id: answer.question,
-        selected_answers: answer.selected_answers,
+        selected_answers:
+          typeof selfAssessment === "boolean" ? [] : answer.selected_answers,
+        ...(typeof selfAssessment === "boolean"
+          ? { self_assessment: selfAssessment }
+          : {}),
         study_time: studyTime,
         next_question: nextQuestionId,
       },
@@ -369,10 +376,10 @@ export class QuizService extends BaseApiService {
       quiz: quizId,
       text: data.text,
       explanation: data.explanation ?? "",
-      multiple: data.multiple,
+      type: data.type,
+      shuffle_answers: data.shuffle_answers,
+      open_matching: data.open_matching,
       ...imageFields,
-      question_type: 0,
-      is_flashcard: false,
       is_markdown_enabled: true,
       is_ai_generated: data.is_ai_generated ?? false,
       answers: data.answers.map((a, index) => {
@@ -399,10 +406,10 @@ export class QuizService extends BaseApiService {
         return {
           text: q.text,
           explanation: q.explanation ?? "",
-          multiple: q.multiple,
+          type: q.type,
+          shuffle_answers: q.shuffle_answers,
+          open_matching: q.open_matching,
           ...imageFields,
-          question_type: 0,
-          is_flashcard: false,
           is_markdown_enabled: true,
           is_ai_generated: q.is_ai_generated ?? false,
           answers: q.answers.map((a, index) => {

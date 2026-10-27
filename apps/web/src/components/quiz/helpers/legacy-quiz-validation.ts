@@ -1,3 +1,5 @@
+import { isQuestionType } from "@testownik/core/quiz/question";
+
 const ALLOWED_LEGACY_QUIZ_KEYS = [
   "id",
   "title",
@@ -16,6 +18,9 @@ const ALLOWED_LEGACY_QUESTION_KEYS = [
   "question",
   "explanation",
   "multiple",
+  "type",
+  "shuffle_answers",
+  "open_matching",
   "image",
   "answers",
 ];
@@ -74,10 +79,34 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
     }
 
+    if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "multiple" w formacie logicznym (true/false) dla starszych plików.`;
+    }
+    if (q.type !== undefined && !isQuestionType(q.type)) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
+    }
+    if (
+      q.shuffle_answers !== undefined &&
+      typeof q.shuffle_answers !== "boolean"
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "shuffle_answers" w formacie logicznym (true/false).`;
+    }
+    if (
+      q.open_matching !== undefined &&
+      q.open_matching !== "exact" &&
+      q.open_matching !== "similar"
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "open_matching" (exact lub similar).`;
+    }
+
     if (!Array.isArray(q.answers) || q.answers.length === 0) {
       return `Pytanie nr ${String(
         questionIndex + 1,
       )} musi mieć przynajmniej jedną odpowiedź.`;
+    }
+
+    if (q.type === "true_false" && q.answers.length !== 2) {
+      return `Pytanie nr ${String(questionIndex + 1)} typu Prawda/Fałsz musi mieć dokładnie dwie odpowiedzi.`;
     }
 
     if (q.id !== undefined && typeof q.id !== "number") {
@@ -99,6 +128,14 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
         )} jest nieprawidłowa.`;
       }
       const a = answer as Record<string, unknown>;
+      if (
+        q.type === "open" &&
+        [a.image, a.image_url, a.image_upload].some(
+          (image) => typeof image === "string" && image.trim() !== "",
+        )
+      ) {
+        return `Odpowiedzi pytania otwartego nr ${String(questionIndex + 1)} nie mogą zawierać zdjęć.`;
+      }
 
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(a, ALLOWED_LEGACY_ANSWER_KEYS)) {

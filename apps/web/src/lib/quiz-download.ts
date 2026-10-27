@@ -55,7 +55,9 @@ const pickQuestionFields = async (question: Question) => ({
   order: question.order,
   text: question.text,
   explanation: question.explanation ?? undefined,
-  multiple: question.multiple,
+  type: question.type,
+  shuffle_answers: question.shuffle_answers,
+  open_matching: question.open_matching,
   image_url: await prepareImageForDownload(question),
   answers: await Promise.all(
     question.answers.map(async (a) => await pickAnswerFields(a)),

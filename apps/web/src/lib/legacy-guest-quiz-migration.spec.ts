@@ -19,7 +19,9 @@ const currentQuiz: Quiz = {
       id: "q-1",
       order: 1,
       text: "Question?",
-      multiple: false,
+      type: "single_choice",
+      shuffle_answers: true,
+      open_matching: "exact",
       answers: [
         {
           id: "a-1",
@@ -75,7 +77,9 @@ describe("migrateLegacyGuestQuizzes", () => {
           id: "q-1",
           order: 1,
           text: "Question?",
-          multiple: false,
+          type: "single_choice",
+          shuffle_answers: true,
+          open_matching: "exact",
           explanation: undefined,
           image_url: null,
           image_upload: null,
@@ -93,6 +97,41 @@ describe("migrateLegacyGuestQuizzes", () => {
       ],
     });
     expect(localStorage.getItem(STORAGE_KEYS.GUEST_QUIZZES)).toBeNull();
+  });
+
+  it("normalizes old stored current-format questions without leaking multiple", async () => {
+    const storedQuiz = {
+      ...currentQuiz,
+      questions: currentQuiz.questions.map(
+        ({ type, shuffle_answers, open_matching, ...question }) => ({
+          ...question,
+          multiple: false,
+          answers: [
+            ...question.answers,
+            { id: "a-2", order: 2, text: "Another answer", is_correct: true },
+          ],
+        }),
+      ),
+    };
+    localStorage.setItem(
+      STORAGE_KEYS.GUEST_QUIZZES,
+      JSON.stringify([storedQuiz]),
+    );
+    const createQuiz = vi.fn().mockResolvedValue({ id: "new-id" });
+    expect(await migrateLegacyGuestQuizzes({ createQuiz })).toEqual({
+      migratedCount: 1,
+      failedCount: 0,
+      skippedCount: 0,
+    });
+    const payload = createQuiz.mock.calls[0][0] as {
+      questions: Record<string, unknown>[];
+    };
+    expect(payload.questions[0]).toMatchObject({
+      type: "multiple_choice",
+      shuffle_answers: true,
+      open_matching: "exact",
+    });
+    expect(payload.questions[0]).not.toHaveProperty("multiple");
   });
 
   it("migrates legacy quizzes automatically", async () => {

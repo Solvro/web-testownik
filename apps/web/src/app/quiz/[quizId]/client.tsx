@@ -1,7 +1,11 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { FileQuestionMarkIcon } from "lucide-react";
+import {
+  FileQuestionMarkIcon,
+  GalleryHorizontalEndIcon,
+  ListChecksIcon,
+} from "lucide-react";
 import {
   ViewTransition,
   startTransition,
@@ -19,10 +23,12 @@ import { BrainrotCard } from "@/components/quiz/brainrot-card";
 import { ContinuityDialog } from "@/components/quiz/continuity-dialog";
 import { ExternalImageContext } from "@/components/quiz/external-image-context";
 import { ExternalImageWarning } from "@/components/quiz/external-image-warning";
+import { FlashcardCard } from "@/components/quiz/flashcard-card";
 import { useExternalImageApproval } from "@/components/quiz/hooks/use-external-image-approval";
 import { useFocusMode } from "@/components/quiz/hooks/use-focus-mode";
 import { useKeyShortcuts } from "@/components/quiz/hooks/use-key-shortcuts";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
+import { useStudyMode } from "@/components/quiz/hooks/use-study-mode";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizActionButtons } from "@/components/quiz/quiz-action-buttons";
 import { QuizHistoryDialog } from "@/components/quiz/quiz-history-dialog";
@@ -45,6 +51,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { env } from "@/env";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
@@ -62,6 +69,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     currentQuestion,
     selectedAnswers,
     questionChecked,
+    wasCorrect,
     isQuizFinished,
     isHistoryQuestion,
     canGoBack,
@@ -99,6 +107,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
   const {
     nextAction,
     skipQuestion,
+    gradeSelf,
     resetProgress,
     setSelectedAnswers,
     onQuestionDeleted,
@@ -106,6 +115,19 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     toggleBrainrot,
     togglePreviousQuestion,
   } = actions;
+
+  const [studyMode, setStudyMode] = useStudyMode(quizId);
+  // The question answered as in the quiz although flashcards are on.
+  const [revealedQuestionId, setRevealedQuestionId] = useState<string | null>(
+    null,
+  );
+  const showFlashcard =
+    studyMode === "flashcards" &&
+    currentQuestion !== null &&
+    !isQuizFinished &&
+    !isHistoryQuestion &&
+    !questionChecked &&
+    revealedQuestionId !== currentQuestion.id;
 
   const {
     isApproved: externalImagesApproved,
@@ -172,6 +194,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     togglePreviousQuestion: () => {
       handleQuizActivity(togglePreviousQuestion);
     },
+    enabled: !showFlashcard,
   });
 
   useEffect(() => {
@@ -305,7 +328,30 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
             showBrainrot ? "lg:col-span-3" : "lg:col-span-4",
           )}
         >
-          <div className="min-w-0 lg:col-span-2">
+          <div className="min-w-0 space-y-3 lg:col-span-2">
+            {quiz.questions.length === 0 ? null : (
+              <Tabs
+                value={studyMode}
+                onValueChange={(value) => {
+                  if (value === "quiz" || value === "flashcards") {
+                    resetInactivityTimer();
+                    setStudyMode(value);
+                  }
+                }}
+                className="items-end"
+              >
+                <TabsList aria-label="Tryb nauki">
+                  <TabsTrigger value="quiz">
+                    <ListChecksIcon />
+                    Quiz
+                  </TabsTrigger>
+                  <TabsTrigger value="flashcards">
+                    <GalleryHorizontalEndIcon />
+                    Fiszki
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
             <ViewTransition name={`quiz-open-${quiz.id}`} update="h-full">
               {quiz.questions.length === 0 ? (
                 <Card>
@@ -323,6 +369,21 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                     </Empty>
                   </CardContent>
                 </Card>
+              ) : showFlashcard ? (
+                <FlashcardCard
+                  key={currentQuestion.id}
+                  question={currentQuestion}
+                  answers={answers}
+                  onGrade={(knew) => {
+                    handleQuizActivity(() => {
+                      gradeSelf(knew);
+                    });
+                  }}
+                  onShowAnswers={() => {
+                    resetInactivityTimer();
+                    setRevealedQuestionId(currentQuestion.id);
+                  }}
+                />
               ) : (
                 <QuestionCard
                   quizId={quiz.id}
@@ -330,20 +391,14 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
                     resetInactivityTimer();
-                    // If question is not multiple, unselect everything except the new
-                    if (currentQuestion !== null && !currentQuestion.multiple) {
-                      setSelectedAnswers(
-                        newSelected.length > 0 ? [newSelected[0]] : [],
-                      );
-                    } else {
-                      setSelectedAnswers(newSelected);
-                    }
+                    setSelectedAnswers(newSelected);
                   }}
                   nextAction={() => {
                     handleQuizActivity(nextAction);
                   }}
                   answers={answers}
                   questionChecked={questionChecked}
+                  wasCorrect={wasCorrect}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
                   togglePreviousQuestion={() => {

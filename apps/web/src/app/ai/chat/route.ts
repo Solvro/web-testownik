@@ -1,3 +1,4 @@
+import { QUESTION_TYPES } from "@testownik/core/quiz/types";
 import type { Question } from "@testownik/core/quiz/types";
 import { stepCountIs, streamText } from "ai";
 import type { UIMessage } from "ai";
@@ -18,6 +19,22 @@ import { buildUsageCallbacks } from "@/lib/ai/usage.server";
 export const maxDuration = 60;
 
 const practiceQuestionSchema = z.object({
+  type: z
+    .enum(QUESTION_TYPES)
+    .optional()
+    .describe(
+      "Typ pytania: single_choice, multiple_choice, true_false lub open",
+    ),
+  shuffle_answers: z
+    .boolean()
+    .optional()
+    .describe("Losowanie odpowiedzi; false dla true_false"),
+  open_matching: z
+    .enum(["exact", "similar"])
+    .optional()
+    .describe(
+      "Dopasowanie wpisanej odpowiedzi dla pytania open; domyślnie exact",
+    ),
   text: z.string().describe("Treść pytania (może zawierać markdown/LaTeX)"),
   answers: z
     .array(
@@ -26,9 +43,11 @@ const practiceQuestionSchema = z.object({
         is_correct: z.boolean().describe("Czy to jest poprawna odpowiedź"),
       }),
     )
-    .min(2)
+    .min(1)
     .max(6)
-    .describe("Opcje odpowiedzi (2-6 odpowiedzi, przynajmniej jedna poprawna)"),
+    .describe(
+      "Odpowiedzi (1-6; true_false: dokładnie 2, najpierw prawda, potem fałsz; open: akceptowane odpowiedzi, wszystkie poprawne)",
+    ),
   explanation: z
     .string()
     .optional()
@@ -36,6 +55,22 @@ const practiceQuestionSchema = z.object({
 });
 
 const editQuestionSchema = z.object({
+  type: z
+    .enum(QUESTION_TYPES)
+    .optional()
+    .describe(
+      "Typ pytania: single_choice, multiple_choice, true_false lub open",
+    ),
+  shuffle_answers: z
+    .boolean()
+    .optional()
+    .describe("Losowanie odpowiedzi; false dla true_false"),
+  open_matching: z
+    .enum(["exact", "similar"])
+    .optional()
+    .describe(
+      "Dopasowanie wpisanej odpowiedzi dla pytania open; domyślnie exact",
+    ),
   text: z.string().describe("Zaktualizowana treść pytania"),
   answers: z
     .array(
@@ -44,7 +79,7 @@ const editQuestionSchema = z.object({
         is_correct: z.boolean().describe("Czy to jest poprawna odpowiedź"),
       }),
     )
-    .min(2)
+    .min(1)
     .max(6)
     .describe("Zaktualizowane opcje odpowiedzi"),
   explanation: z
@@ -341,7 +376,9 @@ export async function POST(request: Request) {
                   order: q.order,
                   text: truncateQuestionPreview(q.text),
                   answer_count: q.answers.length,
-                  multiple: q.multiple,
+                  type: q.type,
+                  shuffle_answers: q.shuffle_answers,
+                  open_matching: q.open_matching,
                   has_explanation:
                     q.explanation !== undefined && q.explanation.trim() !== "",
                 })),
@@ -366,7 +403,9 @@ export async function POST(request: Request) {
                 order: question.order,
                 text: question.text,
                 explanation: question.explanation ?? null,
-                multiple: question.multiple,
+                type: question.type,
+                shuffle_answers: question.shuffle_answers,
+                open_matching: question.open_matching,
                 answers: question.answers.map((a) => ({
                   text: a.text,
                   is_correct: a.is_correct,

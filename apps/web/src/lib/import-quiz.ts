@@ -1,3 +1,4 @@
+import { inferChoiceType } from "@testownik/core/quiz/question";
 import type { Answer, Question, Quiz } from "@testownik/core/quiz/types";
 import JSZip from "jszip";
 import type React from "react";
@@ -6,7 +7,10 @@ import { toast } from "sonner";
 
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
-import { migrateLegacyQuiz } from "@/lib/migration";
+import {
+  migrateLegacyQuiz,
+  normalizeQuestionTypeFields,
+} from "@/lib/migration";
 import { getImageService, getQuizService } from "@/services";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
@@ -18,6 +22,36 @@ const trueFalseStrings = {
   nie: false,
   false: false,
 };
+
+function trueFalseValue(text: string): boolean | undefined {
+  const labels: Partial<Record<string, boolean>> = trueFalseStrings;
+  return labels[text.toLowerCase()];
+}
+
+function isTrueFalseAnswerPair(answers: Answer[]): boolean {
+  return (
+    answers.length === 2 &&
+    answers.filter((answer) => answer.is_correct).length === 1 &&
+    answers.some((answer) => trueFalseValue(answer.text) === true) &&
+    answers.some((answer) => trueFalseValue(answer.text) === false)
+  );
+}
+
+function txtQuestionTypeFields(answers: Answer[], isTrueFalse: boolean) {
+  if (isTrueFalse) {
+    answers.sort(
+      (a, b) => Number(trueFalseValue(b.text)) - Number(trueFalseValue(a.text)),
+    );
+    for (const [index, answer] of answers.entries()) {
+      answer.order = index + 1;
+    }
+  }
+  return {
+    type: isTrueFalse ? ("true_false" as const) : inferChoiceType(answers),
+    shuffle_answers: !isTrueFalse,
+    open_matching: "exact" as const,
+  };
+}
 
 export type UploadType = "file" | "json" | "legacy";
 
@@ -99,12 +133,12 @@ const parseQTemplate = (
     order: index,
     text: questionText,
     answers,
-    multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
+    ...txtQuestionTypeFields(answers, isTrueFalseAnswerPair(answers)),
     explanation: "",
   };
 };
 
-const parseQuestion = (
+export const parseQuestion = (
   lines: string[],
   filename: string,
   index: number,
@@ -185,16 +219,16 @@ const parseQuestion = (
   }
 
   const isTrueFalse =
-    (template.endsWith("X01") || template.endsWith("X10")) &&
-    answers.length === 2 &&
-    answers.every((a) => a.text.toLowerCase() in trueFalseStrings);
+    (template.toUpperCase().endsWith("X01") ||
+      template.toUpperCase().endsWith("X10")) &&
+    isTrueFalseAnswerPair(answers);
 
   return {
     id: crypto.randomUUID(),
     order: index,
     text: question,
     answers,
-    multiple: !isTrueFalse,
+    ...txtQuestionTypeFields(answers, isTrueFalse),
     explanation: "",
   };
 };
@@ -798,10 +832,22 @@ export const useImportQuiz = () => {
       type RawAnswer = Omit<Answer, "id" | "order"> & {
         order?: number;
       };
-      type RawQuestion = Omit<Question, "id" | "order" | "answers"> & {
-        order?: number;
-        answers: RawAnswer[];
-      };
+      type RawQuestion = Omit<
+        Question,
+        | "id"
+        | "order"
+        | "answers"
+        | "type"
+        | "shuffle_answers"
+        | "open_matching"
+      > &
+        Partial<
+          Pick<Question, "type" | "shuffle_answers" | "open_matching">
+        > & {
+          multiple?: boolean;
+          order?: number;
+          answers: RawAnswer[];
+        };
       type RawQuiz = Omit<Quiz, "questions"> & {
         questions: RawQuestion[];
         comment?: string;
@@ -819,7 +865,7 @@ export const useImportQuiz = () => {
       const normalizedQuiz: Quiz = {
         ...quizData,
         questions: quizData.questions.map((q, qIndex) => {
-          const { image: qImage, ...qRest } = q;
+          const { image: qImage, multiple, ...qRest } = q;
           return {
             ...qRest,
             image_url: q.image_url ?? qImage,
@@ -832,7 +878,7 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
-            multiple: q.answers.filter((a) => a.is_correct).length > 1,
+            ...normalizeQuestionTypeFields({ ...qRest, multiple }),
           };
         }),
       } as Quiz;

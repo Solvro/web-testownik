@@ -1,6 +1,12 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DEFAULT_QUESTION_TYPE_FIELDS,
+  inferChoiceType,
+  isQuestionType,
+} from "@testownik/core/quiz/question";
 import { prepareQuestionForSubmission } from "@testownik/core/quiz/schema";
+import { QUESTION_TYPE_LABELS } from "@testownik/core/quiz/types";
 import type {
   Answer,
   Question,
@@ -57,6 +63,9 @@ interface EditedAnswer {
 }
 
 interface EditedQuestion {
+  type?: Question["type"];
+  shuffle_answers?: boolean;
+  open_matching?: Question["open_matching"];
   text?: string;
   answers?: EditedAnswer[];
   explanation?: string;
@@ -127,13 +136,19 @@ function buildEditedQuestion(
   }));
 
   return {
+    ...DEFAULT_QUESTION_TYPE_FIELDS,
     ...question,
     text: edit.text ?? question.text,
     explanation: edit.explanation ?? question.explanation,
     image: edit.image ?? edit.image_url ?? question.image,
     image_url: edit.image_url ?? question.image_url,
     image_upload: edit.image_upload ?? question.image_upload,
-    multiple: answers.filter((answer) => answer.is_correct).length > 1,
+    type: isQuestionType(edit.type) ? edit.type : inferChoiceType(answers),
+    shuffle_answers:
+      edit.type === "true_false"
+        ? false
+        : (edit.shuffle_answers ?? question.shuffle_answers),
+    open_matching: edit.open_matching ?? question.open_matching,
     answers,
   };
 }
@@ -148,6 +163,21 @@ function buildDiffSections(
   afterQuestion: Question,
 ): DiffSection[] {
   const sections = [
+    {
+      label: "Typ pytania",
+      before: QUESTION_TYPE_LABELS[beforeQuestion.type],
+      after: QUESTION_TYPE_LABELS[afterQuestion.type],
+    },
+    {
+      label: "Losowanie odpowiedzi",
+      before: String(beforeQuestion.shuffle_answers),
+      after: String(afterQuestion.shuffle_answers),
+    },
+    {
+      label: "Dopasowanie odpowiedzi",
+      before: beforeQuestion.open_matching,
+      after: afterQuestion.open_matching,
+    },
     {
       label: "Treść pytania",
       before: beforeQuestion.text,
@@ -549,7 +579,7 @@ function EditQuestionCard({
             }}
             hideDelete
             hideFullEditor
-            minAnswers={2}
+            minAnswers={1}
           />
         ) : null}
 

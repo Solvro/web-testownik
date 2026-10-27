@@ -1,6 +1,7 @@
 import {
   checkAnswerCorrectness,
   createAnswerRecord,
+  createSelfAssessmentRecord,
   getAnsweredQuestionWithShuffledAnswers,
 } from "@testownik/core/quiz/session";
 import type { AnswerRecord, Question } from "@testownik/core/quiz/types";
@@ -199,6 +200,38 @@ export function useQuizLogic({
     nextQuestionRef.current = null;
   };
 
+  // A flashcard has no answer to check: the learner's own grade is recorded
+  // and the next card follows at once.
+  const gradeSelf = (knew: boolean) => {
+    if (currentQuestionRef.current == null || questionChecked) {
+      return;
+    }
+
+    const record = createSelfAssessmentRecord(
+      currentQuestionRef.current.id,
+      knew,
+    );
+    const studyTime = getCurrentStudyTime();
+    const { nextQuestion: nextQ } = sessionActions.recordAnswer(
+      record,
+      studyTime,
+    );
+    nextQuestionRef.current = nextQ;
+
+    void getQuizService().recordAnswer(
+      quizId,
+      record,
+      studyTime,
+      nextQ?.id ?? null,
+      knew,
+    );
+
+    continuity.sendAnswerChecked(nextQ);
+    continuity.sendQuestionUpdate(nextQ, []);
+    sessionActions.advanceQuestion(nextQ?.id ?? null);
+    nextQuestionRef.current = null;
+  };
+
   const togglePreviousQuestion = () => {
     if (historyQuestionId !== null) {
       setHistoryQuestionId(null);
@@ -279,6 +312,11 @@ export function useQuizLogic({
           : (answers.find((a) => a.question === historyQuestionId)
               ?.selected_answers ?? []),
       questionChecked: historyQuestion == null ? questionChecked : true,
+      wasCorrect:
+        historyQuestion == null
+          ? null
+          : (answers.find((a) => a.question === historyQuestionId)
+              ?.was_correct ?? null),
       isQuizFinished,
       canGoBack: answers.length > 0,
       isHistoryQuestion: historyQuestion != null,
@@ -302,6 +340,7 @@ export function useQuizLogic({
     actions: {
       nextAction,
       skipQuestion,
+      gradeSelf,
       resetProgress,
       setSelectedAnswers: (ans: string[]) => {
         selectedAnswersRef.current = ans;

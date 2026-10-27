@@ -105,7 +105,7 @@ async function chooseAllQuestions(
   label: "Jednokrotny wybór" | "Wielokrotny wybór",
 ) {
   await user.click(screen.getByRole("button", { name: "Opcje quizu" }));
-  const trigger = await screen.findByRole("menuitem", { name: "Typ wyboru" });
+  const trigger = await screen.findByRole("menuitem", { name: "Typ pytania" });
   // The submenu opens from the keyboard like a real menu.
   trigger.focus();
   await user.keyboard("{ArrowRight}");
@@ -707,8 +707,8 @@ describe("Quiz editor", () => {
       expect(onSave).toHaveBeenCalledTimes(1);
     });
     expect(
-      onSave.mock.calls[0][0].questions.map((question) => question.multiple),
-    ).toEqual([false, true, true]);
+      onSave.mock.calls[0][0].questions.map((question) => question.type),
+    ).toEqual(["single_choice", "multiple_choice", "multiple_choice"]);
   });
 
   it("reminds about questions without a correct answer once they are left", async () => {
@@ -1096,7 +1096,7 @@ describe("Quiz editor", () => {
     const user = userEvent.setup();
     const onSave = saveMock();
     const quiz = quizFixture(2);
-    quiz.questions[0].multiple = true;
+    quiz.questions[0].type = "multiple_choice";
     quiz.questions[0].answers[1].is_correct = true;
     render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={onSave} />);
     await chooseAllQuestions(user, "Jednokrotny wybór");
@@ -1108,7 +1108,9 @@ describe("Quiz editor", () => {
       screen.getByRole("img", { name: "Kilka poprawnych odpowiedzi" }),
     ).toBeInTheDocument();
     const [message, options] = vi.mocked(toast).mock.calls[0];
-    expect(message).toBe("Ustawiono jednokrotny wybór we wszystkich pytaniach");
+    expect(message).toBe(
+      "Ustawiono typ „Jednokrotny wybór” we wszystkich pytaniach",
+    );
     expect(options?.description).toBe(
       "1 pytanie ma kilka poprawnych odpowiedzi. Popraw je przed zapisem.",
     );
@@ -1422,7 +1424,9 @@ describe("Quiz editor", () => {
         order: item.order,
         text: item.text,
         explanation: "",
-        multiple: item.multiple,
+        type: item.type,
+        shuffle_answers: item.shuffle_answers,
+        open_matching: item.open_matching,
         image: null,
         answers: item.answers.map((answer) => ({
           id: answer.id,

@@ -1,3 +1,4 @@
+import { isQuestionType } from "@testownik/core/quiz/question";
 import type { Question } from "@testownik/core/quiz/types";
 
 const MAX_ID_LENGTH = 100;
@@ -36,7 +37,10 @@ export function isQuestion(value: unknown): value is Question {
     question.text.length <= MAX_QUESTION_TEXT_LENGTH &&
     isOptionalBoundedString(question.explanation, MAX_EXPLANATION_LENGTH) &&
     isOptionalBoundedString(question.image, MAX_IMAGE_URL_LENGTH) &&
-    typeof question.multiple === "boolean" &&
+    isQuestionType(question.type) &&
+    typeof question.shuffle_answers === "boolean" &&
+    (question.open_matching === "exact" ||
+      question.open_matching === "similar") &&
     Array.isArray(question.answers) &&
     question.answers.length <= MAX_ANSWERS &&
     question.answers.every((answer: unknown) => {

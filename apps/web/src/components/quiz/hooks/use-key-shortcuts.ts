@@ -8,6 +8,8 @@ interface Options {
   isHistoryQuestion: boolean;
   questionChecked: boolean;
   togglePreviousQuestion: () => void;
+  /** Off while a flashcard handles the keyboard itself. */
+  enabled?: boolean;
 }
 
 export function useKeyShortcuts({
@@ -16,11 +18,12 @@ export function useKeyShortcuts({
   isHistoryQuestion,
   questionChecked,
   togglePreviousQuestion,
+  enabled = true,
 }: Options) {
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (isInputElement(target)) {
+      if (!enabled || isInputElement(target)) {
         return;
       }
 
@@ -77,5 +80,6 @@ export function useKeyShortcuts({
     isHistoryQuestion,
     togglePreviousQuestion,
     questionChecked,
+    enabled,
   ]);
 }

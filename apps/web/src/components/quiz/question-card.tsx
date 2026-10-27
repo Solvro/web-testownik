@@ -1,4 +1,5 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { gradeResponse } from "@testownik/core/quiz/grading";
 import { getQuestionAnsweredCount } from "@testownik/core/quiz/session";
 import type { AnswerRecord, Question } from "@testownik/core/quiz/types";
 import { RotateCcwIcon, SparklesIcon, Undo2 } from "lucide-react";
@@ -9,8 +10,9 @@ import { SiGithub } from "react-icons/si";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { ChoiceAnswers } from "@/components/quiz/answers/choice-answers";
+import { OpenAnswer } from "@/components/quiz/answers/open-answer";
 import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
-import { computeAnswerVariant } from "@/components/quiz/helpers/question-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,15 +28,20 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 interface QuestionCardProps {
   quizId: string;
   question: Question | null;
+  /** Selected answer IDs, or the typed text of an open question. */
   selectedAnswers: string[];
   setSelectedAnswers: (selectedAnswers: string[]) => void;
   answers: AnswerRecord[];
   questionChecked: boolean;
+  /**
+   * How the shown answer was graded when it comes from the history, where
+   * a flashcard graded by the learner has no response to grade again.
+   */
+  wasCorrect?: boolean | null;
   nextAction: () => void;
   isQuizFinished: boolean;
   restartQuiz?: () => void;
@@ -51,6 +58,7 @@ export function QuestionCard({
   setSelectedAnswers,
   answers,
   questionChecked,
+  wasCorrect = null,
   nextAction,
   isQuizFinished,
   restartQuiz,
@@ -60,29 +68,20 @@ export function QuestionCard({
   answerHints = [],
 }: QuestionCardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAnswerClick = (answerId: string) => {
-    if (questionChecked) {
+  const toggleAnswer = (answerId: string) => {
+    if (questionChecked || question === null || question.type === "open") {
       return;
     }
-    const newSelectedAnswers = [...selectedAnswers];
-    const answerIndex = newSelectedAnswers.indexOf(answerId);
-
-    if (question?.multiple === true) {
-      if (answerIndex === -1) {
-        newSelectedAnswers.push(answerId);
-      } else {
-        newSelectedAnswers.splice(answerIndex, 1);
-      }
+    const selected = selectedAnswers.includes(answerId);
+    if (question.type === "multiple_choice") {
+      setSelectedAnswers(
+        selected
+          ? selectedAnswers.filter((id) => id !== answerId)
+          : [...selectedAnswers, answerId],
+      );
     } else {
-      if (answerIndex !== -1) {
-        newSelectedAnswers.splice(answerIndex, 1);
-      }
-      if (answerIndex === -1) {
-        newSelectedAnswers.splice(0, newSelectedAnswers.length, answerId);
-      }
+      setSelectedAnswers(selected ? [] : [answerId]);
     }
-
-    setSelectedAnswers(newSelectedAnswers);
   };
 
   useEffect(() => {
@@ -98,8 +97,12 @@ export function QuestionCard({
         }
 
         const answerIndex = Number.parseInt(event.key, 10) - 1;
-        if (question !== null && answerIndex < question.answers.length) {
-          handleAnswerClick(question.answers[answerIndex].id);
+        if (
+          question !== null &&
+          question.type !== "open" &&
+          answerIndex < question.answers.length
+        ) {
+          toggleAnswer(question.answers[answerIndex].id);
         }
       }
     };
@@ -108,7 +111,7 @@ export function QuestionCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [question, selectedAnswers, handleAnswerClick]);
+  }, [question, selectedAnswers, toggleAnswer]);
 
   if (isQuizFinished) {
     return (
@@ -181,11 +184,25 @@ export function QuestionCard({
     return null;
   }
 
-  const isQuestionAnsweredCorrectly =
-    questionChecked &&
-    question.answers.every((answer) => {
-      return answer.is_correct === selectedAnswers.includes(answer.id);
-    });
+  const open = question.type === "open";
+  const noResponse = selectedAnswers.length === 0;
+  const correct =
+    questionChecked && (wasCorrect ?? gradeResponse(question, selectedAnswers));
+  // A record without a response is a skipped question, or a flashcard the
+  // learner graded themselves.
+  const status = !questionChecked
+    ? null
+    : correct
+      ? noResponse
+        ? "Fiszka oceniona jako znana"
+        : "Poprawna odpowiedź!"
+      : noResponse
+        ? isHistoryQuestion
+          ? "Pominięto lub oceniono jako nieznane"
+          : open
+            ? "Nie podano odpowiedzi"
+            : "Nie wybrano odpowiedzi"
+        : "Niepoprawna odpowiedź.";
 
   const answersCount = getQuestionAnsweredCount(
     question.id,
@@ -263,77 +280,36 @@ export function QuestionCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col gap-2">
-          {question.answers.map((answer, answerIndex) => {
-            const hint = answerHints.find((h) => h.answerIndex === answerIndex);
-            return (
-              <div key={`answer-wrapper-${answer.id}`} className="group/answer">
-                <button
-                  id={`answer-${answer.id}`}
-                  onClick={() => {
-                    handleAnswerClick(answer.id);
-                  }}
-                  disabled={questionChecked}
-                  className={cn(
-                    "bg-input dark:bg-background focus-visible:ring-ring w-full justify-start rounded-md border px-4 py-3 text-left font-medium wrap-break-word transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed",
-                    computeAnswerVariant(
-                      selectedAnswers.includes(answer.id),
-                      questionChecked,
-                      answer.is_correct,
-                    ),
-                  )}
-                >
-                  <MarkdownRenderer
-                    className="pointer-events-none w-full text-sm"
-                    enabled={question.is_markdown_enabled !== false}
-                  >
-                    {answer.text}
-                  </MarkdownRenderer>
-                  <ImageLoad
-                    key={`answer-image-${question.id}-${answer.id}`}
-                    url={answer.image}
-                    alt={answer.text}
-                    width={answer.image_width}
-                    height={answer.image_height}
-                    className="mx-auto max-h-40 rounded object-contain"
-                  />
-                </button>
-                <div
-                  className={cn(
-                    "grid transition-all duration-300 ease-out",
-                    hint === undefined
-                      ? "grid-rows-[0fr] opacity-0"
-                      : "mt-1.5 grid-rows-[1fr] opacity-100",
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <div className="border-primary/10 bg-primary/5 flex items-start gap-2 rounded-lg border px-3 py-2">
-                      <SparklesIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
-                      <MarkdownRenderer className="text-primary text-xs leading-relaxed">
-                        {hint?.hint ?? ""}
-                      </MarkdownRenderer>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {open ? (
+          <OpenAnswer
+            question={question}
+            response={selectedAnswers[0] ?? ""}
+            checked={questionChecked}
+            onChange={(response) => {
+              setSelectedAnswers(response === "" ? [] : [response]);
+            }}
+            onSubmit={nextAction}
+          />
+        ) : (
+          <ChoiceAnswers
+            question={question}
+            selectedAnswers={selectedAnswers}
+            checked={questionChecked}
+            onToggle={toggleAnswer}
+            answerHints={answerHints}
+          />
+        )}
         <div className="mt-4 min-h-5 text-sm">
-          {questionChecked && isQuestionAnsweredCorrectly ? (
-            <p className="font-medium text-green-600 dark:text-green-400">
-              Poprawna odpowiedź!
+          {status === null ? null : (
+            <p
+              className={
+                correct
+                  ? "font-medium text-green-600 dark:text-green-400"
+                  : "text-destructive font-medium"
+              }
+            >
+              {status}
             </p>
-          ) : questionChecked && selectedAnswers.length === 0 ? (
-            <p className="text-destructive font-medium">
-              Nie wybrano odpowiedzi
-            </p>
-          ) : (
-            questionChecked && (
-              <p className="text-destructive font-medium">
-                Niepoprawna odpowiedź.
-              </p>
-            )
           )}
         </div>
         <div className="mt-2 flex justify-end gap-2">

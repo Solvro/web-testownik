@@ -2,6 +2,7 @@
 
 import { useSelector } from "@tanstack/react-form";
 import type { QuestionFormData } from "@testownik/core/quiz/schema";
+import type { QuestionType } from "@testownik/core/quiz/types";
 
 import { hasImage, questionIssue } from "./quiz-editor-form";
 import type { QuizEditorForm } from "./quiz-editor-form";
@@ -30,6 +31,7 @@ export function matchesQuery(question: QuestionFormData, query: string) {
 export interface QuestionSummary {
   id: string;
   text: string;
+  type: QuestionType;
   image: boolean;
   answers: number;
   correct: number;
@@ -43,6 +45,7 @@ function sameSummary(a: QuestionSummary | null, b: QuestionSummary | null) {
       b !== null &&
       a.id === b.id &&
       a.text === b.text &&
+      a.type === b.type &&
       a.image === b.image &&
       a.answers === b.answers &&
       a.correct === b.correct &&
@@ -64,6 +67,7 @@ export function useQuestionSummary(form: QuizEditorForm, index: number) {
               question.is_markdown_enabled === false
                 ? question.text.replaceAll(/\s+/g, " ").trim().slice(0, 200)
                 : plainText(question.text),
+            type: question.type,
             image: hasImage(question),
             answers: question.answers.length,
             correct: question.answers.filter((answer) => answer.is_correct)

@@ -1,3 +1,4 @@
+import type { Quiz } from "@testownik/core/quiz/types";
 import { AccessLevel } from "@testownik/core/quiz/types";
 
 export const mockQuiz = {
@@ -13,14 +14,16 @@ export const mockQuiz = {
       id: "mock-question-uuid-1",
       order: 1,
       text: "What is 2+2?",
-      multiple: false,
+      type: "single_choice",
+      shuffle_answers: true,
+      open_matching: "exact",
       answers: [
         { id: "mock-answer-uuid-1", order: 1, text: "4", is_correct: true },
         { id: "mock-answer-uuid-2", order: 2, text: "5", is_correct: false },
       ],
     },
   ],
-};
+} satisfies Quiz;
 
 export const mockLegacyQuiz = {
   title: "Legacy Quiz",

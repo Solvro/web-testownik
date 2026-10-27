@@ -1,6 +1,12 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
+import { isQuestionType } from "@testownik/core/quiz/question";
+import {
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+} from "@testownik/core/quiz/types";
+import type { QuestionType } from "@testownik/core/quiz/types";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -49,8 +55,9 @@ import {
   canMutate,
   createAnswer,
   hasImage,
+  picksOneAnswer,
   updateQuestion,
-  withChoiceType,
+  withQuestionType,
 } from "./quiz-editor-form";
 import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
@@ -140,20 +147,23 @@ export function QuestionEditor({
     disabled,
   };
 
-  function setMultiple(multiple: boolean) {
+  function setType(type: QuestionType) {
     updateQuestion(form, questionId, (latest) =>
-      withChoiceType(latest, multiple),
+      withQuestionType(latest, type),
     );
   }
 
   function toggleCorrect(answerId: string) {
     updateQuestion(form, questionId, (current) => {
+      if (current.type === "open") {
+        return current;
+      }
       const marking =
         current.answers.find((answer) => answer.id === answerId)?.is_correct !==
         true;
       // Marking in single choice replaces the correct answer. Unmarking only
       // clears the one answer, also when a conflict left several marked.
-      const keepOthers = current.multiple || !marking;
+      const keepOthers = !picksOneAnswer(current.type) || !marking;
       return {
         ...current,
         answers: current.answers.map((answer) => ({
@@ -166,7 +176,8 @@ export function QuestionEditor({
   }
 
   function addAnswer(afterId?: string) {
-    const created = createAnswer(0);
+    // Every answer of an open question is an accepted one.
+    const created = createAnswer(0, "", question?.type === "open");
     updateQuestion(form, questionId, (current) => {
       const position =
         afterId === undefined
@@ -253,9 +264,18 @@ export function QuestionEditor({
       return false;
     }
     const before = form.getFieldValue(`${path}.answers`);
-    updateQuestion(form, questionId, (current) =>
-      insertPastedAnswers(current, answerId, lines),
-    );
+    updateQuestion(form, questionId, (current) => {
+      const inserted = insertPastedAnswers(current, answerId, lines);
+      return current.type === "open"
+        ? {
+            ...inserted,
+            answers: inserted.answers.map((answer) => ({
+              ...answer,
+              is_correct: true,
+            })),
+          }
+        : inserted;
+    });
     const after = form.getFieldValue(`${path}.answers`);
     const paste = describePaste(before, after, answerId, text);
     const last = after.at(
@@ -284,8 +304,10 @@ export function QuestionEditor({
   }
 
   const conflict =
-    !question.multiple &&
+    picksOneAnswer(question.type) &&
     question.answers.filter((answer) => answer.is_correct).length > 1;
+  const trueFalse = question.type === "true_false";
+  const open = question.type === "open";
   const questionImage = hasImage(question);
   const markdown = question.is_markdown_enabled !== false;
 
@@ -385,29 +407,66 @@ export function QuestionEditor({
                     aria-label={`Opcje pytania ${number}`}
                     disabled={disabled}
                   >
-                    {question.multiple
-                      ? "Wielokrotny wybór"
-                      : "Jednokrotny wybór"}
+                    {QUESTION_TYPE_LABELS[question.type]}
                     <ChevronDownIcon className="opacity-70" />
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuRadioGroup
-                  value={question.multiple ? "multiple" : "single"}
+                  value={question.type}
                   onValueChange={(value) => {
-                    setMultiple(value === "multiple");
+                    if (isQuestionType(value)) {
+                      setType(value);
+                    }
                   }}
                 >
-                  <DropdownMenuLabel>Typ wyboru</DropdownMenuLabel>
-                  <DropdownMenuRadioItem value="single">
-                    Jednokrotny wybór
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="multiple">
-                    Wielokrotny wybór
-                  </DropdownMenuRadioItem>
+                  <DropdownMenuLabel>Typ pytania</DropdownMenuLabel>
+                  {QUESTION_TYPES.map((type) => (
+                    <DropdownMenuRadioItem key={type} value={type}>
+                      {QUESTION_TYPE_LABELS[type]}
+                    </DropdownMenuRadioItem>
+                  ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
+                {open ? (
+                  <>
+                    <DropdownMenuRadioGroup
+                      value={question.open_matching}
+                      onValueChange={(value) => {
+                        if (value === "exact" || value === "similar") {
+                          updateQuestion(form, questionId, (current) => ({
+                            ...current,
+                            open_matching: value,
+                          }));
+                        }
+                      }}
+                    >
+                      <DropdownMenuLabel>
+                        Sprawdzanie odpowiedzi
+                      </DropdownMenuLabel>
+                      <DropdownMenuRadioItem value="exact">
+                        Dokładne
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="similar">
+                        Z tolerancją literówek
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : trueFalse ? null : (
+                  <DropdownMenuCheckboxItem
+                    checked={question.shuffle_answers}
+                    onCheckedChange={(checked) => {
+                      updateQuestion(form, questionId, (current) => ({
+                        ...current,
+                        shuffle_answers: checked,
+                      }));
+                    }}
+                  >
+                    Losowa kolejność odpowiedzi
+                  </DropdownMenuCheckboxItem>
+                )}
                 <DropdownMenuCheckboxItem
                   checked={markdown}
                   onCheckedChange={(checked) => {
@@ -547,9 +606,22 @@ export function QuestionEditor({
           </ImageDropZone>
 
           <section
-            aria-label={`Odpowiedzi do pytania ${number}`}
+            aria-label={
+              open
+                ? `Akceptowane odpowiedzi do pytania ${number}`
+                : `Odpowiedzi do pytania ${number}`
+            }
             className="space-y-2"
           >
+            {open || trueFalse ? (
+              <p className="text-muted-foreground text-sm">
+                {trueFalse
+                  ? "Pierwsza odpowiedź oznacza prawdę, druga fałsz. Etykiety można zmienić; ich kolejność nie jest losowana."
+                  : question.open_matching === "similar"
+                    ? "Wpisana odpowiedź jest zaliczana, gdy pasuje do jednej z poniższych, także z drobnymi literówkami, bez znaków diakrytycznych i interpunkcji."
+                    : "Wpisana odpowiedź jest zaliczana, gdy jest taka sama jak jedna z poniższych. Wielkość liter i odstępy nie mają znaczenia."}
+              </p>
+            ) : null}
             <form.Field name={`${path}.answers`}>
               {(answersField) => <FieldError errors={answersField.errors} />}
             </form.Field>
@@ -563,9 +635,9 @@ export function QuestionEditor({
                   questionIndex={index}
                   answer={answer}
                   answerIndex={answerIndex}
-                  multiple={question.multiple}
+                  type={question.type}
                   conflict={conflict}
-                  canDelete={question.answers.length > minAnswers}
+                  canDelete={!trueFalse && question.answers.length > minAnswers}
                   disabled={disabled}
                   onToggleCorrect={() => {
                     toggleCorrect(answer.id);
@@ -573,10 +645,17 @@ export function QuestionEditor({
                   onEnter={() => {
                     const isLastAnswer =
                       answerIndex === question.answers.length - 1;
+                    const next = question.answers.at(answerIndex + 1);
+                    if (trueFalse) {
+                      // The two labels are fixed: Enter only moves between them.
+                      if (next !== undefined) {
+                        focusField(`answer-text-${next.id}`);
+                      }
+                      return;
+                    }
                     if (isLastAnswer && answer.text.trim() === "") {
                       return;
                     }
-                    const next = question.answers.at(answerIndex + 1);
                     if (next?.text === "") {
                       focusField(`answer-text-${next.id}`);
                     } else {
@@ -586,25 +665,29 @@ export function QuestionEditor({
                   onRemove={() => {
                     removeAnswer(answer.id);
                   }}
-                  onPasteLines={(event) => pasteLines(answer.id, event)}
+                  onPasteLines={(event) =>
+                    !trueFalse && pasteLines(answer.id, event)
+                  }
                   onUploadStart={onUploadStart}
                   onUploadEnd={onUploadEnd}
                 />
               ))}
             </div>
-            <Button
-              id={`add-answer-${questionId}`}
-              type="button"
-              variant="ghost"
-              className="text-primary hover:text-primary -ml-1 px-2"
-              disabled={disabled}
-              onClick={() => {
-                addAnswer();
-              }}
-            >
-              <PlusIcon />
-              Dodaj odpowiedź
-            </Button>
+            {trueFalse ? null : (
+              <Button
+                id={`add-answer-${questionId}`}
+                type="button"
+                variant="ghost"
+                className="text-primary hover:text-primary -ml-1 px-2"
+                disabled={disabled}
+                onClick={() => {
+                  addAnswer();
+                }}
+              >
+                <PlusIcon />
+                {open ? "Dodaj akceptowaną odpowiedź" : "Dodaj odpowiedź"}
+              </Button>
+            )}
           </section>
 
           <form.Field name={`${path}.explanation`}>

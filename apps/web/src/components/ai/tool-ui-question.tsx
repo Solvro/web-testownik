@@ -1,5 +1,12 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DEFAULT_QUESTION_TYPE_FIELDS,
+  inferChoiceType,
+  isQuestionType,
+} from "@testownik/core/quiz/question";
+import { questionTypeError } from "@testownik/core/quiz/schema";
+import { OPEN_MATCHINGS, QUESTION_TYPES } from "@testownik/core/quiz/types";
 import type {
   Question,
   QuizWithUserProgress,
@@ -56,6 +63,9 @@ interface GeneratedAnswer {
 }
 
 interface GeneratedQuestion {
+  type?: Question["type"];
+  shuffle_answers?: boolean;
+  open_matching?: Question["open_matching"];
   text?: string;
   answers?: GeneratedAnswer[];
   explanation?: string;
@@ -118,6 +128,9 @@ function createDraftAnswer(
 const questionPayloadSchema = z
   .object({
     text: z.string(),
+    type: z.enum(QUESTION_TYPES).optional(),
+    shuffle_answers: z.boolean().optional(),
+    open_matching: z.enum(OPEN_MATCHINGS).optional(),
     explanation: z.string().optional(),
     image: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
@@ -133,7 +146,7 @@ const questionPayloadSchema = z
           image_upload: z.string().nullable().optional(),
         }),
       )
-      .min(2),
+      .min(1),
   })
   .refine((question) => question.text.trim() !== "" || hasImageValue(question))
   .refine((question) =>
@@ -141,12 +154,27 @@ const questionPayloadSchema = z
       (answer) => answer.text.trim() !== "" || hasImageValue(answer),
     ),
   )
+  .refine(
+    (question) =>
+      questionTypeError({
+        type: question.type ?? inferChoiceType(question.answers),
+        answers: question.answers,
+      }) === null,
+  )
   .transform((question) => {
     const answers = question.answers.toSorted((a, b) => a.order - b.order);
     return {
       text: question.text,
       explanation: question.explanation ?? "",
-      multiple: answers.filter((answer) => answer.is_correct).length > 1,
+      ...DEFAULT_QUESTION_TYPE_FIELDS,
+      type: question.type ?? inferChoiceType(answers),
+      shuffle_answers:
+        question.type === "true_false"
+          ? false
+          : (question.shuffle_answers ??
+            DEFAULT_QUESTION_TYPE_FIELDS.shuffle_answers),
+      open_matching:
+        question.open_matching ?? DEFAULT_QUESTION_TYPE_FIELDS.open_matching,
       is_ai_generated: true,
       image_url: question.image_url,
       image_upload: question.image_upload,
@@ -177,7 +205,17 @@ function toQuestionDraft(
     order: 1,
     text: question.text ?? "",
     explanation: question.explanation ?? "",
-    multiple: answers.filter((answer) => answer.is_correct).length > 1,
+    ...DEFAULT_QUESTION_TYPE_FIELDS,
+    type: isQuestionType(question.type)
+      ? question.type
+      : inferChoiceType(answers),
+    shuffle_answers:
+      question.type === "true_false"
+        ? false
+        : (question.shuffle_answers ??
+          DEFAULT_QUESTION_TYPE_FIELDS.shuffle_answers),
+    open_matching:
+      question.open_matching ?? DEFAULT_QUESTION_TYPE_FIELDS.open_matching,
     is_ai_generated: true,
     image: question.image ?? question.image_url ?? null,
     image_url: question.image_url ?? null,
@@ -488,7 +526,7 @@ function QuestionCard({
             }}
             hideDelete
             hideFullEditor
-            minAnswers={2}
+            minAnswers={1}
           />
         ) : null}
       </CardContent>
