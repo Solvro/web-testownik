@@ -4,8 +4,7 @@ import { getQuestionAnsweredCount } from "@testownik/core/quiz/session";
 import type { AnswerRecord, Question } from "@testownik/core/quiz/types";
 import {
   CheckIcon,
-  ListChecksIcon,
-  RotateCwIcon,
+  FlipHorizontal2Icon,
   SparklesIcon,
   XIcon,
 } from "lucide-react";
@@ -38,13 +37,10 @@ export function FlashcardCard({
   question,
   answers,
   onGrade,
-  onShowAnswers,
 }: {
   question: Question;
   answers: AnswerRecord[];
   onGrade: (knew: boolean) => void;
-  /** Answers this card as in the quiz instead. */
-  onShowAnswers: () => void;
 }) {
   const [flipped, setFlipped] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -268,49 +264,67 @@ export function FlashcardCard({
               aria-hidden={!flipped}
               className="bg-card text-card-foreground flex min-h-80 rotate-y-180 flex-col gap-4 rounded-xl border p-6 shadow-sm backface-hidden"
             >
-              <header className="text-muted-foreground text-sm font-medium">
-                {question.type === "open"
-                  ? correct.length === 1
-                    ? "Poprawna odpowiedź"
-                    : "Akceptowane odpowiedzi"
-                  : correct.length === 1
-                    ? "Poprawna odpowiedź"
-                    : "Poprawne odpowiedzi"}
-              </header>
-              <ul className="flex flex-1 flex-col justify-center gap-2">
-                {correct.map((answer) => (
-                  <li
-                    key={answer.id}
-                    className="flex items-start gap-2 rounded-md border border-green-500/40 bg-green-500/10 px-3 py-2 text-green-800 dark:text-green-300"
-                  >
-                    <CheckIcon
-                      className="mt-0.5 size-4 shrink-0"
-                      aria-hidden="true"
+              {/* The question stays in view, small, so the answer reads in context. */}
+              <MarkdownRenderer
+                className="text-muted-foreground line-clamp-2 text-sm"
+                enabled={markdown}
+              >
+                {question.text}
+              </MarkdownRenderer>
+              <div className="flex flex-1 flex-col items-center justify-center py-2">
+                {correct.length === 1 ? (
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <MarkdownRenderer
+                      className="text-xl leading-snug font-medium text-balance"
+                      enabled={markdown}
+                    >
+                      {correct[0].text}
+                    </MarkdownRenderer>
+                    <ImageLoad
+                      key={`flashcard-answer-image-${correct[0].id}`}
+                      url={correct[0].image}
+                      alt={correct[0].text}
+                      width={correct[0].image_width}
+                      height={correct[0].image_height}
+                      className="mx-auto max-h-56 rounded border object-contain"
                     />
-                    <div className="min-w-0 flex-1">
-                      <MarkdownRenderer className="text-sm" enabled={markdown}>
-                        {answer.text}
-                      </MarkdownRenderer>
-                      <ImageLoad
-                        key={`flashcard-answer-image-${answer.id}`}
-                        url={answer.image}
-                        alt={answer.text}
-                        width={answer.image_width}
-                        height={answer.image_height}
-                        className="mt-1 max-h-40 rounded object-contain"
-                      />
-                    </div>
-                  </li>
-                ))}
-                {correct.length === 0 ? (
-                  <li className="text-muted-foreground text-sm">
+                  </div>
+                ) : correct.length === 0 ? (
+                  <p className="text-muted-foreground text-center text-sm">
                     To pytanie nie ma oznaczonej poprawnej odpowiedzi.
-                  </li>
-                ) : null}
-              </ul>
+                  </p>
+                ) : (
+                  <ul className="flex w-full max-w-xl flex-col gap-3">
+                    {correct.map((answer) => (
+                      <li key={answer.id} className="flex items-start gap-3">
+                        <CheckIcon
+                          className="mt-1 size-5 shrink-0 text-green-600 dark:text-green-400"
+                          aria-hidden="true"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <MarkdownRenderer
+                            className="text-lg leading-snug font-medium"
+                            enabled={markdown}
+                          >
+                            {answer.text}
+                          </MarkdownRenderer>
+                          <ImageLoad
+                            key={`flashcard-answer-image-${answer.id}`}
+                            url={answer.image}
+                            alt={answer.text}
+                            width={answer.image_width}
+                            height={answer.image_height}
+                            className="mt-2 max-h-40 rounded border object-contain"
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               {question.explanation != null &&
               question.explanation.trim() !== "" ? (
-                <div className="bg-muted/40 rounded-md border p-3 text-sm">
+                <div className="text-muted-foreground border-t pt-4 text-sm leading-relaxed">
                   <MarkdownRenderer enabled={markdown}>
                     {question.explanation}
                   </MarkdownRenderer>
@@ -359,10 +373,10 @@ export function FlashcardCard({
           aria-label={flipped ? "Pokaż pytanie" : "Pokaż odpowiedź"}
           aria-keyshortcuts="Space"
         >
-          <RotateCwIcon
+          <FlipHorizontal2Icon
             className={cn(
               "transition-transform duration-500",
-              flipped && "rotate-180",
+              flipped && "-scale-x-100",
             )}
           />
         </Button>
@@ -380,19 +394,6 @@ export function FlashcardCard({
           <CheckIcon />
           Umiem
           <Kbd className="hidden sm:inline-flex">2</Kbd>
-        </Button>
-      </div>
-      <div className="mt-2 flex justify-center">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground"
-          disabled={leaving !== null}
-          onClick={onShowAnswers}
-        >
-          <ListChecksIcon />
-          Odpowiedz jak w quizie
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import {
   BarChart3Icon,
   CopyIcon,
   EyeOffIcon,
+  GalleryHorizontalEndIcon,
   HistoryIcon,
   Link2Icon,
   Loader2Icon,
@@ -211,6 +212,14 @@ export function QuizInfoCard({
                   Ustawienia
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  render={(props) => (
+                    <Link {...props} href={`/quiz/${quiz.id}/flashcards`}>
+                      <GalleryHorizontalEndIcon />
+                      Fiszki
+                    </Link>
+                  )}
+                />
                 {canViewStats ? (
                   <DropdownMenuItem
                     render={(props) => (
