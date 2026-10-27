@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { Suspense } from "react";
 
@@ -12,12 +13,13 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
+import { shouldRenderBareDocument } from "@/lib/document-shell";
+import { OriginTrialMetas } from "@/lib/origin-trials";
 
 import "./globals.css";
 import { Providers } from "./providers";
 
 const hankenGrotesk = Hanken_Grotesk({
-  weight: ["100", "300", "400"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -33,11 +35,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: env.NEXT_PUBLIC_SITE_URL,
   },
+  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   robots: "index, follow",
-  ...(process.env.COOLIFY_URL != null &&
-    process.env.COOLIFY_URL !== "" && {
-      metadataBase: new URL(process.env.COOLIFY_URL),
-    }),
   openGraph: {
     title: "Testownik Solvro - Twoje narzędzie do nauki",
     description:
@@ -78,6 +77,25 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The landing's device-screen iframes bring their own providers; see
+  // `lib/document-shell.ts`.
+  const requestHeaders = await headers();
+  if (shouldRenderBareDocument(requestHeaders)) {
+    return (
+      <html
+        lang="pl"
+        data-landing-screen-document
+        suppressHydrationWarning
+        className={hankenGrotesk.className}
+      >
+        <head>
+          <OriginTrialMetas />
+        </head>
+        <body className="bg-background overflow-hidden">{children}</body>
+      </html>
+    );
+  }
+
   const user = await getServerCurrentUser();
 
   return (
@@ -87,6 +105,7 @@ export default async function RootLayout({
       className={hankenGrotesk.className}
     >
       <head>
+        <OriginTrialMetas />
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
@@ -123,7 +142,7 @@ export default async function RootLayout({
           src="https://analytics.solvro.pl/script.js"
           data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
           data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <Script
           src="https://analytics.solvro.pl/recorder.js"
@@ -131,7 +150,7 @@ export default async function RootLayout({
           data-sample-rate="1"
           data-mask-level="moderate"
           data-max-duration="300000"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </body>
     </html>

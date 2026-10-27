@@ -25,6 +25,7 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getProposalQuestionId } from "@/lib/ai/chat-proposal-context";
 
 export interface ChatNotice {
   kind: "warning";
@@ -39,6 +40,8 @@ interface ChatThreadProps {
   composerDisabled?: boolean;
   composerDisabledMessage?: string;
   quotaNotice?: ChatNotice | null;
+  /** Replaces the generic text shown when a request fails. */
+  errorMessage?: string | null;
 }
 
 function hasRenderableAssistantContent(message: UIMessage) {
@@ -210,6 +213,7 @@ export function ChatThread({
   composerDisabled = false,
   composerDisabledMessage,
   quotaNotice,
+  errorMessage,
 }: ChatThreadProps) {
   const {
     messages,
@@ -268,6 +272,11 @@ export function ChatThread({
                     >
                       <ChatMessage
                         message={message}
+                        originQuestionId={getProposalQuestionId(
+                          messages,
+                          index,
+                          runtime.questionContextSnapshots,
+                        )}
                         running={
                           running ? index === messages.length - 1 : false
                         }
@@ -310,7 +319,8 @@ export function ChatThread({
                       role="alert"
                     >
                       <MarkerContent className="flex-1">
-                        Nie udało się wygenerować odpowiedzi.
+                        {errorMessage ??
+                          "Nie udało się wygenerować odpowiedzi."}
                       </MarkerContent>
                       <Button
                         type="button"

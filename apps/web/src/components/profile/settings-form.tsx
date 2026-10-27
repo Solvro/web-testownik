@@ -41,7 +41,10 @@ export function SettingsForm({
       )}
     >
       <div className="grid gap-2">
-        <div className="flex flex-col justify-between gap-2 md:flex-row">
+        <div
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
+        >
           <Label
             className="text-sm font-medium"
             htmlFor="initial-reoccurrences"
@@ -93,7 +96,10 @@ export function SettingsForm({
         </div>
       </div>
       <div className="grid gap-2">
-        <div className="flex flex-col justify-between gap-2 md:flex-row">
+        <div
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
+        >
           <Label
             className="text-sm font-medium"
             htmlFor="wrong-answer-reoccurrences"
@@ -145,7 +151,10 @@ export function SettingsForm({
         </div>
       </div>
       <div className="grid gap-2">
-        <div className="flex flex-col justify-between gap-2 md:flex-row">
+        <div
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
+        >
           <Label
             className="text-sm font-medium"
             htmlFor="max-question-reoccurrences-switch"
@@ -165,7 +174,10 @@ export function SettingsForm({
         </div>
       </div>
       <div className="grid gap-2">
-        <div className="flex flex-col justify-between gap-2 md:flex-row">
+        <div
+          data-slot="settings-form-row"
+          className="flex flex-col justify-between gap-2 md:flex-row"
+        >
           <Label
             className="text-sm font-medium"
             htmlFor="max-question-reoccurrences-input"

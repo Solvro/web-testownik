@@ -20,6 +20,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  isEventForSurface,
+  useEmbeddedSurface,
+} from "@/components/ui/portal-container";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -85,8 +89,15 @@ export function QuestionCard({
     setSelectedAnswers(newSelectedAnswers);
   };
 
+  // Embedded previews only react to keys pressed while focus is inside them;
+  // in the app the shortcuts are page-wide.
+  const surface = useEmbeddedSurface();
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isEventForSurface(surface, event)) {
+        return;
+      }
       if (event.key >= "1" && event.key <= "9") {
         const target = event.target as HTMLElement;
         if (isInputElement(target)) {
@@ -108,7 +119,7 @@ export function QuestionCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [question, selectedAnswers, handleAnswerClick]);
+  }, [question, selectedAnswers, handleAnswerClick, surface]);
 
   if (isQuizFinished) {
     return (
@@ -309,7 +320,7 @@ export function QuestionCard({
                   <div className="overflow-hidden">
                     <div className="border-primary/10 bg-primary/5 flex items-start gap-2 rounded-lg border px-3 py-2">
                       <SparklesIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
-                      <MarkdownRenderer className="text-primary text-xs leading-relaxed">
+                      <MarkdownRenderer className="text-primary/80 prose-strong:text-primary text-xs leading-relaxed">
                         {hint?.hint ?? ""}
                       </MarkdownRenderer>
                     </div>
@@ -336,7 +347,10 @@ export function QuestionCard({
             )
           )}
         </div>
-        <div className="mt-2 flex justify-end gap-2">
+        <div
+          data-slot="question-card-actions"
+          className="mt-2 flex justify-end gap-2"
+        >
           {isHistoryQuestion ? (
             <Button variant="outline" onClick={togglePreviousQuestion}>
               Powrót do pytań
@@ -350,6 +364,7 @@ export function QuestionCard({
                       <Button
                         variant="outline"
                         size="icon"
+                        aria-label="Poprzednie pytanie"
                         onClick={togglePreviousQuestion}
                       >
                         <Undo2 />
