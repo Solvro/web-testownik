@@ -29,7 +29,9 @@ describe("recordAnswer", () => {
         ),
       );
       const service = new QuizService("http://test.local");
-      await service.recordAnswer("quiz", answer, 12, "next", selfAssessment);
+      await service.recordAnswer("quiz", answer, 12, "next", {
+        selfAssessment,
+      });
       expect(payload).toEqual({
         question_id: "question",
         study_time: 12,
@@ -41,6 +43,25 @@ describe("recordAnswer", () => {
       });
     },
   );
+});
+
+test("a skip sends skipped=true with no selected answers", async () => {
+  let payload: unknown;
+  server.use(
+    http.post("http://test.local/quizzes/quiz/answer/", async ({ request }) => {
+      payload = await request.json();
+      return HttpResponse.json(answer);
+    }),
+  );
+  const service = new QuizService("http://test.local");
+  await service.recordAnswer("quiz", answer, 12, "next", { skipped: true });
+  expect(payload).toEqual({
+    question_id: "question",
+    study_time: 12,
+    next_question: "next",
+    selected_answers: [],
+    skipped: true,
+  });
 });
 
 describe("question creation", () => {

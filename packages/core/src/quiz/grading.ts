@@ -144,14 +144,11 @@ export function acceptedAnswers(question: GradableQuestion) {
 
 /**
  * Whether `response` answers the question correctly. For choice types it
- * holds the selected answer IDs; for open questions the typed text, or
- * nothing when the question was skipped.
+ * holds the selected answer IDs: selecting nothing is right only when no
+ * answer is correct. For open questions it holds the typed text; nothing
+ * typed is never right. Skips are recorded as wrong without grading.
  */
 export function gradeResponse(question: GradableQuestion, response: string[]) {
-  // A skipped question is never right, also when nothing is correct.
-  if (response.length === 0) {
-    return false;
-  }
   if (question.type === "open") {
     const typed = response.at(0);
     return (

@@ -97,8 +97,10 @@ describe("gradeResponse", () => {
     expect(gradeResponse(question, [])).toBe(false);
   });
 
-  it("never counts a skipped question as right", () => {
-    expect(gradeResponse(choice("multiple_choice", []), [])).toBe(false);
+  it("counts selecting nothing as right only when no answer is correct", () => {
+    expect(gradeResponse(choice("multiple_choice", []), [])).toBe(true);
+    expect(gradeResponse(choice("multiple_choice", []), ["a"])).toBe(false);
+    expect(gradeResponse(choice("single_choice", ["a"]), [])).toBe(false);
     expect(gradeResponse(open("exact", ""), [])).toBe(false);
   });
 

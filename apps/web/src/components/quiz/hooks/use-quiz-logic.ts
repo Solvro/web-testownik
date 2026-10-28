@@ -228,6 +228,7 @@ export function useQuizLogic({
       newAnswer,
       studyTime,
       nextQ?.id ?? null,
+      { skipped: true },
     );
 
     continuity.sendAnswerChecked(nextQ, newAnswer);
@@ -265,7 +266,7 @@ export function useQuizLogic({
       record,
       studyTime,
       nextQ?.id ?? null,
-      knew,
+      { selfAssessment: knew },
     );
 
     continuity.sendAnswerChecked(nextQ, record);
