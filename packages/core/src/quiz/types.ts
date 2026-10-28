@@ -32,12 +32,32 @@ export interface Answer {
   image_height?: number | null; // Read-only (Display)
 }
 
+/**
+ * How a question is answered. Choice types pick from `answers`; `open` is
+ * typed and compared with the accepted answers in `answers`.
+ */
+export const QUESTION_TYPES = [
+  "single_choice",
+  "multiple_choice",
+  "true_false",
+  "open",
+] as const;
+
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+
+/** How a typed answer to an open question is compared with the accepted ones. */
+export const OPEN_MATCHINGS = ["exact", "similar"] as const;
+
+export type OpenMatching = (typeof OPEN_MATCHINGS)[number];
+
 export interface Question {
   id: string;
   order: number;
   text: string;
   explanation?: string;
-  multiple: boolean;
+  type: QuestionType;
+  /** Only read for open questions. */
+  open_matching: OpenMatching;
   is_ai_generated?: boolean;
   /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
   is_markdown_enabled?: boolean;
@@ -146,7 +166,8 @@ export interface QuizVersionQuestion {
   order: number;
   text: string;
   explanation: string;
-  multiple: boolean;
+  type: QuestionType;
+  open_matching: OpenMatching;
   is_markdown_enabled?: boolean;
   image: string | null;
   answers: QuizVersionAnswer[];

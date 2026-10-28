@@ -1,5 +1,11 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DEFAULT_QUESTION_TYPE_FIELDS,
+  inferChoiceType,
+} from "@testownik/core/quiz/question";
+import { choiceTypeError } from "@testownik/core/quiz/schema";
+import { OPEN_MATCHINGS, QUESTION_TYPES } from "@testownik/core/quiz/types";
 import type {
   Question,
   QuizWithUserProgress,
@@ -118,6 +124,9 @@ function createDraftAnswer(
 const questionPayloadSchema = z
   .object({
     text: z.string(),
+    // Set on drafts, possibly changed in quick edit; inferred otherwise.
+    type: z.enum(QUESTION_TYPES).optional(),
+    open_matching: z.enum(OPEN_MATCHINGS).optional(),
     explanation: z.string().optional(),
     image: z.string().nullable().optional(),
     image_url: z.string().nullable().optional(),
@@ -141,12 +150,22 @@ const questionPayloadSchema = z
       (answer) => answer.text.trim() !== "" || hasImageValue(answer),
     ),
   )
+  .refine(
+    (question) =>
+      choiceTypeError({
+        type: question.type ?? inferChoiceType(question.answers),
+        answers: question.answers,
+      }) === null,
+  )
   .transform((question) => {
     const answers = question.answers.toSorted((a, b) => a.order - b.order);
     return {
       text: question.text,
       explanation: question.explanation ?? "",
-      multiple: answers.filter((answer) => answer.is_correct).length > 1,
+      ...DEFAULT_QUESTION_TYPE_FIELDS,
+      type: question.type ?? inferChoiceType(answers),
+      open_matching:
+        question.open_matching ?? DEFAULT_QUESTION_TYPE_FIELDS.open_matching,
       is_ai_generated: true,
       image_url: question.image_url,
       image_upload: question.image_upload,
@@ -177,7 +196,8 @@ function toQuestionDraft(
     order: 1,
     text: question.text ?? "",
     explanation: question.explanation ?? "",
-    multiple: answers.filter((answer) => answer.is_correct).length > 1,
+    ...DEFAULT_QUESTION_TYPE_FIELDS,
+    type: inferChoiceType(answers),
     is_ai_generated: true,
     image: question.image ?? question.image_url ?? null,
     image_url: question.image_url ?? null,

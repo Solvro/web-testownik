@@ -19,7 +19,8 @@ const currentQuiz: Quiz = {
       id: "q-1",
       order: 1,
       text: "Question?",
-      multiple: false,
+      type: "single_choice",
+      open_matching: "exact",
       answers: [
         {
           id: "a-1",
@@ -75,7 +76,8 @@ describe("migrateLegacyGuestQuizzes", () => {
           id: "q-1",
           order: 1,
           text: "Question?",
-          multiple: false,
+          type: "single_choice",
+          open_matching: "exact",
           explanation: undefined,
           image_url: null,
           image_upload: null,

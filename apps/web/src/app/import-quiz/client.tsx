@@ -560,10 +560,17 @@ function ImportQuizPageContent(): React.JSX.Element {
                           automatycznie od 1 (opcjonalne).
                         </li>
                         <li>
-                          <TypographyInlineCode>multiple</TypographyInlineCode>{" "}
-                          – czy jest wiele poprawnych odpowiedzi; domyślnie{" "}
-                          <TypographyInlineCode>false</TypographyInlineCode>{" "}
-                          (opcjonalne).
+                          <TypographyInlineCode>type</TypographyInlineCode> –
+                          typ pytania:{" "}
+                          <TypographyInlineCode>
+                            single_choice
+                          </TypographyInlineCode>{" "}
+                          (jednokrotny wybór) lub{" "}
+                          <TypographyInlineCode>
+                            multiple_choice
+                          </TypographyInlineCode>{" "}
+                          (wielokrotny wybór); jeśli brak, wynika z liczby
+                          poprawnych odpowiedzi (opcjonalne).
                         </li>
                         <li>
                           <TypographyInlineCode>
@@ -637,7 +644,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                     "is_correct": false
                 }
             ],
-            "multiple": false, // Opcjonalny, domyślnie false
+            "type": "single_choice", // Opcjonalny, domyślnie wg liczby poprawnych odpowiedzi
             "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny
         },
         {
@@ -655,7 +662,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                     "is_correct": false
                 }
             ],
-            "multiple": false
+            "type": "single_choice"
         },
         {
             "order": 3, // Opcjonalny, jeśli brak to automatycznie od 1
@@ -675,7 +682,7 @@ function ImportQuizPageContent(): React.JSX.Element {
                     "is_correct": false
                 }
             ],
-            "multiple": true // Opcjonalny, domyślnie false
+            "type": "multiple_choice" // Opcjonalny, domyślnie wg liczby poprawnych odpowiedzi
         }
     ]
 }`}

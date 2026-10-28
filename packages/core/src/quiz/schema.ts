@@ -1,5 +1,7 @@
 import * as z from "zod";
 
+import { OPEN_MATCHINGS, QUESTION_TYPES } from "./types";
+import type { QuestionType } from "./types";
 import { formatValidationError } from "./validation";
 
 export const answerFormSchema = z
@@ -45,10 +47,10 @@ export const SINGLE_CHOICE_REQUIRED_ERROR =
  * Single choice needs exactly one correct answer.
  */
 export function choiceTypeError(question: {
-  multiple: boolean;
+  type: QuestionType;
   answers: { is_correct: boolean }[];
 }) {
-  if (question.multiple) {
+  if (question.type !== "single_choice") {
     return null;
   }
   const correct = question.answers.filter((answer) => answer.is_correct).length;
@@ -67,7 +69,8 @@ export const questionFormSchema = z
     order: z.number(),
     text: z.string(),
     explanation: z.string().optional(),
-    multiple: z.boolean(),
+    type: z.enum(QUESTION_TYPES),
+    open_matching: z.enum(OPEN_MATCHINGS),
     is_ai_generated: z.boolean().optional(),
     /** Whether the text, answers and explanation render as Markdown. Defaults to true. */
     is_markdown_enabled: z.boolean().optional(),

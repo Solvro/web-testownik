@@ -142,7 +142,7 @@ export function QuestionEditor({
 
   function setMultiple(multiple: boolean) {
     updateQuestion(form, questionId, (latest) =>
-      withChoiceType(latest, multiple),
+      withChoiceType(latest, multiple ? "multiple_choice" : "single_choice"),
     );
   }
 
@@ -153,7 +153,7 @@ export function QuestionEditor({
         true;
       // Marking in single choice replaces the correct answer. Unmarking only
       // clears the one answer, also when a conflict left several marked.
-      const keepOthers = current.multiple || !marking;
+      const keepOthers = current.type === "multiple_choice" || !marking;
       return {
         ...current,
         answers: current.answers.map((answer) => ({
@@ -283,8 +283,9 @@ export function QuestionEditor({
     return true;
   }
 
+  const multiple = question.type === "multiple_choice";
   const conflict =
-    !question.multiple &&
+    !multiple &&
     question.answers.filter((answer) => answer.is_correct).length > 1;
   const questionImage = hasImage(question);
   const markdown = question.is_markdown_enabled !== false;
@@ -385,16 +386,14 @@ export function QuestionEditor({
                     aria-label={`Opcje pytania ${number}`}
                     disabled={disabled}
                   >
-                    {question.multiple
-                      ? "Wielokrotny wybór"
-                      : "Jednokrotny wybór"}
+                    {multiple ? "Wielokrotny wybór" : "Jednokrotny wybór"}
                     <ChevronDownIcon className="opacity-70" />
                   </Button>
                 }
               />
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuRadioGroup
-                  value={question.multiple ? "multiple" : "single"}
+                  value={multiple ? "multiple" : "single"}
                   onValueChange={(value) => {
                     setMultiple(value === "multiple");
                   }}
@@ -563,7 +562,7 @@ export function QuestionEditor({
                   questionIndex={index}
                   answer={answer}
                   answerIndex={answerIndex}
-                  multiple={question.multiple}
+                  multiple={multiple}
                   conflict={conflict}
                   canDelete={question.answers.length > minAnswers}
                   disabled={disabled}

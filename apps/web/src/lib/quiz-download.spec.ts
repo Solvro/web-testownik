@@ -34,7 +34,8 @@ describe("prepareQuizForDownload", () => {
           id: "q1",
           order: 1,
           text: "Question",
-          multiple: false,
+          type: "single_choice",
+          open_matching: "exact",
           image: "https://api.example.test/uploads/q1.png",
           image_upload: "question-upload-id",
           answers: [
@@ -79,7 +80,8 @@ describe("prepareQuizForDownload", () => {
           id: "q1",
           order: 1,
           text: "Question",
-          multiple: false,
+          type: "single_choice",
+          open_matching: "exact",
           image: "https://example.test/q1.png",
           image_upload: null,
           answers: [

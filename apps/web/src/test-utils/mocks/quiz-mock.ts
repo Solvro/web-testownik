@@ -13,7 +13,8 @@ export const mockQuiz = {
       id: "mock-question-uuid-1",
       order: 1,
       text: "What is 2+2?",
-      multiple: false,
+      type: "single_choice",
+      open_matching: "exact",
       answers: [
         { id: "mock-answer-uuid-1", order: 1, text: "4", is_correct: true },
         { id: "mock-answer-uuid-2", order: 2, text: "5", is_correct: false },
@@ -28,7 +29,8 @@ export const mockLegacyQuiz = {
     {
       id: 1,
       question: "Legacy Question?",
-      multiple: false,
+      type: "single_choice",
+      open_matching: "exact",
       answers: [
         { answer: "Yes", correct: true },
         { answer: "No", correct: false },

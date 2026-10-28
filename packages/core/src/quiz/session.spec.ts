@@ -13,7 +13,8 @@ const makeQuestion = (id: string): Question => ({
   id,
   order: 1,
   text: id,
-  multiple: false,
+  type: "single_choice",
+  open_matching: "exact",
   answers: ["a", "b", "c", "d"].map((suffix, index) => ({
     id: `${id}-${suffix}`,
     order: index + 1,

@@ -331,7 +331,10 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   setSelectedAnswers={(newSelected) => {
                     resetInactivityTimer();
                     // If question is not multiple, unselect everything except the new
-                    if (currentQuestion !== null && !currentQuestion.multiple) {
+                    if (
+                      currentQuestion !== null &&
+                      currentQuestion.type !== "multiple_choice"
+                    ) {
                       setSelectedAnswers(
                         newSelected.length > 0 ? [newSelected[0]] : [],
                       );
