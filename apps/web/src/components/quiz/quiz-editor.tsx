@@ -381,7 +381,9 @@ export function QuizEditor(props: QuizEditorProps) {
     const questions = form.getFieldValue("questions");
     const question = createQuestion(
       questions.length + 1,
-      questions.at(-1)?.multiple ?? false,
+      questions.at(-1)?.type === "multiple_choice"
+        ? "multiple_choice"
+        : "single_choice",
     );
     form.pushFieldValue("questions", question);
     setSearch("");
@@ -794,7 +796,9 @@ function BulkActions({
   // The choice type shared by every question, or "" when they differ.
   const allChoice = useSelector(form.atom, (state) => {
     const types = new Set(
-      state.values.questions.map((question) => question.multiple),
+      state.values.questions.map(
+        (question) => question.type === "multiple_choice",
+      ),
     );
     return types.size === 1 ? ([...types][0] ? "multiple" : "single") : "";
   });
@@ -858,10 +862,15 @@ function BulkActions({
     const previous: ChoiceTypes = new Map(
       form
         .getFieldValue("questions")
-        .map((question) => [question.id, question.multiple]),
+        .map((question) => [question.id, question.type]),
     );
     form.setFieldValue("questions", (questions) =>
-      questions.map((question) => withChoiceType(question, multiple)),
+      questions.map((question) =>
+        withChoiceType(
+          question,
+          multiple ? "multiple_choice" : "single_choice",
+        ),
+      ),
     );
     revalidate(form);
     const conflicts = form

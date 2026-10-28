@@ -1,7 +1,31 @@
+import {
+  DEFAULT_QUESTION_TYPE_FIELDS,
+  inferChoiceType,
+  isQuestionType,
+} from "@testownik/core/quiz/question";
 import type { Answer, Question, Quiz } from "@testownik/core/quiz/types";
 import { AccessLevel } from "@testownik/core/quiz/types";
 
 import type { LegacyQuiz } from "@/types/quiz-legacy";
+
+/** Normalize type fields from current JSON or legacy exports/local storage. */
+export function normalizeQuestionTypeFields(question: {
+  type?: unknown;
+  open_matching?: unknown;
+  multiple?: unknown;
+  answers: { is_correct: boolean }[];
+}): Pick<Question, "type" | "open_matching"> {
+  const type = isQuestionType(question.type)
+    ? question.type
+    : question.multiple === true
+      ? "multiple_choice"
+      : inferChoiceType(question.answers);
+  return {
+    ...DEFAULT_QUESTION_TYPE_FIELDS,
+    type,
+    open_matching: question.open_matching === "similar" ? "similar" : "exact",
+  };
+}
 
 /**
  * Migrates a legacy quiz object to the current Quiz format.
@@ -36,7 +60,7 @@ export function migrateLegacyQuiz(
         order: legacyId, // Move old id to order
         text: question.question ?? "",
         explanation: question.explanation,
-        multiple: question.multiple,
+        ...normalizeQuestionTypeFields({ ...question, answers }),
         image_url: question.image,
         answers,
       };

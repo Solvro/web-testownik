@@ -1,5 +1,9 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DEFAULT_QUESTION_TYPE_FIELDS,
+  inferChoiceType,
+} from "@testownik/core/quiz/question";
 import type {
   Question,
   QuizWithUserProgress,
@@ -146,7 +150,8 @@ const questionPayloadSchema = z
     return {
       text: question.text,
       explanation: question.explanation ?? "",
-      multiple: answers.filter((answer) => answer.is_correct).length > 1,
+      ...DEFAULT_QUESTION_TYPE_FIELDS,
+      type: inferChoiceType(answers),
       is_ai_generated: true,
       image_url: question.image_url,
       image_upload: question.image_upload,
@@ -177,7 +182,8 @@ function toQuestionDraft(
     order: 1,
     text: question.text ?? "",
     explanation: question.explanation ?? "",
-    multiple: answers.filter((answer) => answer.is_correct).length > 1,
+    ...DEFAULT_QUESTION_TYPE_FIELDS,
+    type: inferChoiceType(answers),
     is_ai_generated: true,
     image: question.image ?? question.image_url ?? null,
     image_url: question.image_url ?? null,

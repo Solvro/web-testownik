@@ -67,7 +67,7 @@ export function QuestionCard({
     const newSelectedAnswers = [...selectedAnswers];
     const answerIndex = newSelectedAnswers.indexOf(answerId);
 
-    if (question?.multiple === true) {
+    if (question?.type === "multiple_choice") {
       if (answerIndex === -1) {
         newSelectedAnswers.push(answerId);
       } else {
