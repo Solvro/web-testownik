@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { migrateLegacyQuiz } from "@/lib/migration";
+import {
+  migrateLegacyQuiz,
+  normalizeQuestionTypeFields,
+} from "@/lib/migration";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -239,5 +242,35 @@ describe("Migration", () => {
 
       expect(quiz.title).toBe("Untitled Quiz");
     });
+  });
+});
+
+describe("normalizeQuestionTypeFields", () => {
+  const one = [{ is_correct: true }, { is_correct: false }];
+  const two = [{ is_correct: true }, { is_correct: true }];
+
+  it("keeps a valid type and open matching", () => {
+    expect(
+      normalizeQuestionTypeFields({
+        type: "open",
+        open_matching: "similar",
+        answers: one,
+      }),
+    ).toEqual({ type: "open", open_matching: "similar" });
+  });
+
+  it("maps the legacy multiple flag to multiple choice", () => {
+    expect(
+      normalizeQuestionTypeFields({ multiple: true, answers: one }).type,
+    ).toBe("multiple_choice");
+  });
+
+  it("infers the choice type from the correct answers otherwise", () => {
+    expect(
+      normalizeQuestionTypeFields({ type: "unknown", answers: two }),
+    ).toEqual({ type: "multiple_choice", open_matching: "exact" });
+    expect(
+      normalizeQuestionTypeFields({ multiple: false, answers: one }),
+    ).toEqual({ type: "single_choice", open_matching: "exact" });
   });
 });

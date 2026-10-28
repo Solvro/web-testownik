@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_QUESTION_TYPE_FIELDS,
   isQuestionType,
+  typeAfterAnswerEdit,
 } from "@testownik/core/quiz/question";
 import { prepareQuestionForSubmission } from "@testownik/core/quiz/schema";
 import { QUESTION_TYPE_LABELS } from "@testownik/core/quiz/types";
@@ -133,8 +134,11 @@ function buildEditedQuestion(
     order: index + 1,
   }));
   // An edit which says nothing about the type keeps it: rewording an open
-  // question must not turn it into a choice.
-  const type = isQuestionType(edit.type) ? edit.type : question.type;
+  // question must not turn it into a choice. Single choice still becomes
+  // multiple choice when the edit marks several answers correct.
+  const type = isQuestionType(edit.type)
+    ? edit.type
+    : typeAfterAnswerEdit(question.type, answers);
 
   return {
     ...DEFAULT_QUESTION_TYPE_FIELDS,
