@@ -42,6 +42,8 @@ vi.mock("@/services", () => ({
 const profile: UserData = {
   id: "user-1",
   full_name: "Anna Nowak",
+  first_name: "Anna",
+  last_name: "Nowak",
   photo: null,
   student_number: "123",
   email: "anna@example.com",
