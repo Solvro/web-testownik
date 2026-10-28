@@ -341,7 +341,8 @@ export async function POST(request: Request) {
                   order: q.order,
                   text: truncateQuestionPreview(q.text),
                   answer_count: q.answers.length,
-                  multiple: q.multiple,
+                  type: q.type,
+                  open_matching: q.open_matching,
                   has_explanation:
                     q.explanation !== undefined && q.explanation.trim() !== "",
                 })),
@@ -366,7 +367,8 @@ export async function POST(request: Request) {
                 order: question.order,
                 text: question.text,
                 explanation: question.explanation ?? null,
-                multiple: question.multiple,
+                type: question.type,
+                open_matching: question.open_matching,
                 answers: question.answers.map((a) => ({
                   text: a.text,
                   is_correct: a.is_correct,

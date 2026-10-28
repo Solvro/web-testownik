@@ -40,7 +40,8 @@ type CreateQuestionAnswerData = Pick<
 type CreateQuestionData = Pick<
   Question,
   | "text"
-  | "multiple"
+  | "type"
+  | "open_matching"
   | "image_url"
   | "image_upload"
   | "is_ai_generated"
@@ -369,10 +370,9 @@ export class QuizService extends BaseApiService {
       quiz: quizId,
       text: data.text,
       explanation: data.explanation ?? "",
-      multiple: data.multiple,
+      type: data.type,
+      open_matching: data.open_matching,
       ...imageFields,
-      question_type: 0,
-      is_flashcard: false,
       is_markdown_enabled: true,
       is_ai_generated: data.is_ai_generated ?? false,
       answers: data.answers.map((a, index) => {
@@ -399,10 +399,9 @@ export class QuizService extends BaseApiService {
         return {
           text: q.text,
           explanation: q.explanation ?? "",
-          multiple: q.multiple,
+          type: q.type,
+          open_matching: q.open_matching,
           ...imageFields,
-          question_type: 0,
-          is_flashcard: false,
           is_markdown_enabled: true,
           is_ai_generated: q.is_ai_generated ?? false,
           answers: q.answers.map((a, index) => {

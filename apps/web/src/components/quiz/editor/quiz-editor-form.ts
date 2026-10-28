@@ -11,7 +11,7 @@ import {
   choiceTypeError,
   quizFormSchema,
 } from "@testownik/core/quiz/schema";
-import type { Quiz } from "@testownik/core/quiz/types";
+import type { QuestionType, Quiz } from "@testownik/core/quiz/types";
 import { toast } from "sonner";
 
 export { createAnswer, createQuestion } from "./quiz-editor-factories";
@@ -237,11 +237,12 @@ export function questionIssue(question: QuestionFormData) {
     return "missing";
   }
   const correct = question.answers.filter((answer) => answer.is_correct).length;
-  if (!question.multiple && correct > 1) {
+  const multiple = question.type === "multiple_choice";
+  if (!multiple && correct > 1) {
     return "conflict";
   }
   if (correct === 0) {
-    return question.multiple ? "no-correct" : "missing-correct";
+    return multiple ? "no-correct" : "missing-correct";
   }
   return null;
 }
@@ -252,13 +253,13 @@ export function questionIssue(question: QuestionFormData) {
  */
 export function withChoiceType(
   question: QuestionFormData,
-  multiple: boolean,
+  type: QuestionType,
 ): QuestionFormData {
-  return question.multiple === multiple ? question : { ...question, multiple };
+  return question.type === type ? question : { ...question, type };
 }
 
 /** Previous choice types by question ID, for undoing `withChoiceType`. */
-export type ChoiceTypes = Map<string, boolean>;
+export type ChoiceTypes = Map<string, QuestionType>;
 
 /** Restores choice types, keeping other edits made since. */
 export function restoreChoiceTypes(
@@ -266,9 +267,7 @@ export function restoreChoiceTypes(
   previous: ChoiceTypes,
 ) {
   return questions.map((question) => {
-    const multiple = previous.get(question.id);
-    return multiple === undefined
-      ? question
-      : withChoiceType(question, multiple);
+    const type = previous.get(question.id);
+    return type === undefined ? question : withChoiceType(question, type);
   });
 }

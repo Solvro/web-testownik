@@ -1,3 +1,5 @@
+import { isQuestionType } from "@testownik/core/quiz/question";
+
 const ALLOWED_LEGACY_QUIZ_KEYS = [
   "id",
   "title",
@@ -15,7 +17,9 @@ const ALLOWED_LEGACY_QUESTION_KEYS = [
   "id",
   "question",
   "explanation",
-  "multiple",
+  "multiple", // Older exports; "type" replaces it.
+  "type",
+  "open_matching",
   "image",
   "answers",
 ];
@@ -72,6 +76,20 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
 
     if (typeof q.question !== "string" || q.question.trim() === "") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść.`;
+    }
+
+    if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "multiple" w formacie logicznym (true/false).`;
+    }
+    if (q.type !== undefined && !isQuestionType(q.type)) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
+    }
+    if (
+      q.open_matching !== undefined &&
+      q.open_matching !== "exact" &&
+      q.open_matching !== "similar"
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "open_matching" (exact lub similar).`;
     }
 
     if (!Array.isArray(q.answers) || q.answers.length === 0) {

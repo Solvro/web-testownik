@@ -1,3 +1,4 @@
+import { inferChoiceType } from "@testownik/core/quiz/question";
 import type { Answer, Question, Quiz } from "@testownik/core/quiz/types";
 import JSZip from "jszip";
 import type React from "react";
@@ -6,7 +7,10 @@ import { toast } from "sonner";
 
 import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
 import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
-import { migrateLegacyQuiz } from "@/lib/migration";
+import {
+  migrateLegacyQuiz,
+  normalizeQuestionTypeFields,
+} from "@/lib/migration";
 import { getImageService, getQuizService } from "@/services";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
@@ -99,7 +103,8 @@ const parseQTemplate = (
     order: index,
     text: questionText,
     answers,
-    multiple: correctness.filter((c) => c === "1").length > 1, // True if multiple answers are correct
+    type: inferChoiceType(answers),
+    open_matching: "exact",
     explanation: "",
   };
 };
@@ -194,7 +199,8 @@ const parseQuestion = (
     order: index,
     text: question,
     answers,
-    multiple: !isTrueFalse,
+    type: isTrueFalse ? "single_choice" : "multiple_choice",
+    open_matching: "exact",
     explanation: "",
   };
 };
@@ -832,7 +838,13 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
-            multiple: q.answers.filter((a) => a.is_correct).length > 1,
+            // As before, files without `type` take the choice type from the
+            // correct answers rather than from `multiple`.
+            ...normalizeQuestionTypeFields({
+              type: q.type,
+              open_matching: q.open_matching,
+              answers: q.answers,
+            }),
           };
         }),
       } as Quiz;
