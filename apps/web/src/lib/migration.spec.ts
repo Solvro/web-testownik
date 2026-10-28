@@ -265,6 +265,13 @@ describe("normalizeQuestionTypeFields", () => {
     ).toBe("multiple_choice");
   });
 
+  it("keeps an explicit single-choice flag with several correct answers", () => {
+    // The editor then shows the conflict instead of changing the type.
+    expect(
+      normalizeQuestionTypeFields({ multiple: false, answers: two }).type,
+    ).toBe("single_choice");
+  });
+
   it("infers the choice type from the correct answers otherwise", () => {
     expect(
       normalizeQuestionTypeFields({ type: "unknown", answers: two }),

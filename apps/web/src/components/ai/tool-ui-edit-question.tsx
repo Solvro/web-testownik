@@ -1,6 +1,6 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { inferChoiceType } from "@testownik/core/quiz/question";
+import { typeAfterAnswerEdit } from "@testownik/core/quiz/question";
 import { prepareQuestionForSubmission } from "@testownik/core/quiz/schema";
 import type {
   Answer,
@@ -134,12 +134,7 @@ function buildEditedQuestion(
     image: edit.image ?? edit.image_url ?? question.image,
     image_url: edit.image_url ?? question.image_url,
     image_upload: edit.image_upload ?? question.image_upload,
-    // Edits keep true/false and open questions; choice types follow the
-    // correct answers.
-    type:
-      question.type === "single_choice" || question.type === "multiple_choice"
-        ? inferChoiceType(answers)
-        : question.type,
+    type: typeAfterAnswerEdit(question.type, answers),
     answers,
   };
 }

@@ -838,7 +838,13 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
-            ...normalizeQuestionTypeFields(q),
+            // As before, files without `type` take the choice type from the
+            // correct answers rather than from `multiple`.
+            ...normalizeQuestionTypeFields({
+              type: q.type,
+              open_matching: q.open_matching,
+              answers: q.answers,
+            }),
           };
         }),
       } as Quiz;

@@ -19,6 +19,21 @@ export function inferChoiceType(
     : "single_choice";
 }
 
+/**
+ * The type of a question after its answers were replaced, as by an AI edit:
+ * the type stays, except that single choice becomes multiple choice when
+ * several answers are correct, which it could not hold.
+ */
+export function typeAfterAnswerEdit(
+  type: QuestionType,
+  answers: { is_correct: boolean }[],
+): QuestionType {
+  return type === "single_choice" &&
+    answers.filter((answer) => answer.is_correct).length > 1
+    ? "multiple_choice"
+    : type;
+}
+
 /** Whether `value` names a question type. */
 export function isQuestionType(value: unknown): value is QuestionType {
   return (
