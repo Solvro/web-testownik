@@ -73,7 +73,6 @@ function AppleLogo(): React.JSX.Element {
   );
 }
 
-/** SF Symbols traced from andrewtavis/sf-symbols-online; Control Center from the supplied reference. */
 function BatteryGlyph(): React.JSX.Element {
   return (
     <svg className="h-[7px] w-[15px]" fill="currentColor" viewBox="0 0 53 27">
