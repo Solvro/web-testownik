@@ -208,9 +208,15 @@ export function FlashcardCard({
       return;
     }
     const first = current.samples[0];
-    if (
-      Math.hypot(event.clientX - first.x, event.clientY - first.y) > TAP_SLOP
-    ) {
+    const dx = event.clientX - first.x;
+    const dy = event.clientY - first.y;
+    if (!current.moved && Math.hypot(dx, dy) > TAP_SLOP) {
+      // A touch that starts vertically scrolls the page instead.
+      if (event.pointerType === "touch" && Math.abs(dy) > Math.abs(dx)) {
+        gesture.current = null;
+        settle();
+        return;
+      }
       current.moved = true;
     }
     current.samples.push({
@@ -266,6 +272,27 @@ export function FlashcardCard({
     gesture.current = null;
     settle();
   };
+
+  // Once a swipe has started, the page must not take the touch over and
+  // scroll: that cancels the pointer and drops the card. React listens to
+  // touch events passively, so this one is registered by hand.
+  useEffect(() => {
+    const card = cardRef.current;
+    if (card === null) {
+      return;
+    }
+    const handleTouchMove = (event: TouchEvent) => {
+      // Decided only once the touch has left the tap slop: a prevented
+      // first move would stop a vertical scroll too.
+      if (gesture.current?.moved === true) {
+        event.preventDefault();
+      }
+    };
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => {
+      card.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
 
   const keys = useRef({ flip, grade });
   useEffect(() => {
@@ -323,9 +350,9 @@ export function FlashcardCard({
       {/* Above the neighbouring columns, so that a card dragged or thrown
           sideways passes over the quiz info instead of under it. */}
       {/* Its transform and opacity are written by `place` and `grade`, not
-          by React. Vertical scrolling stays with the browser until a swipe
-          starts sideways; from then on the card follows the pointer both
-          ways. */}
+          by React. A touch that starts vertically scrolls the page; one that
+          starts sideways is a swipe, and from then on the card follows the
+          finger both ways. */}
       <div
         ref={cardRef}
         className="relative z-10 touch-pan-y will-change-transform"
