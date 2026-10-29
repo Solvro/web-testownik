@@ -21,17 +21,34 @@ import { cn } from "@/lib/utils";
 
 /** How far the card travels before letting go grades it. */
 const SWIPE_THRESHOLD = 110;
+/** A flick this fast, in px/ms, grades a card short of the threshold… */
+const FLICK_VELOCITY = 0.5;
+/** …once it has moved this far, so that a jittery tap does not. */
+const FLICK_MIN_DISTANCE = 40;
 /** A shorter move is a tap, which flips the card. */
 const TAP_SLOP = 8;
-/** The exit animation; the next card arrives when it ends. */
-const LEAVE_DURATION = 280;
+/** Pixels of sideways travel per degree of tilt, for a card held at an edge. */
+const TILT_RATE = 18;
+/** The pointer samples this recent, in ms, set the release velocity. */
+const VELOCITY_WINDOW = 100;
+/** The bounds of the exit animation; the next card arrives when it ends. */
+const LEAVE_MIN = 180;
+const LEAVE_MAX = 360;
+/** A card let go short of the threshold springs back, overshooting a little. */
+const SETTLE = "transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1)";
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 /**
  * A question as a flashcard: the front asks, a tap or Space flips it to the
  * correct answers and the explanation. Swiping right, the right button or
  * `2` records that the learner knew it; swiping left, the left button or `1`
- * that they did not. Mount it with the question ID as key, so that the next
- * card starts face up and in place.
+ * that they did not. The card follows the pointer, tilts around the point
+ * where it was grabbed, and a quick flick throws it like a long swipe. Mount
+ * it with the question ID as key, so that the next card starts face up and in
+ * place.
  */
 export function FlashcardCard({
   question,
@@ -43,16 +60,25 @@ export function FlashcardCard({
   onGrade: (knew: boolean) => void;
 }) {
   const [flipped, setFlipped] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const [leaving, setLeaving] = useState<"left" | "right" | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
   const leaveTimer = useRef<number | null>(null);
   const onGradeRef = useRef(onGrade);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const knowRef = useRef<HTMLSpanElement>(null);
+  const forgetRef = useRef<HTMLSpanElement>(null);
+  // Where the card is, written straight to the DOM: a drag re-renders
+  // nothing.
+  const position = useRef({ x: 0, y: 0, tilt: 0 });
   const gesture = useRef<{
-    x: number;
     pointerId: number;
+    /** The pointer position at which the card would sit at rest. */
+    originX: number;
+    originY: number;
+    /** -1 to 1: grabbed at the bottom edge, the middle or the top edge. */
+    lever: number;
     moved: boolean;
+    samples: { t: number; x: number; y: number }[];
   } | null>(null);
 
   useEffect(() => {
@@ -69,16 +95,65 @@ export function FlashcardCard({
     [],
   );
 
-  const grade = (knew: boolean) => {
+  const place = (x: number, y: number, tilt: number, transition: string) => {
+    position.current = { x, y, tilt };
+    const card = cardRef.current;
+    if (card !== null) {
+      card.style.transition = transition;
+      card.style.transform = `translate(${String(x)}px, ${String(y)}px) rotate(${String(tilt)}deg)`;
+    }
+    const strength = Math.min(1, Math.abs(x) / SWIPE_THRESHOLD);
+    if (knowRef.current !== null) {
+      knowRef.current.style.opacity = String(x > 0 ? strength : 0);
+    }
+    if (forgetRef.current !== null) {
+      forgetRef.current.style.opacity = String(x < 0 ? strength : 0);
+    }
+  };
+
+  const settle = () => {
+    place(0, 0, 0, prefersReducedMotion() ? "transform 150ms ease" : SETTLE);
+  };
+
+  /** Throws the card off screen from where it is, carrying its velocity. */
+  const grade = (knew: boolean, velocity?: { x: number; y: number }) => {
     if (leavingRef.current) {
       return;
     }
     leavingRef.current = true;
-    setLeaving(knew ? "right" : "left");
+    setLeaving(true);
+    const card = cardRef.current;
+    const direction = knew ? 1 : -1;
+    const { x, y, tilt } = position.current;
+    let duration = LEAVE_MIN;
+    if (card !== null && prefersReducedMotion()) {
+      card.style.transition = `opacity ${String(duration)}ms ease`;
+    } else if (card !== null) {
+      // Far enough that the tilted card clears the viewport from anywhere.
+      const targetX = direction * (window.innerWidth + card.offsetWidth * 1.2);
+      const speed = Math.max(Math.abs(velocity?.x ?? 0), 1.2);
+      duration = Math.min(
+        LEAVE_MAX,
+        Math.max(LEAVE_MIN, Math.abs(targetX - x) / speed),
+      );
+      const drift = Math.max(
+        -window.innerHeight / 2,
+        Math.min(window.innerHeight / 2, (velocity?.y ?? 0) * duration),
+      );
+      place(
+        targetX,
+        y + drift,
+        tilt + direction * 15,
+        `transform ${String(duration)}ms cubic-bezier(0.25, 0.6, 0.4, 1), opacity ${String(duration)}ms ease-in`,
+      );
+    }
+    if (card !== null) {
+      card.style.opacity = "0";
+    }
     leaveTimer.current = window.setTimeout(() => {
       leaveTimer.current = null;
       onGradeRef.current(knew);
-    }, LEAVE_DURATION);
+    }, duration);
   };
 
   const flip = () => {
@@ -88,21 +163,43 @@ export function FlashcardCard({
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || leavingRef.current) {
+    if (event.button !== 0 || leavingRef.current || gesture.current !== null) {
       return;
     }
+    const card = event.currentTarget;
+    // Caught mid-spring, the card stays where it is instead of jumping.
+    let { x, y } = position.current;
+    try {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(card).transform);
+      x = matrix.m41;
+      y = matrix.m42;
+    } catch {
+      // An unparsable transform leaves the last placed position.
+    }
+    const rect = card.getBoundingClientRect();
+    const fromMiddle = Math.max(
+      -1,
+      Math.min(
+        1,
+        (rect.top + rect.height / 2 - event.clientY) / (rect.height / 2),
+      ),
+    );
     gesture.current = {
-      x: event.clientX,
       pointerId: event.pointerId,
+      originX: event.clientX - x,
+      originY: event.clientY - y,
+      // Held near the middle the card still tilts, just less.
+      lever: (fromMiddle < 0 ? -1 : 1) * (0.5 + Math.abs(fromMiddle) / 2),
       moved: false,
+      samples: [{ t: event.timeStamp, x: event.clientX, y: event.clientY }],
     };
     try {
-      event.currentTarget.setPointerCapture(event.pointerId);
+      card.setPointerCapture(event.pointerId);
     } catch {
       // A synthetic pointer cannot be captured; the swipe still works while
       // the pointer stays over the card.
     }
-    setDragging(true);
+    place(x, y, (x / TILT_RATE) * gesture.current.lever, "none");
   };
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -110,11 +207,20 @@ export function FlashcardCard({
     if (current?.pointerId !== event.pointerId) {
       return;
     }
-    const dx = event.clientX - current.x;
-    if (Math.abs(dx) > TAP_SLOP) {
+    const first = current.samples[0];
+    if (
+      Math.hypot(event.clientX - first.x, event.clientY - first.y) > TAP_SLOP
+    ) {
       current.moved = true;
     }
-    setOffset(dx);
+    current.samples.push({
+      t: event.timeStamp,
+      x: event.clientX,
+      y: event.clientY,
+    });
+    const x = event.clientX - current.originX;
+    const y = event.clientY - current.originY;
+    place(x, y, (x / TILT_RATE) * current.lever, "none");
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -123,23 +229,48 @@ export function FlashcardCard({
       return;
     }
     gesture.current = null;
-    setDragging(false);
-    const dx = event.clientX - current.x;
-    if (Math.abs(dx) >= SWIPE_THRESHOLD) {
-      grade(dx > 0);
+    // The pointer's speed just before release; one that paused first has
+    // none.
+    const end = { t: event.timeStamp, x: event.clientX, y: event.clientY };
+    const start =
+      current.samples.find((sample) => end.t - sample.t <= VELOCITY_WINDOW) ??
+      end;
+    const elapsed = end.t - start.t;
+    const velocity =
+      elapsed > 0
+        ? { x: (end.x - start.x) / elapsed, y: (end.y - start.y) / elapsed }
+        : { x: 0, y: 0 };
+    const { x } = position.current;
+    const toward = Math.sign(velocity.x) === Math.sign(x);
+    const fast = Math.abs(velocity.x) >= FLICK_VELOCITY;
+    const far = Math.abs(x) >= SWIPE_THRESHOLD;
+    // Past the threshold it grades unless pulled back hard; short of it, a
+    // flick away from the middle grades too.
+    if (
+      (far && (toward || !fast)) ||
+      (fast && toward && Math.abs(x) >= FLICK_MIN_DISTANCE)
+    ) {
+      grade(x > 0, velocity);
       return;
     }
-    setOffset(0);
+    settle();
     if (!current.moved) {
       flip();
     }
   };
 
-  const onPointerCancel = () => {
+  const onPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (gesture.current?.pointerId !== event.pointerId) {
+      return;
+    }
     gesture.current = null;
-    setDragging(false);
-    setOffset(0);
+    settle();
   };
+
+  const keys = useRef({ flip, grade });
+  useEffect(() => {
+    keys.current = { flip, grade };
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -156,19 +287,19 @@ export function FlashcardCard({
             return;
           }
           event.preventDefault();
-          flip();
+          keys.current.flip();
           break;
         }
         case "ArrowLeft":
         case "1": {
           event.preventDefault();
-          grade(false);
+          keys.current.grade(false);
           break;
         }
         case "ArrowRight":
         case "2": {
           event.preventDefault();
-          grade(true);
+          keys.current.grade(true);
           break;
         }
       }
@@ -177,9 +308,8 @@ export function FlashcardCard({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-    // `flip` and `grade` only touch refs and state setters, and `grade`
-    // reaches the latest `onGrade` through its ref, so one registration
-    // lasts the card's life.
+    // The handler reaches the latest `flip` and `grade` through a ref, so
+    // one registration lasts the card's life.
   }, []);
 
   const markdown = question.is_markdown_enabled !== false;
@@ -188,30 +318,26 @@ export function FlashcardCard({
     .filter((answer) => answer.is_correct)
     .toSorted((a, b) => a.order - b.order);
   const appearances = getQuestionAnsweredCount(question.id, false, answers);
-  const knowStrength = Math.min(1, Math.max(0, offset / SWIPE_THRESHOLD));
-  const forgetStrength = Math.min(1, Math.max(0, -offset / SWIPE_THRESHOLD));
-  const transform =
-    leaving === null
-      ? `translateX(${String(offset)}px) rotate(${String(offset / 18)}deg)`
-      : `translateX(${leaving === "right" ? "140%" : "-140%"}) rotate(${leaving === "right" ? "20" : "-20"}deg)`;
-
   return (
     <div className="select-none" data-testid="flashcard">
       {/* Above the neighbouring columns, so that a card dragged or thrown
           sideways passes over the quiz info instead of under it. */}
+      {/* Its transform and opacity are written by `place` and `grade`, not
+          by React. Vertical scrolling stays with the browser until a swipe
+          starts sideways; from then on the card follows the pointer both
+          ways. */}
       <div
-        className="relative z-10 touch-pan-y"
-        style={{
-          transform,
-          opacity: leaving === null ? 1 : 0,
-          transition: dragging
-            ? "none"
-            : `transform ${String(LEAVE_DURATION)}ms ease, opacity ${String(LEAVE_DURATION)}ms ease`,
-        }}
+        ref={cardRef}
+        className="relative z-10 touch-pan-y will-change-transform"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
+        onLostPointerCapture={onPointerCancel}
+        onDragStart={(event) => {
+          // A dragged image would take the pointer away from the card.
+          event.preventDefault();
+        }}
       >
         <div className="perspective-distant">
           <div
@@ -334,16 +460,16 @@ export function FlashcardCard({
           </div>
         </div>
         <span
+          ref={forgetRef}
           aria-hidden="true"
-          className="pointer-events-none absolute top-5 left-5 -rotate-12 rounded-md border-4 border-red-500 px-3 py-1 text-2xl font-black tracking-wide text-red-500 uppercase"
-          style={{ opacity: forgetStrength }}
+          className="pointer-events-none absolute top-5 left-5 -rotate-12 rounded-md border-4 border-red-500 px-3 py-1 text-2xl font-black tracking-wide text-red-500 uppercase opacity-0"
         >
           Nie umiem
         </span>
         <span
+          ref={knowRef}
           aria-hidden="true"
-          className="pointer-events-none absolute top-5 right-5 rotate-12 rounded-md border-4 border-green-500 px-3 py-1 text-2xl font-black tracking-wide text-green-500 uppercase"
-          style={{ opacity: knowStrength }}
+          className="pointer-events-none absolute top-5 right-5 rotate-12 rounded-md border-4 border-green-500 px-3 py-1 text-2xl font-black tracking-wide text-green-500 uppercase opacity-0"
         >
           Umiem
         </span>
@@ -355,7 +481,7 @@ export function FlashcardCard({
           variant="outline"
           size="lg"
           className="border-red-500/40 text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          disabled={leaving !== null}
+          disabled={leaving}
           onClick={() => {
             grade(false);
           }}
@@ -385,7 +511,7 @@ export function FlashcardCard({
           variant="outline"
           size="lg"
           className="border-green-500/40 text-green-700 hover:bg-green-500/10 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-          disabled={leaving !== null}
+          disabled={leaving}
           onClick={() => {
             grade(true);
           }}
