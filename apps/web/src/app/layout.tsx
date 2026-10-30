@@ -15,6 +15,7 @@ import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { shouldRenderBareDocument } from "@/lib/document-shell";
 import { OriginTrialMetas } from "@/lib/origin-trials";
+import { UMAMI_ORIGIN, UMAMI_WEBSITE_ID } from "@/lib/umami";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -139,14 +140,14 @@ export default async function RootLayout({
           <AppFooter />
         </Providers>
         <Script
-          src="https://analytics.solvro.pl/script.js"
-          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          src={`${UMAMI_ORIGIN}/script.js`}
+          data-website-id={UMAMI_WEBSITE_ID}
           data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
           strategy="lazyOnload"
         />
         <Script
-          src="https://analytics.solvro.pl/recorder.js"
-          data-website-id="fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"
+          src={`${UMAMI_ORIGIN}/recorder.js`}
+          data-website-id={UMAMI_WEBSITE_ID}
           data-sample-rate="1"
           data-mask-level="moderate"
           data-max-duration="300000"
