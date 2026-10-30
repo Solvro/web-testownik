@@ -1,0 +1,38 @@
+{
+  "studentsCount": 563760,
+  "offersCount": 293,
+  "maxDiscountPct": 50,
+  "yearlySavingsPln": 2000,
+  "offers": [
+    {
+      "id": "dominos-pizza-40-znizki-studenckiej",
+      "partner": "Domino's Pizza",
+      "title": "40% Zniżki Studenckiej na pizzę",
+      "category": "Jedzenie",
+      "channel": "Online i stacjonarnie",
+      "limited": true,
+      "badge": { "kind": "activations", "value": 53983 },
+      "url": "https://bit.ly/4zcALip"
+    },
+    {
+      "id": "komputronik-30-znizki-studenckiej-na-laptopy",
+      "partner": "Komputronik",
+      "title": "30% Zniżki Studenckiej na laptopy",
+      "category": "Technologia",
+      "channel": "Online",
+      "validUntil": "2027-03-31",
+      "url": "https://bit.ly/4zcALip"
+    },
+    {
+      "id": "zalando-dodatkowe-20-znizki-studenckiej",
+      "partner": "Zalando",
+      "title": "Dodatkowe 20% Zniżki Studenckiej",
+      "category": "Moda",
+      "channel": "Online",
+      "badge": { "kind": "new" },
+      "url": "https://bit.ly/4zcALip"
+    }
+  ],
+  "fetchedAt": "2026-10-31",
+  "source": "snapshot"
+}

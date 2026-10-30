@@ -98,3 +98,46 @@ export const FAQ: readonly FaqEntry[] = [
       "Najprościej przez przycisk „Prześlij opinię” w aplikacji. Projekt jest też otwartoźródłowy, więc problemy i propozycje możesz zgłaszać bezpośrednio w repozytorium Testownika na GitHubie.",
   },
 ];
+
+/** The uniperks partner link; `/go/uniperks` adds the placement and redirects here. */
+export const PERKS_PARTNER_URL = "https://bit.ly/4zcALip";
+
+/** Which partner section design is live, reported with every perks event. */
+export const PERKS_VARIANT = "coupons-uniperks";
+
+/** Where a click on the partner section came from, as `utm_content`. */
+export const PERKS_PLACEMENTS = [
+  "landing-cta",
+  "landing-secondary",
+  "landing-card",
+] as const;
+
+export type PerksPlacement = (typeof PERKS_PLACEMENTS)[number];
+
+export const PERKS_COPY = {
+  eyebrow: "Partner Testownika",
+  headline: "Uczysz się za darmo.",
+  headlineAccent: "Kupuj taniej.",
+  primaryCta: "Odblokuj zniżki!",
+  secondaryCta: "Zobacz oferty",
+  studentsCaption: "studentów",
+  offersCaption: (maxDiscount: string) => `oferty do\u00A0−${maxDiscount}%`,
+  savingsCaption: "oszczędności rocznie",
+  disclosure:
+    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są przykładowe — aktualne znajdziesz w aplikacji.",
+} as const;
+
+/** The lead paragraph, from already formatted live numbers. */
+export function perksLead({
+  students,
+  offers,
+  maxDiscount,
+  savings,
+}: {
+  students: string;
+  offers: string;
+  maxDiscount: string;
+  savings: string;
+}): string {
+  return `Dołącz do\u00A0${students} studentów, którzy korzystają z\u00A0${offers} zniżek do\u00A0−${maxDiscount}% w\u00A0aplikacji uniperks i\u00A0oszczędzają nawet ${savings}\u00A0zł rocznie.`;
+}

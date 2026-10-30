@@ -24,6 +24,9 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     S3_URL: z.url().optional(),
+    /** uniperks partner feed for the landing's partner section. */
+    UNIPERKS_FEED_URL: z.url().optional(),
+    UNIPERKS_FEED_TOKEN: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_API_URL: z.url(),

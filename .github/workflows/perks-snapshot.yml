@@ -1,0 +1,50 @@
+name: Perks snapshot
+
+# Refreshes the landing partner section's committed fallback numbers and
+# offers, and opens a PR when they changed.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: "true"
+
+      - name: Setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Refresh snapshot
+        run: pnpm --filter web perks:snapshot
+        env:
+          UNIPERKS_FEED_URL: ${{ secrets.UNIPERKS_FEED_URL }}
+          UNIPERKS_FEED_TOKEN: ${{ secrets.UNIPERKS_FEED_TOKEN }}
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/perks-snapshot
+          commit-message: "chore(landing): refresh the uniperks snapshot"
+          title: "chore(landing): refresh the uniperks snapshot"
+          body: Weekly refresh of `apps/web/src/app/(landing)/data/perks.snapshot.json` from the partner feed or uniperks.pl.
+          add-paths: apps/web/src/app/(landing)/data/perks.snapshot.json
+          delete-branch: true
