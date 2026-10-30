@@ -2,22 +2,22 @@
 
 import { getQuestionAnsweredCount } from "@testownik/core/quiz/session";
 import type { AnswerRecord, Question } from "@testownik/core/quiz/types";
-import {
-  CheckIcon,
-  FlipHorizontal2Icon,
-  SparklesIcon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, ChevronDownIcon, SparklesIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
+import { AiExplanationCard } from "@/components/ai/ai-explain-card";
 import { ImageLoad } from "@/components/image-load";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { isInputElement, isModalOpen } from "@/components/quiz/helpers/dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Kbd } from "@/components/ui/kbd";
-import { cn } from "@/lib/utils";
 
 /** How far the card travels before letting go grades it. */
 const SWIPE_THRESHOLD = 110;
@@ -43,7 +43,8 @@ function prefersReducedMotion() {
 
 /**
  * A question as a flashcard: the front asks, a tap or Space flips it to the
- * correct answers and the explanation. Swiping right, the right button or
+ * correct answers, the explanation folded away and, with `ai`, an AI
+ * explanation on request. Swiping right, the right button or
  * `2` records that the learner knew it; swiping left, the left button or `1`
  * that they did not. The card follows the pointer, tilts around the point
  * where it was grabbed, and a quick flick throws it like a long swipe. Mount
@@ -53,13 +54,17 @@ function prefersReducedMotion() {
 export function FlashcardCard({
   question,
   answers,
+  ai,
   onGrade,
 }: {
   question: Question;
   answers: AnswerRecord[];
+  /** Offers an AI explanation on the back; null when AI is off. */
+  ai: { defaultModel: string | null } | null;
   onGrade: (knew: boolean) => void;
 }) {
   const [flipped, setFlipped] = useState(false);
+  const [showAiExplanation, setShowAiExplanation] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
   const leaveTimer = useRef<number | null>(null);
@@ -164,6 +169,13 @@ export function FlashcardCard({
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || leavingRef.current || gesture.current !== null) {
+      return;
+    }
+    // A control on the card does its own thing; it neither flips nor drags.
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, a, input, textarea, select") !== null
+    ) {
       return;
     }
     const card = event.currentTarget;
@@ -340,6 +352,8 @@ export function FlashcardCard({
   }, []);
 
   const markdown = question.is_markdown_enabled !== false;
+  const hasExplanation =
+    question.explanation != null && question.explanation.trim() !== "";
   // The back lists the correct answers in the author's order, not shuffled.
   const correct = question.answers
     .filter((answer) => answer.is_correct)
@@ -375,6 +389,7 @@ export function FlashcardCard({
           >
             <section
               aria-hidden={flipped}
+              inert={flipped}
               className="bg-card text-card-foreground flex min-h-80 flex-col gap-4 rounded-xl border p-6 shadow-sm backface-hidden"
             >
               <header className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
@@ -415,6 +430,7 @@ export function FlashcardCard({
             </section>
             <section
               aria-hidden={!flipped}
+              inert={!flipped}
               className="bg-card text-card-foreground flex min-h-80 rotate-y-180 flex-col gap-4 rounded-xl border p-6 shadow-sm backface-hidden"
             >
               {/* The question stays in view, small, so the answer reads in context. */}
@@ -475,13 +491,50 @@ export function FlashcardCard({
                   </ul>
                 )}
               </div>
-              {question.explanation != null &&
-              question.explanation.trim() !== "" ? (
-                <div className="text-muted-foreground border-t pt-4 text-sm leading-relaxed">
-                  <MarkdownRenderer enabled={markdown}>
-                    {question.explanation}
-                  </MarkdownRenderer>
-                </div>
+              {hasExplanation || ai !== null ? (
+                <Collapsible className="border-t pt-2">
+                  <div className="flex items-center gap-2">
+                    {hasExplanation ? (
+                      <CollapsibleTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="group/explanation text-muted-foreground -ml-2"
+                          />
+                        }
+                      >
+                        Wyjaśnienie
+                        <ChevronDownIcon className="transition-transform duration-200 group-data-panel-open/explanation:rotate-180" />
+                      </CollapsibleTrigger>
+                    ) : null}
+                    {ai === null ? null : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary -mr-2 ml-auto"
+                        disabled={showAiExplanation}
+                        onClick={() => {
+                          setShowAiExplanation(true);
+                        }}
+                      >
+                        <SparklesIcon />
+                        Wyjaśnij z AI
+                      </Button>
+                    )}
+                  </div>
+                  {hasExplanation ? (
+                    <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+                      <div className="text-muted-foreground pt-2 text-sm leading-relaxed">
+                        <MarkdownRenderer enabled={markdown}>
+                          {question.explanation}
+                        </MarkdownRenderer>
+                      </div>
+                    </CollapsibleContent>
+                  ) : null}
+                </Collapsible>
               ) : null}
             </section>
           </div>
@@ -502,12 +555,26 @@ export function FlashcardCard({
         </span>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-3">
+      {ai !== null && showAiExplanation && flipped ? (
+        <div className="mt-4">
+          <AiExplanationCard
+            defaultAiModel={ai.defaultModel}
+            question={question}
+            onClose={() => {
+              setShowAiExplanation(false);
+            }}
+          />
+        </div>
+      ) : null}
+
+      {/* On a phone the grades stay at the bottom of the screen, under the
+          thumb, however long the card. */}
+      <div className="bg-background/80 fixed inset-x-0 bottom-0 z-20 flex items-center gap-3 border-t px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:z-auto sm:mt-4 sm:justify-center sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <Button
           type="button"
           variant="outline"
           size="lg"
-          className="border-red-500/40 text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          className="flex-1 border-red-500/40 text-red-600 hover:bg-red-500/10 hover:text-red-700 sm:flex-none dark:text-red-400 dark:hover:text-red-300"
           disabled={leaving}
           onClick={() => {
             grade(false);
@@ -521,23 +588,8 @@ export function FlashcardCard({
         <Button
           type="button"
           variant="outline"
-          size="icon-lg"
-          onClick={flip}
-          aria-label={flipped ? "Pokaż pytanie" : "Pokaż odpowiedź"}
-          aria-keyshortcuts="Space"
-        >
-          <FlipHorizontal2Icon
-            className={cn(
-              "transition-transform duration-500",
-              flipped && "-scale-x-100",
-            )}
-          />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
           size="lg"
-          className="border-green-500/40 text-green-700 hover:bg-green-500/10 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+          className="flex-1 border-green-500/40 text-green-700 hover:bg-green-500/10 hover:text-green-800 sm:flex-none dark:text-green-400 dark:hover:text-green-300"
           disabled={leaving}
           onClick={() => {
             grade(true);

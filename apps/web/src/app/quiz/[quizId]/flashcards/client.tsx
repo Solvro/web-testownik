@@ -6,7 +6,9 @@ import {
   PartyPopperIcon,
   RotateCcwIcon,
 } from "lucide-react";
+import { useContext } from "react";
 
+import { AppContext } from "@/app-context";
 import { FlashcardCard } from "@/components/quiz/flashcard-card";
 import { useQuizLogic } from "@/components/quiz/hooks/use-quiz-logic";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -20,6 +22,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
+import { env } from "@/env";
+import { PermissionAction } from "@/lib/auth/permissions";
 
 /**
  * The quiz as a deck of flashcards. It shares the quiz's session: a card
@@ -27,7 +31,12 @@ import { Progress } from "@/components/ui/progress";
  * history are the same on both pages.
  */
 export function FlashcardsPageClient({ quizId }: { quizId: string }) {
+  const { checkPermission } = useContext(AppContext);
   const { quiz, state, stats, actions } = useQuizLogic({ quizId });
+  const showAi =
+    env.NEXT_PUBLIC_AI_ENABLED &&
+    checkPermission(PermissionAction.AI_FEATURES) &&
+    !(quiz.user_settings?.ai_disabled ?? false);
   const { currentQuestion, isQuizFinished } = state;
   const { masteredCount, totalQuestions } = stats;
   const { gradeSelf, resetProgress } = actions;
@@ -127,6 +136,11 @@ export function FlashcardsPageClient({ quizId }: { quizId: string }) {
           key={attemptKey}
           question={currentQuestion}
           answers={answers}
+          ai={
+            showAi
+              ? { defaultModel: quiz.user_settings?.default_ai_model ?? null }
+              : null
+          }
           onGrade={(knew) => {
             gradeSelf(knew, currentQuestion.id);
           }}
