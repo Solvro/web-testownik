@@ -1,9 +1,14 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
+import { isQuestionType } from "@testownik/core/quiz/question";
 import type { QuizFormData } from "@testownik/core/quiz/schema";
 import { validateQuizForm } from "@testownik/core/quiz/schema";
-import type { Quiz } from "@testownik/core/quiz/types";
+import {
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+} from "@testownik/core/quiz/types";
+import type { QuestionType, Quiz } from "@testownik/core/quiz/types";
 import {
   CheckIcon,
   EllipsisIcon,
@@ -34,18 +39,16 @@ import {
   createQuestion,
   questionIssue,
   quizToFormData,
+  rememberQuestionTypes,
   removeQuestion,
-  restoreChoiceTypes,
+  restoreQuestionTypes,
   revalidate,
   setRestoring as setFormRestoring,
   setUploading,
   useQuizEditorForm,
-  withChoiceType,
+  withQuestionType,
 } from "@/components/quiz/editor/quiz-editor-form";
-import type {
-  ChoiceTypes,
-  QuizEditorForm,
-} from "@/components/quiz/editor/quiz-editor-form";
+import type { QuizEditorForm } from "@/components/quiz/editor/quiz-editor-form";
 import { UnsavedChangesGuard } from "@/components/quiz/editor/unsaved-changes-guard";
 import { plural } from "@/components/quiz/editor/version-history";
 import { VersionHistoryDialog } from "@/components/quiz/editor/version-history-dialog";
@@ -381,9 +384,7 @@ export function QuizEditor(props: QuizEditorProps) {
     const questions = form.getFieldValue("questions");
     const question = createQuestion(
       questions.length + 1,
-      questions.at(-1)?.type === "multiple_choice"
-        ? "multiple_choice"
-        : "single_choice",
+      questions.at(-1)?.type ?? "single_choice",
     );
     form.pushFieldValue("questions", question);
     setSearch("");
@@ -793,14 +794,12 @@ function BulkActions({
   onOpenHistory?: () => void;
   onOpenShortcuts: () => void;
 }) {
-  // The choice type shared by every question, or "" when they differ.
-  const allChoice = useSelector(form.atom, (state) => {
+  // The type shared by every question, or "" when they differ.
+  const allType = useSelector(form.atom, (state) => {
     const types = new Set(
-      state.values.questions.map(
-        (question) => question.type === "multiple_choice",
-      ),
+      state.values.questions.map((question) => question.type),
     );
-    return types.size === 1 ? ([...types][0] ? "multiple" : "single") : "";
+    return types.size === 1 ? [...types][0] : "";
   });
   // Whether every question renders Markdown, or "" when they differ.
   const allMarkdown = useSelector(form.atom, (state) => {
@@ -855,36 +854,27 @@ function BulkActions({
     );
   }
 
-  function setAll(multiple: boolean) {
+  function setAll(type: QuestionType) {
     if (!canMutate(form)) {
       return;
     }
-    const previous: ChoiceTypes = new Map(
-      form
-        .getFieldValue("questions")
-        .map((question) => [question.id, question.type]),
-    );
+    const previous = rememberQuestionTypes(form.getFieldValue("questions"));
     form.setFieldValue("questions", (questions) =>
-      questions.map((question) =>
-        withChoiceType(
-          question,
-          multiple ? "multiple_choice" : "single_choice",
-        ),
-      ),
+      questions.map((question) => withQuestionType(question, type)),
     );
     revalidate(form);
     const conflicts = form
       .getFieldValue("questions")
       .filter((question) => questionIssue(question) === "conflict").length;
     toast(
-      multiple
-        ? "Ustawiono wielokrotny wybór we wszystkich pytaniach"
-        : "Ustawiono jednokrotny wybór we wszystkich pytaniach",
+      `Ustawiono typ „${QUESTION_TYPE_LABELS[type]}” we wszystkich pytaniach`,
       {
         description:
           conflicts > 0
             ? `${String(conflicts)} ${plural(conflicts, "pytanie ma", "pytania mają", "pytań ma")} kilka poprawnych odpowiedzi. Popraw je przed zapisem.`
-            : undefined,
+            : type === "true_false"
+              ? "Każde pytanie ma teraz dwie odpowiedzi: prawdę i fałsz."
+              : undefined,
         duration: 10_000,
         action: {
           label: "Cofnij",
@@ -893,7 +883,7 @@ function BulkActions({
               return;
             }
             form.setFieldValue("questions", (questions) =>
-              restoreChoiceTypes(questions, previous),
+              restoreQuestionTypes(questions, previous),
             );
             revalidate(form);
           },
@@ -938,24 +928,23 @@ function BulkActions({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <ListChecksIcon />
-            Typ wyboru
+            Typ pytania
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup
-              value={allChoice}
+              value={allType}
               onValueChange={(value) => {
-                if (value !== allChoice) {
-                  setAll(value === "multiple");
+                if (value !== allType && isQuestionType(value)) {
+                  setAll(value);
                 }
               }}
             >
               <DropdownMenuLabel>Dla wszystkich pytań</DropdownMenuLabel>
-              <DropdownMenuRadioItem value="single">
-                Jednokrotny wybór
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="multiple">
-                Wielokrotny wybór
-              </DropdownMenuRadioItem>
+              {QUESTION_TYPES.map((type) => (
+                <DropdownMenuRadioItem key={type} value={type}>
+                  {QUESTION_TYPE_LABELS[type]}
+                </DropdownMenuRadioItem>
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

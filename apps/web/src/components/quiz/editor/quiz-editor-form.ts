@@ -8,13 +8,20 @@ import type {
 } from "@testownik/core/quiz/schema";
 import {
   SINGLE_CHOICE_ERROR,
-  choiceTypeError,
+  questionTypeError,
   quizFormSchema,
 } from "@testownik/core/quiz/schema";
+import { TRUE_FALSE_LABELS } from "@testownik/core/quiz/types";
 import type { QuestionType, Quiz } from "@testownik/core/quiz/types";
 import { toast } from "sonner";
 
-export { createAnswer, createQuestion } from "./quiz-editor-factories";
+import { createAnswer, createTrueFalseAnswers } from "./quiz-editor-factories";
+
+export {
+  createAnswer,
+  createQuestion,
+  createTrueFalseAnswers,
+} from "./quiz-editor-factories";
 
 /** The editor's values for a quiz from the API, in question and answer order. */
 export function quizToFormData(
@@ -56,7 +63,7 @@ export function useQuizEditorForm(options: {
         run: ({ value, createErrorMap }) => {
           const errors = createErrorMap();
           for (const [index, question] of value.questions.entries()) {
-            if (choiceTypeError(question) === SINGLE_CHOICE_ERROR) {
+            if (questionTypeError(question) === SINGLE_CHOICE_ERROR) {
               const field =
                 `questions[${String(index)}].answers` as `questions[${number}].answers`;
               errors.fields[field] = SINGLE_CHOICE_ERROR;
@@ -220,11 +227,17 @@ export function hasImage(item: {
   );
 }
 
+/** Whether the type picks one answer: its correct marks act like radios. */
+export function picksOneAnswer(type: QuestionType) {
+  return type === "single_choice" || type === "true_false";
+}
+
 /**
  * `missing`, `conflict` and `missing-correct` block saving; `no-correct` is
- * only a reminder. Single choice needs exactly one correct answer: `conflict`
- * has several, `missing-correct` none. Multiple choice without any correct
- * answer is `no-correct`.
+ * only a reminder. Single choice and true/false need exactly one correct
+ * answer: `conflict` has several, `missing-correct` none. Multiple choice
+ * without any correct answer is `no-correct`. An open question accepts every
+ * answer, so it only needs text.
  */
 export function questionIssue(question: QuestionFormData) {
   if (
@@ -232,42 +245,190 @@ export function questionIssue(question: QuestionFormData) {
     question.answers.length === 0 ||
     question.answers.some(
       (answer) => answer.text.trim() === "" && !hasImage(answer),
-    )
+    ) ||
+    (question.type === "true_false" && question.answers.length !== 2)
   ) {
     return "missing";
   }
+  if (question.type === "open") {
+    return null;
+  }
   const correct = question.answers.filter((answer) => answer.is_correct).length;
-  const multiple = question.type === "multiple_choice";
-  if (!multiple && correct > 1) {
+  if (picksOneAnswer(question.type) && correct > 1) {
     return "conflict";
   }
   if (correct === 0) {
-    return multiple ? "no-correct" : "missing-correct";
+    return picksOneAnswer(question.type) ? "missing-correct" : "no-correct";
   }
   return null;
 }
 
+function renumberAnswers(answers: AnswerFormData[]) {
+  return answers.map((answer, index) =>
+    answer.order === index + 1 ? answer : { ...answer, order: index + 1 },
+  );
+}
+
 /**
- * Sets the choice type. Correct answers are left as they are: a single-choice
- * question with several of them shows as a conflict until it is fixed.
+ * Sets the question type and fits the answers to it. Between the choice types
+ * the answers are left as they are: a single-choice question with several
+ * correct ones shows as a conflict until it is fixed. True/false keeps the
+ * first two answers as its labels, or starts with the default ones when they
+ * are empty; leaving it drops the default labels, which mean nothing
+ * elsewhere. An open question accepts every answer and drops their images.
  */
-export function withChoiceType(
+export function withQuestionType(
   question: QuestionFormData,
   type: QuestionType,
 ): QuestionFormData {
-  return question.type === type ? question : { ...question, type };
+  if (question.type === type) {
+    return question;
+  }
+  const changed = {
+    ...question,
+    type,
+  };
+  if (type === "true_false") {
+    const kept = question.answers.slice(0, 2);
+    const labels = createTrueFalseAnswers();
+    const answers =
+      kept.length === 2 && kept.some((answer) => answer.text.trim() !== "")
+        ? kept.map((answer, index) => ({
+            ...answer,
+            order: index + 1,
+            text: answer.text.trim() === "" ? labels[index].text : answer.text,
+          }))
+        : labels;
+    const correct = answers.filter((answer) => answer.is_correct).length;
+    return {
+      ...changed,
+      answers: answers.map((answer, index) => ({
+        ...answer,
+        is_correct: correct === 1 ? answer.is_correct : index === 0,
+      })),
+    };
+  }
+  const defaultLabels = new Set<string>(TRUE_FALSE_LABELS);
+  const kept =
+    question.type === "true_false"
+      ? question.answers.filter(
+          (answer) =>
+            !defaultLabels.has(answer.text.trim()) || hasImage(answer),
+        )
+      : question.answers;
+  if (type === "open") {
+    return {
+      ...changed,
+      answers: renumberAnswers(
+        kept.length === 0 ? [createAnswer(1)] : kept,
+      ).map((answer) => ({
+        ...answer,
+        is_correct: true,
+        image: null,
+        image_url: null,
+        image_upload: null,
+        image_width: null,
+        image_height: null,
+      })),
+    };
+  }
+  // Between the choice types the answers stay as they are.
+  if (kept === question.answers && kept.length >= 2) {
+    return changed;
+  }
+  // A choice question starts with two answers to fill in.
+  const padded = [...kept];
+  while (padded.length < 2) {
+    padded.push(createAnswer(padded.length + 1));
+  }
+  return { ...changed, answers: renumberAnswers(padded) };
 }
 
-/** Previous choice types by question ID, for undoing `withChoiceType`. */
-export type ChoiceTypes = Map<string, QuestionType>;
+/** Whether two answer lists hold the same answers in the same order. */
+function sameAnswers(a: AnswerFormData[], b: AnswerFormData[]) {
+  return (
+    a.length === b.length &&
+    a.every((answer, index) => {
+      const other = b[index];
+      return (
+        answer.id === other.id &&
+        answer.order === other.order &&
+        answer.text === other.text &&
+        answer.is_correct === other.is_correct &&
+        answer.image === other.image &&
+        answer.image_url === other.image_url &&
+        answer.image_upload === other.image_upload
+      );
+    })
+  );
+}
 
-/** Restores choice types, keeping other edits made since. */
-export function restoreChoiceTypes(
+/** Previous question types by question ID, for undoing `withQuestionType`. */
+export type QuestionTypes = Map<
+  string,
+  Pick<QuestionFormData, "type" | "answers">
+>;
+
+/** The types and answers of the questions, to restore after a bulk change. */
+export function rememberQuestionTypes(
   questions: QuestionFormData[],
-  previous: ChoiceTypes,
+): QuestionTypes {
+  return new Map(
+    questions.map((question) => [
+      question.id,
+      {
+        type: question.type,
+        answers: question.answers,
+      },
+    ]),
+  );
+}
+
+/**
+ * Restores question types, keeping other edits made since. The answers come
+ * back only for questions whose type change rewrote them.
+ */
+export function restoreQuestionTypes(
+  questions: QuestionFormData[],
+  previous: QuestionTypes,
 ) {
   return questions.map((question) => {
-    const type = previous.get(question.id);
-    return type === undefined ? question : withChoiceType(question, type);
+    const before = previous.get(question.id);
+    if (before === undefined || before.type === question.type) {
+      return question;
+    }
+    // Repeating the change on the remembered answers tells whether it
+    // rewrote them; a change which left them as they were, such as one
+    // between the choice types, keeps the edits made since.
+    const rewrote = !sameAnswers(
+      withQuestionType({ ...question, ...before }, question.type).answers,
+      before.answers,
+    );
+    return {
+      ...question,
+      type: before.type,
+      answers: rewrote ? before.answers : question.answers,
+    };
   });
+}
+
+/**
+ * An answer put back into a question after its type may have changed: an
+ * open question accepts it and shows no image.
+ */
+export function fitAnswerToType(
+  answer: AnswerFormData,
+  type: QuestionType,
+): AnswerFormData {
+  return type === "open"
+    ? {
+        ...answer,
+        is_correct: true,
+        image: null,
+        image_url: null,
+        image_upload: null,
+        image_width: null,
+        image_height: null,
+      }
+    : answer;
 }

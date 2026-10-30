@@ -8,11 +8,7 @@ import { AccessLevel } from "@testownik/core/quiz/types";
 
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
-/**
- * Normalize type fields from current JSON or legacy exports/local storage: an
- * explicit `type` wins, then the legacy `multiple` flag, then the correct
- * answers decide.
- */
+/** Normalize type fields from current JSON or legacy exports/local storage. */
 export function normalizeQuestionTypeFields(question: {
   type?: unknown;
   open_matching?: unknown;
@@ -21,10 +17,8 @@ export function normalizeQuestionTypeFields(question: {
 }): Pick<Question, "type" | "open_matching"> {
   const type = isQuestionType(question.type)
     ? question.type
-    : typeof question.multiple === "boolean"
-      ? question.multiple
-        ? "multiple_choice"
-        : "single_choice"
+    : question.multiple === true
+      ? "multiple_choice"
       : inferChoiceType(question.answers);
   return {
     ...DEFAULT_QUESTION_TYPE_FIELDS,

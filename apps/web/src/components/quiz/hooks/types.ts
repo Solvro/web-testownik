@@ -20,6 +20,8 @@ export interface UseQuizLogicResult {
     currentQuestion: Question | null;
     selectedAnswers: string[];
     questionChecked: boolean;
+    /** The grade of the history record shown, or null for the current question. */
+    wasCorrect: boolean | null;
     isQuizFinished: boolean;
     showHistory: boolean;
     isHistoryQuestion: boolean;
@@ -43,6 +45,11 @@ export interface UseQuizLogicResult {
   actions: {
     nextAction: () => void;
     skipQuestion: () => void;
+    /**
+     * Records a flashcard the learner graded themselves and moves on. With
+     * `questionId`, only while that question is still the current one.
+     */
+    gradeSelf: (knew: boolean, questionId?: string) => void;
     resetProgress: () => Promise<void>;
     setSelectedAnswers: (a: string[]) => void;
     onQuestionDeleted: (

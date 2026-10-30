@@ -70,6 +70,8 @@ interface ResetProgressMessage {
 interface AnswerCheckedMessage {
   type: "answer_checked";
   nextQuestion: Question | null;
+  /** The record made; peers apply it instead of grading on their own. */
+  record?: AnswerRecord;
 }
 interface PingMessage {
   type: "ping";
@@ -78,13 +80,17 @@ interface PongMessage {
   type: "pong";
 }
 
-export type PeerMessage =
+export type PeerMessage = (
   | InitialSyncMessage
   | QuestionUpdateMessage
   | AnswerCheckedMessage
   | PingMessage
   | PongMessage
-  | ResetProgressMessage;
+  | ResetProgressMessage
+) & {
+  /** The tab which made the message; a tab ignores its own, relayed back. */
+  from?: string;
+};
 
 interface UseQuizContinuityOptions {
   enabled: boolean;
@@ -105,7 +111,10 @@ interface UseQuizContinuityOptions {
     studyTime?: number;
   }) => void;
   onQuestionUpdate: (q: Question | null, selected: string[]) => void;
-  onAnswerChecked: (nextQuestion: Question | null) => void;
+  onAnswerChecked: (
+    nextQuestion: Question | null,
+    record?: AnswerRecord,
+  ) => void;
   onResetProgress: (session: QuizSession) => void;
 }
 
@@ -138,7 +147,17 @@ export function useQuizContinuity({
 }: UseQuizContinuityOptions & { userId: string | null | undefined }) {
   const [peerConnections, setPeerConnections] = useState<DataConnection[]>([]);
   const [isHost, setIsHost] = useState(false);
+  // This tab, so that it never connects to or listens to itself: a host
+  // left behind by a previous initialisation would otherwise relay this
+  // tab's own messages back to it.
+  // eslint-disable-next-line react/hook-use-state -- Drawn once; never set.
+  const [instanceId] = useState(() => crypto.randomUUID());
   const peerRef = useRef<Peer | null>(null);
+  // Peers created but not yet open; closing destroys them too.
+  const pendingPeersRef = useRef(new Set<Peer>());
+  // Bumped by every initialisation and close; callbacks of an older one
+  // destroy their peer instead of using it.
+  const generationRef = useRef(0);
   const peerConnectionsRef = useRef<DataConnection[]>([]);
   const isInitializingRef = useRef(false);
   const isMountedRef = useRef(true);
@@ -156,6 +175,13 @@ export function useQuizContinuity({
 
   const gracefulClose = () => {
     isShuttingDownRef.current = true;
+    generationRef.current += 1;
+    for (const pending of pendingPeersRef.current) {
+      if (!pending.destroyed) {
+        pending.destroy();
+      }
+    }
+    pendingPeersRef.current.clear();
     for (const conn of peerConnectionsRef.current) {
       conn.close();
     }
@@ -175,7 +201,7 @@ export function useQuizContinuity({
   // util
   const send = (conn: DataConnection, data: PeerMessage) => {
     if (!isDisconnectedRef.current && conn.open) {
-      void conn.send(data);
+      void conn.send({ from: instanceId, ...data });
     }
   };
 
@@ -231,7 +257,11 @@ export function useQuizContinuity({
           return;
         }
         const conn = peer.connect(peerId, {
-          metadata: { device: getDeviceFriendlyName(), type: getDeviceType() },
+          metadata: {
+            device: getDeviceFriendlyName(),
+            type: getDeviceType(),
+            instance: instanceId,
+          },
         });
         conn.on("open", () => {
           if (isDisconnectedRef.current) {
@@ -258,7 +288,7 @@ export function useQuizContinuity({
   };
 
   const handleClientData = (data: PeerMessage) => {
-    if (isDisconnectedRef.current) {
+    if (isDisconnectedRef.current || data.from === instanceId) {
       return;
     }
     switch (data.type) {
@@ -277,7 +307,7 @@ export function useQuizContinuity({
         break;
       }
       case "answer_checked": {
-        onAnswerChecked(data.nextQuestion);
+        onAnswerChecked(data.nextQuestion, data.record);
         break;
       }
       case "reset_progress": {
@@ -301,7 +331,7 @@ export function useQuizContinuity({
   };
 
   const handleHostData = (conn: DataConnection, data: PeerMessage) => {
-    if (isDisconnectedRef.current) {
+    if (isDisconnectedRef.current || data.from === instanceId) {
       return;
     }
     switch (data.type) {
@@ -311,7 +341,7 @@ export function useQuizContinuity({
         break;
       }
       case "answer_checked": {
-        onAnswerChecked(data.nextQuestion);
+        onAnswerChecked(data.nextQuestion, data.record);
         broadcastExcept(conn, data);
         break;
       }
@@ -351,10 +381,17 @@ export function useQuizContinuity({
       return;
     }
     const baseId = `${quizId}_${userId}`.replaceAll("/", "");
+    const generation = generationRef.current;
+    const stale = () =>
+      generation !== generationRef.current ||
+      isDisconnectedRef.current ||
+      !isMountedRef.current;
     try {
       const hostPeer = new Peer(baseId, { config: RTC_CONFIG });
+      pendingPeersRef.current.add(hostPeer);
       hostPeer.on("open", () => {
-        if (isDisconnectedRef.current || !isMountedRef.current) {
+        pendingPeersRef.current.delete(hostPeer);
+        if (stale()) {
           hostPeer.destroy();
           return;
         }
@@ -365,10 +402,13 @@ export function useQuizContinuity({
       hostPeer.on("connection", handleHostConnection);
       hostPeer.on("error", (error: unknown) => {
         const peerError = error as { type?: string };
-        if (peerError.type === "unavailable-id") {
+        pendingPeersRef.current.delete(hostPeer);
+        if (peerError.type === "unavailable-id" && !stale()) {
           const clientPeer = new Peer({ config: RTC_CONFIG });
+          pendingPeersRef.current.add(clientPeer);
           clientPeer.on("open", () => {
-            if (isDisconnectedRef.current || !isMountedRef.current) {
+            pendingPeersRef.current.delete(clientPeer);
+            if (stale()) {
               clientPeer.destroy();
               return;
             }
@@ -432,7 +472,8 @@ export function useQuizContinuity({
   }
 
   function handleHostConnection(conn: DataConnection) {
-    if (isDisconnectedRef.current) {
+    const metadata = conn.metadata as { instance?: string } | undefined;
+    if (isDisconnectedRef.current || metadata?.instance === instanceId) {
       conn.close();
       return;
     }
@@ -519,8 +560,11 @@ export function useQuizContinuity({
       isDisconnectedRef.current = false;
       emitDisconnectPreferenceChange();
     },
-    sendAnswerChecked: (nextQuestion: Question | null) => {
-      broadcast({ type: "answer_checked", nextQuestion });
+    sendAnswerChecked: (
+      nextQuestion: Question | null,
+      record?: AnswerRecord,
+    ) => {
+      broadcast({ type: "answer_checked", nextQuestion, record });
     },
     sendQuestionUpdate: (
       question: Question | null,

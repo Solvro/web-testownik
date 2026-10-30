@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_USER_SETTINGS } from "../user/types";
 import {
+  createAnswerRecord,
+  createSelfAssessmentRecord,
   ensureQuizCurrentQuestion,
   getQuestionWithShuffledAnswers,
   resolveCurrentQuestion,
@@ -23,6 +25,28 @@ const makeQuestion = (id: string): Question => ({
   })),
 });
 
+it("accepts native-generated record IDs without global Web Crypto", () => {
+  vi.stubGlobal("crypto", null);
+  try {
+    expect(
+      createAnswerRecord("q", ["typed"], true, "native-answer"),
+    ).toMatchObject({
+      id: "native-answer",
+      selected_answers: ["typed"],
+      was_correct: true,
+    });
+    expect(createSelfAssessmentRecord("q", false, "native-card")).toMatchObject(
+      {
+        id: "native-card",
+        selected_answers: [],
+        was_correct: false,
+      },
+    );
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
 const makeAnswer = (
   question: string,
   answeredAt = "2026-01-01T00:00:00.000Z",
@@ -35,29 +59,69 @@ const makeAnswer = (
 });
 
 describe("session-utils answer shuffling", () => {
-  it("uses question id in the answer shuffle seed", () => {
-    const first = getQuestionWithShuffledAnswers(
-      makeQuestion("q1"),
+  it.each(["single_choice", "multiple_choice"] as const)(
+    "shuffles %s answers using the question id in the seed",
+    (type) => {
+      const first = getQuestionWithShuffledAnswers(
+        { ...makeQuestion("q1"), type },
+        [],
+        "session-1",
+      );
+      const second = getQuestionWithShuffledAnswers(
+        { ...makeQuestion("q2"), type },
+        [],
+        "session-1",
+      );
+
+      expect(first.answers.map((answer) => answer.id)).toEqual([
+        "q1-a",
+        "q1-d",
+        "q1-b",
+        "q1-c",
+      ]);
+      expect(second.answers.map((answer) => answer.id)).toEqual([
+        "q2-d",
+        "q2-c",
+        "q2-a",
+        "q2-b",
+      ]);
+    },
+  );
+
+  it("keeps the answer order for open and true/false questions", () => {
+    const fixed = getQuestionWithShuffledAnswers(
+      {
+        ...makeQuestion("q1"),
+        type: "open",
+        answers: [...makeQuestion("q1").answers].sort(
+          (a, b) => b.order - a.order,
+        ),
+      },
       [],
       "session-1",
     );
-    const second = getQuestionWithShuffledAnswers(
-      makeQuestion("q2"),
+    const trueFalse = getQuestionWithShuffledAnswers(
+      {
+        ...makeQuestion("q1"),
+        type: "true_false",
+        answers: makeQuestion("q1")
+          .answers.slice(0, 2)
+          .sort((a, b) => b.order - a.order),
+      },
       [],
       "session-1",
     );
 
-    expect(first.answers.map((answer) => answer.id)).toEqual([
+    expect(fixed.answers.map((answer) => answer.id)).toEqual([
       "q1-a",
-      "q1-d",
       "q1-b",
       "q1-c",
+      "q1-d",
     ]);
-    expect(second.answers.map((answer) => answer.id)).toEqual([
-      "q2-d",
-      "q2-c",
-      "q2-a",
-      "q2-b",
+    // The "true" label is answer one, whatever the array order.
+    expect(trueFalse.answers.map((answer) => answer.id)).toEqual([
+      "q1-a",
+      "q1-b",
     ]);
   });
 

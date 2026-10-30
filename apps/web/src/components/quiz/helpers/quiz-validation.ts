@@ -23,8 +23,9 @@ const ALLOWED_QUESTION_KEYS = [
   "order",
   "text",
   "explanation",
-  "multiple", // Older exports; "type" replaces it.
+  "multiple",
   "type",
+  "shuffle_answers", // Ignored for older exports.
   "open_matching",
   "is_ai_generated",
   "image", // Also allowed for backward compatibility
@@ -102,10 +103,13 @@ export const validateQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć treść albo zdjęcie.`;
     }
 
-    if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "multiple" (wielokrotny wybór).`;
+    if (q.order !== undefined && typeof q.order !== "number") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłową kolejność (order).`;
     }
 
+    if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "multiple" w formacie logicznym (true/false) dla starszych plików.`;
+    }
     if (q.type !== undefined && !isQuestionType(q.type)) {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
     }
@@ -117,14 +121,14 @@ export const validateQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "open_matching" (exact lub similar).`;
     }
 
-    if (q.order !== undefined && typeof q.order !== "number") {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłową kolejność (order).`;
-    }
-
     if (!Array.isArray(q.answers) || q.answers.length === 0) {
       return `Pytanie nr ${String(
         questionIndex + 1,
       )} musi mieć przynajmniej jedną odpowiedź.`;
+    }
+
+    if (q.type === "true_false" && q.answers.length !== 2) {
+      return `Pytanie nr ${String(questionIndex + 1)} typu Prawda/Fałsz musi mieć dokładnie dwie odpowiedzi.`;
     }
 
     if (q.id !== undefined && typeof q.id !== "string") {
@@ -145,6 +149,14 @@ export const validateQuiz = (input: unknown): string | null => {
         )} jest nieprawidłowa.`;
       }
       const a = answer as Record<string, unknown>;
+      if (
+        q.type === "open" &&
+        [a.image, a.image_url, a.image_upload].some(
+          (image) => typeof image === "string" && image.trim() !== "",
+        )
+      ) {
+        return `Odpowiedzi pytania otwartego nr ${String(questionIndex + 1)} nie mogą zawierać zdjęć.`;
+      }
 
       if (a.id !== undefined && typeof a.id !== "string") {
         return `Odpowiedź nr ${String(answerIndex + 1)} w pytaniu nr ${String(

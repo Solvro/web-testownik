@@ -1,13 +1,22 @@
+import { act, renderHook } from "@testing-library/react";
 import { prepareQuizForSubmission } from "@testownik/core/quiz/schema";
 import type { QuizFormData } from "@testownik/core/quiz/schema";
 import { AccessLevel } from "@testownik/core/quiz/types";
 import type { Question, Quiz } from "@testownik/core/quiz/types";
+import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
+
+import { validateLegacyQuiz } from "@/components/quiz/helpers/legacy-quiz-validation";
+import { validateQuiz } from "@/components/quiz/helpers/quiz-validation";
+import { normalizeQuestionTypeFields } from "@/lib/migration";
+import { server } from "@/test-utils/mocks/server";
 
 import {
   countDataUrlImages,
   extractImagesToUpload,
+  parseQuestion,
   uploadDataUrlImages,
+  useImportQuiz,
 } from "./import-quiz";
 
 describe("extractImagesToUpload", () => {
@@ -566,4 +575,261 @@ describe("prepareQuizForSubmission", () => {
     expect(result.questions[0]).not.toHaveProperty("image");
     expect(result.questions[0].answers[0]).not.toHaveProperty("image");
   });
+});
+
+describe("TXT question type mapping", () => {
+  test.each([
+    ["X01", "Statement", "Fałsz", "Prawda"],
+    ["x10", "Statement", "Nie", "Tak"],
+    ["QQ10", "1.\tStatement", "(a) False", "(b) True"],
+    ["QQ01", "1.\tStatement", "(a) True", "(b) False"],
+  ])(
+    "normalizes %s true/false labels without changing correctness",
+    (...lines) => {
+      const question = parseQuestion(lines, "1.txt", 1);
+      expect(question).toMatchObject({
+        type: "true_false",
+        open_matching: "exact",
+        answers: [
+          {
+            order: 1,
+            text: /^(Prawda|Tak|True)$/,
+            is_correct: lines[0] === "X01",
+          },
+          {
+            order: 2,
+            text: /^(Fałsz|Nie|False)$/,
+            is_correct: lines[0] !== "X01",
+          },
+        ],
+      });
+      expect(question).not.toHaveProperty("multiple");
+    },
+  );
+
+  test.each([
+    ["X10", "single_choice"],
+    ["X11", "multiple_choice"],
+    ["QQ10", "single_choice"],
+    ["QQ11", "multiple_choice"],
+  ])("infers the choice type for %s", (template, type) => {
+    const lines = template.startsWith("QQ")
+      ? [template, "1.\tQuestion", "(a) A", "(b) B"]
+      : [template, "Question", "A", "B"];
+    expect(parseQuestion(lines, "1.txt", 1)).toMatchObject({
+      type,
+      open_matching: "exact",
+    });
+  });
+});
+
+describe("JSON legacy question type mapping", () => {
+  test.each([
+    [true, 1, "multiple_choice"],
+    [false, 1, "single_choice"],
+    [false, 2, "multiple_choice"],
+    [undefined, 2, "multiple_choice"],
+    [undefined, 1, "single_choice"],
+  ])(
+    "maps multiple=%s with %s correct answers to %s",
+    (multiple, count, type) => {
+      const question = {
+        multiple,
+        answers: Array.from({ length: count }, () => ({ is_correct: true })),
+      };
+      expect(normalizeQuestionTypeFields(question)).toEqual({
+        type,
+        open_matching: "exact",
+      });
+    },
+  );
+
+  test("preserves an explicit type and settings over a legacy flag", () => {
+    expect(
+      normalizeQuestionTypeFields({
+        type: "open",
+        multiple: true,
+        open_matching: "similar",
+        answers: [{ is_correct: true }],
+      }),
+    ).toEqual({
+      type: "open",
+      open_matching: "similar",
+    });
+  });
+});
+
+describe.each([
+  ["current", validateQuiz, "text", "is_correct"],
+  ["legacy", validateLegacyQuiz, "question", "correct"],
+] as const)(
+  "%s JSON type validation",
+  (_format, validate, textKey, correctKey) => {
+    function quiz(
+      fields: Record<string, unknown> = {},
+      answerFields: Record<string, unknown> = {},
+    ) {
+      return {
+        title: "Quiz",
+        questions: [
+          {
+            [textKey]: "Question",
+            ...fields,
+            answers: [
+              {
+                [textKey === "text" ? "text" : "answer"]: "Answer",
+                [correctKey]: true,
+                ...answerFields,
+              },
+            ],
+          },
+        ],
+      };
+    }
+
+    test.each([
+      { type: "unknown" },
+      { open_matching: "fuzzy" },
+      { multiple: "false" },
+    ])("rejects invalid type fields %j", (fields) => {
+      expect(validate(quiz(fields))).not.toBeNull();
+    });
+    test.each([true, false, "true", null, { obsolete: true }])(
+      "ignores the obsolete shuffle setting %j",
+      (shuffle_answers) => {
+        expect(validate(quiz({ shuffle_answers }))).toBeNull();
+      },
+    );
+    test("requires two true/false answers and at least one open answer", () => {
+      expect(validate(quiz({ type: "true_false" }))).toContain(
+        "dokładnie dwie",
+      );
+      expect(validate(quiz({ type: "open" }))).toBeNull();
+      const emptyQuiz = quiz({ type: "open" });
+      emptyQuiz.questions[0].answers = [];
+      expect(validate(emptyQuiz)).toContain("przynajmniej jedną");
+    });
+    test("rejects images on open answers", () => {
+      expect(
+        validate(quiz({ type: "open" }, { image: "image.png" })),
+      ).toContain("nie mogą zawierać zdjęć");
+    });
+  },
+);
+
+test.each([true, false, "obsolete", null])(
+  "JSON import strips shuffle_answers=%j and sends normalized type fields",
+  async (shuffle_answers) => {
+    let payload: { questions: Record<string, unknown>[] } | undefined;
+    server.use(
+      http.post("*/quizzes/", async ({ request }) => {
+        payload = (await request.json()) as {
+          questions: Record<string, unknown>[];
+        };
+        return HttpResponse.json({ id: "imported", ...payload });
+      }),
+    );
+    const { result } = renderHook(() => useImportQuiz());
+    const question = {
+      text: "Question",
+      answers: [{ text: "A", is_correct: true }],
+    };
+    const quiz = {
+      title: "Mapping",
+      questions: [
+        { ...question, multiple: true, shuffle_answers },
+        { ...question, multiple: false },
+        {
+          ...question,
+          multiple: false,
+          answers: [...question.answers, { text: "B", is_correct: true }],
+        },
+        {
+          ...question,
+          answers: [...question.answers, { text: "B", is_correct: true }],
+        },
+        {
+          ...question,
+          multiple: true,
+          type: "open",
+          open_matching: "similar",
+        },
+        {
+          ...question,
+          type: "true_false",
+          answers: [...question.answers, { text: "B", is_correct: false }],
+        },
+      ],
+    };
+    act(() => {
+      result.current.handleUploadTypeChange("json");
+    });
+    result.current.monacoEditorRef.current = {
+      getValue: () => JSON.stringify(quiz),
+    };
+    await act(async () => {
+      await result.current.handleImport();
+    });
+    expect(result.current.error).toBeNull();
+    expect(
+      payload?.questions.map(({ type, open_matching }) => ({
+        type,
+        open_matching,
+      })),
+    ).toEqual([
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "single_choice", open_matching: "exact" },
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "multiple_choice", open_matching: "exact" },
+      { type: "open", open_matching: "similar" },
+      { type: "true_false", open_matching: "exact" },
+    ]);
+    for (const imported of payload?.questions ?? []) {
+      expect(imported).not.toHaveProperty("multiple");
+      expect(imported).not.toHaveProperty("shuffle_answers");
+    }
+  },
+);
+
+test("legacy JSON import strips the obsolete shuffle setting", async () => {
+  let payload: { questions: Record<string, unknown>[] } | undefined;
+  server.use(
+    http.post("*/quizzes/", async ({ request }) => {
+      payload = (await request.json()) as {
+        questions: Record<string, unknown>[];
+      };
+      return HttpResponse.json({ id: "imported", ...payload });
+    }),
+  );
+  const { result } = renderHook(() => useImportQuiz());
+  act(() => {
+    result.current.handleUploadTypeChange("json");
+  });
+  result.current.monacoEditorRef.current = {
+    getValue: () =>
+      JSON.stringify({
+        title: "Legacy quiz",
+        questions: [
+          {
+            question: "Question",
+            shuffle_answers: "obsolete",
+            type: "open",
+            open_matching: "similar",
+            answers: [{ answer: "Answer", correct: true }],
+          },
+        ],
+      }),
+  };
+  await act(async () => {
+    await result.current.handleImport();
+  });
+  expect(result.current.error).toBeNull();
+  expect(payload?.questions).toHaveLength(1);
+  expect(payload?.questions[0]).toMatchObject({
+    type: "open",
+    open_matching: "similar",
+    text: "Question",
+    answers: [{ text: "Answer", is_correct: true }],
+  });
+  expect(payload?.questions[0]).not.toHaveProperty("shuffle_answers");
 });

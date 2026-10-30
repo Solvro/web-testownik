@@ -302,12 +302,26 @@ export class QuizService extends BaseApiService {
     answer: AnswerRecord,
     studyTime: number,
     nextQuestionId: string | null,
+    {
+      selfAssessment,
+      skipped = false,
+    }: {
+      /** The learner's own grade, for a flashcard. */
+      selfAssessment?: boolean;
+      /** A skip, recorded as wrong; an empty selection alone is graded. */
+      skipped?: boolean;
+    } = {},
   ): Promise<AnswerRecord> {
+    const graded = typeof selfAssessment !== "boolean" && !skipped;
     const response = await this.post<AnswerRecord>(
       `quizzes/${quizId}/answer/`,
       {
         question_id: answer.question,
-        selected_answers: answer.selected_answers,
+        selected_answers: graded ? answer.selected_answers : [],
+        ...(typeof selfAssessment === "boolean"
+          ? { self_assessment: selfAssessment }
+          : {}),
+        ...(skipped ? { skipped: true } : {}),
         study_time: studyTime,
         next_question: nextQuestionId,
       },

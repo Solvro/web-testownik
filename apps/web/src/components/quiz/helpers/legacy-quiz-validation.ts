@@ -17,8 +17,9 @@ const ALLOWED_LEGACY_QUESTION_KEYS = [
   "id",
   "question",
   "explanation",
-  "multiple", // Older exports; "type" replaces it.
+  "multiple",
   "type",
+  "shuffle_answers", // Ignored for older exports.
   "open_matching",
   "image",
   "answers",
@@ -79,7 +80,7 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
     }
 
     if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
-      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "multiple" w formacie logicznym (true/false).`;
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć pole "multiple" w formacie logicznym (true/false) dla starszych plików.`;
     }
     if (q.type !== undefined && !isQuestionType(q.type)) {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
@@ -96,6 +97,10 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
       return `Pytanie nr ${String(
         questionIndex + 1,
       )} musi mieć przynajmniej jedną odpowiedź.`;
+    }
+
+    if (q.type === "true_false" && q.answers.length !== 2) {
+      return `Pytanie nr ${String(questionIndex + 1)} typu Prawda/Fałsz musi mieć dokładnie dwie odpowiedzi.`;
     }
 
     if (q.id !== undefined && typeof q.id !== "number") {
@@ -117,6 +122,14 @@ export const validateLegacyQuiz = (input: unknown): string | null => {
         )} jest nieprawidłowa.`;
       }
       const a = answer as Record<string, unknown>;
+      if (
+        q.type === "open" &&
+        [a.image, a.image_url, a.image_upload].some(
+          (image) => typeof image === "string" && image.trim() !== "",
+        )
+      ) {
+        return `Odpowiedzi pytania otwartego nr ${String(questionIndex + 1)} nie mogą zawierać zdjęć.`;
+      }
 
       // Check if answer contains only allowed properties
       if (!containsOnlyAllowedKeys(a, ALLOWED_LEGACY_ANSWER_KEYS)) {

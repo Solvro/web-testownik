@@ -1,0 +1,105 @@
+[
+  {
+    "mode": "exact",
+    "expected": "Warszawa",
+    "typed": "  warszawa ",
+    "match": true
+  },
+  {
+    "mode": "exact",
+    "expected": "Warszawa",
+    "typed": "Warszwa",
+    "match": false
+  },
+  { "mode": "exact", "expected": "Prawda", "typed": "prawda", "match": true },
+  { "mode": "exact", "expected": "a b  c", "typed": "a  b c", "match": true },
+  { "mode": "exact", "expected": "2,5", "typed": "2.5", "match": false },
+  { "mode": "exact", "expected": "Łódź", "typed": "łódź", "match": true },
+  { "mode": "exact", "expected": "Łódź", "typed": "lodz", "match": false },
+  { "mode": "exact", "expected": "", "typed": "", "match": true },
+  { "mode": "exact", "expected": "abc", "typed": "", "match": false },
+  {
+    "mode": "similar",
+    "expected": "Warszawa",
+    "typed": "Warszwa",
+    "match": true
+  },
+  {
+    "mode": "similar",
+    "expected": "Warszawa",
+    "typed": "Wrszwa",
+    "match": true
+  },
+  {
+    "mode": "similar",
+    "expected": "Warszawa",
+    "typed": "Krakow",
+    "match": false
+  },
+  { "mode": "similar", "expected": "łódź", "typed": "lodz", "match": true },
+  { "mode": "similar", "expected": "Łódź", "typed": "Lodz", "match": true },
+  { "mode": "similar", "expected": "kot", "typed": "kod", "match": false },
+  { "mode": "similar", "expected": "kot", "typed": "kot", "match": true },
+  { "mode": "similar", "expected": "kot", "typed": "KOT.", "match": true },
+  { "mode": "similar", "expected": "e-mail", "typed": "email", "match": true },
+  {
+    "mode": "similar",
+    "expected": "fotosynteza",
+    "typed": "fotosytneza",
+    "match": true
+  },
+  {
+    "mode": "similar",
+    "expected": "fotosynteza",
+    "typed": "fotsyntza",
+    "match": true
+  },
+  {
+    "mode": "similar",
+    "expected": "fotosynteza",
+    "typed": "fotsntza",
+    "match": false
+  },
+  {
+    "mode": "similar",
+    "expected": "Zjednoczone Królestwo Wielkiej Brytanii",
+    "typed": "zjednoczone krolestwo wielkiej brytani",
+    "match": true
+  },
+  { "mode": "similar", "expected": "2,5", "typed": "25", "match": true },
+  { "mode": "similar", "expected": "", "typed": "abc", "match": false },
+  { "mode": "similar", "expected": "abc", "typed": "", "match": false },
+  {
+    "mode": "similar",
+    "expected": "Mitochondrium",
+    "typed": "mitohondrium",
+    "match": true
+  },
+  { "mode": "similar", "expected": "DNA", "typed": "RNA", "match": false },
+  { "mode": "similar", "expected": "żółw", "typed": "zolw", "match": true },
+  {
+    "mode": "similar",
+    "expected": "Jan Kochanowski",
+    "typed": "Jan  Kochanowski",
+    "match": true
+  },
+  {
+    "mode": "similar",
+    "expected": "Jan Kochanowski",
+    "typed": "Kochanowski",
+    "match": false
+  },
+  {
+    "mode": "exact",
+    "expected": "Warszawa",
+    "typed": "﻿Warszawa",
+    "match": true
+  },
+  { "mode": "similar", "expected": "𐐨𐐩b", "typed": "𐐨𐐩a", "match": false },
+  {
+    "mode": "similar",
+    "expected": "abcdefgh",
+    "typed": "abcdefghijk",
+    "match": false
+  }
+]

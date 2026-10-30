@@ -69,9 +69,9 @@ describe("Migration", () => {
       expect(firstQuestion.text).toBe(
         mockLegacyGuestQuiz.questions[0].question,
       );
-      // The legacy `multiple` flag becomes the choice type.
-      expect(mockLegacyGuestQuiz.questions[0].multiple).toBe(true);
       expect(firstQuestion.type).toBe("multiple_choice");
+      expect(firstQuestion.open_matching).toBe("exact");
+      expect(firstQuestion).not.toHaveProperty("multiple");
       // Legacy id becomes 'order' in new format
       expect(firstQuestion.order).toBe(1);
       // New id should be a UUID
@@ -263,13 +263,6 @@ describe("normalizeQuestionTypeFields", () => {
     expect(
       normalizeQuestionTypeFields({ multiple: true, answers: one }).type,
     ).toBe("multiple_choice");
-  });
-
-  it("keeps an explicit single-choice flag with several correct answers", () => {
-    // The editor then shows the conflict instead of changing the type.
-    expect(
-      normalizeQuestionTypeFields({ multiple: false, answers: two }).type,
-    ).toBe("single_choice");
   });
 
   it("infers the choice type from the correct answers otherwise", () => {

@@ -69,7 +69,11 @@ export function QuizActionButtons({
       return;
     }
     const answersText = question.answers
-      .map((a, index) => `Odpowiedź ${(index + 1).toString()}: ${a.text}`)
+      .map((a, index) =>
+        question.type === "open"
+          ? `Akceptowana odpowiedź ${(index + 1).toString()}: ${a.text}`
+          : `Odpowiedź ${(index + 1).toString()}: ${a.text}`,
+      )
       .join("\n");
     const full = `${question.text}\n\n${answersText}`;
     void navigator.clipboard
@@ -94,12 +98,13 @@ export function QuizActionButtons({
       return;
     }
     const answersText = question.answers
-      .map(
-        (a, index) =>
-          `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
+      .map((a, index) =>
+        question.type === "open"
+          ? `Akceptowana odpowiedź ${(index + 1).toString()}: ${a.text}`
+          : `Odpowiedź ${(index + 1).toString()}: ${a.text} (Poprawna: ${a.is_correct ? "Tak" : "Nie"})`,
       )
       .join("\n");
-    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\nOdpowiedzi:\n${answersText}`;
+    const fullText = `Wyjaśnij to pytanie i jak dojść do odpowiedzi: ${question.text}\n\n${question.type === "open" ? "Pytanie otwarte." : "Odpowiedzi:"}\n${answersText}`;
     window.open(
       `https://chat.openai.com/?q=${encodeURIComponent(fullText)}`,
       "_blank",

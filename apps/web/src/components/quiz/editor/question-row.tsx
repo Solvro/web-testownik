@@ -44,7 +44,11 @@ export function QuestionRow({
         ? "Kilka poprawnych odpowiedzi"
         : issue === "no-correct" || issue === "missing-correct"
           ? "Brak poprawnej odpowiedzi"
-          : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
+          : summary.type === "true_false"
+            ? "Prawda/Fałsz"
+            : summary.type === "open"
+              ? `Otwarte, ${String(summary.answers)} ${plural(summary.answers, "akceptowana odpowiedź", "akceptowane odpowiedzi", "akceptowanych odpowiedzi")}`
+              : `${String(summary.answers)} ${plural(summary.answers, "odpowiedź", "odpowiedzi", "odpowiedzi")}, ${String(summary.correct)} ${plural(summary.correct, "poprawna", "poprawne", "poprawnych")}`;
 
   return (
     <button

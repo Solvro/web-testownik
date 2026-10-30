@@ -1,3 +1,4 @@
+import type { Quiz } from "@testownik/core/quiz/types";
 import { AccessLevel } from "@testownik/core/quiz/types";
 
 export const mockQuiz = {
@@ -21,7 +22,7 @@ export const mockQuiz = {
       ],
     },
   ],
-};
+} satisfies Quiz;
 
 export const mockLegacyQuiz = {
   title: "Legacy Quiz",
@@ -29,8 +30,7 @@ export const mockLegacyQuiz = {
     {
       id: 1,
       question: "Legacy Question?",
-      type: "single_choice",
-      open_matching: "exact",
+      multiple: false,
       answers: [
         { answer: "Yes", correct: true },
         { answer: "No", correct: false },

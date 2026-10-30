@@ -105,7 +105,7 @@ async function chooseAllQuestions(
   label: "Jednokrotny wybór" | "Wielokrotny wybór",
 ) {
   await user.click(screen.getByRole("button", { name: "Opcje quizu" }));
-  const trigger = await screen.findByRole("menuitem", { name: "Typ wyboru" });
+  const trigger = await screen.findByRole("menuitem", { name: "Typ pytania" });
   // The submenu opens from the keyboard like a real menu.
   trigger.focus();
   await user.keyboard("{ArrowRight}");
@@ -1108,7 +1108,9 @@ describe("Quiz editor", () => {
       screen.getByRole("img", { name: "Kilka poprawnych odpowiedzi" }),
     ).toBeInTheDocument();
     const [message, options] = vi.mocked(toast).mock.calls[0];
-    expect(message).toBe("Ustawiono jednokrotny wybór we wszystkich pytaniach");
+    expect(message).toBe(
+      "Ustawiono typ „Jednokrotny wybór” we wszystkich pytaniach",
+    );
     expect(options?.description).toBe(
       "1 pytanie ma kilka poprawnych odpowiedzi. Popraw je przed zapisem.",
     );

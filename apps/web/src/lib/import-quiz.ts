@@ -23,6 +23,35 @@ const trueFalseStrings = {
   false: false,
 };
 
+function trueFalseValue(text: string): boolean | undefined {
+  const labels: Partial<Record<string, boolean>> = trueFalseStrings;
+  return labels[text.toLowerCase()];
+}
+
+function isTrueFalseAnswerPair(answers: Answer[]): boolean {
+  return (
+    answers.length === 2 &&
+    answers.filter((answer) => answer.is_correct).length === 1 &&
+    answers.some((answer) => trueFalseValue(answer.text) === true) &&
+    answers.some((answer) => trueFalseValue(answer.text) === false)
+  );
+}
+
+function txtQuestionTypeFields(answers: Answer[], isTrueFalse: boolean) {
+  if (isTrueFalse) {
+    answers.sort(
+      (a, b) => Number(trueFalseValue(b.text)) - Number(trueFalseValue(a.text)),
+    );
+    for (const [index, answer] of answers.entries()) {
+      answer.order = index + 1;
+    }
+  }
+  return {
+    type: isTrueFalse ? ("true_false" as const) : inferChoiceType(answers),
+    open_matching: "exact" as const,
+  };
+}
+
 export type UploadType = "file" | "json" | "legacy";
 
 interface JsonCodeEditor {
@@ -103,13 +132,12 @@ const parseQTemplate = (
     order: index,
     text: questionText,
     answers,
-    type: inferChoiceType(answers),
-    open_matching: "exact",
+    ...txtQuestionTypeFields(answers, isTrueFalseAnswerPair(answers)),
     explanation: "",
   };
 };
 
-const parseQuestion = (
+export const parseQuestion = (
   lines: string[],
   filename: string,
   index: number,
@@ -190,17 +218,16 @@ const parseQuestion = (
   }
 
   const isTrueFalse =
-    (template.endsWith("X01") || template.endsWith("X10")) &&
-    answers.length === 2 &&
-    answers.every((a) => a.text.toLowerCase() in trueFalseStrings);
+    (template.toUpperCase().endsWith("X01") ||
+      template.toUpperCase().endsWith("X10")) &&
+    isTrueFalseAnswerPair(answers);
 
   return {
     id: crypto.randomUUID(),
     order: index,
     text: question,
     answers,
-    type: isTrueFalse ? "single_choice" : "multiple_choice",
-    open_matching: "exact",
+    ...txtQuestionTypeFields(answers, isTrueFalse),
     explanation: "",
   };
 };
@@ -804,10 +831,16 @@ export const useImportQuiz = () => {
       type RawAnswer = Omit<Answer, "id" | "order"> & {
         order?: number;
       };
-      type RawQuestion = Omit<Question, "id" | "order" | "answers"> & {
-        order?: number;
-        answers: RawAnswer[];
-      };
+      type RawQuestion = Omit<
+        Question,
+        "id" | "order" | "answers" | "type" | "open_matching"
+      > &
+        Partial<Pick<Question, "type" | "open_matching">> & {
+          shuffle_answers?: unknown;
+          multiple?: boolean;
+          order?: number;
+          answers: RawAnswer[];
+        };
       type RawQuiz = Omit<Quiz, "questions"> & {
         questions: RawQuestion[];
         comment?: string;
@@ -825,7 +858,7 @@ export const useImportQuiz = () => {
       const normalizedQuiz: Quiz = {
         ...quizData,
         questions: quizData.questions.map((q, qIndex) => {
-          const { image: qImage, ...qRest } = q;
+          const { image: qImage, multiple, shuffle_answers, ...qRest } = q;
           return {
             ...qRest,
             image_url: q.image_url ?? qImage,
@@ -838,13 +871,7 @@ export const useImportQuiz = () => {
                 order: a.order ?? aIndex + 1,
               };
             }),
-            // As before, files without `type` take the choice type from the
-            // correct answers rather than from `multiple`.
-            ...normalizeQuestionTypeFields({
-              type: q.type,
-              open_matching: q.open_matching,
-              answers: q.answers,
-            }),
+            ...normalizeQuestionTypeFields({ ...qRest, multiple }),
           };
         }),
       } as Quiz;

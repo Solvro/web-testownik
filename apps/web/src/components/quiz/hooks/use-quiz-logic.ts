@@ -1,6 +1,7 @@
 import {
   checkAnswerCorrectness,
   createAnswerRecord,
+  createSelfAssessmentRecord,
   getAnsweredQuestionWithShuffledAnswers,
 } from "@testownik/core/quiz/session";
 import type { AnswerRecord, Question } from "@testownik/core/quiz/types";
@@ -58,6 +59,11 @@ export function useQuizLogic({
   >(() => {
     /* noop until assigned */
   });
+  const applyRemoteRecordRef = useRef<
+    (record: AnswerRecord, nextQuestion: Question | null) => void
+  >(() => {
+    /* noop until assigned */
+  });
 
   // continuity hook
   const continuity = useQuizContinuity({
@@ -83,8 +89,14 @@ export function useQuizLogic({
       sessionActions.setSelectedAnswers(selected);
       setHistoryQuestionId(null);
     },
-    onAnswerChecked: (nextQuestion) => {
-      checkAnswerRef.current(true, nextQuestion);
+    onAnswerChecked: (nextQuestion, record) => {
+      // Peers send the record they made; older ones only say a check
+      // happened, which is then repeated on this tab's own selection.
+      if (record === undefined) {
+        checkAnswerRef.current(true, nextQuestion);
+      } else {
+        applyRemoteRecordRef.current(record, nextQuestion);
+      }
       setHistoryQuestionId(null);
     },
     onResetProgress: (session) => {
@@ -101,9 +113,11 @@ export function useQuizLogic({
     nextQuestionOverride?: Question | null,
     force?: boolean,
   ) => {
+    // A checked question is not checked again, also when a peer reports the
+    // check this tab already made.
     if (
       currentQuestionRef.current == null ||
-      (force === false && questionChecked)
+      (force !== true && questionChecked)
     ) {
       return;
     }
@@ -133,12 +147,28 @@ export function useQuizLogic({
         studyTime,
         nextQuestionRef.current?.id ?? client.nextQuestionId,
       );
+      continuity.sendAnswerChecked(nextQuestionRef.current, newAnswer);
     }
+  };
 
-    if (!remote) {
-      const nextQ = nextQuestionRef.current;
-      continuity.sendAnswerChecked(nextQ);
+  // A record a peer made: stored once, whatever the selection here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const applyRemoteRecord = (
+    record: AnswerRecord,
+    nextQuestion: Question | null,
+  ) => {
+    const { nextQuestion: nextQ, duplicate } = sessionActions.recordAnswer(
+      record,
+      getCurrentStudyTime(),
+      nextQuestion,
+    );
+    if (duplicate) {
+      return;
     }
+    // The card shows the peer's selection with the grade it was given.
+    selectedAnswersRef.current = record.selected_answers;
+    sessionActions.setSelectedAnswers(record.selected_answers);
+    nextQuestionRef.current = nextQ;
   };
 
   useEffect(() => {
@@ -146,7 +176,14 @@ export function useQuizLogic({
     answersRef.current = answers;
     selectedAnswersRef.current = selectedAnswers;
     checkAnswerRef.current = checkAnswer;
-  }, [currentQuestion, answers, selectedAnswers, checkAnswer]);
+    applyRemoteRecordRef.current = applyRemoteRecord;
+  }, [
+    currentQuestion,
+    answers,
+    selectedAnswers,
+    checkAnswer,
+    applyRemoteRecord,
+  ]);
 
   const advanceToNext = () => {
     const nextQ = nextQuestionRef.current;
@@ -191,9 +228,48 @@ export function useQuizLogic({
       newAnswer,
       studyTime,
       nextQ?.id ?? null,
+      { skipped: true },
     );
 
-    continuity.sendAnswerChecked(nextQ);
+    continuity.sendAnswerChecked(nextQ, newAnswer);
+    continuity.sendQuestionUpdate(nextQ, []);
+    sessionActions.advanceQuestion(nextQ?.id ?? null);
+    nextQuestionRef.current = null;
+  };
+
+  // A flashcard has no answer to check: the learner's own grade is recorded
+  // and the next card follows at once. A grade for a card which is no
+  // longer current, such as one finishing its swipe after a peer moved on,
+  // is dropped.
+  const gradeSelf = (knew: boolean, questionId?: string) => {
+    if (
+      currentQuestionRef.current == null ||
+      questionChecked ||
+      (questionId !== undefined && currentQuestionRef.current.id !== questionId)
+    ) {
+      return;
+    }
+
+    const record = createSelfAssessmentRecord(
+      currentQuestionRef.current.id,
+      knew,
+    );
+    const studyTime = getCurrentStudyTime();
+    const { nextQuestion: nextQ } = sessionActions.recordAnswer(
+      record,
+      studyTime,
+    );
+    nextQuestionRef.current = nextQ;
+
+    void getQuizService().recordAnswer(
+      quizId,
+      record,
+      studyTime,
+      nextQ?.id ?? null,
+      { selfAssessment: knew },
+    );
+
+    continuity.sendAnswerChecked(nextQ, record);
     continuity.sendQuestionUpdate(nextQ, []);
     sessionActions.advanceQuestion(nextQ?.id ?? null);
     nextQuestionRef.current = null;
@@ -279,6 +355,15 @@ export function useQuizLogic({
           : (answers.find((a) => a.question === historyQuestionId)
               ?.selected_answers ?? []),
       questionChecked: historyQuestion == null ? questionChecked : true,
+      // The grade as recorded, so that a check made on another device shows
+      // the same result here.
+      wasCorrect:
+        historyQuestion == null
+          ? questionChecked && answers[0]?.question === currentQuestion?.id
+            ? answers[0].was_correct
+            : null
+          : (answers.find((a) => a.question === historyQuestionId)
+              ?.was_correct ?? null),
       isQuizFinished,
       canGoBack: answers.length > 0,
       isHistoryQuestion: historyQuestion != null,
@@ -302,6 +387,7 @@ export function useQuizLogic({
     actions: {
       nextAction,
       skipQuestion,
+      gradeSelf,
       resetProgress,
       setSelectedAnswers: (ans: string[]) => {
         selectedAnswersRef.current = ans;

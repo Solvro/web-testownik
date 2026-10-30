@@ -3,6 +3,7 @@
  */
 import { DEFAULT_USER_SETTINGS } from "../user/types";
 import type { UserSettings } from "../user/types";
+import { gradeResponse } from "./grading";
 import { getDeterministicShuffle } from "./shuffle";
 import type {
   AnswerRecord,
@@ -28,7 +29,7 @@ export function getRemainingAttempts(
   // Filter answers for this question, sorted by time
   const questionAnswers = answers
     .filter((a) => a.question === questionId)
-    .toSorted(
+    .sort(
       (a, b) =>
         new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime(),
     );
@@ -115,23 +116,40 @@ function getAnswerShuffleSeed(
   return `${seed ?? "question"}-${questionId}-${appearanceNumber.toString()}`;
 }
 
+/**
+ * Whether the answers show in a random order. True/false keeps its "true"
+ * label first; an open question has nothing to shuffle.
+ */
+export function shufflesAnswers(question: Pick<Question, "type">) {
+  return (
+    question.type === "single_choice" || question.type === "multiple_choice"
+  );
+}
+
+/** The answers in the order shown for the given appearance of the question. */
+function orderAnswers(question: Question, seed: string): Question {
+  return {
+    ...question,
+    answers: shufflesAnswers(question)
+      ? getDeterministicShuffle(question.answers, seed)
+      : [...question.answers].sort((a, b) => a.order - b.order),
+  };
+}
+
 export function getQuestionWithShuffledAnswers(
   question: Question,
   answers: AnswerRecord[],
   seed?: string,
   questionChecked = false,
 ): Question {
-  return {
-    ...question,
-    answers: getDeterministicShuffle(
-      question.answers,
-      getAnswerShuffleSeed(
-        seed,
-        question.id,
-        getQuestionAppearanceNumber(question.id, answers, questionChecked),
-      ),
+  return orderAnswers(
+    question,
+    getAnswerShuffleSeed(
+      seed,
+      question.id,
+      getQuestionAppearanceNumber(question.id, answers, questionChecked),
     ),
-  };
+  );
 }
 
 export function getAnsweredQuestionWithShuffledAnswers(
@@ -144,13 +162,10 @@ export function getAnsweredQuestionWithShuffledAnswers(
     answers.filter((answer) => answer.question === question.id).length,
   );
 
-  return {
-    ...question,
-    answers: getDeterministicShuffle(
-      question.answers,
-      getAnswerShuffleSeed(seed, question.id, appearanceNumber),
-    ),
-  };
+  return orderAnswers(
+    question,
+    getAnswerShuffleSeed(seed, question.id, appearanceNumber),
+  );
 }
 
 /**
@@ -227,37 +242,42 @@ export function pickNextQuestion({
 }
 
 /**
- * Determine if answer is correct by comparing selected answers with correct answers.
+ * Whether the response answers the question correctly: the selected answer
+ * IDs of a choice question, or the typed text of an open one.
  */
 export function checkAnswerCorrectness(
   question: Question,
   selectedAnswers: string[],
 ): boolean {
-  const correctAnswerIds = question.answers
-    .filter((a) => a.is_correct)
-    .map((a) => a.id);
-
-  const selectedSet = new Set(selectedAnswers);
-  const correctSet = new Set(correctAnswerIds);
-
-  return (
-    selectedSet.size === correctSet.size &&
-    [...selectedSet].every((id) => correctSet.has(id))
-  );
+  return gradeResponse(question, selectedAnswers);
 }
 
 export function createAnswerRecord(
   questionId: string,
   selectedAnswers: string[],
   wasCorrect: boolean,
+  // Native callers supply an Expo UUID; browser callers use Web Crypto.
+  id: string = crypto.randomUUID(),
 ): AnswerRecord {
   return {
-    id: crypto.randomUUID(),
+    id,
     question: questionId,
     answered_at: new Date().toISOString(),
     selected_answers: selectedAnswers,
     was_correct: wasCorrect,
   };
+}
+
+/**
+ * The record of a flashcard the learner graded themselves: no response, only
+ * whether they knew it. Counts like any other answer towards the progress.
+ */
+export function createSelfAssessmentRecord(
+  questionId: string,
+  knew: boolean,
+  id?: string,
+): AnswerRecord {
+  return createAnswerRecord(questionId, [], knew, id);
 }
 
 export function deriveSettings(

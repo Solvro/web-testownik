@@ -1,6 +1,12 @@
 "use client";
 
 import { useSelector } from "@tanstack/react-form";
+import { isQuestionType } from "@testownik/core/quiz/question";
+import {
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+} from "@testownik/core/quiz/types";
+import type { QuestionType } from "@testownik/core/quiz/types";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -48,9 +54,11 @@ import { useQuestionHistory } from "./question-history";
 import {
   canMutate,
   createAnswer,
+  fitAnswerToType,
   hasImage,
+  picksOneAnswer,
   updateQuestion,
-  withChoiceType,
+  withQuestionType,
 } from "./quiz-editor-form";
 import type { QuizEditorForm } from "./quiz-editor-form";
 import { imageUpdates, useEditorImage } from "./use-editor-image";
@@ -60,7 +68,7 @@ import { imageUpdates, useEditorImage } from "./use-editor-image";
  * has focus. The buttons inside show their own focus instead.
  */
 const quietField =
-  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-primary has-data-held:bg-transparent has-data-held:ring-2 has-data-held:ring-primary";
+  "-mx-2 rounded-lg px-2 transition-[background-color,box-shadow] hover:bg-muted/40 has-[textarea:focus]:bg-transparent has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50 has-data-held:bg-transparent has-data-held:ring-3 has-data-held:ring-ring/50";
 
 export function QuestionEditor({
   hidden = false,
@@ -140,20 +148,23 @@ export function QuestionEditor({
     disabled,
   };
 
-  function setMultiple(multiple: boolean) {
+  function setType(type: QuestionType) {
     updateQuestion(form, questionId, (latest) =>
-      withChoiceType(latest, multiple ? "multiple_choice" : "single_choice"),
+      withQuestionType(latest, type),
     );
   }
 
   function toggleCorrect(answerId: string) {
     updateQuestion(form, questionId, (current) => {
+      if (current.type === "open") {
+        return current;
+      }
       const marking =
         current.answers.find((answer) => answer.id === answerId)?.is_correct !==
         true;
       // Marking in single choice replaces the correct answer. Unmarking only
       // clears the one answer, also when a conflict left several marked.
-      const keepOthers = current.type === "multiple_choice" || !marking;
+      const keepOthers = !picksOneAnswer(current.type) || !marking;
       return {
         ...current,
         answers: current.answers.map((answer) => ({
@@ -166,7 +177,8 @@ export function QuestionEditor({
   }
 
   function addAnswer(afterId?: string) {
-    const created = createAnswer(0);
+    // Every answer of an open question is an accepted one.
+    const created = createAnswer(0, "", question?.type === "open");
     updateQuestion(form, questionId, (current) => {
       const position =
         afterId === undefined
@@ -218,6 +230,15 @@ export function QuestionEditor({
           if (!canMutate(form)) {
             return;
           }
+          // The type may have changed since: true/false has no room, an
+          // open question accepts the answer.
+          const latest = form
+            .getFieldValue("questions")
+            .find((item) => item.id === questionId);
+          if (latest?.type === "true_false") {
+            toast.info("Pytanie Prawda/Fałsz ma dokładnie dwie odpowiedzi.");
+            return;
+          }
           updateQuestion(form, questionId, (current) =>
             current.answers.some((answer) => answer.id === answerId)
               ? current
@@ -227,7 +248,7 @@ export function QuestionEditor({
                     .toSpliced(
                       Math.min(position, current.answers.length),
                       0,
-                      removed,
+                      fitAnswerToType(removed, current.type),
                     )
                     .map((answer, order) => ({ ...answer, order: order + 1 })),
                 },
@@ -253,9 +274,18 @@ export function QuestionEditor({
       return false;
     }
     const before = form.getFieldValue(`${path}.answers`);
-    updateQuestion(form, questionId, (current) =>
-      insertPastedAnswers(current, answerId, lines),
-    );
+    updateQuestion(form, questionId, (current) => {
+      const inserted = insertPastedAnswers(current, answerId, lines);
+      return current.type === "open"
+        ? {
+            ...inserted,
+            answers: inserted.answers.map((answer) => ({
+              ...answer,
+              is_correct: true,
+            })),
+          }
+        : inserted;
+    });
     const after = form.getFieldValue(`${path}.answers`);
     const paste = describePaste(before, after, answerId, text);
     const last = after.at(
@@ -283,10 +313,11 @@ export function QuestionEditor({
     return true;
   }
 
-  const multiple = question.type === "multiple_choice";
   const conflict =
-    !multiple &&
+    picksOneAnswer(question.type) &&
     question.answers.filter((answer) => answer.is_correct).length > 1;
+  const trueFalse = question.type === "true_false";
+  const open = question.type === "open";
   const questionImage = hasImage(question);
   const markdown = question.is_markdown_enabled !== false;
 
@@ -386,27 +417,54 @@ export function QuestionEditor({
                     aria-label={`Opcje pytania ${number}`}
                     disabled={disabled}
                   >
-                    {multiple ? "Wielokrotny wybór" : "Jednokrotny wybór"}
+                    {QUESTION_TYPE_LABELS[question.type]}
                     <ChevronDownIcon className="opacity-70" />
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuRadioGroup
-                  value={multiple ? "multiple" : "single"}
+                  value={question.type}
                   onValueChange={(value) => {
-                    setMultiple(value === "multiple");
+                    if (isQuestionType(value)) {
+                      setType(value);
+                    }
                   }}
                 >
-                  <DropdownMenuLabel>Typ wyboru</DropdownMenuLabel>
-                  <DropdownMenuRadioItem value="single">
-                    Jednokrotny wybór
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="multiple">
-                    Wielokrotny wybór
-                  </DropdownMenuRadioItem>
+                  <DropdownMenuLabel>Typ pytania</DropdownMenuLabel>
+                  {QUESTION_TYPES.map((type) => (
+                    <DropdownMenuRadioItem key={type} value={type}>
+                      {QUESTION_TYPE_LABELS[type]}
+                    </DropdownMenuRadioItem>
+                  ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
+                {open ? (
+                  <>
+                    <DropdownMenuRadioGroup
+                      value={question.open_matching}
+                      onValueChange={(value: unknown) => {
+                        if (value === "exact" || value === "similar") {
+                          updateQuestion(form, questionId, (current) => ({
+                            ...current,
+                            open_matching: value,
+                          }));
+                        }
+                      }}
+                    >
+                      <DropdownMenuLabel>
+                        Sprawdzanie odpowiedzi
+                      </DropdownMenuLabel>
+                      <DropdownMenuRadioItem value="exact">
+                        Dokładne
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="similar">
+                        Z tolerancją literówek
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : null}
                 <DropdownMenuCheckboxItem
                   checked={markdown}
                   onCheckedChange={(checked) => {
@@ -546,7 +604,11 @@ export function QuestionEditor({
           </ImageDropZone>
 
           <section
-            aria-label={`Odpowiedzi do pytania ${number}`}
+            aria-label={
+              open
+                ? `Akceptowane odpowiedzi do pytania ${number}`
+                : `Odpowiedzi do pytania ${number}`
+            }
             className="space-y-2"
           >
             <form.Field name={`${path}.answers`}>
@@ -562,9 +624,9 @@ export function QuestionEditor({
                   questionIndex={index}
                   answer={answer}
                   answerIndex={answerIndex}
-                  multiple={multiple}
+                  type={question.type}
                   conflict={conflict}
-                  canDelete={question.answers.length > minAnswers}
+                  canDelete={!trueFalse && question.answers.length > minAnswers}
                   disabled={disabled}
                   onToggleCorrect={() => {
                     toggleCorrect(answer.id);
@@ -572,10 +634,17 @@ export function QuestionEditor({
                   onEnter={() => {
                     const isLastAnswer =
                       answerIndex === question.answers.length - 1;
+                    const next = question.answers.at(answerIndex + 1);
+                    if (trueFalse) {
+                      // The two labels are fixed: Enter only moves between them.
+                      if (next !== undefined) {
+                        focusField(`answer-text-${next.id}`);
+                      }
+                      return;
+                    }
                     if (isLastAnswer && answer.text.trim() === "") {
                       return;
                     }
-                    const next = question.answers.at(answerIndex + 1);
                     if (next?.text === "") {
                       focusField(`answer-text-${next.id}`);
                     } else {
@@ -585,30 +654,43 @@ export function QuestionEditor({
                   onRemove={() => {
                     removeAnswer(answer.id);
                   }}
-                  onPasteLines={(event) => pasteLines(answer.id, event)}
+                  onPasteLines={(event) =>
+                    !trueFalse && pasteLines(answer.id, event)
+                  }
                   onUploadStart={onUploadStart}
                   onUploadEnd={onUploadEnd}
                 />
               ))}
             </div>
-            <Button
-              id={`add-answer-${questionId}`}
-              type="button"
-              variant="ghost"
-              className="text-primary hover:text-primary -ml-1 px-2"
-              disabled={disabled}
-              onClick={() => {
-                addAnswer();
-              }}
-            >
-              <PlusIcon />
-              Dodaj odpowiedź
-            </Button>
+            {trueFalse ? null : (
+              <Button
+                id={`add-answer-${questionId}`}
+                type="button"
+                variant="ghost"
+                className="text-primary hover:text-primary -ml-1 px-2"
+                disabled={disabled}
+                onClick={() => {
+                  addAnswer();
+                }}
+              >
+                <PlusIcon />
+                {open ? "Dodaj akceptowaną odpowiedź" : "Dodaj odpowiedź"}
+              </Button>
+            )}
+            {open || trueFalse ? (
+              <p className="text-muted-foreground px-1 text-xs">
+                {trueFalse
+                  ? "Pierwsza odpowiedź oznacza prawdę, druga fałsz."
+                  : question.open_matching === "similar"
+                    ? "Zaliczane są też odpowiedzi z drobnymi literówkami."
+                    : "Zaliczana jest tylko dokładna odpowiedź."}
+              </p>
+            ) : null}
           </section>
 
           <form.Field name={`${path}.explanation`}>
             {(field) => (
-              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-primary has-data-held:ring-primary flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-2 has-[textarea:focus]:ring-2 sm:flex-row sm:items-start">
+              <div className="bg-muted/50 dark:bg-input/20 has-[textarea:focus]:ring-ring/50 has-data-held:ring-ring/50 flex flex-col gap-x-1.5 rounded-lg px-4 py-2.5 text-sm transition-shadow has-data-held:ring-3 has-[textarea:focus]:ring-3 sm:flex-row sm:items-start">
                 <label
                   htmlFor={`explanation-${questionId}`}
                   className="shrink-0 py-0.5 leading-relaxed font-semibold"

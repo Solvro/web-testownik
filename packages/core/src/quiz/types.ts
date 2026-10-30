@@ -45,10 +45,25 @@ export const QUESTION_TYPES = [
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
+export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  single_choice: "Jednokrotny wybór",
+  multiple_choice: "Wielokrotny wybór",
+  true_false: "Prawda/Fałsz",
+  open: "Otwarte",
+};
+
 /** How a typed answer to an open question is compared with the accepted ones. */
 export const OPEN_MATCHINGS = ["exact", "similar"] as const;
 
 export type OpenMatching = (typeof OPEN_MATCHINGS)[number];
+
+/** Default labels of the two answers of a new true/false question. */
+export const TRUE_FALSE_LABELS = ["Prawda", "Fałsz"] as const;
+
+/** How a quiz is studied: answered as a quiz, or flipped as flashcards. */
+export const STUDY_MODES = ["quiz", "flashcards"] as const;
+
+export type StudyMode = (typeof STUDY_MODES)[number];
 
 export interface Question {
   id: string;

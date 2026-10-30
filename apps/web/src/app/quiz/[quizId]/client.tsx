@@ -62,6 +62,7 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
     currentQuestion,
     selectedAnswers,
     questionChecked,
+    wasCorrect,
     isQuizFinished,
     isHistoryQuestion,
     canGoBack,
@@ -330,23 +331,14 @@ function QuizPageContent({ quizId }: { quizId: string }): React.JSX.Element {
                   selectedAnswers={selectedAnswers}
                   setSelectedAnswers={(newSelected) => {
                     resetInactivityTimer();
-                    // If question is not multiple, unselect everything except the new
-                    if (
-                      currentQuestion !== null &&
-                      currentQuestion.type !== "multiple_choice"
-                    ) {
-                      setSelectedAnswers(
-                        newSelected.length > 0 ? [newSelected[0]] : [],
-                      );
-                    } else {
-                      setSelectedAnswers(newSelected);
-                    }
+                    setSelectedAnswers(newSelected);
                   }}
                   nextAction={() => {
                     handleQuizActivity(nextAction);
                   }}
                   answers={answers}
                   questionChecked={questionChecked}
+                  wasCorrect={wasCorrect}
                   isQuizFinished={isQuizFinished}
                   restartQuiz={resetProgress}
                   togglePreviousQuestion={() => {

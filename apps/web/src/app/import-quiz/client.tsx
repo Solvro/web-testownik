@@ -561,16 +561,28 @@ function ImportQuizPageContent(): React.JSX.Element {
                         </li>
                         <li>
                           <TypographyInlineCode>type</TypographyInlineCode> –
-                          typ pytania:{" "}
+                          typ pytania: single_choice (jednokrotny wybór),
+                          multiple_choice (wielokrotny wybór), true_false
+                          (Prawda/Fałsz: dokładnie dwie odpowiedzi, order 1 to
+                          prawda, order 2 to fałsz, jedna poprawna) lub open
+                          (pytanie otwarte: przynajmniej jedna akceptowana
+                          odpowiedź, wszystkie is_correct=true, bez zdjęć
+                          odpowiedzi). Jeśli brak, typ wyboru jest ustalany na
+                          podstawie liczby poprawnych odpowiedzi.
+                        </li>
+                        <li>
+                          Odpowiedzi pytań single_choice i multiple_choice są
+                          zawsze losowane. Pytania true_false i open zachowują
+                          kolejność odpowiedzi.
+                        </li>
+                        <li>
                           <TypographyInlineCode>
-                            single_choice
+                            open_matching
                           </TypographyInlineCode>{" "}
-                          (jednokrotny wybór) lub{" "}
-                          <TypographyInlineCode>
-                            multiple_choice
-                          </TypographyInlineCode>{" "}
-                          (wielokrotny wybór); jeśli brak, wynika z liczby
-                          poprawnych odpowiedzi (opcjonalne).
+                          – sposób dopasowania wpisanej odpowiedzi w pytaniu
+                          open: exact (domyślnie, po normalizacji wielkości
+                          liter i odstępów) lub similar (z tolerancją literówek
+                          i pominięciem znaków diakrytycznych; opcjonalne).
                         </li>
                         <li>
                           <TypographyInlineCode>
@@ -622,67 +634,80 @@ function ImportQuizPageContent(): React.JSX.Element {
                 <pre className="bg-muted w-full rounded-md p-3 text-xs">
                   {`{
     "title": "Przykładowy quiz",
-    "description": "Opis quizu", // Opcjonalny
+    "description": "Opis quizu",
     "questions": [
         {
-            "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
-            "text": "Jaki jest sens sesji?",
+            "order": 1,
+            "text": "Ile wynosi 2 + 2?",
+            "type": "single_choice",
+            "open_matching": "exact",
+            "explanation": "2 + 2 = 4.",
             "answers": [
                 {
-                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Nie ma sensu",
-                    "is_correct": false
-                },
-                {
-                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Żeby zjeść obiad",
+                    "order": 1,
+                    "text": "4",
                     "is_correct": true
                 },
                 {
-                    "order": 3, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Żeby się wykończyć",
+                    "order": 2,
+                    "text": "5",
                     "is_correct": false
                 }
-            ],
-            "type": "single_choice", // Opcjonalny, domyślnie wg liczby poprawnych odpowiedzi
-            "explanation": "Sesja ma sens, żeby zjeść obiad." // Opcjonalny
+            ]
         },
         {
-            "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
-            "text": "Kto jest najlepszy?",
+            "order": 2,
+            "text": "Które liczby są parzyste?",
+            "type": "multiple_choice",
+            "open_matching": "exact",
             "answers": [
                 {
-                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Ja",
+                    "order": 1,
+                    "text": "2",
                     "is_correct": true
                 },
                 {
-                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Ty",
+                    "order": 2,
+                    "text": "4",
+                    "is_correct": true
+                },
+                {
+                    "order": 3,
+                    "text": "5",
                     "is_correct": false
                 }
-            ],
-            "type": "single_choice"
+            ]
         },
         {
-            "order": 3, // Opcjonalny, jeśli brak to automatycznie od 1
-            "text": "Pytanie ze zdjęciem",
-            "image_url": "https://example.com/image.jpg", // Opcjonalny
+            "order": 3,
+            "text": "Ziemia krąży wokół Słońca.",
+            "type": "true_false",
+            "open_matching": "exact",
             "answers": [
                 {
-                    "order": 1, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Odpowiedź 1",
-                    "image_url": "https://example.com/image2.jpg", // Opcjonalny
+                    "order": 1,
+                    "text": "Prawda",
                     "is_correct": true
                 },
                 {
-                    "order": 2, // Opcjonalny, jeśli brak to automatycznie od 1
-                    "text": "Odpowiedź 2",
-                    "image_url": "https://example.com/image3.jpg", // Opcjonalny
+                    "order": 2,
+                    "text": "Fałsz",
                     "is_correct": false
                 }
-            ],
-            "type": "multiple_choice" // Opcjonalny, domyślnie wg liczby poprawnych odpowiedzi
+            ]
+        },
+        {
+            "order": 4,
+            "text": "Jakie miasto jest stolicą Polski?",
+            "type": "open",
+            "open_matching": "similar",
+            "answers": [
+                {
+                    "order": 1,
+                    "text": "Warszawa",
+                    "is_correct": true
+                }
+            ]
         }
     ]
 }`}
