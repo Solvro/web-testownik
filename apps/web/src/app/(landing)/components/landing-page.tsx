@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
+import type { PerksData } from "../lib/perks";
 import { useGuestStart } from "./hooks/use-guest-start";
 import "./landing.css";
 import { Faq } from "./sections/faq";
@@ -14,6 +15,7 @@ import { LandingNav } from "./sections/landing-nav";
 import { NAV_HOVER_NONE } from "./sections/landing-nav-hover";
 import type { NavHover } from "./sections/landing-nav-hover";
 import { LandingTableOfContents } from "./sections/landing-table-of-contents";
+import { Perks } from "./sections/perks";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
 import { Timeline } from "./sections/timeline";
@@ -28,10 +30,13 @@ import { FOCUS_RING } from "./ui/focus";
  */
 export function LandingPage({
   contributors,
+  perks,
   isAuthenticated,
 }: {
   /** Unresolved: the team rail streams in rather than holding up the hero. */
   contributors: Promise<GitHubContributor[]>;
+  /** Unresolved: only the partner numbers and cards wait for it. */
+  perks: Promise<PerksData>;
   /** Signed-in visitors only reach the page at `/?landing=true`. */
   isAuthenticated: boolean;
 }): React.JSX.Element {
@@ -126,6 +131,7 @@ export function LandingPage({
       <Faq />
       <Timeline />
       <Team contributors={contributors} />
+      <Perks perks={perks} />
       <Finale
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}

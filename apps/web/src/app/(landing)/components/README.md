@@ -123,6 +123,18 @@ restoration resumes at current progress. Expiry disposes the stack and selects
 the static layout; a later context-restored event can recreate it. The TOC
 rebuilds the hero peek for the shorter static layout.
 
+## Partner section and data
+
+`sections/perks.tsx` is the uniperks partner block (`#perks`): our frame, their
+card anatomy in `sections/perks-cards.tsx`, colours as `--perk-*` variables on
+the section. `lib/perks.server.ts` resolves its numbers and offers from the
+partner feed (`UNIPERKS_FEED_URL`, `UNIPERKS_FEED_TOKEN`), else the public
+uniperks.pl page (robots.txt checked, parsed result cached six hours), else
+`data/perks.snapshot.json`. `pnpm --filter web perks:snapshot` rewrites the
+snapshot; `perks-snapshot.yml` does that weekly and opens a PR. CTAs go
+through `/go/uniperks?p=<placement>`, which counts the click in Umami and
+redirects to `PERKS_PARTNER_URL`.
+
 ## Covers
 
 The closed loading cover stays above the live scene until screen readiness,
