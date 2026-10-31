@@ -66,6 +66,112 @@
   transform: rotate(-1deg);
 }
 
+.lp-ink-link {
+  position: relative;
+}
+
+.lp-ink-link::after {
+  position: absolute;
+  inset: auto 0 0.25rem;
+  height: 0.15em;
+  border-top: 1.5px solid currentColor;
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-1deg);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lp-cta-chevron {
+  transition: transform 200ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.lp-cta-shaft {
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path 200ms cubic-bezier(0.77, 0, 0.175, 1),
+    opacity 150ms ease;
+}
+
+.lp-ink-link:focus-visible::after {
+  clip-path: inset(0);
+}
+
+.lp-showcase-cta:focus-visible .lp-cta-chevron {
+  transform: translateX(4px);
+}
+
+.lp-showcase-cta:focus-visible .lp-cta-shaft {
+  opacity: 1;
+  clip-path: inset(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-ink-link:hover::after {
+    clip-path: inset(0);
+  }
+
+  .lp-showcase-cta:hover .lp-cta-chevron {
+    transform: translateX(4px);
+  }
+
+  .lp-showcase-cta:hover .lp-cta-shaft {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+.lp-check-drawing {
+  transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lp-notebook-check:active .lp-check-drawing {
+  transform: rotate(-6deg) scale(0.95);
+}
+
+.lp-check-tick,
+.lp-check-scribble {
+  stroke: var(--foreground);
+  stroke-width: 2.7;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+
+.lp-check-tick {
+  transition:
+    stroke-dashoffset 420ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 150ms ease;
+}
+
+.lp-check-scribble {
+  transition:
+    stroke-dashoffset 450ms linear,
+    opacity 150ms ease;
+}
+
+.lp-notebook-check[data-ink-state="checked"] .lp-check-tick,
+.lp-notebook-check[data-ink-state="cancelled"] .lp-check-scribble {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.lp-notebook-check[data-ink-state="cancelled"] .lp-check-tick {
+  transition-duration: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-ink-link::after,
+  .lp-cta-chevron,
+  .lp-cta-shaft,
+  .lp-check-drawing,
+  .lp-check-tick,
+  .lp-check-scribble {
+    transition: none;
+  }
+}
+
 .lp-ink-strike {
   text-decoration: line-through;
   text-decoration-thickness: 1.5px;

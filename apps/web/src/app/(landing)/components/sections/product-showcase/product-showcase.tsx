@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRightIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -134,7 +133,7 @@ export function ProductShowcase(): React.JSX.Element {
         <a
           href="#landing-demos"
           className={cn(
-            "inline-flex min-h-11 items-center rounded-sm hover:underline",
+            "lp-ink-link inline-flex min-h-11 items-center rounded-sm",
             FOCUS_RING,
           )}
           onClick={(event) => {
@@ -270,10 +269,21 @@ export function ProductShowcase(): React.JSX.Element {
                       </p>
                       <LandingButtonLink
                         href="/login?redirect=%2Fquizzes"
-                        className="border-border bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground mt-8 min-h-10 w-fit max-w-full rounded-lg border px-4 text-[0.88rem] font-semibold tracking-[-0.01em] normal-case"
+                        className="lp-showcase-cta border-border bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground mt-8 min-h-10 w-fit max-w-full rounded-lg border px-4 text-[0.88rem] font-semibold tracking-[-0.01em] normal-case"
                       >
                         <span className="truncate">{feature.cta}</span>
-                        <ArrowRightIcon aria-hidden="true" />
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path className="lp-cta-shaft" d="M4 12h15" />
+                          <path className="lp-cta-chevron" d="m10 7 5 5-5 5" />
+                        </svg>
                       </LandingButtonLink>
                     </div>
 

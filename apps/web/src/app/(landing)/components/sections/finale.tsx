@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../ui/focus";
-import { HandNote } from "../ui/hand-note";
+import { NotebookCheck } from "../ui/notebook-check";
 import { LandingButton, LandingButtonLink } from "../ui/landing-button";
 import { ParticleLogo } from "../ui/particle-logo";
 import { monoLabelVariants } from "../ui/typography-variants";
@@ -64,9 +64,7 @@ export function Finale({
       </p>
 
       {/* Above the particle canvas, which would otherwise drift over it. */}
-      <HandNote className="relative mt-6">
-        □ Do zrobienia: pierwszy quiz.
-      </HandNote>
+      <NotebookCheck />
       <div className="relative z-10 mt-8 flex w-full flex-col gap-[0.8rem] sm:w-auto sm:flex-row">
         {isAuthenticated ? (
           <LandingButtonLink
