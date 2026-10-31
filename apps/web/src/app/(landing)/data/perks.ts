@@ -1,8 +1,8 @@
 import type { PerksData, PerksOffer } from "../lib/perks";
 
 export const perks = {
-  studentsCount: 563_760,
-  offersCount: 293,
+  studentsCount: 500_000,
+  offersCount: 250,
   maxDiscountPct: 50,
   yearlySavingsPln: 2000,
   offers: [

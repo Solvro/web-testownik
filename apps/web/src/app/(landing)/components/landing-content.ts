@@ -147,10 +147,10 @@ export const PERKS_COPY = {
   primaryCta: "Odblokuj zniżki!",
   secondaryCta: "Zobacz oferty",
   studentsCaption: "studentów",
-  offersCaption: (maxDiscount: string) => `oferty do\u00A0−${maxDiscount}%`,
+  offersCaption: (maxDiscount: string) => `ofert do\u00A0−${maxDiscount}%`,
   savingsCaption: "oszczędności rocznie",
   disclosure:
-    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach i animowane liczniki są poglądowe — aktualne dane znajdziesz w aplikacji.",
+    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są poglądowe — aktualne dane znajdziesz w aplikacji.",
 } as const;
 
 /** The lead paragraph, from already formatted base numbers. */
@@ -165,5 +165,5 @@ export function perksLead({
   maxDiscount: string;
   savings: string;
 }): string {
-  return `Dołącz do ponad\u00A0${students} studentów, którzy kupują taniej z\u00A0uniperks. Odkryj ${offers} zniżki do\u00A0−${maxDiscount}% i\u00A0oszczędzaj nawet ${savings}\u00A0zł rocznie.`;
+  return `Dołącz do ponad\u00A0${students} studentów, którzy kupują taniej z\u00A0uniperks. Odkryj ponad\u00A0${offers} zniżek do\u00A0−${maxDiscount}% i\u00A0oszczędzaj nawet ${savings}\u00A0zł rocznie.`;
 }

@@ -128,10 +128,9 @@ rebuilds the hero peek for the shorter static layout.
 `sections/perks.tsx` is the uniperks partner block (`#perks`): our frame, their
 card anatomy in `sections/perks-cards.tsx`, colours as `--perk-*` variables on
 the section. Numbers and offers are hard coded in `data/perks.ts`.
-There are no partner fetches or scheduled refreshes. Only the stats row counts
-up on entering the viewport, then adds one student every 4 seconds and one
-offer every 28 seconds while visible. Savings stay fixed after the count-up.
-Reduced motion shows the base values immediately. Card backgrounds are local
+There are no partner fetches or scheduled refreshes. The stats show fixed lower
+bounds (500 000+ students and 250+ offers), with no simulated live increments.
+Card backgrounds are local
 AI-generated photos with blur fading from 0 px at the top to 3 px at the bottom,
 a dark-to-transparent gradient, and frosted badges. Cards
 lift through a shared 3D perspective on hover, revealing their full content
