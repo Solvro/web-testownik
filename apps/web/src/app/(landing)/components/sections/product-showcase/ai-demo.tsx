@@ -139,7 +139,10 @@ function DemoChat({
         </Tooltip>
       </header>
       <ActiveQuestion session={session} />
-      <div className="min-h-0 flex-1">
+      {/* The app's chat contains overscroll, and Chrome then swallows the
+          wheel even while the thread is too short to scroll. On the landing
+          page the wheel must reach the page. */}
+      <div className="min-h-0 flex-1 [&_[data-slot=message-scroller-viewport]]:overscroll-auto">
         <ChatThread
           runtime={runtime}
           errorMessage={error === undefined ? null : describeFailure(failure)}
