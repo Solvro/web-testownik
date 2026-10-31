@@ -56,8 +56,8 @@ const blankScreen = (
  * The hero visual below `lg`: an iPhone drawn entirely in CSS (the antenna
  * lines, sensors and volume buttons are the `.lp-iphone-*` pseudo-elements in
  * landing.css) running the same live quiz as the desktop stage. No image,
- * no model, no WebGL. The scroll choreography is a CSS scroll-driven animation
- * on `.lp-hero-phone` and `.lp-hero-chip`.
+ * no model, no WebGL. The phone holds still on scroll; only the chips around
+ * it drift (`.lp-hero-chip`).
  *
  * The frame is a fixed 428 × 879 px device scaled per breakpoint, so the
  * screen keeps the 390 px logical width the quiz surface is designed for —
@@ -82,7 +82,7 @@ export function HeroPhone({
       <div
         role="group"
         aria-label="iPhone z quizem w Testowniku"
-        className="lp-hero-phone absolute inset-0"
+        className="absolute inset-0"
       >
         <div
           className={cn(

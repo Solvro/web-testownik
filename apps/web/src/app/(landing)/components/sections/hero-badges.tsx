@@ -104,7 +104,7 @@ const STUDY_BADGES: StudyBadge[] = [
     icon: NotebookPenIcon,
     className: "top-[24%] right-[20%] hidden xl:grid",
     mobileClassName:
-      "top-[9%] -left-6 rotate-[7deg] [--lp-chip-drift:-0.5rem_-1.1rem] sm:-left-9",
+      "top-[9%] -left-11 rotate-[7deg] [--lp-chip-drift:-0.5rem_-1.1rem] min-[375px]:-left-14 sm:-left-20",
     rotation: "7deg",
     floatDelay: "-1.7s",
   },
@@ -113,7 +113,7 @@ const STUDY_BADGES: StudyBadge[] = [
     icon: TestTubeDiagonalIcon,
     className: "top-[38%] right-[10%]",
     mobileClassName:
-      "top-[31%] -right-7 rotate-[-6deg] [--lp-chip-drift:0.6rem_-1.4rem] sm:-right-10",
+      "top-[31%] -right-11 rotate-[-6deg] [--lp-chip-drift:0.6rem_-1.4rem] min-[375px]:-right-14 sm:-right-20",
     rotation: "-6deg",
     floatDelay: "-4.1s",
   },
@@ -122,7 +122,7 @@ const STUDY_BADGES: StudyBadge[] = [
     icon: BookMarkedIcon,
     className: "bottom-[25%] left-[12%]",
     mobileClassName:
-      "top-[56%] -left-7 rotate-[-8deg] [--lp-chip-drift:-0.7rem_-0.7rem] sm:-left-10",
+      "top-[56%] -left-11 rotate-[-8deg] [--lp-chip-drift:-0.7rem_-0.7rem] min-[375px]:-left-14 sm:-left-20",
     rotation: "-8deg",
     floatDelay: "-0.4s",
   },
@@ -131,7 +131,7 @@ const STUDY_BADGES: StudyBadge[] = [
     icon: GraduationCap,
     className: "bottom-[38%] left-[20%] hidden xl:grid",
     mobileClassName:
-      "top-[74%] -right-9 hidden rotate-[6deg] [--lp-chip-drift:0.5rem_-1rem] sm:grid",
+      "top-[74%] -right-20 hidden rotate-[6deg] [--lp-chip-drift:0.5rem_-1rem] sm:grid",
     rotation: "6deg",
     floatDelay: "-2.9s",
   },

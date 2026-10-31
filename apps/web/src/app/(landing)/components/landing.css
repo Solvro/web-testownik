@@ -455,27 +455,11 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 }
 
 /*
- * Mobile hero choreography with no JavaScript: over the first stretch of page
- * scroll the phone rises and straightens and the study chips drift outwards.
- * Each chip sets its own `--lp-chip-drift`. Without scroll-timeline support,
- * or with reduced motion, both stay in the resting pose (no offset).
+ * Mobile hero, no JavaScript: over the first stretch of page scroll the study
+ * chips drift outwards, each by its own `--lp-chip-drift`. The phone itself
+ * holds still. Without scroll-timeline support, or with reduced motion, the
+ * chips stay in the resting pose.
  */
-/* The phone starts leaning left, stands straight a quarter of the way in and
-   ends leaning a little right, so it reads naturally as it rises. */
-@keyframes lp-hero-phone-rise {
-  from {
-    translate: 0 1rem;
-    rotate: -3.5deg;
-  }
-  25% {
-    rotate: 0deg;
-  }
-  to {
-    translate: 0 0;
-    rotate: 2.5deg;
-  }
-}
-
 @keyframes lp-hero-chip-drift {
   from {
     translate: 0 0;
@@ -487,15 +471,10 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .lp-hero-phone,
     .lp-hero-chip {
-      animation: lp-hero-phone-rise linear both;
+      animation: lp-hero-chip-drift linear both;
       animation-timeline: scroll(root block);
       animation-range: 0 80vh;
-    }
-
-    .lp-hero-chip {
-      animation-name: lp-hero-chip-drift;
     }
   }
 }
