@@ -18,6 +18,12 @@ export const LANDING_SECTIONS = [
   { id: "story", label: "Nasza historia", navLabel: "Historia", peek: "top" },
   { id: "team", label: "Poznaj zespół", navLabel: "Zespół", peek: "top" },
   {
+    id: "perks",
+    label: "Zniżki dla studentów",
+    navLabel: "Zniżki",
+    peek: "top",
+  },
+  {
     id: "footer",
     label: "Zacznij korzystać",
     navLabel: "Dołącz",
