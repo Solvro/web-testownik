@@ -20,29 +20,18 @@ export const REPOSITORY_URL = "https://github.com/Solvro/web-testownik";
 
 export const STORY_HEADING = "Nasza historia";
 
-export const LANDING_UPDATE = {
-  date: "2026-10-25",
-  label: "25.10.2026",
-  title: "Wygodniejsze przeglądanie Testownika",
-  summary: "Szybsza strona, płynniejszy podgląd i nawigacja zawsze pod ręką.",
-  changes: [
-    {
-      title: "Strona główna",
-      summary: "Szybsze sekcje i powrót do miejsca przeglądania.",
-      text: "Szybsze sekcje i powrót do miejsca, w którym kończysz przeglądanie.",
-    },
-    {
-      title: "Podgląd aplikacji",
-      summary: "Wcześniejsze ładowanie i płynniejsze otwieranie laptopa.",
-      text: "Ekrany ładują się wcześniej, a laptop otwiera się płynniej.",
-    },
-    {
-      title: "Nawigacja",
-      summary: "Mniejsze menu, które zostaje pod ręką.",
-      text: "Menu zostaje pod ręką i zmniejsza się podczas przewijania strony.",
-    },
-  ],
-};
+/** Where the update note's "Zobacz więcej" and its posts lead. */
+export const BLOG_PATH = "/blog";
+
+/**
+ * What the update note lists until the blog has published posts, or while
+ * the request for them is in flight or has failed.
+ */
+export const LANDING_UPDATE_FALLBACK: readonly string[] = [
+  "Szybsze sekcje i powrót do miejsca przeglądania.",
+  "Wcześniejsze ładowanie i płynniejsze otwieranie laptopa.",
+  "Mniejsze menu, które zostaje pod ręką.",
+];
 
 export const STORY: readonly TimelineEntry[] = [
   {
@@ -141,16 +130,15 @@ export const PERKS_PLACEMENTS = [
 export type PerksPlacement = (typeof PERKS_PLACEMENTS)[number];
 
 export const PERKS_COPY = {
-  eyebrow: "Partner Testownika",
-  headline: "Uczysz się za darmo.",
-  headlineAccent: "Kupuj taniej.",
+  headline: "Zalicz sesję",
+  headlineAccent: "Zgarnij zniżki",
   primaryCta: "Odblokuj zniżki!",
   secondaryCta: "Zobacz oferty",
   studentsCaption: "studentów",
   offersCaption: (maxDiscount: string) => `ofert do\u00A0−${maxDiscount}%`,
   savingsCaption: "oszczędności rocznie",
   disclosure:
-    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są poglądowe — aktualne dane znajdziesz w aplikacji.",
+    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są poglądowe. Aktualne dane znajdziesz w aplikacji.",
 } as const;
 
 /** The lead paragraph, from already formatted base numbers. */
@@ -166,4 +154,15 @@ export function perksLead({
   savings: string;
 }): string {
   return `Dołącz do ponad\u00A0${students} studentów, którzy kupują taniej z\u00A0uniperks. Odkryj ponad\u00A0${offers} zniżek do\u00A0−${maxDiscount}% i\u00A0oszczędzaj nawet ${savings}\u00A0zł rocznie.`;
+}
+
+/** The one-line lead below `lg`, where the stats and the long lead are dropped. */
+export function perksShortLead({
+  offers,
+  maxDiscount,
+}: {
+  offers: string;
+  maxDiscount: string;
+}): string {
+  return `Ponad\u00A0${offers} studenckich zniżek do\u00A0−${maxDiscount}% w\u00A0jednej aplikacji.`;
 }

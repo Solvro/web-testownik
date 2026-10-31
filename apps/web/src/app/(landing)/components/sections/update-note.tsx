@@ -1,15 +1,182 @@
+import { EraserIcon } from "lucide-react";
+import Link from "next/link";
+import { Suspense, use, useEffect, useRef, useState } from "react";
+import type { PointerEvent, RefObject } from "react";
+
 import { cn } from "@/lib/utils";
 
 import { Peel } from "../../canvasui/Peel";
-import { LANDING_UPDATE } from "../landing-content";
+import type { LandingBlogPost } from "../../lib/blog";
+import { useMediaQuery } from "../hooks/use-media-query";
+import { BLOG_PATH, LANDING_UPDATE_FALLBACK } from "../landing-content";
 import { FOCUS_RING } from "../ui/focus";
 import { handwritingClassName } from "../ui/handwriting";
 
-export function UpdateNote(): React.JSX.Element {
+const ITEM_LINK_CLASS = cn(
+  "pointer-events-auto line-clamp-2 rounded-sm",
+  FOCUS_RING,
+);
+
+const LIST_CLASS =
+  "mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]";
+
+/** The static changes: while the posts load, and when there are none. */
+function FallbackList(): React.JSX.Element {
+  return (
+    <ul className={LIST_CLASS}>
+      {LANDING_UPDATE_FALLBACK.map((change) => (
+        <li key={change}>
+          <Link href={BLOG_PATH} className={ITEM_LINK_CLASS}>
+            {change}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PostList({
+  posts,
+}: {
+  posts: Promise<LandingBlogPost[]>;
+}): React.JSX.Element {
+  const resolved = use(posts);
+  if (resolved.length === 0) {
+    return <FallbackList />;
+  }
+  return (
+    <ul className={LIST_CLASS}>
+      {resolved.map((post) => (
+        <li key={post.slug}>
+          <Link
+            href={`${BLOG_PATH}/${encodeURIComponent(post.slug)}`}
+            className={ITEM_LINK_CLASS}
+          >
+            {post.title}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const INK = "#253b60";
+
+/** A pencil whose tip is the hotspot, so the line starts where it points. */
+const PENCIL_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='${INK}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21.17 6.81a2.83 2.83 0 0 0-4-4L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z' fill='%23fff'/></svg>`,
+)}") 2 22, crosshair`;
+
+/**
+ * Pen strokes from a mouse, pen or finger, just for fun. It lives on the
+ * sheet itself, under the text, so the ink curls away with the paper. Nothing
+ * is kept: a resize or reload wipes it. Every coalesced sample goes into the
+ * stroke, so fast scribbles stay smooth, and offsets are in the note's own
+ * coordinates, so the tilt does not skew the line.
+ */
+function InkCanvas({
+  canvasReference,
+  onInk,
+}: {
+  canvasReference: RefObject<HTMLCanvasElement | null>;
+  onInk: () => void;
+}): React.JSX.Element {
+  const strokeReference = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasReference.current;
+    if (canvas === null) {
+      return;
+    }
+    const resize = (): void => {
+      const ratio = window.devicePixelRatio;
+      canvas.width = Math.round(canvas.clientWidth * ratio);
+      canvas.height = Math.round(canvas.clientHeight * ratio);
+      const context = canvas.getContext("2d");
+      if (context !== null) {
+        context.scale(ratio, ratio);
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.lineWidth = 2.4;
+        context.strokeStyle = INK;
+      }
+    };
+    // Fires once on observe too. Resizing the bitmap wipes the ink.
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    return () => {
+      observer.disconnect();
+    };
+  }, [canvasReference]);
+
+  const draw = (event: PointerEvent<HTMLCanvasElement>): void => {
+    const context = canvasReference.current?.getContext("2d");
+    const last = strokeReference.current;
+    if (context == null || last === null) {
+      return;
+    }
+    // Every sample since the last frame, where supported (Safari 18+).
+    const native = event.nativeEvent;
+    const samples =
+      "getCoalescedEvents" in native ? native.getCoalescedEvents() : [];
+    context.beginPath();
+    context.moveTo(last.x, last.y);
+    let next = last;
+    for (const point of samples.length > 0 ? samples : [native]) {
+      next = { x: point.offsetX, y: point.offsetY };
+      context.lineTo(next.x, next.y);
+    }
+    context.stroke();
+    strokeReference.current = next;
+  };
+
+  const end = (): void => {
+    strokeReference.current = null;
+  };
+
+  return (
+    <canvas
+      ref={canvasReference}
+      aria-hidden="true"
+      style={{ cursor: PENCIL_CURSOR }}
+      className="absolute inset-0 size-full touch-none"
+      onPointerDown={(event) => {
+        if (event.button !== 0) {
+          return;
+        }
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const { offsetX: x, offsetY: y } = event.nativeEvent;
+        strokeReference.current = { x, y };
+        // A tap leaves a dot.
+        const context = event.currentTarget.getContext("2d");
+        context?.beginPath();
+        context?.arc(x, y, 1.2, 0, Math.PI * 2);
+        context?.stroke();
+        onInk();
+      }}
+      onPointerMove={draw}
+      onPointerUp={end}
+      onPointerCancel={end}
+    />
+  );
+}
+
+/** The sticky note under the story heading: the latest blog posts. */
+export function UpdateNote({
+  posts,
+}: {
+  posts: Promise<LandingBlogPost[]>;
+}): React.JSX.Element {
+  const inkReference = useRef<HTMLCanvasElement>(null);
+  const [hasInk, setHasInk] = useState(false);
+  // Mouse and pen only: on touch the note would swallow the page's scroll.
+  const canDraw = useMediaQuery("(hover: hover) and (pointer: fine)");
+  const showEraser = canDraw && hasInk;
+
   return (
     <article
       aria-labelledby="landing-update-heading"
-      className="mt-10 max-w-sm px-2"
+      className="max-w-sm -rotate-[1.5deg] px-2 lg:mt-10"
     >
       <Peel
         reverse
@@ -24,10 +191,12 @@ export function UpdateNote(): React.JSX.Element {
         shade={0.3}
         className="lp-update-note"
         overlay={
+          // The text sits above the sheet and lets strokes through to the
+          // ink; only the links and the eraser take the pointer.
           <div
             className={cn(
               handwritingClassName,
-              "lp-update-paper flex h-full flex-col px-6 pt-5 pb-14 text-[#253b60] sm:px-7",
+              "lp-update-paper pointer-events-none relative flex h-full flex-col px-6 pt-5 pb-14 text-[#253b60] sm:px-7",
             )}
           >
             <h3
@@ -36,30 +205,54 @@ export function UpdateNote(): React.JSX.Element {
             >
               Ostatnie zmiany
             </h3>
-            <p className="mt-3 text-[1.45rem] leading-[1.12] font-semibold">
-              {LANDING_UPDATE.title}
-            </p>
-            <ul className="mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]">
-              {LANDING_UPDATE.changes.map((change) => (
-                <li key={change.title}>{change.summary}</li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              role="link"
-              tabIndex={0}
-              aria-disabled="true"
+            <Suspense fallback={<FallbackList />}>
+              <PostList posts={posts} />
+            </Suspense>
+            <Link
+              href={BLOG_PATH}
               className={cn(
-                "lp-ink-link mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center rounded-sm text-[1.35rem] font-semibold",
+                "lp-ink-link pointer-events-auto mt-3 inline-flex min-h-11 w-fit items-center rounded-sm text-[1.35rem] font-semibold",
                 FOCUS_RING,
               )}
             >
               Zobacz więcej
+            </Link>
+            {/* A paper tag over the scribble, so it never drowns in ink. */}
+            <button
+              type="button"
+              aria-label="Zmaż rysunek"
+              inert={!showEraser}
+              onClick={() => {
+                const canvas = inkReference.current;
+                canvas
+                  ?.getContext("2d")
+                  ?.clearRect(0, 0, canvas.width, canvas.height);
+                setHasInk(false);
+              }}
+              className={cn(
+                "absolute top-4 right-5 grid size-10 origin-center place-items-center rounded-lg bg-[#fdf5c4] shadow-[0_3px_8px_-3px_rgb(99_88_29/45%)] sm:right-6",
+                "transition-[opacity,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                showEraser
+                  ? "pointer-events-auto scale-100 rotate-0 opacity-100"
+                  : "pointer-events-none scale-75 rotate-[-6deg] opacity-0",
+                FOCUS_RING,
+              )}
+            >
+              <EraserIcon aria-hidden="true" className="size-5" />
             </button>
           </div>
         }
       >
-        <div className="lp-update-sheet" />
+        <div className="lp-update-sheet relative">
+          {canDraw ? (
+            <InkCanvas
+              canvasReference={inkReference}
+              onInk={() => {
+                setHasInk(true);
+              }}
+            />
+          ) : null}
+        </div>
       </Peel>
     </article>
   );

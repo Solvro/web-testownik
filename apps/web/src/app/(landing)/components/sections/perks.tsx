@@ -8,14 +8,18 @@ import { cn } from "@/lib/utils";
 
 import { perks as snapshot } from "../../data/perks";
 import type { PerksData } from "../../lib/perks";
-import { handwritingClassName } from "../ui/handwriting";
-import { PerksStats } from "./perks-stats";
 import { trackUmamiEvent } from "../../lib/umami";
-import { PERKS_COPY, PERKS_VARIANT, perksLead } from "../landing-content";
+import {
+  PERKS_COPY,
+  PERKS_VARIANT,
+  perksLead,
+  perksShortLead,
+} from "../landing-content";
 import { uniperksWordmarkDark, uniperksWordmarkLight } from "../logos";
 import { FOCUS_RING } from "../ui/focus";
 import { DisplayHeading } from "../ui/typography";
-import { PerksCards } from "./perks-cards";
+import { PerksCards, PerksCoverflow } from "./perks-cards";
+import { PerksStats } from "./perks-stats";
 
 /*
  * The partner's ground rather than our graph paper. Everything inside reads
@@ -54,13 +58,13 @@ const LEAD_CLASS =
   "mt-6 max-w-[32rem] text-[17px] leading-relaxed text-pretty text-(--perk-muted) lg:text-[18px]";
 
 export function Perks(): React.JSX.Element {
-  const stackReference = useRef<HTMLDivElement>(null);
+  const cardsReference = useRef<HTMLDivElement>(null);
 
-  // One view per page load, once half the card stack is on screen. Umami
+  // One view per page load, once half the cards are on screen. Umami
   // loads lazily, so an early crossing waits for the next one.
   useEffect(() => {
-    const stack = stackReference.current;
-    if (stack === null) {
+    const cards = cardsReference.current;
+    if (cards === null) {
       return;
     }
     const observer = new IntersectionObserver(
@@ -74,7 +78,7 @@ export function Perks(): React.JSX.Element {
       },
       { threshold: 0.5 },
     );
-    observer.observe(stack);
+    observer.observe(cards);
     return () => {
       observer.disconnect();
     };
@@ -93,26 +97,9 @@ export function Perks(): React.JSX.Element {
         className="absolute inset-0 -z-10"
         style={haloStyle}
       />
-      <div className="grid gap-y-10 lg:grid-cols-2 lg:gap-x-16">
+      <div className="grid gap-y-6 lg:grid-cols-2 lg:gap-x-16 lg:gap-y-10">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                handwritingClassName,
-                "text-[25px] leading-none text-(--perk-fg)",
-              )}
-            >
-              {PERKS_COPY.eyebrow}
-            </span>
-            <span
-              aria-hidden="true"
-              className={cn(
-                handwritingClassName,
-                "text-[28px] leading-none text-(--perk-fg)",
-              )}
-            >
-              —
-            </span>
             <Image
               src={uniperksWordmarkLight}
               alt="uniperks"
@@ -129,15 +116,25 @@ export function Perks(): React.JSX.Element {
             <br />
             <em>{PERKS_COPY.headlineAccent}</em>
           </DisplayHeading>
-          <p className={LEAD_CLASS}>{perksLead(formatted(snapshot))}</p>
+          <p className={cn(LEAD_CLASS, "hidden lg:block")}>
+            {perksLead(formatted(snapshot))}
+          </p>
+          <p className={cn(LEAD_CLASS, "mt-4 lg:hidden")}>
+            {perksShortLead(formatted(snapshot))}
+          </p>
         </div>
 
         <div
-          ref={stackReference}
+          ref={cardsReference}
           aria-hidden="true"
-          className="lp-perk-stack relative mx-auto h-[330px] w-full max-w-[318px] lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:h-[30rem] lg:max-w-[34rem] lg:self-center"
+          className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:self-center"
         >
-          <PerksCards offers={snapshot.offers} />
+          <div className="lg:hidden">
+            <PerksCoverflow offers={snapshot.offers} />
+          </div>
+          <div className="lp-perk-stack relative mx-auto hidden h-[30rem] w-full max-w-[34rem] lg:block">
+            <PerksCards offers={snapshot.offers} />
+          </div>
         </div>
 
         <div className="flex flex-col items-stretch gap-4 lg:col-start-1 lg:row-start-2 lg:flex-row lg:items-center">
@@ -162,7 +159,7 @@ export function Perks(): React.JSX.Element {
             data-umami-event-placement="landing-secondary"
             className={cn(
               "inline-flex min-h-13 items-center justify-center self-stretch rounded-full border border-(--perk-border) bg-(--perk-card) px-6 text-base font-semibold text-(--perk-fg) transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/10",
-              "lg:self-center",
+              "hidden lg:inline-flex lg:self-center",
               FOCUS_RING,
             )}
           >
@@ -170,7 +167,7 @@ export function Perks(): React.JSX.Element {
           </a>
         </div>
 
-        <div className="min-w-0 lg:col-start-1 lg:row-start-3">
+        <div className="hidden min-w-0 lg:col-start-1 lg:row-start-3 lg:block">
           <PerksStats />
         </div>
 

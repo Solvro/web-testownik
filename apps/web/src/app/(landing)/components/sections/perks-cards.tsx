@@ -41,9 +41,9 @@ function formatDate(isoDate: string): string {
 }
 
 const CARD_PLACEMENT = [
-  "top-0 right-0 max-lg:inset-x-0 max-lg:mx-auto [--card-tilt:5deg] [--card-depth:0px]",
-  "max-lg:hidden top-[5.5rem] left-0 [--card-tilt:-6deg] [--card-depth:12px]",
-  "bottom-0 max-lg:inset-x-0 max-lg:mx-auto lg:left-[14%] [--card-tilt:-1.5deg] [--card-depth:24px]",
+  "top-0 right-0 [--card-tilt:5deg] [--card-depth:0px]",
+  "top-[5.5rem] left-0 [--card-tilt:-6deg] [--card-depth:12px]",
+  "bottom-0 left-[14%] [--card-tilt:-1.5deg] [--card-depth:24px]",
 ] as const;
 
 const CARD_BACKGROUNDS = ["pizza", "laptop", "fashion"] as const;
@@ -58,20 +58,23 @@ function OfferBadge({
       ? "🎉 Nowość"
       : `🔥 ${numberFormat.format(badge.value)} ${ACTIVATIONS[activationWords.select(badge.value)]}`;
   return (
-    <span className="rounded-full bg-black/40 px-2.5 py-1 text-[13px] leading-none font-semibold whitespace-nowrap text-white backdrop-blur-md">
+    <span className="rounded-full bg-black/45 px-2.5 py-1 text-[13px] leading-none font-semibold whitespace-nowrap text-white">
       {label}
     </span>
   );
 }
 
-function OfferCard({
+function CardFace({
   offer,
-  index,
+  background,
+  accent,
+  large = false,
 }: {
   offer: PerksOffer;
-  index: number;
+  background: (typeof CARD_BACKGROUNDS)[number];
+  accent: boolean;
+  large?: boolean;
 }): React.JSX.Element {
-  const front = index === CARD_PLACEMENT.length - 1;
   const Icon = CATEGORY_ICONS[offer.category] ?? Tag;
   const meta = [
     offer.validUntil === undefined
@@ -85,62 +88,55 @@ function OfferCard({
   return (
     <div
       className={cn(
-        "lp-perk-card absolute h-[13.5rem] w-[300px] lg:h-[15.5rem] lg:w-[22rem]",
-        front && "lg:h-[17rem] lg:w-[24rem]",
-        CARD_PLACEMENT[index],
+        "lp-perk-face relative isolate flex size-full flex-col justify-between overflow-hidden rounded-[24px] p-5 shadow-[0_24px_50px_-30px_rgb(35_5_71/0.35)] lg:p-6",
+        accent
+          ? "bg-(--perk-accent) text-(--perk-accent-fg)"
+          : "bg-[#263647] text-white",
       )}
     >
+      {/* A sharp photo under a scrim; blur behind the copy only smudged it. */}
+      <Image
+        src={`/images/perks/${background}.webp`}
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 384px, 100vw"
+        className="-z-20 object-cover object-top"
+      />
       <div
         className={cn(
-          "group/card relative isolate flex size-full flex-col justify-between overflow-hidden rounded-[24px] p-5 shadow-[0_24px_50px_-30px_rgb(35_5_71/0.35)] lg:p-6",
-          front
-            ? "bg-(--perk-accent) text-(--perk-accent-fg)"
-            : "bg-[#263647] text-white",
+          "absolute inset-0 -z-10",
+          accent
+            ? "bg-linear-to-t from-[#230547] via-[#230547]/60 via-45% to-[#230547]/0"
+            : "bg-linear-to-t from-black/90 via-black/55 via-45% to-black/0",
         )}
-      >
-        <Image
-          src={`/images/perks/${CARD_BACKGROUNDS[index]}.webp`}
-          alt=""
-          fill
-          sizes="(min-width: 1024px) 384px, 300px"
-          className="-z-20 scale-[1.04] object-cover"
-        />
-        <div className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,transparent,black)] backdrop-blur-[3px]" />
-        <div
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-[10px] bg-black/35">
+          <Icon className="size-5 text-white" />
+        </div>
+        <OfferBadge badge={offer.badge} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[13px] text-white/85">{offer.category}</p>
+        <p
           className={cn(
-            "absolute inset-0 -z-10",
-            front ? "bg-[#32105c]/20" : "bg-[#14202d]/10",
+            "mt-1 line-clamp-2 font-bold tracking-[-0.02em] text-balance",
+            large
+              ? "text-[30px] leading-[1.02] tracking-[-0.035em]"
+              : "text-[19px] leading-[1.15]",
           )}
-        />
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-black/85 via-black/40 via-40% to-black/0" />
-        <div className="flex items-start justify-between gap-3">
-          <div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/15 backdrop-blur-md">
-            <Icon className="size-5 text-white" />
-          </div>
-          <OfferBadge badge={offer.badge} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[13px] text-white/85">{offer.category}</p>
-          <p
-            className={cn(
-              "mt-1 line-clamp-2 font-bold tracking-[-0.02em] text-balance",
-              front
-                ? "text-[19px] leading-[1.15] lg:text-[30px] lg:leading-[1.02] lg:tracking-[-0.035em]"
-                : "text-[19px] leading-[1.15]",
-            )}
-          >
-            {offer.title}
-          </p>
-          <p className="mt-2 truncate text-[13px] text-white/85">
-            {meta.join(" · ")}
-          </p>
-        </div>
+        >
+          {offer.title}
+        </p>
+        <p className="mt-2 truncate text-[13px] text-white/85">
+          {meta.join(" · ")}
+        </p>
       </div>
     </div>
   );
 }
 
-/** Decorative offer cards in uniperks' card anatomy. */
+/** The stack beside the copy at `lg`. */
 export function PerksCards({
   offers,
 }: {
@@ -148,9 +144,71 @@ export function PerksCards({
 }): React.JSX.Element {
   return (
     <>
-      {offers.slice(0, CARD_PLACEMENT.length).map((offer, index) => (
-        <OfferCard key={offer.id} offer={offer} index={index} />
-      ))}
+      {offers.slice(0, CARD_PLACEMENT.length).map((offer, index) => {
+        const front = index === CARD_PLACEMENT.length - 1;
+        return (
+          <div
+            key={offer.id}
+            className={cn(
+              "lp-perk-card absolute h-[15.5rem] w-[22rem]",
+              front && "h-[17rem] w-[24rem]",
+              CARD_PLACEMENT[index],
+            )}
+          >
+            <CardFace
+              offer={offer}
+              background={CARD_BACKGROUNDS[index]}
+              accent={front}
+              large={front}
+            />
+          </div>
+        );
+      })}
     </>
+  );
+}
+
+/*
+ * The two cards behind the middle one below `lg`: pushed out to each side,
+ * turned away and dimmed, so they read as a deck seen from the front.
+ * Each carries its own `perspective()`, so plain z-index does the stacking.
+ */
+const COVERFLOW_SIDES = [
+  "[transform:perspective(900px)_translateX(-62%)_rotateY(32deg)_scale(0.88)]",
+  "[transform:perspective(900px)_translateX(62%)_rotateY(-32deg)_scale(0.88)]",
+] as const;
+
+/** Below `lg`: three offers as a still coverflow, the first in front. */
+export function PerksCoverflow({
+  offers,
+}: {
+  offers: readonly PerksOffer[];
+}): React.JSX.Element {
+  const [middle, ...sides] = offers.slice(0, 3);
+  return (
+    <div className="-mx-4 overflow-hidden py-6 sm:-mx-6">
+      <div className="relative mx-auto h-[12.5rem] w-[74%] max-w-[22rem]">
+        {sides.map((offer, index) => (
+          <div
+            key={offer.id}
+            className={cn("absolute inset-0", COVERFLOW_SIDES[index])}
+          >
+            <CardFace
+              offer={offer}
+              background={CARD_BACKGROUNDS[index + 1]}
+              accent={false}
+            />
+            <div className="absolute inset-0 rounded-[24px] bg-black/35" />
+          </div>
+        ))}
+        <div className="absolute inset-0 z-10">
+          <CardFace
+            offer={middle}
+            background={CARD_BACKGROUNDS[0]}
+            accent={false}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

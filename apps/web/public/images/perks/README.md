@@ -1,7 +1,7 @@
 # Partner card backgrounds
 
 Generated with the built-in image generation tool. Optimized as 800 × 600 WebP
-assets; blur and overlays are applied in the card component.
+assets, shown sharp under a bottom scrim applied in the card component.
 
 ## Prompts
 

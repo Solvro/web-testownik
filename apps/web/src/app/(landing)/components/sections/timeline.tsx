@@ -4,17 +4,65 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
+import type { LandingBlogPost } from "../../lib/blog";
 import { STORY, STORY_HEADING } from "../landing-content";
 import { HandNote } from "../ui/hand-note";
 import { LandingSection } from "../ui/section";
 import { DisplayHeading } from "../ui/typography";
 import { UpdateNote } from "./update-note";
 
-const MARKER_OFFSET = 12;
-const REVEAL_TAIL = 16;
-const TYPE_START = 420;
+/** Where the playhead sits, as a fraction of the viewport height. */
+const REVEAL_HEAD = 0.7;
+const TYPE_START = 260;
 const TYPE_STEP = 28;
+/** Long titles type faster, so the description never waits more than this. */
+const TYPE_BUDGET = 700;
+const INK_WIDTH = 12;
+/** The stroke starts level with the first marker, at the track's `top-3`. */
+const INK_TOP = 12;
 const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
+
+function typeStep(length: number): number {
+  return Math.min(TYPE_STEP, TYPE_BUDGET / Math.max(length, 1));
+}
+
+/** Cheap deterministic noise, so the stroke keeps its shape across resizes. */
+function seeded(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state += 1;
+    const value = Math.sin(state * 12.9898) * 43_758.5453;
+    return value - Math.floor(value);
+  };
+}
+
+/**
+ * A vertical pen stroke `length` px long: it wanders a pixel or two either
+ * side of the centre and its control points never line up, so it reads as
+ * drawn by hand rather than ruled. Quadratic segments through midpoints keep
+ * it smooth.
+ */
+function inkPath(length: number, seed: number): string {
+  const random = seeded(seed);
+  const centre = INK_WIDTH / 2;
+  const points: [number, number][] = [[centre, 0]];
+  let y = 0;
+  let drift = 0;
+  while (y < length) {
+    y = Math.min(length, y + 36 + random() * 44);
+    drift = Math.max(-2.2, Math.min(2.2, drift * 0.4 + (random() - 0.5) * 3));
+    points.push([centre + drift, y]);
+  }
+  let d = `M${centre.toString()} 0`;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const [x, py] = points[index];
+    const [nx, ny] = points[index + 1];
+    d += ` Q${x.toFixed(2)} ${py.toFixed(1)} ${((x + nx) / 2).toFixed(2)} ${((py + ny) / 2).toFixed(1)}`;
+  }
+  const [lx, ly] = points.at(-1) ?? [centre, length];
+  d += ` L${lx.toFixed(2)} ${ly.toFixed(1)}`;
+  return d;
+}
 
 function TypedTitle({
   title,
@@ -47,6 +95,7 @@ function TypedTitle({
     );
     let index = 0;
     let interval = 0;
+    const step = typeStep(characters.length);
     const timeout = window.setTimeout(() => {
       interval = window.setInterval(() => {
         text.textContent += characters[index];
@@ -54,7 +103,7 @@ function TypedTitle({
         if (index === characters.length) {
           window.clearInterval(interval);
         }
-      }, TYPE_STEP);
+      }, step);
     }, TYPE_START);
     const finish = (): void => {
       window.clearTimeout(timeout);
@@ -87,19 +136,25 @@ function TypedTitle({
   );
 }
 
-/** The rail and event reveal share the same scroll playhead and marker positions. */
-export function Timeline(): React.JSX.Element {
+/**
+ * The rail is a pen stroke that draws itself down to a playhead a little
+ * below the middle of the viewport. An event reveals as the stroke reaches its
+ * marker, and the stroke never retreats above a revealed marker.
+ */
+export function Timeline({
+  blogPosts,
+}: {
+  blogPosts: Promise<LandingBlogPost[]>;
+}): React.JSX.Element {
   const trackReference = useRef<HTMLDivElement>(null);
-  const railReference = useRef<HTMLDivElement>(null);
-  const fillReference = useRef<HTMLDivElement>(null);
+  const inkReference = useRef<SVGSVGElement>(null);
   const [revealed, setRevealed] = useState(() => STORY.map(() => false));
-  const [continuationVisible, setContinuationVisible] = useState(false);
+  const [inkLength, setInkLength] = useState(0);
 
   useEffect(() => {
     const track = trackReference.current;
-    const rail = railReference.current;
-    const fill = fillReference.current;
-    if (track === null || rail === null || fill === null) {
+    const ink = inkReference.current;
+    if (track === null || ink === null) {
       return;
     }
 
@@ -107,64 +162,45 @@ export function Timeline(): React.JSX.Element {
     const items = [
       ...track.querySelectorAll<HTMLElement>("[data-timeline-event]"),
     ];
-    const continuation = track.querySelector<HTMLElement>(
-      "[data-timeline-continuation]",
-    );
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const paintFill = (): void => {
+    const paint = (): void => {
       frame = 0;
-      const rect = track.getBoundingClientRect();
-      const length = Math.max(track.scrollHeight - MARKER_OFFSET, 1);
-      const head = window.innerHeight * 0.58;
-      const distance = Math.min(
-        length,
-        Math.max(0, head - rect.top - MARKER_OFFSET),
+      const length = Math.max(track.scrollHeight - INK_TOP, 1);
+      setInkLength((current) =>
+        Math.abs(current - length) < 1 ? current : length,
       );
+
+      const head = window.innerHeight * REVEAL_HEAD;
+      const distance = reduceMotion.matches
+        ? length
+        : Math.min(
+            length,
+            Math.max(0, head - track.getBoundingClientRect().top - INK_TOP),
+          );
       const deepestRevealed = items.findLastIndex(
         (item) =>
           item.dataset.timelineRevealed === "true" ||
-          reduceMotion.matches ||
-          distance >= item.offsetTop + item.offsetHeight + REVEAL_TAIL,
+          distance >= item.offsetTop,
       );
-      const continuationReached =
-        continuation !== null &&
-        (continuation.dataset.timelineRevealed === "true" ||
-          reduceMotion.matches ||
-          distance >= continuation.offsetTop);
-
-      const revealedDistance =
-        continuation !== null && continuationReached
-          ? continuation.offsetTop + continuation.offsetHeight - MARKER_OFFSET
-          : deepestRevealed === -1
-            ? 0
-            : items[deepestRevealed].offsetTop +
-              items[deepestRevealed].offsetHeight +
-              REVEAL_TAIL;
-      const progress = Math.min(
-        1,
-        Math.max(distance, revealedDistance) / length,
-      );
-      rail.style.height = `${length.toString()}px`;
-      fill.style.height = `${length.toString()}px`;
-      fill.style.transform = `scaleY(${progress.toString()})`;
+      const floor =
+        deepestRevealed === -1 ? 0 : items[deepestRevealed].offsetTop;
+      const progress = Math.min(1, Math.max(distance, floor) / length);
+      ink.style.strokeDashoffset = (1 - progress).toString();
 
       setRevealed((current) => {
-        const next = current.map((visible, index) => {
-          return visible || index <= deepestRevealed;
-        });
+        const next = current.map(
+          (visible, index) => visible || index <= deepestRevealed,
+        );
         return next.some((visible, index) => visible !== current[index])
           ? next
           : current;
       });
-      if (continuation !== null) {
-        setContinuationVisible((visible) => visible || continuationReached);
-      }
     };
 
     const schedulePaint = (): void => {
       if (frame === 0) {
-        frame = window.requestAnimationFrame(paintFill);
+        frame = window.requestAnimationFrame(paint);
       }
     };
 
@@ -204,7 +240,9 @@ export function Timeline(): React.JSX.Element {
       }
       resizeObserver.disconnect();
     };
-  }, [revealed, continuationVisible]);
+  }, []);
+
+  const path = inkLength > 0 ? inkPath(inkLength, 7) : "";
 
   return (
     <LandingSection
@@ -212,37 +250,62 @@ export function Timeline(): React.JSX.Element {
       showPlaceholder={false}
       className="mb-12 grid scroll-mt-[5rem] grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
-      <header className="min-w-0 self-start lg:sticky lg:top-24">
-        <HandNote className="mb-5">03 / zaczęło się tak jak u Ciebie</HandNote>
-        <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">
-          {STORY_HEADING}
-        </DisplayHeading>
-        <UpdateNote />
+      {/*
+       * Below `lg` the header dissolves into the grid so the note can follow
+       * the timeline instead of pushing it a screen down.
+       */}
+      <header className="min-w-0 self-start max-lg:contents lg:sticky lg:top-24">
+        <div>
+          <HandNote className="mb-5">
+            03 / zaczęło się tak jak u Ciebie
+          </HandNote>
+          <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">
+            {STORY_HEADING}
+          </DisplayHeading>
+        </div>
+        <div className="max-lg:order-last max-lg:-mt-8">
+          <UpdateNote posts={blogPosts} />
+        </div>
       </header>
 
       <div ref={trackReference} className="relative ml-2 pb-12 sm:ml-4 lg:ml-0">
-        <div
-          ref={railReference}
+        <svg
+          ref={inkReference}
           aria-hidden="true"
-          className="absolute top-3 left-0 w-px"
+          width={INK_WIDTH}
+          height={inkLength}
+          viewBox={`0 0 ${INK_WIDTH.toString()} ${inkLength.toString()}`}
+          className="text-primary absolute top-3 -left-1.5 overflow-visible [stroke-dasharray:1_1] [stroke-dashoffset:1]"
           style={{
-            maskImage: "linear-gradient(to bottom, black 100%, transparent)",
+            maskImage:
+              "linear-gradient(to bottom, black calc(100% - 6rem), transparent)",
           }}
-        />
-        <div
-          ref={fillReference}
-          aria-hidden="true"
-          className="from-primary via-primary to-primary/0 absolute top-3 left-0 w-px origin-top bg-linear-to-b from-0% via-85% to-110% will-change-transform motion-reduce:will-change-auto"
-          style={{
-            transform: "scaleY(0)",
-            boxShadow:
-              "0 0 10px color-mix(in oklch, var(--primary) 15%, transparent), 0 0 10px color-mix(in oklch, var(--primary) 10%, transparent)",
-          }}
-        />
+        >
+          <path
+            d={path}
+            pathLength={1}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+          />
+          {/* A second, thinner pass a hair to the side: uneven pen pressure. */}
+          <path
+            d={path}
+            pathLength={1}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={0.9}
+            strokeLinecap="round"
+            opacity={0.45}
+            transform="translate(0.9 1.5)"
+          />
+        </svg>
 
         <ol className="flex flex-col gap-20 pt-12 sm:gap-24">
           {STORY.map((event, index) => {
             const isVisible = revealed[index] ?? false;
+            const titleLength = [...segmenter.segment(event.title)].length;
             return (
               <li
                 key={event.date}
@@ -250,19 +313,33 @@ export function Timeline(): React.JSX.Element {
                 data-timeline-revealed={isVisible}
                 className="relative pl-12 sm:pl-14"
               >
+                {/* A short hand-drawn branch from the rail to the dot. */}
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 40 8"
+                  preserveAspectRatio="none"
+                  className="text-primary absolute top-2 left-0 h-2 w-8 overflow-visible sm:w-10"
+                >
+                  <path
+                    d="M0 4.5 C 9 2.5, 20 6, 31 3.6 S 38 3.2, 40 4"
+                    pathLength={1}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    className={cn(
+                      "transition-[stroke-dashoffset] duration-500 ease-out [stroke-dasharray:1_1] motion-reduce:transition-none",
+                      isVisible
+                        ? "[stroke-dashoffset:0]"
+                        : "[stroke-dashoffset:1]",
+                    )}
+                  />
+                </svg>
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "absolute top-3 left-0 h-px w-8 origin-left transition-[background-color,transform] duration-500 sm:w-10",
-                    isVisible
-                      ? "bg-primary scale-x-100"
-                      : "bg-border scale-x-0 motion-reduce:scale-x-100",
-                  )}
-                />
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute top-2 left-8 size-2 rounded-full transition-[background-color,box-shadow,transform] duration-500 sm:left-10",
+                    "absolute top-2 left-8 size-2 rounded-full transition-[background-color,box-shadow,transform,opacity] delay-300 duration-500 sm:left-10",
                     isVisible
                       ? "bg-primary scale-125 opacity-100 shadow-[0_0_0_5px_color-mix(in_oklch,var(--primary)_8%,transparent),0_0_18px_color-mix(in_oklch,var(--primary)_30%,transparent)]"
                       : "bg-border scale-75 opacity-0 motion-reduce:scale-100",
@@ -288,7 +365,7 @@ export function Timeline(): React.JSX.Element {
                       : "opacity-0",
                   )}
                   style={{
-                    animationDelay: `${(TYPE_START + [...segmenter.segment(event.title)].length * TYPE_STEP + 220).toString()}ms`,
+                    animationDelay: `${(TYPE_START + titleLength * typeStep(titleLength) + 120).toString()}ms`,
                   }}
                 >
                   {event.text}

@@ -146,7 +146,7 @@ export function ProductShowcase(): React.JSX.Element {
                 }
               }}
             >
-              ↓ teraz Twoja kolej — wypróbuj poniżej
+              ↓ teraz Twoja kolej, wypróbuj poniżej
             </a>
           </HandNote>
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { getLatestBlogPostsSSR } from "@/app/(landing)/lib/blog";
 import { getContributorsSSR } from "@/app/(landing)/lib/contributors";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
@@ -55,9 +56,11 @@ export default async function HomePage({
     return <DeviceCapture request={captureRequest} />;
   }
 
-  // The contributor rail streams in so its request cannot delay the hero.
+  // The contributor rail and the update note's posts stream in so their
+  // requests cannot delay the hero.
   return (
     <LandingPage
+      blogPosts={getLatestBlogPostsSSR()}
       contributors={getContributorsSSR()}
       isAuthenticated={user != null}
     />

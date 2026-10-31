@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
+import type { LandingBlogPost } from "../lib/blog";
 import { useGuestStart } from "./hooks/use-guest-start";
 import "./landing.css";
 import { Faq } from "./sections/faq";
@@ -28,9 +29,12 @@ import { FOCUS_RING } from "./ui/focus";
  * rules that cannot be utilities in `landing.css`.
  */
 export function LandingPage({
+  blogPosts,
   contributors,
   isAuthenticated,
 }: {
+  /** Unresolved: the update note lists them once they arrive. */
+  blogPosts: Promise<LandingBlogPost[]>;
   /** Unresolved: the team rail streams in rather than holding up the hero. */
   contributors: Promise<GitHubContributor[]>;
   /** Signed-in visitors only reach the page at `/?landing=true`. */
@@ -126,7 +130,7 @@ export function LandingPage({
       <div className="relative">
         <ProductShowcase />
         <Faq />
-        <Timeline />
+        <Timeline blogPosts={blogPosts} />
       </div>
       <Team contributors={contributors} />
       <Perks />
