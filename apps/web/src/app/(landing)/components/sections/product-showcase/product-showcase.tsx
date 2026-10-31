@@ -86,69 +86,71 @@ export function ProductShowcase(): React.JSX.Element {
       showPlaceholder={false}
       className="scroll-mt-[5rem] outline-none"
     >
-      <header className="grid grid-cols-1 items-end gap-x-20 gap-y-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
-        <div>
-          <HandNote className="mb-5">
-            01 / plan na najbliższe kolokwium
-          </HandNote>
-          <DisplayHeading className="mt-0">
-            Zobacz, jak
-            <br />
-            <em className="lp-ink-underline">działa nauka.</em>
-          </DisplayHeading>
-        </div>
-        <p className="text-muted-foreground max-w-[34rem] text-[1.05rem] leading-[1.65]">
-          Quizy, asystent AI, średnia ocen i&nbsp;statystyki to tylko kilka
-          z&nbsp;wielu funkcji.
-        </p>
-      </header>
+      <div className="grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-start">
+        <header>
+          <div>
+            <HandNote className="mb-5">
+              01 / plan na najbliższe kolokwium
+            </HandNote>
+            <DisplayHeading className="mt-0">
+              Zobacz, jak
+              <br />
+              <em className="lp-ink-underline">działa nauka.</em>
+            </DisplayHeading>
+          </div>
+        </header>
 
-      <ol
-        aria-label="Jak uczyć się z Testownikiem"
-        className="mt-10 grid gap-6 sm:grid-cols-3 sm:gap-10"
-      >
-        <li>
-          <HandNote className="mb-3">1. Zbierz materiał</HandNote>
-          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            Stwórz własny zestaw pytań albo zaimportuj gotowy quiz. Wszystko w
-            jednym miejscu.
-          </p>
-        </li>
-        <li>
-          <HandNote className="mb-3">2. Sprawdź, co pamiętasz</HandNote>
-          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            Odpowiadaj bez zaglądania w notatki. Sprawdź odpowiedź, a gdy
-            utkniesz, poproś o wyjaśnienie.
-          </p>
-        </li>
-        <li>
-          <HandNote className="mb-3">3. Wróć do trudniejszych pytań</HandNote>
-          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            Zobacz postępy w statystykach i powtórz to, co jeszcze sprawia
-            trudność. Nawet w przerwie między zajęciami.
-          </p>
-        </li>
-      </ol>
-      <HandNote className="mt-8 text-right text-[1.4rem]!">
-        <a
-          href="#landing-demos"
-          className={cn(
-            "lp-ink-link inline-flex min-h-11 items-center rounded-sm",
-            FOCUS_RING,
-          )}
-          onClick={(event) => {
-            const target =
-              document.querySelector<HTMLElement>("#landing-demos");
-            if (target !== null) {
-              event.preventDefault();
-              scrollToLandingSection(target);
-              target.focus({ preventScroll: true });
-            }
-          }}
-        >
-          ↓ teraz Twoja kolej — wypróbuj poniżej
-        </a>
-      </HandNote>
+        <div className="lg:mt-9">
+          <ol
+            aria-label="Jak uczyć się z Testownikiem"
+            className="grid gap-7 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-8"
+          >
+            <li>
+              <HandNote className="mb-3">1. Zbierz materiał</HandNote>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Stwórz własny zestaw pytań albo zaimportuj gotowy quiz. Wszystko
+                w jednym miejscu.
+              </p>
+            </li>
+            <li>
+              <HandNote className="mb-3">2. Sprawdź, co pamiętasz</HandNote>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Odpowiadaj bez zaglądania w notatki. Sprawdź odpowiedź, a gdy
+                utkniesz, poproś o wyjaśnienie.
+              </p>
+            </li>
+            <li className="sm:col-span-2 sm:mx-auto">
+              <HandNote className="mb-3">
+                3. Wróć do trudniejszych pytań
+              </HandNote>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Zobacz postępy w statystykach i powtórz to, co jeszcze sprawia
+                trudność. Nawet w przerwie między zajęciami.
+              </p>
+            </li>
+          </ol>
+          <HandNote className="mt-4 text-right text-[1.4rem]!">
+            <a
+              href="#landing-demos"
+              className={cn(
+                "lp-ink-link inline-flex min-h-11 items-center rounded-sm",
+                FOCUS_RING,
+              )}
+              onClick={(event) => {
+                const target =
+                  document.querySelector<HTMLElement>("#landing-demos");
+                if (target !== null) {
+                  event.preventDefault();
+                  scrollToLandingSection(target);
+                  target.focus({ preventScroll: true });
+                }
+              }}
+            >
+              ↓ teraz Twoja kolej — wypróbuj poniżej
+            </a>
+          </HandNote>
+        </div>
+      </div>
 
       <ShowcaseSessionProvider>
         <div

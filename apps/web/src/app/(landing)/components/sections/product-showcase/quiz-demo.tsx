@@ -434,18 +434,25 @@ export function QuizDemo(): React.JSX.Element {
                   />
                   <TooltipContent>{aiLabel}</TooltipContent>
                 </Tooltip>
-                <Button
-                  ref={shareTriggerReference}
-                  type="button"
-                  size="icon-sm"
-                  variant="outline"
-                  aria-label="Udostępnij quiz"
-                  onClick={() => {
-                    setShareOpen(true);
-                  }}
-                >
-                  <Share2Icon className="size-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        ref={shareTriggerReference}
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        aria-label="Udostępnij quiz"
+                        onClick={() => {
+                          setShareOpen(true);
+                        }}
+                      >
+                        <Share2Icon className="size-3.5" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Udostępnij quiz</TooltipContent>
+                </Tooltip>
                 <div className="text-muted-foreground flex items-center gap-1.5 text-sm font-semibold tabular-nums">
                   <TimerIcon
                     aria-hidden="true"

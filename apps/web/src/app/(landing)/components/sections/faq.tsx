@@ -17,7 +17,7 @@ export function Faq(): React.JSX.Element {
     >
       <div className="relative mx-auto grid w-[calc(100%-2rem)] grid-cols-1 gap-8 sm:w-[min(100%-3rem,96rem)] sm:gap-12 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw] 2xl:grid-cols-[minmax(max-content,0.72fr)_minmax(0,1.28fr)]">
         <header className="self-start lg:sticky lg:top-24">
-          <HandNote className="mb-5">02 / dopiski na marginesie</HandNote>
+          <HandNote className="mb-5">02 / zanim zapytasz</HandNote>
           <DisplayHeading>
             Pytania?
             <br />

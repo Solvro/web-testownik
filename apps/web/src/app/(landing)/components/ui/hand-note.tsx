@@ -1,20 +1,18 @@
-import { Caveat } from "next/font/google";
 import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
-const caveat = Caveat({
-  subsets: ["latin", "latin-ext"],
-  display: "swap",
-  preload: false,
-});
+import { handwritingClassName } from "./handwriting";
 
 export function HandNote({
   className,
   ...props
 }: ComponentProps<"p">): React.JSX.Element {
   return (
-    <p className={cn(caveat.className, "lp-hand-note", className)} {...props} />
+    <p
+      className={cn(handwritingClassName, "lp-hand-note", className)}
+      {...props}
+    />
   );
 }
 

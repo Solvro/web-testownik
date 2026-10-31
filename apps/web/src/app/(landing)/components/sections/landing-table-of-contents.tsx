@@ -622,7 +622,18 @@ export function LandingTableOfContents(): React.JSX.Element {
                 )}
               >
                 <div className="border-border bg-background relative rounded-xl border p-2 shadow-[0_18px_50px_-28px_oklch(0_0_0/0.55)]">
-                  <span className="border-border bg-background absolute top-1/2 -left-[6px] size-2.5 -translate-y-1/2 rotate-45 border-t border-l" />
+                  <svg
+                    aria-hidden="true"
+                    className="text-border absolute top-1/2 -left-[10px] z-10 h-4 w-[11px] -translate-y-1/2 overflow-visible"
+                    viewBox="0 0 11 16"
+                  >
+                    <path
+                      d="M11 0 1 8 11 16"
+                      fill="var(--background)"
+                      stroke="currentColor"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                   <div
                     className="border-border bg-muted/30 relative overflow-hidden rounded-lg border"
                     style={{

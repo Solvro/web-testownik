@@ -23,7 +23,6 @@ export const STORY_HEADING = "Nasza historia";
 export const LANDING_UPDATE = {
   date: "2026-10-25",
   label: "25.10.2026",
-  heading: "Co nowego?",
   title: "Wygodniejsze przeglądanie Testownika",
   summary: "Szybsza strona, płynniejszy podgląd i nawigacja zawsze pod ręką.",
   changes: [
@@ -43,7 +42,6 @@ export const LANDING_UPDATE = {
       text: "Menu zostaje pod ręką i zmniejsza się podczas przewijania strony.",
     },
   ],
-  note: "Rozwijamy się między zajęciami.",
 };
 
 export const STORY: readonly TimelineEntry[] = [

@@ -1,11 +1,10 @@
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { FOCUS_RING } from "../ui/focus";
-import { NotebookCheck } from "../ui/notebook-check";
 import { LandingButton, LandingButtonLink } from "../ui/landing-button";
 import { ParticleLogo } from "../ui/particle-logo";
 import { monoLabelVariants } from "../ui/typography-variants";
@@ -63,8 +62,6 @@ export function Finale({
         </span>
       </p>
 
-      {/* Above the particle canvas, which would otherwise drift over it. */}
-      <NotebookCheck />
       <div className="relative z-10 mt-8 flex w-full flex-col gap-[0.8rem] sm:w-auto sm:flex-row">
         {isAuthenticated ? (
           <LandingButtonLink
@@ -90,10 +87,21 @@ export function Finale({
               variant="onDark"
               onClick={onStart}
               disabled={isStarting}
-              className="w-full sm:w-auto"
+              className="lp-showcase-cta w-full sm:w-auto"
             >
               {isStarting ? "Uruchamiam Testownik…" : "Zacznij jako gość"}
-              <ArrowRight aria-hidden="true" />
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path className="lp-cta-shaft" d="M4 12h15" />
+                <path className="lp-cta-chevron" d="m10 7 5 5-5 5" />
+              </svg>
             </LandingButton>
           </>
         )}

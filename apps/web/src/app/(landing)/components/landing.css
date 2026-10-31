@@ -14,32 +14,6 @@
  * (`sections/toc-section-preview.ts`).
  */
 
-/* Ink belongs to the page, without separate paper surfaces. */
-.lp-notebook::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background-image:
-    linear-gradient(
-      color-mix(in oklch, var(--primary) 4%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in oklch, var(--primary) 4%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 2rem 2rem;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    black 8rem,
-    black calc(100% - 8rem),
-    transparent
-  );
-}
-
 .lp-hand-note {
   color: var(--primary);
   font-size: 1.65rem;
@@ -74,7 +48,7 @@
   position: absolute;
   inset: auto 0 0.25rem;
   height: 0.15em;
-  border-top: 1.5px solid currentColor;
+  border-top: 3px solid currentColor;
   border-radius: 50%;
   content: "";
   transform: rotate(-1deg);
@@ -775,5 +749,64 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
 @media (min-width: 1024px) {
   [data-hero-progress] {
     will-change: transform, opacity;
+  }
+}
+
+.lp-update-peel {
+  height: 26rem;
+  isolation: isolate;
+  transform: rotate(-2deg);
+  filter: drop-shadow(7px 12px 9px rgb(0 0 0 / 30%));
+  transition: filter 260ms ease;
+}
+
+.lp-update-paper {
+  min-height: 26rem;
+  background: linear-gradient(180deg, #e9dc85, #f9e98c 22%, #faec97);
+}
+
+.lp-update-peel[data-peel-native="false"] {
+  height: auto;
+}
+
+/* A curved corner, rather than a triangular flap, without html-in-canvas. */
+.lp-update-peel[data-peel-native="false"]::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 62%;
+  height: 3.5rem;
+  border-radius: 90% 0 0 0 / 100% 0 0 0;
+  background: linear-gradient(165deg, #fff4ad 20%, #d6c566 90%);
+  box-shadow: -3px -7px 12px -5px rgb(99 88 29 / 44%);
+  content: "";
+  pointer-events: none;
+  transform: scaleY(1);
+  transform-origin: bottom;
+  transition: transform 260ms ease;
+}
+
+.lp-update-peel:focus-within {
+  filter: drop-shadow(2px 4px 4px rgb(0 0 0 / 20%));
+}
+
+.lp-update-peel[data-peel-native="false"]:focus-within::after {
+  transform: scaleY(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-update-peel:hover {
+    filter: drop-shadow(2px 4px 4px rgb(0 0 0 / 20%));
+  }
+
+  .lp-update-peel[data-peel-native="false"]:hover::after {
+    transform: scaleY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-update-peel,
+  .lp-update-peel::after {
+    transition: none;
   }
 }
