@@ -9,8 +9,8 @@ export type LandingBlogPost = Pick<BlogPostSummary, "title" | "slug">;
 
 /**
  * The latest published blog posts, for the update note. Never throws: on any
- * failure, or before anything is published, the note falls back to its
- * static changes.
+ * failure, or before anything is published, the note shows placeholder
+ * bullets instead.
  */
 export async function getLatestBlogPostsSSR(
   limit = 3,

@@ -23,16 +23,6 @@ export const STORY_HEADING = "Nasza historia";
 /** Where the update note's "Zobacz więcej" and its posts lead. */
 export const BLOG_PATH = "/blog";
 
-/**
- * What the update note lists until the blog has published posts, or while
- * the request for them is in flight or has failed.
- */
-export const LANDING_UPDATE_FALLBACK: readonly string[] = [
-  "Szybsze sekcje i powrót do miejsca przeglądania.",
-  "Wcześniejsze ładowanie i płynniejsze otwieranie laptopa.",
-  "Mniejsze menu, które zostaje pod ręką.",
-];
-
 export const STORY: readonly TimelineEntry[] = [
   {
     date: "Czerwiec 2024",

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Peel } from "../../canvasui/Peel";
 import type { LandingBlogPost } from "../../lib/blog";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { BLOG_PATH, LANDING_UPDATE_FALLBACK } from "../landing-content";
+import { BLOG_PATH } from "../landing-content";
 import { FOCUS_RING } from "../ui/focus";
 import { handwritingClassName } from "../ui/handwriting";
 
@@ -20,18 +20,22 @@ const ITEM_LINK_CLASS = cn(
 const LIST_CLASS =
   "mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]";
 
-/** The static changes: while the posts load, and when there are none. */
-function FallbackList(): React.JSX.Element {
+/**
+ * Before the blog has posts (or when the request fails): say so, and point
+ * at the pencil where drawing is on (mouse and pen, as in `UpdateNote`).
+ * CSS picks the line, so it matches the server render.
+ */
+function EmptyNote(): React.JSX.Element {
   return (
-    <ul className={LIST_CLASS}>
-      {LANDING_UPDATE_FALLBACK.map((change) => (
-        <li key={change}>
-          <Link href={BLOG_PATH} className={ITEM_LINK_CLASS}>
-            {change}
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <p className="mt-4 text-[1.25rem] leading-[1.3]">
+      Pracujemy nad pierwszymi wpisami.{" "}
+      <span className="hidden [@media(hover:hover)_and_(pointer:fine)]:inline">
+        Może ty na coś wpadniesz? Spróbuj!
+      </span>
+      <span className="[@media(hover:hover)_and_(pointer:fine)]:hidden">
+        Zajrzyj tu wkrótce.
+      </span>
+    </p>
   );
 }
 
@@ -42,7 +46,7 @@ function PostList({
 }): React.JSX.Element {
   const resolved = use(posts);
   if (resolved.length === 0) {
-    return <FallbackList />;
+    return <EmptyNote />;
   }
   return (
     <ul className={LIST_CLASS}>
@@ -205,7 +209,7 @@ export function UpdateNote({
             >
               Ostatnie zmiany
             </h3>
-            <Suspense fallback={<FallbackList />}>
+            <Suspense fallback={null}>
               <PostList posts={posts} />
             </Suspense>
             <Link
