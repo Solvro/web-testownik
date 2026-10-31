@@ -13,7 +13,8 @@ import type { QuizMetadata } from "@testownik/core/quiz/types";
 import { AccessLevel } from "@testownik/core/quiz/types";
 import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode, RefObject } from "react";
 
 import { ScopeToggle } from "@/components/quiz/stats/scope-toggle";
 import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
@@ -349,19 +350,56 @@ function HardestQuestionsPreview(): React.JSX.Element {
   );
 }
 
+const placeholder = (
+  <div className="bg-muted/40 min-h-64 animate-pulse rounded-xl" />
+);
+
+/**
+ * Mounts `children` once they come within reach of the panel's own scroll
+ * area. Four recharts charts plus the table in one frame stalled the panel
+ * switch; now only what is on screen renders, the rest as it scrolls up.
+ */
+function WhenVisible({
+  root,
+  children,
+}: {
+  root: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
+}): React.JSX.Element {
+  const slotReference = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const slot = slotReference.current;
+    if (slot === null) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { root: root.current, rootMargin: "160px 0px" },
+    );
+    observer.observe(slot);
+    return () => {
+      observer.disconnect();
+    };
+  }, [root]);
+
+  return (
+    <div ref={slotReference} className="min-w-0">
+      {visible ? children : placeholder}
+    </div>
+  );
+}
+
 export function StatsDemo(): React.JSX.Element {
   const queryClient = useQueryClient();
   seedLandingStats(queryClient);
-
-  const [chartsReady, setChartsReady] = useState(false);
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setChartsReady(true);
-    });
-    return () => {
-      window.cancelAnimationFrame(frame);
-    };
-  }, []);
+  const scrollReference = useRef<HTMLDivElement>(null);
 
   return (
     <div className="bg-background text-foreground [&_.recharts-surface:focus-visible]:outline-primary flex h-[min(70svh,32rem)] min-h-80 min-w-0 flex-col overflow-hidden rounded-3xl border shadow-xl shadow-black/5 sm:h-full sm:min-h-140 [&_.recharts-surface:focus-visible]:outline-2 [&_.recharts-surface:focus-visible]:outline-offset-[-2px] [&_.recharts-surface:focus-visible]:outline-solid">
@@ -371,7 +409,10 @@ export function StatsDemo(): React.JSX.Element {
         </strong>
       </header>
 
-      <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-1 sm:p-5 [&_[data-slot=card]]:min-w-0 [&_[data-slot=chart]]:max-w-full">
+      <div
+        ref={scrollReference}
+        className="min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-1 sm:p-5 [&_[data-slot=card]]:min-w-0 [&_[data-slot=chart]]:max-w-full"
+      >
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
           <StatsInfoCard
             quiz={METADATA}
@@ -380,19 +421,23 @@ export function StatsDemo(): React.JSX.Element {
           <StatsTable quizId={QUIZ_ID} canViewAll />
         </div>
 
-        {chartsReady ? (
-          <>
-            <div className="grid min-w-0 grid-cols-1 gap-4 *:min-w-0 xl:grid-cols-2">
-              <SessionsChart quizId={QUIZ_ID} canViewAll />
-              <HourlyChart quizId={QUIZ_ID} canViewAll />
-              <ScoreChart quizId={QUIZ_ID} canViewAll />
-              <StudyTimeChart quizId={QUIZ_ID} canViewAll />
-            </div>
-            <HardestQuestionsPreview />
-          </>
-        ) : (
-          <div className="bg-muted/40 min-h-48 animate-pulse rounded-xl" />
-        )}
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+          <WhenVisible root={scrollReference}>
+            <SessionsChart quizId={QUIZ_ID} canViewAll />
+          </WhenVisible>
+          <WhenVisible root={scrollReference}>
+            <HourlyChart quizId={QUIZ_ID} canViewAll />
+          </WhenVisible>
+          <WhenVisible root={scrollReference}>
+            <ScoreChart quizId={QUIZ_ID} canViewAll />
+          </WhenVisible>
+          <WhenVisible root={scrollReference}>
+            <StudyTimeChart quizId={QUIZ_ID} canViewAll />
+          </WhenVisible>
+        </div>
+        <WhenVisible root={scrollReference}>
+          <HardestQuestionsPreview />
+        </WhenVisible>
       </div>
     </div>
   );
