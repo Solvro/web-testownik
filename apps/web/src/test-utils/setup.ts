@@ -7,6 +7,10 @@ import { server } from "./mocks/server";
 
 process.env.NEXT_PUBLIC_API_URL = "http://test.local";
 
+vi.mock("next/font/google", () => ({
+  Caveat: () => ({ className: "font-caveat" }),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
