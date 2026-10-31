@@ -58,7 +58,7 @@ function OfferBadge({
       ? "🎉 Nowość"
       : `🔥 ${numberFormat.format(badge.value)} ${ACTIVATIONS[activationWords.select(badge.value)]}`;
   return (
-    <span className="rounded-full bg-black/40 px-2.5 py-1 text-[13px] leading-none font-semibold whitespace-nowrap text-white">
+    <span className="rounded-full bg-black/40 px-2.5 py-1 text-[13px] leading-none font-semibold whitespace-nowrap text-white backdrop-blur-md">
       {label}
     </span>
   );
@@ -103,8 +103,9 @@ function OfferCard({
           alt=""
           fill
           sizes="(min-width: 1024px) 384px, 300px"
-          className="-z-20 scale-[1.04] object-cover blur-[3px]"
+          className="-z-20 scale-[1.04] object-cover"
         />
+        <div className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,transparent,black)] backdrop-blur-[3px]" />
         <div
           className={cn(
             "absolute inset-0 -z-10",
@@ -113,7 +114,7 @@ function OfferCard({
         />
         <div className="absolute inset-0 -z-10 bg-linear-to-t from-black/85 via-black/40 via-40% to-black/0" />
         <div className="flex items-start justify-between gap-3">
-          <div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/15">
+          <div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/15 backdrop-blur-md">
             <Icon className="size-5 text-white" />
           </div>
           <OfferBadge badge={offer.badge} />

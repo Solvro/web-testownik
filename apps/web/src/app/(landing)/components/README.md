@@ -132,7 +132,8 @@ There are no partner fetches or scheduled refreshes. Only the stats row counts
 up on entering the viewport, then adds one student every 4 seconds and one
 offer every 28 seconds while visible. Savings stay fixed after the count-up.
 Reduced motion shows the base values immediately. Card backgrounds are local
-AI-generated photos with a 3 px blur and a dark-to-transparent gradient. Cards
+AI-generated photos with blur fading from 0 px at the top to 3 px at the bottom,
+a dark-to-transparent gradient, and frosted badges. Cards
 lift through a shared 3D perspective on hover, revealing their full content
 without discrete z-index swaps. Savings use an upper bound ("do 2000 zł"); the
 lead rounds the student count down to thousands with "ponad". CTAs go
