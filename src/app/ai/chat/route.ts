@@ -99,6 +99,9 @@ interface ChatBody {
   quizId?: string;
 }
 
+// Oskar Witek (280981)
+const MASTER_USER_ID = "d96ac021-b39f-4ac4-ae06-e6fcd4cb29c5";
+
 const MAX_CHAT_MESSAGES = 200;
 const MAX_CHAT_QUESTIONS = 500;
 const MAX_CONTEXT_SNAPSHOTS = 200;
@@ -249,6 +252,7 @@ export async function POST(request: Request) {
         chatQuestions.length,
         userName,
         canEdit,
+        user.user_id === MASTER_USER_ID,
       );
       const requestId = crypto.randomUUID();
       const startedAt = Date.now();

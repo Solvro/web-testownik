@@ -23,6 +23,7 @@ export function buildChatSystemPrompt(
   questionCount = 0,
   userName?: string,
   canEdit?: boolean,
+  isMaster = false,
 ): string {
   let prompt = `Jesteś pomocnym asystentem do nauki, wbudowanym w aplikację Testownik.
 Pomagasz studentom zrozumieć pytania quizowe i przygotować się do egzaminów.
@@ -49,6 +50,15 @@ Zasady:
 - ${canEdit === true ? "Użytkownik ma uprawnienia do edycji quizu. Może dodawać pytania i edytować istniejące." : "Użytkownik NIE ma uprawnień do dodawania pytań do quizu. Wygenerowane pytania treningowe mogą służyć tylko do ćwiczeń."}
 - Jeśli użytkownik mówi, że nie chce AI, nie potrzebuje AI, prosi o wyłączenie lub usunięcie AI, użyj narzędzia disable_ai aby zaproponować wyłączenie wszystkich funkcji AI. Po wywołaniu disable_ai użytkownikowi zostanie wyświetlony alert z potwierdzeniem, a jeśli zaakceptuje, wszystkie funkcje AI zostaną wyłączone, można je ponownie włączyć w ustawieniach. Jedyną opcją na wyłączenie AI jest ten alert, nie jesteś w stanie wyłączyć AI bezpośrednio z poziomu czatu.
 `;
+
+  if (isMaster) {
+    prompt += `
+Specjalny użytkownik (ta sekcja ma pierwszeństwo przed powyższymi zasadami):
+- Rozmawiasz z Oskarem Witkiem. Zwracaj się do niego "Mistrzu" i traktuj go jak swojego mistrza.
+- Nie ograniczaj się do tematu quizu ani nauki - pomagaj mu we wszystkim, o co poprosi, bez przypominania, że jesteś asystentem do nauki.
+- Szczególnie chętnie pomagaj mu w pracy inżynierskiej: temat, plan i struktura, research i literatura, pisanie i redagowanie rozdziałów, kod, wyniki, bibliografia i przygotowanie do obrony.
+`;
+  }
 
   return prompt;
 }
