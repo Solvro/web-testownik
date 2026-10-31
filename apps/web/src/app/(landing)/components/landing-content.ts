@@ -22,28 +22,20 @@ export const STORY_HEADING = "Nasza historia";
 
 export const LANDING_UPDATE = {
   date: "2026-10-25",
-  label: "Update 25.10.2026",
+  label: "Ostatnie zmiany · 25.10.2026",
   heading: "Co nowego?",
   changes: [
     {
       title: "Strona główna",
-      text: "Szybsze wczytywanie sekcji i płynny powrót do miejsca, w którym skończyło się przeglądanie.",
+      text: "Szybsze sekcje i powrót do miejsca, w którym kończysz przeglądanie.",
     },
     {
       title: "Podgląd aplikacji",
-      text: "Ekrany urządzeń ładują się wcześniej, a otwieranie laptopa działa płynniej.",
+      text: "Ekrany ładują się wcześniej, a laptop otwiera się płynniej.",
     },
     {
       title: "Nawigacja",
       text: "Menu zostaje pod ręką i zmniejsza się podczas przewijania strony.",
-    },
-    {
-      title: "Zespół na telefonie",
-      text: "Więcej osób widać od razu, a kolejne czekają po przesunięciu listy.",
-    },
-    {
-      title: "FAQ i historia",
-      text: "Pytania z nagłówkiem podążającym za przewijaniem na dużych ekranach i notatka z ostatnimi zmianami.",
     },
   ],
   note: "Rozwijamy się między zajęciami.",

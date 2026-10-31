@@ -14,6 +14,78 @@
  * (`sections/toc-section-preview.ts`).
  */
 
+/* Ink belongs to the page, without separate paper surfaces. */
+[data-landing-page] {
+  background-image:
+    linear-gradient(
+      color-mix(in oklch, var(--primary) 4%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--primary) 4%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 2rem 2rem;
+}
+
+.lp-hand-note {
+  color: var(--primary);
+  font-size: 1.65rem;
+  line-height: 1.15;
+  transform: rotate(-2deg);
+  text-wrap: pretty;
+}
+
+.lp-ink-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.lp-ink-underline::after {
+  position: absolute;
+  right: -1%;
+  bottom: -0.12em;
+  left: 0;
+  height: 0.12em;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.65;
+  content: "";
+  transform: rotate(-1deg);
+}
+
+.lp-ink-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--primary);
+}
+
+.lp-update-note {
+  padding-left: 1.5rem;
+  border-left: 1px solid color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+.lp-ink-check {
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: rotate(-12deg);
+}
+
+.lp-margin-sketch {
+  width: 8rem;
+  height: auto;
+  margin: 1.5rem 0 0 auto;
+  color: var(--primary);
+  opacity: 0.3;
+  transform: rotate(-5deg);
+}
+
+.lp-study-step {
+  border-top: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
+  padding-top: 1rem;
+}
+
 /* The root layout's shell, which the landing replaces. */
 body:has([data-landing-page]) {
   background: var(--background);

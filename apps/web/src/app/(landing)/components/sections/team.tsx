@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { REPOSITORY_URL } from "../landing-content";
 import { FOCUS_RING } from "../ui/focus";
+import { HandNote } from "../ui/hand-note";
 import { DisplayHeading } from "../ui/typography";
 import { TeamRoster, TeamRosterFallback } from "./team-roster";
 
@@ -41,6 +42,7 @@ export function Team({
       />
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)] lg:items-end">
         <div>
+          <HandNote className="mb-5">04 / projekt grupowy, który żyje</HandNote>
           <DisplayHeading className="max-w-[12ch] text-[clamp(2.8rem,11vw,4.2rem)] leading-[0.9] sm:text-[clamp(3.4rem,5vw,4.9rem)]">
             Ten zespół
             <br />

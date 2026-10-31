@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
 import { FOCUS_RING } from "../../ui/focus";
+import { HandNote } from "../../ui/hand-note";
 import { LandingButtonLink } from "../../ui/landing-button";
 import { LandingSection } from "../../ui/section";
 import { DisplayHeading } from "../../ui/typography";
@@ -86,16 +87,51 @@ export function ProductShowcase(): React.JSX.Element {
       className="scroll-mt-[5rem] outline-none"
     >
       <header className="grid grid-cols-1 items-end gap-x-20 gap-y-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
-        <DisplayHeading className="mt-0">
-          Zobacz, jak
-          <br />
-          <em>działa nauka.</em>
-        </DisplayHeading>
+        <div>
+          <HandNote className="mb-5">
+            01 / plan na najbliższe kolokwium
+          </HandNote>
+          <DisplayHeading className="mt-0">
+            Zobacz, jak
+            <br />
+            <em className="lp-ink-underline">działa nauka.</em>
+          </DisplayHeading>
+        </div>
         <p className="text-muted-foreground max-w-[34rem] text-[1.05rem] leading-[1.65]">
           Quizy, asystent AI, średnia ocen i&nbsp;statystyki to tylko kilka
           z&nbsp;wielu funkcji.
         </p>
       </header>
+
+      <ol
+        aria-label="Jak uczyć się z Testownikiem"
+        className="mt-10 grid gap-6 sm:grid-cols-3 sm:gap-10"
+      >
+        <li className="lp-study-step">
+          <HandNote className="mb-3">1. Zbierz materiał</HandNote>
+          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+            Stwórz własny zestaw pytań albo zaimportuj gotowy quiz. Wszystko w
+            jednym miejscu.
+          </p>
+        </li>
+        <li className="lp-study-step">
+          <HandNote className="mb-3">2. Sprawdź, co pamiętasz</HandNote>
+          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+            Odpowiadaj bez zaglądania w notatki. Sprawdź odpowiedź, a gdy
+            utkniesz, poproś o wyjaśnienie.
+          </p>
+        </li>
+        <li className="lp-study-step">
+          <HandNote className="mb-3">3. Wróć do trudniejszych pytań</HandNote>
+          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+            Zobacz postępy w statystykach i powtórz to, co jeszcze sprawia
+            trudność. Nawet w przerwie między zajęciami.
+          </p>
+        </li>
+      </ol>
+      <HandNote className="mt-8 text-right text-[1.4rem]!">
+        ↓ teraz Twoja kolej — wypróbuj poniżej
+      </HandNote>
 
       <ShowcaseSessionProvider>
         <div className="border-border bg-card @container mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[47rem]">

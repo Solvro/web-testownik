@@ -19,6 +19,7 @@ import { DEVICE_MODELS_URL } from "../scene/device-models-url";
 import { DeviceSceneBackdrop } from "../scene/device-scene-backdrop";
 import { DEVICE_COVER_CLASS } from "../scene/scene-classes";
 import { FOCUS_RING } from "../ui/focus";
+import { HandNote } from "../ui/hand-note";
 import { HeroBadges } from "./hero-badges";
 import { HeroFade } from "./hero-fade";
 import { HeroPhone } from "./hero-phone";
@@ -104,6 +105,10 @@ function HeroContent({
           Twórz i&nbsp;rozwiązuj quizy, śledź postępy i&nbsp;oceny oraz ucz się
           razem ze znajomymi.
         </p>
+        <HandNote className="mt-4 text-[1.4rem]! lg:text-[1.65rem]!">
+          <span className="lp-ink-strike">Wkuć. Zdać. Zapomnieć.</span>{" "}
+          Zrozumieć i zapamiętać.
+        </HandNote>
       </div>
 
       {visual}

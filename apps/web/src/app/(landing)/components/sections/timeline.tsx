@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { STORY, STORY_HEADING } from "../landing-content";
+import { HandNote } from "../ui/hand-note";
 import { LandingSection } from "../ui/section";
 import { DisplayHeading } from "../ui/typography";
 import { UpdateNote } from "./update-note";
@@ -212,6 +213,7 @@ export function Timeline(): React.JSX.Element {
       className="mb-12 grid scroll-mt-[5rem] grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
       <header className="min-w-0 self-start">
+        <HandNote className="mb-5">03 / zaczęło się tak jak u Ciebie</HandNote>
         <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">
           {STORY_HEADING}
         </DisplayHeading>

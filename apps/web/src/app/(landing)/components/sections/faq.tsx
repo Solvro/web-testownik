@@ -6,16 +6,18 @@ import {
 } from "@/components/ui/accordion";
 
 import { FAQ } from "../landing-content";
+import { HandNote } from "../ui/hand-note";
 import { DisplayHeading } from "../ui/typography";
 
 export function Faq(): React.JSX.Element {
   return (
     <section
       id="faq"
-      className="dark bg-background text-foreground relative scroll-mt-[5rem] py-16 sm:py-24 lg:py-36"
+      className="text-foreground relative scroll-mt-[5rem] py-16 sm:py-24 lg:py-36"
     >
       <div className="relative mx-auto grid w-[calc(100%-2rem)] grid-cols-1 gap-8 sm:w-[min(100%-3rem,96rem)] sm:gap-12 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw] 2xl:grid-cols-[minmax(max-content,0.72fr)_minmax(0,1.28fr)]">
         <header className="self-start lg:sticky lg:top-24">
+          <HandNote className="mb-5">02 / dopiski na marginesie</HandNote>
           <DisplayHeading>
             Pytania?
             <br />
@@ -25,6 +27,9 @@ export function Faq(): React.JSX.Element {
             Jak zacząć naukę, tworzyć quizy i&nbsp;korzystać z&nbsp;pozostałych
             funkcji? Odpowiadamy na&nbsp;najczęstsze pytania o&nbsp;Testownik.
           </p>
+          <HandNote className="mt-8">
+            Warto wiedzieć przed pierwszym quizem.
+          </HandNote>
         </header>
 
         <Accordion
