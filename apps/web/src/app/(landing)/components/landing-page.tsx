@@ -122,9 +122,11 @@ export function LandingPage({
        * server renderer, so the section would stream in after the shell with
        * zero height first, breaking scroll restoration on reload.
        */}
-      <ProductShowcase />
-      <Faq />
-      <Timeline />
+      <div className="lp-notebook relative">
+        <ProductShowcase />
+        <Faq />
+        <Timeline />
+      </div>
       <Team contributors={contributors} />
       <Finale
         isAuthenticated={isAuthenticated}

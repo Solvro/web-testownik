@@ -1,6 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
 import { Suspense } from "react";
-import type { CSSProperties } from "react";
 import { FiGithub } from "react-icons/fi";
 
 import type { GitHubContributor } from "@/lib/contributors";
@@ -11,15 +10,6 @@ import { FOCUS_RING } from "../ui/focus";
 import { HandNote } from "../ui/hand-note";
 import { DisplayHeading } from "../ui/typography";
 import { TeamRoster, TeamRosterFallback } from "./team-roster";
-
-/** Graph paper behind the heading, fading out before the roster starts. */
-const gridBackdropStyle: CSSProperties = {
-  backgroundImage:
-    "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-  backgroundSize: "4rem 4rem",
-  maskImage:
-    "radial-gradient(ellipse 70% 100% at 18% 0%, black, transparent 80%)",
-};
 
 export function Team({
   contributors,
@@ -35,11 +25,6 @@ export function Team({
       id="team"
       className="bg-background relative isolate w-full scroll-mt-[5rem] px-4 pt-12 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pt-14 sm:pb-10"
     >
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 -z-10 h-[28rem] opacity-60"
-        style={gridBackdropStyle}
-      />
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)] lg:items-end">
         <div>
           <HandNote className="mb-5">04 / projekt grupowy, który żyje</HandNote>

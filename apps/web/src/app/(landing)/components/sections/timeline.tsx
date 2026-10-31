@@ -212,7 +212,7 @@ export function Timeline(): React.JSX.Element {
       showPlaceholder={false}
       className="mb-12 grid scroll-mt-[5rem] grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
-      <header className="min-w-0 self-start">
+      <header className="min-w-0 self-start lg:sticky lg:top-24">
         <HandNote className="mb-5">03 / zaczęło się tak jak u Ciebie</HandNote>
         <DisplayHeading className="lg:text-[clamp(3.5rem,5.1vw,6rem)]">
           {STORY_HEADING}

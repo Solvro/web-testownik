@@ -15,7 +15,11 @@
  */
 
 /* Ink belongs to the page, without separate paper surfaces. */
-[data-landing-page] {
+.lp-notebook::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
   background-image:
     linear-gradient(
       color-mix(in oklch, var(--primary) 4%, transparent) 1px,
@@ -27,6 +31,13 @@
       transparent 1px
     );
   background-size: 2rem 2rem;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 8rem,
+    black calc(100% - 8rem),
+    transparent
+  );
 }
 
 .lp-hand-note {
@@ -61,11 +72,6 @@
   text-decoration-color: var(--primary);
 }
 
-.lp-update-note {
-  padding-left: 1.5rem;
-  border-left: 1px solid color-mix(in oklch, var(--primary) 25%, transparent);
-}
-
 .lp-ink-check {
   font-size: 1.4rem;
   line-height: 1;
@@ -79,11 +85,6 @@
   color: var(--primary);
   opacity: 0.3;
   transform: rotate(-5deg);
-}
-
-.lp-study-step {
-  border-top: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
-  padding-top: 1rem;
 }
 
 /* The root layout's shell, which the landing replaces. */

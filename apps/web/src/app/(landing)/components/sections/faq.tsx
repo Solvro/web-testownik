@@ -27,9 +27,6 @@ export function Faq(): React.JSX.Element {
             Jak zacząć naukę, tworzyć quizy i&nbsp;korzystać z&nbsp;pozostałych
             funkcji? Odpowiadamy na&nbsp;najczęstsze pytania o&nbsp;Testownik.
           </p>
-          <HandNote className="mt-8">
-            Warto wiedzieć przed pierwszym quizem.
-          </HandNote>
         </header>
 
         <Accordion

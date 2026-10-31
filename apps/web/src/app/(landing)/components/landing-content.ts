@@ -22,19 +22,24 @@ export const STORY_HEADING = "Nasza historia";
 
 export const LANDING_UPDATE = {
   date: "2026-10-25",
-  label: "Ostatnie zmiany · 25.10.2026",
+  label: "25.10.2026",
   heading: "Co nowego?",
+  title: "Wygodniejsze przeglądanie Testownika",
+  summary: "Szybsza strona, płynniejszy podgląd i nawigacja zawsze pod ręką.",
   changes: [
     {
       title: "Strona główna",
+      summary: "Szybsze sekcje i powrót do miejsca przeglądania.",
       text: "Szybsze sekcje i powrót do miejsca, w którym kończysz przeglądanie.",
     },
     {
       title: "Podgląd aplikacji",
+      summary: "Wcześniejsze ładowanie i płynniejsze otwieranie laptopa.",
       text: "Ekrany ładują się wcześniej, a laptop otwiera się płynniej.",
     },
     {
       title: "Nawigacja",
+      summary: "Mniejsze menu, które zostaje pod ręką.",
       text: "Menu zostaje pod ręką i zmniejsza się podczas przewijania strony.",
     },
   ],

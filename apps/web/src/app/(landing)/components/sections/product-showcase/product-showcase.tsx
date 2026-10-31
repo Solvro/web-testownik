@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
+import { scrollToLandingSection } from "../../scroll-to-section";
 import { FOCUS_RING } from "../../ui/focus";
 import { HandNote } from "../../ui/hand-note";
 import { LandingButtonLink } from "../../ui/landing-button";
@@ -107,21 +108,21 @@ export function ProductShowcase(): React.JSX.Element {
         aria-label="Jak uczyć się z Testownikiem"
         className="mt-10 grid gap-6 sm:grid-cols-3 sm:gap-10"
       >
-        <li className="lp-study-step">
+        <li>
           <HandNote className="mb-3">1. Zbierz materiał</HandNote>
           <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
             Stwórz własny zestaw pytań albo zaimportuj gotowy quiz. Wszystko w
             jednym miejscu.
           </p>
         </li>
-        <li className="lp-study-step">
+        <li>
           <HandNote className="mb-3">2. Sprawdź, co pamiętasz</HandNote>
           <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
             Odpowiadaj bez zaglądania w notatki. Sprawdź odpowiedź, a gdy
             utkniesz, poproś o wyjaśnienie.
           </p>
         </li>
-        <li className="lp-study-step">
+        <li>
           <HandNote className="mb-3">3. Wróć do trudniejszych pytań</HandNote>
           <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
             Zobacz postępy w statystykach i powtórz to, co jeszcze sprawia
@@ -130,11 +131,32 @@ export function ProductShowcase(): React.JSX.Element {
         </li>
       </ol>
       <HandNote className="mt-8 text-right text-[1.4rem]!">
-        ↓ teraz Twoja kolej — wypróbuj poniżej
+        <a
+          href="#landing-demos"
+          className={cn(
+            "inline-flex min-h-11 items-center rounded-sm hover:underline",
+            FOCUS_RING,
+          )}
+          onClick={(event) => {
+            const target =
+              document.querySelector<HTMLElement>("#landing-demos");
+            if (target !== null) {
+              event.preventDefault();
+              scrollToLandingSection(target);
+              target.focus({ preventScroll: true });
+            }
+          }}
+        >
+          ↓ teraz Twoja kolej — wypróbuj poniżej
+        </a>
       </HandNote>
 
       <ShowcaseSessionProvider>
-        <div className="border-border bg-card @container mt-10 overflow-hidden rounded-[1.1rem] border sm:mt-16 lg:flex lg:h-[47rem]">
+        <div
+          id="landing-demos"
+          tabIndex={-1}
+          className="border-border bg-card @container mt-10 scroll-mt-24 overflow-hidden rounded-[1.1rem] border outline-none sm:mt-16 lg:flex lg:h-[47rem]"
+        >
           {SHOWCASE_FEATURES.map((feature, index) => {
             const active = feature.id === activeId;
             const panelId = `landing-feature-${feature.id}`;
