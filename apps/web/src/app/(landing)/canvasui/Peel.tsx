@@ -821,6 +821,8 @@ export function createPeel(
 export interface PeelProps extends PeelOptions {
   /** The content that peels away. */
   children: ReactNode;
+  /** Native HTML above the sheet, excluded from canvas capture. */
+  overlay?: ReactNode;
   /** The content revealed underneath the peel. */
   under?: ReactNode;
   className?: string;
@@ -831,6 +833,7 @@ const emptySubscribe = () => () => {};
 
 export function Peel({
   children,
+  overlay,
   under,
   className,
   style,
@@ -926,7 +929,8 @@ export function Peel({
         <div
           ref={contentRef}
           style={{
-            position: "relative",
+            position: overlay ? "absolute" : "relative",
+            inset: overlay ? 0 : undefined,
             width: "100%",
             height: "100%",
             overflow: "hidden",
@@ -946,6 +950,7 @@ export function Peel({
           pointerEvents: "none",
         }}
       />
+      {overlay}
     </div>
   );
 }

@@ -752,61 +752,58 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   }
 }
 
-.lp-update-peel {
-  height: 26rem;
+.lp-update-note {
+  position: relative;
   isolation: isolate;
-  transform: rotate(-2deg);
-  filter: drop-shadow(7px 12px 9px rgb(0 0 0 / 30%));
-  transition: filter 260ms ease;
 }
 
-.lp-update-paper {
-  min-height: 26rem;
-  background: linear-gradient(180deg, #e9dc85, #f9e98c 22%, #faec97);
+.lp-update-sheet {
+  height: 100%;
+  background: linear-gradient(180deg, #f0e38e, #f9e98c 22%, #faec97);
+  box-shadow: inset 0 12px 18px -18px rgb(99 88 29 / 24%);
 }
 
-.lp-update-peel[data-peel-native="false"] {
-  height: auto;
-}
-
-/* A curved corner, rather than a triangular flap, without html-in-canvas. */
-.lp-update-peel[data-peel-native="false"]::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 62%;
-  height: 3.5rem;
-  border-radius: 90% 0 0 0 / 100% 0 0 0;
-  background: linear-gradient(165deg, #fff4ad 20%, #d6c566 90%);
-  box-shadow: -3px -7px 12px -5px rgb(99 88 29 / 44%);
-  content: "";
-  pointer-events: none;
-  transform: scaleY(1);
-  transform-origin: bottom;
-  transition: transform 260ms ease;
-}
-
-.lp-update-peel:focus-within {
+/* Filter only the paper canvas; keep the native text out of its bitmap. */
+.lp-update-note > canvas[aria-hidden] {
   filter: drop-shadow(2px 4px 4px rgb(0 0 0 / 20%));
 }
 
-.lp-update-peel[data-peel-native="false"]:focus-within::after {
-  transform: scaleY(0);
+.lp-update-note[data-peel-native="false"] {
+  box-shadow: 2px 4px 4px rgb(0 0 0 / 20%);
+}
+
+.lp-update-note[data-peel-native="false"]::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #e3d57e, #fff4ad);
+  box-shadow: -3px -3px 6px rgb(99 88 29 / 16%);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  content: "";
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: transform 260ms ease;
+}
+
+.lp-update-note[data-peel-native="false"]:focus-within::after {
+  transform: scale(0);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .lp-update-peel:hover {
-    filter: drop-shadow(2px 4px 4px rgb(0 0 0 / 20%));
-  }
-
-  .lp-update-peel[data-peel-native="false"]:hover::after {
-    transform: scaleY(0);
+  .lp-update-note[data-peel-native="false"]:hover::after {
+    transform: scale(0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-update-peel,
-  .lp-update-peel::after {
+  .lp-update-note::after {
     transition: none;
   }
+}
+
+.lp-update-paper {
+  position: relative;
+  min-height: 22rem;
 }
