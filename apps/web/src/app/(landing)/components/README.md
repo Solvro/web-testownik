@@ -127,11 +127,13 @@ rebuilds the hero peek for the shorter static layout.
 
 `sections/perks.tsx` is the uniperks partner block (`#perks`): our frame, their
 card anatomy in `sections/perks-cards.tsx`, colours as `--perk-*` variables on
-the section. `lib/perks.server.ts` resolves its numbers and offers from the
-partner feed (`UNIPERKS_FEED_URL`, `UNIPERKS_FEED_TOKEN`), else the public
-uniperks.pl page (robots.txt checked, parsed result cached six hours), else
-`data/perks.snapshot.json`. `pnpm --filter web perks:snapshot` rewrites the
-snapshot; `perks-snapshot.yml` does that weekly and opens a PR. CTAs go
+the section. Numbers and offers are hard coded in `data/perks.ts`.
+There are no partner fetches or scheduled refreshes. Only the stats row counts
+up on entering the viewport, then adds one student every 4 seconds and one
+offer every 28 seconds while visible. Savings stay fixed after the count-up.
+Reduced motion shows the base values immediately. Card backgrounds are local
+AI-generated photos, blurred beneath tinted overlays. The stack fans out with
+fixed layering, without hover z-index swaps. CTAs go
 through `/go/uniperks?p=<placement>`, which counts the click in Umami and
 redirects to `PERKS_PARTNER_URL`.
 

@@ -10,7 +10,6 @@
     "export:device-models": "node scripts/export-device-models/export-device-models.mjs",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
-    "perks:snapshot": "tsx scripts/perks-snapshot.ts",
     "start": "next start",
     "test": "vitest",
     "typecheck": "tsc --noEmit"

@@ -43,11 +43,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "avatars.githubusercontent.com",
       },
-      {
-        // Partner logos from the uniperks feed (`PERKS_LOGO_HOST`).
-        protocol: "https",
-        hostname: "static.uniperks.pl",
-      },
     ],
   },
 };

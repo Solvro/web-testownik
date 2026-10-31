@@ -150,10 +150,10 @@ export const PERKS_COPY = {
   offersCaption: (maxDiscount: string) => `oferty do\u00A0−${maxDiscount}%`,
   savingsCaption: "oszczędności rocznie",
   disclosure:
-    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są przykładowe — aktualne znajdziesz w aplikacji.",
+    "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach i animowane liczniki są poglądowe — aktualne dane znajdziesz w aplikacji.",
 } as const;
 
-/** The lead paragraph, from already formatted live numbers. */
+/** The lead paragraph, from already formatted base numbers. */
 export function perksLead({
   students,
   offers,

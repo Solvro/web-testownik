@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getContributorsSSR } from "@/app/(landing)/lib/contributors";
-import { getPerks } from "@/app/(landing)/lib/perks.server";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 
 import {
@@ -56,12 +55,10 @@ export default async function HomePage({
     return <DeviceCapture request={captureRequest} />;
   }
 
-  // Deliberately not awaited: the contributor rail and the partner numbers
-  // stream into their sections, so outside calls cannot delay the hero.
+  // The contributor rail streams in so its request cannot delay the hero.
   return (
     <LandingPage
       contributors={getContributorsSSR()}
-      perks={getPerks()}
       isAuthenticated={user != null}
     />
   );

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
-import type { PerksData } from "../lib/perks";
 import { useGuestStart } from "./hooks/use-guest-start";
 import "./landing.css";
 import { Faq } from "./sections/faq";
@@ -30,13 +29,10 @@ import { FOCUS_RING } from "./ui/focus";
  */
 export function LandingPage({
   contributors,
-  perks,
   isAuthenticated,
 }: {
   /** Unresolved: the team rail streams in rather than holding up the hero. */
   contributors: Promise<GitHubContributor[]>;
-  /** Unresolved: only the partner numbers and cards wait for it. */
-  perks: Promise<PerksData>;
   /** Signed-in visitors only reach the page at `/?landing=true`. */
   isAuthenticated: boolean;
 }): React.JSX.Element {
@@ -133,7 +129,7 @@ export function LandingPage({
         <Timeline />
       </div>
       <Team contributors={contributors} />
-      <Perks perks={perks} />
+      <Perks />
       <Finale
         isAuthenticated={isAuthenticated}
         isStarting={isStarting}

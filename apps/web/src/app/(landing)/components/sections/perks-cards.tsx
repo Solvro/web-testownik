@@ -40,29 +40,21 @@ function formatDate(isoDate: string): string {
   return `${day}.${month}.${year}`;
 }
 
-/*
- * Back to front: +5°, −6°, −1.5°. Hovering the stack fans it out, front card
- * first, with a slight spring; the card under the pointer then straightens
- * (an inner counter-rotation), rises above the others and casts a deeper
- * shadow. Nothing moves with reduced motion. Below `lg` only the back and
- * front cards show, both 300 px wide.
- */
+// Fixed layers preserve spatial continuity as the entire stack gently opens.
 const CARD_PLACEMENT = [
-  "top-0 right-0 max-lg:inset-x-0 max-lg:mx-auto [--card-tilt:5deg] [--card-fan:8deg] motion-safe:delay-[90ms] motion-safe:group-hover/perks:translate-x-3 motion-safe:group-hover/perks:-translate-y-2",
-  "max-lg:hidden top-[5.5rem] left-0 [--card-tilt:-6deg] [--card-fan:-9deg] motion-safe:delay-[45ms] motion-safe:group-hover/perks:-translate-x-4",
-  "bottom-0 max-lg:inset-x-0 max-lg:mx-auto lg:left-[14%] [--card-tilt:-1.5deg] [--card-fan:-2.5deg] motion-safe:group-hover/perks:-translate-y-1",
+  "top-0 right-0 z-0 max-lg:inset-x-0 max-lg:mx-auto [--card-tilt:5deg] lg:motion-safe:group-hover/perks:translate-x-5 lg:motion-safe:group-hover/perks:-translate-y-3",
+  "max-lg:hidden top-[5.5rem] left-0 z-1 [--card-tilt:-6deg] lg:motion-safe:group-hover/perks:-translate-x-6",
+  "bottom-0 z-2 max-lg:inset-x-0 max-lg:mx-auto lg:left-[14%] [--card-tilt:-1.5deg] lg:motion-safe:group-hover/perks:translate-y-3",
 ] as const;
 
-/** Spring-ish ease: a few percent of overshoot, then settle. */
+const CARD_BACKGROUNDS = ["pizza", "laptop", "fashion"] as const;
 const CARD_MOTION =
-  "motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.34,1.4,0.64,1)]";
+  "motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.23,1,0.32,1)]";
 
 function OfferBadge({
   badge,
-  front,
 }: {
   badge: NonNullable<PerksOffer["badge"]>;
-  front: boolean;
 }): React.JSX.Element | null {
   if (badge.kind === "activations" && badge.value === undefined) {
     return null;
@@ -79,9 +71,7 @@ function OfferBadge({
         "rounded-full px-2.5 py-1 text-[13px] leading-none font-semibold whitespace-nowrap",
         badge.kind === "limited"
           ? "bg-[#FEEBE7] text-[#A33B22]"
-          : front
-            ? "bg-white/15 text-white"
-            : "bg-(--perk-bg) text-(--perk-fg)",
+          : "bg-white/15 text-white",
       )}
     >
       {label}
@@ -110,8 +100,8 @@ function OfferCard({
   return (
     <div
       className={cn(
-        "absolute h-[13.5rem] w-[300px] rotate-(--card-tilt) hover:z-10 motion-safe:group-hover/perks:rotate-(--card-fan) lg:h-[15.5rem] lg:w-[22rem]",
-        "motion-safe:transition-[rotate,translate]",
+        "absolute h-[13.5rem] w-[300px] rotate-(--card-tilt) lg:h-[15.5rem] lg:w-[22rem]",
+        "motion-safe:transition-transform",
         CARD_MOTION,
         front && "lg:h-[17rem] lg:w-[24rem]",
         CARD_PLACEMENT[index],
@@ -119,54 +109,38 @@ function OfferCard({
     >
       <div
         className={cn(
-          "group/card flex size-full flex-col justify-between rounded-[24px] p-5 shadow-[0_24px_50px_-30px_rgb(35_5_71/0.35)] lg:p-6",
-          "motion-safe:transition-[rotate,translate,scale,box-shadow] motion-safe:hover:-translate-y-2 motion-safe:hover:scale-[1.02] motion-safe:hover:rotate-[calc(var(--card-fan)*-1)] motion-safe:hover:shadow-[0_36px_60px_-28px_rgb(35_5_71/0.5)]",
+          "group/card relative isolate flex size-full flex-col justify-between overflow-hidden rounded-[24px] p-5 shadow-[0_24px_50px_-30px_rgb(35_5_71/0.35)] lg:p-6",
+          "motion-safe:transition-transform lg:motion-safe:hover:-translate-y-1 lg:motion-safe:hover:scale-[1.015]",
           CARD_MOTION,
           front
             ? "bg-(--perk-accent) text-(--perk-accent-fg)"
-            : "bg-(--perk-card) text-(--perk-fg)",
+            : "bg-[#263647] text-white",
         )}
       >
+        <Image
+          src={`/images/perks/${CARD_BACKGROUNDS[index]}.webp`}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 384px, 300px"
+          className="-z-20 scale-110 object-cover blur-[12px]"
+        />
+        <div
+          className={cn(
+            "absolute inset-0 -z-10",
+            front ? "bg-[#32105c]/75" : "bg-[#14202d]/75",
+          )}
+        />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-black/15 to-black/0" />
         <div className="flex items-start justify-between gap-3">
-          <div
-            className={cn(
-              "grid size-11 shrink-0 place-items-center overflow-hidden rounded-[10px]",
-              front ? "bg-white/15" : "bg-(--perk-bg)",
-            )}
-          >
-            {offer.logoUrl === undefined ? (
-              <Icon
-                className={cn(
-                  "size-5 motion-safe:transition-[rotate,scale] motion-safe:group-hover/card:scale-110 motion-safe:group-hover/card:-rotate-12",
-                  CARD_MOTION,
-                  front
-                    ? "text-(--perk-accent-fg)"
-                    : "text-(--perk-accent-ink)",
-                )}
-              />
-            ) : (
-              <Image
-                src={offer.logoUrl}
-                alt=""
-                width={44}
-                height={44}
-                className="size-full object-cover"
-              />
-            )}
+          <div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/15">
+            <Icon className="size-5 text-white" />
           </div>
           {offer.badge === undefined ? null : (
-            <OfferBadge badge={offer.badge} front={front} />
+            <OfferBadge badge={offer.badge} />
           )}
         </div>
         <div className="min-w-0">
-          <p
-            className={cn(
-              "text-[13px]",
-              front ? "text-(--perk-accent-fg)/75" : "text-(--perk-muted)",
-            )}
-          >
-            {offer.category}
-          </p>
+          <p className="text-[13px] text-white/85">{offer.category}</p>
           <p
             className={cn(
               "mt-1 line-clamp-2 font-bold tracking-[-0.02em] text-balance",
@@ -177,12 +151,7 @@ function OfferCard({
           >
             {offer.title}
           </p>
-          <p
-            className={cn(
-              "mt-2 truncate text-[13px]",
-              front ? "text-(--perk-accent-fg)/75" : "text-(--perk-muted)",
-            )}
-          >
+          <p className="mt-2 truncate text-[13px] text-white/85">
             {meta.join(" · ")}
           </p>
         </div>
@@ -201,25 +170,6 @@ export function PerksCards({
     <>
       {offers.slice(0, CARD_PLACEMENT.length).map((offer, index) => (
         <OfferCard key={offer.id} offer={offer} index={index} />
-      ))}
-    </>
-  );
-}
-
-/** Same footprint as the resolved stack, so streamed cards cause no shift. */
-export function PerksCardsSkeleton(): React.JSX.Element {
-  return (
-    <>
-      {CARD_PLACEMENT.map((placement, index) => (
-        <div
-          key={placement}
-          className={cn(
-            "absolute h-[13.5rem] w-[300px] rotate-(--card-tilt) rounded-[24px] bg-(--perk-card) lg:h-[15.5rem] lg:w-[22rem]",
-            index === CARD_PLACEMENT.length - 1 &&
-              "bg-(--perk-accent)/40 lg:h-[17rem] lg:w-[24rem]",
-            placement,
-          )}
-        />
       ))}
     </>
   );

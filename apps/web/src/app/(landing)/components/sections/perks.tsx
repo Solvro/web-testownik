@@ -1,19 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { Suspense, use, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
-import snapshot from "../../data/perks.snapshot.json";
+import snapshot from "../../data/perks";
 import type { PerksData } from "../../lib/perks";
+import { handwritingClassName } from "../ui/handwriting";
+import { PerksStats } from "./perks-stats";
 import { trackUmamiEvent } from "../../lib/umami";
 import { PERKS_COPY, PERKS_VARIANT, perksLead } from "../landing-content";
 import { uniperksWordmarkDark, uniperksWordmarkLight } from "../logos";
 import { FOCUS_RING } from "../ui/focus";
-import { DisplayHeading, MonoLabel } from "../ui/typography";
-import { PerksCards, PerksCardsSkeleton } from "./perks-cards";
+import { DisplayHeading } from "../ui/typography";
+import { PerksCards } from "./perks-cards";
 
 /*
  * The partner's ground rather than our graph paper. Everything inside reads
@@ -48,93 +50,10 @@ function formatted(
   };
 }
 
-/*
- * The skeletons render the snapshot's text in transparent ink over a block,
- * so the streamed numbers land in the same lines and nothing shifts.
- */
-const PENDING_TEXT =
-  "rounded-[6px] bg-(--perk-border) text-transparent select-none [box-decoration-break:clone]";
-const snapshotNumbers = formatted(snapshot);
-
 const LEAD_CLASS =
   "mt-6 max-w-[32rem] text-[17px] leading-relaxed text-pretty text-(--perk-muted) lg:text-[18px]";
 
-function PerksLead({
-  perks,
-}: {
-  perks: Promise<PerksData>;
-}): React.JSX.Element {
-  return <p className={LEAD_CLASS}>{perksLead(formatted(use(perks)))}</p>;
-}
-
-function PerksStatsRow({
-  numbers,
-  pending = false,
-}: {
-  numbers: ReturnType<typeof formatted>;
-  pending?: boolean;
-}): React.JSX.Element {
-  const cells = [
-    { value: numbers.students, caption: PERKS_COPY.studentsCaption },
-    {
-      value: numbers.offers,
-      caption: PERKS_COPY.offersCaption(numbers.maxDiscount),
-    },
-    { value: `${numbers.savings}\u00A0zł`, caption: PERKS_COPY.savingsCaption },
-  ];
-  return (
-    <dl
-      aria-hidden={pending || undefined}
-      className="grid grid-cols-3 gap-4 border-t border-(--perk-border) pt-6"
-    >
-      {cells.map((cell) => (
-        <div key={cell.caption} className="flex min-w-0 flex-col-reverse gap-1">
-          <dt className="text-[13px] leading-snug text-(--perk-muted)">
-            <span className={cn(pending && PENDING_TEXT)}>{cell.caption}</span>
-          </dt>
-          <dd className="text-[1.375rem] leading-[1.1] font-bold tracking-[-0.035em] whitespace-nowrap tabular-nums lg:text-[2.25rem]">
-            <span className={cn(pending && PENDING_TEXT)}>{cell.value}</span>
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function PerksStats({
-  perks,
-}: {
-  perks: Promise<PerksData>;
-}): React.JSX.Element {
-  const data = use(perks);
-  const source = `${data.source}@${data.fetchedAt}`;
-  return (
-    <div
-      // Debugging only: which source won and when it was read, on the
-      // section. Never visible.
-      ref={(node) => {
-        node?.closest("section")?.setAttribute("data-perks-source", source);
-      }}
-    >
-      <PerksStatsRow numbers={formatted(data)} />
-    </div>
-  );
-}
-
-function PerksCardStack({
-  perks,
-}: {
-  perks: Promise<PerksData>;
-}): React.JSX.Element {
-  return <PerksCards offers={use(perks).offers} />;
-}
-
-export function Perks({
-  perks,
-}: {
-  /** Unresolved: the shell and headline render first, the numbers stream in. */
-  perks: Promise<PerksData>;
-}): React.JSX.Element {
+export function Perks(): React.JSX.Element {
   const stackReference = useRef<HTMLDivElement>(null);
 
   // One view per page load, once half the card stack is on screen. Umami
@@ -177,10 +96,23 @@ export function Perks({
       <div className="grid gap-y-10 lg:grid-cols-2 lg:gap-x-16">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="flex items-center gap-3">
-            <MonoLabel size="md" className="text-(--perk-muted)">
+            <span
+              className={cn(
+                handwritingClassName,
+                "text-[25px] leading-none text-(--perk-muted)",
+              )}
+            >
               {PERKS_COPY.eyebrow}
-            </MonoLabel>
-            <span aria-hidden="true" className="h-px w-8 bg-(--perk-border)" />
+            </span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                handwritingClassName,
+                "text-[28px] leading-none text-(--perk-muted)",
+              )}
+            >
+              —
+            </span>
             <Image
               src={uniperksWordmarkLight}
               alt="uniperks"
@@ -197,17 +129,7 @@ export function Perks({
             <br />
             <em>{PERKS_COPY.headlineAccent}</em>
           </DisplayHeading>
-          <Suspense
-            fallback={
-              <p aria-hidden="true" className={LEAD_CLASS}>
-                <span className={PENDING_TEXT}>
-                  {perksLead(snapshotNumbers)}
-                </span>
-              </p>
-            }
-          >
-            <PerksLead perks={perks} />
-          </Suspense>
+          <p className={LEAD_CLASS}>{perksLead(formatted(snapshot))}</p>
         </div>
 
         <div
@@ -215,9 +137,7 @@ export function Perks({
           aria-hidden="true"
           className="group/perks relative mx-auto h-[330px] w-full max-w-[318px] lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:h-[30rem] lg:max-w-[34rem] lg:self-center"
         >
-          <Suspense fallback={<PerksCardsSkeleton />}>
-            <PerksCardStack perks={perks} />
-          </Suspense>
+          <PerksCards offers={snapshot.offers} />
         </div>
 
         <div className="flex flex-col items-stretch gap-4 lg:col-start-1 lg:row-start-2 lg:flex-row lg:items-center">
@@ -241,8 +161,8 @@ export function Perks({
             data-umami-event="perks-click"
             data-umami-event-placement="landing-secondary"
             className={cn(
-              "self-center rounded-sm text-base font-semibold text-(--perk-fg) underline underline-offset-4",
-              "lg:inline-flex lg:min-h-13 lg:items-center lg:rounded-full lg:border lg:border-(--perk-border) lg:bg-(--perk-card) lg:px-6 lg:no-underline lg:transition-colors lg:hover:border-(--perk-accent-ink) lg:dark:bg-transparent",
+              "inline-flex min-h-13 items-center justify-center self-stretch rounded-full border border-(--perk-border) bg-(--perk-card) px-6 text-base font-semibold text-(--perk-fg) transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/10",
+              "lg:self-center",
               FOCUS_RING,
             )}
           >
@@ -251,11 +171,7 @@ export function Perks({
         </div>
 
         <div className="min-w-0 lg:col-start-1 lg:row-start-3">
-          <Suspense
-            fallback={<PerksStatsRow numbers={snapshotNumbers} pending />}
-          >
-            <PerksStats perks={perks} />
-          </Suspense>
+          <PerksStats />
         </div>
 
         <p className="text-[12px] leading-relaxed text-(--perk-muted) lg:col-span-2 lg:row-start-4">
