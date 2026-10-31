@@ -44,13 +44,18 @@ export function tocPreviewLayout(viewportWidth: number): TocPreviewLayout {
   };
 }
 
-/** Vertical shift (layout pixels) that brings the aligned part into view. */
+/**
+ * Vertical shift (layout pixels) that brings the aligned part into view.
+ * Centring works both ways: a taller section shows its middle, a shorter one
+ * sits in the middle of the window (a negative shift) instead of leaving the
+ * spare space below it.
+ */
 export function tocPreviewOffset(
   contentHeight: number,
   windowHeight: number,
   align: TocPreviewAlign,
 ): number {
-  if (align === "top" || contentHeight <= windowHeight) {
+  if (align === "top") {
     return 0;
   }
   return Math.round((contentHeight - windowHeight) / 2);

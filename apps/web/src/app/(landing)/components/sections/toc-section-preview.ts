@@ -330,10 +330,10 @@ function buildClonePeek(
   fillWordmarks(clone);
   clone.style.position = "relative";
   clone.style.inset = "auto";
-  clone.style.margin = "0";
-  clone.style.width = px(layout.layoutWidth);
+  // The stage is already the layout width, so the section's own width and
+  // margins resolve as on the page: `LandingSection` keeps its side gutters
+  // (`mx-auto` on a narrower box), full-bleed sections fill the stage.
   clone.style.maxWidth = px(layout.layoutWidth);
-  clone.style.minWidth = px(layout.layoutWidth);
   clone.style.boxSizing = "border-box";
   clone.style.transform = offset === 0 ? "none" : `translateY(${px(-offset)})`;
 

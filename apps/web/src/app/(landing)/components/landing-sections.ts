@@ -4,7 +4,8 @@
  *   a WebGL canvas, CSS3D screens and an html-in-canvas Bubble, none of which
  *   survive `cloneNode`.
  * - `top` / `center`: a scaled DOM clone, aligned to the section's top or
- *   vertical centre inside the peek window.
+ *   vertical centre inside the peek window (`center` also suits a section
+ *   shorter than the window).
  */
 export const LANDING_SECTIONS = [
   { id: "start", label: "Na początek", navLabel: "Start", peek: "hero" },
@@ -21,7 +22,7 @@ export const LANDING_SECTIONS = [
     id: "perks",
     label: "Zniżki dla studentów",
     navLabel: "Zniżki",
-    peek: "top",
+    peek: "center",
   },
   {
     id: "footer",

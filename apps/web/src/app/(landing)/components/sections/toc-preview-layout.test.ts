@@ -42,8 +42,8 @@ describe("tocPreviewOffset", () => {
     expect(tocPreviewOffset(900, 752, "center")).toBe(74);
   });
 
-  it("does not shift content that already fits", () => {
-    expect(tocPreviewOffset(600, 752, "center")).toBe(0);
+  it("centres a shorter section in the window", () => {
+    expect(tocPreviewOffset(600, 752, "center")).toBe(-76);
   });
 });
 
