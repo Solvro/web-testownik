@@ -91,3 +91,12 @@ CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-sta
 
 The still the iPad shows before its live statistics charts load
 (`scene/device-screen-content.tsx`).
+
+## `testownik-phone-quiz-preview-{light,dark}.webp`
+
+The still the mobile hero's CSS iPhone shows until its live quiz has loaded
+(`sections/hero-phone.tsx`). Screen only, at exactly 2× the 390 × 841 screen
+(780 × 1682): captured from the live surface with the phone laid out at
+`--lp-phone-scale: 1`, the Dynamic Island, sensors and status-bar clock hidden,
+and a page clip on the screen's box, in light and dark. Recapture when the
+quiz preview's first screen changes.

@@ -1,9 +1,11 @@
 "use client";
 
+import { LoaderCircleIcon } from "lucide-react";
 import { Suspense, lazy } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import { useIsCompactViewport } from "../hooks/use-prefers-reduced-motion";
 import { MobileHeroBadges } from "./hero-badges";
 
@@ -11,6 +13,17 @@ const HeroPhoneScreen = lazy(async () => {
   const loaded = await import("./hero-phone-screen");
   return { default: loaded.HeroPhoneScreen };
 });
+
+/*
+ * Below `lg` the quiz chunk starts downloading as soon as this module
+ * evaluates, alongside hydration, instead of only once the phone has mounted.
+ */
+if (
+  typeof window !== "undefined" &&
+  !window.matchMedia(DESKTOP_STAGE_QUERY).matches
+) {
+  void import("./hero-phone-screen");
+}
 
 const FOCUSABLE =
   'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
@@ -48,8 +61,25 @@ function skipSequentialFocus(
   };
 }
 
+/*
+ * A still of the quiz's first screen while the page hydrates and the quiz
+ * chunk loads; the live surface paints over it. Captured screen-only at 2x
+ * the 390 × 841 screen (no island, no clock), so it maps onto it pixel for
+ * pixel. In the clock's place, laid out on the status bar's own grid, a
+ * spinner says the phone is still starting up. A hidden element never fetches
+ * its background, so desktop does not download the still.
+ */
 const blankScreen = (
-  <div aria-hidden="true" className="bg-background size-full" />
+  <div
+    aria-hidden="true"
+    className="bg-background size-full bg-[url(/models/testownik-phone-quiz-preview-light.webp)] bg-size-[390px_841px] bg-no-repeat dark:bg-[url(/models/testownik-phone-quiz-preview-dark.webp)]"
+  >
+    <div className="grid h-[54px] grid-cols-[1fr_126px_1fr] items-center">
+      <span className="justify-self-center pl-2">
+        <LoaderCircleIcon className="text-foreground size-[17px] animate-spin motion-reduce:animate-none" />
+      </span>
+    </div>
+  </div>
 );
 
 /**
