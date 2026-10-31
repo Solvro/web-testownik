@@ -165,5 +165,5 @@ export function perksLead({
   maxDiscount: string;
   savings: string;
 }): string {
-  return `Dołącz do\u00A0${students} studentów, którzy korzystają z\u00A0${offers} zniżek do\u00A0−${maxDiscount}% w\u00A0aplikacji uniperks i\u00A0oszczędzają nawet ${savings}\u00A0zł rocznie.`;
+  return `Dołącz do ponad\u00A0${students} studentów, którzy kupują taniej z\u00A0uniperks. Odkryj ${offers} zniżki do\u00A0−${maxDiscount}% i\u00A0oszczędzaj nawet ${savings}\u00A0zł rocznie.`;
 }

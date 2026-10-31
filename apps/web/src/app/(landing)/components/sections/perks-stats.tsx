@@ -55,8 +55,8 @@ export function PerksStats(): React.JSX.Element {
     const tick = (now: number) => {
       elapsed += lastFrame === undefined ? 0 : now - lastFrame;
       lastFrame = now;
-      const progress = Math.min(elapsed / 1600, 1);
-      const eased = 1 - (1 - progress) ** 3;
+      const progress = Math.min(elapsed / 1800, 1);
+      const eased = 1 - (1 - progress) ** 5;
       setValues(targets.map((target) => Math.round(target * eased)));
       if (progress < 1) {
         frame = requestAnimationFrame(tick);
@@ -116,10 +116,16 @@ export function PerksStats(): React.JSX.Element {
           </dt>
           <dd className="text-[1.375rem] leading-[1.1] font-bold tracking-[-0.035em] whitespace-nowrap tabular-nums lg:text-[2.25rem]">
             <span className="sr-only">
+              {index === 2 ? "do " : ""}
               {format.format(targets[index])}
               {index === 2 ? " zł" : ""}
             </span>
             <span aria-hidden="true">
+              {index === 2 ? (
+                <span className="mr-1 text-[0.55em] font-medium tracking-normal">
+                  do
+                </span>
+              ) : null}
               {format.format(values[index])}
               {index === 2 ? "\u00A0zł" : ""}
             </span>

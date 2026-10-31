@@ -43,7 +43,7 @@ function formatted(
   >,
 ) {
   return {
-    students: numberFormat.format(data.studentsCount),
+    students: `${numberFormat.format(Math.floor(data.studentsCount / 1000))} tys.`,
     offers: numberFormat.format(data.offersCount),
     maxDiscount: numberFormat.format(data.maxDiscountPct),
     savings: numberFormat.format(data.yearlySavingsPln),
@@ -99,7 +99,7 @@ export function Perks(): React.JSX.Element {
             <span
               className={cn(
                 handwritingClassName,
-                "text-[25px] leading-none text-(--perk-muted)",
+                "text-[25px] leading-none text-(--perk-fg)",
               )}
             >
               {PERKS_COPY.eyebrow}
@@ -108,7 +108,7 @@ export function Perks(): React.JSX.Element {
               aria-hidden="true"
               className={cn(
                 handwritingClassName,
-                "text-[28px] leading-none text-(--perk-muted)",
+                "text-[28px] leading-none text-(--perk-fg)",
               )}
             >
               —
@@ -135,7 +135,7 @@ export function Perks(): React.JSX.Element {
         <div
           ref={stackReference}
           aria-hidden="true"
-          className="group/perks relative mx-auto h-[330px] w-full max-w-[318px] lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:h-[30rem] lg:max-w-[34rem] lg:self-center"
+          className="lp-perk-stack relative mx-auto h-[330px] w-full max-w-[318px] lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:h-[30rem] lg:max-w-[34rem] lg:self-center"
         >
           <PerksCards offers={snapshot.offers} />
         </div>

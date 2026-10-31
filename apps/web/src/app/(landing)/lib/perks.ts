@@ -7,7 +7,7 @@ export interface PerksOffer {
   channel: string;
   validUntil?: string;
   limited?: boolean;
-  badge?: { kind: "limited" | "new" | "activations"; value?: number };
+  badge: { kind: "new" } | { kind: "activations"; value: number };
   url: string;
 }
 

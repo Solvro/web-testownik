@@ -807,3 +807,34 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   position: relative;
   min-height: 22rem;
 }
+
+/* Depth interpolates continuously as a card is picked up; no z-index swap. */
+.lp-perk-stack {
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.lp-perk-card {
+  transform: translate3d(0, 0, var(--card-depth)) rotate(var(--card-tilt));
+  transition: transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-perk-card:hover {
+    transform: translate3d(0, -12px, 100px) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-perk-stack {
+    perspective: none;
+  }
+
+  .lp-perk-card {
+    transition: none;
+  }
+
+  .lp-perk-card:hover {
+    transform: translateZ(100px) rotate(var(--card-tilt));
+  }
+}

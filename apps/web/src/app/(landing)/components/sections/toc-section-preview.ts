@@ -313,6 +313,11 @@ function buildClonePeek(
   align: "top" | "center",
 ): HTMLElement {
   const stage = createStage(section.id, layout);
+  // The preview window can be taller than the cloned section.
+  const background = getComputedStyle(section).backgroundColor;
+  if (background !== "rgba(0, 0, 0, 0)" && background !== "transparent") {
+    stage.style.backgroundColor = background;
+  }
   const offset = tocPreviewOffset(
     section.offsetHeight,
     layout.windowHeight,

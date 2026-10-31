@@ -63,9 +63,9 @@ describe("partner stats", () => {
       intersect(true);
     });
     await act(() => vi.advanceTimersByTime(800));
-    expect(numbers(container)[0]).toBeGreaterThan(0);
+    expect(numbers(container)[0]).toBeGreaterThan(snapshot.studentsCount * 0.9);
     expect(numbers(container)[0]).toBeLessThan(snapshot.studentsCount);
-    await act(() => vi.advanceTimersByTime(1000));
+    await act(() => vi.advanceTimersByTime(1200));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount,
       snapshot.offersCount,

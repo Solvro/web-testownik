@@ -26,6 +26,7 @@ export const perks = {
       category: "Technologia",
       channel: "Online",
       validUntil: "2027-03-31",
+      badge: { kind: "new" },
       url: "https://bit.ly/4zcALip",
     },
     {
