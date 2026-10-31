@@ -56,7 +56,8 @@ function toCreatedQuestion(data: CreateQuestionData, order: number): Question {
     order,
     text: data.text,
     explanation: data.explanation ?? "",
-    multiple: data.multiple,
+    type: data.type,
+    open_matching: data.open_matching,
     is_ai_generated: data.is_ai_generated ?? false,
     is_markdown_enabled: true,
     // Nothing remote is loaded inside a preview.
@@ -95,8 +96,8 @@ function applyQuestionUpdate(
     order: question.order,
     image: question.image ?? null,
     answers,
-    multiple:
-      data.multiple ?? answers.filter((answer) => answer.is_correct).length > 1,
+    // An edit keeps the question's type unless it sets one, as in the app.
+    type: data.type ?? question.type,
   };
 }
 

@@ -707,8 +707,8 @@ describe("Quiz editor", () => {
       expect(onSave).toHaveBeenCalledTimes(1);
     });
     expect(
-      onSave.mock.calls[0][0].questions.map((question) => question.multiple),
-    ).toEqual([false, true, true]);
+      onSave.mock.calls[0][0].questions.map((question) => question.type),
+    ).toEqual(["single_choice", "multiple_choice", "multiple_choice"]);
   });
 
   it("reminds about questions without a correct answer once they are left", async () => {
@@ -1096,7 +1096,7 @@ describe("Quiz editor", () => {
     const user = userEvent.setup();
     const onSave = saveMock();
     const quiz = quizFixture(2);
-    quiz.questions[0].multiple = true;
+    quiz.questions[0].type = "multiple_choice";
     quiz.questions[0].answers[1].is_correct = true;
     render(<QuizEditor mode="edit" initialQuiz={quiz} onSave={onSave} />);
     await chooseAllQuestions(user, "Jednokrotny wybór");
@@ -1422,7 +1422,8 @@ describe("Quiz editor", () => {
         order: item.order,
         text: item.text,
         explanation: "",
-        multiple: item.multiple,
+        type: item.type,
+        open_matching: item.open_matching,
         image: null,
         answers: item.answers.map((answer) => ({
           id: answer.id,

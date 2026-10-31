@@ -1,26 +1,29 @@
 "use client";
 
+import { useSelector } from "@tanstack/react-form";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { QuizFormData } from "@testownik/core/quiz/schema";
 import {
   prepareQuestionForSubmission,
-  validateQuestionForm,
+  validateQuizForm,
 } from "@testownik/core/quiz/schema";
 import type {
   Question,
   Quiz,
   QuizWithUserProgress,
 } from "@testownik/core/quiz/types";
-import { ExternalLinkIcon, LoaderCircleIcon, Trash2 } from "lucide-react";
+import { ExternalLinkIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { focusField } from "@/components/quiz/editor/focus-field";
+import { QuestionEditor } from "@/components/quiz/editor/question-editor";
 import {
-  QuestionFormContent,
-  QuestionFormHeader,
-} from "@/components/quiz/editor";
-import type { ImageState } from "@/components/quiz/editor/image";
+  setUploading,
+  useQuizEditorForm,
+} from "@/components/quiz/editor/quiz-editor-form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,10 +40,8 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useImageUpload } from "@/hooks/use-image-upload";
 import { getQuizService } from "@/services";
 
 import {
@@ -56,6 +57,7 @@ interface QuickEditQuestionDialogProps {
   onOpenChange: (open: boolean) => void;
   question: Question;
   quizId: string;
+  /** Takes the edited question instead of saving it to the API. */
   onSaveDraft?: (question: Question) => void;
   onQuestionDeleted?: (
     deletedQuestionId: string,
@@ -81,9 +83,37 @@ function updateCachedQuiz<TQuiz extends Quiz>(
   });
 }
 
+/**
+ * Edits one question with the quiz editor's question card, in a dialog. The
+ * form is created when the dialog opens, so a cancelled edit is forgotten.
+ */
 export function QuickEditQuestionDialog({
   open,
   onOpenChange,
+  ...props
+}: QuickEditQuestionDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        aria-describedby={undefined}
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">
+          Edycja pytania {String(props.question.order)}
+        </DialogTitle>
+        <QuickEditQuestionForm
+          {...props}
+          onClose={() => {
+            onOpenChange(false);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function QuickEditQuestionForm({
   question,
   quizId,
   onSaveDraft,
@@ -91,56 +121,31 @@ export function QuickEditQuestionDialog({
   hideDelete = false,
   hideFullEditor = false,
   minAnswers = 1,
-}: QuickEditQuestionDialogProps) {
+  onClose,
+}: Omit<QuickEditQuestionDialogProps, "open" | "onOpenChange"> & {
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState(question);
-
-  const [isImageUploading, setIsImageUploading] = useState(false);
-  const { upload } = useImageUpload();
-
-  function handleImageChange(state: ImageState) {
-    setFormData((previous) => ({
-      ...previous,
-      image: state.image,
-      image_url: state.imageUrl,
-      image_upload: state.uploadId,
-      image_width: state.width ?? null,
-      image_height: state.height ?? null,
-    }));
-  }
-
-  async function handleUpload(file: File) {
-    setIsImageUploading(true);
-    await upload(
-      file,
-      (url, id, width, height) => {
-        handleImageChange({
-          image: url,
-          uploadId: id,
-          imageUrl: null,
-          width: width ?? null,
-          height: height ?? null,
-        });
-        setIsImageUploading(false);
+  const [uploads, setUploads] = useState(0);
+  const uploadsRef = useRef(0);
+  // The editor's quiz has one question; the title only satisfies the schema.
+  const defaultValues: QuizFormData = {
+    title: "Pytanie",
+    description: "",
+    questions: [
+      {
+        ...question,
+        answers: question.answers.toSorted((a, b) => a.order - b.order),
       },
-      () => {
-        handleImageChange({
-          image: null,
-          uploadId: null,
-          imageUrl: null,
-        });
-        setIsImageUploading(false);
-      },
-    );
-  }
+    ],
+  };
 
-  const { isPending: isSaving, mutateAsync: saveQuestion } = useMutation({
-    mutationFn: async () => {
-      const payload = prepareQuestionForSubmission(formData);
+  const { mutateAsync: saveQuestion } = useMutation({
+    mutationFn: async (value: QuizFormData) => {
+      const payload = prepareQuestionForSubmission(value.questions[0]);
       return await getQuizService().updateQuestion(question.id, payload);
     },
     onSuccess: (updatedQuestion) => {
-      toast.success("Pytanie zaktualizowane");
       updateCachedQuiz<Quiz>(queryClient, quizQueryKey(quizId), (quiz) =>
         replaceQuestionInQuiz(quiz, updatedQuestion),
       );
@@ -149,10 +154,6 @@ export function QuickEditQuestionDialog({
         quizDetailQueryKey(quizId),
         (quiz) => replaceQuestionInQuiz(quiz, updatedQuestion),
       );
-      onOpenChange(false);
-    },
-    onError: () => {
-      toast.error("Nie udało się zaktualizować pytania");
     },
   });
 
@@ -176,143 +177,171 @@ export function QuickEditQuestionDialog({
           }),
       );
       onQuestionDeleted?.(question.id, newCurrentQuestionId);
-      onOpenChange(false);
+      onClose();
     },
     onError: () => {
       toast.error("Nie udało się usunąć pytania");
     },
   });
 
-  const handleSave = async () => {
-    const validation = validateQuestionForm(formData);
-
-    if (!validation.success) {
+  const form = useQuizEditorForm({
+    defaultValues,
+    onInvalid: (value) => {
+      const validation = validateQuizForm(value);
+      if (validation.success) {
+        return;
+      }
+      const answerIndex =
+        validation.path?.[2] === "answers" ? validation.path[3] : undefined;
+      const answer =
+        typeof answerIndex === "number"
+          ? value.questions[0].answers.at(answerIndex)
+          : undefined;
+      focusField(
+        answer === undefined
+          ? `question-text-${question.id}`
+          : `answer-text-${answer.id}`,
+      );
       toast.error(validation.error);
+    },
+    onSave: async (value) => {
+      if (onSaveDraft !== undefined) {
+        onSaveDraft(value.questions[0]);
+        onClose();
+        return value;
+      }
+      try {
+        const saved = await saveQuestion(value);
+        toast.success("Pytanie zaktualizowane");
+        onClose();
+        return { ...value, questions: [saved] };
+      } catch {
+        toast.error("Nie udało się zaktualizować pytania");
+        return null;
+      }
+    },
+  });
+  const isSaving = useSelector(form.atom, (state) => state.isSubmitting);
+
+  function trackUpload(change: number) {
+    uploadsRef.current = Math.max(0, uploadsRef.current + change);
+    setUploads(uploadsRef.current);
+    setUploading(form, uploadsRef.current);
+  }
+
+  async function save() {
+    if (isSaving || uploads > 0) {
       return;
     }
-
-    if (validation.data.answers.length < minAnswers) {
+    if (form.state.values.questions[0].answers.length < minAnswers) {
       toast.error(
-        `Pytanie musi mieć przynajmniej ${minAnswers.toString()} odpowiedzi`,
+        `Pytanie musi mieć przynajmniej ${String(minAnswers)} odpowiedzi`,
       );
       return;
     }
-
-    if (onSaveDraft !== undefined) {
-      onSaveDraft(validation.data);
-      onOpenChange(false);
-      return;
-    }
-
-    await saveQuestion();
-  };
+    await form.handleSubmit();
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="flex flex-col gap-0 sm:max-w-4xl"
-        aria-describedby={undefined}
-      >
-        <DialogHeader className="pr-6">
-          <DialogTitle className="sr-only">Edycja pytania</DialogTitle>
-          <QuestionFormHeader
-            question={formData}
-            onUpdate={(updates) => {
-              setFormData((previous) => ({ ...previous, ...updates }));
-            }}
-            isImageUploading={isImageUploading}
-            onImageChange={handleImageChange}
-            onUpload={handleUpload}
-            hideDelete
-          />
-        </DialogHeader>
-
-        <div className="-mx-6 -my-1 flex-1 overflow-y-auto px-6 py-1">
-          <QuestionFormContent
-            question={formData}
-            onUpdate={(updates) => {
-              setFormData((previous) => ({ ...previous, ...updates }));
-            }}
-            isImageUploading={isImageUploading}
-            onImageChange={handleImageChange}
-            onUpload={handleUpload}
-            minAnswers={minAnswers}
-          />
-        </div>
-
-        <DialogFooter className="flex items-center justify-between sm:justify-between">
-          <div className="flex items-center gap-2">
-            {hideDelete ? null : (
-              <AlertDialog>
-                <AlertDialogTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 />
-                      Usuń pytanie
-                    </Button>
-                  }
-                ></AlertDialogTrigger>
-
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Czy na pewno chcesz usunąć to pytanie?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tej operacji nie można cofnąć.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={async () => {
-                        await deleteQuestion();
-                      }}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? "Usuwanie..." : "Usuń"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {hideFullEditor ? null : (
-              <Button
-                variant="ghost"
-                nativeButton={false}
+    <>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <QuestionEditor
+          embedded
+          form={form}
+          index={0}
+          questionId={question.id}
+          count={1}
+          number={String(question.order)}
+          minAnswers={minAnswers}
+          onNext={() => {
+            void save();
+          }}
+          onAdd={() => {
+            void save();
+          }}
+          onUploadStart={() => {
+            trackUpload(1);
+          }}
+          onUploadEnd={() => {
+            trackUpload(-1);
+          }}
+        />
+      </div>
+      <DialogFooter className="border-border mx-0 mb-0 flex-row flex-wrap items-center justify-between gap-2 border-t px-4 py-3 sm:justify-between">
+        <div className="flex items-center gap-1">
+          {hideDelete ? null : (
+            <AlertDialog>
+              <AlertDialogTrigger
                 render={
-                  <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
-                    Pełny edytor <ExternalLinkIcon className="ml-2 size-4" />
-                  </Link>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    disabled={isSaving || isDeleting}
+                  >
+                    <Trash2Icon />
+                    Usuń pytanie
+                  </Button>
                 }
-              ></Button>
-            )}
-          </div>
-          <div className="flex gap-2">
+              />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Czy na pewno chcesz usunąć to pytanie?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tej operacji nie można cofnąć.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      await deleteQuestion();
+                    }}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Usuwanie..." : "Usuń"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          {hideFullEditor ? null : (
             <Button
-              variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-              }}
-            >
-              Anuluj
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Zapisywanie...
-                </>
-              ) : (
-                "Zapisz zmiany"
-              )}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              variant="ghost"
+              nativeButton={false}
+              render={
+                <Link href={`/edit-quiz/${quizId}#question-${question.id}`}>
+                  Pełny edytor
+                  <ExternalLinkIcon />
+                </Link>
+              }
+            />
+          )}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Anuluj
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              void save();
+            }}
+            disabled={isSaving || uploads > 0}
+          >
+            {isSaving ? (
+              <>
+                <Loader2Icon className="animate-spin" />
+                Zapisywanie...
+              </>
+            ) : (
+              "Zapisz zmiany"
+            )}
+          </Button>
+        </div>
+      </DialogFooter>
+    </>
   );
 }

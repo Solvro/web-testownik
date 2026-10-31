@@ -195,7 +195,7 @@ export function quizPreviewReducer(
       const question = findQuestion(state, state.currentQuestionId);
       // As on the quiz page: a single-choice question keeps one answer.
       const selectedAnswers =
-        question?.multiple === false
+        question?.type === "single_choice"
           ? action.answers.slice(-1)
           : action.answers;
       return { ...state, selectedAnswers };

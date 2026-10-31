@@ -12,7 +12,8 @@ const makeQuestion = (id: string): Question => ({
   id,
   order: 1,
   text: id,
-  multiple: false,
+  type: "single_choice",
+  open_matching: "exact",
   answers: [],
 });
 

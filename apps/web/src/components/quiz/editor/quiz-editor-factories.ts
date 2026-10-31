@@ -2,6 +2,7 @@ import type {
   AnswerFormData,
   QuestionFormData,
 } from "@testownik/core/quiz/schema";
+import type { QuestionType } from "@testownik/core/quiz/types";
 
 export function createAnswer(order: number): AnswerFormData {
   return {
@@ -19,13 +20,14 @@ export function createAnswer(order: number): AnswerFormData {
 
 export function createQuestion(
   order: number,
-  multiple = false,
+  type: QuestionType = "single_choice",
 ): QuestionFormData {
   return {
     id: crypto.randomUUID(),
     order,
     text: "",
-    multiple,
+    type,
+    open_matching: "exact",
     is_markdown_enabled: true,
     answers: [createAnswer(1), createAnswer(2)],
     image: null,

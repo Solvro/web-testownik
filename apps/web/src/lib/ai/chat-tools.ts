@@ -174,7 +174,8 @@ export function buildQuizTools(
               order: q.order,
               text: truncateQuestionPreview(q.text, limits.listPreviewLength),
               answer_count: q.answers.length,
-              multiple: q.multiple,
+              type: q.type,
+              open_matching: q.open_matching,
               has_explanation:
                 q.explanation !== undefined && q.explanation.trim() !== "",
             })),
@@ -205,7 +206,8 @@ export function buildQuizTools(
               question.explanation === undefined
                 ? null
                 : truncate(question.explanation, limits.maxExplanationLength),
-            multiple: question.multiple,
+            type: question.type,
+            open_matching: question.open_matching,
             answers: question.answers.slice(0, limits.maxAnswers).map((a) => ({
               text: truncate(a.text, limits.maxAnswerTextLength),
               is_correct: a.is_correct,

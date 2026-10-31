@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { ClipboardEvent } from "react";
@@ -66,9 +72,39 @@ it("applies block formats from the menu", async () => {
   textarea.setSelectionRange(0, 9);
   await user.click(screen.getByRole("button", { name: "Więcej formatowania" }));
   await user.click(
-    await screen.findByRole("menuitem", { name: "Lista numerowana" }),
+    await screen.findByRole("menuitemcheckbox", { name: "Lista numerowana" }),
   );
-  expect(textarea).toHaveValue("1. jeden\n2. dwa");
+  // The format is applied once the menu has closed.
+  await waitFor(() => {
+    expect(textarea).toHaveValue("1. jeden\n2. dwa");
+  });
+  expect(textarea).toHaveFocus();
+});
+
+it("keeps showing the source while the formatting menu is open", async () => {
+  const user = userEvent.setup();
+  const { container } = render(<Editor initialValue="**Róża**" />);
+  const textarea = screen.getByRole<HTMLTextAreaElement>("textbox", {
+    name: "Odpowiedź 1",
+  });
+  await user.click(textarea);
+  textarea.setSelectionRange(0, 8);
+  await user.click(screen.getByRole("button", { name: "Więcej formatowania" }));
+  // The browser moves focus into the open menu; jsdom needs a hand.
+  const item = await screen.findByRole("menuitemcheckbox", { name: "Cytat" });
+  item.focus();
+  expect(textarea).not.toHaveFocus();
+  expect(container.querySelector("strong")).toBeNull();
+  expect(textarea).toHaveValue("**Róża**");
+
+  await user.keyboard("{Escape}");
+  await waitFor(() => {
+    expect(textarea).toHaveFocus();
+  });
+  expect(container.querySelector("strong")).toBeNull();
+
+  await user.click(document.body);
+  expect(container.querySelector("strong")).toHaveTextContent("Róża");
 });
 
 it("supports formatting shortcuts and selects the link address", async () => {
@@ -212,5 +248,9 @@ it("exposes invalid and disabled field states", () => {
     <MarkdownEditor value="" onChange={vi.fn()} label="Treść" disabled />,
   );
   expect(screen.getByRole("textbox", { name: "Treść" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Pogrubienie" })).toBeDisabled();
+  // Toolbar buttons stay focusable while disabled.
+  expect(screen.getByRole("button", { name: "Pogrubienie" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
 });

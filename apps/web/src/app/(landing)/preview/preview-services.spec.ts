@@ -24,7 +24,8 @@ function createEditor(): PreviewQuizEditor & { current: Question[] } {
 const generated = (text: string) => ({
   text,
   explanation: "Bo tak.",
-  multiple: false,
+  type: "single_choice" as const,
+  open_matching: "exact" as const,
   is_ai_generated: true,
   answers: [
     { text: "tak", is_correct: true },
@@ -96,7 +97,7 @@ describe("preview quiz service", () => {
       original.answers.slice(0, 2).map(({ id }) => id),
     );
     expect(updated.answers[2].id).not.toBe("");
-    expect(updated.multiple).toBe(true);
+    expect(updated.type).toBe(original.type);
     expect(editor.update).toHaveBeenCalledWith(updated);
 
     await expect(quiz.updateQuestion("nope", { text: "x" })).rejects.toThrow(

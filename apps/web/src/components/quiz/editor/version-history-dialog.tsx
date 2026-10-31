@@ -44,7 +44,8 @@ function laterChange(
   const same =
     now.text === question.text &&
     (now.explanation ?? "") === question.explanation &&
-    now.multiple === question.multiple &&
+    now.type === question.type &&
+    now.open_matching === question.open_matching &&
     now.answers.length === question.answers.length &&
     now.answers.every((answer, index) => {
       const old = question.answers.at(index);

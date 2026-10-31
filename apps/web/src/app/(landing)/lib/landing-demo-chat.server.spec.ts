@@ -106,7 +106,8 @@ function question(order: number, text = `Pytanie ${order.toString()}?`) {
     id: `q-${order.toString()}`,
     order,
     text,
-    multiple: false,
+    type: "single_choice",
+    open_matching: "exact",
     answers: [
       {
         id: `q-${order.toString()}-a`,

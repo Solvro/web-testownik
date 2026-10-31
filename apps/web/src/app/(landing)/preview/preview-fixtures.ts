@@ -39,7 +39,8 @@ export const PREVIEW_QUESTION: Question = {
   id: "q-83",
   order: 83,
   text: "Która strategia najlepiej pomaga trwale zapamiętać materiał przed egzaminem?",
-  multiple: false,
+  type: "single_choice",
+  open_matching: "exact",
   answers: [
     {
       id: "a-1",
@@ -96,7 +97,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-12",
     order: 12,
     text: "Jak długa powinna być krótka przerwa po 25 minutach nauki w technice Pomodoro?",
-    multiple: false,
+    type: "single_choice",
+    open_matching: "exact",
     answers: answers("q-12", [
       ["około 5 minut", true],
       ["co najmniej pół godziny", false],
@@ -108,7 +110,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-27",
     order: 27,
     text: "Które z poniższych metod to aktywne przypominanie?",
-    multiple: true,
+    type: "multiple_choice",
+    open_matching: "exact",
     answers: answers("q-27", [
       ["fiszki rozwiązywane bez zaglądania na odwrót", true],
       ["tłumaczenie tematu koledze z pamięci", true],
@@ -121,7 +124,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-41",
     order: 41,
     text: "Na czym polega efekt rozłożenia nauki w czasie?",
-    multiple: false,
+    type: "single_choice",
+    open_matching: "exact",
     answers: answers("q-41", [
       ["kilka krótszych sesji daje trwalszą wiedzę niż jedna długa", true],
       ["im dłuższa jednorazowa sesja, tym lepiej", false],
@@ -133,7 +137,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-56",
     order: 56,
     text: "Co pomaga wykryć iluzję znajomości materiału?",
-    multiple: true,
+    type: "multiple_choice",
+    open_matching: "exact",
     answers: answers("q-56", [
       ["test z pamięci bez notatek", true],
       ["wyjaśnienie zagadnienia własnymi słowami", true],
@@ -148,7 +153,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-97",
     order: 97,
     text: "Kiedy najlepiej zaplanować pierwszą powtórkę nowego materiału?",
-    multiple: false,
+    type: "single_choice",
+    open_matching: "exact",
     answers: answers("q-97", [
       ["tego samego lub następnego dnia", true],
       ["tydzień przed egzaminem", false],
@@ -160,7 +166,8 @@ export const PREVIEW_QUESTIONS: Question[] = [
     id: "q-104",
     order: 104,
     text: "Co warto zrobić z pytaniem, na które odpowiedziałeś błędnie?",
-    multiple: true,
+    type: "multiple_choice",
+    open_matching: "exact",
     answers: answers("q-104", [
       ["przeczytać wyjaśnienie i poprawną odpowiedź", true],
       ["wrócić do niego w kolejnej sesji", true],

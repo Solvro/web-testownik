@@ -1,3 +1,5 @@
+import { isQuestionType } from "@testownik/core/quiz/question";
+
 const ALLOWED_QUIZ_KEYS = [
   "id",
   "title",
@@ -21,7 +23,9 @@ const ALLOWED_QUESTION_KEYS = [
   "order",
   "text",
   "explanation",
-  "multiple",
+  "multiple", // Older exports; "type" replaces it.
+  "type",
+  "open_matching",
   "is_ai_generated",
   "image", // Also allowed for backward compatibility
   "image_url",
@@ -100,6 +104,17 @@ export const validateQuiz = (input: unknown): string | null => {
 
     if (q.multiple !== undefined && typeof q.multiple !== "boolean") {
       return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "multiple" (wielokrotny wybór).`;
+    }
+
+    if (q.type !== undefined && !isQuestionType(q.type)) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "type" (single_choice, multiple_choice, true_false lub open).`;
+    }
+    if (
+      q.open_matching !== undefined &&
+      q.open_matching !== "exact" &&
+      q.open_matching !== "similar"
+    ) {
+      return `Pytanie nr ${String(questionIndex + 1)} musi mieć prawidłowe pole "open_matching" (exact lub similar).`;
     }
 
     if (q.order !== undefined && typeof q.order !== "number") {

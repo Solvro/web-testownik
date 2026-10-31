@@ -7,7 +7,7 @@ import type { QuizService } from "@/services/quiz.service";
 import { STORAGE_KEYS } from "@/services/types";
 import type { LegacyQuiz } from "@/types/quiz-legacy";
 
-import { migrateLegacyQuiz } from "./migration";
+import { migrateLegacyQuiz, normalizeQuestionTypeFields } from "./migration";
 
 export interface LegacyGuestQuizMigrationResult {
   migratedCount: number;
@@ -43,7 +43,7 @@ function normalizeQuizForSubmission(quiz: Quiz) {
       order: question.order,
       text: question.text,
       explanation: question.explanation,
-      multiple: question.multiple,
+      ...normalizeQuestionTypeFields(question),
       image: question.image ?? null,
       image_url: question.image_url ?? question.image ?? null,
       image_upload: question.image_upload ?? null,
