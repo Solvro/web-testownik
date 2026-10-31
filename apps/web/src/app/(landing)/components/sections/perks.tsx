@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
-import snapshot from "../../data/perks";
+import { perks as snapshot } from "../../data/perks";
 import type { PerksData } from "../../lib/perks";
 import { handwritingClassName } from "../ui/handwriting";
 import { PerksStats } from "./perks-stats";

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import snapshot from "../../data/perks";
+import { perks as snapshot } from "../../data/perks";
 import { PERKS_COPY } from "../landing-content";
 
 const format = new Intl.NumberFormat("pl-PL");
@@ -81,11 +81,13 @@ export function PerksStats(): React.JSX.Element {
     };
     const observer = new IntersectionObserver(
       ([entry]) => {
-        visible = entry.isIntersecting;
+        visible = entry.isIntersecting && entry.intersectionRatio >= 0.5;
         start();
       },
       { threshold: 0.5 },
     );
+    // State updates respond to viewport events, not effect initialization.
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-initialize-state
     observer.observe(node);
     document.addEventListener("visibilitychange", start);
     reducedMotion.addEventListener("change", start);
@@ -105,7 +107,7 @@ export function PerksStats(): React.JSX.Element {
   return (
     <dl
       ref={reference}
-      className="grid grid-cols-3 gap-4 border-t border-(--perk-border) pt-6"
+      className="grid grid-cols-3 items-start gap-4 border-t border-(--perk-border) pt-6"
     >
       {captions.map((caption, index) => (
         <div key={caption} className="flex min-w-0 flex-col-reverse gap-1">

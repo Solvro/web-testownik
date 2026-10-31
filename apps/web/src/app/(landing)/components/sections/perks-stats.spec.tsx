@@ -1,10 +1,10 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import snapshot from "../../data/perks";
+import { perks as snapshot } from "../../data/perks";
 import { PerksStats } from "./perks-stats";
 
-let intersect: (visible: boolean) => void;
+let intersect: (visible: boolean, ratio?: number) => void;
 let reduced = false;
 
 beforeEach(() => {
@@ -19,9 +19,14 @@ beforeEach(() => {
     "IntersectionObserver",
     class {
       constructor(callback: IntersectionObserverCallback) {
-        intersect = (visible) => {
+        intersect = (visible, ratio = visible ? 1 : 0) => {
           callback(
-            [{ isIntersecting: visible } as IntersectionObserverEntry],
+            [
+              {
+                isIntersecting: visible,
+                intersectionRatio: ratio,
+              } as IntersectionObserverEntry,
+            ],
             this as unknown as IntersectionObserver,
           );
         };
@@ -40,34 +45,39 @@ afterEach(() => {
 
 function numbers(container: HTMLElement) {
   return [...container.querySelectorAll("dd [aria-hidden]")].map((node) =>
-    Number(node.textContent?.replaceAll(/\D/g, "")),
+    Number(node.textContent.replaceAll(/\D/g, "")),
   );
 }
 
 describe("partner stats", () => {
-  it("counts only on entering, increments at separate rates, and pauses offscreen", () => {
+  it("counts only on entering, increments at separate rates, and pauses offscreen", async () => {
     const { container } = render(<PerksStats />);
-    act(() => vi.advanceTimersByTime(5000));
+    await act(() => vi.advanceTimersByTime(5000));
+    expect(numbers(container)).toEqual([0, 0, 0]);
+    act(() => {
+      intersect(true, 0.1);
+    });
+    await act(() => vi.advanceTimersByTime(2000));
     expect(numbers(container)).toEqual([0, 0, 0]);
     act(() => {
       intersect(true);
     });
-    act(() => vi.advanceTimersByTime(800));
+    await act(() => vi.advanceTimersByTime(800));
     expect(numbers(container)[0]).toBeGreaterThan(0);
     expect(numbers(container)[0]).toBeLessThan(snapshot.studentsCount);
-    act(() => vi.advanceTimersByTime(1000));
+    await act(() => vi.advanceTimersByTime(1000));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount,
       snapshot.offersCount,
       2000,
     ]);
-    act(() => vi.advanceTimersByTime(4000));
+    await act(() => vi.advanceTimersByTime(4000));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount + 1,
       snapshot.offersCount,
       2000,
     ]);
-    act(() => vi.advanceTimersByTime(24_000));
+    await act(() => vi.advanceTimersByTime(24_000));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount + 7,
       snapshot.offersCount + 1,
@@ -76,7 +86,7 @@ describe("partner stats", () => {
     act(() => {
       intersect(false);
     });
-    act(() => vi.advanceTimersByTime(60_000));
+    await act(() => vi.advanceTimersByTime(60_000));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount + 7,
       snapshot.offersCount + 1,
@@ -85,17 +95,17 @@ describe("partner stats", () => {
     act(() => {
       intersect(true);
     });
-    act(() => vi.advanceTimersByTime(4000));
+    await act(() => vi.advanceTimersByTime(4000));
     expect(numbers(container)[0]).toBe(snapshot.studentsCount + 8);
   });
 
-  it("shows fixed base values with reduced motion and clears work on unmount", () => {
+  it("shows fixed base values with reduced motion and clears work on unmount", async () => {
     reduced = true;
     const { container, unmount } = render(<PerksStats />);
     act(() => {
       intersect(true);
     });
-    act(() => vi.advanceTimersByTime(60_000));
+    await act(() => vi.advanceTimersByTime(60_000));
     expect(numbers(container)).toEqual([
       snapshot.studentsCount,
       snapshot.offersCount,

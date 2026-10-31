@@ -1,6 +1,6 @@
 import type { PerksData, PerksOffer } from "../lib/perks";
 
-const perks = {
+export const perks = {
   studentsCount: 563_760,
   offersCount: 293,
   maxDiscountPct: 50,
@@ -41,5 +41,3 @@ const perks = {
     },
   ],
 } as const satisfies PerksData & { offers: readonly PerksOffer[] };
-
-export default perks;
