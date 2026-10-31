@@ -28,7 +28,7 @@ export const TEAM_MEMBERS = [
     name: "Michał Golisz",
     team: "Product",
     role: "Project Manager",
-    active: true,
+    active: false,
     github: "MichalGolisz",
   },
   {
@@ -77,21 +77,21 @@ export const TEAM_MEMBERS = [
     name: "Tymon Jędryczka",
     team: "Frontend",
     role: "Developer",
-    active: true,
+    active: false,
     github: "jedryczkatymon",
   },
   {
     name: "Bartosz Fabianowski",
     team: "Frontend",
     role: "Developer",
-    active: true,
+    active: false,
     github: "BFabianowski",
   },
   {
     name: "Jakub Kuflik",
     team: "Frontend",
     role: "Developer",
-    active: true,
+    active: false,
     github: "Qufel",
   },
   {
@@ -112,7 +112,7 @@ export const TEAM_MEMBERS = [
     name: "Maja Maciejewska",
     team: "UX/UI",
     role: "Designer",
-    active: true,
+    active: false,
     github: "maja18108",
   },
   {
@@ -134,6 +134,7 @@ export const TEAM_MEMBERS = [
     team: "AI/ML",
     role: "Developer",
     active: true,
+    github: "Patmiko",
   },
   {
     name: "Marvin Ruciński",
