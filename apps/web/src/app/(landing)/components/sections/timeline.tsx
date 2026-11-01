@@ -166,7 +166,7 @@ export function Timeline({
 
     const paint = (): void => {
       frame = 0;
-      const length = Math.max(track.scrollHeight - INK_TOP, 1);
+      const length = Math.max(track.clientHeight - INK_TOP, 1);
       setInkLength((current) =>
         Math.abs(current - length) < 1 ? current : length,
       );
