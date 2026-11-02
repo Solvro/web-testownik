@@ -60,9 +60,16 @@ describe("partner stats", () => {
       {} as IntersectionObserver,
     );
     expect(disconnect).toHaveBeenCalledOnce();
+    // A frame timestamp can precede the observer callback's performance.now().
+    tick(-16);
+    expect(displayedValues(container)).toEqual(["0", "0", "0"]);
+    tick(0);
+    expect(displayedValues(container)).toEqual(["0", "0", "0"]);
     tick(600);
     expect(displayedValues(container)).toEqual(["437500", "219", "1750"]);
     tick(1200);
+    expect(displayedValues(container)).toEqual(["500000", "250", "2000"]);
+    tick(1500);
     expect(displayedValues(container)).toEqual(["500000", "250", "2000"]);
     unmount();
     expect(cancel).toHaveBeenCalledWith(1);

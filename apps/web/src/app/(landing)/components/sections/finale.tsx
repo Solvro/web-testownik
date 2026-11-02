@@ -110,7 +110,7 @@ export function Finale({
       <footer
         className={cn(
           monoLabelVariants({ size: "xs" }),
-          "relative mt-16 flex w-full flex-col justify-between gap-4 sm:flex-row",
+          "relative mt-16 flex w-full flex-col justify-between gap-4 sm:flex-row sm:flex-wrap",
         )}
       >
         <span>TESTOWNIK © {new Date().getFullYear()}</span>
@@ -136,6 +136,7 @@ export function Finale({
         >
           PRYWATNOŚĆ
         </Link>
+        <span className="w-full normal-case">designed by Maksym Tarasiuk</span>
       </footer>
     </section>
   );

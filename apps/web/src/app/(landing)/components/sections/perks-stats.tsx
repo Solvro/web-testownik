@@ -48,7 +48,7 @@ export function PerksStats(): React.JSX.Element {
         observer.disconnect();
         const start = performance.now();
         const tick = (now: number): void => {
-          const progress = Math.min((now - start) / 1200, 1);
+          const progress = Math.max(0, Math.min((now - start) / 1200, 1));
           const eased = 1 - (1 - progress) ** 3;
           for (const [index, counter] of counters.entries()) {
             counter.textContent = format.format(
