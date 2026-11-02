@@ -110,7 +110,7 @@ export function Finale({
       <footer
         className={cn(
           monoLabelVariants({ size: "xs" }),
-          "relative mt-16 flex w-full flex-col justify-between gap-4 sm:flex-row sm:flex-wrap",
+          "relative mt-16 flex w-full flex-col justify-between gap-4 sm:flex-row",
         )}
       >
         <span>TESTOWNIK © {new Date().getFullYear()}</span>
@@ -125,7 +125,16 @@ export function Finale({
           >
             Antoni Czaplicki
           </a>{" "}
-          · KN SOLVRO
+          · KN SOLVRO · DESIGN BY{" "}
+          <a
+            href="https://github.com/maks1u"
+            className={cn(
+              "inline-flex min-h-6 items-center rounded-sm",
+              FOCUS_RING,
+            )}
+          >
+            Maksym Tarasiuk
+          </a>
         </span>
         <Link
           href="/privacy-policy"
@@ -136,7 +145,6 @@ export function Finale({
         >
           PRYWATNOŚĆ
         </Link>
-        <span className="w-full normal-case">designed by Maksym Tarasiuk</span>
       </footer>
     </section>
   );

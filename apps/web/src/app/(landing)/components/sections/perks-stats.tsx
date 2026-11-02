@@ -7,12 +7,21 @@ import { PERKS_COPY } from "../landing-content";
 
 const format = new Intl.NumberFormat("pl-PL");
 const stats = [
-  { value: snapshot.studentsCount, caption: PERKS_COPY.studentsCaption },
+  {
+    value: snapshot.studentsCount,
+    start: 100_000,
+    caption: PERKS_COPY.studentsCaption,
+  },
   {
     value: snapshot.offersCount,
+    start: 100,
     caption: PERKS_COPY.offersCaption(String(snapshot.maxDiscountPct)),
   },
-  { value: snapshot.yearlySavingsPln, caption: PERKS_COPY.savingsCaption },
+  {
+    value: snapshot.yearlySavingsPln,
+    start: 1000,
+    caption: PERKS_COPY.savingsCaption,
+  },
 ];
 
 export function PerksStats(): React.JSX.Element {
@@ -37,8 +46,8 @@ export function PerksStats(): React.JSX.Element {
     if (motion.matches || typeof IntersectionObserver === "undefined") {
       return;
     }
-    for (const counter of counters) {
-      counter.textContent = "0";
+    for (const [index, counter] of counters.entries()) {
+      counter.textContent = format.format(stats[index].start);
     }
     const observer = new IntersectionObserver(
       (entries) => {
@@ -51,8 +60,9 @@ export function PerksStats(): React.JSX.Element {
           const progress = Math.max(0, Math.min((now - start) / 1200, 1));
           const eased = 1 - (1 - progress) ** 3;
           for (const [index, counter] of counters.entries()) {
+            const { start: initial, value } = stats[index];
             counter.textContent = format.format(
-              Math.round(stats[index].value * eased),
+              Math.round(initial + (value - initial) * eased),
             );
           }
           if (progress < 1) {

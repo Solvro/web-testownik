@@ -28,7 +28,7 @@ describe("partner stats", () => {
     ).toEqual(["studentów", "ofert do\u00A0−50%", "oszczędności rocznie"]);
   });
 
-  it("counts from zero once visible, reaches exact totals, and cancels on unmount", () => {
+  it("counts from the requested starting values, reaches exact totals, and cancels on unmount", () => {
     let reveal: IntersectionObserverCallback = vi.fn();
     const disconnect = vi.fn();
     vi.stubGlobal(
@@ -53,7 +53,7 @@ describe("partner stats", () => {
     vi.stubGlobal("cancelAnimationFrame", cancel);
     vi.spyOn(performance, "now").mockReturnValue(0);
     const { container, unmount } = render(<PerksStats />);
-    expect(displayedValues(container)).toEqual(["0", "0", "0"]);
+    expect(displayedValues(container)).toEqual(["100000", "100", "1000"]);
     expect(requestAnimationFrame).not.toHaveBeenCalled();
     reveal(
       [{ isIntersecting: true }] as IntersectionObserverEntry[],
@@ -62,11 +62,11 @@ describe("partner stats", () => {
     expect(disconnect).toHaveBeenCalledOnce();
     // A frame timestamp can precede the observer callback's performance.now().
     tick(-16);
-    expect(displayedValues(container)).toEqual(["0", "0", "0"]);
+    expect(displayedValues(container)).toEqual(["100000", "100", "1000"]);
     tick(0);
-    expect(displayedValues(container)).toEqual(["0", "0", "0"]);
+    expect(displayedValues(container)).toEqual(["100000", "100", "1000"]);
     tick(600);
-    expect(displayedValues(container)).toEqual(["437500", "219", "1750"]);
+    expect(displayedValues(container)).toEqual(["450000", "231", "1875"]);
     tick(1200);
     expect(displayedValues(container)).toEqual(["500000", "250", "2000"]);
     tick(1500);
