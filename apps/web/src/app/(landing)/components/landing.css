@@ -878,6 +878,17 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
     opacity 350ms ease;
 }
 
+/* Preview animations are disabled; render the cards in their finished pose. */
+.lp-toc-preview-stage .lp-perk-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.lp-toc-preview-stage .lp-perk-cover-card {
+  opacity: 1;
+  transform: var(--coverflow-rest, none);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .lp-perk-stack:has(.lp-perk-card:hover)
     .lp-perk-card:not(:hover)

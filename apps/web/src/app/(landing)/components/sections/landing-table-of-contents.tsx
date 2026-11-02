@@ -71,7 +71,6 @@ export function LandingTableOfContents(): React.JSX.Element {
   const [previewTop, setPreviewTop] = useState(0);
   const [previewLeft, setPreviewLeft] = useState(0);
   const [previewsEnabled, setPreviewsEnabled] = useState(false);
-  a;
   const placePreview = useCallback((anchor: HTMLElement): void => {
     const linkRect = anchor.getBoundingClientRect();
     const navRect = navigationReference.current?.getBoundingClientRect();

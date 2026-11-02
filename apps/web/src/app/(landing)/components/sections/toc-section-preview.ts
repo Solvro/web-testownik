@@ -328,6 +328,12 @@ function buildClonePeek(
   neutralizeTree(clone);
   dropUncloneableMedia(clone);
   fillWordmarks(clone);
+  // A peek always shows the final count, even before the live reveal starts.
+  for (const counter of clone.querySelectorAll<HTMLElement>(
+    "[data-perk-count]",
+  )) {
+    counter.textContent = counter.dataset.perkCount ?? "";
+  }
   clone.style.position = "relative";
   clone.style.inset = "auto";
   // The stage is already the layout width, so the section's own width and
