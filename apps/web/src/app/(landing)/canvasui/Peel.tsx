@@ -79,11 +79,7 @@ function createCanvasResizeObserver(onResize: () => void) {
 }
 
 type HtmlInCanvasContext = CanvasRenderingContext2D & {
-  drawElementImage: (
-    element: Element,
-    x: number,
-    y: number,
-  ) => DOMMatrix | void;
+  drawElementImage(element: Element, x: number, y: number): DOMMatrix | void;
 };
 
 type HtmlInCanvasElement = HTMLCanvasElement & {
