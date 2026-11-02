@@ -133,8 +133,9 @@ bounds (500 000+ students and 250+ offers), with no simulated live increments.
 Card backgrounds are local
 AI-generated photos with blur fading from 0 px at the top to 3 px at the bottom,
 a dark-to-transparent gradient, and frosted badges. Cards
-lift through a shared 3D perspective on hover, revealing their full content
-without discrete z-index swaps. Savings use an upper bound ("do 2000 zł"); the
+deal outward from a central stack once half the deck scrolls into view.
+On fine-pointer hover, the selected card shifts slightly inward and grows while the others
+fade and soften. Reduced motion keeps the reveal to a fade. Savings use an upper bound ("do 2000 zł"); the
 lead rounds the student count down to thousands with "ponad". CTAs go
 through `/go/uniperks?p=<placement>`, which counts the click in Umami and
 redirects to `PERKS_PARTNER_URL`.

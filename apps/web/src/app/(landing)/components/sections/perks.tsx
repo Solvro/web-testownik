@@ -69,6 +69,9 @@ export function Perks(): React.JSX.Element {
     }
     const observer = new IntersectionObserver(
       (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          cards.dataset.revealed = "true";
+        }
         if (
           entries.some((entry) => entry.isIntersecting) &&
           trackUmamiEvent("perks-view", { variant: PERKS_VARIANT })

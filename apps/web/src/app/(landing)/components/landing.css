@@ -796,33 +796,149 @@ body:has([data-landing-page]) #container > [data-sonner-toaster] {
   min-height: 22rem;
 }
 
-/* Depth interpolates continuously as a card is picked up; no z-index swap. */
+/* Animate depth so cards settle back into the deck without a z-index snap. */
 .lp-perk-stack {
+  container-type: inline-size;
   perspective: 1400px;
   transform-style: preserve-3d;
 }
 
 .lp-perk-card {
-  transform: translate3d(0, 0, var(--card-depth)) rotate(var(--card-tilt));
-  transition: transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+  transform: translateZ(0);
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-perk-card:nth-child(2) {
+  transform: translateZ(12px);
+}
+
+.lp-perk-card:nth-child(3) {
+  transform: translateZ(24px);
+}
+
+[data-revealed="true"] .lp-perk-card .lp-perk-face {
+  pointer-events: auto;
+}
+
+.lp-perk-reveal {
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(calc(-1 * var(--card-x)), calc(-1 * var(--card-y)))
+    rotate(calc(-1 * var(--card-tilt))) scale(0.95);
+}
+
+[data-revealed="true"] .lp-perk-reveal {
+  animation: lp-perk-deal 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.lp-perk-card:nth-child(2) .lp-perk-reveal {
+  animation-delay: 75ms;
+}
+
+.lp-perk-card:nth-child(3) .lp-perk-reveal {
+  animation-delay: 150ms;
+}
+
+@keyframes lp-perk-deal {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-perk-cover-card {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+[data-revealed="true"] .lp-perk-cover-card {
+  animation: lp-perk-cover-deal 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.lp-perk-cover-card:nth-child(2) {
+  animation-delay: 75ms;
+}
+
+.lp-perk-cover-card:nth-child(3) {
+  animation-delay: 150ms;
+}
+
+@keyframes lp-perk-cover-deal {
+  to {
+    opacity: 1;
+    transform: var(--coverflow-rest, none);
+  }
+}
+
+.lp-perk-motion {
+  transform: rotate(var(--card-tilt));
+  transition:
+    transform 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 350ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .lp-perk-card:hover {
-    transform: translate3d(0, -12px, 100px) rotate(0deg);
+  .lp-perk-stack:has(.lp-perk-card:hover)
+    .lp-perk-card:not(:hover)
+    .lp-perk-motion {
+    opacity: 0.45;
+  }
+
+  .lp-perk-face::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--perk-bg);
+    content: "";
+    opacity: 0;
+    transition: opacity 350ms ease;
+  }
+
+  .lp-perk-stack:has(.lp-perk-card:hover)
+    .lp-perk-card:not(:hover)
+    .lp-perk-face::after {
+    opacity: 0.2;
+  }
+
+  .lp-perk-stack .lp-perk-card:hover {
+    transform: translateZ(100px);
+  }
+
+  [data-revealed="true"] .lp-perk-card:hover .lp-perk-motion {
+    transform: translate(calc(-0.2 * var(--card-x)), calc(-0.2 * var(--card-y)))
+      rotate(calc(0.5 * var(--card-tilt))) scale(1.045);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-perk-stack {
-    perspective: none;
-  }
-
   .lp-perk-card {
     transition: none;
   }
 
-  .lp-perk-card:hover {
-    transform: translateZ(100px) rotate(var(--card-tilt));
+  .lp-perk-reveal {
+    transform: none;
+  }
+
+  [data-revealed="true"] .lp-perk-card .lp-perk-reveal {
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+
+  .lp-perk-cover-card {
+    transform: var(--coverflow-rest, none);
+  }
+
+  [data-revealed="true"] .lp-perk-cover-card {
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+
+  .lp-perk-motion {
+    transition: opacity 200ms ease;
+  }
+
+  [data-revealed="true"] .lp-perk-card:hover .lp-perk-motion {
+    transform: rotate(var(--card-tilt));
   }
 }

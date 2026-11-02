@@ -41,9 +41,9 @@ function formatDate(isoDate: string): string {
 }
 
 const CARD_PLACEMENT = [
-  "top-0 right-0 [--card-tilt:5deg] [--card-depth:0px]",
-  "top-[5.5rem] left-0 [--card-tilt:-6deg] [--card-depth:12px]",
-  "bottom-0 left-[14%] [--card-tilt:-1.5deg] [--card-depth:24px]",
+  "top-0 right-0 [--card-tilt:5deg] [--card-x:calc(50cqw-11rem)] [--card-y:-7.25rem]",
+  "top-[5.5rem] left-0 [--card-tilt:-6deg] [--card-x:calc(11rem-50cqw)] [--card-y:-1.75rem]",
+  "bottom-0 left-[14%] [--card-tilt:-1.5deg] [--card-x:calc(12rem-36cqw)] [--card-y:6.5rem]",
 ] as const;
 
 const CARD_BACKGROUNDS = ["pizza", "laptop", "fashion"] as const;
@@ -155,12 +155,16 @@ export function PerksCards({
               CARD_PLACEMENT[index],
             )}
           >
-            <CardFace
-              offer={offer}
-              background={CARD_BACKGROUNDS[index]}
-              accent={front}
-              large={front}
-            />
+            <div className="lp-perk-reveal size-full">
+              <div className="lp-perk-motion size-full">
+                <CardFace
+                  offer={offer}
+                  background={CARD_BACKGROUNDS[index]}
+                  accent={front}
+                  large={front}
+                />
+              </div>
+            </div>
           </div>
         );
       })}
@@ -174,8 +178,8 @@ export function PerksCards({
  * Each carries its own `perspective()`, so plain z-index does the stacking.
  */
 const COVERFLOW_SIDES = [
-  "[transform:perspective(900px)_translateX(-62%)_rotateY(32deg)_scale(0.88)]",
-  "[transform:perspective(900px)_translateX(62%)_rotateY(-32deg)_scale(0.88)]",
+  "[--coverflow-rest:perspective(900px)_translateX(-62%)_rotateY(32deg)_scale(0.88)]",
+  "[--coverflow-rest:perspective(900px)_translateX(62%)_rotateY(-32deg)_scale(0.88)]",
 ] as const;
 
 /** Below `lg`: three offers as a still coverflow, the first in front. */
@@ -191,7 +195,10 @@ export function PerksCoverflow({
         {sides.map((offer, index) => (
           <div
             key={offer.id}
-            className={cn("absolute inset-0", COVERFLOW_SIDES[index])}
+            className={cn(
+              "lp-perk-cover-card absolute inset-0",
+              COVERFLOW_SIDES[index],
+            )}
           >
             <CardFace
               offer={offer}
@@ -201,7 +208,7 @@ export function PerksCoverflow({
             <div className="absolute inset-0 rounded-[24px] bg-black/35" />
           </div>
         ))}
-        <div className="absolute inset-0 z-10">
+        <div className="lp-perk-cover-card absolute inset-0 z-10">
           <CardFace
             offer={middle}
             background={CARD_BACKGROUNDS[0]}
