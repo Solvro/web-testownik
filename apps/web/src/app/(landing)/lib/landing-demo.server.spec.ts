@@ -35,6 +35,8 @@ function createMockModel() {
       await Promise.resolve();
       return {
         stream: simulateReadableStream({
+          initialDelayInMs: null,
+          chunkDelayInMs: null,
           chunks: [
             { type: "text-start" as const, id: "t1" },
             { type: "text-delta" as const, id: "t1", delta: "Aktywne " },

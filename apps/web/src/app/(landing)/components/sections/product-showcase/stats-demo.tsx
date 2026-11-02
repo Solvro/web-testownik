@@ -383,6 +383,7 @@ function WhenVisible({
       },
       { root: root.current, rootMargin: "160px 0px" },
     );
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-adjust-state-on-prop-change -- Visibility changes asynchronously in the observer callback.
     observer.observe(slot);
     return () => {
       observer.disconnect();

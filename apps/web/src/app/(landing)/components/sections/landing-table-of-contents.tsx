@@ -71,12 +71,7 @@ export function LandingTableOfContents(): React.JSX.Element {
   const [previewTop, setPreviewTop] = useState(0);
   const [previewLeft, setPreviewLeft] = useState(0);
   const [previewsEnabled, setPreviewsEnabled] = useState(false);
-  const [portalReady, setPortalReady] = useState(false);
-
-  useEffect(() => {
-    setPortalReady(true);
-  }, []);
-
+  a;
   const placePreview = useCallback((anchor: HTMLElement): void => {
     const linkRect = anchor.getBoundingClientRect();
     const navRect = navigationReference.current?.getBoundingClientRect();
@@ -404,18 +399,16 @@ export function LandingTableOfContents(): React.JSX.Element {
     };
   }, [clearPreviewTimers, finishHidePreview, setActiveSection]);
 
-  const previewHostReady = portalReady && previewsEnabled;
-
   useLayoutEffect(() => {
     const mount = previewMountReference.current;
-    if (!previewHostReady || mount === null) {
+    if (!previewsEnabled || mount === null) {
       return;
     }
     return attachTocPreviewHost(mount);
-  }, [previewHostReady]);
+  }, [previewsEnabled]);
 
   useLayoutEffect(() => {
-    if (!previewHostReady) {
+    if (!previewsEnabled) {
       return;
     }
     const section =
@@ -423,7 +416,7 @@ export function LandingTableOfContents(): React.JSX.Element {
         ? null
         : (SECTIONS.find((candidate) => candidate.id === previewId) ?? null);
     showTocSectionPreview(section);
-  }, [previewHostReady, previewId]);
+  }, [previewsEnabled, previewId]);
 
   // Dirty peeks are re-cloned in idle time only while the rail is out, so a
   // hover usually finds a current one already parked.
@@ -587,7 +580,7 @@ export function LandingTableOfContents(): React.JSX.Element {
        * every pre-built peek, so a hover flips visibility instead of
        * inserting DOM.
        */}
-      {previewHostReady
+      {previewsEnabled
         ? createPortal(
             <div
               aria-hidden="true"
