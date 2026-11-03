@@ -47,6 +47,8 @@ import { PermissionAction } from "@/lib/auth/permissions";
 import { prepareQuizForDownload } from "@/lib/quiz-download";
 import { getQuizService } from "@/services";
 
+import { RecentQuizzesDialog } from "./recent-quizzes-dialog";
+
 interface QuizzesPageContentProps {
   userId?: string;
 }
@@ -227,12 +229,15 @@ function QuizzesPageContent({ userId }: QuizzesPageContentProps) {
     <div>
       <div className="mb-4 flex flex-col gap-4 sm:flex-row">
         <h3 className="text-2xl font-semibold">Twoje quizy</h3>
-        <QuizSort
-          key={resetFiltersTrigger}
-          onSortChange={handleSortQuizzes}
-          onNameFilterChange={handleFilterQuizzes}
-          onResetFilters={handleResetFilters}
-        />
+        <div className="flex flex-1 items-center gap-2">
+          <QuizSort
+            key={resetFiltersTrigger}
+            onSortChange={handleSortQuizzes}
+            onNameFilterChange={handleFilterQuizzes}
+            onResetFilters={handleResetFilters}
+          />
+          <RecentQuizzesDialog userId={userId} />
+        </div>
       </div>
       {filteredUserQuizes.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
