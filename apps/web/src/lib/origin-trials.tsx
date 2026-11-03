@@ -1,15 +1,11 @@
 /**
- * Origin Trial tokens for `HTMLInCanvas` (html-in-canvas: `<canvas
- * layoutsubtree>` with `drawElementImage`), which the landing's Bubble and
- * Glass lenses need. Both are first-party `isSubdomain` tokens for
- * `https://solvro.pl:443`, so they cover every `*.solvro.pl` deployment; on
- * any other origin (localhost, previews elsewhere) the browser ignores them.
+ * Origin Trial tokens for `HTMLInCanvas`, used by the landing's Bubble and
+ * Glass lenses. Both are `isSubdomain` tokens for `https://solvro.pl:443`, so
+ * other origins (localhost, previews elsewhere) ignore them. They live in the
+ * root layout because the `/landing-screen/[device]` iframes need them too.
  *
- * - Chrome: expires 2027-03-02 00:00 UTC (`expiry` 1803945600).
- * - Edge: expires 2026-12-08 15:27 UTC (`expiry` 1796743663).
- *
- * Every document that uses html-in-canvas needs them, including the
- * `/landing-screen/[device]` iframe documents, hence the root layout.
+ * - Chrome: expires 2027-03-02 00:00 UTC.
+ * - Edge: expires 2026-12-08 15:27 UTC.
  */
 const HTML_IN_CANVAS_ORIGIN_TRIAL_TOKENS = [
   // Chrome
@@ -18,11 +14,7 @@ const HTML_IN_CANVAS_ORIGIN_TRIAL_TOKENS = [
   "A977K2psSn0M4wdL3+HYoyT5Z2URH31m4lqZgF4jA4YCO4tHhgo/ZxzX8vBmgH03REmWxeMu+hVVUWn8Np3DG18AAABieyJvcmlnaW4iOiJodHRwczovL3NvbHZyby5wbDo0NDMiLCJmZWF0dXJlIjoiSFRNTEluQ2FudmFzIiwiZXhwaXJ5IjoxNzk2NzQzNjYzLCJpc1N1YmRvbWFpbiI6dHJ1ZX0=",
 ] as const;
 
-/**
- * The trial tokens as `<meta http-equiv="origin-trial">`. Next's metadata
- * `other` field renders `name=`, which origin trials do not accept, so these
- * are rendered in the layout's `<head>` directly.
- */
+/** Next's metadata `other` field renders `name=`, which origin trials reject. */
 export function OriginTrialMetas(): React.JSX.Element {
   return (
     <>

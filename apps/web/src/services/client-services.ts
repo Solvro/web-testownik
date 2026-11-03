@@ -7,14 +7,9 @@ import type { QuizService } from "./quiz.service";
 import type { UserService } from "./user.service";
 
 /**
- * The services a query cache talks to.
- *
- * Data and its source go together: a component reads through react-query, so
- * the cache it renders from also decides where requests go. The app's cache
- * uses the app-wide registry. A cache built for one subtree can bind its own
- * services — the landing page's device previews mount real app components on
- * a throwaway cache bound to local fixtures, so nothing they do reaches the
- * API, the session or the clipboard.
+ * The services a query cache talks to. The app's cache uses the app-wide
+ * registry; the landing page's device previews bind a throwaway cache to local
+ * fixtures, so nothing they do reaches the API, the session or the clipboard.
  *
  * Query and mutation functions get the cache as `context.client`; components
  * that call a service directly use `useServices()`.

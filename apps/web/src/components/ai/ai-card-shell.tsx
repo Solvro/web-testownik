@@ -204,7 +204,6 @@ export function AiCardShell({
   );
 }
 
-/** A card's Markdown reply. */
 export function AiCardMarkdown({ children }: { children: string }) {
   return (
     <div className="text-foreground text-sm">
