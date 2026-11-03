@@ -2,6 +2,7 @@ import { DESKTOP_STAGE_QUERY } from "../breakpoints";
 import { HERO_PROGRESS_PROPERTY } from "../hero-progress";
 import type { LandingSectionPeek } from "../landing-sections";
 import { wordmarkDark } from "../logos";
+import { finishReveals } from "./toc-clone-finish";
 import {
   TOC_PREVIEW_OBSERVED_ATTRIBUTES,
   TocPreviewFreshness,
@@ -328,12 +329,7 @@ function buildClonePeek(
   neutralizeTree(clone);
   dropUncloneableMedia(clone);
   fillWordmarks(clone);
-  // A peek always shows the final count, even before the live reveal starts.
-  for (const counter of clone.querySelectorAll<HTMLElement>(
-    "[data-perk-count]",
-  )) {
-    counter.textContent = counter.dataset.perkCount ?? "";
-  }
+  finishReveals(clone);
   clone.style.position = "relative";
   clone.style.inset = "auto";
   // The stage is already the layout width, so the section's own width and

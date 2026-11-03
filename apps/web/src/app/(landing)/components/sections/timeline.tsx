@@ -130,6 +130,7 @@ function TypedTitle({
       <span
         ref={textReference}
         aria-hidden="true"
+        data-timeline-title={title}
         className="absolute inset-0"
       />
     </h3>
@@ -272,6 +273,7 @@ export function Timeline({
         <svg
           ref={inkReference}
           aria-hidden="true"
+          data-timeline-ink=""
           width={INK_WIDTH}
           height={inkLength}
           viewBox={`0 0 ${INK_WIDTH.toString()} ${inkLength.toString()}`}
@@ -311,7 +313,9 @@ export function Timeline({
                 key={event.date}
                 data-timeline-event={String(index)}
                 data-timeline-revealed={isVisible}
-                className="relative pl-12 sm:pl-14"
+                // Reveal styles key off the attribute, so the TOC peek can
+                // show a not-yet-revealed event finished by flipping it.
+                className="group/event relative pl-12 sm:pl-14"
               >
                 {/* A short hand-drawn branch from the rail to the dot. */}
                 <svg
@@ -328,30 +332,22 @@ export function Timeline({
                     strokeWidth={1.6}
                     strokeLinecap="round"
                     vectorEffect="non-scaling-stroke"
-                    className={cn(
-                      "transition-[stroke-dashoffset] duration-500 ease-out [stroke-dasharray:1_1] motion-reduce:transition-none",
-                      isVisible
-                        ? "[stroke-dashoffset:0]"
-                        : "[stroke-dashoffset:1]",
-                    )}
+                    className="transition-[stroke-dashoffset] duration-500 ease-out [stroke-dasharray:1_1] [stroke-dashoffset:1] group-data-[timeline-revealed=true]/event:[stroke-dashoffset:0] motion-reduce:transition-none"
                   />
                 </svg>
                 <span
                   aria-hidden="true"
                   className={cn(
                     "absolute top-2 left-8 size-2 rounded-full transition-[background-color,box-shadow,transform,opacity] delay-300 duration-500 sm:left-10",
-                    isVisible
-                      ? "bg-primary scale-125 opacity-100 shadow-[0_0_0_5px_color-mix(in_oklch,var(--primary)_8%,transparent),0_0_18px_color-mix(in_oklch,var(--primary)_30%,transparent)]"
-                      : "bg-border scale-75 opacity-0 motion-reduce:scale-100",
+                    "bg-border scale-75 opacity-0 motion-reduce:scale-100",
+                    "group-data-[timeline-revealed=true]/event:bg-primary group-data-[timeline-revealed=true]/event:scale-125 group-data-[timeline-revealed=true]/event:opacity-100 group-data-[timeline-revealed=true]/event:shadow-[0_0_0_5px_color-mix(in_oklch,var(--primary)_8%,transparent),0_0_18px_color-mix(in_oklch,var(--primary)_30%,transparent)]",
                   )}
                 />
 
                 <time
                   className={cn(
-                    "text-primary mt-1 block text-xs font-bold tracking-[0.12em] capitalize motion-reduce:opacity-100",
-                    isVisible
-                      ? "animate-[lp-story-date-in_420ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
-                      : "opacity-0",
+                    "text-primary mt-1 block text-xs font-bold tracking-[0.12em] capitalize opacity-0 motion-reduce:opacity-100",
+                    "group-data-[timeline-revealed=true]/event:opacity-100 group-data-[timeline-revealed=true]/event:motion-safe:animate-[lp-story-date-in_420ms_cubic-bezier(0.22,1,0.36,1)_both]",
                   )}
                 >
                   {event.date}
@@ -359,10 +355,8 @@ export function Timeline({
                 <TypedTitle title={event.title} visible={isVisible} />
                 <p
                   className={cn(
-                    "text-muted-foreground mt-2 max-w-xl leading-[1.7] motion-reduce:opacity-100",
-                    isVisible
-                      ? "animate-[lp-story-description-in_650ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none"
-                      : "opacity-0",
+                    "text-muted-foreground mt-2 max-w-xl leading-[1.7] opacity-0 motion-reduce:opacity-100",
+                    "group-data-[timeline-revealed=true]/event:opacity-100 group-data-[timeline-revealed=true]/event:motion-safe:animate-[lp-story-description-in_650ms_cubic-bezier(0.22,1,0.36,1)_both]",
                   )}
                   style={{
                     animationDelay: `${(TYPE_START + titleLength * typeStep(titleLength) + 120).toString()}ms`,
