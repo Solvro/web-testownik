@@ -14,6 +14,7 @@ export default await solvro({
         ],
       },
     ],
-    "react/no-unknown-property": ["error", { ignore: ["tw"] }],
+    // html-in-canvas marks the captured subtree on the canvas element.
+    "react/no-unknown-property": ["error", { ignore: ["tw", "layoutsubtree"] }],
   },
 });

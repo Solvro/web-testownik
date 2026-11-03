@@ -4,6 +4,30 @@ const s3Url = new URL(process.env.S3_URL ?? "https://s3.b.solvro.pl");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  headers() {
+    return [
+      {
+        // The landing's device model and covers: every file is versioned
+        // (`-v1` in the name, `?v=` on the model), so they can be cached
+        // like the hashed chunks instead of revalidated on each visit.
+        source: "/models/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
+  // Printed QR codes point here; keep them temporary so the target can change.
+  redirects() {
+    return ["wlep", "rollup"].map((campaign) => ({
+      source: `/${campaign}`,
+      destination: `/?landing=true&utm_source=qr&utm_campaign=${campaign}`,
+      permanent: false,
+    }));
+  },
   transpilePackages: ["@testownik/core"],
   serverExternalPackages: ["sharp"],
   images: {
@@ -22,6 +46,10 @@ const nextConfig: NextConfig = {
         protocol: s3Url.protocol.replace(":", "") as "http" | "https",
         hostname: s3Url.hostname,
         port: s3Url.port,
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
       },
     ],
   },

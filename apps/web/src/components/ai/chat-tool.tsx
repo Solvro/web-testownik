@@ -189,9 +189,11 @@ function activeToolTitle(part: ChatToolPart) {
 
 export function ChatTool({
   part,
+  originQuestionId = null,
   interrupted = false,
 }: {
   part: ChatToolPart;
+  originQuestionId?: string | null;
   interrupted?: boolean;
 }) {
   const toolName = getChatToolName(part);
@@ -208,6 +210,7 @@ export function ChatTool({
   if (toolName === "edit_question") {
     return (
       <EditQuestionTool
+        originQuestionId={originQuestionId}
         input={part.input}
         state={part.state}
         interrupted={interrupted}

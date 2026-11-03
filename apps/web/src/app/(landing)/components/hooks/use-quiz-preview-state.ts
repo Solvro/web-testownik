@@ -1,0 +1,209 @@
+"use client";
+
+import { hashKey, useQuery } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import type { UserSettings } from "@testownik/core/user/types";
+import { DEFAULT_USER_SETTINGS } from "@testownik/core/user/types";
+import { useEffect, useRef, useState } from "react";
+
+import { createPreviewClient } from "@/app/(landing)/preview/preview-client";
+import {
+  createQuizPreviewState,
+  selectQuizPreviewView,
+} from "@/app/(landing)/preview/preview-quiz-machine";
+import type { QuizPreviewAction } from "@/app/(landing)/preview/preview-quiz-machine";
+import {
+  INITIAL_SETTINGS_STAMP,
+  createQuizSyncId,
+  createSyncedQuizState,
+  openQuizSyncChannel,
+  respondToQuizSyncMessage,
+  syncedQuizReducer,
+} from "@/app/(landing)/preview/preview-quiz-sync";
+import type {
+  QuizSyncChannel,
+  SettingsStamp,
+  SyncedQuizEvent,
+  SyncedQuizState,
+} from "@/app/(landing)/preview/preview-quiz-sync";
+import type { PreviewQuizSession } from "@/app/(landing)/preview/preview-session";
+import { useStudyTimer } from "@/components/quiz/hooks/use-study-timer";
+import { userSettingsQueryKey } from "@/hooks/use-user-settings";
+
+/** Study time the previews open on, matching the tablet's stats. */
+const PREVIEW_STUDY_TIME_SECONDS = 4836;
+
+const SETTINGS_HASH = hashKey(userSettingsQueryKey);
+
+type QuizPreviewOptions = Parameters<typeof createQuizPreviewState>[0];
+
+/**
+ * The quiz session behind a device preview. Sessions sharing a `syncChannel`
+ * forward every action and settings change to each other, so the desktop
+ * stage's laptop and iPhone iframes stay in step.
+ */
+export function useQuizPreviewState({
+  syncChannel,
+  // The fixture opens with a wrong answer picked, ready to be checked.
+  quiz = { selectedAnswers: ["a-4"] },
+  studyTimeSeconds = PREVIEW_STUDY_TIME_SECONDS,
+}: {
+  syncChannel?: string;
+  /** Read once. */
+  quiz?: QuizPreviewOptions;
+  studyTimeSeconds?: number;
+} = {}): PreviewQuizSession {
+  const [synced, setSynced] = useState(() =>
+    createSyncedQuizState(createQuizPreviewState(quiz)),
+  );
+  const { state } = synced;
+  // Updated as each event is applied, not on render: actions name the one
+  // before them, and the services read the questions between renders.
+  const syncedReference = useRef<SyncedQuizState>(synced);
+  const apply = (event: SyncedQuizEvent): void => {
+    syncedReference.current = syncedQuizReducer(syncedReference.current, event);
+    setSynced(syncedReference.current);
+  };
+  const actReference = useRef<(action: QuizPreviewAction) => void>(() => {
+    // Replaced once mounted.
+  });
+  const clientReference = useRef<QueryClient | null>(null);
+  clientReference.current ??= createPreviewClient({
+    questions: () => syncedReference.current.state.questions,
+    add: (questions) => {
+      actReference.current({ type: "addQuestions", questions });
+    },
+    update: (question) => {
+      actReference.current({ type: "updateQuestion", question });
+    },
+  });
+  const client = clientReference.current;
+  // Edited by the real settings dialog in either screen; never persisted.
+  const { data: settings = DEFAULT_USER_SETTINGS } = useQuery<UserSettings>(
+    {
+      queryKey: userSettingsQueryKey,
+      queryFn: () => DEFAULT_USER_SETTINGS,
+    },
+    client,
+  );
+  const timer = useStudyTimer(false, studyTimeSeconds);
+  const timerStore = timer.store;
+
+  const channelReference = useRef<QuizSyncChannel | null>(null);
+
+  useEffect(() => {
+    if (syncChannel === undefined) {
+      return;
+    }
+    // The settings last sent or received and their stamp, so an applied
+    // update is not echoed back and concurrent edits settle on one.
+    let lastSettings = JSON.stringify(
+      client.getQueryData<UserSettings>(userSettingsQueryKey),
+    );
+    let settingsStamp: SettingsStamp = INITIAL_SETTINGS_STAMP;
+    let awaiting: string | undefined;
+
+    const channel = openQuizSyncChannel(syncChannel, (message) => {
+      if (channel === null) {
+        return;
+      }
+      const current = client.getQueryData<UserSettings>(userSettingsQueryKey);
+      const response = respondToQuizSyncMessage(message, {
+        id: channel.id,
+        synced: syncedReference.current,
+        settings:
+          current === undefined
+            ? undefined
+            : { settings: current, stamp: settingsStamp },
+        awaiting,
+        studyTime: timerStore.getSnapshot(),
+      });
+      awaiting = response.awaiting;
+      if (response.event !== undefined) {
+        apply(response.event);
+      }
+      if (response.resetTimer === true) {
+        timerStore.setFromLoaded(0);
+      }
+      if (response.studyTime !== undefined) {
+        timerStore.setFromLoaded(response.studyTime);
+      }
+      if (response.settings !== undefined) {
+        settingsStamp = response.settings.stamp;
+        lastSettings = JSON.stringify(response.settings.settings);
+        client.setQueryData(userSettingsQueryKey, response.settings.settings);
+      }
+      if (response.reply !== undefined) {
+        channel.post(response.reply);
+      }
+    });
+    if (channel === null) {
+      return;
+    }
+    channelReference.current = channel;
+
+    const unsubscribe = client.getQueryCache().subscribe((event) => {
+      if (event.type !== "updated" || event.query.queryHash !== SETTINGS_HASH) {
+        return;
+      }
+      const next = event.query.state.data as UserSettings | undefined;
+      const serialized = JSON.stringify(next);
+      if (next !== undefined && serialized !== lastSettings) {
+        lastSettings = serialized;
+        settingsStamp = {
+          version: settingsStamp.version + 1,
+          author: channel.id,
+        };
+        channel.post({
+          kind: "settings",
+          settings: next,
+          stamp: settingsStamp,
+        });
+      }
+    });
+    channel.post({ kind: "hello" });
+
+    return () => {
+      unsubscribe();
+      channel.close();
+      channelReference.current = null;
+    };
+  }, [client, syncChannel, timerStore]);
+
+  const act = (action: QuizPreviewAction): void => {
+    const parent = syncedReference.current.head;
+    const id = createQuizSyncId();
+    apply({ type: "action", action, id });
+    channelReference.current?.post({ kind: "action", action, id, parent });
+  };
+
+  useEffect(() => {
+    actReference.current = act;
+  });
+
+  return {
+    state,
+    view: selectQuizPreviewView(state, settings),
+    select: (answers) => {
+      act({ type: "select", answers });
+    },
+    next: () => {
+      act({ type: "next", settings });
+    },
+    back: () => {
+      act({ type: "back" });
+    },
+    reset: () => {
+      act({ type: "reset" });
+      timer.setFromLoaded(0);
+    },
+    setFocusMode: (active) => {
+      act({ type: "setFocusMode", active });
+    },
+    goTo: (questionId) => {
+      act({ type: "goTo", questionId });
+    },
+    timer: timer.store,
+    client,
+  };
+}

@@ -4,14 +4,38 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 
+import {
+  usePortalContainer,
+  useSurfaceModal,
+} from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+function DropdownMenu({ modal, ...props }: MenuPrimitive.Root.Props) {
+  const surfaceModal = useSurfaceModal();
+  return (
+    <MenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={
+        modal ??
+        (surfaceModal === undefined ? undefined : surfaceModal === true)
+      }
+      {...props}
+    />
+  );
 }
 
-function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
-  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
+function DropdownMenuPortal({
+  container,
+  ...props
+}: MenuPrimitive.Portal.Props) {
+  const embeddedContainer = usePortalContainer();
+  return (
+    <MenuPrimitive.Portal
+      data-slot="dropdown-menu-portal"
+      container={container ?? embeddedContainer}
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
@@ -30,8 +54,9 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  const container = usePortalContainer();
   return (
-    <MenuPrimitive.Portal>
+    <MenuPrimitive.Portal container={container}>
       <MenuPrimitive.Positioner
         className="isolate z-50 outline-none"
         align={align}

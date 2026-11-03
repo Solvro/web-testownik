@@ -5,6 +5,12 @@ import { env } from "@/env";
 import { API_URL } from "@/lib/api";
 import { AUTH_COOKIES } from "@/lib/auth";
 import { verifyAccessToken } from "@/lib/auth/server";
+import {
+  BARE_DOCUMENT_SHELL,
+  DOCUMENT_PATHNAME_HEADER,
+  DOCUMENT_SHELL_HEADER,
+  isBareDocumentPath,
+} from "@/lib/document-shell";
 
 /**
  * Forward Set-Cookie headers from backend response to Next.js response.
@@ -17,6 +23,34 @@ function forwardAuthCookies(
   for (const cookie of setCookieHeaders) {
     nextResponse.headers.append("Set-Cookie", cookie);
   }
+}
+
+/** Auth redirects carry cookies for one user, so no cache may keep them. */
+function authRedirect(url: string | URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
+/**
+ * Directories of `public/`. A single root segment with an extension is a
+ * public file or a metadata route (`/robots.txt`); neither needs the session.
+ * Dynamic routes such as `/quiz/[quizId]` keep the session check whatever
+ * their parameter looks like.
+ */
+const PUBLIC_ASSET_PREFIXES = [
+  "/banned-screen/",
+  "/favicon/",
+  "/images/",
+  "/models/",
+  "/sounds/",
+];
+
+function isPublicAssetPath(pathname: string): boolean {
+  return (
+    PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    /^\/[^/]+\.[a-z0-9]+$/i.test(pathname)
+  );
 }
 
 /**
@@ -45,7 +79,7 @@ async function tryRefreshTokens(
         url.searchParams.set("error", "user_banned");
         url.searchParams.set("ban_reason", data.ban_reason ?? "Unknown reason");
 
-        const response = NextResponse.redirect(url);
+        const response = authRedirect(url);
         response.cookies.delete({
           name: AUTH_COOKIES.ACCESS_TOKEN,
           domain: env.JWT_COOKIE_DOMAIN,
@@ -61,7 +95,7 @@ async function tryRefreshTokens(
       return null;
     }
 
-    const response = NextResponse.redirect(redirectUrl);
+    const response = authRedirect(redirectUrl);
     forwardAuthCookies(backendResponse, response);
     return response;
   } catch {
@@ -69,11 +103,31 @@ async function tryRefreshTokens(
   }
 }
 
+/** See `lib/document-shell.ts`. */
+function nextWithDocumentShell(request: NextRequest): NextResponse {
+  const isBare = isBareDocumentPath(request.nextUrl.pathname);
+  const headers = new Headers(request.headers);
+  headers.delete(DOCUMENT_SHELL_HEADER);
+  headers.set(DOCUMENT_PATHNAME_HEADER, request.nextUrl.pathname);
+  if (isBare) {
+    headers.set(DOCUMENT_SHELL_HEADER, BARE_DOCUMENT_SHELL);
+  }
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function proxy(request: NextRequest) {
+  // The landing's device screens and static files never need the session.
+  if (
+    isBareDocumentPath(request.nextUrl.pathname) ||
+    isPublicAssetPath(request.nextUrl.pathname)
+  ) {
+    return nextWithDocumentShell(request);
+  }
+
   const accessToken = request.cookies.get(AUTH_COOKIES.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(AUTH_COOKIES.REFRESH_TOKEN)?.value;
 
-  const response = NextResponse.next();
+  const response = nextWithDocumentShell(request);
 
   if (accessToken !== undefined && accessToken !== "") {
     const payload = await verifyAccessToken(accessToken);
@@ -94,8 +148,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    // eslint-disable-next-line unicorn/prefer-string-raw
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|json)$).*)",
-  ],
+  // Only Next.js internals bypass sanitization. App route parameters can have
+  // any extension; public assets pass through sanitized, without the session.
+  matcher: ["/((?!_next/).*)"],
 };
