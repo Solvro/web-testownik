@@ -485,13 +485,14 @@ export function LandingTableOfContents(): React.JSX.Element {
     <nav
       ref={navigationReference}
       aria-label="Spis treści strony"
-      aria-hidden={isVisible !== true}
       className={cn(
         "group/toc pointer-events-none fixed top-1/2 left-0 z-[100] hidden w-max -translate-y-1/2 py-1.5 md:block",
         "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+        // Idle hiding is visual only: the links stay tabbable and in the
+        // accessibility tree, and focusing one brings the rail back.
         isVisible === true
           ? "translate-x-0 opacity-100"
-          : "pointer-events-none -translate-x-2 opacity-0",
+          : "pointer-events-none -translate-x-2 opacity-0 focus-within:translate-x-0 focus-within:opacity-100",
       )}
     >
       <ol>
@@ -504,7 +505,6 @@ export function LandingTableOfContents(): React.JSX.Element {
               <a
                 href={`#${section.id}`}
                 aria-current={isActive ? "location" : undefined}
-                tabIndex={isVisible === true ? 0 : -1}
                 onClick={(event) => {
                   followLink(event, section.id);
                 }}
