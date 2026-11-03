@@ -1,13 +1,12 @@
 "use client";
 
 // Adapted from https://canvasui.dev/docs/components/peel (reverse hover and focus).
-
 import {
+  type ReactNode,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
 } from "react";
 
 const canvasDimensionLimits = new WeakMap<
