@@ -146,8 +146,6 @@ export function Perks(): React.JSX.Element {
             href="/go/uniperks?p=landing-cta"
             target="_blank"
             rel="noopener sponsored"
-            data-umami-event="perks-click"
-            data-umami-event-placement="landing-cta"
             className={cn(
               "inline-flex min-h-13 items-center justify-center rounded-full bg-(--perk-accent) px-6 text-base font-semibold text-(--perk-accent-fg) transition-colors hover:bg-(--perk-accent)/90",
               FOCUS_RING,
@@ -159,8 +157,6 @@ export function Perks(): React.JSX.Element {
             href="/go/uniperks?p=landing-secondary"
             target="_blank"
             rel="noopener sponsored"
-            data-umami-event="perks-click"
-            data-umami-event-placement="landing-secondary"
             className={cn(
               "inline-flex min-h-13 items-center justify-center self-stretch rounded-full border border-(--perk-border) bg-(--perk-card) px-6 text-base font-semibold text-(--perk-fg) transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/10",
               "hidden lg:inline-flex lg:self-center",

@@ -90,7 +90,7 @@ describe("landing demo helpers", () => {
   it("parses provider:model and falls back to the Luna default", () => {
     expect(parseLandingAiModel()).toEqual({
       provider: "openai",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
     });
     expect(parseLandingAiModel("anthropic:claude-x:beta")).toEqual({
       provider: "anthropic",

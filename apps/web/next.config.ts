@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Printed QR codes point here; keep them temporary so the target can change.
+  redirects() {
+    return ["wlep", "rollup"].map((campaign) => ({
+      source: `/${campaign}`,
+      destination: `/?landing=true&utm_source=qr&utm_campaign=${campaign}`,
+      permanent: false,
+    }));
+  },
   transpilePackages: ["@testownik/core"],
   serverExternalPackages: ["sharp"],
   images: {

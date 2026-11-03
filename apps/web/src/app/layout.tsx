@@ -15,7 +15,6 @@ import { env } from "@/env";
 import { getServerCurrentUser } from "@/lib/auth/utils.server";
 import { shouldRenderBareDocument } from "@/lib/document-shell";
 import { OriginTrialMetas } from "@/lib/origin-trials";
-import { UMAMI_ORIGIN, UMAMI_WEBSITE_ID } from "@/lib/umami";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -140,14 +139,14 @@ export default async function RootLayout({
           <AppFooter />
         </Providers>
         <Script
-          src={`${UMAMI_ORIGIN}/script.js`}
-          data-website-id={UMAMI_WEBSITE_ID}
+          src={`${env.NEXT_PUBLIC_UMAMI_ORIGIN}/script.js`}
+          data-website-id={env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
           data-domains={new URL(env.NEXT_PUBLIC_SITE_URL).hostname}
           strategy="lazyOnload"
         />
         <Script
-          src={`${UMAMI_ORIGIN}/recorder.js`}
-          data-website-id={UMAMI_WEBSITE_ID}
+          src={`${env.NEXT_PUBLIC_UMAMI_ORIGIN}/recorder.js`}
+          data-website-id={env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
           data-sample-rate="1"
           data-mask-level="moderate"
           data-max-duration="300000"

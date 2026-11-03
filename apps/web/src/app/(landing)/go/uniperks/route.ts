@@ -2,7 +2,6 @@ import { after } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { env } from "@/env";
-import { UMAMI_ORIGIN, UMAMI_WEBSITE_ID } from "@/lib/umami";
 
 import {
   PERKS_PARTNER_URL,
@@ -25,7 +24,7 @@ async function sendClickEvent(
   const userAgent = request.headers.get("user-agent");
   const forwardedFor = request.headers.get("x-forwarded-for");
   try {
-    await fetch(`${UMAMI_ORIGIN}/api/send`, {
+    await fetch(`${env.NEXT_PUBLIC_UMAMI_ORIGIN}/api/send`, {
       method: "POST",
       cache: "no-store",
       signal: AbortSignal.timeout(UMAMI_TIMEOUT_MS),
@@ -38,7 +37,7 @@ async function sendClickEvent(
       body: JSON.stringify({
         type: "event",
         payload: {
-          website: UMAMI_WEBSITE_ID,
+          website: env.NEXT_PUBLIC_UMAMI_WEBSITE_ID,
           hostname: new URL(env.NEXT_PUBLIC_SITE_URL).hostname,
           url: "/go/uniperks",
           referrer: request.headers.get("referer") ?? "",

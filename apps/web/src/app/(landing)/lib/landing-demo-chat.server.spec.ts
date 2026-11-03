@@ -318,7 +318,7 @@ describe("handleLandingDemoChatRequest", () => {
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(await response.text()).toContain("Pytanie nr 2.");
     expect(mocks.getConfiguredAiModel).toHaveBeenCalledWith(
-      "gpt-5.6-luna",
+      "gpt-6-luna",
       "openai",
     );
     const [call] = model.doStreamCalls;
