@@ -1,9 +1,11 @@
-import type { Question } from "@testownik/core/quiz/types";
+import type { Question, QuizMetadata } from "@testownik/core/quiz/types";
 
 import {
   PREVIEW_AI_HINTS,
+  PREVIEW_CREATOR,
   PREVIEW_QUESTION,
   PREVIEW_QUESTIONS,
+  PREVIEW_QUIZ_METADATA,
   PREVIEW_SESSION_ANSWERS,
 } from "@/app/(landing)/preview/preview-fixtures";
 import type { createQuizPreviewState } from "@/app/(landing)/preview/preview-quiz-machine";
@@ -18,6 +20,15 @@ import type { AnswerHint } from "@/components/ai/ai-explain-card";
  * The question it opens on carries a deliberate typo, for the assistant's
  * "fix the typos" suggestion to find.
  */
+
+/**
+ * The quiz as the showcase's share dialog and stats card describe it: the
+ * previews' quiz, with its author, which only these two panels show.
+ */
+export const SHOWCASE_QUIZ_METADATA: QuizMetadata = {
+  ...PREVIEW_QUIZ_METADATA,
+  creator: PREVIEW_CREATOR,
+};
 
 const SHOWCASE_START_TEXT = PREVIEW_QUESTION.text.replace(
   "zapamiętać",

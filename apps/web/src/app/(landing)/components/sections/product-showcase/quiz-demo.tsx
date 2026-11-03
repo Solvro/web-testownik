@@ -1,8 +1,6 @@
 "use client";
 
 import { AccessLevel } from "@testownik/core/quiz/types";
-import type { QuizBase } from "@testownik/core/quiz/types";
-import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Group, User } from "@testownik/core/user/types";
 import {
   ChevronLeftIcon,
@@ -19,7 +17,12 @@ import {
   PreviewAiExplanationCard,
   PreviewAiHintCard,
 } from "@/app/(landing)/preview/preview-ai-cards";
-import { PREVIEW_QUIZ } from "@/app/(landing)/preview/preview-fixtures";
+import {
+  PREVIEW_CREATOR,
+  PREVIEW_DIRECTORY,
+  PREVIEW_QUIZ,
+  PREVIEW_SHARES,
+} from "@/app/(landing)/preview/preview-fixtures";
 import {
   PreviewRuntime,
   PreviewSandbox,
@@ -42,87 +45,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { getShowcaseExplanation, getShowcaseHint } from "./showcase-quiz";
+import {
+  SHOWCASE_QUIZ_METADATA,
+  getShowcaseExplanation,
+  getShowcaseHint,
+} from "./showcase-quiz";
 import { useShowcaseSession } from "./showcase-session-context";
 
 const QUIZ_TITLE = PREVIEW_QUIZ.title;
-const QUIZ_ID = PREVIEW_QUIZ.id;
 
-const CREATOR: User = {
-  id: "landing-creator",
-  full_name: "Antoni Czaplicki",
-  photo: "https://github.com/Antoni-Czaplicki.png",
-  student_number: "268431",
-  account_type: ACCOUNT_TYPE.STUDENT,
-  account_level: ACCOUNT_LEVEL.GOLD,
-};
-
-const QUIZ: QuizBase = {
-  id: QUIZ_ID,
-  title: QUIZ_TITLE,
-  description: "Praktyczny zestaw do samodzielnej nauki",
-  creator: CREATOR,
-  visibility: AccessLevel.UNLISTED,
-  allow_anonymous: true,
-  is_anonymous: false,
-  version: 1,
-  can_edit: true,
-};
-
-const SEARCHABLE_USERS: User[] = [
-  {
-    id: "landing-user-franek",
-    full_name: "Franek Wiśniewski",
-    photo:
-      "https://ui-avatars.com/api/?background=b45309&color=fff&name=Franek+Wisniewski&size=128",
-    student_number: "271002",
-    account_type: ACCOUNT_TYPE.STUDENT,
-    account_level: ACCOUNT_LEVEL.BASIC,
-  },
-  {
-    id: "landing-user-asia",
-    full_name: "Asia Lewandowska",
-    photo:
-      "https://ui-avatars.com/api/?background=be185d&color=fff&name=Asia+Lewandowska&size=128",
-    student_number: "269118",
-    account_type: ACCOUNT_TYPE.STUDENT,
-    account_level: ACCOUNT_LEVEL.BASIC,
-  },
-];
-
-const TERM = {
-  id: "landing-term",
-  name: "2025/26 Lato",
-  start_date: "2026-02-24",
-  end_date: "2026-06-30",
-  finish_date: "2026-09-30",
-  is_current: true,
-};
-
-const INITIAL_USER: User & { shared_quiz_id?: string; allow_edit: boolean } = {
-  id: "landing-user-ola",
-  full_name: "Ola Nowak",
-  photo:
-    "https://ui-avatars.com/api/?background=0f766e&color=fff&name=Ola+Nowak&size=128",
-  student_number: "270441",
-  account_type: ACCOUNT_TYPE.STUDENT,
-  account_level: ACCOUNT_LEVEL.BASIC,
-  shared_quiz_id: "share-ola",
-  allow_edit: false,
-};
-
-const INITIAL_GROUP: Group & {
-  shared_quiz_id?: string;
-  allow_edit: boolean;
-} = {
-  id: "landing-group-si",
-  name: "KN Solvro",
-  photo:
-    "https://ui-avatars.com/api/?background=7c3aed&color=fff&name=KN+Solvro&size=128",
-  term: TERM,
-  shared_quiz_id: "share-group",
-  allow_edit: true,
-};
+/*
+ * The share dialog sits inside the demo panel, so it opens with the first
+ * person and the group the previews share the quiz with, not everyone.
+ */
+const INITIAL_USERS = PREVIEW_SHARES.flatMap(({ id, user, allow_edit }) =>
+  user === null ? [] : [{ ...user, allow_edit, shared_quiz_id: id }],
+).slice(0, 1);
+const INITIAL_GROUPS = PREVIEW_SHARES.flatMap(({ id, group, allow_edit }) =>
+  group === null ? [] : [{ ...group, allow_edit, shared_quiz_id: id }],
+);
 
 function formatTimer(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -148,13 +89,13 @@ function QuizShareOverlay({
   );
   const [allowAnonymous, setAllowAnonymous] = useState(true);
   const [isCreatorAnonymous, setIsCreatorAnonymous] = useState(false);
-  const [usersWithAccess, setUsersWithAccess] = useState([INITIAL_USER]);
-  const [groupsWithAccess, setGroupsWithAccess] = useState([INITIAL_GROUP]);
+  const [usersWithAccess, setUsersWithAccess] = useState(INITIAL_USERS);
+  const [groupsWithAccess, setGroupsWithAccess] = useState(INITIAL_GROUPS);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<(User | Group)[]>([]);
 
   const takenIds = new Set([
-    CREATOR.id,
+    PREVIEW_CREATOR.id,
     ...usersWithAccess.map((user) => user.id),
     ...groupsWithAccess.map((group) => group.id),
   ]);
@@ -170,7 +111,7 @@ function QuizShareOverlay({
       return;
     }
     setSearchResults(
-      SEARCHABLE_USERS.filter(
+      PREVIEW_DIRECTORY.filter(
         (user) =>
           !takenIds.has(user.id) &&
           (user.full_name.toLowerCase().includes(normalized) ||
@@ -248,7 +189,7 @@ function QuizShareOverlay({
             </h5>
             <div className="min-w-0 [&_[data-slot=scroll-area-scrollbar]]:hidden [&_[data-slot=scroll-area-viewport]]:!max-h-none [&_[data-slot=scroll-area-viewport]]:!overflow-visible">
               <AccessList
-                quizMetadata={QUIZ}
+                quizMetadata={SHOWCASE_QUIZ_METADATA}
                 usersWithAccess={usersWithAccess}
                 groupsWithAccess={groupsWithAccess}
                 isCreatorAnonymous={isCreatorAnonymous}

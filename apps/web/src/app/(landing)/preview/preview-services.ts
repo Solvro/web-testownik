@@ -13,13 +13,16 @@ import {
   PREVIEW_DIRECTORY,
   PREVIEW_GROUPS,
   PREVIEW_HARDEST,
+  PREVIEW_HARDEST_ALL,
   PREVIEW_HOURLY,
+  PREVIEW_HOURLY_ALL,
   PREVIEW_QUIZ,
   PREVIEW_QUIZ_METADATA,
   PREVIEW_SESSIONS,
-  PREVIEW_SHARED_WITH,
+  PREVIEW_SHARES,
   PREVIEW_STATS,
   PREVIEW_TIMELINE,
+  PREVIEW_TIMELINE_ALL,
 } from "./preview-fixtures";
 
 /**
@@ -145,24 +148,11 @@ function offline<T extends object>(name: string, implemented: Partial<T>): T {
   }) as T;
 }
 
-const sharedWith: SharedQuiz[] = [
-  ...PREVIEW_SHARED_WITH.map((user, index) => ({
-    id: `shared-${user.id}`,
-    quiz: PREVIEW_QUIZ_METADATA,
-    access_level: AccessLevel.SHARED,
-    user,
-    group: null,
-    allow_edit: index === 0,
-  })),
-  {
-    id: `shared-${PREVIEW_GROUPS[0].id}`,
-    quiz: PREVIEW_QUIZ_METADATA,
-    access_level: AccessLevel.SHARED,
-    user: null,
-    group: PREVIEW_GROUPS[0],
-    allow_edit: false,
-  },
-];
+const sharedWith: SharedQuiz[] = PREVIEW_SHARES.map((share) => ({
+  ...share,
+  quiz: PREVIEW_QUIZ_METADATA,
+  access_level: AccessLevel.SHARED,
+}));
 
 /** Questions kept by the services themselves, for a cache without a session. */
 function createLocalEditor(): PreviewQuizEditor {
@@ -236,15 +226,23 @@ export function createPreviewServices(
     getQuizStats: reply((_quizId: string, scope: StatsScope = "me") => ({
       ...PREVIEW_STATS[scope],
     })),
-    getQuizTimeline: reply((_quizId: string, _scope?: StatsScope, days = 30) =>
-      PREVIEW_TIMELINE.slice(-Math.max(1, days)),
+    getQuizTimeline: reply(
+      (_quizId: string, scope: StatsScope = "me", days = 30) =>
+        (scope === "all" ? PREVIEW_TIMELINE_ALL : PREVIEW_TIMELINE).slice(
+          -Math.max(1, days),
+        ),
     ),
     getQuizSessions: reply(() => PREVIEW_SESSIONS),
     getQuizHardestQuestions: reply(
-      (_quizId: string, _scope?: StatsScope, limit = 10) =>
-        PREVIEW_HARDEST.slice(0, limit),
+      (_quizId: string, scope: StatsScope = "me", limit = 10) =>
+        (scope === "all" ? PREVIEW_HARDEST_ALL : PREVIEW_HARDEST).slice(
+          0,
+          limit,
+        ),
     ),
-    getQuizHourly: reply(() => PREVIEW_HOURLY),
+    getQuizHourly: reply((_quizId: string, scope: StatsScope = "me") =>
+      scope === "all" ? PREVIEW_HOURLY_ALL : PREVIEW_HOURLY,
+    ),
     getStudyGroups: reply(() => PREVIEW_GROUPS),
     getSharedQuizzesForQuiz: reply(() => sharedWith),
     searchUsers: reply((query: string) => {

@@ -11,7 +11,7 @@ import type {
   Quiz,
   QuizMetadata,
 } from "@testownik/core/quiz/types";
-import { ACCOUNT_LEVEL } from "@testownik/core/user/types";
+import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Group, Term, User } from "@testownik/core/user/types";
 
 /**
@@ -32,8 +32,20 @@ export const PREVIEW_QUIZ_ID = "landing-preview-quiz";
 export const PREVIEW_NOW = new Date();
 PREVIEW_NOW.setUTCHours(18, 30, 0, 0);
 
-const day = (offset: number): string =>
-  new Date(PREVIEW_NOW.getTime() - offset * 86_400_000).toISOString();
+/**
+ * A moment `daysAgo` days before `PREVIEW_NOW` (fractions allowed), optionally
+ * at a set UTC time of that day. Every preview date goes through this.
+ */
+export function previewDate(
+  daysAgo: number,
+  at?: { hour: number; minute: number },
+): string {
+  const date = new Date(PREVIEW_NOW.getTime() - daysAgo * 86_400_000);
+  if (at !== undefined) {
+    date.setUTCHours(at.hour, at.minute, 0, 0);
+  }
+  return date.toISOString();
+}
 
 export const PREVIEW_QUESTION: Question = {
   id: "q-83",
@@ -210,7 +222,7 @@ export const PREVIEW_SESSION_ANSWERS: AnswerRecord[] = [
 ].map(([id, question, offset, selected, correct]) => ({
   id: id as string,
   question: question as string,
-  answered_at: day(offset as number),
+  answered_at: previewDate(offset as number),
   selected_answers: selected as string[],
   was_correct: correct as boolean,
 }));
@@ -243,6 +255,16 @@ export const PREVIEW_QUIZ: Quiz = {
 function avatar(name: string): string {
   return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
+
+/** The quiz's author, where a screen shows one. */
+export const PREVIEW_CREATOR: User = {
+  id: "u-0",
+  full_name: "Antoni Czaplicki",
+  photo: "https://github.com/Antoni-Czaplicki.png",
+  student_number: "268431",
+  account_type: ACCOUNT_TYPE.STUDENT,
+  account_level: ACCOUNT_LEVEL.GOLD,
+};
 
 /** People the quiz is already shared with. */
 export const PREVIEW_SHARED_WITH: User[] = [
@@ -389,11 +411,34 @@ export const PREVIEW_GROUPS: Group[] = [
   },
 ];
 
+/** Who the quiz is shared with as the previews open, and who may edit it. */
+export interface PreviewShare {
+  id: string;
+  user: User | null;
+  group: Group | null;
+  allow_edit: boolean;
+}
+
+export const PREVIEW_SHARES: PreviewShare[] = [
+  ...PREVIEW_SHARED_WITH.map((user, index) => ({
+    id: `shared-${user.id}`,
+    user,
+    group: null,
+    allow_edit: index === 0,
+  })),
+  {
+    id: `shared-${PREVIEW_GROUPS[0].id}`,
+    user: null,
+    group: PREVIEW_GROUPS[0],
+    allow_edit: false,
+  },
+];
+
 export const PREVIEW_QUIZ_METADATA: QuizMetadata = {
   ...PREVIEW_QUIZ,
-  created_at: day(126),
-  updated_at: day(4),
-  last_used_at: day(1),
+  created_at: previewDate(126),
+  updated_at: previewDate(4),
+  last_used_at: previewDate(1),
   question_count: 119,
 };
 
@@ -403,28 +448,28 @@ export const PREVIEW_STATS: Record<"me" | "all", QuizStats> = {
     total_answers: 424,
     correct_answers: 336,
     wrong_answers: 88,
-    accuracy: 0.792,
-    first_answer_accuracy: 0.63,
+    accuracy: 79.2,
+    first_answer_accuracy: 63,
     study_time_seconds: 4836,
     total_study_time_seconds: 29_016,
     average_study_time_seconds: 4836,
     sessions_count: 6,
     unique_users_count: null,
-    last_activity_at: day(1),
+    last_activity_at: previewDate(1),
   },
   all: {
     quiz_id: PREVIEW_QUIZ_ID,
     total_answers: 2066,
     correct_answers: 1728,
     wrong_answers: 338,
-    accuracy: 0.836,
-    first_answer_accuracy: 0.66,
+    accuracy: 83.6,
+    first_answer_accuracy: 66,
     study_time_seconds: null,
     total_study_time_seconds: 148_920,
     average_study_time_seconds: 2996,
     sessions_count: 33,
     unique_users_count: 10,
-    last_activity_at: day(0),
+    last_activity_at: previewDate(0),
   },
 };
 
@@ -447,7 +492,7 @@ const TIMELINE_SHAPE = [
 
 export const PREVIEW_TIMELINE: TimelineEntry[] = TIMELINE_SHAPE.map(
   ([sessions, total, correct], index) => ({
-    date: day(TIMELINE_SHAPE.length - 1 - index).slice(0, 10),
+    date: previewDate(TIMELINE_SHAPE.length - 1 - index).slice(0, 10),
     sessions_count: sessions,
     total_answers: total,
     correct_answers: correct,
@@ -463,8 +508,8 @@ export const PREVIEW_SESSIONS: SessionEntry[] = [
   [13, 4836, 142, 118],
 ].map(([offset, time, total, correct]) => ({
   session_id: `s-${offset.toString()}`,
-  started_at: day(offset),
-  ended_at: day(offset),
+  started_at: previewDate(offset + time / 86_400),
+  ended_at: previewDate(offset),
   study_time_seconds: time,
   total_answers: total,
   correct_answers: correct,
@@ -494,3 +539,40 @@ export const PREVIEW_HOURLY: HourlyEntry[] = Array.from(
     ][hour],
   }),
 );
+
+/*
+ * Everyone's activity on the quiz, for the "all" scope; the series above are
+ * the visitor's own.
+ */
+const EVERYONE_DAILY_SESSIONS = [1, 2, 3, 2, 4, 5, 4, 6, 5, 7];
+
+export const PREVIEW_TIMELINE_ALL: TimelineEntry[] =
+  EVERYONE_DAILY_SESSIONS.map((sessions, index) => {
+    const total = sessions * 48;
+    return {
+      date: previewDate(EVERYONE_DAILY_SESSIONS.length - 1 - index).slice(
+        0,
+        10,
+      ),
+      sessions_count: sessions,
+      total_answers: total,
+      correct_answers: Math.round(total * 0.81),
+      total_study_time_seconds: sessions * 42 * 60,
+    };
+  });
+
+export const PREVIEW_HOURLY_ALL: HourlyEntry[] = [
+  2, 1, 0, 0, 0, 1, 3, 8, 16, 24, 31, 38, 46, 42, 37, 45, 58, 72, 86, 100, 91,
+  67, 39, 14,
+].map((sessions_count, hour) => ({ hour, sessions_count }));
+
+export const PREVIEW_HARDEST_ALL: HardestQuestion[] = [
+  ["Która technika najskuteczniej sprawdza pamięć?", 28, 41],
+  ["Jak zaplanować powtórki po błędnej sesji?", 19, 36],
+  ["Co robić przy wyniku 72% przed kolejną próbą?", 14, 33],
+].map(([text, wrong, total], index) => ({
+  question_id: `hq-all-${index.toString()}`,
+  question_text: text as string,
+  wrong_answers: wrong as number,
+  total_answers: total as number,
+}));
