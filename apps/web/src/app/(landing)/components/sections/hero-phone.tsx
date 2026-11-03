@@ -72,7 +72,7 @@ function skipSequentialFocus(
 const blankScreen = (
   <div
     aria-hidden="true"
-    className="bg-background size-full bg-[url(/models/testownik-phone-quiz-preview-light.webp)] bg-size-[390px_841px] bg-no-repeat dark:bg-[url(/models/testownik-phone-quiz-preview-dark.webp)]"
+    className="bg-background size-full bg-[url(/models/testownik-phone-quiz-preview-light-v1.webp)] bg-size-[390px_841px] bg-no-repeat dark:bg-[url(/models/testownik-phone-quiz-preview-dark-v1.webp)]"
   >
     <div className="grid h-[54px] grid-cols-[1fr_126px_1fr] items-center">
       <span className="justify-self-center pl-2">

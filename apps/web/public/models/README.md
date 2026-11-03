@@ -87,12 +87,12 @@ silhouette:
 CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-stack
 ```
 
-## `testownik-tablet-stats-preview-{light,dark}.webp`
+## `testownik-tablet-stats-preview-{light,dark}-v1.webp`
 
 The still the iPad shows before its live statistics charts load
 (`scene/device-screen-content.tsx`).
 
-## `testownik-phone-quiz-preview-{light,dark}.webp`
+## `testownik-phone-quiz-preview-{light,dark}-v1.webp`
 
 The still the mobile hero's CSS iPhone shows until its live quiz has loaded
 (`sections/hero-phone.tsx`). Screen only, at exactly 2× the 390 × 841 screen

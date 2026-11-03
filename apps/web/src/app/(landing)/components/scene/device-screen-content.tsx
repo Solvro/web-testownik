@@ -164,7 +164,7 @@ export function DeviceTabletScreen(): React.JSX.Element {
           <div
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark.webp)]",
+              "pointer-events-none absolute inset-0 bg-[url(/models/testownik-tablet-stats-preview-light-v1.webp)] bg-size-[100%_100%] transition-opacity duration-150 dark:bg-[url(/models/testownik-tablet-stats-preview-dark-v1.webp)]",
               chartsReady ? "opacity-0" : "opacity-100",
             )}
           />
