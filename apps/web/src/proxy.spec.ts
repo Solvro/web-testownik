@@ -1,7 +1,11 @@
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
-import { describe, expect, it, vi } from "vitest";
+import { readdirSync } from "node:fs";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AUTH_COOKIES } from "@/lib/auth";
+import { verifyAccessToken } from "@/lib/auth/server";
 import {
   BARE_DOCUMENT_SHELL,
   DOCUMENT_PATHNAME_HEADER,
@@ -67,5 +71,94 @@ describe("proxy document shell headers", () => {
     expect(
       unstable_doesMiddlewareMatch({ config, url: "/_next/static/chunk.js" }),
     ).toBe(false);
+  });
+});
+
+describe("proxy auth", () => {
+  const expiredSession = `${AUTH_COOKIES.ACCESS_TOKEN}=expired; ${AUTH_COOKIES.REFRESH_TOKEN}=refresh`;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(verifyAccessToken).mockReset();
+  });
+
+  function stubRefresh(response: Response) {
+    vi.mocked(verifyAccessToken).mockResolvedValue(null);
+    const fetchMock = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it.each(["/models/device-stack.glb", "/favicon.svg", "/robots.txt"])(
+    "passes %s through without touching the session",
+    async (pathname) => {
+      const fetchMock = stubRefresh(new Response("{}", { status: 200 }));
+      const response = await proxy(
+        new NextRequest(`http://localhost${pathname}`, {
+          headers: {
+            cookie: expiredSession,
+            [DOCUMENT_SHELL_HEADER]: BARE_DOCUMENT_SHELL,
+          },
+        }),
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(verifyAccessToken).not.toHaveBeenCalled();
+      expect(response.headers.get("location")).toBeNull();
+      expect(
+        response.headers.get(`x-middleware-request-${DOCUMENT_SHELL_HEADER}`),
+      ).toBeNull();
+    },
+  );
+
+  it("skips the session for every public directory", async () => {
+    vi.mocked(verifyAccessToken).mockResolvedValue(null);
+    const publicDirectory = path.resolve(import.meta.dirname, "../public");
+    const directories = readdirSync(publicDirectory, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+    expect(directories).toContain("models");
+    for (const directory of directories) {
+      await proxy(
+        new NextRequest(`http://localhost/${directory}/nested/asset`, {
+          headers: { cookie: expiredSession },
+        }),
+      );
+    }
+    expect(verifyAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("refreshes app routes whose parameter looks like a file", async () => {
+    const fetchMock = stubRefresh(
+      new Response("{}", {
+        status: 200,
+        headers: { "set-cookie": `${AUTH_COOKIES.ACCESS_TOKEN}=fresh` },
+      }),
+    );
+    const response = await proxy(
+      new NextRequest("http://localhost/quiz/review-probe.svg", {
+        headers: { cookie: expiredSession },
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(response.headers.get("location")).toBe(
+      "http://localhost/quiz/review-probe.svg",
+    );
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("does not let caches keep the ban redirect", async () => {
+    stubRefresh(
+      Response.json(
+        { code: "user_banned", ban_reason: "spam" },
+        { status: 401 },
+      ),
+    );
+    const response = await proxy(
+      new NextRequest("http://localhost/quizzes", {
+        headers: { cookie: expiredSession },
+      }),
+    );
+    expect(response.headers.get("location")).toContain("error=user_banned");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 });
