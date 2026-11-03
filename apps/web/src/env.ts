@@ -19,7 +19,7 @@ export const env = createEnv({
     LANDING_AI_MODEL: z
       .string()
       .regex(/^(?:openai|xai|anthropic):\S+$/)
-      .optional(),
+      .default("openai:gpt-6-luna"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

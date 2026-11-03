@@ -10,8 +10,6 @@ import { env } from "@/env";
 import { getConfiguredAiModel, isAiProviderConfigured } from "@/lib/ai/model";
 import type { AiModelProvider } from "@/lib/ai/models";
 
-export const DEFAULT_LANDING_AI_MODEL = "openai:gpt-6-luna";
-
 /** 10-minute sliding windows: per visitor IP, and across all visitors. */
 export const LANDING_DEMO_RATE_LIMITS = {
   perClient: { limit: 30, window: 600 },
@@ -60,9 +58,9 @@ export function getClientKey(headers: Headers): string {
 }
 
 export function parseLandingAiModel(
-  value?: string,
+  value: string,
 ): { provider: AiModelProvider; model: string } | null {
-  const [provider, ...rest] = (value ?? DEFAULT_LANDING_AI_MODEL).split(":");
+  const [provider, ...rest] = value.split(":");
   const model = rest.join(":");
   if (
     (provider !== "openai" && provider !== "xai" && provider !== "anthropic") ||

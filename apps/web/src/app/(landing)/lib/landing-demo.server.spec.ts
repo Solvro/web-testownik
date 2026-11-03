@@ -10,7 +10,7 @@ import { resetRateLimitStore } from "@/app/(landing)/lib/rate-limit";
 const mocks = vi.hoisted(() => ({
   env: {
     NEXT_PUBLIC_AI_ENABLED: true,
-    LANDING_AI_MODEL: undefined as string | undefined,
+    LANDING_AI_MODEL: "openai:gpt-6-luna",
   },
   providerConfigured: true,
   getConfiguredAiModel: vi.fn(),
@@ -87,8 +87,8 @@ describe("landing demo helpers", () => {
     ).toBe("2001:db8::1");
   });
 
-  it("parses provider:model and falls back to the Luna default", () => {
-    expect(parseLandingAiModel()).toEqual({
+  it("parses provider:model", () => {
+    expect(parseLandingAiModel("openai:gpt-6-luna")).toEqual({
       provider: "openai",
       model: "gpt-6-luna",
     });
@@ -105,7 +105,7 @@ describe("landing demo concurrent admission", () => {
   beforeEach(() => {
     resetRateLimitStore();
     mocks.env.NEXT_PUBLIC_AI_ENABLED = true;
-    mocks.env.LANDING_AI_MODEL = undefined;
+    mocks.env.LANDING_AI_MODEL = "openai:gpt-6-luna";
     mocks.providerConfigured = true;
     mocks.getConfiguredAiModel.mockReset();
     mocks.getConfiguredAiModel.mockReturnValue({});

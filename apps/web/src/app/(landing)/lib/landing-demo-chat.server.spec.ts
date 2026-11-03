@@ -22,7 +22,7 @@ import { CURRENT_QUESTION_CONTEXT_MARKER } from "@/lib/ai/prompts";
 const mocks = vi.hoisted(() => ({
   env: {
     NEXT_PUBLIC_AI_ENABLED: true,
-    LANDING_AI_MODEL: undefined as string | undefined,
+    LANDING_AI_MODEL: "openai:gpt-6-luna",
   },
   providerConfigured: true,
   getConfiguredAiModel: vi.fn(),
@@ -288,7 +288,7 @@ describe("handleLandingDemoChatRequest", () => {
   beforeEach(() => {
     resetRateLimitStore();
     mocks.env.NEXT_PUBLIC_AI_ENABLED = true;
-    mocks.env.LANDING_AI_MODEL = undefined;
+    mocks.env.LANDING_AI_MODEL = "openai:gpt-6-luna";
     mocks.providerConfigured = true;
     mocks.getConfiguredAiModel.mockReset();
     mocks.getConfiguredAiModel.mockImplementation(() => createMockModel());
