@@ -59,6 +59,84 @@ function ShowcaseScene({
 /** Shared top inset so the "0X" stays on one Y across open/closed. */
 const RAIL_TOP = "lg:pt-6";
 
+/** Drawn inside the rails and panel, which the card clips. */
+const INSET_FOCUS_RING = "focus-visible:outline-offset-[-3px]";
+
+type Corner = "tl" | "tr" | "bl" | "br";
+
+/**
+ * Focus outline corners on the card's rounded edge take its inner radius; the
+ * rest stay square against the neighbouring items. Spelled out so Tailwind
+ * sees every class.
+ */
+const FOCUS_CORNER: Record<
+  Corner,
+  { stacked: string; rowOn: string; rowOff: string }
+> = {
+  tl: {
+    stacked: "focus-visible:rounded-tl-[calc(1.1rem-1px)]",
+    rowOn: "lg:focus-visible:rounded-tl-[calc(1.1rem-1px)]",
+    rowOff: "lg:focus-visible:rounded-tl-none",
+  },
+  tr: {
+    stacked: "focus-visible:rounded-tr-[calc(1.1rem-1px)]",
+    rowOn: "lg:focus-visible:rounded-tr-[calc(1.1rem-1px)]",
+    rowOff: "lg:focus-visible:rounded-tr-none",
+  },
+  bl: {
+    stacked: "focus-visible:rounded-bl-[calc(1.1rem-1px)]",
+    rowOn: "lg:focus-visible:rounded-bl-[calc(1.1rem-1px)]",
+    rowOff: "lg:focus-visible:rounded-bl-none",
+  },
+  br: {
+    stacked: "focus-visible:rounded-br-[calc(1.1rem-1px)]",
+    rowOn: "lg:focus-visible:rounded-br-[calc(1.1rem-1px)]",
+    rowOff: "lg:focus-visible:rounded-br-none",
+  },
+};
+
+/**
+ * Below `lg` the items stack: the first holds the card's top corners, the
+ * last its bottom ones, and an open item's rail sits above its panel. At `lg`
+ * they form a row (first left, last right) and the open rail is hidden.
+ */
+function focusCorners({
+  first,
+  last,
+  part,
+  active,
+}: {
+  first: boolean;
+  last: boolean;
+  part: "rail" | "panel";
+  active: boolean;
+}): string {
+  const atBottom = last && (part === "panel" || !active);
+  const stacked: Record<Corner, boolean> = {
+    tl: first && part === "rail",
+    tr: first && part === "rail",
+    bl: atBottom,
+    br: atBottom,
+  };
+  const row: Record<Corner, boolean> = {
+    tl: first,
+    bl: first,
+    tr: last,
+    br: last,
+  };
+  const classes: string[] = [];
+  for (const corner of ["tl", "tr", "bl", "br"] as const) {
+    const { stacked: onStacked, rowOn, rowOff } = FOCUS_CORNER[corner];
+    if (stacked[corner]) {
+      classes.push(onStacked);
+    }
+    if (row[corner] !== stacked[corner]) {
+      classes.push(row[corner] ? rowOn : rowOff);
+    }
+  }
+  return classes.join(" ");
+}
+
 const showcaseBackdropStyle: CSSProperties = {
   backgroundImage:
     "radial-gradient(ellipse at 12% 18%, color-mix(in oklab, var(--primary) 24%, transparent), transparent 42%), radial-gradient(ellipse at 88% 82%, color-mix(in oklab, var(--chart-6) 10%, transparent), transparent 38%), linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
@@ -151,6 +229,8 @@ export function ProductShowcase(): React.JSX.Element {
         >
           {SHOWCASE_FEATURES.map((feature, index) => {
             const active = feature.id === activeId;
+            const first = index === 0;
+            const last = index === SHOWCASE_FEATURES.length - 1;
             const panelId = `landing-feature-${feature.id}`;
             const number = String(index + 1).padStart(2, "0");
 
@@ -189,7 +269,8 @@ export function ProductShowcase(): React.JSX.Element {
                     active &&
                       "bg-secondary/60 lg:pointer-events-none lg:hidden",
                     FOCUS_RING,
-                    "focus-visible:outline-offset-[-3px]",
+                    INSET_FOCUS_RING,
+                    focusCorners({ first, last, part: "rail", active }),
                   )}
                 >
                   <span className="text-primary text-sm font-bold tabular-nums">
@@ -233,11 +314,12 @@ export function ProductShowcase(): React.JSX.Element {
                       // Laid out at its final width from the first frame; the
                       // article's animating width only clips it. The three
                       // rails are 4.75rem each, plus this article's 1px border.
-                      index === SHOWCASE_FEATURES.length - 1
+                      last
                         ? "lg:w-[calc(100cqw-14.25rem)]"
                         : "lg:w-[calc(100cqw-14.25rem-1px)]",
                       FOCUS_RING,
-                      "focus-visible:outline-offset-[-3px]",
+                      INSET_FOCUS_RING,
+                      focusCorners({ first, last, part: "panel", active }),
                     )}
                   >
                     <div

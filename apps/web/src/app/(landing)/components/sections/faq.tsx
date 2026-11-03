@@ -4,8 +4,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 import { FAQ } from "../landing-content";
+import { FOCUS_RING } from "../ui/focus";
 import { HandNote } from "../ui/hand-note";
 import { DisplayHeading } from "../ui/typography";
 
@@ -37,14 +39,26 @@ export function Faq(): React.JSX.Element {
         >
           {FAQ.map((item, index) => (
             <AccordionItem key={item.question} value={`faq-${String(index)}`}>
-              <AccordionTrigger className="hover:text-primary aria-expanded:text-primary gap-4 rounded-none py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!">
+              <AccordionTrigger
+                className={cn(
+                  "hover:text-primary aria-expanded:text-primary -mx-3 gap-4 rounded-lg px-3 py-5 text-[clamp(1rem,1.5vw,1.3rem)] leading-[1.25] font-semibold tracking-[-0.025em] hover:no-underline sm:gap-6 sm:py-6 [&_svg]:mt-1 [&_svg]:text-current!",
+                  // The landing's outline instead of the app's ring and
+                  // border, inset so it clears the separators. Its focus
+                  // ::after would join the flex row and shift the chevron.
+                  "after:hidden focus-visible:border-transparent focus-visible:ring-0",
+                  FOCUS_RING,
+                  "focus-visible:-outline-offset-2 focus-visible:outline-solid",
+                )}
+              >
                 {item.question}
               </AccordionTrigger>
               <AccordionContent
                 aria-label={item.question}
                 className="text-muted-foreground max-w-[44rem] pr-0 pb-5 text-[0.95rem] leading-[1.7] sm:pr-10 sm:pb-6 sm:text-[0.98rem]"
               >
-                {item.answer}
+                {item.answer.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
               </AccordionContent>
             </AccordionItem>
           ))}
