@@ -27,11 +27,7 @@ export const LANDING_DEMO_CHAT_MAX_OUTPUT_TOKENS = 800;
 /** A tool call and the answer that follows it, and one step to spare. */
 export const LANDING_DEMO_CHAT_MAX_STEPS = 3;
 
-/**
- * The app chat's tools on the visitor's copy of the sample quiz, with results
- * bounded in tokens. The visitor owns that copy, so it can be edited; there
- * are no settings to switch AI off in, so no `disable_ai`.
- */
+/** The visitor owns their copy of the quiz, so it can be edited; no `disable_ai`. */
 export function buildLandingDemoChatTools(
   questions: Question[],
   countTokens: (text: string) => number,
@@ -55,8 +51,7 @@ export function buildLandingDemoChatTools(
   };
 }
 
-// These schemas do not depend on the visitor's quiz. Count them once with the
-// same cached counter used for the prompt, history and tool output bounds.
+// The schemas do not depend on the visitor's quiz, so they are counted once.
 let toolSchemaTokens: number | undefined;
 
 async function createInputTokenCounter(questionCount: number) {
@@ -109,11 +104,9 @@ export async function countLandingDemoChatInputTokens(
 }
 
 /**
- * The app's assistant on the landing page's sample quiz, for anonymous
- * visitors: the same prompt, message building and tools as `/ai/chat`
- * (without `disable_ai`), on the landing model and the demo's rate limits
- * instead of an account's quota. The quiz is the visitor's local copy, so
- * its questions arrive with the request; question images are never fetched.
+ * The same prompt, messages and tools as `/ai/chat`, on the landing model and
+ * the demo's rate limits. The quiz arrives with the request; its images are
+ * never fetched.
  */
 export async function handleLandingDemoChatRequest(
   request: Request,
@@ -184,8 +177,8 @@ export async function handleLandingDemoChatRequest(
         ]) > LANDING_DEMO_CHAT_MAX_INPUT_TOKENS,
     ],
     prepareStep: ({ messages: stepMessages }) => {
-      // stopWhen ends normal tool continuations cleanly. Check the actual SDK
-      // messages as well, before any provider call, including the first step.
+      // Checked on every step before the provider call, the first included;
+      // stopWhen only ends tool continuations.
       if (countInputTokens(stepMessages) > LANDING_DEMO_CHAT_MAX_INPUT_TOKENS) {
         throw new Error("Landing demo chat model input budget exceeded");
       }

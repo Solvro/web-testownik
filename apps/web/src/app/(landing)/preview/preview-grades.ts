@@ -6,10 +6,7 @@ import {
 import type { CourseView } from "@testownik/core/grades/utils";
 import type { Course, GradeReport } from "@testownik/core/user/types";
 
-/**
- * Grades fixtures, fed through the app's own `buildCourseView` so the landing
- * page renders whatever the real grades screen would render for this data.
- */
+// Fed through the app's own `buildCourseView`, like the real grades screen.
 
 function report(value: number, typeDescription: string): GradeReport {
   return {

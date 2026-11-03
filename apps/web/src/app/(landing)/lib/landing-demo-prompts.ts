@@ -11,7 +11,6 @@ export const LANDING_DEMO_CHAT_RULES = `- To jest pokaz na stronie głównej Tes
 - Odpowiadaj krótko: najwyżej 3-4 zdania, bez nagłówków. Generuj najwyżej 3 pytania naraz, każde z 3-4 krótkimi odpowiedziami.
 `;
 
-/** The app chat's prompt on the sample quiz, with the demo's rules. */
 export function buildLandingDemoChatSystemPrompt(
   questionCount: number,
 ): string {

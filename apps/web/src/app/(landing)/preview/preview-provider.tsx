@@ -18,11 +18,8 @@ import {
 } from "./preview-client";
 
 /**
- * What the real components inside a screen need instead of the app's
- * providers: a preview query cache (pass `client` to share one between the
- * screens of a session) and a toaster inside the screen for what the preview
- * services report. Render it inside a `PreviewSandbox` so the toaster stays
- * in the screen.
+ * Stands in for the app's providers: a preview query cache (pass `client` to
+ * share one) and an in-screen toaster. Render it inside a `PreviewSandbox`.
  */
 export function PreviewRuntime({
   client,
@@ -63,13 +60,11 @@ export function PreviewRuntime({
   );
 }
 
-/** The tablet's charts, rendered from a cache seeded once per mount. */
 export function PreviewDataProvider({
   children,
 }: {
   children: ReactNode;
 }): React.JSX.Element {
-  // Built once and never refetched; nothing about it ever re-renders.
   const clientReference = useRef<QueryClient | null>(null);
   clientReference.current ??= createTabletClient();
   return (
@@ -77,12 +72,7 @@ export function PreviewDataProvider({
   );
 }
 
-/**
- * Links inside a preview point at real app routes. Following one would leave
- * the landing page from inside a drawing of a device, so the click is
- * cancelled before `next/link` sees it (it skips prevented events) and before
- * the browser does. The screen may still act on where it pointed.
- */
+/** Cancelled before `next/link` sees it, since it skips prevented events. */
 function cancelNavigation(
   event: MouseEvent<HTMLElement>,
   onNavigate?: (href: string) => void,
@@ -102,23 +92,13 @@ function cancelNavigation(
 }
 
 /**
- * Turns whatever it wraps into a self-contained screen: the box is the
- * boundary for layout, paint, focus rings and fixed positioning, overlays
- * portal into a layer inside it (so a tooltip is clipped by the device and
- * follows its transform), page-wide keyboard shortcuts only fire while
- * focus is inside, and links do not navigate — `onNavigate` receives their
- * `href` instead, which is how a screen switches views.
+ * A self-contained screen: the box bounds layout, paint and fixed
+ * positioning, overlays portal inside it, page-wide shortcuts only fire while
+ * focus is inside, and links call `onNavigate` instead of navigating.
  *
- * The box itself does not scroll. A screen that does keeps the browser's
- * default scroll chaining, so at the end of its list the page carries on.
- *
- * `standalone` is for a surface that is a document of its own (the desktop
- * hero's device-screen iframes): the frame already is the boundary, so the box
- * only cancels links, and overlays portal to the frame's `body` as in the app.
- *
- * `layout="phone"` lays the app's components out as on a phone whatever the
- * viewport (`PHONE_SURFACE_LAYOUT`). Those variants only reach what renders
- * inside the box, so a phone keeps its own portal layer even when standalone.
+ * `standalone` is for a screen that is its own document (the desktop hero's
+ * iframes), where the box only cancels links. A `layout="phone"` screen keeps
+ * its own portal layer even then, so `PHONE_SURFACE_LAYOUT` reaches overlays.
  */
 export function PreviewSandbox({
   children,

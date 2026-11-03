@@ -1,13 +1,8 @@
 /**
- * The app's components pick their layout from the viewport (`sm:`, `md:`). A
- * phone drawn on the page is phone-sized whatever the viewport says, so on a
- * tablet the CSS phone's dialogs would lay out for a tablet. These variants go
- * on the phone screen's root and put the phone layout back from outside,
- * keyed on the components' `data-slot` hooks; the shared components stay as
- * they are in the app. Each line undoes what the viewport adds.
- *
- * They only reach what renders inside the root, so the screen's overlays have
- * to portal into it (`PreviewSandbox` gives a phone its own portal layer).
+ * The app's components pick their layout from the viewport, so on a tablet
+ * the CSS phone's dialogs would lay out for a tablet. These variants on the
+ * phone screen's root undo what the viewport adds, keyed on `data-slot`.
+ * Overlays must portal inside the root for them to apply.
  */
 export const PHONE_SURFACE_LAYOUT = [
   // Inputs below 16px make iOS zoom in on focus (`Input` is `md:text-sm`).

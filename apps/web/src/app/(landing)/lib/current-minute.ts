@@ -28,11 +28,7 @@ function getServerMinute(): null {
   return null;
 }
 
-/**
- * The visitor's current time, as a Date at the start of the current minute,
- * re-rendering on each minute boundary. Null on the server and during
- * hydration, so device clocks can render a stand-in of the same shape.
- */
+/** Null on the server and during hydration, so clocks can render a stand-in. */
 export function useCurrentMinute(): Date | null {
   const minute = useSyncExternalStore(
     subscribeToMinutes,

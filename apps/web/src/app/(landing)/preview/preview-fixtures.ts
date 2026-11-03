@@ -14,14 +14,8 @@ import type {
 import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Group, Term, User } from "@testownik/core/user/types";
 
-/**
- * Fixtures for the landing-page device screens.
- *
- * These exist so the marketing surfaces can mount the *real* Testownik
- * components — `QuestionCard`, the stats charts, the grades table — instead of
- * lookalikes. Everything here is shaped exactly like the API responses, so the
- * components take their normal render path with no network and no auth.
- */
+// Shaped like the API responses, so the device screens can mount the real
+// components with no network and no auth.
 
 export const PREVIEW_QUIZ_ID = "landing-preview-quiz";
 
@@ -32,10 +26,7 @@ export const PREVIEW_QUIZ_ID = "landing-preview-quiz";
 export const PREVIEW_NOW = new Date();
 PREVIEW_NOW.setUTCHours(18, 30, 0, 0);
 
-/**
- * A moment `daysAgo` days before `PREVIEW_NOW` (fractions allowed), optionally
- * at a set UTC time of that day. Every preview date goes through this.
- */
+/** Fractional `daysAgo` is allowed. Every preview date goes through this. */
 export function previewDate(
   daysAgo: number,
   at?: { hour: number; minute: number },
@@ -205,14 +196,9 @@ export const PREVIEW_AI_HINTS: Record<string, string> = {
     "Błąd to najlepsza wskazówka, **do czego wrócić** przy następnej powtórce.",
 };
 
-/** The question every preview opens on. */
 export const PREVIEW_START_QUESTION_ID = PREVIEW_QUESTION.id;
 
-/**
- * This session's answer history, newest first like
- * `current_session.answers`. It feeds the per-question counters, the back
- * button and the history dialog.
- */
+/** Newest first, like `current_session.answers`. */
 export const PREVIEW_SESSION_ANSWERS: AnswerRecord[] = [
   ["r-5", "q-41", 0.02, ["q-41-a2"], false],
   ["r-4", "q-27", 0.04, ["q-27-a1", "q-27-a2", "q-27-a4"], true],
@@ -227,10 +213,7 @@ export const PREVIEW_SESSION_ANSWERS: AnswerRecord[] = [
   was_correct: correct as boolean,
 }));
 
-/**
- * Progress over the whole quiz as the previews open, matching the stats on
- * the tablet. The sample questions move these numbers as they are answered.
- */
+/** Matches the stats on the tablet. */
 export const PREVIEW_PROGRESS = {
   mastered: 71,
   correct: 336,
@@ -256,7 +239,6 @@ function avatar(name: string): string {
   return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
-/** The quiz's author, where a screen shows one. */
 export const PREVIEW_CREATOR: User = {
   id: "u-0",
   full_name: "Antoni Czaplicki",
@@ -266,7 +248,6 @@ export const PREVIEW_CREATOR: User = {
   account_level: ACCOUNT_LEVEL.GOLD,
 };
 
-/** People the quiz is already shared with. */
 export const PREVIEW_SHARED_WITH: User[] = [
   {
     id: "u-1",
@@ -283,7 +264,6 @@ export const PREVIEW_SHARED_WITH: User[] = [
   },
 ];
 
-/** What the share dialog's search finds. */
 export const PREVIEW_DIRECTORY: User[] = [
   ...PREVIEW_SHARED_WITH,
   {
