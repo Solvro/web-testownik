@@ -160,7 +160,7 @@ export function ProductShowcase(): React.JSX.Element {
                 key={feature.id}
                 className={cn(
                   "border-border relative min-w-0 border-b last:border-b-0 lg:h-full lg:overflow-hidden lg:border-r lg:border-b-0 lg:last:border-r-0",
-                  "transition-[width,flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "transition-[width,flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
                   active ? "lg:flex-1" : "lg:w-[4.75rem] lg:flex-none",
                 )}
               >
