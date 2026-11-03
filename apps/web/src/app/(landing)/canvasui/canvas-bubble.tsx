@@ -95,7 +95,7 @@ uniform float uDpr;
 uniform float uTime;
 uniform float uHasContent;
 uniform int uCount;
-uniform vec2 uTrail[${MAX_TRAIL}];
+uniform vec2 uTrail[${String(MAX_TRAIL)}];
 uniform float uTrailLength;
 uniform float uBaseRadius;
 uniform float uBlend;
@@ -162,7 +162,7 @@ float smoothMin (float d1, float d2, float k) {
 float map (vec3 p) {
   float radius = uBaseRadius * uTrailLength;
   float d = 1e5;
-  for (int i = 0; i < ${MAX_TRAIL}; i++) {
+  for (int i = 0; i < ${String(MAX_TRAIL)}; i++) {
     if (i >= uCount) break;
     float sphere = length(p - vec3(uTrail[i], 0.0)) -
       (radius - uBaseRadius * float(i));
@@ -279,14 +279,14 @@ export function createBubble(
 
   let contentDirty = false;
   let contentReady = false;
-  let wake = (): void => {};
+  let wake: (() => void) | undefined;
 
   capture?.setOnPaint(() => {
     try {
       capture.reset();
       capture.draw();
       contentDirty = true;
-      wake();
+      wake?.();
     } catch {}
   });
 
@@ -363,9 +363,9 @@ export function createBubble(
 
     const count = activeCount();
     const trailLength = Math.min(Math.max(renderedTrail, 1), MAX_TRAIL);
-    const minRes = Math.min(output.width, output.height);
+    const minResolution = Math.min(output.width, output.height);
     const headRadius = Math.max(renderedSize, 4) * dpr * presence;
-    const baseRadius = (headRadius * 2) / (minRes * trailLength);
+    const baseRadius = (headRadius * 2) / (minResolution * trailLength);
     const blend = Math.max(config.blend, 0.5);
 
     let minX = Infinity;
@@ -375,8 +375,8 @@ export function createBubble(
     for (let index = 0; index < count; index++) {
       const dx = trailX[index] * dpr;
       const dy = output.height - trailY[index] * dpr;
-      trailData[index * 2] = (dx * 2 - output.width) / minRes;
-      trailData[index * 2 + 1] = (dy * 2 - output.height) / minRes;
+      trailData[index * 2] = (dx * 2 - output.width) / minResolution;
+      trailData[index * 2 + 1] = (dy * 2 - output.height) / minResolution;
       minX = Math.min(minX, dx);
       maxX = Math.max(maxX, dx);
       minY = Math.min(minY, dy);
@@ -385,7 +385,7 @@ export function createBubble(
 
     const pad =
       headRadius +
-      ((Math.log(trailLength + 1) / blend) * minRes) / 2 +
+      ((Math.log(trailLength + 1) / blend) * minResolution) / 2 +
       Math.abs(config.refraction) * dpr * 0.5 +
       32 * dpr;
     const sx = Math.max(0, Math.floor(minX - pad));
@@ -703,7 +703,8 @@ export function Bubble({
   const contentRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLCanvasElement>(null);
   const instanceRef = useRef<BubbleInstance | null>(null);
-  const [initialOptions] = useState(options);
+  // Later changes go through setOptions instead of a rebuild.
+  const initialOptions = useRef(options);
   const [failed, setFailed] = useState(false);
   const [contentReady, setContentReady] = useState(false);
 
@@ -720,7 +721,13 @@ export function Bubble({
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
-    if (!enabled || failed || !source || !content || !output) {
+    if (
+      !enabled ||
+      failed ||
+      source === null ||
+      content === null ||
+      output === null
+    ) {
       return;
     }
     let active = true;
@@ -744,9 +751,9 @@ export function Bubble({
         onRender: handleRender,
         onContextLost: fail,
       },
-      initialOptions,
+      initialOptions.current,
     );
-    if (!instanceRef.current) {
+    if (instanceRef.current === null) {
       fail();
     }
     return () => {
@@ -754,7 +761,7 @@ export function Bubble({
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [captureHtml, enabled, failed, initialOptions, supported]);
+  }, [captureHtml, enabled, failed, supported]);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);

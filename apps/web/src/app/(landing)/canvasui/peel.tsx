@@ -210,7 +210,7 @@ const SEG = 96;
  * The peel needs html-in-canvas and a hovering pointer, and is pure motion, so
  * it also stays off when reduced motion is requested.
  */
-export function supportsPeel(): boolean {
+function supportsPeel(): boolean {
   return (
     supportsHtmlInCanvas() &&
     window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
@@ -245,15 +245,15 @@ export function createPeel(
 
   const capture = createHtmlInCanvasCapture(source, content);
 
-  let wake = () => {};
+  let wake: (() => void) | undefined;
   let lost = false;
 
   const gridVerts = new Float32Array((SEG + 1) * (SEG + 1) * 2);
   for (let y = 0; y <= SEG; y++) {
     for (let x = 0; x <= SEG; x++) {
-      const i = (y * (SEG + 1) + x) * 2;
-      gridVerts[i] = x / SEG;
-      gridVerts[i + 1] = y / SEG;
+      const index = (y * (SEG + 1) + x) * 2;
+      gridVerts[index] = x / SEG;
+      gridVerts[index + 1] = y / SEG;
     }
   }
   const gridIndices = new Uint32Array(SEG * SEG * 6);
@@ -290,10 +290,14 @@ export function createPeel(
   let contentMaxX = 1;
   let hasTexture = false;
 
-  if (under && capture) under.style.visibility = "hidden";
+  if (under !== undefined && capture !== null) {
+    under.style.visibility = "hidden";
+  }
 
   capture?.setOnPaint(() => {
-    if (lost) return;
+    if (lost) {
+      return;
+    }
     try {
       capture.reset();
       capture.draw();
@@ -308,7 +312,7 @@ export function createPeel(
       );
       capture.reset();
       hasTexture = true;
-      wake();
+      wake?.();
     } catch {}
   });
 
@@ -316,7 +320,7 @@ export function createPeel(
     const dpr = getCanvasPixelRatio(output, gl);
     syncCanvasBackingSize(output, output, dpr);
     contentMaxX = contentWidthRatio(content, output);
-    if (capture) {
+    if (capture !== null) {
       syncCanvasBackingSize(source, source, dpr);
       capture.requestPaint();
     }
@@ -329,7 +333,7 @@ export function createPeel(
   let shineRgb: [number, number, number] = [1, 1, 1];
   const probe = document.createElement("canvas");
   probe.width = probe.height = 1;
-  const probeCtx = probe.getContext("2d", { willReadFrequently: true });
+  const probeContext = probe.getContext("2d", { willReadFrequently: true });
 
   function syncShineColor() {
     if (config.shineColor !== "auto") {
@@ -337,21 +341,21 @@ export function createPeel(
       return;
     }
     let luminance = 1;
-    if (probeCtx) {
-      let el: Element | null = content;
-      while (el) {
-        const bg = getComputedStyle(el).backgroundColor;
+    if (probeContext !== null) {
+      let element: Element | null = content;
+      while (element !== null) {
+        const bg = getComputedStyle(element).backgroundColor;
         if (bg && bg !== "transparent") {
-          probeCtx.clearRect(0, 0, 1, 1);
-          probeCtx.fillStyle = bg;
-          probeCtx.fillRect(0, 0, 1, 1);
-          const [r, g, b, a] = probeCtx.getImageData(0, 0, 1, 1).data;
+          probeContext.clearRect(0, 0, 1, 1);
+          probeContext.fillStyle = bg;
+          probeContext.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = probeContext.getImageData(0, 0, 1, 1).data;
           if (a > 0) {
             luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
             break;
           }
         }
-        el = el.parentElement;
+        element = element.parentElement;
       }
     }
     shineRgb = luminance > 0.5 ? [0, 0, 0] : [1, 1, 1];
@@ -364,12 +368,16 @@ export function createPeel(
   syncShineColor();
 
   function render() {
-    if (under && hasTexture && under.style.visibility === "hidden") {
+    if (
+      under !== undefined &&
+      hasTexture &&
+      under.style.visibility === "hidden"
+    ) {
       under.style.visibility = "";
     }
     const w = Math.max(output.clientWidth, 1);
     const h = Math.max(output.clientHeight, 1);
-    const side = SIDE_INDEX[config.side] ?? 0;
+    const side = SIDE_INDEX[config.side];
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, output.width, output.height);
@@ -453,7 +461,9 @@ export function createPeel(
   }
 
   function frame(now: number) {
-    if (destroyed) return;
+    if (destroyed) {
+      return;
+    }
     if (!visible) {
       running = false;
       return;
@@ -485,7 +495,9 @@ export function createPeel(
   }
 
   function start() {
-    if (destroyed || lost || running || !visible) return;
+    if (destroyed || lost || running || !visible) {
+      return;
+    }
     running = true;
     lastTime = performance.now();
     raf = requestAnimationFrame(frame);
@@ -534,22 +546,32 @@ export function createPeel(
   observer.observe(content);
 
   const intersection = new IntersectionObserver((entries) => {
-    visible = entries[entries.length - 1]?.isIntersecting ?? true;
-    if (visible) start();
+    visible = entries.at(-1)?.isIntersecting ?? true;
+    if (visible) {
+      start();
+    }
   });
   intersection.observe(output);
 
   function sideDistance(x: number, y: number, rect: DOMRect): number {
-    if (config.side === "right") return rect.width - x;
-    if (config.side === "top") return y;
-    if (config.side === "bottom") return rect.height - y;
+    if (config.side === "right") {
+      return rect.width - x;
+    }
+    if (config.side === "top") {
+      return y;
+    }
+    if (config.side === "bottom") {
+      return rect.height - y;
+    }
     return x;
   }
 
   const rectCache = createRectCache(output);
 
   function onPointerMove(event: PointerEvent) {
-    if (!capture) return;
+    if (capture === null) {
+      return;
+    }
     const rect = rectCache.current;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -588,8 +610,9 @@ export function createPeel(
         !Object.entries(next).some(
           ([key, value]) => config[key as keyof PeelOptions] !== value,
         )
-      )
+      ) {
         return;
+      }
       Object.assign(config, next);
       syncShineColor();
       start();
@@ -615,7 +638,9 @@ export function createPeel(
       listenTarget.removeEventListener("pointermove", onPointerMove);
       listenTarget.removeEventListener("pointerleave", onPointerLeave);
       content.style.pointerEvents = "";
-      if (under) under.style.visibility = "";
+      if (under !== undefined) {
+        under.style.visibility = "";
+      }
       gl.deleteTexture(contentTexture);
       deleteProgram(gl, sheet);
       gl.deleteBuffer(gridBuffer);
@@ -650,22 +675,28 @@ export function Peel({
   const outputRef = useRef<HTMLCanvasElement>(null);
   const underRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<PeelInstance | null>(null);
-  const [initialOptions] = useState(options);
+  // Later changes go through setOptions instead of a rebuild.
+  const initialOptions = useRef(options);
   const [failed, setFailed] = useState(false);
 
   const supported = useClientCapability(supportsPeel);
   const native = supported && !failed;
+  const hasOverlay = Boolean(overlay);
 
   useEffect(() => {
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
     // The fallback is plain DOM: no context, shaders or listeners.
-    if (!native || !source || !content || !output) return;
+    if (!native || source === null || content === null || output === null) {
+      return;
+    }
     let active = true;
     // A failed or lost context is final.
     const fail = () => {
-      if (active) setFailed(true);
+      if (active) {
+        setFailed(true);
+      }
     };
     instanceRef.current = createPeel(
       {
@@ -675,15 +706,17 @@ export function Peel({
         under: underRef.current ?? undefined,
         onContextLost: fail,
       },
-      initialOptions,
+      initialOptions.current,
     );
-    if (!instanceRef.current) fail();
+    if (instanceRef.current === null) {
+      fail();
+    }
     return () => {
       active = false;
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [initialOptions, native]);
+  }, [native]);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);
@@ -740,12 +773,12 @@ export function Peel({
           </div>
         ) : null}
       </canvas>
-      {!native ? (
+      {native ? null : (
         <div
           ref={contentRef}
           style={{
-            position: overlay ? "absolute" : "relative",
-            inset: overlay ? 0 : undefined,
+            position: hasOverlay ? "absolute" : "relative",
+            inset: hasOverlay ? 0 : undefined,
             width: "100%",
             height: "100%",
             overflow: "hidden",
@@ -753,7 +786,7 @@ export function Peel({
         >
           {children}
         </div>
-      ) : null}
+      )}
       <canvas
         ref={outputRef}
         aria-hidden

@@ -1,13 +1,13 @@
 "use client";
 
 // Adapted from https://canvasui.dev/docs/components/particle-object
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import type { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-import { disposeObject } from "../components/scene/three/utils";
+import { disposeObject, isMesh } from "../components/scene/three/utils";
 
 export interface ParticleObjectOptions {
   /** URL of the asset to display: GLB/glTF, SVG, PNG, JPEG, WebP, or GIF. Object URLs from a file input work too. The format is sniffed from the bytes, not the extension. */
@@ -196,7 +196,7 @@ function readAlbedo(map: THREE.Texture | null): ImageData | null {
     | HTMLCanvasElement
     | ImageBitmap
     | undefined;
-  if (!image?.width || !image.height) {
+  if (image === undefined || !(image.width > 0 && image.height > 0)) {
     return null;
   }
   try {
@@ -210,7 +210,7 @@ function readAlbedo(map: THREE.Texture | null): ImageData | null {
     scratch.width = width;
     scratch.height = height;
     const context = scratch.getContext("2d");
-    if (!context) {
+    if (context === null) {
       return null;
     }
     context.drawImage(image, 0, 0, width, height);
@@ -249,31 +249,33 @@ function sampleMesh(scene: THREE.Group, count: number): CloudSample {
   scene.updateMatrixWorld(true);
   const buckets: TriangleBucket[] = [];
 
-  scene.traverse((node) => {
-    const mesh = node as THREE.Mesh;
-    if (!mesh.isMesh) {
+  scene.traverse((mesh) => {
+    if (!isMesh(mesh)) {
       return;
     }
     const geometry = mesh.geometry;
-    const positions = geometry.getAttribute("position");
-    if (!positions) {
+    if (!geometry.hasAttribute("position")) {
       return;
     }
+    const positions = geometry.getAttribute("position");
     const index = geometry.getIndex();
     const triangleCount = Math.floor(
-      (index ? index.count : positions.count) / 3,
+      (index === null ? positions.count : index.count) / 3,
     );
     if (triangleCount === 0) {
       return;
     }
+    // Any material type can turn up; only color and map are read.
     const material = (
       Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
-    ) as THREE.MeshStandardMaterial;
+    ) as Partial<THREE.MeshStandardMaterial> | undefined;
+    const optionalAttribute = (name: string) =>
+      geometry.hasAttribute(name) ? geometry.getAttribute(name) : null;
     buckets.push({
       positions,
-      normals: geometry.getAttribute("normal") ?? null,
-      uvs: geometry.getAttribute("uv") ?? null,
-      vertexColors: geometry.getAttribute("color") ?? null,
+      normals: optionalAttribute("normal"),
+      uvs: optionalAttribute("uv"),
+      vertexColors: optionalAttribute("color"),
       index,
       matrix: mesh.matrixWorld.clone(),
       normalMatrix: new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld),
@@ -301,7 +303,9 @@ function sampleMesh(scene: THREE.Group, count: number): CloudSample {
   let totalArea = 0;
 
   const vertexIndex = (bucket: TriangleBucket, tri: number, corner: number) =>
-    bucket.index ? bucket.index.getX(tri * 3 + corner) : tri * 3 + corner;
+    bucket.index === null
+      ? tri * 3 + corner
+      : bucket.index.getX(tri * 3 + corner);
 
   for (const bucket of buckets) {
     for (let tri = 0; tri < bucket.triangleCount; tri++) {
@@ -369,7 +373,7 @@ function sampleMesh(scene: THREE.Group, count: number): CloudSample {
     positions[index * 3 + 2] = a.z;
 
     albedo.copy(bucket.baseColor);
-    if (bucket.albedo && bucket.uvs) {
+    if (bucket.albedo !== null && bucket.uvs !== null) {
       const tu =
         bucket.uvs.getX(index0) * w +
         bucket.uvs.getX(index1) * u +
@@ -381,7 +385,7 @@ function sampleMesh(scene: THREE.Group, count: number): CloudSample {
       sampleAlbedo(bucket.albedo, tu, tv, bucket.albedoFlipY, texel);
       albedo.multiply(texel);
     }
-    if (bucket.vertexColors) {
+    if (bucket.vertexColors !== null) {
       albedo.multiplyScalar(
         (bucket.vertexColors.getX(index0) * w +
           bucket.vertexColors.getX(index1) * u +
@@ -397,7 +401,7 @@ function sampleMesh(scene: THREE.Group, count: number): CloudSample {
     }
 
     let shade = 0.85;
-    if (bucket.normals) {
+    if (bucket.normals !== null) {
       normal.set(
         bucket.normals.getX(index0) * w +
           bucket.normals.getX(index1) * u +
@@ -512,7 +516,7 @@ function sniffKind(
   }
   const ascii = (start: number, text: string) => {
     for (let index = 0; index < text.length; index++) {
-      if (bytes[start + index] !== text.charCodeAt(index)) {
+      if (bytes[start + index] !== text.codePointAt(index)) {
         return false;
       }
     }
@@ -564,17 +568,17 @@ async function rasterizeImage(blob: Blob): Promise<ImageData> {
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       const context = canvas.getContext("2d");
-      if (!context) {
+      if (context === null) {
         reject(new Error("2d context unavailable"));
         return;
       }
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
       resolve(context.getImageData(0, 0, canvas.width, canvas.height));
     });
-    image.onerror = () => {
+    image.addEventListener("error", () => {
       URL.revokeObjectURL(url);
       reject(new Error("Could not decode the image"));
-    };
+    });
     image.src = url;
   });
 }
@@ -644,7 +648,7 @@ export function createParticleObject(
   // Image assets never pay for the glTF and Draco loaders.
   let modelLoaders: Promise<{ loader: GLTFLoader; draco: DRACOLoader }> | null =
     null;
-  function loadModelLoaders() {
+  async function loadModelLoaders() {
     modelLoaders ??= Promise.all([
       import("three/addons/loaders/GLTFLoader.js"),
       import("three/addons/loaders/DRACOLoader.js"),
@@ -664,7 +668,7 @@ export function createParticleObject(
   }
 
   function clearPoints() {
-    if (!points) {
+    if (points === null) {
       return;
     }
     fitGroup.remove(points);
@@ -685,11 +689,11 @@ export function createParticleObject(
   }
 
   function buildCloud() {
-    if (!assetSource) {
+    if (assetSource === null) {
       return;
     }
     const count = Math.max(Math.round(config.count), 16);
-    if (count === builtCount && points) {
+    if (count === builtCount && points !== null) {
       return;
     }
     builtCount = count;
@@ -708,7 +712,7 @@ export function createParticleObject(
 
     const geometry = new THREE.BufferGeometry();
     const positionAttribute = new THREE.BufferAttribute(
-      sample.positions.slice(),
+      new Float32Array(sample.positions),
       3,
     );
     positionAttribute.setUsage(THREE.DynamicDrawUsage);
@@ -738,6 +742,8 @@ export function createParticleObject(
     }
     loadedSource = source;
     const token = ++loadToken;
+    // Read through a call: the checks follow awaits that may have changed it.
+    const isStale = () => disposed || token !== loadToken;
     if (!source) {
       clearAsset();
       return;
@@ -745,28 +751,28 @@ export function createParticleObject(
     try {
       const response = await fetch(source);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(`HTTP ${String(response.status)}`);
       }
       const buffer = await response.arrayBuffer();
-      if (disposed || token !== loadToken) {
+      if (isStale()) {
         return;
       }
       const bytes = new Uint8Array(buffer);
       const kind = sniffKind(bytes);
-      if (!kind) {
+      if (kind === null) {
         throw new Error("Unrecognized asset format");
       }
 
       if (kind === "glb" || kind === "gltf") {
         const { loader, draco } = await loadModelLoaders();
-        if (disposed || token !== loadToken) {
+        if (isStale()) {
           return;
         }
         draco.setDecoderPath(config.dracoDecoderPath);
         const resourcePath = source.slice(0, source.lastIndexOf("/") + 1);
         const data = kind === "glb" ? buffer : new TextDecoder().decode(bytes);
         const gltf = await loader.parseAsync(data, resourcePath);
-        if (disposed || token !== loadToken) {
+        if (isStale()) {
           disposeObject(gltf.scene);
           return;
         }
@@ -777,7 +783,7 @@ export function createParticleObject(
           type: kind === "svg" ? "image/svg+xml" : "",
         });
         const data = await rasterizeImage(blob);
-        if (disposed || token !== loadToken) {
+        if (isStale()) {
           return;
         }
         clearAsset();
@@ -786,7 +792,7 @@ export function createParticleObject(
       buildCloud();
       config.onLoad?.();
     } catch (error) {
-      if (disposed || token !== loadToken) {
+      if (isStale()) {
         return;
       }
       config.onError?.(error);
@@ -853,7 +859,7 @@ export function createParticleObject(
   observer.observe(canvas);
   resize();
   applyOptions();
-  loadAsset();
+  void loadAsset();
 
   let pointerX = 0;
   let pointerY = 0;
@@ -902,14 +908,19 @@ export function createParticleObject(
   const ndc = new THREE.Vector2();
   const inverseMatrix = new THREE.Matrix4();
   const localOrigin = new THREE.Vector3();
-  const localDir = new THREE.Vector3();
+  const localDirection = new THREE.Vector3();
   const camRight = new THREE.Vector3();
   const camUp = new THREE.Vector3();
   const camBack = new THREE.Vector3();
   const localShove = new THREE.Vector3();
 
   function simulate(delta: number) {
-    if (!points || !homes || !velocities || particleCount === 0) {
+    if (
+      points === null ||
+      homes === null ||
+      velocities === null ||
+      particleCount === 0
+    ) {
       return;
     }
     const positionAttribute = points.geometry.getAttribute(
@@ -943,7 +954,9 @@ export function createParticleObject(
       points.updateWorldMatrix(true, false);
       inverseMatrix.copy(points.matrixWorld).invert();
       localOrigin.copy(raycaster.ray.origin).applyMatrix4(inverseMatrix);
-      localDir.copy(raycaster.ray.direction).transformDirection(inverseMatrix);
+      localDirection
+        .copy(raycaster.ray.direction)
+        .transformDirection(inverseMatrix);
 
       const worldScale = Math.max(fitGroup.scale.x, 1e-4);
       const worldPerPx =
@@ -964,9 +977,9 @@ export function createParticleObject(
       ox = localOrigin.x;
       oy = localOrigin.y;
       oz = localOrigin.z;
-      dx = localDir.x;
-      dy = localDir.y;
-      dz = localDir.z;
+      dx = localDirection.x;
+      dy = localDirection.y;
+      dz = localDirection.z;
       pushing = true;
     }
 
@@ -1057,7 +1070,8 @@ export function createParticleObject(
         MODEL_LIFT +
         config.yOffset +
         (Math.sin(elapsed / 1.5) / 10) * config.floatIntensity;
-      material.uniforms.uTime.value += delta;
+      material.uniforms.uTime.value =
+        (material.uniforms.uTime.value as number) + delta;
     }
 
     pointerSpeed *= Math.exp(-3 * delta);
@@ -1080,7 +1094,7 @@ export function createParticleObject(
       if (config.count !== previousCount) {
         buildCloud();
       }
-      loadAsset();
+      void loadAsset();
     },
     resize,
     destroy() {
@@ -1121,19 +1135,23 @@ export function ParticleObject({
 }: ParticleObjectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const instanceRef = useRef<ParticleObjectInstance | null>(null);
-  const [initialOptions] = useState(options);
+  // Later changes go through setOptions instead of a rebuild.
+  const initialOptions = useRef(options);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) {
+    if (canvas === null) {
       return;
     }
-    instanceRef.current = createParticleObject({ canvas }, initialOptions);
+    instanceRef.current = createParticleObject(
+      { canvas },
+      initialOptions.current,
+    );
     return () => {
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [initialOptions]);
+  }, []);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);

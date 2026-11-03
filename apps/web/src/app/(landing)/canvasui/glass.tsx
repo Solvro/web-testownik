@@ -297,14 +297,14 @@ export function createGlass(
 
   let contentDirty = false;
   let contentReady = false;
-  let wake = () => {};
+  let wake: (() => void) | undefined;
 
   capture?.setOnPaint(() => {
     try {
       capture.reset();
       capture.draw();
       contentDirty = true;
-      wake();
+      wake?.();
     } catch {}
   });
 
@@ -527,7 +527,9 @@ export function createGlass(
     presenceTarget = 1;
     const target = event.target as Element | null;
     zoomTarget =
-      config.zoom > 1 && target?.closest?.(config.targets)
+      config.zoom > 1 &&
+      target !== null &&
+      target.closest(config.targets) !== null
         ? Math.min(Math.max(config.zoom, 1), 4)
         : 1;
     start();
@@ -621,7 +623,8 @@ export function Glass({
   const contentRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLCanvasElement>(null);
   const instanceRef = useRef<GlassInstance | null>(null);
-  const [initialOptions] = useState(options);
+  // Later changes go through setOptions instead of a rebuild.
+  const initialOptions = useRef(options);
   const [failed, setFailed] = useState(false);
   const [contentReady, setContentReady] = useState(false);
 
@@ -635,7 +638,13 @@ export function Glass({
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
-    if (!enabled || failed || !source || !content || !output) {
+    if (
+      !enabled ||
+      failed ||
+      source === null ||
+      content === null ||
+      output === null
+    ) {
       return;
     }
     let active = true;
@@ -658,9 +667,9 @@ export function Glass({
         },
         onContextLost: fail,
       },
-      initialOptions,
+      initialOptions.current,
     );
-    if (!instanceRef.current) {
+    if (instanceRef.current === null) {
       fail();
     }
     return () => {
@@ -668,7 +677,7 @@ export function Glass({
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [enabled, failed, initialOptions, supported]);
+  }, [enabled, failed, supported]);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);
