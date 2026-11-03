@@ -214,11 +214,11 @@ export function DeviceScreenFrame({
       // A preview, not part of the page's keyboard path: Tab skips the frame.
       tabIndex={-1}
       data-surface-ready={isReady}
-      // The stack mounts the screens only once the hero is near the
-      // viewport and the model has loaded, so `lazy` defers nothing on
-      // arrival; it does keep a visitor who has jumped further down from
-      // loading them until they come back. (`fetchpriority` is not an
-      // iframe attribute.)
+      // The stack mounts the screens once the hero is near the viewport
+      // and its hosts are attached, before the model has loaded, so the
+      // frames load alongside it and `lazy` defers nothing on arrival; it
+      // does keep a visitor who has jumped further down from loading them
+      // until they come back. (`fetchpriority` is not an iframe attribute.)
       loading="lazy"
       className="bg-background block size-full border-0"
       onPointerEnter={
