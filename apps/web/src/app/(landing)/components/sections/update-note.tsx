@@ -8,13 +8,16 @@ import { cn } from "@/lib/utils";
 import { Peel } from "../../canvasui/peel";
 import type { LandingBlogPost } from "../../lib/blog";
 import { useMediaQuery } from "../hooks/use-media-query";
+import { usePrefersReducedMotion } from "../hooks/use-prefers-reduced-motion";
 import { BLOG_PATH } from "../landing-content";
 import { FOCUS_RING } from "../ui/focus";
 import { handwritingClassName } from "../ui/handwriting";
 
 // Inline, so only the title's text takes the pointer, not the rest of its
 // line or the line box under a short last line. The clamp sits on the item.
-const ITEM_LINK_CLASS = cn("pointer-events-auto rounded-sm", FOCUS_RING);
+// An outline breaks apart around wrapped lines, so focus tints each line.
+const ITEM_LINK_CLASS =
+  "pointer-events-auto rounded-sm box-decoration-clone outline-none focus-visible:bg-[#253b60]/12 focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4";
 
 const LIST_CLASS =
   "mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]";
@@ -168,6 +171,7 @@ export function UpdateNote({
   const [hasInk, setHasInk] = useState(false);
   // Mouse and pen only: on touch the note would swallow the page's scroll.
   const canDraw = useMediaQuery("(hover: hover) and (pointer: fine)");
+  const prefersReducedMotion = usePrefersReducedMotion();
   const showEraser = canDraw && hasInk;
 
   return (
@@ -176,6 +180,8 @@ export function UpdateNote({
       className="max-w-sm -rotate-[1.5deg] px-2 lg:mt-10"
     >
       <Peel
+        // Remounts when reduced motion changes, so the note goes flat at once.
+        key={prefersReducedMotion ? "flat" : "peel"}
         reverse
         corner
         side="bottom"
