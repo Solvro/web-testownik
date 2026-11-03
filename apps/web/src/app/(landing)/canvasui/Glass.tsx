@@ -1,13 +1,22 @@
 "use client";
 
-import {
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { ReactNode } from "react";
+
+import {
+  createHtmlInCanvasCapture,
+  useSupportsHtmlInCanvas,
+} from "./runtime/html-in-canvas";
+import {
+  cappedDevicePixelRatio,
+  contentWidthRatio,
+  createContentTexture,
+  createFullscreenQuad,
+  createProgram,
+  deleteProgram,
+  syncCanvasBackingSize,
+  watchContextLoss,
+} from "./runtime/webgl";
 
 export interface GlassOptions {
   /** Lens shape. */
@@ -54,6 +63,8 @@ export interface GlassElements {
   output: HTMLCanvasElement;
   /** Called after the first captured HTML texture has reached WebGL. */
   onContentReady?: () => void;
+  /** Called once if the browser drops the WebGL context; rendering stops. */
+  onContextLost?: () => void;
 }
 
 export interface GlassInstance {
@@ -81,15 +92,6 @@ const DEFAULTS: Required<GlassOptions> = {
   zoom: 1.5,
   targets: "[data-glass-target]",
   follow: 0.2,
-};
-
-type PaintableCanvas = HTMLCanvasElement & {
-  onpaint?: (() => void) | null;
-  requestPaint?: () => void;
-};
-
-type ElementImageContext = CanvasRenderingContext2D & {
-  drawElementImage?: (element: Element, x: number, y: number) => void;
 };
 
 const VERT = `#version 300 es
@@ -264,139 +266,58 @@ void main () {
   outColor = vec4(pow(glass, vec3(1.0 / 2.2)) * alpha, alpha);
 }`;
 
-export function supportsHtmlInCanvas(): boolean {
-  if (typeof document === "undefined") {
-    return false;
-  }
-  const probe = document.createElement("canvas") as PaintableCanvas;
-  const context = probe.getContext("2d") as ElementImageContext | null;
-  return Boolean(
-    context &&
-    typeof context.drawElementImage === "function" &&
-    typeof probe.requestPaint === "function",
-  );
-}
-
 export function createGlass(
   elements: GlassElements,
   options: GlassOptions = {},
 ): GlassInstance | null {
   const config = { ...DEFAULTS, ...options };
-  const { source, content, output, onContentReady } = elements;
+  const { source, content, output, onContentReady, onContextLost } = elements;
 
-  const gl = output.getContext("webgl2", {
+  const context = output.getContext("webgl2", {
     alpha: true,
     depth: false,
     stencil: false,
     antialias: false,
     premultipliedAlpha: true,
   });
-  if (!gl || gl.isContextLost()) {
+  if (context === null || context.isContextLost()) {
     return null;
   }
+  const gl = context;
 
-  const sourceContext = source.getContext("2d") as ElementImageContext | null;
-  const paintable = source as PaintableCanvas;
-  const htmlInCanvas = Boolean(
-    sourceContext &&
-    typeof sourceContext.drawElementImage === "function" &&
-    typeof paintable.requestPaint === "function",
-  );
+  const linked = createProgram(gl, VERT, FRAG, "Glass");
+  if (linked === null) {
+    return null;
+  }
+  const { program, uniforms } = linked;
+
+  const capture = createHtmlInCanvasCapture(source, content);
+  const htmlInCanvas = capture !== null;
 
   let contentDirty = false;
   let contentReady = false;
   let wake = () => {};
 
-  if (htmlInCanvas) {
-    paintable.onpaint = () => {
-      try {
-        sourceContext!.reset();
-        sourceContext!.drawElementImage!(content, 0, 0);
-        contentDirty = true;
-        wake();
-      } catch {}
-    };
-  }
+  capture?.setOnPaint(() => {
+    try {
+      capture.reset();
+      capture.draw();
+      contentDirty = true;
+      wake();
+    } catch {}
+  });
 
-  function compile(type: number, text: string): WebGLShader {
-    const shader = gl!.createShader(type)!;
-    gl!.shaderSource(shader, text);
-    gl!.compileShader(shader);
-    if (!gl!.getShaderParameter(shader, gl!.COMPILE_STATUS)) {
-      console.error("Glass shader error:", gl!.getShaderInfoLog(shader));
-    }
-    return shader;
-  }
-
-  const vertexShader = compile(gl.VERTEX_SHADER, VERT);
-  const fragmentShader = compile(gl.FRAGMENT_SHADER, FRAG);
-  const program = gl.createProgram();
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-
-  const uniforms: Record<string, WebGLUniformLocation> = {};
-  const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-  for (let index = 0; index < count; index++) {
-    const info = gl.getActiveUniform(program, index)!;
-    uniforms[info.name] = gl.getUniformLocation(program, info.name)!;
-  }
-
-  const quad = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-    gl.STATIC_DRAW,
-  );
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-  const contentTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, contentTexture);
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR,
-  );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    1,
-    1,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    new Uint8Array([0, 0, 0, 0]),
-  );
-  gl.generateMipmap(gl.TEXTURE_2D);
+  const quad = createFullscreenQuad(gl);
+  const contentTexture = createContentTexture(gl, true);
 
   let contentMaxX = 1;
 
   function syncCanvasSize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, Math.round(output.clientWidth * dpr));
-    const height = Math.max(1, Math.round(output.clientHeight * dpr));
-    if (output.width !== width || output.height !== height) {
-      output.width = width;
-      output.height = height;
-    }
-    contentMaxX = Math.min(
-      1,
-      Math.max(0.05, content.clientWidth / Math.max(output.clientWidth, 1)),
-    );
-    if (htmlInCanvas) {
-      const cssWidth = Math.max(1, Math.round(source.clientWidth));
-      const cssHeight = Math.max(1, Math.round(source.clientHeight));
-      if (source.width !== cssWidth || source.height !== cssHeight) {
-        source.width = cssWidth;
-        source.height = cssHeight;
-      }
-      paintable.requestPaint!();
+    syncCanvasBackingSize(output, output, cappedDevicePixelRatio());
+    contentMaxX = contentWidthRatio(content, output);
+    if (capture !== null) {
+      syncCanvasBackingSize(source, source, 1);
+      capture.requestPaint();
     }
   }
 
@@ -407,16 +328,9 @@ export function createGlass(
       return;
     }
     contentDirty = false;
-    gl!.bindTexture(gl!.TEXTURE_2D, contentTexture);
-    gl!.texImage2D(
-      gl!.TEXTURE_2D,
-      0,
-      gl!.RGBA,
-      gl!.RGBA,
-      gl!.UNSIGNED_BYTE,
-      source,
-    );
-    gl!.generateMipmap(gl!.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, contentTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    gl.generateMipmap(gl.TEXTURE_2D);
     if (!contentReady) {
       contentReady = true;
       onContentReady?.();
@@ -465,11 +379,11 @@ export function createGlass(
   function render() {
     uploadContent();
     const dpr = output.width / Math.max(output.clientWidth, 1);
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
-    gl!.viewport(0, 0, output.width, output.height);
-    gl!.disable(gl!.SCISSOR_TEST);
-    gl!.clearColor(0, 0, 0, 0);
-    gl!.clear(gl!.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, output.width, output.height);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     if (presence <= 0.004) {
       return;
     }
@@ -483,45 +397,46 @@ export function createGlass(
     const margin = 4 * dpr;
     const sx = Math.max(0, Math.floor(cx - halfW * dpr - margin));
     const sy = Math.max(0, Math.floor(cy - halfH * dpr - margin));
-    gl!.enable(gl!.SCISSOR_TEST);
-    gl!.scissor(
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(
       sx,
       sy,
       Math.min(output.width - sx, Math.ceil(halfW * dpr * 2 + margin * 2)),
       Math.min(output.height - sy, Math.ceil(halfH * dpr * 2 + margin * 2)),
     );
 
-    gl!.useProgram(program);
-    gl!.activeTexture(gl!.TEXTURE0);
-    gl!.bindTexture(gl!.TEXTURE_2D, contentTexture);
-    gl!.uniform1i(uniforms.uContent, 0);
-    gl!.uniform2f(uniforms.uResolution, output.width, output.height);
-    gl!.uniform1f(uniforms.uMaxX, contentMaxX);
-    gl!.uniform1f(uniforms.uHasContent, htmlInCanvas ? 1 : 0);
-    gl!.uniform2f(uniforms.uCenter, cx, cy);
-    gl!.uniform2f(uniforms.uHalf, halfW * dpr, halfH * dpr);
+    gl.useProgram(program);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, contentTexture);
+    gl.uniform1i(uniforms.uContent, 0);
+    gl.uniform2f(uniforms.uResolution, output.width, output.height);
+    gl.uniform1f(uniforms.uMaxX, contentMaxX);
+    gl.uniform1f(uniforms.uHasContent, htmlInCanvas ? 1 : 0);
+    gl.uniform2f(uniforms.uCenter, cx, cy);
+    gl.uniform2f(uniforms.uHalf, halfW * dpr, halfH * dpr);
     const corner =
       config.shape === "circle"
         ? Math.min(halfW, halfH)
         : Math.min(Math.max(config.corner, 0), Math.min(halfW, halfH));
-    gl!.uniform1f(uniforms.uCorner, corner * dpr);
-    gl!.uniform1f(uniforms.uEdge, Math.min(Math.max(config.edge, 0), 0.98));
-    gl!.uniform1f(uniforms.uBevel, Math.max(config.bevel, 0.5));
-    gl!.uniform1f(uniforms.uIor, Math.min(Math.max(config.ior, 1.01), 2.5));
-    gl!.uniform1f(uniforms.uDepth, Math.max(config.depth, 0) * dpr);
-    gl!.uniform1f(uniforms.uAberration, Math.max(config.aberration, 0));
-    gl!.uniform1f(uniforms.uBlur, Math.max(config.blur, 0));
-    gl!.uniform1f(uniforms.uReflect, Math.max(config.reflection, 0));
-    gl!.uniform1f(uniforms.uShine, Math.max(config.shine, 0));
-    gl!.uniform1f(uniforms.uZoom, Math.max(zoom, 1));
-    gl!.uniform1f(uniforms.uAlpha, alpha);
-    gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
-    gl!.disable(gl!.SCISSOR_TEST);
+    gl.uniform1f(uniforms.uCorner, corner * dpr);
+    gl.uniform1f(uniforms.uEdge, Math.min(Math.max(config.edge, 0), 0.98));
+    gl.uniform1f(uniforms.uBevel, Math.max(config.bevel, 0.5));
+    gl.uniform1f(uniforms.uIor, Math.min(Math.max(config.ior, 1.01), 2.5));
+    gl.uniform1f(uniforms.uDepth, Math.max(config.depth, 0) * dpr);
+    gl.uniform1f(uniforms.uAberration, Math.max(config.aberration, 0));
+    gl.uniform1f(uniforms.uBlur, Math.max(config.blur, 0));
+    gl.uniform1f(uniforms.uReflect, Math.max(config.reflection, 0));
+    gl.uniform1f(uniforms.uShine, Math.max(config.shine, 0));
+    gl.uniform1f(uniforms.uZoom, Math.max(zoom, 1));
+    gl.uniform1f(uniforms.uAlpha, alpha);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.disable(gl.SCISSOR_TEST);
   }
 
   let raf = 0;
   let lastTime = performance.now();
   let destroyed = false;
+  let lost = false;
   let running = false;
   let visible = true;
 
@@ -570,7 +485,7 @@ export function createGlass(
   }
 
   function start() {
-    if (destroyed || running || !visible) {
+    if (destroyed || lost || running || !visible) {
       return;
     }
     running = true;
@@ -591,6 +506,13 @@ export function createGlass(
   }
 
   wake = wakeIfNeeded;
+
+  const stopWatchingContext = watchContextLoss(output, () => {
+    lost = true;
+    running = false;
+    cancelAnimationFrame(raf);
+    onContextLost?.();
+  });
 
   function onPointerMove(event: PointerEvent) {
     pointerClientX = event.clientX;
@@ -660,6 +582,7 @@ export function createGlass(
     destroy() {
       destroyed = true;
       cancelAnimationFrame(raf);
+      stopWatchingContext();
       content.removeEventListener("pointermove", onPointerMove);
       content.removeEventListener("pointerleave", onPointerLeave);
       content.removeEventListener("scroll", onScroll);
@@ -668,13 +591,9 @@ export function createGlass(
       intersection.disconnect();
       motionQuery.removeEventListener("change", onMotionChange);
       gl.deleteTexture(contentTexture);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
+      deleteProgram(gl, linked);
       gl.deleteBuffer(quad);
-      if (htmlInCanvas) {
-        paintable.onpaint = null;
-      }
+      capture?.setOnPaint(null);
     },
   };
 }
@@ -685,11 +604,9 @@ export interface GlassProps extends GlassOptions {
   style?: React.CSSProperties;
   /** When false the magnifier is not initialized until enabled again. */
   enabled?: boolean;
-  /** Called when the WebGL2 context cannot be created, so nothing renders. */
+  /** Called when WebGL2 cannot be created or is lost; children render as DOM. */
   onUnavailable?: () => void;
 }
-
-const emptySubscribe = () => () => {};
 
 export function Glass({
   children,
@@ -707,30 +624,27 @@ export function Glass({
   const [failed, setFailed] = useState(false);
   const [contentReady, setContentReady] = useState(false);
 
-  const supported = useSyncExternalStore(
-    emptySubscribe,
-    supportsHtmlInCanvas,
-    () => false,
-  );
+  const supported = useSupportsHtmlInCanvas();
   const reportUnavailable = useEffectEvent(() => {
     onUnavailable?.();
   });
   const native = enabled && supported && !failed;
 
   useEffect(() => {
-    if (!enabled) {
-      instanceRef.current?.destroy();
-      instanceRef.current = null;
-      return;
-    }
-
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
-    if (!source || !content || !output) {
+    if (!enabled || failed || !source || !content || !output) {
       return;
     }
     let active = true;
+    // A failed or lost context is final: the children stay plain DOM.
+    const fail = (): void => {
+      if (active) {
+        reportUnavailable();
+        setFailed(true);
+      }
+    };
     instanceRef.current = createGlass(
       {
         source,
@@ -741,21 +655,19 @@ export function Glass({
             setContentReady(true);
           }
         },
+        onContextLost: fail,
       },
       initialOptions,
     );
     if (!instanceRef.current) {
-      reportUnavailable();
-      if (native) {
-        setFailed(true);
-      }
+      fail();
     }
     return () => {
       active = false;
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
-  }, [enabled, initialOptions, native]);
+  }, [enabled, failed, initialOptions, supported]);
 
   useEffect(() => {
     instanceRef.current?.setOptions(options);

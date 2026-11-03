@@ -1,150 +1,25 @@
 "use client";
 
 // Adapted from https://canvasui.dev/docs/components/peel (reverse hover and focus).
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+
 import {
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-
-const canvasDimensionLimits = new WeakMap<
-  WebGLRenderingContext | WebGL2RenderingContext,
-  number
->();
-
-/** Keep the existing DPR budget, then account for browser pinch zoom. */
-function getCanvasPixelRatio(
-  element: HTMLElement,
-  context?: WebGLRenderingContext | WebGL2RenderingContext,
-): number {
-  const scale = window.visualViewport?.scale || 1;
-  const requested = Math.min(window.devicePixelRatio || 1, 2) * scale;
-  const width = Math.max(element.clientWidth, 1);
-  const height = Math.max(element.clientHeight, 1);
-  let maxDimension = 8192;
-  if (context) {
-    let limit = canvasDimensionLimits.get(context);
-    if (limit === undefined) {
-      limit = Math.min(
-        maxDimension,
-        context.getParameter(context.MAX_TEXTURE_SIZE),
-        context.getParameter(context.MAX_RENDERBUFFER_SIZE),
-      );
-      canvasDimensionLimits.set(context, limit);
-    }
-    maxDimension = limit;
-  }
-  // Rendering the full element preserves its CSS position and native input
-  // geometry while panning. Bound allocations when zooming large canvases.
-  return Math.min(
-    requested,
-    maxDimension / Math.max(width, height),
-    Math.sqrt(16_777_216 / (width * height)),
-  );
-}
-
-/** Pinch zoom changes visualViewport without resizing the element's CSS box. */
-function createCanvasResizeObserver(onResize: () => void) {
-  const viewport = window.visualViewport;
-  let frame = 0;
-  let disconnected = false;
-  const schedule = () => {
-    if (frame || disconnected) return;
-    frame = requestAnimationFrame(() => {
-      frame = 0;
-      onResize();
-    });
-  };
-  const observer = new ResizeObserver(schedule);
-  window.addEventListener("resize", schedule, { passive: true });
-  viewport?.addEventListener("resize", schedule, { passive: true });
-  return {
-    observe(element: Element, options?: ResizeObserverOptions) {
-      observer.observe(element, options);
-    },
-    unobserve(element: Element) {
-      observer.unobserve(element);
-    },
-    disconnect() {
-      disconnected = true;
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", schedule);
-      viewport?.removeEventListener("resize", schedule);
-    },
-  };
-}
-
-type HtmlInCanvasContext = CanvasRenderingContext2D & {
-  drawElementImage(element: Element, x: number, y: number): DOMMatrix | void;
-};
-
-type HtmlInCanvasElement = HTMLCanvasElement & {
-  updateElementGeometry?: (
-    element: Element,
-    options: { canvasTransform: DOMMatrix },
-  ) => void;
-};
-
-/** Configure the capture subtree for both generations of the experimental API. */
-function prepareHtmlInCanvas(source: HTMLCanvasElement, content: HTMLElement) {
-  if ("content" in source) {
-    source.setAttribute("content", "drawable");
-    content.setAttribute("drawable", "");
-  } else {
-    source.setAttribute("layoutsubtree", "");
-  }
-}
-
-/** Capture pixels and keep the native DOM hit-test region aligned with them. */
-function drawHtmlInCanvas(
-  source: HTMLCanvasElement,
-  context: CanvasRenderingContext2D,
-  content: HTMLElement,
-) {
-  const transform = (context as HtmlInCanvasContext).drawElementImage(
-    content,
-    0,
-    0,
-  );
-  const canvas = source as HtmlInCanvasElement;
-  // Chrome 154 decoupled geometry from drawing before enabling automatic 2D
-  // synchronization. Older versions have no update method; newer versions
-  // synchronize automatically and return void. Use the returned matrix as-is:
-  // drawElementImage already accounts for the canvas's pixel density.
-  if (transform && typeof canvas.updateElementGeometry === "function") {
-    canvas.updateElementGeometry(content, { canvasTransform: transform });
-  }
-}
-
-function createRectCache(element: Element) {
-  let current = element.getBoundingClientRect();
-
-  const refresh = () => {
-    current = element.getBoundingClientRect();
-  };
-
-  const observer = new ResizeObserver(refresh);
-  observer.observe(element);
-  window.addEventListener("resize", refresh, { passive: true });
-  window.addEventListener("scroll", refresh, {
-    capture: true,
-    passive: true,
-  });
-
-  return {
-    get current() {
-      return current;
-    },
-    destroy() {
-      observer.disconnect();
-      window.removeEventListener("resize", refresh);
-      window.removeEventListener("scroll", refresh, true);
-    },
-  };
-}
+  createHtmlInCanvasCapture,
+  supportsHtmlInCanvas,
+  useClientCapability,
+} from "./runtime/html-in-canvas";
+import {
+  contentWidthRatio,
+  createCanvasResizeObserver,
+  createContentTexture,
+  createProgram,
+  createRectCache,
+  deleteProgram,
+  getCanvasPixelRatio,
+  syncCanvasBackingSize,
+  watchContextLoss,
+} from "./runtime/webgl";
 
 export type PeelSide = "left" | "right" | "top" | "bottom";
 
@@ -192,6 +67,8 @@ export interface PeelElements {
   output: HTMLCanvasElement;
   /** Element revealed underneath the peel. Kept hidden until the first capture is ready. */
   under?: HTMLElement;
+  /** Called once if the browser drops the WebGL context; rendering stops. */
+  onContextLost?: () => void;
 }
 
 export interface PeelInstance {
@@ -226,15 +103,6 @@ const SIDE_INDEX: Record<PeelSide, number> = {
   right: 1,
   top: 2,
   bottom: 3,
-};
-
-type PaintableCanvas = HTMLCanvasElement & {
-  onpaint?: (() => void) | null;
-  requestPaint?: () => void;
-};
-
-type ElementImageContext = CanvasRenderingContext2D & {
-  drawElementImage?: (element: Element, x: number, y: number) => void;
 };
 
 const SHEET_VERT = `#version 300 es
@@ -338,16 +206,15 @@ void main () {
 
 const SEG = 96;
 
-export function supportsHtmlInCanvas(): boolean {
-  if (typeof document === "undefined") return false;
-  const probe = document.createElement("canvas") as PaintableCanvas;
-  const ctx = probe.getContext("2d") as ElementImageContext | null;
-  return Boolean(
-    ctx &&
+/**
+ * The peel needs html-in-canvas and a hovering pointer, and is pure motion, so
+ * it also stays off when reduced motion is requested.
+ */
+export function supportsPeel(): boolean {
+  return (
+    supportsHtmlInCanvas() &&
     window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
-    !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    typeof ctx.drawElementImage === "function" &&
-    typeof probe.requestPaint === "function",
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
 
@@ -356,61 +223,30 @@ export function createPeel(
   options: PeelOptions = {},
 ): PeelInstance | null {
   const config = { ...DEFAULTS, ...options };
-  const { source, content, output, under } = elements;
+  const { source, content, output, under, onContextLost } = elements;
 
-  const gl = output.getContext("webgl2", {
+  const context = output.getContext("webgl2", {
     alpha: true,
     depth: true,
     stencil: false,
     antialias: true,
     premultipliedAlpha: true,
   });
-  if (!gl || gl.isContextLost()) return null;
+  if (context === null || context.isContextLost()) {
+    return null;
+  }
+  const gl = context;
 
-  const sourceCtx = source.getContext("2d") as ElementImageContext | null;
-  const paintable = source as PaintableCanvas;
-  const htmlInCanvas = Boolean(
-    sourceCtx &&
-    typeof sourceCtx.drawElementImage === "function" &&
-    typeof paintable.requestPaint === "function",
-  );
+  const linked = createProgram(gl, SHEET_VERT, SHEET_FRAG, "Peel");
+  if (linked === null) {
+    return null;
+  }
+  const sheet = linked;
 
-  if (htmlInCanvas) prepareHtmlInCanvas(source, content);
+  const capture = createHtmlInCanvasCapture(source, content);
 
   let wake = () => {};
-  let capture = () => {};
-
-  if (htmlInCanvas) {
-    paintable.onpaint = () => capture();
-  }
-
-  function compile(type: number, text: string): WebGLShader {
-    const shader = gl!.createShader(type)!;
-    gl!.shaderSource(shader, text);
-    gl!.compileShader(shader);
-    if (!gl!.getShaderParameter(shader, gl!.COMPILE_STATUS)) {
-      console.error("Peel shader error:", gl!.getShaderInfoLog(shader));
-    }
-    return shader;
-  }
-
-  function link(vertText: string, fragText: string) {
-    const vert = compile(gl!.VERTEX_SHADER, vertText);
-    const frag = compile(gl!.FRAGMENT_SHADER, fragText);
-    const program = gl!.createProgram()!;
-    gl!.attachShader(program, vert);
-    gl!.attachShader(program, frag);
-    gl!.linkProgram(program);
-    const uniforms: Record<string, WebGLUniformLocation> = {};
-    const count = gl!.getProgramParameter(program, gl!.ACTIVE_UNIFORMS);
-    for (let i = 0; i < count; i++) {
-      const info = gl!.getActiveUniform(program, i)!;
-      uniforms[info.name] = gl!.getUniformLocation(program, info.name)!;
-    }
-    return { program, vert, frag, uniforms };
-  }
-
-  const sheet = link(SHEET_VERT, SHEET_FRAG);
+  let lost = false;
 
   const gridVerts = new Float32Array((SEG + 1) * (SEG + 1) * 2);
   for (let y = 0; y <= SEG; y++) {
@@ -449,69 +285,40 @@ export function createPeel(
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, gridIndices, gl.STATIC_DRAW);
   gl.bindVertexArray(null);
 
-  const contentTexture = gl.createTexture()!;
-  gl.bindTexture(gl.TEXTURE_2D, contentTexture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    1,
-    1,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    new Uint8Array([0, 0, 0, 0]),
-  );
+  const contentTexture = createContentTexture(gl, false);
 
   let contentMaxX = 1;
   let hasTexture = false;
 
-  if (under && htmlInCanvas) under.style.visibility = "hidden";
+  if (under && capture) under.style.visibility = "hidden";
 
-  capture = () => {
-    if (!htmlInCanvas) return;
+  capture?.setOnPaint(() => {
+    if (lost) return;
     try {
-      sourceCtx!.reset();
-      drawHtmlInCanvas(source, sourceCtx!, content);
-      gl!.bindTexture(gl!.TEXTURE_2D, contentTexture);
-      gl!.texImage2D(
-        gl!.TEXTURE_2D,
+      capture.reset();
+      capture.draw();
+      gl.bindTexture(gl.TEXTURE_2D, contentTexture);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
         0,
-        gl!.RGBA,
-        gl!.RGBA,
-        gl!.UNSIGNED_BYTE,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
         source,
       );
-      sourceCtx!.reset();
+      capture.reset();
       hasTexture = true;
       wake();
     } catch {}
-  };
+  });
 
   function syncCanvasSize() {
-    const dpr = getCanvasPixelRatio(output, gl!);
-    const width = Math.max(1, Math.round(output.clientWidth * dpr));
-    const height = Math.max(1, Math.round(output.clientHeight * dpr));
-    if (output.width !== width || output.height !== height) {
-      output.width = width;
-      output.height = height;
-    }
-    contentMaxX = Math.min(
-      1,
-      Math.max(0.05, content.clientWidth / Math.max(output.clientWidth, 1)),
-    );
-    if (htmlInCanvas) {
-      const sourceWidth = Math.max(1, Math.round(source.clientWidth * dpr));
-      const sourceHeight = Math.max(1, Math.round(source.clientHeight * dpr));
-      if (source.width !== sourceWidth || source.height !== sourceHeight) {
-        source.width = sourceWidth;
-        source.height = sourceHeight;
-      }
-      paintable.requestPaint!();
+    const dpr = getCanvasPixelRatio(output, gl);
+    syncCanvasBackingSize(output, output, dpr);
+    contentMaxX = contentWidthRatio(content, output);
+    if (capture) {
+      syncCanvasBackingSize(source, source, dpr);
+      capture.requestPaint();
     }
   }
 
@@ -564,49 +371,49 @@ export function createPeel(
     const h = Math.max(output.clientHeight, 1);
     const side = SIDE_INDEX[config.side] ?? 0;
 
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
-    gl!.viewport(0, 0, output.width, output.height);
-    gl!.clearColor(0, 0, 0, 0);
-    gl!.clearDepth(1);
-    gl!.clear(gl!.COLOR_BUFFER_BIT | gl!.DEPTH_BUFFER_BIT);
-    gl!.enable(gl!.BLEND);
-    gl!.blendFunc(gl!.ONE, gl!.ONE_MINUS_SRC_ALPHA);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, output.width, output.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clearDepth(1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    gl!.enable(gl!.DEPTH_TEST);
-    gl!.depthFunc(gl!.LEQUAL);
-    gl!.useProgram(sheet.program);
-    gl!.bindVertexArray(sheetVao);
-    gl!.activeTexture(gl!.TEXTURE0);
-    gl!.bindTexture(gl!.TEXTURE_2D, contentTexture);
-    gl!.uniform1i(sheet.uniforms.uContent, 0);
-    gl!.uniform2f(sheet.uniforms.uRes, w, h);
-    gl!.uniform1f(sheet.uniforms.uSide, side);
-    gl!.uniform1f(sheet.uniforms.uPeel, peel.a);
-    gl!.uniform1f(sheet.uniforms.uCorner, config.corner ? 1 : 0);
-    gl!.uniform1f(sheet.uniforms.uReveal, Math.max(config.reveal, 0));
-    gl!.uniform1f(sheet.uniforms.uCurl, Math.max(config.curl, 1));
-    gl!.uniform1f(sheet.uniforms.uBow, config.bow);
-    gl!.uniform1f(sheet.uniforms.uFocal, Math.max(config.perspective, 200));
-    gl!.uniform1f(sheet.uniforms.uShade, config.shade);
-    gl!.uniform1f(sheet.uniforms.uZone, Math.max(config.zone, 1));
-    gl!.uniform1f(sheet.uniforms.uBulge, Math.max(config.bulge, 0));
-    gl!.uniform1f(sheet.uniforms.uShine, Math.max(config.shine, 0));
-    gl!.uniform3f(
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.useProgram(sheet.program);
+    gl.bindVertexArray(sheetVao);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, contentTexture);
+    gl.uniform1i(sheet.uniforms.uContent, 0);
+    gl.uniform2f(sheet.uniforms.uRes, w, h);
+    gl.uniform1f(sheet.uniforms.uSide, side);
+    gl.uniform1f(sheet.uniforms.uPeel, peel.a);
+    gl.uniform1f(sheet.uniforms.uCorner, config.corner ? 1 : 0);
+    gl.uniform1f(sheet.uniforms.uReveal, Math.max(config.reveal, 0));
+    gl.uniform1f(sheet.uniforms.uCurl, Math.max(config.curl, 1));
+    gl.uniform1f(sheet.uniforms.uBow, config.bow);
+    gl.uniform1f(sheet.uniforms.uFocal, Math.max(config.perspective, 200));
+    gl.uniform1f(sheet.uniforms.uShade, config.shade);
+    gl.uniform1f(sheet.uniforms.uZone, Math.max(config.zone, 1));
+    gl.uniform1f(sheet.uniforms.uBulge, Math.max(config.bulge, 0));
+    gl.uniform1f(sheet.uniforms.uShine, Math.max(config.shine, 0));
+    gl.uniform3f(
       sheet.uniforms.uShineColor,
       shineRgb[0],
       shineRgb[1],
       shineRgb[2],
     );
-    gl!.uniform1f(sheet.uniforms.uCross, side < 1.5 ? h : w);
-    gl!.uniform1f(
+    gl.uniform1f(sheet.uniforms.uCross, side < 1.5 ? h : w);
+    gl.uniform1f(
       sheet.uniforms.uSpan,
       config.shineDistance > 0 ? config.shineDistance : side < 1.5 ? w : h,
     );
-    gl!.uniform2f(sheet.uniforms.uPointer, pointer.su, pointer.sv);
-    gl!.uniform1f(sheet.uniforms.uMaxX, contentMaxX);
-    gl!.drawElements(gl!.TRIANGLES, gridIndices.length, gl!.UNSIGNED_INT, 0);
-    gl!.bindVertexArray(null);
-    gl!.disable(gl!.DEPTH_TEST);
+    gl.uniform2f(sheet.uniforms.uPointer, pointer.su, pointer.sv);
+    gl.uniform1f(sheet.uniforms.uMaxX, contentMaxX);
+    gl.drawElements(gl.TRIANGLES, gridIndices.length, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(null);
+    gl.disable(gl.DEPTH_TEST);
   }
 
   function syncContentEvents() {
@@ -678,7 +485,7 @@ export function createPeel(
   }
 
   function start() {
-    if (destroyed || running || !visible) return;
+    if (destroyed || lost || running || !visible) return;
     running = true;
     lastTime = performance.now();
     raf = requestAnimationFrame(frame);
@@ -686,6 +493,13 @@ export function createPeel(
 
   wake = start;
   start();
+
+  const stopWatchingContext = watchContextLoss(output, () => {
+    lost = true;
+    running = false;
+    cancelAnimationFrame(raf);
+    onContextLost?.();
+  });
 
   function onMotionChange() {
     reducedMotion = motionQuery.matches;
@@ -735,7 +549,7 @@ export function createPeel(
   const rectCache = createRectCache(output);
 
   function onPointerMove(event: PointerEvent) {
-    if (!htmlInCanvas) return;
+    if (!capture) return;
     const rect = rectCache.current;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -788,6 +602,7 @@ export function createPeel(
       destroyed = true;
       rectCache.destroy();
       cancelAnimationFrame(raf);
+      stopWatchingContext();
       observer.disconnect();
       intersection.disconnect();
       themeObserver.disconnect();
@@ -801,14 +616,12 @@ export function createPeel(
       listenTarget.removeEventListener("pointerleave", onPointerLeave);
       content.style.pointerEvents = "";
       if (under) under.style.visibility = "";
-      gl!.deleteTexture(contentTexture);
-      gl!.deleteProgram(sheet.program);
-      gl!.deleteShader(sheet.vert);
-      gl!.deleteShader(sheet.frag);
-      gl!.deleteBuffer(gridBuffer);
-      gl!.deleteBuffer(indexBuffer);
-      gl!.deleteVertexArray(sheetVao);
-      if (htmlInCanvas) paintable.onpaint = null;
+      gl.deleteTexture(contentTexture);
+      deleteProgram(gl, sheet);
+      gl.deleteBuffer(gridBuffer);
+      gl.deleteBuffer(indexBuffer);
+      gl.deleteVertexArray(sheetVao);
+      capture?.setOnPaint(null);
     },
   };
 }
@@ -823,8 +636,6 @@ export interface PeelProps extends PeelOptions {
   className?: string;
   style?: React.CSSProperties;
 }
-
-const emptySubscribe = () => () => {};
 
 export function Peel({
   children,
@@ -842,24 +653,33 @@ export function Peel({
   const [initialOptions] = useState(options);
   const [failed, setFailed] = useState(false);
 
-  const supported = useSyncExternalStore(
-    emptySubscribe,
-    supportsHtmlInCanvas,
-    () => false,
-  );
+  const supported = useClientCapability(supportsPeel);
   const native = supported && !failed;
 
   useEffect(() => {
     const source = sourceRef.current;
     const content = contentRef.current;
     const output = outputRef.current;
-    if (!source || !content || !output) return;
+    // The fallback is plain DOM: no context, shaders or listeners.
+    if (!native || !source || !content || !output) return;
+    let active = true;
+    // A failed or lost context is final.
+    const fail = () => {
+      if (active) setFailed(true);
+    };
     instanceRef.current = createPeel(
-      { source, content, output, under: underRef.current ?? undefined },
+      {
+        source,
+        content,
+        output,
+        under: underRef.current ?? undefined,
+        onContextLost: fail,
+      },
       initialOptions,
     );
-    if (native && !instanceRef.current) setFailed(true);
+    if (!instanceRef.current) fail();
     return () => {
+      active = false;
       instanceRef.current?.destroy();
       instanceRef.current = null;
     };
