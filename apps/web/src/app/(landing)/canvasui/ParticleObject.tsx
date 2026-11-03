@@ -1,5 +1,6 @@
 "use client";
 
+// Adapted from https://canvasui.dev/docs/components/particle-object
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";

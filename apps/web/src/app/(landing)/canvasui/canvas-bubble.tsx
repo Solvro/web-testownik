@@ -1,5 +1,6 @@
 "use client";
 
+// Adapted from https://canvasui.dev/docs/components/bubble
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
