@@ -1154,5 +1154,3 @@ export function ParticleObject({
     </div>
   );
 }
-
-export default ParticleObject;

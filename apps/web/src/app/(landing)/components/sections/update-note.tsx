@@ -186,7 +186,6 @@ export function UpdateNote({
         reverse
         corner
         side="bottom"
-        mode="hover"
         reveal={36}
         curl={34}
         bow={12}

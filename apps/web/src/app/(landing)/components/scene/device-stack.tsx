@@ -43,7 +43,6 @@ const MIN_SCENE_WIDTH = DESKTOP_STAGE_QUERY;
  * into its own layer; React only portals children into them.
  */
 export function DeviceStack({
-  className,
   coverOnly = false,
   pixelRatio,
   laptopContent,
@@ -53,7 +52,6 @@ export function DeviceStack({
   onRestored,
   onReady,
 }: {
-  className?: string;
   onUnavailable?: () => void;
   onRestored?: () => void;
   /** The model and all three screens are up; the cover is fading out. */
@@ -287,7 +285,6 @@ export function DeviceStack({
         // hundreds of elements that would inherit it: pinning it stops every
         // scroll frame from restyling all three screens.
         "[--landing-hero-progress:0]",
-        className,
       )}
     >
       {/*

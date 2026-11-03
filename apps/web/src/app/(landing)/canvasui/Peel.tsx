@@ -769,5 +769,3 @@ export function Peel({
     </div>
   );
 }
-
-export default Peel;

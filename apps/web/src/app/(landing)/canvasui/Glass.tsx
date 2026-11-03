@@ -730,5 +730,3 @@ export function Glass({
     </div>
   );
 }
-
-export default Glass;

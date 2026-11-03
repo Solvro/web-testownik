@@ -817,5 +817,3 @@ export function Bubble({
     </div>
   );
 }
-
-export default Bubble;
