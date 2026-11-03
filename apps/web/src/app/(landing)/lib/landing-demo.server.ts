@@ -1,22 +1,16 @@
-import { streamText } from "ai";
 import "server-only";
 
-import { parseLandingDemoRequest } from "@/app/(landing)/lib/landing-demo";
-import { buildLandingDemoSystemPrompt } from "@/app/(landing)/lib/landing-demo-prompts";
 import {
   checkRateLimit,
   createRateLimitExceededResponse,
   peekRateLimit,
   releaseRateLimit,
 } from "@/app/(landing)/lib/rate-limit";
-import { PREVIEW_QUESTION } from "@/app/(landing)/preview/preview-fixtures";
 import { env } from "@/env";
 import { getConfiguredAiModel, isAiProviderConfigured } from "@/lib/ai/model";
 import type { AiModelProvider } from "@/lib/ai/models";
 
 export const DEFAULT_LANDING_AI_MODEL = "openai:gpt-5.6-luna";
-
-export const LANDING_DEMO_MAX_OUTPUT_TOKENS = 220;
 
 /** 10-minute sliding windows: per visitor IP, and across all visitors. */
 export const LANDING_DEMO_RATE_LIMITS = {
@@ -28,8 +22,6 @@ const RATE_LIMIT_SCOPE = "ai-landing-demo";
 const GLOBAL_RATE_LIMIT_KEY = "global";
 const UNKNOWN_CLIENT_KEY = "unknown";
 const MAX_CLIENT_KEY_LENGTH = 64;
-/** The plain demo's body; the demo chat sets its own. */
-const MAX_BODY_BYTES = 16_384;
 
 function serviceUnavailable(code: string) {
   return Response.json(
@@ -136,8 +128,7 @@ export type LandingDemoAdmission<Body> =
  * Everything a public demo endpoint does before it calls the model: AI and
  * the landing model must be available, the caller and all visitors together
  * must be within `LANDING_DEMO_RATE_LIMITS`, and the body must fit
- * `maxBodyBytes` and `parse`. Every demo endpoint draws on the same per-IP
- * and global budget, so a visitor has one allowance whichever they use.
+ * `maxBodyBytes` and `parse`.
  *
  * Limits are checked before the body is read, so an over-quota caller costs
  * nothing but a header lookup. The global cap is only peeked then: it is
@@ -237,31 +228,3 @@ export async function admitLandingDemoRequest<Body>(
 export const LANDING_DEMO_PROVIDER_OPTIONS = {
   openai: { reasoningEffort: "low" },
 } as const;
-
-export async function handleLandingDemoRequest(
-  request: Request,
-): Promise<Response> {
-  const admission = await admitLandingDemoRequest(request, {
-    maxBodyBytes: MAX_BODY_BYTES,
-    parse: parseLandingDemoRequest,
-  });
-  if (!admission.admitted) {
-    return admission.response;
-  }
-
-  const result = streamText({
-    model: admission.model,
-    abortSignal: request.signal,
-    system: buildLandingDemoSystemPrompt(PREVIEW_QUESTION),
-    messages: admission.body.messages,
-    maxOutputTokens: LANDING_DEMO_MAX_OUTPUT_TOKENS,
-    maxRetries: 0,
-    providerOptions: LANDING_DEMO_PROVIDER_OPTIONS,
-    onError: ({ error }) => {
-      console.error("Landing AI demo stream failed", error);
-    },
-  });
-  return result.toTextStreamResponse({
-    headers: { "Cache-Control": "no-store" },
-  });
-}

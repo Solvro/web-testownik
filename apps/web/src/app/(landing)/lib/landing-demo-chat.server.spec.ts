@@ -19,10 +19,7 @@ import {
 } from "@/app/(landing)/lib/landing-demo-chat.server";
 import { buildLandingDemoChatSystemPrompt } from "@/app/(landing)/lib/landing-demo-prompts";
 import { getLandingDemoTokenCounter } from "@/app/(landing)/lib/landing-demo-tokenizer.server";
-import {
-  LANDING_DEMO_RATE_LIMITS,
-  handleLandingDemoRequest,
-} from "@/app/(landing)/lib/landing-demo.server";
+import { LANDING_DEMO_RATE_LIMITS } from "@/app/(landing)/lib/landing-demo.server";
 import { resetRateLimitStore } from "@/app/(landing)/lib/rate-limit";
 import { buildChatModelMessages } from "@/lib/ai/chat-messages";
 import {
@@ -782,6 +779,15 @@ describe("handleLandingDemoChatRequest", () => {
     }
   });
 
+  it("uses the configured LANDING_AI_MODEL", async () => {
+    mocks.env.LANDING_AI_MODEL = "xai:grok-mini";
+    const response = await handleLandingDemoChatRequest(
+      chatRequest(chatBody()),
+    );
+    await response.text();
+    expect(mocks.getConfiguredAiModel).toHaveBeenCalledWith("grok-mini", "xai");
+  });
+
   it("returns 503 without AI or a key for the landing model", async () => {
     mocks.providerConfigured = false;
     const response = await handleLandingDemoChatRequest(
@@ -826,24 +832,18 @@ describe("handleLandingDemoChatRequest", () => {
     }
   });
 
-  it("shares one per-client budget with /ai/landing-demo", async () => {
+  it("rate limits each client IP with Retry-After", async () => {
     const headers = { "x-forwarded-for": "203.0.113.21" };
-    const half = LANDING_DEMO_RATE_LIMITS.perClient.limit / 2;
-    for (let index = 0; index < half; index++) {
+    for (
+      let index = 0;
+      index < LANDING_DEMO_RATE_LIMITS.perClient.limit;
+      index++
+    ) {
       const chat = await handleLandingDemoChatRequest(
         chatRequest(chatBody(), headers),
       );
       expect(chat.status).toBe(200);
       await chat.text();
-      const plain = await handleLandingDemoRequest(
-        new Request("http://localhost/ai/landing-demo", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...headers },
-          body: JSON.stringify({ prompt: "a" }),
-        }),
-      );
-      expect(plain.status).toBe(200);
-      await plain.text();
     }
 
     const limited = await handleLandingDemoChatRequest(

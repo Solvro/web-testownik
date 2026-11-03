@@ -1,7 +1,7 @@
 /**
  * Public, unauthenticated demo of the app's assistant for the landing page's
- * showcase. Shares the `/ai/landing-demo` rate limits instead of the usage
- * service.
+ * showcase. Guarded by the in-memory per-IP + global rate limiter instead of
+ * the usage service.
  */
 export const runtime = "nodejs";
 export const maxDuration = 30;

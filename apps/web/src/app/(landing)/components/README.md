@@ -75,11 +75,11 @@ trimmed history, no usage reporting, an offline "explain" fallback) against
 `/ai/landing-demo/chat` (`../ai/landing-demo/`, server code in `../lib/`), with
 the app prompt plus the rules in `../lib/landing-demo-prompts.ts` and the app's
 question tools under the demo's limits. Tool cards save/edit questions through
-the session's preview services. The public route shares admission with
-`/ai/landing-demo`: AI must be enabled and the provider configured;
+the session's preview services. The public route is admitted by
+`admitLandingDemoRequest`: AI must be enabled and the provider configured;
 `LANDING_AI_MODEL` selects `provider:model` (default `openai:gpt-5.6-luna`).
 In-memory sliding windows allow 30 requests per client IP and 600 globally per
-ten minutes across both endpoints. Client identity uses the first forwarded IP,
+ten minutes. Client identity uses the first forwarded IP,
 then real IP, with an unknown-client bucket. Admission peeks before reading a
 streamed, size-bounded body and consumes the allowance after validation.
 
