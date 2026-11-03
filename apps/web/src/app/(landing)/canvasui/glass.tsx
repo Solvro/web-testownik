@@ -267,7 +267,7 @@ void main () {
   outColor = vec4(pow(glass, vec3(1.0 / 2.2)) * alpha, alpha);
 }`;
 
-export function createGlass(
+function createGlass(
   elements: GlassElements,
   options: GlassOptions = {},
 ): GlassInstance | null {

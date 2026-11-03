@@ -583,7 +583,7 @@ async function rasterizeImage(blob: Blob): Promise<ImageData> {
   });
 }
 
-export function createParticleObject(
+function createParticleObject(
   elements: ParticleObjectElements,
   options: ParticleObjectOptions = {},
 ): ParticleObjectInstance | null {

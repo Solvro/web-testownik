@@ -218,7 +218,7 @@ function supportsPeel(): boolean {
   );
 }
 
-export function createPeel(
+function createPeel(
   elements: PeelElements,
   options: PeelOptions = {},
 ): PeelInstance | null {

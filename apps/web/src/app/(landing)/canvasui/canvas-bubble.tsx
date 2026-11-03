@@ -248,7 +248,7 @@ void main () {
   outColor = vec4(color * alpha, alpha);
 }`;
 
-export function createBubble(
+function createBubble(
   elements: BubbleElements,
   options: BubbleOptions = {},
 ): BubbleInstance | null {
