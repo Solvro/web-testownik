@@ -19,7 +19,7 @@
   },
   "prettier": "@solvro/config/prettier",
   "overrides": {
-    "@next/eslint-plugin-next": "^16.1.1"
+    "@next/eslint-plugin-next": "^16.4.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
