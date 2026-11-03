@@ -5,19 +5,20 @@ import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 
 import {
-  useEmbeddedSurface,
   usePortalContainer,
+  useSurfaceModal,
 } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({ modal, ...props }: MenuPrimitive.Root.Props) {
-  // A modal menu locks the page's scroll and hides everything else from
-  // assistive tech, which an embedded surface has no business doing.
-  const isEmbedded = useEmbeddedSurface() !== null;
+  const surfaceModal = useSurfaceModal();
   return (
     <MenuPrimitive.Root
       data-slot="dropdown-menu"
-      modal={modal ?? (isEmbedded ? false : undefined)}
+      modal={
+        modal ??
+        (surfaceModal === undefined ? undefined : surfaceModal === true)
+      }
       {...props}
     />
   );

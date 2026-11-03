@@ -139,7 +139,13 @@ export function PreviewSandbox({
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null,
   );
-  const surface: EmbeddedSurface = { root, portalContainer };
+  // Overlays keep focus inside the screen but never lock the page's scroll
+  // or block the pointer outside it.
+  const surface: EmbeddedSurface = {
+    root,
+    portalContainer,
+    modal: "trap-focus",
+  };
   const isPhone = layout === "phone";
   const linkHandlers = {
     onClickCapture: (event: MouseEvent<HTMLElement>) => {
