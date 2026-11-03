@@ -54,8 +54,8 @@ export function followLandingSectionLink(
   if (isModifiedClick(event)) {
     return null;
   }
-  const target = document.getElementById(id);
-  if (target === null) {
+  const target = document.querySelector(`#${CSS.escape(id)}`);
+  if (!(target instanceof HTMLElement)) {
     return null;
   }
   event.preventDefault();
