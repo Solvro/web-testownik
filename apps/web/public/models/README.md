@@ -1,41 +1,31 @@
 # Landing-page device assets
 
-Everything in this directory is used only by the landing-page hero
-(`src/app/(landing)/components/`).
+Used only by the landing-page hero (`src/app/(landing)/components/`).
+Everything under `/models/` is served as immutable (`next.config.ts`): when a
+file changes, bump the `-vN` in its name (and every reference), or the `?v=`
+in `scene/device-models-url.ts` for the model.
 
 ## `device-stack.glb`
 
-The MacBook, iPad and iPhone in one meshopt-compressed binary glTF (807 KB,
-440 KB gzip), loaded by `scene/three/models.ts` with three's `GLTFLoader` and
-`MeshoptDecoder`. It is a build artefact: regenerate it, do not edit it by hand.
+MacBook, iPad and iPhone in one meshopt-compressed glTF, loaded by
+`scene/three/models.ts`. A build artefact: regenerate it, do not edit it.
 
-Everything under `/models/` is served as immutable (`next.config.ts`); the
-model is requested with a `?v=` query from `scene/device-models-url.ts`, so bump
-it after regenerating.
-
-The export bakes in every fix-up, so the runtime only looks nodes up by name:
+The runtime looks these nodes up by name:
 
 | Node             | What it is                                                |
 | ---------------- | --------------------------------------------------------- |
 | `laptop`         | MacBook root, identity rotation                           |
 | `laptop-hinge`   | Synthetic pivot at the hinge axis; rotate about X to open |
 | `laptop-lid`     | Lid assembly, re-parented onto the hinge                  |
-| `laptop-display` | MacBook panel, blanked to dark glass (`#030405`)          |
+| `laptop-display` | MacBook panel, blanked to dark glass                      |
 | `tablet`         | iPad root                                                 |
-| `tablet-display` | iPad screen, blanked to dark glass (`#020305`)            |
+| `tablet-display` | iPad screen, blanked to dark glass                        |
 | `phone`          | iPhone root                                               |
-| `phone-display`  | iPhone screen, blanked to dark glass (`#020305`)          |
+| `phone-display`  | iPhone screen, blanked to dark glass                      |
 
-Every emissive material inside the MacBook lid is blanked, so no baked-in
-screenshot can show through. Unused variants and empty nodes are pruned, and the
-iPhone shell is toned navy `#22355d`.
-
-The three `*-display` meshes are exempt from welding and quantisation: each
-live screen's plane, extent and in-plane axes are measured from their raw
-geometry and baked into `SCREEN_PLACEMENT` and `SATELLITE_RIG` in
-`scene/three/screens.ts`. `screens.test.ts` re-measures the meshes in this file
-and fails if they no longer match. Everything else is welded, quantised and
-meshopt compressed.
+The `*-display` meshes are not welded or quantised: `SCREEN_PLACEMENT` and
+`SATELLITE_RIG` in `scene/three/screens.ts` are measured from them, and
+`screens.test.ts` fails if they no longer match.
 
 ### Regenerating
 
@@ -45,58 +35,41 @@ meshopt compressed.
 pnpm --filter @testownik/web export:device-models
 ```
 
-`DEVICE_MODELS_SOURCE=/some/dir` reads the sources from elsewhere. The command
-needs a local Chrome: it runs `scripts/export-device-models/prepare-scene.js`
-in headless Chrome, then post-processes the result with glTF Transform. The
-output is deterministic.
+`DEVICE_MODELS_SOURCE=/some/dir` reads the sources from elsewhere. Needs a
+local Chrome (`scripts/export-device-models/prepare-scene.js` runs headless).
 
-After regenerating, compare the hero with the previous model in the closed and
-fully open pose (`?landing=true&capture=devices&captureProgress=0` and `…=1`,
-see `capture/capture-request.ts`). If the closed pose moved, regenerate the
-covers below. If `screens.test.ts` fails, its assertion report prints the
-newly measured position, scale and height of each display mesh; paste those
-into `SCREEN_PLACEMENT` in `scene/three/screens.ts`.
+Afterwards bump `?v=`, compare the closed and open pose
+(`?landing=true&capture=devices&captureProgress=0` and `…=1`, see
+`capture/capture-request.ts`) and recapture the covers if the closed pose
+moved. If `screens.test.ts` fails, paste the measurements from its report into
+`SCREEN_PLACEMENT`.
 
-## `testownik-device-stack-closed-{light,dark}-v1.webp`
+## `testownik-device-stack-{closed,open}-{light,dark}-v1.webp`
 
-The still shown while the model and the three screen iframes become ready. It
-is a capture of the hero's real WebGL and CSS3D renderers at the closed pose,
-cropped to exactly the cover box `DeviceStack` lays out (`scene-classes.ts`,
-solved by `scene/laptop-framing.ts`), so the live scene takes over with a short
-fade and no jump. Regenerate both themes after any change to the closed pose,
-camera framing, device models, product surfaces or theme colors:
+Captures of the hero's real renderers. `closed` is the cover shown while the
+scene loads, cropped to the cover box in `scene/scene-classes.ts`; `open` is
+the static hero without WebGL. Recapture after changing the pose, framing,
+models, product surfaces or theme colors:
 
 ```sh
 pnpm dev --port 3123
 # In another terminal, from apps/web:
 CAPTURE_BASE_URL=http://localhost:3123 pnpm capture:device-stack
-```
-
-The harness captures at 1758×1000 CSS pixels and 1.35× DPR (the runtime cap)
-and writes lossy WebP with lossless alpha; it rejects a file over 60 KB or a
-silhouette touching the crop edge. Bump the file version in the harness and in
-`scene/scene-classes.ts` together when the capture geometry changes.
-
-## `testownik-device-stack-open-{light,dark}-v1.webp`
-
-The static hero when WebGL is unavailable or a lost context does not come
-back, captured with the same harness at the open pose and trimmed to the
-silhouette:
-
-```sh
 CAPTURE_BASE_URL=http://localhost:3123 CAPTURE_POSE=open pnpm capture:device-stack
 ```
 
+The harness (`scripts/capture-device-stack.mjs`) rejects oversized files and
+silhouettes touching the crop edge. Bump the version in the harness and in
+`scene/scene-classes.ts` together.
+
 ## `testownik-tablet-stats-preview-{light,dark}-v1.webp`
 
-The still the iPad shows before its live statistics charts load
-(`scene/device-screen-content.tsx`).
+The iPad's still until its live charts load (`scene/device-screen-content.tsx`).
 
 ## `testownik-phone-quiz-preview-{light,dark}-v1.webp`
 
-The still the mobile hero's CSS iPhone shows until its live quiz has loaded
-(`sections/hero-phone.tsx`). Screen only, at exactly 2× the 390 × 841 screen
-(780 × 1682): captured from the live surface with the phone laid out at
-`--lp-phone-scale: 1`, the Dynamic Island, sensors and status-bar clock hidden,
-and a page clip on the screen's box, in light and dark. Recapture when the
-quiz preview's first screen changes.
+The mobile hero phone's still until its live quiz loads
+(`sections/hero-phone.tsx`). Screen only, at 2× the 390 × 841 screen
+(780 × 1682), captured from the live surface at `--lp-phone-scale: 1` with the
+Dynamic Island, sensors and clock hidden. Recapture when the quiz preview's
+first screen changes.
