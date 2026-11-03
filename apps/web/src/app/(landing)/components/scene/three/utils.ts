@@ -1,7 +1,24 @@
-import type { Material, Mesh, Object3D, Texture, Vector3 } from "three";
+import type {
+  Line,
+  Material,
+  Mesh,
+  Object3D,
+  Points,
+  Texture,
+  Vector3,
+} from "three";
 
 export function isMesh(object: Object3D): object is Mesh {
   return "isMesh" in object && object.isMesh === true;
+}
+
+/** Meshes, points and lines: everything that owns geometry and materials. */
+function isDrawable(object: Object3D): object is Mesh | Points | Line {
+  return (
+    isMesh(object) ||
+    ("isPoints" in object && object.isPoints === true) ||
+    ("isLine" in object && object.isLine === true)
+  );
 }
 
 function isTexture(value: unknown): value is Texture {
@@ -13,8 +30,8 @@ function isTexture(value: unknown): value is Texture {
   );
 }
 
-function materialsOf(mesh: Mesh): Material[] {
-  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+function materialsOf(object: Mesh | Points | Line): Material[] {
+  return Array.isArray(object.material) ? object.material : [object.material];
 }
 
 export function smoothstep(from: number, to: number, value: number): number {
@@ -43,7 +60,7 @@ export function setCubicBezier(
 /** Releases every geometry, material and texture under `root`. */
 export function disposeObject(root: Object3D): void {
   root.traverse((object) => {
-    if (!isMesh(object)) {
+    if (!isDrawable(object)) {
       return;
     }
 

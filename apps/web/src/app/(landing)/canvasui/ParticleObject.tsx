@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import type { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import type { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+import { disposeObject } from "../components/scene/three/utils";
 
 export interface ParticleObjectOptions {
   /** URL of the asset to display: GLB/glTF, SVG, PNG, JPEG, WebP, or GIF. Object URLs from a file input work too. The format is sniffed from the bytes, not the extension. */
@@ -185,29 +187,6 @@ interface TriangleBucket {
   albedo: ImageData | null;
   albedoFlipY: boolean;
   triangleCount: number;
-}
-
-function disposeObject(root: THREE.Object3D) {
-  root.traverse((node) => {
-    const mesh = node as THREE.Mesh;
-    if (mesh.geometry) {
-      mesh.geometry.dispose();
-    }
-    const materials = Array.isArray(mesh.material)
-      ? mesh.material
-      : [mesh.material];
-    for (const material of materials) {
-      if (!material) {
-        continue;
-      }
-      for (const value of Object.values(material)) {
-        if (value instanceof THREE.Texture) {
-          value.dispose();
-        }
-      }
-      material.dispose();
-    }
-  });
 }
 
 function readAlbedo(map: THREE.Texture | null): ImageData | null {
@@ -661,10 +640,27 @@ export function createParticleObject(
   let loadToken = 0;
   let disposed = false;
 
-  const loader = new GLTFLoader();
-  const draco = new DRACOLoader();
-  draco.setDecoderPath(config.dracoDecoderPath);
-  loader.setDRACOLoader(draco);
+  // Image assets never pay for the glTF and Draco loaders.
+  let modelLoaders: Promise<{ loader: GLTFLoader; draco: DRACOLoader }> | null =
+    null;
+  function loadModelLoaders() {
+    modelLoaders ??= Promise.all([
+      import("three/addons/loaders/GLTFLoader.js"),
+      import("three/addons/loaders/DRACOLoader.js"),
+    ]).then(
+      ([gltf, dracoModule]) => {
+        const loader = new gltf.GLTFLoader();
+        const draco = new dracoModule.DRACOLoader();
+        loader.setDRACOLoader(draco);
+        return { loader, draco };
+      },
+      (error: unknown) => {
+        modelLoaders = null;
+        throw error;
+      },
+    );
+    return modelLoaders;
+  }
 
   function clearPoints() {
     if (!points) {
@@ -761,6 +757,10 @@ export function createParticleObject(
       }
 
       if (kind === "glb" || kind === "gltf") {
+        const { loader, draco } = await loadModelLoaders();
+        if (disposed || token !== loadToken) {
+          return;
+        }
         draco.setDecoderPath(config.dracoDecoderPath);
         const resourcePath = source.slice(0, source.lastIndexOf("/") + 1);
         const data = kind === "glb" ? buffer : new TextDecoder().decode(bytes);
@@ -1095,7 +1095,14 @@ export function createParticleObject(
       controls.dispose();
       clearAsset();
       material.dispose();
-      draco.dispose();
+      modelLoaders?.then(
+        ({ draco }) => {
+          draco.dispose();
+        },
+        () => {
+          // The failed load already reported itself through onError.
+        },
+      );
       renderer.dispose();
     },
   };
