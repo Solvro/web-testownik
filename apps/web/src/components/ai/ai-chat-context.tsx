@@ -7,6 +7,7 @@ interface AiChatContextValue {
   quizId: string;
   questionId: string | null;
   question: Question | null;
+  questions: Question[];
   canEdit: boolean;
 }
 

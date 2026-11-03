@@ -1,0 +1,830 @@
+/* Progress belongs only to its animated target, never its descendants. */
+@property --landing-hero-progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/*
+ * Only what utilities cannot express: the app shell, DOM created by CanvasUI
+ * and Next.js, pseudo-element chrome, keyframes and scroll-driven animation.
+ */
+
+.lp-hand-note {
+  color: var(--primary);
+  font-size: 1.65rem;
+  line-height: 1.15;
+  transform: rotate(-2deg);
+  text-wrap: pretty;
+}
+
+.lp-ink-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.lp-ink-underline::after {
+  position: absolute;
+  right: -1%;
+  bottom: -0.12em;
+  left: 0;
+  height: 0.12em;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.65;
+  content: "";
+  transform: rotate(-1deg);
+}
+
+.lp-ink-link {
+  position: relative;
+}
+
+.lp-ink-link::after {
+  position: absolute;
+  inset: auto 0 0.25rem;
+  height: 0.15em;
+  border-top: 3px solid currentColor;
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-1deg);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lp-cta-chevron {
+  transition: transform 200ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.lp-cta-shaft {
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path 200ms cubic-bezier(0.77, 0, 0.175, 1),
+    opacity 150ms ease;
+}
+
+.lp-ink-link:focus-visible::after {
+  clip-path: inset(0);
+}
+
+.lp-showcase-cta:focus-visible .lp-cta-chevron {
+  transform: translateX(4px);
+}
+
+.lp-showcase-cta:focus-visible .lp-cta-shaft {
+  opacity: 1;
+  clip-path: inset(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-ink-link:hover::after {
+    clip-path: inset(0);
+  }
+
+  .lp-showcase-cta:hover .lp-cta-chevron {
+    transform: translateX(4px);
+  }
+
+  .lp-showcase-cta:hover .lp-cta-shaft {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-ink-link::after,
+  .lp-cta-chevron,
+  .lp-cta-shaft {
+    transition: none;
+  }
+}
+
+/* The root layout's shell, which the landing replaces. */
+body:has([data-landing-page]) {
+  background: var(--background);
+  scrollbar-color: var(--primary) var(--background);
+  scrollbar-width: thin;
+}
+
+body:has([data-landing-page])::-webkit-scrollbar {
+  width: 0.48rem;
+}
+
+body:has([data-landing-page])::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+body:has([data-landing-page])::-webkit-scrollbar-thumb {
+  border: 2px solid var(--background);
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+body:has([data-landing-page]) #container {
+  max-width: none;
+  gap: 0;
+  padding: 0;
+}
+
+body:has([data-landing-page]) #container > main {
+  width: 100%;
+}
+
+/* Keep the development launcher clear of the hero's bottom-right link. */
+body:has([data-landing-page]) .tsqd-open-btn-container {
+  bottom: 4rem;
+}
+
+body:has([data-landing-page]) #container > [data-app-navbar],
+body:has([data-landing-page]) [data-app-footer],
+body:has([data-landing-page]) #container > [role="alert"] {
+  display: none;
+}
+
+/* CanvasUI discards alpha, so the Bubble's captured subtree needs an opaque background. */
+.lp-hero-grid,
+.lp-bubble-capture,
+.lp-bubble-capture > canvas > div,
+.lp-bubble-capture > div:not([class]),
+.lp-bubble-capture > div {
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px),
+    var(--background) !important;
+  background-size: 5rem 5rem !important;
+  /* Lets `HeroFade` (at -z-1) paint over the grid but under all content. */
+  isolation: isolate;
+}
+
+/* Not a stacking context: its canvases are layered around the fixed header. */
+.lp-bubble-capture {
+  isolation: auto;
+}
+
+/*
+ * Clipped under the fixed header, so the header's capture copy does not show
+ * through its blur. 5.3rem is the header's hero height at `lg`.
+ */
+.lp-bubble-capture > canvas:first-of-type {
+  z-index: 1;
+  clip-path: inset(5.3rem 0 0 0);
+}
+
+/* Masked over the same stretch `HeroFade` fades the grid. */
+.lp-bubble-capture > canvas:last-of-type {
+  z-index: 60;
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - clamp(7rem, 22vh, 13rem)),
+    transparent
+  );
+}
+
+/* The closed lid keeps the laptop screen inert, down into its frame. */
+.lp-screen-laptop[inert],
+.lp-screen-laptop[inert] * {
+  pointer-events: none !important;
+}
+
+/*
+ * The MacBook panel's lit area is rounded only at the top (12.3 CSS px, from
+ * `laptop-display` in device-stack.glb).
+ *
+ * The host stays square and an overlay draws the black border and rounding
+ * with a spread shadow. Clipping the content to the same radius would
+ * anti-alias two coincident edges and leave a light seam. Painted above the
+ * content, it also hides the CSS3D layer's aliased edge.
+ */
+.lp-screen-laptop::before {
+  --lp-laptop-ring: 3px;
+  --lp-laptop-radius: 12.3px;
+  --lp-laptop-inner-radius: calc(
+    var(--lp-laptop-radius) - var(--lp-laptop-ring)
+  );
+
+  position: absolute;
+  z-index: 29;
+  border-radius: var(--lp-laptop-inner-radius) var(--lp-laptop-inner-radius) 0 0;
+  box-shadow: 0 0 0 var(--lp-laptop-radius) oklch(0.04 0 0);
+  content: "";
+  inset: var(--lp-laptop-ring);
+  pointer-events: none;
+}
+
+/*
+ * Notch and camera, scaled from a 14" MacBook Pro (220 × 38 pt of 1800 ×
+ * 1169 pt) to 104 × 19 px on the 940 × 611 px screen. The SVG is 8 px wider
+ * than the notch body to hold the concave fillets where it meets the bezel.
+ */
+.lp-screen-laptop::after {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 50%;
+  width: 112px;
+  height: 19px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='19' viewBox='0 0 112 19'%3E%3Cdefs%3E%3CradialGradient id='l' cx='.42' cy='.38' r='.6'%3E%3Cstop offset='0' stop-color='%233a4250'/%3E%3Cstop offset='.48' stop-color='%230d1018'/%3E%3Cstop offset='1' stop-color='%23040404'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M0 0H112V3A4 4 0 0 0 108 7V13.5A5.5 5.5 0 0 1 102.5 19H9.5A5.5 5.5 0 0 1 4 13.5V7A4 4 0 0 0 0 3Z'/%3E%3Ccircle cx='56' cy='9' r='2.4' fill='url%28%23l%29'/%3E%3Ccircle cx='56' cy='9' r='2.9' fill='none' stroke='%23fff' stroke-opacity='.05' stroke-width='.6'/%3E%3C/svg%3E")
+    no-repeat;
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.lp-screen-phone::after {
+  position: absolute;
+  z-index: 20;
+  top: 13px;
+  left: 50%;
+  width: 104px;
+  height: 36px;
+  border-radius: 999px;
+  background: oklch(0.08 0 0);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 5%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/*
+ * The mobile hero's iPhone 14 Pro, ported from devices.css v0.2.0 (MIT,
+ * github.com/picturepan2/devices.css). Vendored because the package's reset
+ * sets `display: block` on every descendant of `.device`, overriding the live
+ * screen's utilities. The rest of the phone is in `sections/hero-phone.tsx`.
+ */
+.lp-iphone-stripe::before,
+.lp-iphone-stripe::after,
+.lp-iphone-bands::before,
+.lp-iphone-bands::after,
+.lp-iphone-sensors::before,
+.lp-iphone-sensors::after,
+.lp-iphone-buttons::before,
+.lp-iphone-buttons::after {
+  position: absolute;
+  box-sizing: border-box;
+  content: "";
+}
+
+/* Antenna lines on the long edges. */
+.lp-iphone-stripe::before,
+.lp-iphone-stripe::after {
+  z-index: 9;
+  left: 0;
+  width: 100%;
+  height: 7px;
+  border: solid rgb(1 1 1 / 25%);
+  border-width: 0 7px;
+}
+
+.lp-iphone-stripe::after {
+  top: 85px;
+}
+
+.lp-iphone-stripe::before {
+  bottom: 85px;
+}
+
+/* Antenna lines on the short edges. */
+.lp-iphone-bands::before,
+.lp-iphone-bands::after {
+  z-index: 9;
+  width: 6px;
+  height: 6px;
+  border: solid rgb(1 1 1 / 25%);
+  border-width: 6px 0;
+}
+
+.lp-iphone-bands::after {
+  top: 0;
+  right: 86px;
+}
+
+.lp-iphone-bands::before {
+  bottom: 0;
+  left: 86px;
+}
+
+.lp-iphone-sensors::after {
+  top: 30px;
+  left: 50%;
+  width: 74px;
+  height: 33px;
+  margin-left: -60px;
+  border-radius: 17px;
+  background: #010101;
+}
+
+.lp-iphone-sensors::before {
+  top: 42px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: 36px;
+  border-radius: 50%;
+  background:
+    radial-gradient(farthest-corner at 20% 20%, #6074bf 0, transparent 40%),
+    radial-gradient(
+      farthest-corner at 80% 80%,
+      #513785 0,
+      #24555e 20%,
+      transparent 50%
+    );
+  box-shadow: 0 0 1px 1px rgb(255 255 255 / 5%);
+}
+
+/* Volume up and down, below the action button. */
+.lp-iphone-buttons::before,
+.lp-iphone-buttons::after {
+  left: 0;
+  width: 3px;
+  height: 62px;
+  border-radius: 2px;
+  background: var(--lp-iphone-edge);
+}
+
+.lp-iphone-buttons::after {
+  top: 60px;
+}
+
+.lp-iphone-buttons::before {
+  top: 140px;
+}
+
+/* The mobile hero's study chips drift outwards over the first stretch of scroll. */
+@keyframes lp-hero-chip-drift {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: var(--lp-chip-drift, 0 -1rem);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-hero-chip {
+      animation: lp-hero-chip-drift linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 80vh;
+    }
+  }
+}
+
+/* Registered so the header's shrink can transition (see LandingNav). */
+@property --lp-nav-t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/*
+ * The header shrinks with the scroll as the hero's stage leaves, so it is
+ * already right at first paint when the page loads scrolled. Without
+ * scroll-driven animations, `LandingPage` sets `data-settled` and the property
+ * transitions instead.
+ */
+@keyframes lp-nav-shrink {
+  from {
+    --lp-nav-t: 0;
+  }
+  to {
+    --lp-nav-t: 1;
+  }
+}
+
+@keyframes lp-nav-strip-out {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 39.99rem) {
+  [data-landing-nav="fixed"] {
+    --lp-nav-t: 1;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (min-width: 40rem) {
+    [data-landing-nav="fixed"] {
+      animation: lp-nav-shrink linear both;
+      animation-timeline: --lp-hero;
+      animation-range: exit-crossing 0px exit-crossing 7rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    [data-landing-nav="fixed"] {
+      animation-range: exit 0px exit 7rem;
+    }
+
+    [data-hero-lens-strip] {
+      animation: lp-nav-strip-out linear forwards;
+      animation-timeline: --lp-hero;
+      animation-range: exit 0px exit 100%;
+    }
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-landing-nav="fixed"] {
+      transition: --lp-nav-t 480ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+}
+
+@keyframes lp-float {
+  50% {
+    transform: translateY(-0.45rem);
+  }
+}
+
+/* A showcase panel settles in while the rail is still widening. */
+@keyframes lp-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@keyframes lp-nudge {
+  50% {
+    transform: translateY(0.28rem);
+  }
+}
+
+/* TOC section peek: arrive soft, leave with a quick pop. */
+@keyframes lp-toc-preview-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.4rem) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes lp-toc-preview-boom {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.42);
+  }
+}
+
+@keyframes lp-toc-preview-burst {
+  0% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.55);
+  }
+}
+
+.lp-toc-preview-boom::before,
+.lp-toc-preview-boom::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 118%;
+  height: 118%;
+  border: 1.5px solid color-mix(in oklab, var(--foreground) 28%, transparent);
+  border-radius: 0.9rem;
+  content: "";
+  pointer-events: none;
+  animation: lp-toc-preview-burst 360ms cubic-bezier(0.15, 0.85, 0.25, 1) both;
+}
+
+.lp-toc-preview-boom::after {
+  width: 136%;
+  height: 136%;
+  border-color: color-mix(in oklab, var(--primary) 35%, transparent);
+  animation-delay: 40ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-toc-preview-boom::before,
+  .lp-toc-preview-boom::after {
+    animation: none;
+  }
+}
+
+/* A peek is a still. Utilities would need `before:`/`after:` on every node. */
+.lp-toc-preview-stage *,
+.lp-toc-preview-stage *::before,
+.lp-toc-preview-stage *::after {
+  animation: none !important;
+  transition: none !important;
+  /* Replayed inner scroll offsets must land at once, not glide. */
+  scroll-behavior: auto !important;
+}
+
+/* A re-cloned peek fades in over the stale one, which is removed once covered. */
+@keyframes lp-toc-preview-fresh {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lp-story-date-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lp-story-description-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/*
+ * The wordmark follows the hero's view timeline, on the compositor, instead
+ * of a frame behind with the JS progress. `contain` is the same travel
+ * `useHeroProgress` measures; the inline progress style is the fallback.
+ */
+@keyframes lp-hero-open-logo {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 1.5rem) scale(0.96);
+  }
+  60% {
+    opacity: 0;
+    transform: translate(-50%, 0.6rem) scale(0.984);
+  }
+  76.67% {
+    opacity: 1;
+    transform: translate(-50%, 0.35rem) scale(0.9907);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Only once the stack has opened to the scrolled pose: the wordmark must
+       not float over the cover or a laptop still catching up. */
+    [data-hero-settled="true"] .lp-hero-open-logo {
+      animation: lp-hero-open-logo linear both;
+      animation-timeline: --lp-hero;
+      animation-range: contain;
+    }
+  }
+}
+
+/* Keyed to the progress-target attribute, so the static fallback drops the promotion too. */
+@media (min-width: 1024px) {
+  [data-hero-progress] {
+    will-change: transform, opacity;
+  }
+}
+
+.lp-update-note {
+  position: relative;
+  isolation: isolate;
+}
+
+.lp-update-sheet {
+  height: 100%;
+  background: linear-gradient(180deg, #f0e38e, #f9e98c 22%, #faec97);
+  box-shadow: inset 0 12px 18px -18px rgb(99 88 29 / 24%);
+}
+
+/*
+ * The TOC peek clones drop every canvas, and with html-in-canvas the sheet
+ * lives inside one (the yellow is WebGL). Paint the note itself there.
+ */
+.lp-toc-preview-stage .lp-update-note {
+  background: linear-gradient(180deg, #f0e38e, #f9e98c 22%, #faec97);
+  box-shadow: 2px 4px 4px rgb(0 0 0 / 20%);
+}
+
+/* Filter only the paper canvas; keep the native text out of its bitmap. */
+.lp-update-note > canvas[aria-hidden] {
+  filter: drop-shadow(2px 4px 4px rgb(0 0 0 / 20%));
+}
+
+.lp-update-note[data-peel-native="false"] {
+  box-shadow: 2px 4px 4px rgb(0 0 0 / 20%);
+}
+
+.lp-update-note[data-peel-native="false"]::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #e3d57e, #fff4ad);
+  box-shadow: -3px -3px 6px rgb(99 88 29 / 16%);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  content: "";
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: transform 260ms ease;
+}
+
+.lp-update-note[data-peel-native="false"]:focus-within::after {
+  transform: scale(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-update-note[data-peel-native="false"]:hover::after {
+    transform: scale(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-update-note::after {
+    transition: none;
+  }
+}
+
+.lp-update-paper {
+  position: relative;
+  min-height: 22rem;
+}
+
+/* Animate depth so cards settle back into the deck without a z-index snap. */
+.lp-perk-stack {
+  container-type: inline-size;
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.lp-perk-card {
+  pointer-events: none;
+  transform: translateZ(0);
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-perk-card:nth-child(2) {
+  transform: translateZ(12px);
+}
+
+.lp-perk-card:nth-child(3) {
+  transform: translateZ(24px);
+}
+
+[data-revealed="true"] .lp-perk-card .lp-perk-face {
+  pointer-events: auto;
+}
+
+.lp-perk-reveal {
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(calc(-1 * var(--card-x)), calc(-1 * var(--card-y)))
+    rotate(calc(-1 * var(--card-tilt))) scale(0.95);
+}
+
+[data-revealed="true"] .lp-perk-reveal {
+  animation: lp-perk-deal 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.lp-perk-card:nth-child(2) .lp-perk-reveal {
+  animation-delay: 75ms;
+}
+
+.lp-perk-card:nth-child(3) .lp-perk-reveal {
+  animation-delay: 150ms;
+}
+
+@keyframes lp-perk-deal {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-perk-cover-card {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+[data-revealed="true"] .lp-perk-cover-card {
+  animation: lp-perk-cover-deal 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.lp-perk-cover-card:nth-child(2) {
+  animation-delay: 75ms;
+}
+
+.lp-perk-cover-card:nth-child(3) {
+  animation-delay: 150ms;
+}
+
+@keyframes lp-perk-cover-deal {
+  to {
+    opacity: 1;
+    transform: var(--coverflow-rest, none);
+  }
+}
+
+.lp-perk-motion {
+  transform: rotate(var(--card-tilt));
+  transition:
+    transform 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 350ms ease;
+}
+
+/* Preview animations are disabled; render the cards in their finished pose. */
+.lp-toc-preview-stage .lp-perk-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.lp-toc-preview-stage .lp-perk-cover-card {
+  opacity: 1;
+  transform: var(--coverflow-rest, none);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-perk-stack:has(.lp-perk-card:hover)
+    .lp-perk-card:not(:hover)
+    .lp-perk-motion {
+    opacity: 0.45;
+  }
+
+  .lp-perk-face::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--perk-bg);
+    content: "";
+    opacity: 0;
+    transition: opacity 350ms ease;
+  }
+
+  .lp-perk-stack:has(.lp-perk-card:hover)
+    .lp-perk-card:not(:hover)
+    .lp-perk-face::after {
+    opacity: 0.2;
+  }
+
+  .lp-perk-stack .lp-perk-card:hover {
+    transform: translateZ(100px);
+  }
+
+  [data-revealed="true"] .lp-perk-card:hover .lp-perk-motion {
+    transform: translate(calc(-0.2 * var(--card-x)), calc(-0.2 * var(--card-y)))
+      rotate(calc(0.5 * var(--card-tilt))) scale(1.045);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-perk-card {
+    transition: none;
+  }
+
+  .lp-perk-reveal {
+    transform: none;
+  }
+
+  [data-revealed="true"] .lp-perk-card .lp-perk-reveal {
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+
+  .lp-perk-cover-card {
+    transform: var(--coverflow-rest, none);
+  }
+
+  [data-revealed="true"] .lp-perk-cover-card {
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+
+  .lp-perk-motion {
+    transition: opacity 200ms ease;
+  }
+
+  [data-revealed="true"] .lp-perk-card:hover .lp-perk-motion {
+    transform: rotate(var(--card-tilt));
+  }
+}

@@ -15,6 +15,11 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     XAI_API_KEY: z.string().min(1).optional(),
+    /** Model for the public landing-page AI demo, as `provider:model`. */
+    LANDING_AI_MODEL: z
+      .string()
+      .regex(/^(?:openai|xai|anthropic):\S+$/)
+      .default("openai:gpt-6-luna"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -27,6 +32,11 @@ export const env = createEnv({
     NEXT_PUBLIC_TURN_CREDENTIAL: z.string().optional(),
     NEXT_PUBLIC_ALERTS_APP_CODE: z.string().min(1).default("testownik"),
     NEXT_PUBLIC_AI_ENABLED: z.stringbool().default(true),
+    NEXT_PUBLIC_UMAMI_ORIGIN: z.url().default("https://analytics.solvro.pl"),
+    NEXT_PUBLIC_UMAMI_WEBSITE_ID: z
+      .string()
+      .min(1)
+      .default("fd87b2a1-12b0-4ca2-9e6f-a85f58d981cc"),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
@@ -35,5 +45,7 @@ export const env = createEnv({
     NEXT_PUBLIC_TURN_CREDENTIAL: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
     NEXT_PUBLIC_ALERTS_APP_CODE: process.env.NEXT_PUBLIC_ALERTS_APP_CODE,
     NEXT_PUBLIC_AI_ENABLED: process.env.NEXT_PUBLIC_AI_ENABLED,
+    NEXT_PUBLIC_UMAMI_ORIGIN: process.env.NEXT_PUBLIC_UMAMI_ORIGIN,
+    NEXT_PUBLIC_UMAMI_WEBSITE_ID: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID,
   },
 });

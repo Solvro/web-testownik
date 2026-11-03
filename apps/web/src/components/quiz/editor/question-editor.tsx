@@ -493,6 +493,7 @@ export function QuestionEditor({
                     return (
                       <>
                         <div
+                          data-slot="editor-question"
                           className={cn(
                             quietField,
                             "group/question flex items-start",
@@ -522,7 +523,7 @@ export function QuestionEditor({
                               {...imageProps}
                               target="pytania"
                               // Centred on the first line, which is 26px tall; the button is 32px.
-                              className="text-muted-foreground hover:text-foreground mt-0.75 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:group-has-data-held/question:opacity-100"
+                              className="text-muted-foreground hover:text-foreground mt-0.75 shrink-0 transition-opacity pointer-fine:opacity-75 pointer-fine:group-focus-within/question:opacity-100 pointer-fine:group-hover/question:opacity-100 pointer-fine:[:where([data-slot=editor-question]):has([data-held])_&]:opacity-100"
                             />
                           )}
                         </div>

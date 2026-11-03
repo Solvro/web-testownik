@@ -41,7 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { getQuizService } from "@/services";
+import { servicesFor } from "@/services/client-services";
 
 interface ImageFields {
   image?: string | null;
@@ -294,16 +294,20 @@ function QuestionDiff({ sections }: { sections: DiffSection[] }) {
 
 function EditQuestionCard({
   edit,
+  originQuestionId,
   isRunning,
   answersComplete,
   interrupted,
 }: {
   edit: EditedQuestion;
+  originQuestionId: string | null;
   isRunning: boolean;
   answersComplete: boolean;
   interrupted: boolean;
 }) {
-  const { quizId, questionId, question, canEdit } = useAiChatContext();
+  const { quizId, questions, canEdit } = useAiChatContext();
+  const question = questions.find(({ id }) => id === originQuestionId) ?? null;
+  const questionId = question?.id ?? null;
   const queryClient = useQueryClient();
   const [applied, setApplied] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
@@ -332,7 +336,7 @@ function EditQuestionCard({
       if (editableQuestion === null) {
         throw new Error("No editable question");
       }
-      return await getQuizService().updateQuestion(
+      return await servicesFor(queryClient).quiz.updateQuestion(
         questionId,
         prepareQuestionForSubmission(editableQuestion),
       );
@@ -488,7 +492,7 @@ function EditQuestionCard({
           </div>
         )}
 
-        {answersComplete && questionId !== null && canEdit ? (
+        {answersComplete && canEdit ? (
           <div className="mt-2 flex gap-2">
             <Button
               variant="outline"
@@ -497,7 +501,7 @@ function EditQuestionCard({
               onClick={() => {
                 void applyEdit();
               }}
-              disabled={isPending || applied}
+              disabled={isPending || applied || question === null}
             >
               {isPending ? (
                 <>
@@ -556,7 +560,7 @@ function EditQuestionCard({
 
         {answersComplete && questionId === null && canEdit ? (
           <p className="text-muted-foreground mt-2 text-center text-xs">
-            Brak aktualnego pytania do edycji
+            Pytanie, którego dotyczy propozycja, nie jest już dostępne.
           </p>
         ) : null}
       </CardContent>
@@ -584,10 +588,12 @@ function ToolErrorCard({ label }: { label: string }) {
 
 export function EditQuestionTool({
   input,
+  originQuestionId = null,
   state,
   interrupted = false,
 }: {
   input: unknown;
+  originQuestionId?: string | null;
   state: string;
   interrupted?: boolean;
 }) {
@@ -603,6 +609,7 @@ export function EditQuestionTool({
   }
   return (
     <EditQuestionCard
+      originQuestionId={originQuestionId}
       edit={edit}
       isRunning={!interrupted && state !== "output-available"}
       answersComplete={

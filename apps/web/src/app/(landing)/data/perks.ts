@@ -1,0 +1,41 @@
+import type { PerksData, PerksOffer } from "../lib/perks";
+
+export const perks = {
+  studentsCount: 500_000,
+  offersCount: 250,
+  maxDiscountPct: 50,
+  yearlySavingsPln: 2000,
+  offers: [
+    {
+      id: "dominos-pizza-40-znizki-studenckiej",
+      partner: "Domino's Pizza",
+      title: "40% Zniżki Studenckiej na pizzę",
+      category: "Jedzenie",
+      channel: "Online i stacjonarnie",
+      limited: true,
+      badge: {
+        kind: "activations",
+        value: 53_983,
+      },
+    },
+    {
+      id: "komputronik-30-znizki-studenckiej-na-laptopy",
+      partner: "Komputronik",
+      title: "30% Zniżki Studenckiej na laptopy",
+      category: "Technologia",
+      channel: "Online",
+      validUntil: "2027-03-31",
+      badge: { kind: "new" },
+    },
+    {
+      id: "zalando-dodatkowe-20-znizki-studenckiej",
+      partner: "Zalando",
+      title: "Dodatkowe 20% Zniżki Studenckiej",
+      category: "Moda",
+      channel: "Online",
+      badge: {
+        kind: "new",
+      },
+    },
+  ],
+} as const satisfies PerksData & { offers: readonly PerksOffer[] };

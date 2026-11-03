@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- ImageResponse renders JSX to PNG through Satori. */
 import type { QuizMetadata } from "@testownik/core/quiz/types";
 import { ImageResponse } from "next/og";
 import { NextResponse } from "next/server";

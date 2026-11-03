@@ -1,0 +1,70 @@
+"use client";
+
+import { useLayoutEffect } from "react";
+
+import { cn } from "@/lib/utils";
+
+import { publishHeroProgress } from "../hero-progress";
+import "../landing.css";
+import { DeviceScene } from "../scene/device-scene";
+import "./capture-document.css";
+import type { CaptureRequest } from "./capture-request";
+
+const CAPTURE_DOCUMENT_CLASS = "device-capture-document";
+
+/**
+ * The device stack alone, for `scripts/capture-device-stack.mjs`. Development
+ * only; see `parseCaptureRequest`.
+ */
+export function DeviceCapture({
+  request,
+}: {
+  request: CaptureRequest;
+}): React.JSX.Element {
+  const { theme, progress } = request;
+
+  useLayoutEffect(() => {
+    const { documentElement, body } = document;
+    const wasDark = documentElement.classList.contains("dark");
+
+    documentElement.classList.toggle("dark", theme === "dark");
+    documentElement.classList.add(CAPTURE_DOCUMENT_CLASS);
+    body.classList.add(CAPTURE_DOCUMENT_CLASS);
+
+    return () => {
+      documentElement.classList.toggle("dark", wasDark);
+      documentElement.classList.remove(CAPTURE_DOCUMENT_CLASS);
+      body.classList.remove(CAPTURE_DOCUMENT_CLASS);
+    };
+  }, [theme]);
+
+  useLayoutEffect(() => {
+    if (progress !== undefined) {
+      publishHeroProgress(progress);
+    }
+  }, [progress]);
+
+  return (
+    <div
+      data-device-capture
+      className={cn(
+        // Above everything, transparent by default so the capture can be
+        // trimmed to the device silhouette.
+        "fixed inset-0 z-[2147483647] overflow-hidden bg-transparent",
+        request.background === "black" && "bg-black",
+        request.background === "green" && "bg-[#0f0]",
+        request.background === "white" && "bg-white",
+        theme === "dark" && "dark",
+      )}
+    >
+      {/* Matches the real hero's device-layer box, minus the navigation. */}
+      <div className="absolute inset-x-0 top-[5.3rem] bottom-0">
+        <DeviceScene
+          captureMode
+          captureLoadingCover={request.loadingCover}
+          capturePixelRatio={request.pixelRatio}
+        />
+      </div>
+    </div>
+  );
+}

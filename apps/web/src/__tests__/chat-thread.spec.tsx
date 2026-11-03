@@ -31,6 +31,7 @@ function renderThread(
     error,
     lengthLimitedMessageIds: new Set(options.lengthLimitedMessageIds),
     suggestions: options.suggestions ?? [],
+    questionContextSnapshots: [],
     sendMessage,
     regenerate,
     clearError,
@@ -52,6 +53,7 @@ function renderThread(
           quizId: "quiz-1",
           questionId: null,
           question: null,
+          questions: [],
           canEdit: false,
         }}
       >
