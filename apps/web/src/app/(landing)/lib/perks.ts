@@ -8,7 +8,6 @@ export interface PerksOffer {
   validUntil?: string;
   limited?: boolean;
   badge: { kind: "new" } | { kind: "activations"; value: number };
-  url: string;
 }
 
 export interface PerksData {

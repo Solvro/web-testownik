@@ -14,11 +14,11 @@ import { Hero } from "./sections/hero";
 import { LandingNav } from "./sections/landing-nav";
 import { NAV_HOVER_NONE } from "./sections/landing-nav-hover";
 import type { NavHover } from "./sections/landing-nav-hover";
-import { LandingTableOfContents } from "./sections/landing-table-of-contents";
 import { Perks } from "./sections/perks";
 import { ProductShowcase } from "./sections/product-showcase/product-showcase";
 import { Team } from "./sections/team";
 import { Timeline } from "./sections/timeline";
+import { LandingTableOfContents } from "./sections/toc/landing-table-of-contents";
 import { FOCUS_RING } from "./ui/focus";
 
 /**

@@ -1,0 +1,288 @@
+/**
+ * Builds a peek's stage: a scaled, inert copy of a live section, cleaned of
+ * what cannot or should not be duplicated. `toc-section-preview.ts` caches and
+ * shows the stages.
+ */
+import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
+import { HERO_PROGRESS_PROPERTY } from "../../hero-progress";
+import type { LandingSectionPeek } from "../../landing-sections";
+import { wordmarkDark } from "../../logos";
+import {
+  captureScrollOffsets,
+  copyControlState,
+} from "./toc-preview-freshness";
+import type { ScrollOffset } from "./toc-preview-freshness";
+import { tocPreviewOffset } from "./toc-preview-layout";
+import type { TocPreviewLayout } from "./toc-preview-layout";
+
+/** `lg:min-h-[42rem]` on the hero's sticky stage. */
+const HERO_MIN_HEIGHT = 42 * 16;
+/** `top-[5.3rem]`: the device layer starts below the hero navigation. */
+const HERO_DEVICE_TOP = "5.3rem";
+/** The open-pose still the static hero shows; see `hero-desktop-stage.tsx`. */
+const HERO_PEEK_COVER_CLASS =
+  "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]";
+/**
+ * Marks the revealed stage. A class rather than a `data-*` attribute: the app
+ * CSS has `:has([data-…])` rules, and an attribute flip they might match sends
+ * Chrome through `:has()` invalidation; a class no rule mentions does not.
+ */
+export const ACTIVE_CLASS = "lp-toc-preview-active";
+/**
+ * Built peeks stay mounted in the card; parked ones keep their layout but skip
+ * rendering, so revealing one is a single class flip. `visibility` hides the
+ * parked stage's own background, which `content-visibility` still paints.
+ * `.lp-toc-preview-stage` in landing.css stills every animation inside.
+ */
+const STAGE_CLASS = [
+  "lp-toc-preview-stage bg-background text-foreground pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none contain-layout contain-paint contain-style motion-reduce:animate-none",
+  "not-[.lp-toc-preview-active]:invisible not-[.lp-toc-preview-active]:[content-visibility:hidden]",
+].join(" ");
+
+/** Scroll positions to replay on a stage's clone once it is laid out. */
+export interface PendingScroll {
+  elements: readonly Element[];
+  offsets: readonly ScrollOffset[];
+}
+
+export interface BuiltPreview {
+  stage: HTMLElement;
+  scroll: PendingScroll | null;
+}
+
+function px(value: number): string {
+  return `${String(value)}px`;
+}
+
+function createStage(sectionId: string, layout: TocPreviewLayout): HTMLElement {
+  const stage = document.createElement("div");
+  stage.dataset.tocPreviewStage = sectionId;
+  stage.className = STAGE_CLASS;
+  stage.inert = true;
+  stage.setAttribute("aria-hidden", "true");
+  stage.style.width = px(layout.layoutWidth);
+  stage.style.height = px(layout.windowHeight);
+  stage.style.transform = `scale(${String(layout.scale)})`;
+  return stage;
+}
+
+/**
+ * Strip ids (no duplicates in the document) and turn copied links into text.
+ * An anchor without href still looks like a broken link to crawlers. Focus is
+ * covered by `inert` on the stage and motion by the `.lp-toc-preview-stage`
+ * CSS rule, so no per-node style writes are needed.
+ */
+function neutralizeTree(root: HTMLElement): void {
+  root.removeAttribute("id");
+  for (const node of root.querySelectorAll("[id]")) {
+    node.removeAttribute("id");
+  }
+  for (const link of root.querySelectorAll("a")) {
+    const text = document.createElement("span");
+    for (const { name, value } of link.attributes) {
+      if (!["href", "target", "rel"].includes(name)) {
+        text.setAttribute(name, value);
+      }
+    }
+    text.append(...link.childNodes);
+    link.replaceWith(text);
+  }
+}
+
+/**
+ * Canvases are WebGL (no `preserveDrawingBuffer`, so they read back blank) or
+ * html-in-canvas surfaces that redraw the copy at the wrong scale; video and
+ * iframes are too heavy to duplicate. None of them belongs in a peek.
+ */
+function dropUncloneableMedia(clone: HTMLElement): void {
+  for (const media of clone.querySelectorAll("canvas, video, iframe")) {
+    media.remove();
+  }
+}
+
+/** The finale's wordmark is a particle canvas; stand the still logo in. */
+function fillWordmarks(clone: HTMLElement): void {
+  for (const slot of clone.querySelectorAll<HTMLElement>(
+    "[data-toc-peek-wordmark]",
+  )) {
+    const image = document.createElement("img");
+    image.src = wordmarkDark.src;
+    image.alt = "";
+    image.decoding = "async";
+    image.style.width = "100%";
+    image.style.height = "100%";
+    image.style.objectFit = "contain";
+    slot.replaceChildren(image);
+  }
+}
+
+/*
+ * A peek shows a section as the visitor will find it, so reveal effects that
+ * have not run yet on the live page are shown finished in the clone.
+ */
+
+/** Perks counters count up on reveal; show the final figure. */
+export function finishPerkCounters(clone: HTMLElement): void {
+  for (const counter of clone.querySelectorAll<HTMLElement>(
+    "[data-perk-count]",
+  )) {
+    counter.textContent = counter.dataset.perkCount ?? "";
+  }
+}
+
+/**
+ * Story events reveal as the pen stroke reaches them: the stroke draws down,
+ * titles type themselves out and dates and descriptions fade in.
+ */
+export function finishTimelineReveal(clone: HTMLElement): void {
+  for (const event of clone.querySelectorAll<HTMLElement>(
+    "[data-timeline-revealed]",
+  )) {
+    event.dataset.timelineRevealed = "true";
+  }
+  for (const title of clone.querySelectorAll<HTMLElement>(
+    "[data-timeline-title]",
+  )) {
+    title.textContent = title.dataset.timelineTitle ?? "";
+  }
+  for (const ink of clone.querySelectorAll<SVGElement>("[data-timeline-ink]")) {
+    ink.style.strokeDashoffset = "0";
+  }
+}
+
+/**
+ * Deep-clone a live section with the state `cloneNode` leaves behind: form
+ * control properties now, inner scroll positions once the clone is laid out.
+ */
+function cloneLiveSection(section: HTMLElement): {
+  clone: HTMLElement;
+  scroll: PendingScroll;
+} {
+  const clone = section.cloneNode(true) as HTMLElement;
+  // Static lists, in document order, taken before anything is removed.
+  const liveElements = section.querySelectorAll("*");
+  const cloneElements = [...clone.querySelectorAll("*")];
+  copyControlState(liveElements, cloneElements);
+  return {
+    clone,
+    scroll: {
+      elements: cloneElements,
+      offsets: captureScrollOffsets(liveElements),
+    },
+  };
+}
+
+function buildClonePeek(
+  section: HTMLElement,
+  layout: TocPreviewLayout,
+  align: "top" | "center",
+): BuiltPreview {
+  const stage = createStage(section.id, layout);
+  // The preview window can be taller than the cloned section.
+  const background = getComputedStyle(section).backgroundColor;
+  if (background !== "rgba(0, 0, 0, 0)" && background !== "transparent") {
+    stage.style.backgroundColor = background;
+  }
+  const offset = tocPreviewOffset(
+    section.offsetHeight,
+    layout.windowHeight,
+    align,
+  );
+
+  const { clone, scroll } = cloneLiveSection(section);
+  neutralizeTree(clone);
+  dropUncloneableMedia(clone);
+  fillWordmarks(clone);
+  finishPerkCounters(clone);
+  finishTimelineReveal(clone);
+  clone.style.position = "relative";
+  clone.style.inset = "auto";
+  // The stage is already the layout width, so the section's own width and
+  // margins resolve as on the page: `LandingSection` keeps its side gutters
+  // (`mx-auto` on a narrower box), full-bleed sections fill the stage.
+  clone.style.maxWidth = px(layout.layoutWidth);
+  clone.style.boxSizing = "border-box";
+  clone.style.transform = offset === 0 ? "none" : `translateY(${px(-offset)})`;
+
+  stage.append(clone);
+  return { stage, scroll: scroll.offsets.length > 0 ? scroll : null };
+}
+
+/**
+ * The hero at progress zero, rebuilt from parts that clone cleanly: the
+ * navigation, the copy and the device-stack still the scene itself uses as a
+ * loading cover. Laid out at the real hero height, then fitted into the peek
+ * window so the whole stack shows instead of its top two thirds.
+ *
+ * Progress zero (closed lid) on purpose: following the link scrolls to the
+ * top of the page, where the lid is closed, so that is the state the visitor
+ * lands on whatever the scene shows mid-scroll.
+ */
+function buildHeroPeek(
+  section: HTMLElement,
+  layout: TocPreviewLayout,
+): BuiltPreview | null {
+  const header = section.querySelector("header");
+  const copy = section.querySelector("h1")?.parentElement;
+  if (header === null || copy === null || copy === undefined) {
+    return null;
+  }
+
+  const stage = createStage(section.id, layout);
+  const isStatic = section.dataset.heroStatic === "true";
+  const heroHeight = isStatic
+    ? section.offsetHeight
+    : Math.max(window.innerHeight, HERO_MIN_HEIGHT);
+  const fit = Math.min(1, layout.windowHeight / heroHeight);
+
+  const hero = document.createElement("div");
+  hero.style.position = "absolute";
+  hero.style.top = "0";
+  hero.style.left = "0";
+  hero.style.width = px(layout.layoutWidth);
+  hero.style.height = px(heroHeight);
+  hero.style.transform = `scale(${String(fit)})`;
+  hero.style.transformOrigin = "top center";
+  hero.style.setProperty(HERO_PROGRESS_PROPERTY, "0");
+
+  const headerClone = header.cloneNode(true) as HTMLElement;
+  neutralizeTree(headerClone);
+
+  const copyClone = copy.cloneNode(true) as HTMLElement;
+  neutralizeTree(copyClone);
+  copyClone.style.opacity = "1";
+  copyClone.style.transform = "none";
+
+  const deviceLayer = document.createElement("div");
+  deviceLayer.style.position = "absolute";
+  deviceLayer.style.inset = `${HERO_DEVICE_TOP} 0 0 0`;
+  deviceLayer.style.containerType = "size";
+  // Always the open pose: the peek stands for the section as a whole, and the
+  // visitor reaches the hero's resting state (devices open) by scrolling it.
+  const cover = document.createElement("div");
+  cover.className = HERO_PEEK_COVER_CLASS;
+  deviceLayer.append(cover);
+
+  hero.append(headerClone, copyClone, deviceLayer);
+  stage.append(hero);
+  return { stage, scroll: null };
+}
+
+function isDesktopHero(): boolean {
+  // Below `lg` the hero is the CSS phone, which clones fine.
+  return window.matchMedia(DESKTOP_STAGE_QUERY).matches;
+}
+
+export function buildPreview(
+  section: HTMLElement,
+  peek: LandingSectionPeek,
+  layout: TocPreviewLayout,
+): BuiltPreview {
+  if (peek === "hero" && isDesktopHero()) {
+    const hero = buildHeroPeek(section, layout);
+    if (hero !== null) {
+      return hero;
+    }
+  }
+  return buildClonePeek(section, layout, peek === "center" ? "center" : "top");
+}

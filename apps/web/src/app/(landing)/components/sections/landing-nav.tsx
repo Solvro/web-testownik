@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { LANDING_SECTIONS } from "../landing-sections";
 import { wordmarkDark, wordmarkLight } from "../logos";
-import { scrollToLandingSection } from "../scroll-to-section";
+import { followLandingSectionLink } from "../scroll-to-section";
 import { FOCUS_RING } from "../ui/focus";
 import { LandingButton, LandingButtonLink } from "../ui/landing-button";
 import { NAV_HOVER_NONE } from "./landing-nav-hover";
@@ -20,7 +20,7 @@ import type { NavHover } from "./landing-nav-hover";
  * call to action, so it gets no link of its own here.
  */
 const SECTION_LINKS = LANDING_SECTIONS.filter(({ id }) => id !== "footer").map(
-  ({ id, navLabel }) => ({ href: `#${id}`, label: navLabel }),
+  ({ id, navLabel }) => ({ id, href: `#${id}`, label: navLabel }),
 );
 
 const START_BUTTON_CLASS = cn(
@@ -167,13 +167,7 @@ export function LandingNav({
             key={link.href}
             href={link.href}
             onClick={(event) => {
-              const target = document.querySelector(link.href);
-              if (!(target instanceof HTMLElement)) {
-                return;
-              }
-              event.preventDefault();
-              scrollToLandingSection(target);
-              window.history.replaceState(null, "", link.href);
+              followLandingSectionLink(event, link.id);
             }}
             onPointerEnter={(event) => {
               showUnderline(event, link.href);

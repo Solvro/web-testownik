@@ -1,8 +1,8 @@
 import { TEAM_SIZE } from "./team-data";
 
 /**
- * Every piece of landing copy lives here so the section components stay pure
- * layout. Text changes never require touching a component.
+ * Shared and longer landing copy: the story, the FAQ, the partner section and
+ * the links. Short headings and captions stay inline in their sections.
  */
 
 export interface TimelineEntry {
@@ -111,11 +111,7 @@ export const PERKS_PARTNER_URL = "https://bit.ly/4zcALip";
 export const PERKS_VARIANT = "coupons-uniperks";
 
 /** Where a click on the partner section came from, as `utm_content`. */
-export const PERKS_PLACEMENTS = [
-  "landing-cta",
-  "landing-secondary",
-  "landing-card",
-] as const;
+export const PERKS_PLACEMENTS = ["landing-cta", "landing-secondary"] as const;
 
 export type PerksPlacement = (typeof PERKS_PLACEMENTS)[number];
 

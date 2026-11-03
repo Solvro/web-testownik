@@ -1,21 +1,23 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import type {
-  HardestQuestion,
-  HourlyEntry,
-  QuizStats,
-  SessionEntry,
-  StatsScope,
-  TimelineEntry,
-} from "@testownik/core/quiz/stats";
-import type { QuizMetadata } from "@testownik/core/quiz/types";
-import { AccessLevel } from "@testownik/core/quiz/types";
-import { ACCOUNT_LEVEL, ACCOUNT_TYPE } from "@testownik/core/user/types";
+import type { StatsScope } from "@testownik/core/quiz/stats";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 
+import {
+  PREVIEW_HARDEST,
+  PREVIEW_HARDEST_ALL,
+  PREVIEW_HOURLY,
+  PREVIEW_HOURLY_ALL,
+  PREVIEW_QUIZ,
+  PREVIEW_QUIZ_ID,
+  PREVIEW_SESSIONS,
+  PREVIEW_STATS,
+  PREVIEW_TIMELINE,
+  PREVIEW_TIMELINE_ALL,
+} from "@/app/(landing)/preview/preview-fixtures";
 import { ScopeToggle } from "@/components/quiz/stats/scope-toggle";
 import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
 import { StatsTable } from "@/components/quiz/stats/stats-table";
@@ -29,8 +31,9 @@ import {
 } from "@/components/ui/card";
 import { quizStatsKeys } from "@/hooks/use-quiz-stats";
 
-const QUIZ_ID = "landing-product-quiz";
-const QUIZ_TITLE = "Jak uczyć się skuteczniej?";
+import { SHOWCASE_QUIZ_METADATA } from "./showcase-quiz";
+
+const QUIZ_ID = PREVIEW_QUIZ_ID;
 
 const SessionsChart = dynamic(
   async () =>
@@ -61,198 +64,6 @@ const StudyTimeChart = dynamic(
   { ssr: false },
 );
 
-/*
- * The demo's clock: dates are offsets from today (at noon UTC, so server and
- * client agree on the day), so the stats always read as recent activity.
- */
-const TODAY = new Date();
-TODAY.setUTCHours(12, 0, 0, 0);
-
-function daysAgo(days: number, hours: number, minutes: number): string {
-  const date = new Date(TODAY);
-  date.setUTCDate(date.getUTCDate() - days);
-  date.setUTCHours(hours, minutes, 0, 0);
-  return date.toISOString();
-}
-
-const LAST_ACTIVITY_AT = daysAgo(0, 7, 42);
-
-const METADATA: QuizMetadata = {
-  id: QUIZ_ID,
-  title: QUIZ_TITLE,
-  description: "Praktyczny zestaw do samodzielnej nauki",
-  creator: {
-    id: "landing-creator",
-    full_name: "Tony Stark",
-    photo: "https://api.dicebear.com/9.x/avataaars/svg?seed=Tony%20Stark",
-    student_number: "268431",
-    account_type: ACCOUNT_TYPE.STUDENT,
-    account_level: ACCOUNT_LEVEL.GOLD,
-  },
-  visibility: AccessLevel.UNLISTED,
-  allow_anonymous: true,
-  is_anonymous: false,
-  version: 1,
-  can_edit: true,
-  created_at: daysAgo(136, 14, 18),
-  updated_at: daysAgo(7, 9, 5),
-  last_used_at: LAST_ACTIVITY_AT,
-  question_count: 67,
-};
-
-const ALL_STATS: QuizStats = {
-  quiz_id: QUIZ_ID,
-  total_answers: 4827,
-  correct_answers: 3909,
-  wrong_answers: 918,
-  accuracy: 81,
-  first_answer_accuracy: 68.4,
-  study_time_seconds: null,
-  total_study_time_seconds: 262_800,
-  average_study_time_seconds: 2796,
-  sessions_count: 94,
-  unique_users_count: 37,
-  last_activity_at: LAST_ACTIVITY_AT,
-};
-
-const MY_STATS: QuizStats = {
-  quiz_id: QUIZ_ID,
-  total_answers: 186,
-  correct_answers: 142,
-  wrong_answers: 44,
-  accuracy: 76.3,
-  first_answer_accuracy: 61.2,
-  study_time_seconds: 11_040,
-  total_study_time_seconds: 11_040,
-  average_study_time_seconds: 1380,
-  sessions_count: 8,
-  unique_users_count: null,
-  last_activity_at: LAST_ACTIVITY_AT,
-};
-
-function buildTimeline(
-  seed: readonly number[],
-  answersPerSession: number,
-  accuracy: number,
-  minutesPerSession: number,
-): TimelineEntry[] {
-  return seed.map((sessions_count, offsetFromEnd) => {
-    const date = new Date(TODAY);
-    date.setUTCDate(TODAY.getUTCDate() - (seed.length - 1 - offsetFromEnd));
-    const total_answers = sessions_count * answersPerSession;
-    const correct_answers = Math.round((total_answers * accuracy) / 100);
-    return {
-      date: date.toISOString().slice(0, 10),
-      sessions_count,
-      total_answers,
-      correct_answers,
-      total_study_time_seconds: sessions_count * minutesPerSession * 60,
-    };
-  });
-}
-
-const TIMELINE_ALL = buildTimeline([1, 2, 3, 2, 4, 5, 4, 6, 5, 7], 48, 81, 42);
-const TIMELINE_ME = buildTimeline([0, 1, 1, 0, 1, 1, 1, 0, 1, 1], 23, 76, 23);
-
-const SESSIONS: SessionEntry[] = [
-  {
-    session_id: "s1",
-    started_at: daysAgo(18, 18, 10),
-    ended_at: daysAgo(18, 18, 34),
-    study_time_seconds: 1440,
-    total_answers: 24,
-    correct_answers: 16,
-    accuracy: 66.7,
-  },
-  {
-    session_id: "s2",
-    started_at: daysAgo(13, 17, 40),
-    ended_at: daysAgo(13, 18, 5),
-    study_time_seconds: 1500,
-    total_answers: 22,
-    correct_answers: 17,
-    accuracy: 77.3,
-  },
-  {
-    session_id: "s3",
-    started_at: daysAgo(7, 16, 8),
-    ended_at: daysAgo(7, 16, 29),
-    study_time_seconds: 1260,
-    total_answers: 20,
-    correct_answers: 16,
-    accuracy: 80,
-  },
-  {
-    session_id: "s4",
-    started_at: daysAgo(2, 18, 22),
-    ended_at: daysAgo(2, 18, 48),
-    study_time_seconds: 1560,
-    total_answers: 25,
-    correct_answers: 20,
-    accuracy: 80,
-  },
-  {
-    session_id: "s5",
-    started_at: daysAgo(0, 7, 12),
-    ended_at: LAST_ACTIVITY_AT,
-    study_time_seconds: 1800,
-    total_answers: 17,
-    correct_answers: 13,
-    accuracy: 76.5,
-  },
-];
-
-const HOURLY_ALL: HourlyEntry[] = [
-  2, 1, 0, 0, 0, 1, 3, 8, 16, 24, 31, 38, 46, 42, 37, 45, 58, 72, 86, 100, 91,
-  67, 39, 14,
-].map((sessions_count, hour) => ({ hour, sessions_count }));
-
-const HOURLY_ME: HourlyEntry[] = [
-  0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 2, 3, 4, 5, 3, 2, 1, 0,
-].map((sessions_count, hour) => ({ hour, sessions_count }));
-
-const HARDEST_ALL: HardestQuestion[] = [
-  {
-    question_id: "landing-q-1",
-    question_text: "Która technika najskuteczniej sprawdza pamięć?",
-    wrong_answers: 28,
-    total_answers: 41,
-  },
-  {
-    question_id: "landing-q-2",
-    question_text: "Jak zaplanować powtórki po błędnej sesji?",
-    wrong_answers: 19,
-    total_answers: 36,
-  },
-  {
-    question_id: "landing-q-3",
-    question_text: "Co robić przy wyniku 72% przed kolejną próbą?",
-    wrong_answers: 14,
-    total_answers: 33,
-  },
-];
-
-const HARDEST_ME: HardestQuestion[] = [
-  {
-    question_id: "landing-q-1",
-    question_text: "Która technika najskuteczniej sprawdza pamięć?",
-    wrong_answers: 4,
-    total_answers: 8,
-  },
-  {
-    question_id: "landing-q-2",
-    question_text: "Jak zaplanować powtórki po błędnej sesji?",
-    wrong_answers: 3,
-    total_answers: 8,
-  },
-  {
-    question_id: "landing-q-3",
-    question_text: "Co robić przy wyniku 72% przed kolejną próbą?",
-    wrong_answers: 2,
-    total_answers: 7,
-  },
-];
-
 const COLORS = [
   "var(--chart-1)",
   "var(--chart-2)",
@@ -280,34 +91,49 @@ function seedLandingStats(
     refetchOnReconnect: false,
   });
 
-  queryClient.setQueryData(quizStatsKeys.metadata(QUIZ_ID), METADATA);
-  queryClient.setQueryData(quizStatsKeys.aggregated(QUIZ_ID, "me"), MY_STATS);
-  queryClient.setQueryData(quizStatsKeys.aggregated(QUIZ_ID, "all"), ALL_STATS);
+  queryClient.setQueryData(
+    quizStatsKeys.metadata(QUIZ_ID),
+    SHOWCASE_QUIZ_METADATA,
+  );
+  queryClient.setQueryData(
+    quizStatsKeys.aggregated(QUIZ_ID, "me"),
+    PREVIEW_STATS.me,
+  );
+  queryClient.setQueryData(
+    quizStatsKeys.aggregated(QUIZ_ID, "all"),
+    PREVIEW_STATS.all,
+  );
   queryClient.setQueryData(
     quizStatsKeys.timeline(QUIZ_ID, "me", 30),
-    TIMELINE_ME,
+    PREVIEW_TIMELINE,
   );
   queryClient.setQueryData(
     quizStatsKeys.timeline(QUIZ_ID, "all", 30),
-    TIMELINE_ALL,
+    PREVIEW_TIMELINE_ALL,
   );
-  queryClient.setQueryData(quizStatsKeys.sessions(QUIZ_ID, "me", 30), SESSIONS);
+  queryClient.setQueryData(
+    quizStatsKeys.sessions(QUIZ_ID, "me", 30),
+    PREVIEW_SESSIONS,
+  );
   queryClient.setQueryData(
     quizStatsKeys.hardest(QUIZ_ID, "me", 10),
-    HARDEST_ME,
+    PREVIEW_HARDEST,
   );
   queryClient.setQueryData(
     quizStatsKeys.hardest(QUIZ_ID, "all", 10),
-    HARDEST_ALL,
+    PREVIEW_HARDEST_ALL,
   );
-  queryClient.setQueryData(quizStatsKeys.hourly(QUIZ_ID, "me"), HOURLY_ME);
-  queryClient.setQueryData(quizStatsKeys.hourly(QUIZ_ID, "all"), HOURLY_ALL);
+  queryClient.setQueryData(quizStatsKeys.hourly(QUIZ_ID, "me"), PREVIEW_HOURLY);
+  queryClient.setQueryData(
+    quizStatsKeys.hourly(QUIZ_ID, "all"),
+    PREVIEW_HOURLY_ALL,
+  );
 }
 
 /** Lightweight stand-in — avoids pulling the pie-chart chunk into HMR. */
 function HardestQuestionsPreview(): React.JSX.Element {
   const [scope, setScope] = useState<StatsScope>("all");
-  const data = scope === "all" ? HARDEST_ALL : HARDEST_ME;
+  const data = scope === "all" ? PREVIEW_HARDEST_ALL : PREVIEW_HARDEST;
   const totalWrong = data.reduce((sum, item) => sum + item.wrong_answers, 0);
 
   return (
@@ -406,7 +232,7 @@ export function StatsDemo(): React.JSX.Element {
     <div className="bg-background text-foreground [&_.recharts-surface:focus-visible]:outline-primary flex h-[min(70svh,32rem)] min-h-80 min-w-0 flex-col overflow-hidden rounded-3xl border shadow-xl shadow-black/5 sm:h-full sm:min-h-140 [&_.recharts-surface:focus-visible]:outline-2 [&_.recharts-surface:focus-visible]:outline-offset-[-2px] [&_.recharts-surface:focus-visible]:outline-solid">
       <header className="border-border bg-card border-b px-4 py-4 sm:px-5">
         <strong className="block truncate text-sm sm:text-base">
-          Statystyki: {QUIZ_TITLE}
+          Statystyki: {PREVIEW_QUIZ.title}
         </strong>
       </header>
 
@@ -416,8 +242,8 @@ export function StatsDemo(): React.JSX.Element {
       >
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
           <StatsInfoCard
-            quiz={METADATA}
-            lastActivityAt={MY_STATS.last_activity_at}
+            quiz={SHOWCASE_QUIZ_METADATA}
+            lastActivityAt={PREVIEW_STATS.me.last_activity_at}
           />
           <StatsTable quizId={QUIZ_ID} canViewAll />
         </div>

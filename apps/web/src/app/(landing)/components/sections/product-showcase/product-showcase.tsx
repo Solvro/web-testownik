@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
-import { scrollToLandingSection } from "../../scroll-to-section";
+import { followLandingSectionLink } from "../../scroll-to-section";
 import { FOCUS_RING } from "../../ui/focus";
 import { HandNote } from "../../ui/hand-note";
 import { LandingButtonLink } from "../../ui/landing-button";
@@ -80,11 +80,8 @@ export function ProductShowcase(): React.JSX.Element {
   return (
     <LandingSection
       id="features"
-      // The skip link's target: focusable so activation moves focus here.
-      tabIndex={-1}
       padding="showcase"
-      showPlaceholder={false}
-      className="scroll-mt-[5rem] outline-none"
+      className="scroll-mt-[5rem]"
     >
       <div className="grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-start">
         <header>
@@ -137,13 +134,7 @@ export function ProductShowcase(): React.JSX.Element {
                 FOCUS_RING,
               )}
               onClick={(event) => {
-                const target =
-                  document.querySelector<HTMLElement>("#landing-demos");
-                if (target !== null) {
-                  event.preventDefault();
-                  scrollToLandingSection(target);
-                  target.focus({ preventScroll: true });
-                }
+                followLandingSectionLink(event, "landing-demos");
               }}
             >
               ↓ teraz Twoja kolej, wypróbuj poniżej
@@ -168,7 +159,7 @@ export function ProductShowcase(): React.JSX.Element {
                 key={feature.id}
                 className={cn(
                   "border-border relative min-w-0 border-b last:border-b-0 lg:h-full lg:overflow-hidden lg:border-r lg:border-b-0 lg:last:border-r-0",
-                  "transition-[width,flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "transition-[width,flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
                   active ? "lg:flex-1" : "lg:w-[4.75rem] lg:flex-none",
                 )}
               >

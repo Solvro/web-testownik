@@ -4,7 +4,7 @@ import {
   SIMULATOR_GRADES,
   weightedAverage,
 } from "@testownik/core/grades/utils";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   PREVIEW_COURSE_VIEWS,
@@ -18,32 +18,23 @@ const COURSES = PREVIEW_COURSE_VIEWS;
 export function GradesDemo(): React.JSX.Element {
   const [whatIf, setWhatIf] = useState<Record<string, number>>({});
   const realAverage = weightedAverage(COURSES);
-  const { projected, projectedDelta } = useMemo(() => {
-    let sum = 0;
-    let weight = 0;
+  let sum = 0;
+  let weight = 0;
+  for (const course of COURSES) {
+    const hasOverride = Object.hasOwn(whatIf, course.id);
+    const value = hasOverride ? whatIf[course.id] : course.mainValue;
+    const counts = hasOverride
+      ? true
+      : course.counts && course.mainValue !== null;
 
-    for (const course of COURSES) {
-      const hasOverride = Object.hasOwn(whatIf, course.id);
-      const value = hasOverride ? whatIf[course.id] : course.mainValue;
-      const counts = hasOverride
-        ? true
-        : course.counts && course.mainValue !== null;
-
-      if (value !== null && counts) {
-        sum += value * course.ects;
-        weight += course.ects;
-      }
+    if (value !== null && counts) {
+      sum += value * course.ects;
+      weight += course.ects;
     }
-
-    const nextProjected = weight === 0 ? null : sum / weight;
-    return {
-      projected: nextProjected,
-      projectedDelta:
-        nextProjected === null || realAverage === null
-          ? null
-          : nextProjected - realAverage,
-    };
-  }, [realAverage, whatIf]);
+  }
+  const projected = weight === 0 ? null : sum / weight;
+  const projectedDelta =
+    projected === null || realAverage === null ? null : projected - realAverage;
 
   return (
     <div className="bg-background text-foreground flex h-full min-h-[32rem] flex-col overflow-hidden rounded-[1rem] border p-3 shadow-xl shadow-black/5 sm:min-h-[35rem] sm:p-5">

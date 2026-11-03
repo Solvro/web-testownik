@@ -1,5 +1,5 @@
 /** Tailwind's default responsive breakpoints, for browser APIs used from JS. */
-export const BREAKPOINT = { lg: 1024, xl: 1280 } as const;
+export const BREAKPOINT = { lg: 1024 } as const;
 
 /**
  * The single switch between the two heroes. At and above `lg` the page gets
