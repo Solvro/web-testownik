@@ -8,7 +8,7 @@ import { wordmarkDark } from "../logos";
 
 const ParticleObject = dynamic(
   async () =>
-    import("@/app/(landing)/canvasui/ParticleObject").then(
+    import("@/app/(landing)/canvasui/particle-object").then(
       (module) => module.ParticleObject,
     ),
   { ssr: false },

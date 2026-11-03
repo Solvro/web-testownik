@@ -3,7 +3,7 @@
 import { Suspense, lazy, useState } from "react";
 import type { ReactNode } from "react";
 
-import { Glass } from "@/app/(landing)/canvasui/Glass";
+import { Glass } from "@/app/(landing)/canvasui/glass";
 import { PreviewSandbox } from "@/app/(landing)/preview/preview-provider";
 import type { PreviewQuizSession } from "@/app/(landing)/preview/preview-session";
 import {
