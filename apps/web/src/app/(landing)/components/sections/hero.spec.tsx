@@ -52,7 +52,7 @@ afterEach(() => {
   publishHeroProgress(0);
 });
 
-it("replaces the reduced-motion runway with visible static copy and stops progress", async () => {
+it("replaces the runway with visible static copy when WebGL fails, and stops progress", async () => {
   const view = render(<Harness />);
   fireEvent.click(await screen.findByRole("button", { name: "Fail WebGL" }));
   const hero = view.container.querySelector("#start");
@@ -93,13 +93,13 @@ it("replaces the reduced-motion runway with visible static copy and stops progre
   expect(hero).toHaveClass("lg:min-h-[190rem]");
   expect(copy).toHaveAttribute("data-hero-progress");
   expect(screen.getByText("PRZEWIŃ")).toBeInTheDocument();
-  // The stack is loading again: the copy holds the closed pose, whatever the
-  // (reduced-motion, pinned) progress says, until the scene is ready.
+  // The stack is loading again: the copy holds the closed pose until the
+  // scene is ready, then follows the scroll (at the top here).
   expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("0");
   expect(hero).toHaveAttribute("data-hero-ready", "false");
   fireEvent.click(screen.getByRole("button", { name: "Stack ready" }));
   expect(hero).toHaveAttribute("data-hero-ready", "true");
-  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("1");
+  expect(copy?.style.getPropertyValue("--landing-hero-progress")).toBe("0");
 });
 
 it("resets the static fallback when the desktop stage remounts", async () => {

@@ -3,7 +3,6 @@
 import { useLayoutEffect } from "react";
 
 import { publishHeroProgress } from "../hero-progress";
-import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 function clamp(value: number, minimum = 0, maximum = 1): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -11,7 +10,8 @@ function clamp(value: number, minimum = 0, maximum = 1): number {
 
 /**
  * Progress is how far the hero's top has travelled past the top of the window.
- * With reduced motion it is pinned at 1, so the laptop renders open.
+ * It follows the scroll under reduced motion too: the scroll drives it, so
+ * nothing moves on its own.
  *
  * Call it from `Hero`, which owns the section ref, never from a child: a cached
  * lazy child mounts in the same commit, and its layout effect runs before the
@@ -21,8 +21,6 @@ export function useHeroProgress(
   heroReference: React.RefObject<HTMLElement | null>,
   enabled: boolean,
 ): void {
-  const prefersReducedMotion = usePrefersReducedMotion();
-
   useLayoutEffect(() => {
     const hero = heroReference.current;
     if (!enabled || hero === null) {
@@ -35,10 +33,7 @@ export function useHeroProgress(
 
     const update = (): void => {
       frame = 0;
-      const progress = prefersReducedMotion
-        ? 1
-        : clamp((window.scrollY - top) / travel);
-      publishHeroProgress(progress);
+      publishHeroProgress(clamp((window.scrollY - top) / travel));
     };
 
     const schedule = (): void => {
@@ -75,5 +70,5 @@ export function useHeroProgress(
       // the next time the stage mounts.
       publishHeroProgress(0);
     };
-  }, [enabled, heroReference, prefersReducedMotion]);
+  }, [enabled, heroReference]);
 }
