@@ -5,21 +5,13 @@ import { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { smoothstep } from "./utils";
 
 /**
- * Where each live screen sits and how big it is — the one place that owns it.
+ * Where each live screen sits. The UI is a `CSS3DObject` parented to the
+ * display mesh, so it inherits the hinge rotation, the model yaw and the
+ * camera perspective; a flat overlay projected by hand is never stable.
  *
- * The live UI is a `CSS3DObject` parented to the display mesh itself, so it
- * inherits the hinge rotation, the model yaw and the camera perspective. An
- * earlier version projected four corners through the camera by hand and could
- * never be made stable — do not go back to a flat overlay.
- *
- * The numbers are baked from `public/models/device-stack.glb`. They used to be
- * re-derived on every load from each display's raw vertices, normals and UVs
- * (the MacBook glass is tilted 20° inside its own frame and Apple poses every
- * device differently, so no bounding box gives the plane). The GLB is a
- * deterministic build artefact, so that solve now runs once, offline;
- * `screens.test.ts` re-measures the display meshes in the GLB and fails if
- * these placements stop matching them. The solver they were baked from is
- * `display-plane.ts` as of commit `d9589472`; see `public/models/README.md`.
+ * The numbers are baked from `public/models/device-stack.glb` (no bounding
+ * box gives the display plane); `screens.test.ts` checks them against it. See
+ * `public/models/README.md`.
  */
 
 export interface ScreenPlacement {
@@ -77,15 +69,10 @@ export const SCREEN_PLACEMENT = {
 } as const satisfies Record<string, ScreenPlacement>;
 
 export interface SatelliteRig {
-  /**
-   * Device root offset inside its rig, so the rig turns about the physical
-   * display centre rather than Apple's arbitrary AR-scene origin. That keeps
-   * the iPad and iPhone in their slots as they travel between poses.
-   */
+  /** Lets the rig turn about the display centre, not the AR-scene origin. */
   rootPosition: readonly [number, number, number];
   /** Rig scale that renders the device at its on-screen width (iPad 15.2, iPhone 7.8 units). */
   scale: number;
-  /** Rotation that makes the screen face +Z and read upright. */
   upright: Quaternion;
 }
 
@@ -119,10 +106,8 @@ export const SATELLITE_RIG = {
 } as const satisfies Record<string, SatelliteRig>;
 
 /**
- * Sizes the host and builds its `CSS3DObject` under `holder`, a stand-in in
- * the scene for a display mesh that has not loaded yet. Rendering once from
- * here puts the host in the CSS3D layer, so its iframe can start loading
- * before the model arrives; `anchorScreen` moves it onto the mesh later.
+ * `holder` stands in for the display mesh until it loads, so the iframe can
+ * start loading before the model arrives.
  */
 export function createScreen(
   holder: Object3D,
@@ -159,11 +144,8 @@ const facingNormal = new Vector3();
 const facingOrigin = new Vector3();
 
 /**
- * How squarely a screen faces the camera, 0 → 1. Needs current world matrices.
- *
- * Visibility is gated on this rather than on CSS `backface-visibility`, which
- * CSS3DRenderer's mirrored matrix does not report reliably — without the gate
- * the UI shows through the back of the lid, upside-down and mirrored.
+ * 0 to 1. Needs current world matrices. Used instead of
+ * `backface-visibility`, which CSS3DRenderer's mirrored matrix breaks.
  */
 export function screenFacing(
   object: Object3D,

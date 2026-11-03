@@ -21,18 +21,13 @@ const TITLES: Record<ScreenDevice, string> = {
   phone: "Quiz w Testowniku na iPhonie",
 };
 
-/**
- * A screen that never reports in (a failed request, a crashed frame) still
- * lets the scene take over from the loading cover after this long.
- */
+/** A screen that never reports in still lets the cover hand over after this. */
 const READY_TIMEOUT_MS = 8000;
 
 /**
- * A pointer that leaves a frame for the page reaches the page as a real event
- * within a frame or two; one that left the window entirely never does, and
- * only then is the Bubble told the pointer is gone. Entering the frame is
- * itself a real `pointerover` on the iframe, so a pointer that only crossed
- * the frame in less than this is not dismissed either.
+ * A pointer that leaves a frame for the page reaches the page within a frame
+ * or two; only one that left the window never does, and only then is the
+ * Bubble told it is gone.
  */
 const POINTER_GONE_MS = 120;
 
@@ -41,24 +36,14 @@ function pageTheme(): ScreenTheme {
 }
 
 /**
- * One live device screen of the desktop hero: an iframe of
- * `/landing-screen/<device>` filling the CSS3D host, as in three.js's CSS3D
- * examples. A real document at the screen's native size is the only way the
- * app's components inside see the device rather than the visitor's monitor,
- * and Floating UI measures it without the CSS3D perspective in the way.
+ * An iframe of `/landing-screen/<device>` filling the CSS3D host. A real
+ * document at the screen's native size is the only way the app's components
+ * see the device rather than the visitor's monitor, and lets Floating UI
+ * measure without the CSS3D perspective in the way.
  *
- * `data-surface-ready` flips once the frame has painted; `createDeviceStack`
- * waits for it on all three screens before the cover fades out. The page's
- * theme is passed in the URL once and posted to the frame on every change.
- * Pointer events and `inert` come from the host, which the scene toggles
- * while a screen is hidden or the lid is closed.
- *
- * The frame hands back the pointer the page would otherwise lose to it (see
- * `screen-frame-input.ts`): it is projected through the 3D screen and
- * replayed on the page as a `pointermove`, so the hero Bubble follows the
- * cursor across the devices. Wheel input is the browser's: a gesture stays
- * with a screen's own scroller and chains to the page past it, as over any
- * iframe.
+ * The pointer the frame reports (see `screen-frame-input.ts`) is projected
+ * through the 3D screen and replayed on the page as a `pointermove`, so the
+ * hero Bubble follows the cursor across the devices.
  */
 export function DeviceScreenFrame({
   device,
@@ -88,10 +73,8 @@ export function DeviceScreenFrame({
       return;
     }
 
-    // --- Pointer -------------------------------------------------------
-    // Only a moving pointer is replayed. When the stack moves under a still
-    // one, the cursor has not moved on the page and the Bubble keeps its
-    // client point; the frame reports the new point under it if it changes.
+    // Only a moving pointer is replayed: when the stack moves under a still
+    // one, the cursor has not moved on the page.
     const client = { x: 0, y: 0 };
     let pointerInside = false;
     let leftAt = 0;
@@ -174,7 +157,6 @@ export function DeviceScreenFrame({
       setIsReady(true);
     }, READY_TIMEOUT_MS);
 
-    // --- Theme ---------------------------------------------------------
     let theme = pageTheme();
     const themeObserver = new MutationObserver(() => {
       const next = pageTheme();
@@ -211,14 +193,10 @@ export function DeviceScreenFrame({
       ref={frameReference}
       src={source}
       title={TITLES[device]}
-      // A preview, not part of the page's keyboard path: Tab skips the frame.
       tabIndex={-1}
       data-surface-ready={isReady}
-      // The stack mounts the screens once the hero is near the viewport
-      // and its hosts are attached, before the model has loaded, so the
-      // frames load alongside it and `lazy` defers nothing on arrival; it
-      // does keep a visitor who has jumped further down from loading them
-      // until they come back. (`fetchpriority` is not an iframe attribute.)
+      // Keeps a visitor who has jumped further down from loading the frames
+      // until they come back.
       loading="lazy"
       className="bg-background block size-full border-0"
       onPointerEnter={

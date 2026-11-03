@@ -62,10 +62,7 @@ export function useClientCapability(getSnapshot: () => boolean): boolean {
   return useSyncExternalStore(subscribeNever, getSnapshot, getServerSnapshot);
 }
 
-/**
- * Whether this document can run html-in-canvas (`drawElementImage`): Chrome
- * with the `HTMLInCanvas` origin trial or flag, and nothing else today.
- */
+/** Chrome with the `HTMLInCanvas` origin trial or flag only. */
 export function useSupportsHtmlInCanvas(): boolean {
   return useClientCapability(supportsHtmlInCanvas);
 }
@@ -73,7 +70,6 @@ export function useSupportsHtmlInCanvas(): boolean {
 export interface HtmlInCanvasCapture {
   /** Draw the content into the source canvas and align its hit-testing. */
   draw: () => void;
-  /** Clear the source canvas. */
   reset: () => void;
   /** Ask the browser for a paint event on the next frame. */
   requestPaint: () => void;

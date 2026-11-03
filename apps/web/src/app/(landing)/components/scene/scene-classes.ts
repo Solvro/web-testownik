@@ -1,18 +1,11 @@
 /**
- * Each screen host holds one iframe (`device-screen-frame.tsx`), a document of
- * its own, so nothing inside can paint, portal or scroll past the device. The
- * host's `pointer-events` and `inert` reach into the frame. `attachScreen`
- * gives each host an explicit native width and height, which is what makes
- * size containment safe; keep it here, outside the perspective ancestors.
+ * `attachScreen` gives each host an explicit size, which makes size
+ * containment safe; keep it here, outside the perspective ancestors.
  */
 const SCREEN_HOST_CLASS =
   "bg-background pointer-events-auto overflow-hidden backface-hidden will-change-[transform,opacity] contain-size contain-layout contain-paint *:size-full";
 
-/**
- * Classes for the DOM the device stack creates itself: the CSS3D layer and
- * the three screen hosts. The `lp-screen-*` names remain only as hooks for
- * the bezel, notch and Dynamic Island pseudo-elements in landing.css.
- */
+/** `lp-screen-*` are hooks for the bezel, notch and island in landing.css. */
 export const SCENE_CLASS = {
   screenLayer: [
     "pointer-events-none absolute inset-0 z-3 overflow-hidden opacity-0 transition-opacity duration-150 ease-linear",
@@ -24,18 +17,12 @@ export const SCENE_CLASS = {
 } as const satisfies Record<string, string>;
 
 /**
- * The loading still of the closed device stack. The classes reproduce the
- * camera solver's box in CSS: the picture is one fixed camera at every stage
- * size (`frameLaptop`), so the box is a scale of the reference one, bound by
- * the stage's height on stages wider than `REFERENCE_ASPECT` and by its
- * width below, and its top sits a fixed share of its height above the
- * stage's middle. `placeDeviceCover` writes the same rectangle in pixels on
- * the client. Shared by `DeviceStack` and the hero's pre-mount placeholder.
- * Needs an `@container-[size]` parent.
+ * The loading still of the closed stack. The classes reproduce the camera
+ * solver's box in CSS (`placeDeviceCover` refines it on the client) and need
+ * an `@container-[size]` parent. A background image because a hidden element
+ * does not fetch it.
  *
- * A background image rather than an <img>: below `lg` the placeholder is
- * `display: none`, and a hidden element does not fetch its background.
- * Regenerate both files with `pnpm capture:device-stack` whenever the closed
+ * Regenerate the images with `pnpm capture:device-stack` whenever the closed
  * pose, the field of view or the framing constants change.
  */
 export const DEVICE_COVER_CLASS = [

@@ -7,12 +7,7 @@ const glowStyle: CSSProperties = {
   transform: `translate(-50%, -50%) scale(calc(0.86 + ${HERO_PROGRESS} * 0.16))`,
 };
 
-/**
- * The soft primary glow behind the device stack. The static hero (server
- * markup, and desktop until the stage chunk arrives) renders it at the closed
- * pose, so it is there from the first paint rather than appearing with the
- * scene.
- */
+/** The static hero renders it at the closed pose, so it is there from first paint. */
 export function DeviceSceneBackdrop({
   isStatic,
 }: {

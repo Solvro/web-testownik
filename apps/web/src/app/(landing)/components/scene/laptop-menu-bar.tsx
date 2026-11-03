@@ -3,29 +3,13 @@
 import { useCurrentMinute } from "../../lib/current-minute";
 
 /**
- * The macOS menu bar across the top of the hero MacBook's screen.
+ * Proportions follow a notched 14" MacBook Pro at 1800 × 1169 pt on a 940 px
+ * host (1 pt = 0.52 px): a 20 px bar, 8 px titles 12 px apart. The notch is
+ * `.lp-screen-laptop::after` in landing.css.
  *
- * Proportions follow a notched 14" MacBook Pro, measured with NSScreen at its
- * 1800 × 1169 pt scaling. Our screen host is 940 px wide, so 1 pt = 0.52 px:
- *
- * - the bar is the band above the 16:10 area, i.e. the 38 pt safe-area top
- *   (3.25% of the height) → 20 px. The notch itself is drawn by
- *   `.lp-screen-laptop::after` in landing.css at 19 px, so it overlays the
- *   middle of this bar;
- * - menu titles are 13 pt SF Pro → 7–8 px, kept at 8 px for legibility, with
- *   ~20 pt between titles → 12 px (titles read slightly large, by design);
- * - status items sit right of the notch in macOS's default order
- *   (battery, Wi-Fi, Spotlight, Control Center, then the clock).
- *
- * The clock shows the visitor's current date and time in macOS's Polish
- * format, "wt. 9 sty 9:41": abbreviated weekday, day, abbreviated month and
- * H:mm. It only exists on the client and ticks on each minute boundary; the
- * server and the hydration pass render an invisible stand-in of the same
- * shape, so the markup matches and the status items do not shift.
- *
- * The bar is translucent like the real material, but has no backdrop blur:
- * nothing scrolls beneath it here, and a backdrop filter inside the CSS3D
- * layer would cost a filter pass every frame of the hero's scroll.
+ * The clock only exists on the client; the server renders an invisible
+ * stand-in of the same shape so the status items do not shift. No backdrop
+ * blur: inside the CSS3D layer it would cost a filter pass every scroll frame.
  */
 
 const MENU_BAR_ITEMS = ["Plik", "Edycja", "Widok", "Okno", "Pomoc"] as const;

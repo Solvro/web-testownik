@@ -4,13 +4,9 @@ import type { ScreenDevice } from "./screen-frame-protocol";
 import type { ClientPoint } from "./three/create-device-stack";
 
 /**
- * Maps a point on a live screen (its iframe's client pixels) to the page's
- * client coordinates through the 3D stack, as last rendered. Returns false
- * while the stack is not built or the point is behind the camera.
- *
- * `DeviceStack` provides it around the screens it portals; the frames use it
- * to hand the pointer they capture back to the page (see
- * `device-screen-frame.tsx`).
+ * Maps a point in a screen's iframe to page client coordinates through the 3D
+ * stack as last rendered. False while the stack is not built or the point is
+ * behind the camera.
  */
 export type ProjectScreenPoint = (
   device: ScreenDevice,

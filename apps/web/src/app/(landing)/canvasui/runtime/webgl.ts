@@ -27,11 +27,7 @@ function compileShader(
   return shader;
 }
 
-/**
- * Compiles and links a program, collecting its active uniforms. Returns null
- * after releasing every partial object when any step fails, so the caller can
- * fall back instead of drawing nothing.
- */
+/** Null on any failure, after releasing partial objects, so the caller can fall back. */
 export function createProgram(
   gl: Context,
   vertexSource: string,
@@ -147,14 +143,14 @@ export function watchContextLoss(
   };
 }
 
-/** The device pixel ratio, capped at 2 to bound fill cost. */
+/** Capped at 2 to bound fill cost. */
 export function cappedDevicePixelRatio(): number {
   return Math.min(window.devicePixelRatio || 1, 2);
 }
 
 const canvasDimensionLimits = new WeakMap<Context, number>();
 
-/** Keep the existing DPR budget, then account for browser pinch zoom. */
+/** Also accounts for pinch zoom. */
 export function getCanvasPixelRatio(
   element: HTMLElement,
   context?: Context,
@@ -185,7 +181,6 @@ export function getCanvasPixelRatio(
   );
 }
 
-/** Size `canvas`'s backing store to `element`'s CSS box times `ratio`. */
 export function syncCanvasBackingSize(
   canvas: HTMLCanvasElement,
   element: HTMLElement,

@@ -4,20 +4,10 @@ import type {
   ScreenPointerMessage,
 } from "./screen-frame-protocol";
 
-/**
- * Pointer positions a device screen hands back to the page around it.
- *
- * Wheel input needs nothing of the kind: the browser scrolls a screen's own
- * scroller while a gesture stays on it and chains the rest to the page, as
- * for any iframe. The page gets no pointer events while the pointer is over
- * a frame, though, so the frame reports where it is, once per animation
- * frame, for the hero Bubble to follow.
- */
+// The page gets no pointer events over a frame, so the frame reports the
+// pointer for the hero Bubble to follow. Wheel chaining needs no help.
 
-/**
- * Starts forwarding the pointer to `window.parent`. Returns the cleanup. One
- * message object of each kind is reused; `postMessage` clones it.
- */
+/** One message object of each kind is reused; `postMessage` clones it. */
 export function forwardScreenInput(): () => void {
   const parent = window.parent;
   const origin = window.location.origin;

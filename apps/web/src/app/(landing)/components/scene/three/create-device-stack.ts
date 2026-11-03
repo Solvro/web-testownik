@@ -21,13 +21,8 @@ import { createStage } from "./stage";
 import { smoothstep } from "./utils";
 import type { WebGLUnavailableReason } from "./webgl-availability";
 
-/**
- * Builds the hero's device stack and runs it until disposed.
- *
- * Everything three.js lives behind this one entry point, which the React
- * wrapper imports dynamically — that is what keeps three, the loaders and the
- * device model downloads off the initial bundle and away from phones entirely.
- */
+// The only entry point into three.js, imported dynamically to keep it off the
+// initial bundle and away from phones.
 
 const getCurrentScrollProgress = (): number =>
   MathUtils.clamp(getHeroProgress(), 0, 1);
@@ -48,17 +43,12 @@ export interface DeviceStackOptions {
   canvas: HTMLCanvasElement;
   container: HTMLElement;
   hosts: DeviceStackHosts;
-  /** Class applied to the CSS3D layer the renderer creates. */
   screenLayerClassName: string;
   pixelRatio?: number;
   /** Aborting before the models resolve tears everything down instead. */
   signal: AbortSignal;
-  /**
-   * Called once CSS3DRenderer has attached and sized the portal hosts, which
-   * is before the model loads: the screens' documents load meanwhile.
-   */
+  /** Before the model loads, so the screens' documents load meanwhile. */
   onHostsAttached: () => void;
-  /** Called once the live surfaces have settled and been composited. */
   onReady: () => void;
   /** Context creation failed, or a lost context did not recover. */
   onUnavailable: (reason: WebGLUnavailableReason) => void;
@@ -75,9 +65,8 @@ export interface ClientPoint {
 export interface DeviceStack {
   dispose: () => void;
   /**
-   * Where a point on a live screen, in that screen's own CSS pixels (its
-   * iframe's client coordinates), is on the page as currently rendered.
-   * Writes it to `out` and returns false if it is behind the camera.
+   * `x` and `y` are the screen iframe's client pixels. Writes the page point
+   * to `out`; false if it is behind the camera.
    */
   projectScreenPoint: (
     device: ScreenDevice,
@@ -94,11 +83,7 @@ const INACTIVE_STACK: DeviceStack = {
   projectScreenPoint: () => false,
 };
 
-/**
- * One live screen's visibility rules. Opacity and interactivity are written to
- * the host only when they change, so a scroll frame does not touch the DOM of
- * a screen whose state is stable.
- */
+/** Written to the host only when they change, so stable screens see no DOM writes. */
 interface ScreenState {
   host: HTMLElement;
   object: CSS3DObject;
@@ -200,10 +185,8 @@ export async function createDeviceStack({
   let width = 1;
   let height = 1;
 
-  // --- Screens ------------------------------------------------------------
-  // The hosts go into the CSS3D layer now, sized and at the origin, so the
-  // three iframes load in parallel with the model instead of after it. The
-  // layer is transparent until the stack is ready, so nothing shows.
+  // The hosts go into the (still transparent) CSS3D layer now, so the iframes
+  // load in parallel with the model.
   const screenHolder = new Object3D();
   scene.add(screenHolder);
   const laptopScreen = createScreen(
@@ -265,7 +248,6 @@ export async function createDeviceStack({
     return { dispose: teardown, projectScreenPoint: () => false };
   }
 
-  // --- Devices ------------------------------------------------------------
   scene.add(models.laptop.root);
   anchorScreen(models.laptop.display, laptopScreen);
 
@@ -298,7 +280,6 @@ export async function createDeviceStack({
     screenState(hosts.phone, phoneScreen, [0.04, 0.2]),
   ];
 
-  // --- Frame loop ---------------------------------------------------------
   const progressForFrame = (): number => {
     const target = getCurrentScrollProgress();
     if (progressMode === "loading") {
@@ -336,19 +317,15 @@ export async function createDeviceStack({
     setHeroProgressOverride(progressMode === "scroll" ? null : progress);
     const { opening } = choreography.apply(progress, width, height);
 
-    // The panel is edge-on to the camera when it first faces it, where the
-    // facing value grows about one unit per radian, so a fade on facing
-    // alone switches the screen on within a dozen degrees of hinge travel.
-    // The facing test only gates the back of the lid; the ramp itself
-    // follows the lid opening, lit from soon after the lid lifts (a real
-    // MacBook only sleeps once nearly shut) and fully bright by half way.
+    // A fade on facing alone would switch the screen on within a dozen
+    // degrees of hinge travel, so facing only gates the back of the lid and
+    // the ramp follows the lid opening.
     const laptopVisibility = Math.min(
       screenFacing(laptop.object, camera, ...laptop.fade),
       smoothstep(0.1, 0.5, opening),
     );
-    // Facing the camera is not enough: for the first half of the hinge travel
-    // the panel is still physically behind the lid. Keeping the host inert
-    // stops controls firing "through" a closed MacBook.
+    // For the first half of the hinge travel the panel is still behind the
+    // lid; inert stops controls firing through a closed MacBook.
     syncScreen(
       laptop,
       laptopVisibility,
@@ -383,8 +360,6 @@ export async function createDeviceStack({
     render();
   };
 
-  // Nothing renders while the hero is off-screen, which is most of the page
-  // for a visitor who scrolls past it.
   const visibilityObserver = new IntersectionObserver(
     ([entry]) => {
       isVisible = entry.isIntersecting;
@@ -405,10 +380,8 @@ export async function createDeviceStack({
   isVisible = true;
   resize(initial.width, initial.height);
 
-  // The screens are iframes that load on their own; each marks itself
-  // `data-surface-ready` once it has painted (the iPad with its still
-  // preview — its charts load after interaction). The cover waits for all
-  // three, so it never hands over to a blank screen.
+  // The cover waits for every screen's `data-surface-ready`, so it never
+  // hands over to a blank screen.
   let stableSurfaceFrames = 0;
 
   const revealWhenSurfacesAreStable = (): void => {
@@ -417,8 +390,7 @@ export async function createDeviceStack({
       isSurfaceReady(hosts.laptop) &&
       isSurfaceReady(hosts.tablet) &&
       isSurfaceReady(hosts.phone);
-    // Loading the frames takes a while; the scene has nothing new to draw
-    // until they are in, so the wait is a cheap poll rather than a render.
+    // Nothing new to draw until the frames are in, so poll without rendering.
     if (surfacesReady) {
       render();
     }
@@ -458,7 +430,6 @@ export async function createDeviceStack({
 
   readinessFrame = window.requestAnimationFrame(revealWhenSurfacesAreStable);
 
-  // --- Screen → page projection ------------------------------------------
   const screenObjects = {
     laptop: laptopScreen,
     tablet: tabletScreen,
@@ -467,10 +438,9 @@ export async function createDeviceStack({
   const projected = new Vector3();
 
   /**
-   * CSS3DRenderer centres each host on its object's origin with +y up, and
-   * the object's scale is scene units per CSS pixel, so a host pixel is a
-   * point on the object's local z = 0 plane. The world matrices are the ones
-   * the last frame rendered with.
+   * CSS3DRenderer centres each host on its object's origin with +y up and
+   * scales it in scene units per CSS pixel, so a host pixel is a point on the
+   * object's local z = 0 plane.
    */
   const projectScreenPoint: DeviceStack["projectScreenPoint"] = (
     device,

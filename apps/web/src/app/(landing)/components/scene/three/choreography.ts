@@ -7,12 +7,9 @@ import type { SatelliteRig } from "./screens";
 import { setCubicBezier, smoothstep } from "./utils";
 
 /**
- * The whole hero animation, expressed as a function of scroll progress.
- *
- * The lid opens while the iPad and iPhone ride one continuous cubic arc from
- * lying on the closed lid to standing at either side. The first control point
- * pulls each device clear of the hinge before the lid starts moving, the second
- * lifts it into the final composition — no stop, snap or change of direction.
+ * The hero animation as a function of scroll progress. The iPad and iPhone
+ * ride one cubic arc from the closed lid to either side: the first control
+ * point pulls each clear of the hinge before the lid moves.
  */
 
 const CLOSED_TILT = new Quaternion().setFromEuler(
@@ -23,20 +20,15 @@ const CLOSED_TILT = new Quaternion().setFromEuler(
 const SATELLITE_REFERENCE_ASPECT = 1.92;
 
 interface SatellitePose {
-  /** Resting on the closed lid. */
   closed: Vector3;
   controlOne: Vector3;
   controlTwo: Vector3;
-  /** Standing beside the open laptop. */
   open: Vector3;
-  /** Where it travels to instead when the viewport is too narrow to keep it. */
+  /** Used instead of `open` when the viewport is too narrow to keep it. */
   exit: Vector3;
   exitControlOne: Vector3;
   exitControlTwo: Vector3;
-  /**
-   * Degrees of yaw while lying flat. Set a little off-square on purpose: the
-   * resting shot should read as objects put down by hand, not aligned to a grid.
-   */
+  /** Degrees, a little off-square so the devices look put down by hand. */
   lyingYaw: number;
   /** Angled back towards the laptop and tipped up once upright. */
   standing: readonly [number, number, number];
@@ -102,7 +94,6 @@ function createSatellite(
   return { rig, scale, pose, lying, standing };
 }
 
-/** Moves one satellite to where it belongs at this point in the travel. */
 function placeSatellite(
   satellite: Satellite,
   {
@@ -143,7 +134,7 @@ function placeSatellite(
 }
 
 export interface FrameState {
-  /** Lid travel, 0 closed → 1 open. */
+  /** 0 closed, 1 open. */
   opening: number;
 }
 
@@ -201,16 +192,13 @@ export function createChoreography({
         });
       }
 
-      // Framing comes from the shared solver so the static loading cover lands
-      // on exactly the same rectangle as the live model.
+      // The shared solver, so the loading cover lands on the same rectangle.
       const { framing } = frameLaptop({
         opening,
         aspect: width / height,
         withSatellites: keepSatellites,
       });
       const [targetX, targetY, targetZ] = framing.target;
-      // A slight push in and out through the middle of the travel, so the
-      // composition breathes while the devices are moving.
       const breath = keepSatellites ? Math.sin(Math.PI * travel) * 0.075 : 0;
       const distance = framing.distance * (1 + breath);
 

@@ -1,22 +1,16 @@
 import { SCENE_WIDTH } from "../breakpoints";
 
 /**
- * Shared framing maths for the hero MacBook.
- *
- * Both the live three.js scene and the static loading cover need to agree on
- * exactly where the laptop lands on screen, otherwise the hand-off between them
- * visibly jumps. Keeping the solve here — as plain arithmetic over the asset's
- * measured bounds — means there is only one implementation to be right.
+ * Framing for the hero MacBook, shared by the three.js scene and the static
+ * loading cover so the hand-off between them does not jump.
  */
 
 type Corner = readonly [number, number, number];
 
 /**
- * Axis-aligned bounds of the model, measured once from
- * the MacBook in `public/models/device-stack.glb` with the lid at each end of its travel.
- * The closed box is deeper than the visible laptop because the hinge barrel
- * swings below the base; that padding is harmless as long as both consumers
- * use the same numbers.
+ * Bounds of the MacBook in `public/models/device-stack.glb` at each end of the
+ * lid's travel. The closed box is deeper than the visible laptop because the
+ * hinge barrel swings below the base.
  */
 export const CLOSED_CORNERS: readonly Corner[] = [
   [-15.632, -7.637, -11.353],
@@ -40,24 +34,15 @@ export const OPEN_CORNERS: readonly Corner[] = [
   [15.632, 20.262, 11.06],
 ];
 
-/** Lid travel from open to shut, in degrees. */
 export const LID_TRAVEL_DEGREES = 111;
 
-/**
- * Vertical field of view of the hero camera, in degrees, on a stage at least
- * `REFERENCE_ASPECT` wide. Narrower stages keep the camera where it is and
- * widen the lens instead (see `frameLaptop`).
- */
+/** Vertical, in degrees. Narrower stages than `REFERENCE_ASPECT` widen it. */
 export const CAMERA_FOV = 30;
 
 /**
- * Aspect of the stage the closed cover was captured at. Any wider stage is
- * height-limited and solves to the same camera; a narrower one would need
- * the camera further back to fit the laptop's width, which changes the
- * perspective and so the picture, and the still would no longer match the
- * live render. Instead the camera stays at the reference distance and the
- * field of view widens, which only scales the picture: the cover is a
- * uniform scale of the live render at every stage size.
+ * Aspect of the stage the closed cover was captured at. Narrower stages widen
+ * the field of view rather than moving the camera back, which would change the
+ * perspective; the cover then stays a uniform scale of the live render.
  */
 export const REFERENCE_ASPECT = 1.758;
 
@@ -65,7 +50,6 @@ export interface Framing {
   target: [number, number, number];
   distance: number;
   pitch: number;
-  /** Vertical field of view in degrees, `CAMERA_FOV` unless the stage is narrow. */
   fov: number;
 }
 
@@ -137,13 +121,9 @@ export function frameLaptop({
     target[2] += corner[2] / corners.length;
   }
 
-  // Closed is viewed from a low three-quarter angle, not from overhead: the
-  // wedge profile and the lid edge are what make it read as a laptop at all.
-  // Straight down it is just a dark rectangle.
+  // Closed is viewed from a low angle: straight down it is a dark rectangle.
   const pitch = toRadians(lerp(38, 10, opening));
-  // Closed reads at a similar size to open without swallowing the frame. The
-  // measured box is deeper when shut (the hinge barrel swings below the base),
-  // so the same number here yields a visually smaller device.
+  // The closed box is deeper (the hinge barrel), so the same fill reads smaller.
   const fill = lerp(0.7, withSatellites ? 0.72 : 0.9, opening);
 
   const maxExtent = (framing: Framing, forAspect: number): number => {
@@ -155,9 +135,7 @@ export function frameLaptop({
     return extent;
   };
 
-  // Converge on the tightest distance that still keeps every corner inside
-  // the reference stage. Wider stages are bound by the same height; narrower
-  // ones keep this camera and widen the lens below.
+  // The tightest distance that keeps every corner inside the reference stage.
   let distance = 90;
   for (let pass = 0; pass < 3; pass += 1) {
     const extent = maxExtent(
@@ -186,7 +164,6 @@ export function frameLaptop({
   return { framing: { target: panned, distance, pitch, fov }, corners };
 }
 
-/** Screen-space box the posed laptop occupies, in CSS pixels. */
 export function laptopScreenRect(
   width: number,
   height: number,

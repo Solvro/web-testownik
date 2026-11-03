@@ -424,9 +424,8 @@ function createPeel(
     gl.disable(gl.DEPTH_TEST);
   }
 
-  // Lets the pointer through the curled-away strip to the under layer. Without
-  // one there is nothing to reach, and the content would lose its hover (and
-  // cursor) while the sheet flattens under the pointer.
+  // Lets the pointer through the curled-away strip to the under layer, if
+  // there is one; otherwise the content would lose its hover mid-flatten.
   function syncContentEvents() {
     if (under === undefined) {
       return;

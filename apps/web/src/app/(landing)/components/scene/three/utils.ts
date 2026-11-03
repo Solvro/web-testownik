@@ -12,7 +12,6 @@ export function isMesh(object: Object3D): object is Mesh {
   return "isMesh" in object && object.isMesh === true;
 }
 
-/** Meshes, points and lines: everything that owns geometry and materials. */
 function isDrawable(object: Object3D): object is Mesh | Points | Line {
   return (
     isMesh(object) ||
@@ -39,7 +38,6 @@ export function smoothstep(from: number, to: number, value: number): number {
   return normalized * normalized * (3 - 2 * normalized);
 }
 
-/** Writes the cubic Bézier point at `progress` into `target`. */
 export function setCubicBezier(
   target: Vector3,
   start: Vector3,
@@ -57,7 +55,6 @@ export function setCubicBezier(
     .addScaledVector(end, progress ** 3);
 }
 
-/** Releases every geometry, material and texture under `root`. */
 export function disposeObject(root: Object3D): void {
   root.traverse((object) => {
     if (!isDrawable(object)) {

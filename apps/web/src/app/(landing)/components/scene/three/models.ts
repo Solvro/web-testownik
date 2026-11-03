@@ -5,12 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DEVICE_MODELS_URL } from "../device-models-url";
 import { disposeObject, isMesh } from "./utils";
 
-/**
- * One meshopt-compressed GLB holding all three devices, produced offline by
- * `pnpm export:device-models` from Apple's AR files. The export has already
- * blanked the displays, re-parented the MacBook lid onto its hinge and named
- * every node the hero needs; `public/models/README.md` records the details.
- */
+/** Produced by `pnpm export:device-models`; see `public/models/README.md`. */
 export interface DeviceModels {
   laptop: {
     root: Object3D;

@@ -31,16 +31,9 @@ import type { WebGLUnavailableReason } from "./three/webgl-availability";
 const MIN_SCENE_WIDTH = DESKTOP_STAGE_QUERY;
 
 /**
- * React wrapper around the WebGL device stack.
- *
- * The component owns three things and nothing else: the canvas, the DOM hosts
- * the live UI is portalled into, and the still cover shown while the model
- * loads. All the three.js work lives in `three/create-device-stack.ts`, which
- * is imported dynamically so neither three nor the device models reach a
- * visitor who never sees the scene.
- *
- * The hosts are created imperatively because `CSS3DRenderer` reparents them
- * into its own layer; React only portals children into them.
+ * Owns the canvas, the screen hosts and the loading cover; the three.js work
+ * is imported dynamically from `three/create-device-stack.ts`. The hosts are
+ * created imperatively because `CSS3DRenderer` reparents them into its layer.
  */
 export function DeviceStack({
   coverOnly = false,
@@ -54,14 +47,12 @@ export function DeviceStack({
 }: {
   onUnavailable?: () => void;
   onRestored?: () => void;
-  /** The model and all three screens are up; the cover is fading out. */
   onReady?: () => void;
   /** Capture harness: hold the still cover and hide every live surface. */
   coverOnly?: boolean;
   pixelRatio?: number;
   /**
-   * The live screens, mounted once CSS3DRenderer has attached their hosts.
-   * Each must mark an element `data-surface-ready="true"` once it has
+   * Each screen must mark an element `data-surface-ready="true"` once it has
    * painted; the cover stays up until all three have.
    */
   laptopContent: ReactNode;
@@ -92,9 +83,7 @@ export function DeviceStack({
   const projectScreenPoint: ProjectScreenPoint = (device, x, y, out) =>
     stackReference.current?.projectScreenPoint(device, x, y, out) ?? false;
 
-  // The cover is a still of this very model, laid out by the same solver the
-  // camera uses, so the hand-off to the live scene is a pure cross-fade with
-  // nothing moving underneath it.
+  // Laid out by the camera's own solver, so the hand-off is a pure cross-fade.
   useLayoutEffect(() => {
     const container = containerReference.current;
     if (container === null) {
@@ -165,9 +154,8 @@ export function DeviceStack({
         return;
       }
       try {
-        // Inside the try: a broken module graph (seen once after a hot
-        // reload mid-merge) must end in the static fallback, not a silent
-        // cover with no screens.
+        // Inside the try: a broken module graph must end in the static
+        // fallback, not a cover with no screens.
         const { createDeviceStack } =
           await import("./three/create-device-stack");
         controller.signal.throwIfAborted();
@@ -231,9 +219,7 @@ export function DeviceStack({
     };
     canvas.addEventListener("webglcontextrestored", retryAfterRestore);
 
-    // Below `lg` the hero shows a CSS phone instead, so nothing here should
-    // cost those viewports a WebGL context or a model download. Booting waits
-    // until the viewport is wide enough and the hero is actually close.
+    // Boot only once the viewport is wide enough and the hero is close.
     const wideEnough = window.matchMedia(MIN_SCENE_WIDTH);
     let hasBooted = false;
     let isNearHero = false;
@@ -281,9 +267,8 @@ export function DeviceStack({
       data-cover-only={coverOnly}
       className={cn(
         "group/stack @container-[size] absolute inset-0 transition-opacity duration-300",
-        // Nothing in here reads the hero progress, but the live screens are
-        // hundreds of elements that would inherit it: pinning it stops every
-        // scroll frame from restyling all three screens.
+        // Pinned so scroll frames do not restyle the screens' hundreds of
+        // elements, none of which read it.
         "[--landing-hero-progress:0]",
       )}
     >
