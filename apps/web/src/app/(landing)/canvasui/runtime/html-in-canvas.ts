@@ -116,7 +116,8 @@ export function createHtmlInCanvasCapture(
       // versions synchronize automatically and return nothing. Use the
       // returned matrix as-is: it already accounts for the pixel density.
       if (
-        transform instanceof DOMMatrix &&
+        transform !== undefined &&
+        transform !== null &&
         typeof canvas.updateElementGeometry === "function"
       ) {
         canvas.updateElementGeometry(content, { canvasTransform: transform });
