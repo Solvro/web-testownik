@@ -124,6 +124,7 @@ export function useQuizPreviewState({
             ? undefined
             : { settings: current, stamp: settingsStamp },
         awaiting,
+        studyTime: timerStore.getSnapshot(),
       });
       awaiting = response.awaiting;
       if (response.event !== undefined) {
@@ -131,6 +132,9 @@ export function useQuizPreviewState({
       }
       if (response.resetTimer === true) {
         timerStore.setFromLoaded(0);
+      }
+      if (response.studyTime !== undefined) {
+        timerStore.setFromLoaded(response.studyTime);
       }
       if (response.settings !== undefined) {
         settingsStamp = response.settings.stamp;

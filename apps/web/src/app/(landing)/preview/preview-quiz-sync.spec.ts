@@ -62,6 +62,8 @@ interface SimulatedScreen {
   synced: SyncedQuizState;
   settings: VersionedSettings;
   awaiting: string | undefined;
+  /** The study timer; simulated screens never tick it. */
+  studyTime: number;
   inbox: QuizSyncMessage[];
   actions: number;
 }
@@ -85,6 +87,7 @@ function createNetwork(ids: string[]) {
       synced: createSyncedQuizState(createQuizPreviewState()),
       settings: versioned,
       awaiting: undefined,
+      studyTime: 120,
       inbox: [],
       actions: 0,
     };
@@ -116,6 +119,9 @@ function createNetwork(ids: string[]) {
         action,
         id: actionId,
       });
+      if (action.type === "reset") {
+        self.studyTime = 0;
+      }
       post(self, { kind: "action", action, id: actionId, parent });
     },
     editSettings(id: string, next: typeof settings): void {
@@ -137,6 +143,12 @@ function createNetwork(ids: string[]) {
       self.awaiting = response.awaiting;
       if (response.event !== undefined) {
         self.synced = syncedQuizReducer(self.synced, response.event);
+      }
+      if (response.resetTimer === true) {
+        self.studyTime = 0;
+      }
+      if (response.studyTime !== undefined) {
+        self.studyTime = response.studyTime;
       }
       if (response.settings !== undefined) {
         self.settings = response.settings;
@@ -190,6 +202,7 @@ function expectInStep(...screens: SimulatedScreen[]): void {
   for (const other of rest) {
     expect(other.synced).toEqual(first.synced);
     expect(other.settings).toEqual(first.settings);
+    expect(other.studyTime).toBe(first.studyTime);
   }
 }
 
@@ -253,6 +266,23 @@ describe("syncing screens", () => {
     expectInStep(a, network.screen("b"));
     expect(a.synced.state.focusMode).toBe(true);
   });
+
+  it.each([
+    ["the lower id resets", "a", "b", 0],
+    ["the higher id resets", "b", "a", 120],
+  ])(
+    "keeps the study timers in step when %s during another action",
+    (_, resetter, other, studyTime) => {
+      const network = createNetwork(["a", "b"]);
+      network.settle();
+      network.act(resetter, { type: "reset" });
+      network.act(other, { type: "select", answers: ["a-1"] });
+      network.settle();
+      const a = network.screen("a");
+      expectInStep(a, network.screen("b"));
+      expect(a.studyTime).toBe(studyTime);
+    },
+  );
 
   it("adopts only the answer to its latest resync", () => {
     const network = createNetwork(["a", "b"]);
@@ -350,6 +380,7 @@ describe("parseQuizSyncMessage", () => {
         head: "a:3",
         state,
         settings: versioned,
+        studyTime: 42,
       }).kind,
     ).toBe("snapshot");
     expect(parsed("a", { kind: "settings", ...versioned }).kind).toBe(
@@ -414,6 +445,17 @@ describe("parseQuizSyncMessage", () => {
       }),
     ],
     ["settings without a stamp", message("a", { kind: "settings", settings })],
+    [
+      "a snapshot without a study time",
+      message("a", {
+        kind: "snapshot",
+        to: "b",
+        revision: 1,
+        head: "a:1",
+        state: createQuizPreviewState(),
+        settings: versioned,
+      }),
+    ],
     ["a string", "hello"],
     ["null", null],
   ])("rejects %s", (_, data) => {
@@ -455,6 +497,7 @@ describe("respondToQuizSyncMessage", () => {
     synced: { state: createQuizPreviewState(), revision: 2, head: "me:2" },
     settings: versioned,
     awaiting: undefined,
+    studyTime: 42,
   };
 
   it("answers a hello with a snapshot addressed to its sender", () => {
@@ -469,6 +512,7 @@ describe("respondToQuizSyncMessage", () => {
         head: "me:2",
         state: self.synced.state,
         settings: versioned,
+        studyTime: 42,
       },
     });
   });
@@ -512,6 +556,7 @@ describe("respondToQuizSyncMessage", () => {
         head: "ab:9",
         state,
         settings: versioned,
+        studyTime: 7,
         ...fields,
       });
     const awaiting = { ...self, awaiting: "ab:2" };
@@ -531,6 +576,9 @@ describe("respondToQuizSyncMessage", () => {
     expect(
       respondToQuizSyncMessage(snapshot({ revision: 3 }), self).event,
     ).toEqual({ ...adopted, revision: 3 });
+    expect(
+      respondToQuizSyncMessage(snapshot({ revision: 3 }), self).studyTime,
+    ).toBe(7);
     // An older request's answer is not adopted.
     expect(
       respondToQuizSyncMessage(
@@ -543,7 +591,7 @@ describe("respondToQuizSyncMessage", () => {
         snapshot({ revision: 1, request: "ab:2" }),
         awaiting,
       ),
-    ).toEqual({ awaiting: undefined, event: adopted });
+    ).toEqual({ awaiting: undefined, event: adopted, studyTime: 7 });
   });
 
   it("answers a resync addressed to it", () => {

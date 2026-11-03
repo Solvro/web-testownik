@@ -28,11 +28,13 @@ import type {
  * of whichever screen has applied more actions. Settings edited in either
  * screen's dialog travel separately, with their own version, because `next`
  * and the mastered count depend on them; a late joiner takes the newest.
+ * Snapshots also carry the sender's study time, so a screen that adopts one
+ * (after a reset it missed, or one of its own that lost) shows the same timer.
  *
  * Everything below except `openQuizSyncChannel` is pure.
  */
 
-export const QUIZ_SYNC_PROTOCOL = "testownik-preview-quiz/3";
+export const QUIZ_SYNC_PROTOCOL = "testownik-preview-quiz/4";
 
 /** The order settings changes are applied in: version, then lower author. */
 export interface SettingsStamp {
@@ -71,6 +73,8 @@ export type QuizSyncPayload =
       head: string;
       state: QuizPreviewState;
       settings: VersionedSettings | undefined;
+      /** The sender's study timer, in seconds. */
+      studyTime: number;
     }
   | ({ kind: "settings" } & VersionedSettings);
 
@@ -236,7 +240,8 @@ export function parseQuizSyncMessage(data: unknown): QuizSyncMessage | null {
         isCount(data.revision) &&
         typeof data.head === "string" &&
         isQuizPreviewState(data.state) &&
-        (data.settings === undefined || isVersionedSettings(data.settings))
+        (data.settings === undefined || isVersionedSettings(data.settings)) &&
+        isCount(data.studyTime)
         ? (data as QuizSyncMessage)
         : null;
     }
@@ -258,6 +263,8 @@ export interface QuizSyncResponse {
   awaiting: string | undefined;
   /** A forwarded reset also zeroes the study timer, as a local one does. */
   resetTimer?: boolean;
+  /** The study time of an adopted snapshot. */
+  studyTime?: number;
 }
 
 export function respondToQuizSyncMessage(
@@ -267,6 +274,7 @@ export function respondToQuizSyncMessage(
     synced: SyncedQuizState;
     settings: VersionedSettings | undefined;
     awaiting: string | undefined;
+    studyTime: number;
   },
 ): QuizSyncResponse {
   const unchanged = { awaiting: self.awaiting };
@@ -281,6 +289,7 @@ export function respondToQuizSyncMessage(
     head: self.synced.head,
     state: self.synced.state,
     settings: self.settings,
+    studyTime: self.studyTime,
   });
   const newerSettings = (incoming: VersionedSettings | undefined) =>
     incoming !== undefined &&
@@ -340,6 +349,7 @@ export function respondToQuizSyncMessage(
               head: message.head,
               state: message.state,
             },
+            studyTime: message.studyTime,
           }),
         ...(settings !== undefined && { settings }),
       };
