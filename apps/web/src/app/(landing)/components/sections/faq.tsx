@@ -45,7 +45,7 @@ export function Faq(): React.JSX.Element {
                   // The landing's outline instead of the app's ring and
                   // border, inset so it clears the separators. Its focus
                   // ::after would join the flex row and shift the chevron.
-                  "after:hidden focus-visible:border-transparent focus-visible:ring-0",
+                  "after:hidden focus-visible:border-transparent focus-visible:ring-0 motion-reduce:transition-none",
                   FOCUS_RING,
                   "focus-visible:-outline-offset-2 focus-visible:outline-solid",
                 )}
