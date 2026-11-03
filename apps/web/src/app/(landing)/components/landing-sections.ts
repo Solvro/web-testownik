@@ -33,3 +33,5 @@ export const LANDING_SECTIONS = [
 ] as const;
 
 export type LandingSectionPeek = (typeof LANDING_SECTIONS)[number]["peek"];
+
+export type LandingSectionId = (typeof LANDING_SECTIONS)[number]["id"];

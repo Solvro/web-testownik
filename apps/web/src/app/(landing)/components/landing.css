@@ -11,7 +11,7 @@
  * keyframes and scroll-driven animation. Everything else lives in utilities
  * on the elements themselves, including the DOM the device stack creates
  * (`scene/scene-classes.ts`) and the TOC peek stages
- * (`sections/toc-section-preview.ts`).
+ * (`sections/toc/toc-section-preview.ts`).
  */
 
 .lp-hand-note {

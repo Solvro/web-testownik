@@ -1,22 +1,24 @@
-import { DESKTOP_STAGE_QUERY } from "../breakpoints";
-import { HERO_PROGRESS_PROPERTY } from "../hero-progress";
-import type { LandingSectionPeek } from "../landing-sections";
-import { wordmarkDark } from "../logos";
-import { finishReveals } from "./toc-clone-finish";
+/**
+ * Cache and lifecycle of the TOC peeks: builds them in idle time, keeps them
+ * parked in the card's shadow root and current as the page changes, and
+ * reveals one on hover. Stages are built by `toc-preview-clone.ts`.
+ */
+import type { LandingSectionPeek } from "../../landing-sections";
+import { ACTIVE_CLASS, buildPreview } from "./toc-preview-clone";
+import type { PendingScroll } from "./toc-preview-clone";
 import {
   TOC_PREVIEW_OBSERVED_ATTRIBUTES,
   TocPreviewFreshness,
   applyScrollOffsets,
-  captureScrollOffsets,
-  copyControlState,
 } from "./toc-preview-freshness";
-import type { ScrollOffset, TocPreviewSchedule } from "./toc-preview-freshness";
-import {
-  BoundedCache,
-  tocPreviewLayout,
-  tocPreviewOffset,
-} from "./toc-preview-layout";
+import type { TocPreviewSchedule } from "./toc-preview-freshness";
+import { BoundedCache, tocPreviewLayout } from "./toc-preview-layout";
 import type { TocPreviewLayout } from "./toc-preview-layout";
+import {
+  adoptCopiedStyles,
+  syncShadowStyles,
+  syncShadowTheme,
+} from "./toc-shadow-styles";
 
 export {
   TOC_PREVIEW_GAP,
@@ -32,31 +34,8 @@ export interface TocPreviewSection {
 
 /** One entry per section plus headroom for a stale width after a resize. */
 const PREVIEW_CACHE_LIMIT = 8;
-/** `lg:min-h-[42rem]` on the hero's sticky stage. */
-const HERO_MIN_HEIGHT = 42 * 16;
-/** `top-[5.3rem]`: the device layer starts below the hero navigation. */
-const HERO_DEVICE_TOP = "5.3rem";
-/** The open-pose still the static hero shows; see `hero-desktop-stage.tsx`. */
-const HERO_PEEK_COVER_CLASS =
-  "pointer-events-none absolute inset-x-0 top-[38%] bottom-[3%] bg-[url(/models/testownik-device-stack-open-light-v1.webp)] bg-contain bg-center bg-no-repeat dark:bg-[url(/models/testownik-device-stack-open-dark-v1.webp)]";
-/**
- * Marks the revealed stage. A class rather than a `data-*` attribute: the app
- * CSS has `:has([data-…])` rules, and an attribute flip they might match sends
- * Chrome through `:has()` invalidation; a class no rule mentions does not.
- */
-const ACTIVE_CLASS = "lp-toc-preview-active";
 /** Fades a refreshed stage in over the stale one it replaces. */
 const FRESH_CLASS = "animate-[lp-toc-preview-fresh_100ms_ease-out_both]";
-/**
- * Built peeks stay mounted in the card; parked ones keep their layout but skip
- * rendering, so revealing one is a single class flip. `visibility` hides the
- * parked stage's own background, which `content-visibility` still paints.
- * `.lp-toc-preview-stage` in landing.css stills every animation inside.
- */
-const STAGE_CLASS = [
-  "lp-toc-preview-stage bg-background text-foreground pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none contain-layout contain-paint contain-style motion-reduce:animate-none",
-  "not-[.lp-toc-preview-active]:invisible not-[.lp-toc-preview-active]:[content-visibility:hidden]",
-].join(" ");
 /** `lp-toc-preview-fresh` duration plus a frame of slack. */
 const CROSSFADE_MS = 100 + 20;
 /** At most one rebuild per section per this many milliseconds. */
@@ -75,25 +54,13 @@ const SHOWN_IDLE_TIMEOUT = 150;
  *
  * Why a shadow root: `:has()` does not look across a shadow boundary, so
  * inserting or removing a stage in here only restyles the stage, whatever
- * `:has()` rules the app CSS holds. It used to matter a lot: Tailwind
- * `group-has-*` rules (`:is(:where(.group\/x):has(…) *)`) made Chrome restyle
- * the whole document on every insertion anywhere (~30 ms at 4x CPU). The UI
- * components no longer use them (see the guard in
- * `components/ui/no-group-has.test.ts`), but a stage is hundreds of nodes, so
- * keeping it out of the document's invalidation is still worth it.
+ * `:has()` rules the app CSS holds. A stage is hundreds of nodes, so keeping
+ * it out of the document's invalidation is worth it.
  */
 let previewHost: HTMLElement | null = null;
 /** Where stages are appended: the scope inside the shadow root (or the host). */
 let stageContainer: HTMLElement | null = null;
-/** Constructed copies of the page stylesheets, adopted by the shadow root. */
-let shadowStyles: CSSStyleSheet[] | null = null;
-let shadowStylesSignature = "";
 
-/** Scroll positions to replay on a stage's clone once it is laid out. */
-interface PendingScroll {
-  elements: readonly Element[];
-  offsets: readonly ScrollOffset[];
-}
 const pendingScroll = new WeakMap<HTMLElement, PendingScroll>();
 
 const previewCache = new BoundedCache<string, HTMLElement>(
@@ -111,318 +78,15 @@ function cacheKey(sectionId: string, layout: TocPreviewLayout): string {
   return `${sectionId}@${String(layout.layoutWidth)}`;
 }
 
-function px(value: number): string {
-  return `${String(value)}px`;
-}
-
 function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * A cheap fingerprint of the page CSS. Changes when a stylesheet is added,
- * removed or toggled (a lazily loaded chunk, a dev-server hot update).
- */
-function styleSignature(): string {
-  const parts: string[] = [];
-  for (const sheet of document.styleSheets) {
-    let rules = -1;
-    try {
-      rules = sheet.cssRules.length;
-    } catch {
-      // Cross-origin sheet: its rules are unreadable, so they are not copied.
-    }
-    parts.push(
-      `${sheet.href ?? "inline"}:${String(rules)}:${String(sheet.disabled)}`,
-    );
-  }
-  return parts.join("|");
-}
-
-/**
- * One constructed sheet per page sheet (and per `@import`ed one), keeping its
- * base URL so relative `url()`s still resolve and its media list.
- */
-function copyStyleSheet(sheet: CSSStyleSheet, into: CSSStyleSheet[]): void {
-  if (sheet.disabled) {
-    return;
-  }
-  let rules: CSSRuleList;
-  try {
-    rules = sheet.cssRules;
-  } catch {
-    // Cross-origin: skip.
-    return;
-  }
-  const chunks: string[] = [];
-  const flush = (): void => {
-    if (chunks.length === 0) {
-      return;
-    }
-    const copy = new CSSStyleSheet({
-      baseURL: sheet.href ?? document.baseURI,
-      media: sheet.media.mediaText,
-    });
-    copy.replaceSync(chunks.join("\n"));
-    into.push(copy);
-    chunks.length = 0;
-  };
-  for (const rule of rules) {
-    // Constructed sheets reject `@import`; inline the imported sheet instead.
-    if (rule instanceof CSSImportRule) {
-      flush();
-      if (rule.styleSheet !== null) {
-        copyStyleSheet(rule.styleSheet, into);
-      }
-      continue;
-    }
-    chunks.push(rule.cssText);
-  }
-  flush();
-}
-
-/**
- * Copy the page CSS into the shadow root so clones render as they do in the
- * page. Serialising takes a few tens of milliseconds at 4x CPU, so it runs in
- * the first idle build and only again when the page CSS changes.
- */
-function syncShadowStyles(): void {
+function shadowScope(): { root: ShadowRoot; scope: HTMLElement } | null {
   const root = stageContainer?.getRootNode();
-  if (!(root instanceof ShadowRoot)) {
-    return;
-  }
-  const signature = styleSignature();
-  if (shadowStyles === null || signature !== shadowStylesSignature) {
-    const sheets: CSSStyleSheet[] = [];
-    for (const sheet of document.styleSheets) {
-      copyStyleSheet(sheet, sheets);
-    }
-    shadowStyles = sheets;
-    shadowStylesSignature = signature;
-  }
-  const adopted = root.adoptedStyleSheets;
-  if (
-    adopted.length !== shadowStyles.length ||
-    adopted.some((sheet, index) => sheet !== shadowStyles?.[index])
-  ) {
-    root.adoptedStyleSheets = shadowStyles;
-  }
-}
-
-/**
- * `dark:` compiles to `:is(.dark *)`, which cannot see `html.dark` from inside
- * a shadow root; mirror the theme class onto the scope instead. A theme switch
- * rebuilds every peek, which calls this again.
- */
-function syncShadowTheme(): void {
-  if (stageContainer === null || stageContainer === previewHost) {
-    return;
-  }
-  stageContainer.classList.toggle(
-    "dark",
-    document.documentElement.classList.contains("dark"),
-  );
-}
-
-function createStage(sectionId: string, layout: TocPreviewLayout): HTMLElement {
-  const stage = document.createElement("div");
-  stage.dataset.tocPreviewStage = sectionId;
-  stage.className = STAGE_CLASS;
-  stage.inert = true;
-  stage.setAttribute("aria-hidden", "true");
-  stage.style.width = px(layout.layoutWidth);
-  stage.style.height = px(layout.windowHeight);
-  stage.style.transform = `scale(${String(layout.scale)})`;
-  return stage;
-}
-
-/**
- * Strip ids (no duplicates in the document) and turn copied links into text.
- * An anchor without href still looks like a broken link to crawlers. Focus is covered
- * by `inert` on the stage and motion by the `.lp-toc-preview-stage` CSS rule,
- * so no per-node style writes are needed.
- */
-function neutralizeTree(root: HTMLElement): void {
-  root.removeAttribute("id");
-  for (const node of root.querySelectorAll("[id]")) {
-    node.removeAttribute("id");
-  }
-  for (const link of root.querySelectorAll("a")) {
-    const text = document.createElement("span");
-    for (const { name, value } of link.attributes) {
-      if (!["href", "target", "rel"].includes(name)) {
-        text.setAttribute(name, value);
-      }
-    }
-    text.append(...link.childNodes);
-    link.replaceWith(text);
-  }
-}
-
-/**
- * Canvases are WebGL (no `preserveDrawingBuffer`, so they read back blank) or
- * html-in-canvas surfaces that redraw the copy at the wrong scale; video and
- * iframes are too heavy to duplicate. None of them belongs in a peek.
- */
-function dropUncloneableMedia(clone: HTMLElement): void {
-  for (const media of clone.querySelectorAll("canvas, video, iframe")) {
-    media.remove();
-  }
-}
-
-/** The finale's wordmark is a particle canvas; stand the still logo in. */
-function fillWordmarks(clone: HTMLElement): void {
-  for (const slot of clone.querySelectorAll<HTMLElement>(
-    "[data-toc-peek-wordmark]",
-  )) {
-    const image = document.createElement("img");
-    image.src = wordmarkDark.src;
-    image.alt = "";
-    image.decoding = "async";
-    image.style.width = "100%";
-    image.style.height = "100%";
-    image.style.objectFit = "contain";
-    slot.replaceChildren(image);
-  }
-}
-
-/**
- * Deep-clone a live section with the state `cloneNode` leaves behind: form
- * control properties now, inner scroll positions once the clone is laid out.
- */
-function cloneLiveSection(section: HTMLElement): {
-  clone: HTMLElement;
-  scroll: PendingScroll;
-} {
-  const clone = section.cloneNode(true) as HTMLElement;
-  // Static lists, in document order, taken before anything is removed.
-  const liveElements = section.querySelectorAll("*");
-  const cloneElements = [...clone.querySelectorAll("*")];
-  copyControlState(liveElements, cloneElements);
-  return {
-    clone,
-    scroll: {
-      elements: cloneElements,
-      offsets: captureScrollOffsets(liveElements),
-    },
-  };
-}
-
-function buildClonePeek(
-  section: HTMLElement,
-  layout: TocPreviewLayout,
-  align: "top" | "center",
-): HTMLElement {
-  const stage = createStage(section.id, layout);
-  // The preview window can be taller than the cloned section.
-  const background = getComputedStyle(section).backgroundColor;
-  if (background !== "rgba(0, 0, 0, 0)" && background !== "transparent") {
-    stage.style.backgroundColor = background;
-  }
-  const offset = tocPreviewOffset(
-    section.offsetHeight,
-    layout.windowHeight,
-    align,
-  );
-
-  const { clone, scroll } = cloneLiveSection(section);
-  neutralizeTree(clone);
-  dropUncloneableMedia(clone);
-  fillWordmarks(clone);
-  finishReveals(clone);
-  clone.style.position = "relative";
-  clone.style.inset = "auto";
-  // The stage is already the layout width, so the section's own width and
-  // margins resolve as on the page: `LandingSection` keeps its side gutters
-  // (`mx-auto` on a narrower box), full-bleed sections fill the stage.
-  clone.style.maxWidth = px(layout.layoutWidth);
-  clone.style.boxSizing = "border-box";
-  clone.style.transform = offset === 0 ? "none" : `translateY(${px(-offset)})`;
-
-  stage.append(clone);
-  if (scroll.offsets.length > 0) {
-    pendingScroll.set(stage, scroll);
-  }
-  return stage;
-}
-
-/**
- * The hero at progress zero, rebuilt from parts that clone cleanly: the
- * navigation, the copy and the device-stack still the scene itself uses as a
- * loading cover. Laid out at the real hero height, then fitted into the peek
- * window so the whole stack shows instead of its top two thirds.
- *
- * Progress zero (closed lid) on purpose: following the link scrolls to the
- * top of the page, where the lid is closed, so that is the state the visitor
- * lands on whatever the scene shows mid-scroll.
- */
-function buildHeroPeek(
-  section: HTMLElement,
-  layout: TocPreviewLayout,
-): HTMLElement | null {
-  const header = section.querySelector("header");
-  const copy = section.querySelector("h1")?.parentElement;
-  if (header === null || copy === null || copy === undefined) {
-    return null;
-  }
-
-  const stage = createStage(section.id, layout);
-  const isStatic = section.dataset.heroStatic === "true";
-  const heroHeight = isStatic
-    ? section.offsetHeight
-    : Math.max(window.innerHeight, HERO_MIN_HEIGHT);
-  const fit = Math.min(1, layout.windowHeight / heroHeight);
-
-  const hero = document.createElement("div");
-  hero.style.position = "absolute";
-  hero.style.top = "0";
-  hero.style.left = "0";
-  hero.style.width = px(layout.layoutWidth);
-  hero.style.height = px(heroHeight);
-  hero.style.transform = `scale(${String(fit)})`;
-  hero.style.transformOrigin = "top center";
-  hero.style.setProperty(HERO_PROGRESS_PROPERTY, "0");
-
-  const headerClone = header.cloneNode(true) as HTMLElement;
-  neutralizeTree(headerClone);
-
-  const copyClone = copy.cloneNode(true) as HTMLElement;
-  neutralizeTree(copyClone);
-  copyClone.style.opacity = "1";
-  copyClone.style.transform = "none";
-
-  const deviceLayer = document.createElement("div");
-  deviceLayer.style.position = "absolute";
-  deviceLayer.style.inset = `${HERO_DEVICE_TOP} 0 0 0`;
-  deviceLayer.style.containerType = "size";
-  // Always the open pose: the peek stands for the section as a whole, and the
-  // visitor reaches the hero's resting state (devices open) by scrolling it.
-  const cover = document.createElement("div");
-  cover.className = HERO_PEEK_COVER_CLASS;
-  deviceLayer.append(cover);
-
-  hero.append(headerClone, copyClone, deviceLayer);
-  stage.append(hero);
-  return stage;
-}
-
-function isDesktopHero(): boolean {
-  // Below `lg` the hero is the CSS phone, which clones fine.
-  return window.matchMedia(DESKTOP_STAGE_QUERY).matches;
-}
-
-function buildPreview(
-  section: HTMLElement,
-  peek: LandingSectionPeek,
-  layout: TocPreviewLayout,
-): HTMLElement {
-  if (peek === "hero" && isDesktopHero()) {
-    const hero = buildHeroPeek(section, layout);
-    if (hero !== null) {
-      return hero;
-    }
-  }
-  return buildClonePeek(section, layout, peek === "center" ? "center" : "top");
+  return root instanceof ShadowRoot && stageContainer !== null
+    ? { root, scope: stageContainer }
+    : null;
 }
 
 /**
@@ -494,12 +158,18 @@ function buildAndPark(section: TocPreviewSection): HTMLElement | null {
     return null;
   }
 
-  syncShadowStyles();
-  syncShadowTheme();
+  const shadow = shadowScope();
+  if (shadow !== null) {
+    syncShadowStyles(shadow.root);
+    syncShadowTheme(shadow.scope);
+  }
   const layout = tocPreviewLayout(window.innerWidth);
   const key = cacheKey(section.id, layout);
   const previous = previewCache.has(key) ? previewCache.get(key) : undefined;
-  const stage = buildPreview(element, section.peek, layout);
+  const { stage, scroll } = buildPreview(element, section.peek, layout);
+  if (scroll !== null) {
+    pendingScroll.set(stage, scroll);
+  }
   parkInHost(stage);
 
   if (activeSection !== null && activeSection.id === section.id) {
@@ -551,12 +221,10 @@ export function attachTocPreviewHost(host: HTMLElement): () => void {
     }
     stageContainer = scope as HTMLElement;
     // A new shadow root has no styles yet; never show unstyled stages.
-    if (shadowStyles !== null) {
-      root.adoptedStyleSheets = shadowStyles;
-    } else if (previewCache.size > 0) {
-      syncShadowStyles();
+    if (!adoptCopiedStyles(root) && previewCache.size > 0) {
+      syncShadowStyles(root);
     }
-    syncShadowTheme();
+    syncShadowTheme(stageContainer);
   } else {
     stageContainer = host;
   }

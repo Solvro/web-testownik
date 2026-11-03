@@ -1,6 +1,6 @@
 /**
  * Pure geometry and caching for the TOC section peek. Kept free of the DOM so
- * it can be unit-tested; `toc-section-preview.ts` does the cloning.
+ * it can be unit-tested; `toc-preview-clone.ts` does the cloning.
  */
 
 /** Inner screen width — same for every section peek. */

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { finishPerkCounters, finishTimelineReveal } from "./toc-clone-finish";
+import { finishPerkCounters, finishTimelineReveal } from "./toc-preview-clone";
 
 function html(markup: string): HTMLElement {
   const root = document.createElement("section");
