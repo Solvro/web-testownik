@@ -83,8 +83,6 @@ export interface ChatToolLimits {
   maxAnswers?: number;
   maxAnswerTextLength?: number;
   maxExplanationLength?: number;
-  /** A result over this budget is replaced by an error for the model. */
-  maxOutput?: { tokens: number; countTokens: (text: string) => number };
 }
 
 export const DEFAULT_CHAT_TOOL_LIMITS: ChatToolLimits = {
@@ -92,30 +90,12 @@ export const DEFAULT_CHAT_TOOL_LIMITS: ChatToolLimits = {
   listPreviewLength: 180,
 };
 
-export const TOOL_OUTPUT_TOO_LARGE_ERROR = "tool_output_too_large";
-
 function truncate(text: string, length: number | undefined): string {
   return length === undefined ? text : text.slice(0, length);
 }
 
 function truncateQuestionPreview(text: string, length: number): string {
   return text.length > length ? `${text.slice(0, length)}…` : text;
-}
-
-function boundOutput<T>(
-  limits: ChatToolLimits,
-  execute: (input: T) => string,
-): (input: T) => string {
-  const { maxOutput } = limits;
-  if (maxOutput === undefined) {
-    return execute;
-  }
-  return (input: T) => {
-    const output = execute(input);
-    return maxOutput.countTokens(output) <= maxOutput.tokens
-      ? output
-      : JSON.stringify({ error: TOOL_OUTPUT_TOO_LARGE_ERROR });
-  };
 }
 
 /** The tools that read the quiz and propose new questions. */
@@ -133,102 +113,89 @@ export function buildQuizTools(
           .min(1)
           .describe("Lista wygenerowanych pytań"),
       }),
-      execute: boundOutput(
-        limits,
-        (arguments_: { questions: z.infer<typeof practiceQuestionSchema>[] }) =>
-          JSON.stringify(arguments_),
-      ),
+      execute: (arguments_: {
+        questions: z.infer<typeof practiceQuestionSchema>[];
+      }) => JSON.stringify(arguments_),
     },
     list_questions: {
       description:
         "Pobierz listę pytań z quizu jako krótkie podglądy. Użyj tego, gdy użytkownik prosi o listę pytań, przegląd quizu, wyszukanie podobnych pytań lub potrzebujesz kontekstu z wielu pytań.",
       inputSchema: listQuestionsSchema,
-      execute: boundOutput(
-        limits,
-        (arguments_: z.infer<typeof listQuestionsSchema>) => {
-          const query = arguments_.query?.trim().toLowerCase() ?? "";
-          const matchingQuestions = questions
-            .toSorted((a, b) => a.order - b.order)
-            .filter((q) =>
-              query === "" ? true : q.text.toLowerCase().includes(query),
-            );
-          const limit = Math.min(
-            arguments_.limit ?? limits.defaultListQuestions,
-            limits.maxListQuestions ?? Number.POSITIVE_INFINITY,
+      execute: (arguments_: z.infer<typeof listQuestionsSchema>) => {
+        const query = arguments_.query?.trim().toLowerCase() ?? "";
+        const matchingQuestions = questions
+          .toSorted((a, b) => a.order - b.order)
+          .filter((q) =>
+            query === "" ? true : q.text.toLowerCase().includes(query),
           );
-          const offset = arguments_.offset ?? 0;
-          const page = matchingQuestions.slice(offset, offset + limit);
-          const nextOffset =
-            offset + limit < matchingQuestions.length ? offset + limit : null;
+        const limit = Math.min(
+          arguments_.limit ?? limits.defaultListQuestions,
+          limits.maxListQuestions ?? Number.POSITIVE_INFINITY,
+        );
+        const offset = arguments_.offset ?? 0;
+        const page = matchingQuestions.slice(offset, offset + limit);
+        const nextOffset =
+          offset + limit < matchingQuestions.length ? offset + limit : null;
 
-          return JSON.stringify({
-            total: questions.length,
-            matched: matchingQuestions.length,
-            returned: page.length,
-            offset,
-            next_offset: nextOffset,
-            questions: page.map((q) => ({
-              order: q.order,
-              text: truncateQuestionPreview(q.text, limits.listPreviewLength),
-              answer_count: q.answers.length,
-              type: q.type,
-              open_matching: q.open_matching,
-              has_explanation:
-                q.explanation !== undefined && q.explanation.trim() !== "",
-            })),
-          });
-        },
-      ),
+        return JSON.stringify({
+          total: questions.length,
+          matched: matchingQuestions.length,
+          returned: page.length,
+          offset,
+          next_offset: nextOffset,
+          questions: page.map((q) => ({
+            order: q.order,
+            text: truncateQuestionPreview(q.text, limits.listPreviewLength),
+            answer_count: q.answers.length,
+            type: q.type,
+            open_matching: q.open_matching,
+            has_explanation:
+              q.explanation !== undefined && q.explanation.trim() !== "",
+          })),
+        });
+      },
     },
     get_question: {
       description:
         "Pobierz pełne szczegóły konkretnego pytania z quizu (treść, odpowiedzi, wyjaśnienie). Użyj tego, gdy użytkownik pyta o konkretne pytanie z quizu (np. 'pokaż pytanie 5', 'wyjaśnij pytanie nr 12').",
       inputSchema: getQuestionSchema,
-      execute: boundOutput(
-        limits,
-        (arguments_: z.infer<typeof getQuestionSchema>) => {
-          const question = questions.find(
-            (q) => q.order === arguments_.question_order,
-          );
-          if (question === undefined) {
-            return JSON.stringify({
-              error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${questions.length.toString()} pytań.`,
-            });
-          }
-
+      execute: (arguments_: z.infer<typeof getQuestionSchema>) => {
+        const question = questions.find(
+          (q) => q.order === arguments_.question_order,
+        );
+        if (question === undefined) {
           return JSON.stringify({
-            order: question.order,
-            text: truncate(question.text, limits.maxQuestionTextLength),
-            explanation:
-              question.explanation === undefined
-                ? null
-                : truncate(question.explanation, limits.maxExplanationLength),
-            type: question.type,
-            open_matching: question.open_matching,
-            answers: question.answers.slice(0, limits.maxAnswers).map((a) => ({
-              text: truncate(a.text, limits.maxAnswerTextLength),
-              is_correct: a.is_correct,
-            })),
+            error: `Nie znaleziono pytania nr ${arguments_.question_order.toString()}. Quiz ma ${questions.length.toString()} pytań.`,
           });
-        },
-      ),
+        }
+
+        return JSON.stringify({
+          order: question.order,
+          text: truncate(question.text, limits.maxQuestionTextLength),
+          explanation:
+            question.explanation === undefined
+              ? null
+              : truncate(question.explanation, limits.maxExplanationLength),
+          type: question.type,
+          open_matching: question.open_matching,
+          answers: question.answers.slice(0, limits.maxAnswers).map((a) => ({
+            text: truncate(a.text, limits.maxAnswerTextLength),
+            is_correct: a.is_correct,
+          })),
+        });
+      },
     },
   };
 }
 
 /** Proposes an edit of the current question, applied once the user confirms. */
-export function buildEditQuestionTool(
-  limits: ChatToolLimits = DEFAULT_CHAT_TOOL_LIMITS,
-) {
+export function buildEditQuestionTool() {
   return {
     description:
       "Zaproponuj edycję aktualnego pytania quizowego. Użyj tego, gdy student prosi o poprawienie, ulepszenie lub zmianę treści pytania, odpowiedzi lub wyjaśnienia. Edycja musi zostać zatwierdzona przez użytkownika przed zastosowaniem.",
     inputSchema: editQuestionSchema,
-    execute: boundOutput(
-      limits,
-      (arguments_: z.infer<typeof editQuestionSchema>) =>
-        JSON.stringify(arguments_),
-    ),
+    execute: (arguments_: z.infer<typeof editQuestionSchema>) =>
+      JSON.stringify(arguments_),
   };
 }
 
@@ -262,7 +229,7 @@ export function buildChatTools({
 }) {
   return {
     ...buildQuizTools(questions, limits),
-    ...(canEdit ? { edit_question: buildEditQuestionTool(limits) } : {}),
+    ...(canEdit ? { edit_question: buildEditQuestionTool() } : {}),
     disable_ai: disableAiTool,
   };
 }

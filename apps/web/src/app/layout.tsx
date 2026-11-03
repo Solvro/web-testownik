@@ -24,6 +24,12 @@ const hankenGrotesk = Hanken_Grotesk({
   display: "swap",
 });
 
+// A Coolify deployment (previews included) knows its own address.
+const deploymentUrl =
+  process.env.COOLIFY_URL === undefined || process.env.COOLIFY_URL === ""
+    ? undefined
+    : process.env.COOLIFY_URL.split(",")[0];
+
 export const metadata: Metadata = {
   title: {
     default: "Testownik Solvro",
@@ -35,7 +41,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: env.NEXT_PUBLIC_SITE_URL,
   },
-  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+  metadataBase: new URL(deploymentUrl ?? env.NEXT_PUBLIC_SITE_URL),
   robots: "index, follow",
   openGraph: {
     title: "Testownik Solvro - Twoje narzędzie do nauki",
