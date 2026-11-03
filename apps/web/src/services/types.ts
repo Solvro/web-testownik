@@ -52,6 +52,21 @@ export interface ApiError {
   code?: string;
 }
 
+export interface CommentItem {
+  id: string;
+  content: string;
+  created_at: string;
+  is_deleted: boolean;
+  author: {
+    id: string;
+    email?: string;
+  } | null;
+  quiz: string;
+  question: string | null;
+  parent: string | null;
+  replies?: CommentItem[];
+}
+
 // Storage keys for localStorage
 export const STORAGE_KEYS = {
   GUEST_QUIZZES: "guest_quizzes",
