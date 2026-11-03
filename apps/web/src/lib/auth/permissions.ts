@@ -8,8 +8,8 @@ export enum PermissionAction {
   VIEW_SHARED_QUIZZES = "view_shared_quizzes",
   // Sharing quizzes with others
   SHARE_QUIZZES = "share_quizzes",
-  // Reporting quiz issues to its creators
-  REPORT_QUIZ_ISSUES = "report_quiz_issues",
+  // Commenting on quizzes and questions
+  COMMENT_QUIZ = "comment_quiz",
   // Viewing users' grades
   VIEW_GRADES = "view_grades",
   // Manage notification settings
@@ -34,14 +34,14 @@ export const PERMISSIONS_BY_ROLE: Record<
 > = {
   unauthenticated: [],
   [ACCOUNT_TYPE.GUEST]: [
-    PermissionAction.REPORT_QUIZ_ISSUES,
+    PermissionAction.COMMENT_QUIZ,
     PermissionAction.SEARCH_IN_QUIZ,
   ],
   [ACCOUNT_TYPE.EMAIL]: [
     PermissionAction.UPLOAD_PROFILE_PHOTO,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
-    PermissionAction.REPORT_QUIZ_ISSUES,
+    PermissionAction.COMMENT_QUIZ,
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.SEARCH_IN_QUIZ,
     PermissionAction.QUIZ_CONTINUITY,
@@ -54,7 +54,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.BROWSE_PUBLIC_QUIZZES,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
-    PermissionAction.REPORT_QUIZ_ISSUES,
+    PermissionAction.COMMENT_QUIZ,
     PermissionAction.VIEW_GRADES,
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.SEARCH_IN_QUIZ,
@@ -67,7 +67,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.UPLOAD_PROFILE_PHOTO,
     PermissionAction.VIEW_SHARED_QUIZZES,
     PermissionAction.SHARE_QUIZZES,
-    PermissionAction.REPORT_QUIZ_ISSUES,
+    PermissionAction.COMMENT_QUIZ,
     PermissionAction.VIEW_GRADES,
     PermissionAction.NOTIFICATION_SETTINGS,
     PermissionAction.QUIZ_CONTINUITY,

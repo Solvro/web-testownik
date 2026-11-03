@@ -2,7 +2,7 @@ import type { Question, Quiz } from "@testownik/core/quiz/types";
 import {
   BotIcon,
   ClipboardCopyIcon,
-  MessageSquareWarningIcon,
+  MessageSquareIcon,
   PencilLineIcon,
   SkullIcon,
   SparklesIcon,
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
-import { ReportQuestionIssueDialog } from "@/components/quiz/report-question-issue-dialog";
+import { QuizCommentsDialog } from "@/components/quiz/quiz-comments-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -178,26 +178,23 @@ export function QuizActionButtons({
               {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
             </TooltipContent>
           </Tooltip>
-        ) : checkPermission(PermissionAction.REPORT_QUIZ_ISSUES) ? (
+        ) : checkPermission(PermissionAction.COMMENT_QUIZ) ? (
           <Tooltip>
-            <ReportQuestionIssueDialog
-              quizId={quiz.id}
-              questionId={question?.id}
-            >
+            <QuizCommentsDialog quizId={quiz.id} questionId={question?.id}>
               <TooltipTrigger
                 render={
                   <Button
                     variant="outline"
                     size="icon"
                     disabled={!canUseQuestion}
-                    aria-label="Zgłoś problem z pytaniem"
+                    aria-label="Komentarze"
                   >
-                    <MessageSquareWarningIcon />
+                    <MessageSquareIcon />
                   </Button>
                 }
               ></TooltipTrigger>
-            </ReportQuestionIssueDialog>
-            <TooltipContent>Zgłoś problem z pytaniem</TooltipContent>
+            </QuizCommentsDialog>
+            <TooltipContent>Komentarze</TooltipContent>
           </Tooltip>
         ) : null}
         {canUseAi && onOpenChat != null ? (

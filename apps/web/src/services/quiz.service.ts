@@ -22,6 +22,7 @@ import type {
 import { BaseApiService } from "./base-api.service";
 import type {
   AnswerRecord,
+  CommentItem,
   Group,
   QuestionWithQuizInfo,
   Quiz,
@@ -507,5 +508,40 @@ export class QuizService extends BaseApiService {
       { scope },
     );
     return response.data;
+  }
+
+  /**
+   * Get comments for a quiz or specific question
+   */
+  async getComments(
+    quizId: string,
+    questionId?: string,
+  ): Promise<CommentItem[]> {
+    const parameters: Record<string, string> = { quiz: quizId };
+    if (questionId != null) {
+      parameters.question = questionId;
+    }
+    const response = await this.get<CommentItem[]>("comments/", parameters);
+    return response.data;
+  }
+
+  /**
+   * Create a new comment or threaded reply
+   */
+  async createComment(data: {
+    quiz: string;
+    question?: string;
+    parent?: string;
+    content: string;
+  }): Promise<CommentItem> {
+    const response = await this.post<CommentItem>("comments/", data);
+    return response.data;
+  }
+
+  /**
+   * Soft-delete a comment
+   */
+  async deleteComment(commentId: string): Promise<void> {
+    await this.delete(`comments/${commentId}/`);
   }
 }
