@@ -12,10 +12,9 @@ import { BLOG_PATH } from "../landing-content";
 import { FOCUS_RING } from "../ui/focus";
 import { handwritingClassName } from "../ui/handwriting";
 
-const ITEM_LINK_CLASS = cn(
-  "pointer-events-auto line-clamp-2 rounded-sm",
-  FOCUS_RING,
-);
+// Inline, so only the title's text takes the pointer, not the rest of its
+// line or the line box under a short last line. The clamp sits on the item.
+const ITEM_LINK_CLASS = cn("pointer-events-auto rounded-sm", FOCUS_RING);
 
 const LIST_CLASS =
   "mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]";
@@ -52,12 +51,14 @@ function PostList({
     <ul className={LIST_CLASS}>
       {resolved.map((post) => (
         <li key={post.slug}>
-          <Link
-            href={`${BLOG_PATH}/${encodeURIComponent(post.slug)}`}
-            className={ITEM_LINK_CLASS}
-          >
-            {post.title}
-          </Link>
+          <p className="line-clamp-2">
+            <Link
+              href={`${BLOG_PATH}/${encodeURIComponent(post.slug)}`}
+              className={ITEM_LINK_CLASS}
+            >
+              {post.title}
+            </Link>
+          </p>
         </li>
       ))}
     </ul>
@@ -211,15 +212,17 @@ export function UpdateNote({
             <Suspense fallback={null}>
               <PostList posts={posts} />
             </Suspense>
-            <Link
-              href={BLOG_PATH}
-              className={cn(
-                "lp-ink-link pointer-events-auto mt-3 inline-flex min-h-11 w-fit items-center rounded-sm text-[1.35rem] font-semibold",
-                FOCUS_RING,
-              )}
-            >
-              Zobacz więcej
-            </Link>
+            <p className="mt-3 flex min-h-11 items-center text-[1.35rem] font-semibold">
+              <Link
+                href={BLOG_PATH}
+                className={cn(
+                  "lp-ink-link pointer-events-auto rounded-sm",
+                  FOCUS_RING,
+                )}
+              >
+                Zobacz więcej
+              </Link>
+            </p>
             {/* A paper tag over the scribble, so it never drowns in ink. */}
             <button
               type="button"

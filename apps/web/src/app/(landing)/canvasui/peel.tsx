@@ -424,7 +424,13 @@ function createPeel(
     gl.disable(gl.DEPTH_TEST);
   }
 
+  // Lets the pointer through the curled-away strip to the under layer. Without
+  // one there is nothing to reach, and the content would lose its hover (and
+  // cursor) while the sheet flattens under the pointer.
   function syncContentEvents() {
+    if (under === undefined) {
+      return;
+    }
     const A = peel.a;
     const R = Math.max(config.curl * A, 0.001);
     const c = A * config.reveal + R + Math.max(config.bulge, 0) * A;
