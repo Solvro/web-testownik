@@ -22,8 +22,6 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import type { AppContextType } from "@/app-context-type";
-import { GradesList } from "@/app/grades/components/grades-list";
-import { SummaryStats } from "@/app/grades/components/summary-stats";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { FocusModeOnboardingDialog } from "@/components/quiz/focus-mode-onboarding-dialog";
@@ -63,7 +61,6 @@ import {
   PREVIEW_QUIZ_METADATA,
   PREVIEW_STATS,
 } from "./preview-fixtures";
-import { PREVIEW_COURSE_VIEWS, PREVIEW_GRADE_SUMMARY } from "./preview-grades";
 import { PreviewRuntime, PreviewSandbox } from "./preview-provider";
 import type { PreviewQuizSession } from "./preview-session";
 
@@ -82,7 +79,7 @@ import type { PreviewQuizSession } from "./preview-session";
  * How tightly a surface is packed. The smaller screens scale the root font size
  * rather than transforming, which would blur the text.
  */
-type Density = "full" | "compact" | "phone";
+type Density = "full" | "phone";
 
 interface PreviewSurfaceProps {
   density?: Density;
@@ -99,7 +96,6 @@ const SURFACE = "bg-background text-foreground w-full min-w-0";
 
 const QUIZ_DENSITY: Record<Density, string> = {
   full: "",
-  compact: "text-[0.86em]",
   phone: cn(
     "flex flex-col text-[0.62em]",
     "[&_[data-slot=card]]:gap-3 [&_[data-slot=card]]:rounded-[0.85rem] [&_[data-slot=card]]:py-[0.85rem]",
@@ -262,33 +258,6 @@ export function QuizPreviewSurface({
         canGoBack={view.canGoBack}
         isHistoryQuestion={view.isHistoryQuestion}
         answerHints={answerHints}
-      />
-    </div>
-  );
-}
-
-export function GradesPreviewSurface({
-  density = "full",
-  className,
-}: PreviewSurfaceProps): React.JSX.Element {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
-  return (
-    <div
-      className={cn(
-        SURFACE,
-        "grid gap-3",
-        density === "compact" && "text-[0.82em]",
-        className,
-      )}
-    >
-      <SummaryStats {...PREVIEW_GRADE_SUMMARY} />
-      <GradesList
-        courses={PREVIEW_COURSE_VIEWS}
-        expanded={expanded}
-        onToggle={(id, open) => {
-          setExpanded((current) => ({ ...current, [id]: open }));
-        }}
       />
     </div>
   );

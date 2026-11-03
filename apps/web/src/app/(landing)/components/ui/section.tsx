@@ -11,7 +11,6 @@ const landingSectionVariants = cva(
       padding: {
         default: "py-12 sm:py-20",
         showcase: "pt-12 pb-12 sm:pb-20",
-        none: "",
       },
     },
     defaultVariants: {
@@ -19,25 +18,6 @@ const landingSectionVariants = cva(
     },
   },
 );
-
-export function PlaceholderWatermark({
-  className,
-}: {
-  className?: string;
-}): React.JSX.Element {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "pointer-events-none absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 -rotate-12",
-        "font-code text-[clamp(3rem,11vw,10rem)] leading-none font-black tracking-[0.08em] whitespace-nowrap text-amber-500/20 select-none",
-        className,
-      )}
-    >
-      PLACEHOLDER
-    </span>
-  );
-}
 
 /**
  * Shared landing measure and vertical rhythm. Like every landing section it is
@@ -47,12 +27,9 @@ export function LandingSection({
   children,
   className,
   padding,
-  showPlaceholder = true,
   ...props
 }: ComponentProps<"section"> &
-  VariantProps<typeof landingSectionVariants> & {
-    showPlaceholder?: boolean;
-  }): React.JSX.Element {
+  VariantProps<typeof landingSectionVariants>): React.JSX.Element {
   return (
     <section
       tabIndex={-1}
@@ -63,7 +40,6 @@ export function LandingSection({
       )}
       {...props}
     >
-      {showPlaceholder ? <PlaceholderWatermark /> : null}
       {children}
     </section>
   );

@@ -17,7 +17,6 @@ export const perks = {
         kind: "activations",
         value: 53_983,
       },
-      url: "https://bit.ly/4zcALip",
     },
     {
       id: "komputronik-30-znizki-studenckiej-na-laptopy",
@@ -27,7 +26,6 @@ export const perks = {
       channel: "Online",
       validUntil: "2027-03-31",
       badge: { kind: "new" },
-      url: "https://bit.ly/4zcALip",
     },
     {
       id: "zalando-dodatkowe-20-znizki-studenckiej",
@@ -38,7 +36,6 @@ export const perks = {
       badge: {
         kind: "new",
       },
-      url: "https://bit.ly/4zcALip",
     },
   ],
 } as const satisfies PerksData & { offers: readonly PerksOffer[] };

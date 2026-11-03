@@ -81,7 +81,6 @@ export function ProductShowcase(): React.JSX.Element {
     <LandingSection
       id="features"
       padding="showcase"
-      showPlaceholder={false}
       className="scroll-mt-[5rem]"
     >
       <div className="grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-start">

@@ -248,7 +248,6 @@ export function Timeline({
   return (
     <LandingSection
       id="story"
-      showPlaceholder={false}
       className="mb-12 grid scroll-mt-[5rem] grid-cols-1 gap-14 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw]"
     >
       {/*

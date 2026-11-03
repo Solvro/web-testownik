@@ -111,11 +111,7 @@ export const PERKS_PARTNER_URL = "https://bit.ly/4zcALip";
 export const PERKS_VARIANT = "coupons-uniperks";
 
 /** Where a click on the partner section came from, as `utm_content`. */
-export const PERKS_PLACEMENTS = [
-  "landing-cta",
-  "landing-secondary",
-  "landing-card",
-] as const;
+export const PERKS_PLACEMENTS = ["landing-cta", "landing-secondary"] as const;
 
 export type PerksPlacement = (typeof PERKS_PLACEMENTS)[number];
 
