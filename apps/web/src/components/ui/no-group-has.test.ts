@@ -6,8 +6,7 @@ import { describe, expect, it } from "vitest";
  * Tailwind's `group-has-*` / `peer-has-*` variants compile to
  * `.x:is(:where(.group):has(…) *)`. A `:has()` whose target is `*` makes
  * Chrome restyle the whole document after any DOM insertion or removal once
- * the page also has other `:has()` rules (measured ~30 ms per mutation on the
- * landing page at 4x CPU throttling). Write the condition as an arbitrary
+ * the page also has other `:has()` rules. Write the condition as an arbitrary
  * variant with the component's own class on the right instead, e.g.
  * `[:where([data-slot=field]):has(:disabled)_&]:opacity-50`.
  */

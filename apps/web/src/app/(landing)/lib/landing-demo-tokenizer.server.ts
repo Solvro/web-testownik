@@ -27,8 +27,7 @@ export async function getLandingDemoTokenCounter(): Promise<DemoTokenCounter> {
   ])
     .then(([{ Tiktoken }, { default: ranks }]) => {
       const tokenizer = new Tiktoken(ranks);
-      // Admission/prepareStep/stopWhen repeatedly count the same content. Keep
-      // a bounded cache (at most 64 * 8192 UTF-16 code units) across those checks.
+      // Admission and every model step recount the same content.
       const counts = new Map<string, number>();
       return (text: string) => {
         const cached = counts.get(text);

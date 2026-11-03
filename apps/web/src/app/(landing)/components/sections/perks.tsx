@@ -32,7 +32,6 @@ const PERK_THEME = cn(
   "dark:[--perk-bg:#170634] dark:[--perk-fg:#F7F4FC] dark:[--perk-muted:#BBAEDB] dark:[--perk-card:#2A1152] dark:[--perk-border:#3A2566] dark:[--perk-accent-ink:#B794F6] dark:[--perk-halo:#3A1F66]",
 );
 
-/** The single soft halo, top right. */
 const haloStyle: CSSProperties = {
   backgroundImage:
     "radial-gradient(ellipse 70% 80% at 100% 0%, var(--perk-halo), transparent 68%)",

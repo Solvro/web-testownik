@@ -40,9 +40,7 @@ function isIpAddress(value: string): boolean {
 /**
  * First `x-forwarded-for` hop (set by the reverse proxy), then `x-real-ip`.
  * Only well-formed addresses become keys: anything else, and clients without
- * either header, share one bucket that the global cap backs up. The header is
- * only as trustworthy as the ingress that writes it, so the global cap is the
- * real backstop against rotated keys.
+ * either header, share one bucket that the global cap backs up.
  */
 export function getClientKey(headers: Headers): string {
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -125,16 +123,8 @@ export type LandingDemoAdmission<Body> =
     };
 
 /**
- * Everything a public demo endpoint does before it calls the model: AI and
- * the landing model must be available, the caller and all visitors together
- * must be within `LANDING_DEMO_RATE_LIMITS`, and the body must fit
- * `maxBodyBytes` and `parse`.
- *
- * Limits are checked before the body is read, so an over-quota caller costs
- * nothing but a header lookup. The global cap is only peeked then: it is
- * reserved again after body parsing, before allocating any client state.
- * The reservation and client check run synchronously; a client rejection
- * releases the reservation. Requests rejected for their body do not count.
+ * Rate limits are checked before the body is read; the global cap is reserved
+ * again, synchronously, once the body parses. Rejected bodies do not count.
  */
 export async function admitLandingDemoRequest<Body>(
   request: Request,

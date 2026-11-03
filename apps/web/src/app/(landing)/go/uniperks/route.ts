@@ -52,7 +52,6 @@ async function sendClickEvent(
   }
 }
 
-/** Redirects to the uniperks partner link, tagged with the clicked placement. */
 export function GET(request: NextRequest): Response {
   const placement = parsePlacement(request.nextUrl.searchParams.get("p"));
   const target = new URL(PERKS_PARTNER_URL);
