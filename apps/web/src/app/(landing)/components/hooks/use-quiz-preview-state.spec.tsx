@@ -247,4 +247,31 @@ describe("phone quiz preview", () => {
       expect(await late.findByText(/^Pytanie 97\./)).toBeInTheDocument();
     },
   );
+
+  it.runIf(typeof BroadcastChannel !== "undefined")(
+    "gives a late joiner settings changed before any answer",
+    async () => {
+      const user = userEvent.setup();
+      render(<PhonePreview syncChannel="spec-settings" />);
+
+      await user.click(headerMenu());
+      await user.click(
+        await screen.findByRole("menuitem", { name: "Ustawienia" }),
+      );
+      await user.click(
+        within(portalLayer()).getAllByRole("button", {
+          name: "Zwiększ liczbę powtórzeń",
+        })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("69/119")).toBeInTheDocument();
+      });
+      await user.keyboard("{Escape}");
+
+      const late = within(
+        render(<PhonePreview syncChannel="spec-settings" />).container,
+      );
+      expect(await late.findByText("69/119")).toBeInTheDocument();
+    },
+  );
 });

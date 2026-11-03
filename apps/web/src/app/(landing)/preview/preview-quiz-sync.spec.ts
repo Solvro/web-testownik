@@ -7,6 +7,7 @@ import {
 } from "./preview-quiz-machine";
 import type { QuizPreviewAction } from "./preview-quiz-machine";
 import {
+  INITIAL_SETTINGS_STAMP,
   QUIZ_SYNC_PROTOCOL,
   createSyncedQuizState,
   isQuizPreviewAction,
@@ -14,9 +15,18 @@ import {
   respondToQuizSyncMessage,
   syncedQuizReducer,
 } from "./preview-quiz-sync";
-import type { QuizSyncMessage, SyncedQuizState } from "./preview-quiz-sync";
+import type {
+  QuizSyncMessage,
+  QuizSyncPayload,
+  SyncedQuizState,
+  VersionedSettings,
+} from "./preview-quiz-sync";
 
 const settings = DEFAULT_USER_SETTINGS;
+const versioned: VersionedSettings = {
+  settings,
+  stamp: INITIAL_SETTINGS_STAMP,
+};
 
 function message(
   sender: string,
@@ -42,15 +52,161 @@ const SESSION: QuizPreviewAction[] = [
   { type: "setFocusMode", active: true },
 ];
 
+/**
+ * Screens wired as `useQuizPreviewState` wires them, on a channel whose
+ * delivery order each test picks. Like `BroadcastChannel`, every message
+ * reaches every other screen, in the order its sender posted it.
+ */
+interface SimulatedScreen {
+  id: string;
+  synced: SyncedQuizState;
+  settings: VersionedSettings;
+  awaiting: string | undefined;
+  inbox: QuizSyncMessage[];
+  actions: number;
+}
+
+function createNetwork(ids: string[]) {
+  const screens = new Map<string, SimulatedScreen>();
+  const post = (from: SimulatedScreen, payload: QuizSyncPayload): void => {
+    for (const screen of screens.values()) {
+      if (screen !== from) {
+        screen.inbox.push({
+          ...payload,
+          protocol: QUIZ_SYNC_PROTOCOL,
+          sender: from.id,
+        });
+      }
+    }
+  };
+  const join = (id: string): SimulatedScreen => {
+    const screen: SimulatedScreen = {
+      id,
+      synced: createSyncedQuizState(createQuizPreviewState()),
+      settings: versioned,
+      awaiting: undefined,
+      inbox: [],
+      actions: 0,
+    };
+    screens.set(id, screen);
+    post(screen, { kind: "hello" });
+    return screen;
+  };
+  for (const id of ids) {
+    join(id);
+  }
+  const screen = (id: string): SimulatedScreen => {
+    const found = screens.get(id);
+    if (found === undefined) {
+      throw new Error(`no screen ${id}`);
+    }
+    return found;
+  };
+
+  return {
+    screen,
+    join,
+    act(id: string, action: QuizPreviewAction): void {
+      const self = screen(id);
+      self.actions += 1;
+      const actionId = `${id}:${self.actions.toString()}`;
+      const parent = self.synced.head;
+      self.synced = syncedQuizReducer(self.synced, {
+        type: "action",
+        action,
+        id: actionId,
+      });
+      post(self, { kind: "action", action, id: actionId, parent });
+    },
+    editSettings(id: string, next: typeof settings): void {
+      const self = screen(id);
+      self.settings = {
+        settings: next,
+        stamp: { version: self.settings.stamp.version + 1, author: id },
+      };
+      post(self, { kind: "settings", ...self.settings });
+    },
+    /** Hands `id` the oldest message waiting for it; false if none. */
+    deliver(id: string): boolean {
+      const self = screen(id);
+      const incoming = self.inbox.shift();
+      if (incoming === undefined) {
+        return false;
+      }
+      const response = respondToQuizSyncMessage(incoming, self);
+      self.awaiting = response.awaiting;
+      if (response.event !== undefined) {
+        self.synced = syncedQuizReducer(self.synced, response.event);
+      }
+      if (response.settings !== undefined) {
+        self.settings = response.settings;
+      }
+      if (response.reply !== undefined) {
+        post(self, response.reply);
+      }
+      return true;
+    },
+    settle(): void {
+      let delivered = true;
+      while (delivered) {
+        delivered = false;
+        for (const id of screens.keys()) {
+          delivered = this.deliver(id) || delivered;
+        }
+      }
+    },
+    deliverAll(id: string): void {
+      while (this.deliver(id)) {
+        // Drain.
+      }
+    },
+  };
+}
+
+/** A seeded generator of integers below `limit`, so failures replay. */
+function createRandom(seed: number): (limit: number) => number {
+  let random = seed;
+  return (limit) => {
+    random = (random * 1_103_515_245 + 12_345) % 2_147_483_648;
+    return random % limit;
+  };
+}
+
+function forwardedAction(
+  sender: string,
+  type: "back" | "reset",
+  parent: string,
+): QuizSyncMessage {
+  return parsed(sender, {
+    kind: "action",
+    action: { type },
+    id: `${sender}:1`,
+    parent,
+  });
+}
+
+function expectInStep(...screens: SimulatedScreen[]): void {
+  const [first, ...rest] = screens;
+  for (const other of rest) {
+    expect(other.synced).toEqual(first.synced);
+    expect(other.settings).toEqual(first.settings);
+  }
+}
+
 describe("syncedQuizReducer", () => {
   it("replays forwarded actions to the same state as the reducer", () => {
     const initial = createQuizPreviewState();
     const synced = SESSION.reduce<SyncedQuizState>(
-      (current, action) =>
-        syncedQuizReducer(current, { type: "action", action }),
+      (current, action, index) =>
+        syncedQuizReducer(current, {
+          type: "action",
+          action,
+          id: index.toString(),
+        }),
       createSyncedQuizState(initial),
     );
     expect(synced.revision).toBe(SESSION.length);
+    expect(synced.head).toBe((SESSION.length - 1).toString());
     expect(synced.state).toEqual(
       SESSION.reduce(
         (state, action) => quizPreviewReducer(state, action),
@@ -58,29 +214,116 @@ describe("syncedQuizReducer", () => {
       ),
     );
   });
+});
 
-  it("only adopts snapshots that have seen more actions", () => {
-    const fresh = createSyncedQuizState(createQuizPreviewState());
-    const ahead = syncedQuizReducer(fresh, {
-      type: "action",
-      action: { type: "reset" },
-    });
+describe("syncing screens", () => {
+  it("replays each screen's actions on the other", () => {
+    const network = createNetwork(["a", "b"]);
+    network.settle();
+    for (const [index, action] of SESSION.entries()) {
+      network.act(index % 2 === 0 ? "a" : "b", action);
+      network.settle();
+    }
+    const a = network.screen("a");
+    expectInStep(a, network.screen("b"));
+    expect(a.synced.revision).toBe(SESSION.length);
+  });
 
-    expect(
-      syncedQuizReducer(fresh, {
-        type: "snapshot",
-        revision: ahead.revision,
-        state: ahead.state,
-      }),
-    ).toEqual(ahead);
-    // Not rolled back by a screen that has just loaded.
-    expect(
-      syncedQuizReducer(ahead, {
-        type: "snapshot",
-        revision: 0,
-        state: fresh.state,
-      }),
-    ).toBe(ahead);
+  it.each([
+    ["a first", ["a", "b"]],
+    ["b first", ["b", "a"]],
+  ])("settles simultaneous actions on the lower id's quiz (%s)", (_, order) => {
+    const network = createNetwork(["a", "b"]);
+    network.settle();
+    network.act("a", { type: "select", answers: ["a-1"] });
+    network.act("b", { type: "setFocusMode", active: true });
+    for (const id of order) {
+      network.deliverAll(id);
+    }
+    network.settle();
+
+    const a = network.screen("a");
+    expectInStep(a, network.screen("b"));
+    expect(a.synced.state.selectedAnswers).toEqual(["a-1"]);
+    expect(a.synced.state.focusMode).toBe(false);
+
+    // And they keep replaying each other afterwards.
+    network.act("b", { type: "setFocusMode", active: true });
+    network.settle();
+    expectInStep(a, network.screen("b"));
+    expect(a.synced.state.focusMode).toBe(true);
+  });
+
+  it("adopts only the answer to its latest resync", () => {
+    const network = createNetwork(["a", "b"]);
+    network.settle();
+    network.act("a", { type: "select", answers: ["a-1"] });
+    network.act("b", { type: "setFocusMode", active: true });
+    // b asks for a's quiz twice, once per conflicting action.
+    network.deliver("b");
+    network.act("a", { type: "next", settings });
+    network.deliver("b");
+    network.deliverAll("a");
+    // The first answer arrives; b acts before the second one does.
+    network.deliver("b");
+    network.act("b", { type: "back" });
+    network.settle();
+    const a = network.screen("a");
+    expectInStep(a, network.screen("b"));
+    expect(a.synced.head).toBe("a:2");
+  });
+
+  it("converges whatever the interleaving", () => {
+    const actions: QuizPreviewAction[] = [
+      ...SESSION,
+      { type: "setFocusMode", active: false },
+      { type: "reset" },
+    ];
+    for (let seed = 1; seed <= 200; seed++) {
+      const next = createRandom(seed);
+      const network = createNetwork(["a", "b"]);
+      for (let step = 0; step < 30; step++) {
+        const id = next(2) === 0 ? "a" : "b";
+        if (next(3) === 0) {
+          network.act(id, actions[next(actions.length)]);
+        } else {
+          network.deliver(id);
+        }
+      }
+      network.settle();
+      expectInStep(network.screen("a"), network.screen("b"));
+    }
+  });
+
+  it("gives a late joiner the quiz further along", () => {
+    const network = createNetwork(["a"]);
+    network.act("a", { type: "select", answers: ["a-1"] });
+    const late = network.join("b");
+    network.settle();
+    expectInStep(network.screen("a"), late);
+    expect(late.synced.revision).toBe(1);
+  });
+
+  it("gives a late joiner the current settings at the same revision", () => {
+    const network = createNetwork(["b"]);
+    const changed = { ...settings, initial_reoccurrences: 5 };
+    network.editSettings("b", changed);
+    const late = network.join("a");
+    network.settle();
+    expect(late.synced.revision).toBe(0);
+    expect(late.settings.settings).toEqual(changed);
+    expectInStep(network.screen("b"), late);
+  });
+
+  it("settles simultaneous settings edits on the lower id's", () => {
+    const network = createNetwork(["a", "b"]);
+    network.settle();
+    const fromA = { ...settings, initial_reoccurrences: 4 };
+    network.editSettings("a", fromA);
+    network.editSettings("b", { ...settings, initial_reoccurrences: 6 });
+    network.settle();
+    expectInStep(network.screen("a"), network.screen("b"));
+    expect(network.screen("b").settings.settings).toEqual(fromA);
   });
 });
 
@@ -88,14 +331,30 @@ describe("parseQuizSyncMessage", () => {
   it("accepts each kind of message", () => {
     const state = createQuizPreviewState();
     expect(parsed("a", { kind: "hello" }).kind).toBe("hello");
-    expect(parsed("a", { kind: "action", action: { type: "back" } }).kind).toBe(
-      "action",
+    expect(
+      parsed("a", {
+        kind: "action",
+        action: { type: "back" },
+        id: "a:1",
+        parent: "",
+      }).kind,
+    ).toBe("action");
+    expect(parsed("a", { kind: "resync", to: "b", request: "b:1" }).kind).toBe(
+      "resync",
     );
     expect(
-      parsed("a", { kind: "snapshot", to: "b", revision: 3, state, settings })
-        .kind,
+      parsed("a", {
+        kind: "snapshot",
+        to: "b",
+        revision: 3,
+        head: "a:3",
+        state,
+        settings: versioned,
+      }).kind,
     ).toBe("snapshot");
-    expect(parsed("a", { kind: "settings", settings }).kind).toBe("settings");
+    expect(parsed("a", { kind: "settings", ...versioned }).kind).toBe(
+      "settings",
+    );
   });
 
   it.each([
@@ -105,32 +364,56 @@ describe("parseQuizSyncMessage", () => {
     ["an unknown kind", message("a", { kind: "shout" })],
     [
       "an unknown action",
-      message("a", { kind: "action", action: { type: "x" } }),
+      message("a", {
+        kind: "action",
+        action: { type: "x" },
+        id: "1",
+        parent: "",
+      }),
     ],
     [
       "a malformed action",
       message("a", {
         kind: "action",
         action: { type: "select", answers: [1] },
+        id: "1",
+        parent: "",
       }),
     ],
+    [
+      "an action without a parent",
+      message("a", { kind: "action", action: { type: "back" }, id: "1" }),
+    ],
+    ["a resync for no one", message("a", { kind: "resync", request: "1" })],
     [
       "a negative revision",
       message("a", {
         kind: "snapshot",
         to: "b",
         revision: -1,
+        head: "",
         state: createQuizPreviewState(),
       }),
     ],
     [
       "a snapshot without a state",
-      message("a", { kind: "snapshot", to: "b", revision: 1, state: {} }),
+      message("a", {
+        kind: "snapshot",
+        to: "b",
+        revision: 1,
+        head: "a:1",
+        state: {},
+      }),
     ],
     [
       "settings that are not an object",
-      message("a", { kind: "settings", settings: 1 }),
+      message("a", {
+        kind: "settings",
+        settings: 1,
+        stamp: { version: 1, author: "a" },
+      }),
     ],
+    ["settings without a stamp", message("a", { kind: "settings", settings })],
     ["a string", "hello"],
     ["null", null],
   ])("rejects %s", (_, data) => {
@@ -169,65 +452,139 @@ describe("isQuizPreviewAction", () => {
 describe("respondToQuizSyncMessage", () => {
   const self = {
     id: "me",
-    synced: { state: createQuizPreviewState(), revision: 2 },
-    settings,
+    synced: { state: createQuizPreviewState(), revision: 2, head: "me:2" },
+    settings: versioned,
+    awaiting: undefined,
   };
 
   it("answers a hello with a snapshot addressed to its sender", () => {
     expect(
       respondToQuizSyncMessage(parsed("you", { kind: "hello" }), self),
     ).toEqual({
+      awaiting: undefined,
       reply: {
         kind: "snapshot",
         to: "you",
         revision: 2,
+        head: "me:2",
         state: self.synced.state,
-        settings,
+        settings: versioned,
       },
     });
   });
 
   it("applies forwarded actions and resets the timer with a reset", () => {
     expect(
-      respondToQuizSyncMessage(
-        parsed("you", { kind: "action", action: { type: "back" } }),
-        self,
-      ),
+      respondToQuizSyncMessage(forwardedAction("you", "back", "me:2"), self),
     ).toEqual({
-      event: { type: "action", action: { type: "back" } },
+      awaiting: undefined,
+      event: { type: "action", action: { type: "back" }, id: "you:1" },
       resetTimer: false,
     });
     expect(
-      respondToQuizSyncMessage(
-        parsed("you", { kind: "action", action: { type: "reset" } }),
-        self,
-      ).resetTimer,
+      respondToQuizSyncMessage(forwardedAction("you", "reset", "me:2"), self)
+        .resetTimer,
     ).toBe(true);
   });
 
-  it("ignores snapshots for someone else or that are behind", () => {
-    const state = createQuizPreviewState();
-    const snapshot = (to: string, revision: number): QuizSyncMessage =>
-      parsed("you", { kind: "snapshot", to, revision, state, settings });
-
-    expect(respondToQuizSyncMessage(snapshot("them", 9), self)).toEqual({});
-    expect(respondToQuizSyncMessage(snapshot("me", 2), self)).toEqual({});
-    expect(respondToQuizSyncMessage(snapshot("me", 3), self)).toEqual({
-      event: { type: "snapshot", revision: 3, state },
-      settings,
+  it("asks a lower id for its quiz after a conflicting action", () => {
+    expect(
+      respondToQuizSyncMessage(forwardedAction("zz", "back", ""), self),
+    ).toEqual({ awaiting: undefined });
+    expect(
+      respondToQuizSyncMessage(forwardedAction("ab", "back", ""), self),
+    ).toEqual({
+      awaiting: "ab:1",
+      reply: { kind: "resync", to: "ab", request: "ab:1" },
     });
   });
 
-  it("passes settings on and ignores its own echo", () => {
-    const changed = { ...settings, initial_reoccurrences: 5 };
+  it("adopts only the answer to its latest resync or a quiz further along", () => {
+    const state = createQuizPreviewState({ selectedAnswers: [] });
+    const snapshot = (fields: {
+      to?: string;
+      revision: number;
+      request?: string;
+    }): QuizSyncMessage =>
+      parsed("ab", {
+        kind: "snapshot",
+        to: "me",
+        head: "ab:9",
+        state,
+        settings: versioned,
+        ...fields,
+      });
+    const awaiting = { ...self, awaiting: "ab:2" };
+    const adopted = {
+      type: "snapshot",
+      revision: 1,
+      head: "ab:9",
+      state,
+    };
+
+    expect(
+      respondToQuizSyncMessage(snapshot({ to: "them", revision: 9 }), self),
+    ).toEqual({ awaiting: undefined });
+    expect(respondToQuizSyncMessage(snapshot({ revision: 2 }), self)).toEqual({
+      awaiting: undefined,
+    });
+    expect(
+      respondToQuizSyncMessage(snapshot({ revision: 3 }), self).event,
+    ).toEqual({ ...adopted, revision: 3 });
+    // An older request's answer is not adopted.
     expect(
       respondToQuizSyncMessage(
-        parsed("you", { kind: "settings", settings: changed }),
-        self,
+        snapshot({ revision: 1, request: "ab:1" }),
+        awaiting,
       ),
-    ).toEqual({ settings: changed });
+    ).toEqual({ awaiting: "ab:2" });
+    expect(
+      respondToQuizSyncMessage(
+        snapshot({ revision: 1, request: "ab:2" }),
+        awaiting,
+      ),
+    ).toEqual({ awaiting: undefined, event: adopted });
+  });
+
+  it("answers a resync addressed to it", () => {
+    const [forThem, forMe] = ["them", "me"].map((to) =>
+      parsed("you", { kind: "resync", to, request: "me:2" }),
+    );
+    expect(respondToQuizSyncMessage(forThem, self)).toEqual({
+      awaiting: undefined,
+    });
+    expect(respondToQuizSyncMessage(forMe, self).reply).toMatchObject({
+      kind: "snapshot",
+      to: "you",
+      request: "me:2",
+      head: "me:2",
+    });
+  });
+
+  it("applies newer settings only and ignores its own echo", () => {
+    const changed = { ...settings, initial_reoccurrences: 5 };
+    const update = (version: number, author: string) =>
+      parsed(author, {
+        kind: "settings",
+        settings: changed,
+        stamp: { version, author },
+      });
+    const edited = {
+      ...self,
+      settings: { settings, stamp: { version: 2, author: "me" } },
+    };
+    expect(respondToQuizSyncMessage(update(1, "ab"), edited)).toEqual({
+      awaiting: undefined,
+    });
+    expect(respondToQuizSyncMessage(update(2, "zz"), edited)).toEqual({
+      awaiting: undefined,
+    });
+    expect(respondToQuizSyncMessage(update(2, "ab"), edited)).toEqual({
+      awaiting: undefined,
+      settings: { settings: changed, stamp: { version: 2, author: "ab" } },
+    });
     expect(
       respondToQuizSyncMessage(parsed("me", { kind: "hello" }), self),
-    ).toEqual({});
+    ).toEqual({ awaiting: undefined });
   });
 });

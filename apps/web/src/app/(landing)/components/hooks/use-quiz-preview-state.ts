@@ -4,7 +4,7 @@ import { hashKey, useQuery } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import type { UserSettings } from "@testownik/core/user/types";
 import { DEFAULT_USER_SETTINGS } from "@testownik/core/user/types";
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createPreviewClient } from "@/app/(landing)/preview/preview-client";
 import {
@@ -13,6 +13,8 @@ import {
 } from "@/app/(landing)/preview/preview-quiz-machine";
 import type { QuizPreviewAction } from "@/app/(landing)/preview/preview-quiz-machine";
 import {
+  INITIAL_SETTINGS_STAMP,
+  createQuizSyncId,
   createSyncedQuizState,
   openQuizSyncChannel,
   respondToQuizSyncMessage,
@@ -20,6 +22,8 @@ import {
 } from "@/app/(landing)/preview/preview-quiz-sync";
 import type {
   QuizSyncChannel,
+  SettingsStamp,
+  SyncedQuizEvent,
   SyncedQuizState,
 } from "@/app/(landing)/preview/preview-quiz-sync";
 import type { PreviewQuizSession } from "@/app/(landing)/preview/preview-session";
@@ -57,30 +61,27 @@ export function useQuizPreviewState({
   quiz?: QuizPreviewOptions;
   studyTimeSeconds?: number;
 } = {}): PreviewQuizSession {
-  const [synced, dispatch] = useReducer(syncedQuizReducer, quiz, (options) =>
-    createSyncedQuizState(createQuizPreviewState(options)),
+  const [synced, setSynced] = useState(() =>
+    createSyncedQuizState(createQuizPreviewState(quiz)),
   );
   const { state } = synced;
-  // What the services read and write. Kept ahead of the state so two writes
-  // before a render still number their questions apart.
-  const questionsReference = useRef(state.questions);
+  // Updated as each event is applied, not on render: actions name the one
+  // before them, and the services read the questions between renders.
+  const syncedReference = useRef<SyncedQuizState>(synced);
+  const apply = (event: SyncedQuizEvent): void => {
+    syncedReference.current = syncedQuizReducer(syncedReference.current, event);
+    setSynced(syncedReference.current);
+  };
   const actReference = useRef<(action: QuizPreviewAction) => void>(() => {
     // Replaced once mounted.
   });
   const clientReference = useRef<QueryClient | null>(null);
   clientReference.current ??= createPreviewClient({
-    questions: () => questionsReference.current,
+    questions: () => syncedReference.current.state.questions,
     add: (questions) => {
-      questionsReference.current = [
-        ...questionsReference.current,
-        ...questions,
-      ];
       actReference.current({ type: "addQuestions", questions });
     },
     update: (question) => {
-      questionsReference.current = questionsReference.current.map((current) =>
-        current.id === question.id ? question : current,
-      );
       actReference.current({ type: "updateQuestion", question });
     },
   });
@@ -97,48 +98,45 @@ export function useQuizPreviewState({
   const timerStore = timer.store;
 
   const channelReference = useRef<QuizSyncChannel | null>(null);
-  // Read by the channel handler, which answers late joiners with a snapshot.
-  const syncedReference = useRef<SyncedQuizState>(synced);
-  useEffect(() => {
-    syncedReference.current = synced;
-  }, [synced]);
 
   useEffect(() => {
     if (syncChannel === undefined) {
       return;
     }
-    // The settings last sent or received, so an applied update is not
-    // echoed back to the screen it came from.
+    // The settings last sent or received and their stamp, so an applied
+    // update is not echoed back and concurrent edits settle on one.
     let lastSettings = JSON.stringify(
       client.getQueryData<UserSettings>(userSettingsQueryKey),
     );
-    const applySettings = (next: UserSettings | undefined): void => {
-      if (next === undefined) {
-        return;
-      }
-      const serialized = JSON.stringify(next);
-      if (serialized !== lastSettings) {
-        lastSettings = serialized;
-        client.setQueryData(userSettingsQueryKey, next);
-      }
-    };
+    let settingsStamp: SettingsStamp = INITIAL_SETTINGS_STAMP;
+    let awaiting: string | undefined;
 
     const channel = openQuizSyncChannel(syncChannel, (message) => {
       if (channel === null) {
         return;
       }
+      const current = client.getQueryData<UserSettings>(userSettingsQueryKey);
       const response = respondToQuizSyncMessage(message, {
         id: channel.id,
         synced: syncedReference.current,
-        settings: client.getQueryData<UserSettings>(userSettingsQueryKey),
+        settings:
+          current === undefined
+            ? undefined
+            : { settings: current, stamp: settingsStamp },
+        awaiting,
       });
+      awaiting = response.awaiting;
       if (response.event !== undefined) {
-        dispatch(response.event);
+        apply(response.event);
       }
       if (response.resetTimer === true) {
         timerStore.setFromLoaded(0);
       }
-      applySettings(response.settings);
+      if (response.settings !== undefined) {
+        settingsStamp = response.settings.stamp;
+        lastSettings = JSON.stringify(response.settings.settings);
+        client.setQueryData(userSettingsQueryKey, response.settings.settings);
+      }
       if (response.reply !== undefined) {
         channel.post(response.reply);
       }
@@ -156,7 +154,15 @@ export function useQuizPreviewState({
       const serialized = JSON.stringify(next);
       if (next !== undefined && serialized !== lastSettings) {
         lastSettings = serialized;
-        channel.post({ kind: "settings", settings: next });
+        settingsStamp = {
+          version: settingsStamp.version + 1,
+          author: channel.id,
+        };
+        channel.post({
+          kind: "settings",
+          settings: next,
+          stamp: settingsStamp,
+        });
       }
     });
     channel.post({ kind: "hello" });
@@ -169,17 +175,15 @@ export function useQuizPreviewState({
   }, [client, syncChannel, timerStore]);
 
   const act = (action: QuizPreviewAction): void => {
-    dispatch({ type: "action", action });
-    channelReference.current?.post({ kind: "action", action });
+    const parent = syncedReference.current.head;
+    const id = createQuizSyncId();
+    apply({ type: "action", action, id });
+    channelReference.current?.post({ kind: "action", action, id, parent });
   };
 
   useEffect(() => {
     actReference.current = act;
   });
-  // Snapshots from the other screen replace the questions too.
-  useEffect(() => {
-    questionsReference.current = state.questions;
-  }, [state.questions]);
 
   return {
     state,
