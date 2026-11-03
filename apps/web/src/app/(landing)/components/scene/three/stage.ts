@@ -80,11 +80,17 @@ export function createStage({
   // render. The choreography updates its world matrices once per frame.
   scene.matrixWorldAutoUpdate = false;
 
-  const renderer = new WebGLRenderer({
-    canvas,
-    context,
-    ...attributes,
-  });
+  const renderer = tryWebGLContext(
+    () =>
+      new WebGLRenderer({
+        canvas,
+        context,
+        ...attributes,
+      }),
+  );
+  if (renderer === null) {
+    return null;
+  }
   renderer.setClearColor(0x00_00_00, 0);
   renderer.setPixelRatio(
     pixelRatio ?? Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO),

@@ -5,7 +5,7 @@ import type { PointerEvent, RefObject } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { Peel } from "../../canvasui/Peel";
+import { Peel } from "../../canvasui/peel";
 import type { LandingBlogPost } from "../../lib/blog";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { BLOG_PATH } from "../landing-content";
@@ -186,7 +186,6 @@ export function UpdateNote({
         reverse
         corner
         side="bottom"
-        mode="hover"
         reveal={36}
         curl={34}
         bow={12}

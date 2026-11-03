@@ -1,14 +1,21 @@
 /** Keep the scene alive through ordinary GPU resets before releasing it. */
 export const CONTEXT_RESTORE_MS = 15_000;
 
-/** Creation failures are terminal for one scene; a desktop remount may retry. */
+/**
+ * Creation failures are terminal for one scene; a desktop remount may retry.
+ * A failed model download or chunk import says nothing about WebGL, so it
+ * never spends that budget and the next mount simply tries again.
+ */
 export type WebGLAvailability =
   | "available"
   | "lost"
   | "expired"
   | "unavailable";
 export type WebGLEvent = "lost" | "restored" | "timeout" | "failed";
-export type WebGLUnavailableReason = "creation-failed" | "context-timeout";
+export type WebGLUnavailableReason =
+  | "creation-failed"
+  | "context-timeout"
+  | "asset-failed";
 
 export function nextWebGLAvailability(
   state: WebGLAvailability,

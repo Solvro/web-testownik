@@ -74,6 +74,16 @@ describe("desktop WebGL retries", () => {
     expect(createWebGLRetryPolicy().canAttempt()).toBe(true);
   });
 
+  it("retries asset and module failures on every remount", () => {
+    const policy = createWebGLRetryPolicy();
+    for (let remount = 0; remount < 3; remount += 1) {
+      expect(policy.recordFailure("asset-failed")).toBe(remount === 0);
+      expect(policy.canAttempt()).toBe(true);
+    }
+    expect(policy.recordFailure("creation-failed")).toBe(false);
+    expect(policy.canAttempt()).toBe(true);
+  });
+
   it("does not spend creation retries on GPU context restoration timeouts", () => {
     const policy = createWebGLRetryPolicy();
     expect(policy.recordFailure("context-timeout")).toBe(true);
