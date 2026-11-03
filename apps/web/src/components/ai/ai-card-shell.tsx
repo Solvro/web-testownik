@@ -63,7 +63,8 @@ export function AiCardShell({
   cooldown?: boolean;
   model: string | null;
   fallback: boolean;
-  onRetry: () => void;
+  /** Leave out where the content cannot be regenerated. */
+  onRetry?: () => void;
   onStop: () => void;
   onClose: () => void;
   children: React.ReactNode;
@@ -147,7 +148,7 @@ export function AiCardShell({
               >
                 <SquareIcon className="size-3 fill-current" />
               </Button>
-            ) : (
+            ) : onRetry === undefined ? null : (
               <Tooltip>
                 <TooltipTrigger
                   render={

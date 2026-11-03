@@ -11,11 +11,10 @@ import type { AnswerHint } from "@/components/ai/ai-explain-card";
 
 const THINKING_MS = 520;
 
-/** Thinks for a moment on mount, on `key` change and on retry. */
+/** Thinks for a moment on mount and on `key` change. */
 function useCannedLoading(key: string, onLoaded?: () => void) {
-  const [runId, setRunId] = useState(0);
   const [loadedRun, setLoadedRun] = useState<string | null>(null);
-  const run = `${runId.toString()}:${key}`;
+  const run = key;
   const loaded = useEffectEvent(() => {
     setLoadedRun(run);
     onLoaded?.();
@@ -32,9 +31,6 @@ function useCannedLoading(key: string, onLoaded?: () => void) {
 
   return {
     isLoading: loadedRun !== run,
-    retry: () => {
-      setRunId((current) => current + 1);
-    },
     stop: () => {
       setLoadedRun(run);
     },
@@ -50,7 +46,7 @@ export function PreviewAiHintCard({
   onClose: () => void;
   onAnswerHints?: (hints: AnswerHint[]) => void;
 }): React.JSX.Element {
-  const { isLoading, retry, stop } = useCannedLoading(
+  const { isLoading, stop } = useCannedLoading(
     JSON.stringify(hint),
     onAnswerHints === undefined
       ? undefined
@@ -68,7 +64,6 @@ export function PreviewAiHintCard({
       retryAfter={null}
       model={null}
       fallback={false}
-      onRetry={retry}
       onStop={stop}
       onClose={onClose}
       emphasized
@@ -89,7 +84,7 @@ export function PreviewAiExplanationCard({
   explanation: string;
   onClose: () => void;
 }): React.JSX.Element {
-  const { isLoading, retry, stop } = useCannedLoading(explanation);
+  const { isLoading, stop } = useCannedLoading(explanation);
 
   return (
     <AiCardShell
@@ -100,7 +95,6 @@ export function PreviewAiExplanationCard({
       retryAfter={null}
       model={null}
       fallback={false}
-      onRetry={retry}
       onStop={stop}
       onClose={onClose}
     >
