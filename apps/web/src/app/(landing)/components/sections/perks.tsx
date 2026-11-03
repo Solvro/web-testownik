@@ -90,9 +90,10 @@ export function Perks(): React.JSX.Element {
   return (
     <section
       id="perks"
+      tabIndex={-1}
       className={cn(
         PERK_THEME,
-        "relative isolate w-full scroll-mt-[5rem] bg-(--perk-bg) px-4 py-12 text-(--perk-fg) sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:py-20",
+        "relative isolate w-full scroll-mt-[5rem] bg-(--perk-bg) px-4 py-12 text-(--perk-fg) outline-none sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:py-20",
       )}
     >
       <div

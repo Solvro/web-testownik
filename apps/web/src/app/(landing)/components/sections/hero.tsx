@@ -206,6 +206,7 @@ export function Hero({
   return (
     <section
       id="start"
+      tabIndex={-1}
       ref={heroReference}
       data-hero-static={isStatic}
       data-hero-ready={isStageReady}
@@ -215,7 +216,7 @@ export function Hero({
         // swap animate on. The inset would otherwise default to the root's
         // scroll padding, and the `view-timeline` shorthand would reset it
         // in Chrome.
-        "relative scroll-mt-4 [view-timeline-inset:0] [view-timeline-name:--lp-hero]",
+        "relative scroll-mt-4 outline-none [view-timeline-inset:0] [view-timeline-name:--lp-hero]",
         isStatic
           ? "lg:h-[100svh] lg:min-h-[36rem]"
           : "lg:h-[300vh] lg:min-h-[190rem]",

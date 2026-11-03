@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 import { LANDING_SECTIONS } from "../landing-sections";
-import { scrollToLandingSection } from "../scroll-to-section";
+import { followLandingSectionLink } from "../scroll-to-section";
 import { FOCUS_RING } from "../ui/focus";
 import {
   TOC_PREVIEW_GAP,
@@ -458,23 +458,14 @@ export function LandingTableOfContents(): React.JSX.Element {
     };
   }, [clearPreviewTimers]);
 
-  const scrollToSection = (
+  const followLink = (
     event: React.MouseEvent<HTMLAnchorElement>,
     id: SectionId,
   ): void => {
-    const cached = sectionReferences.current[id];
-    const queried = document.querySelector(`#${CSS.escape(id)}`);
-    const target = cached ?? (queried instanceof HTMLElement ? queried : null);
-    if (target == null) {
-      return;
+    if (followLandingSectionLink(event, id) !== null) {
+      boomPreview();
+      setActiveSection(id);
     }
-
-    event.preventDefault();
-    boomPreview();
-    setActiveSection(id);
-    event.currentTarget.blur();
-    scrollToLandingSection(target);
-    window.history.replaceState(null, "", `#${id}`);
   };
 
   const previewSection =
@@ -515,7 +506,7 @@ export function LandingTableOfContents(): React.JSX.Element {
                 aria-current={isActive ? "location" : undefined}
                 tabIndex={isVisible === true ? 0 : -1}
                 onClick={(event) => {
-                  scrollToSection(event, section.id);
+                  followLink(event, section.id);
                 }}
                 onPointerEnter={(event) => {
                   schedulePreview(section.id, event.currentTarget);

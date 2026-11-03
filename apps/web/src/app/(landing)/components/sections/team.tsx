@@ -23,7 +23,8 @@ export function Team({
   return (
     <section
       id="team"
-      className="bg-background relative isolate w-full scroll-mt-[5rem] px-4 pt-12 pb-8 sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pt-14 sm:pb-10"
+      tabIndex={-1}
+      className="bg-background relative isolate w-full scroll-mt-[5rem] px-4 pt-12 pb-8 outline-none sm:px-[max(1.5rem,calc((100vw-96rem)/2))] sm:pt-14 sm:pb-10"
     >
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)] lg:items-end">
         <div>

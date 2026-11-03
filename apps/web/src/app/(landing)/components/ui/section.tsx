@@ -39,7 +39,10 @@ export function PlaceholderWatermark({
   );
 }
 
-/** Shared landing measure and vertical rhythm. */
+/**
+ * Shared landing measure and vertical rhythm. Like every landing section it is
+ * an in-page link target, so it takes focus programmatically (no ring).
+ */
 export function LandingSection({
   children,
   className,
@@ -52,7 +55,12 @@ export function LandingSection({
   }): React.JSX.Element {
   return (
     <section
-      className={cn(landingSectionVariants({ padding }), "relative", className)}
+      tabIndex={-1}
+      className={cn(
+        landingSectionVariants({ padding }),
+        "relative outline-none",
+        className,
+      )}
       {...props}
     >
       {showPlaceholder ? <PlaceholderWatermark /> : null}

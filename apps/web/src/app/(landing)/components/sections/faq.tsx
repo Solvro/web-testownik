@@ -13,7 +13,8 @@ export function Faq(): React.JSX.Element {
   return (
     <section
       id="faq"
-      className="text-foreground relative scroll-mt-[5rem] py-16 sm:py-24 lg:py-36"
+      tabIndex={-1}
+      className="text-foreground relative scroll-mt-[5rem] py-16 outline-none sm:py-24 lg:py-36"
     >
       <div className="relative mx-auto grid w-[calc(100%-2rem)] grid-cols-1 gap-8 sm:w-[min(100%-3rem,96rem)] sm:gap-12 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-[7vw] 2xl:grid-cols-[minmax(max-content,0.72fr)_minmax(0,1.28fr)]">
         <header className="self-start lg:sticky lg:top-24">
