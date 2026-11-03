@@ -74,6 +74,14 @@ describe("proxy document shell headers", () => {
   });
 });
 
+/** An expired access token, and `response` from the refresh endpoint. */
+function stubRefresh(response: Response) {
+  vi.mocked(verifyAccessToken).mockResolvedValue(null);
+  const fetchMock = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 describe("proxy auth", () => {
   const expiredSession = `${AUTH_COOKIES.ACCESS_TOKEN}=expired; ${AUTH_COOKIES.REFRESH_TOKEN}=refresh`;
 
@@ -81,13 +89,6 @@ describe("proxy auth", () => {
     vi.unstubAllGlobals();
     vi.mocked(verifyAccessToken).mockReset();
   });
-
-  function stubRefresh(response: Response) {
-    vi.mocked(verifyAccessToken).mockResolvedValue(null);
-    const fetchMock = vi.fn().mockResolvedValue(response);
-    vi.stubGlobal("fetch", fetchMock);
-    return fetchMock;
-  }
 
   it.each(["/models/device-stack.glb", "/favicon.svg", "/robots.txt"])(
     "passes %s through without touching the session",
