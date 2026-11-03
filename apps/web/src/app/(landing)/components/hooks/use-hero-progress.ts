@@ -10,23 +10,12 @@ function clamp(value: number, minimum = 0, maximum = 1): number {
 }
 
 /**
- * Drives the hero's scroll progress. The hero is a tall section with a sticky
- * viewport-sized stage, so progress is simply how far its top has travelled
- * past the top of the window.
+ * Progress is how far the hero's top has travelled past the top of the window.
+ * With reduced motion it is pinned at 1, so the laptop renders open.
  *
- * With reduced motion the hero is pinned at 1 — the laptop renders open and
- * nothing animates on scroll.
- *
- * `Hero` owns the section ref and calls this itself, with `enabled` true only
- * on desktop viewports, so phones never attach the listeners. It must not be
- * called from a child: a lazily loaded child that is already cached mounts in
- * the same commit as the section, and its layout effect runs before the
- * parent's ref is attached, which would make the hook bail out for good while
- * the scene kept a stale cached progress (the "open devices under the
- * headline" freeze).
- *
- * When disabled (the viewport dropped below `lg`) the targets and shared cache
- * reset to zero, leaving the shared copy fully visible.
+ * Call it from `Hero`, which owns the section ref, never from a child: a cached
+ * lazy child mounts in the same commit, and its layout effect runs before the
+ * parent's ref is attached, so the hook would bail out for good.
  */
 export function useHeroProgress(
   heroReference: React.RefObject<HTMLElement | null>,

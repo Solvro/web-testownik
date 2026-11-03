@@ -1,11 +1,7 @@
 /**
- * `peek` picks how the desktop TOC previews a section:
- * - `hero`: a dedicated static still (copy + device cover). The live hero is
- *   a WebGL canvas, CSS3D screens and an html-in-canvas Bubble, none of which
- *   survive `cloneNode`.
- * - `top` / `center`: a scaled DOM clone, aligned to the section's top or
- *   vertical centre inside the peek window (`center` also suits a section
- *   shorter than the window).
+ * `peek` picks how the desktop TOC previews a section: `hero` is a static
+ * still, since the live hero's canvases do not survive `cloneNode`; `top` and
+ * `center` align a scaled DOM clone in the peek window.
  */
 export const LANDING_SECTIONS = [
   { id: "start", label: "Na początek", navLabel: "Start", peek: "hero" },

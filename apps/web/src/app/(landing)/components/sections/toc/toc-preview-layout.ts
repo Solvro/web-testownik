@@ -1,36 +1,20 @@
-/**
- * Pure geometry and caching for the TOC section peek. Kept free of the DOM so
- * it can be unit-tested; `toc-preview-clone.ts` does the cloning.
- */
-
-/** Inner screen width — same for every section peek. */
 export const TOC_PREVIEW_INNER_WIDTH = 268;
-/** Inner screen height — same for every section peek. */
 export const TOC_PREVIEW_INNER_HEIGHT = 140;
-/** Outer card width (inner screen + horizontal padding). */
 export const TOC_PREVIEW_WIDTH = TOC_PREVIEW_INNER_WIDTH + 16;
-/** Gap between the expanded TOC rail and the peek card. */
 export const TOC_PREVIEW_GAP = 14;
 /** Narrowest layout a peek is laid out at, so type never reflows to mobile. */
 export const TOC_PREVIEW_MIN_LAYOUT_WIDTH = 1024;
 
-/** Where a section's content sits inside the peek window. */
 export type TocPreviewAlign = "top" | "center";
 
 export interface TocPreviewLayout {
-  /** Width the section is laid out at before scaling. */
   layoutWidth: number;
   /** Height of the visible window, in unscaled layout pixels. */
   windowHeight: number;
-  /** Uniform scale from layout pixels to the peek screen. */
   scale: number;
 }
 
-/**
- * Every peek uses the same layout width and scale so type size stays
- * consistent between sections. The window keeps the peek screen's aspect, so
- * nothing laid out inside it is silently cropped by the card.
- */
+/** Every peek uses the same layout width and scale, so type size matches. */
 export function tocPreviewLayout(viewportWidth: number): TocPreviewLayout {
   const layoutWidth = Math.max(
     Math.round(viewportWidth),
@@ -44,12 +28,7 @@ export function tocPreviewLayout(viewportWidth: number): TocPreviewLayout {
   };
 }
 
-/**
- * Vertical shift (layout pixels) that brings the aligned part into view.
- * Centring works both ways: a taller section shows its middle, a shorter one
- * sits in the middle of the window (a negative shift) instead of leaving the
- * spare space below it.
- */
+/** A section shorter than the window is centred with a negative shift. */
 export function tocPreviewOffset(
   contentHeight: number,
   windowHeight: number,
@@ -61,10 +40,7 @@ export function tocPreviewOffset(
   return Math.round((contentHeight - windowHeight) / 2);
 }
 
-/**
- * Insertion-ordered cache that evicts the least recently used entry. `onEvict`
- * runs for every value that leaves, whether evicted, replaced or cleared.
- */
+/** An LRU cache; `onEvict` runs for every value that leaves, however it leaves. */
 export class BoundedCache<Key, Value> {
   private readonly entries = new Map<Key, Value>();
 

@@ -7,11 +7,7 @@ import uniperksWhiteAsset from "@/assets/partners/uniperks-white.svg";
 // Brand asset of UNIPERKS P.S.A., used with permission for the partner section
 import uniperksAsset from "@/assets/partners/uniperks.svg";
 
-/**
- * Next types SVG imports loosely, which otherwise forces an
- * `@typescript-eslint/no-unsafe-assignment` escape in every consumer. Narrowing
- * them once here keeps the components clean.
- */
+/** Next types SVG imports loosely; narrowed once here instead of in every consumer. */
 export const wordmarkLight = logoFullAsset as StaticImageData;
 export const wordmarkDark = logoFullDarkAsset as StaticImageData;
 export const uniperksWordmarkLight = uniperksAsset as StaticImageData;

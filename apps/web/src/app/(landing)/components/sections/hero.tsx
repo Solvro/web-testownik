@@ -25,22 +25,16 @@ import { HeroPhone } from "./hero-phone";
 import { HeroScrollHint } from "./hero-scroll-hint";
 
 /*
- * Bubble, WebGL scene and scroll progress. Requested only once the desktop
- * query matches, so phones never fetch the chunk. Plain `lazy` rather than
- * `next/dynamic`: with `ssr: false` the latter forces its own Suspense boundary
- * whose fallback cannot receive props, which would blank the shared copy while
- * the chunk loads. Here the fallback is the static hero itself.
+ * Plain `lazy` rather than `next/dynamic`: with `ssr: false` the latter forces
+ * its own Suspense boundary whose fallback cannot receive props, which would
+ * blank the shared copy while the chunk loads.
  */
 const HeroDesktopStage = lazy(async () => {
   const loaded = await import("./hero-desktop-stage");
   return { default: loaded.HeroDesktopStage };
 });
 
-/*
- * On a wide viewport both desktop chunks start downloading as soon as this
- * module evaluates, in parallel and ahead of hydration, rather than one after
- * the other once the hero has mounted and the stack has booted.
- */
+// Start both desktop chunks downloading in parallel, ahead of hydration.
 if (
   typeof window !== "undefined" &&
   window.matchMedia(DESKTOP_STAGE_QUERY).matches
@@ -49,11 +43,7 @@ if (
   void import("../scene/three/create-device-stack");
 }
 
-/**
- * On desktop the copy leaves as the laptop opens. A plain CSS expression over
- * the published progress, so it follows the scroll without a React render per
- * frame. Below `lg` the progress publisher resets the copy to 0.
- */
+/** The copy leaves as the laptop opens, in CSS so no frame needs a render. */
 const copyStyle: CSSProperties = {
   opacity: `clamp(0, calc(1 - ${HERO_PROGRESS} * 3.8), 1)`,
   transform: `translateY(calc(${HERO_PROGRESS} * -4rem))`,
@@ -66,11 +56,7 @@ function StaticDeviceCover(): React.JSX.Element {
   return <div ref={coverReference} className={DEVICE_COVER_CLASS} />;
 }
 
-/**
- * The hero copy and "Poznaj produkt" link, rendered exactly once whichever
- * stage hosts it. Below `lg` it flows; at `lg` it is laid out
- * absolutely over the sticky stage. `visual` sits between copy and link.
- */
+/** Rendered once, by whichever stage hosts it. `visual` sits between copy and link. */
 function HeroContent({
   captureNav,
   visual,
@@ -134,7 +120,6 @@ export function Hero({
   heroReference: React.RefObject<HTMLElement | null>;
   /** The page header: fixed, but rendered inside the stage (see LandingNav). */
   nav?: ReactNode;
-  /** Its capture-only copy for the Bubble. */
   captureNav?: ReactNode;
 }): React.JSX.Element {
   // False on the server and during hydration: the server markup is always the
@@ -174,12 +159,9 @@ export function Hero({
   }, [isStageReady]);
 
   /*
-   * Phones keep this for good. On desktop it is the server render and the
-   * Suspense fallback; the placeholder holds the device cover, the glow and
-   * the study chips in exactly the spots the stage shows them at the closed
-   * pose, so the stage mounting does not move or add anything.
-   * Neither visual costs the other viewport a request: the phone loads its
-   * screen only below `lg`, and a hidden element never fetches a background.
+   * On desktop this is the server render and the Suspense fallback; it places
+   * the device cover, glow and chips where the stage shows them at the closed
+   * pose, so the stage mounts without anything moving.
    */
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">

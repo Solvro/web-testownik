@@ -4,11 +4,7 @@ import { notFound } from "next/navigation";
 import { ScreenFrameDocument } from "@/app/(landing)/components/scene/screen-frame-document";
 import { parseScreenFrameRequest } from "@/app/(landing)/components/scene/screen-frame-protocol";
 
-/**
- * One live screen of the landing page's desktop device stack, rendered in an
- * iframe by `scene/device-screen-frame.tsx`. The root layout serves it in its
- * bare shell (see `lib/document-shell.ts`); it is not a page of its own.
- */
+/** An iframe of `scene/device-screen-frame.tsx`, served in the bare document shell. */
 export const metadata: Metadata = {
   title: "Podgląd ekranu",
   robots: { index: false, follow: false },

@@ -1,10 +1,8 @@
 import { DESKTOP_STAGE_QUERY } from "./breakpoints";
 
 /**
- * Scrolls to a landing section. The hero is a tall scroll-driven stage whose
- * top is the closed laptop; on desktop, "Start" goes to the end of that
- * travel instead, where the devices are open, unless the hero has fallen back
- * to its static layout.
+ * On desktop the hero target is the end of its scroll travel, where the
+ * devices are open, unless the hero has fallen back to its static layout.
  */
 export function scrollToLandingSection(target: HTMLElement): void {
   const behavior: ScrollBehavior = window.matchMedia(
@@ -42,10 +40,8 @@ export function isModifiedClick(event: React.MouseEvent): boolean {
 }
 
 /**
- * Click handler for in-page `#id` links: scrolls the landing way, updates the
- * hash and moves focus to the destination (which needs `tabIndex={-1}`), so
- * the next Tab continues from there. Returns the target, or `null` when the
- * browser was left to handle the click.
+ * For in-page `#id` links. Moves focus to the target (which needs
+ * `tabIndex={-1}`) and returns it, or `null` when the browser handles the click.
  */
 export function followLandingSectionLink(
   event: React.MouseEvent<HTMLAnchorElement>,

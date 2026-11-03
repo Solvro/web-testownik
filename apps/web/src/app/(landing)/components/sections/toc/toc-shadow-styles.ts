@@ -1,16 +1,9 @@
-/**
- * Peeks render inside a shadow root (see `toc-section-preview.ts`), which does
- * not see the page CSS. This module copies it in as constructed stylesheets.
- */
+// A shadow root does not see the page CSS, so it is copied in as constructed sheets.
 
-/** Constructed copies of the page stylesheets, shared by every shadow root. */
 let shadowStyles: CSSStyleSheet[] | null = null;
 let shadowStylesSignature = "";
 
-/**
- * A cheap fingerprint of the page CSS. Changes when a stylesheet is added,
- * removed or toggled (a lazily loaded chunk, a dev-server hot update).
- */
+/** Changes when a stylesheet is added, removed or toggled. */
 function styleSignature(): string {
   const parts: string[] = [];
   for (const sheet of document.styleSheets) {
@@ -27,10 +20,7 @@ function styleSignature(): string {
   return parts.join("|");
 }
 
-/**
- * One constructed sheet per page sheet (and per `@import`ed one), keeping its
- * base URL so relative `url()`s still resolve and its media list.
- */
+/** Keeps the sheet's base URL, so relative `url()`s still resolve, and its media. */
 function copyStyleSheet(sheet: CSSStyleSheet, into: CSSStyleSheet[]): void {
   if (sheet.disabled) {
     return;
@@ -79,11 +69,7 @@ function adopt(root: ShadowRoot, sheets: CSSStyleSheet[]): void {
   }
 }
 
-/**
- * Copy the page CSS into the shadow root so clones render as they do in the
- * page. Serialising takes a few tens of milliseconds at 4x CPU, so it runs in
- * the first idle build and only again when the page CSS changes.
- */
+/** Serialising is slow, so it only reruns when the page CSS changes. */
 export function syncShadowStyles(root: ShadowRoot): void {
   const signature = styleSignature();
   if (shadowStyles === null || signature !== shadowStylesSignature) {
@@ -97,10 +83,6 @@ export function syncShadowStyles(root: ShadowRoot): void {
   adopt(root, shadowStyles);
 }
 
-/**
- * Give a new shadow root the copies made so far, without re-checking the page
- * CSS. Returns whether there were any.
- */
 export function adoptCopiedStyles(root: ShadowRoot): boolean {
   if (shadowStyles === null) {
     return false;
@@ -111,8 +93,7 @@ export function adoptCopiedStyles(root: ShadowRoot): boolean {
 
 /**
  * `dark:` compiles to `:is(.dark *)`, which cannot see `html.dark` from inside
- * a shadow root; mirror the theme class onto the scope instead. A theme switch
- * rebuilds every peek, which calls this again.
+ * a shadow root, so the theme class is mirrored onto the scope.
  */
 export function syncShadowTheme(scope: HTMLElement): void {
   scope.classList.toggle(

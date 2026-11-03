@@ -36,9 +36,8 @@ function sceneScaleForCanvas(
     logoWidth / (compact ? COMPACT_LOGO_ASPECT : DESKTOP_LOGO_ASPECT);
   const originalScale = compact ? COMPACT_SCENE_SCALE : DESKTOP_SCENE_SCALE;
 
-  // ParticleObject projects scene units relative to canvas height. Scaling by
-  // the old logo-box height keeps the wordmark the same visual size while the
-  // canvas itself grows to cover the entire section.
+  // ParticleObject sizes scene units by canvas height; this keeps the
+  // wordmark's size independent of the full-section canvas.
   return (
     originalScale *
     (logoHeight / Math.max(height, 1)) *
@@ -47,13 +46,8 @@ function sceneScaleForCanvas(
 }
 
 /**
- * The closing wordmark, rendered as a single particle simulation — the icon and
- * the lettering are one object, with no conventional logo underneath.
- *
- * An empty `color` keeps the asset's own per-pixel colours, so the icon stays
- * brand blue and the lettering stays white instead of both flattening to one
- * tint. The WebGL chunk is only requested once the section is nearly in view,
- * which keeps it off the hero's critical path.
+ * An empty `color` keeps the asset's per-pixel colours instead of one tint. The
+ * WebGL chunk loads once the section is nearly in view.
  */
 export function ParticleLogo({
   className,

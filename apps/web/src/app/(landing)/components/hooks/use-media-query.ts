@@ -3,9 +3,8 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Subscribes to a media query. Server rendering and the hydration pass both see
- * `false`, so a query is only ever allowed to enable behaviour, never to hide
- * markup that a JavaScript-less visitor would otherwise get.
+ * `false` on the server and during hydration, so use a query to enable
+ * behaviour, never to hide markup a visitor without JavaScript would get.
  */
 export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(

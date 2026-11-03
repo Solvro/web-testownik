@@ -94,7 +94,6 @@ function CardFace({
           : "bg-[#263647] text-white",
       )}
     >
-      {/* A sharp photo under a scrim; blur behind the copy only smudged it. */}
       <Image
         src={`/images/perks/${background}.webp`}
         alt=""
@@ -136,7 +135,6 @@ function CardFace({
   );
 }
 
-/** The stack beside the copy at `lg`. */
 export function PerksCards({
   offers,
 }: {

@@ -153,11 +153,8 @@ function DemoChat({
 }
 
 /**
- * The app's assistant (`ChatRuntime` + `ChatThread`, tools and tool cards
- * included) on the showcase's quiz session, through the public demo
- * endpoint. It sees the question open in the quiz demo and the whole quiz;
- * generated questions it saves and edits it applies go through the session's
- * preview services into that quiz.
+ * The app's assistant on the showcase's quiz session, through the public demo
+ * endpoint. What it saves goes through the session's preview services.
  */
 export function AiDemo(): React.JSX.Element {
   const {

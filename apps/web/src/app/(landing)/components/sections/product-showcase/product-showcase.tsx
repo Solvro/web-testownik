@@ -56,7 +56,7 @@ function ShowcaseScene({
   }
 }
 
-/** Shared top inset so the "0X" stays on one Y across open/closed. */
+/** Keeps the "0X" at one height whether the item is open or closed. */
 const RAIL_TOP = "lg:pt-6";
 
 /** Drawn inside the rails and panel, which the card clips. */
@@ -64,11 +64,7 @@ const INSET_FOCUS_RING = "focus-visible:outline-offset-[-3px]";
 
 type Corner = "tl" | "tr" | "bl" | "br";
 
-/**
- * Focus outline corners on the card's rounded edge take its inner radius; the
- * rest stay square against the neighbouring items. Spelled out so Tailwind
- * sees every class.
- */
+/** Spelled out so Tailwind sees every class. */
 const FOCUS_CORNER: Record<
   Corner,
   { stacked: string; rowOn: string; rowOff: string }
@@ -95,11 +91,7 @@ const FOCUS_CORNER: Record<
   },
 };
 
-/**
- * Below `lg` the items stack: the first holds the card's top corners, the
- * last its bottom ones, and an open item's rail sits above its panel. At `lg`
- * they form a row (first left, last right) and the open rail is hidden.
- */
+/** Outline corners on the card's rounded edge take its inner radius. */
 function focusCorners({
   first,
   last,
@@ -308,8 +300,6 @@ export function ProductShowcase(): React.JSX.Element {
                     tabIndex={-1}
                     className={cn(
                       "grid min-h-0 lg:h-full lg:grid-cols-[minmax(17rem,0.64fr)_minmax(0,1.65fr)]",
-                      // Fades and rises in behind the widening rail instead
-                      // of popping into place at once.
                       "animate-[lp-panel-in_520ms_cubic-bezier(0.22,1,0.36,1)_80ms_both] motion-reduce:animate-none",
                       // Laid out at its final width from the first frame; the
                       // article's animating width only clips it. The three

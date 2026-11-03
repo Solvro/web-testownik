@@ -31,21 +31,16 @@ const START_BUTTON_CLASS = cn(
 );
 
 /*
- * Every dimension that differs between the hero look and the settled bar is
- * a hero value minus a shrink scaled by `--lp-nav-t`: 0 over the hero, 1
- * once the bar is its own size. landing.css animates the property from the
- * hero's view timeline as the stage leaves, so the bar shrinks with the
- * scroll itself, or transitions it from `data-settled` where scroll-driven
- * animations are missing.
+ * Each dimension is its hero value minus a shrink scaled by `--lp-nav-t` (0
+ * over the hero, 1 once settled). landing.css drives the property from the
+ * hero's view timeline, or transitions it on `data-settled` without
+ * scroll-driven animations.
  */
 const NAV_VARIABLES =
   "[--lp-nav-hero-h:4.5rem] [--lp-nav-shrink:0.5rem] sm:[--lp-nav-hero-h:5.3rem] sm:[--lp-nav-shrink:1.3rem]";
 /*
- * The header blurs what is beneath it. Over the hero that is the grid, whose
- * blurred lines read as a soft haze that fades out at the top and the sides
- * (`NAV_HAZE`), fading with the shrink. The solid tint (`NAV_TINT`) comes in
- * over the first third of the shrink, so the devices leaving under the bar
- * never dim its links.
+ * The tint comes in over the first third of the shrink, so the devices leaving
+ * under the bar never dim its links.
  */
 const NAV_SURFACE = "backdrop-blur-[18px]";
 const NAV_HAZE =
@@ -62,16 +57,10 @@ const TOGGLE_SIZE = "size-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 const BUTTON_HEIGHT = "min-h-[calc(2.75rem_-_0.25rem_*_var(--lp-nav-t))]";
 
 /**
- * The landing's own header; the app shell's navbar is hidden for this route
- * (see landing.css). One fixed bar for the whole page: a little taller over
- * the hero, shrinking into its own size as the hero's stage leaves, fixed
- * throughout. It is rendered inside the stage, above the Bubble's canvases
- * and the device layer in every frame. The droplet refracts a `capture`
- * copy of it that only exists inside the html-in-canvas subtree (invisible
- * and inert anywhere else) and mirrors the real bar's hover state; the
- * content canvas is clipped under the bar so the copy never shows through
- * the blur, and the droplet's top strip is copied onto a canvas above the
- * bar. Sections offset their scroll targets by the settled height.
+ * The landing's fixed header, taller over the hero. It renders inside the
+ * stage, above the Bubble's canvases and the device layer. The droplet
+ * refracts a `capture` copy that only exists inside the html-in-canvas subtree
+ * and mirrors the real bar's hover state.
  */
 export function LandingNav({
   ref,
@@ -87,7 +76,6 @@ export function LandingNav({
   isAuthenticated: boolean;
   isStarting: boolean;
   onStart: () => void;
-  /** The Bubble's capture-only copy. */
   capture?: boolean;
   hover?: NavHover;
   /** The real bar reports changes here; the copy only reads `hover`. */

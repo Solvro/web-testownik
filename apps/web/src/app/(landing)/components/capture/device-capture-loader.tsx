@@ -4,12 +4,7 @@ import { Suspense, lazy } from "react";
 
 import type { CaptureRequest } from "./capture-request";
 
-/*
- * The page imports the capture harness unconditionally, and every client
- * component a page imports lands in its initial chunks. Going through `lazy`
- * keeps the harness, and the desktop device scene it renders, out of what
- * real visitors download.
- */
+// `lazy` keeps the harness and its device scene out of the page's initial chunks.
 const DeviceCaptureHarness = lazy(async () => {
   const loaded = await import("./device-capture");
   return { default: loaded.DeviceCapture };

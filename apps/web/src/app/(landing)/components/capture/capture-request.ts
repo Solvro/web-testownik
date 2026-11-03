@@ -1,18 +1,14 @@
 /**
- * Development-only capture harness.
- *
- * `scripts/capture-device-stack.mjs` drives the hero with these parameters to
- * re-render the static loading cover from the live model. It is gated on
- * `NODE_ENV` so none of it can be triggered in production.
+ * Parameters `scripts/capture-device-stack.mjs` uses to re-render the static
+ * loading cover. Gated on `NODE_ENV`, so production never honours them.
  */
 export interface CaptureRequest {
-  /** Freeze the scene on the static cover instead of the live model. */
   loadingCover: boolean;
-  /** Device pixel ratio the WebGL renderer should use, 1–4. */
+  /** 1–4. */
   pixelRatio?: number;
   background?: "black" | "green" | "white";
   theme?: "dark" | "light";
-  /** Hero scroll progress to pose the stack at, 0 closed → 1 open. */
+  /** 0 closed, 1 open. */
   progress?: number;
 }
 

@@ -14,10 +14,7 @@ import { TeamRoster, TeamRosterFallback } from "./team-roster";
 export function Team({
   contributors,
 }: {
-  /**
-   * Unresolved on purpose. The complete hardcoded roster renders immediately;
-   * GitHub enriches it and adds outside contributors when the request resolves.
-   */
+  /** Unresolved on purpose: the hardcoded roster renders before GitHub answers. */
   contributors: Promise<GitHubContributor[]>;
 }): React.JSX.Element {
   return (

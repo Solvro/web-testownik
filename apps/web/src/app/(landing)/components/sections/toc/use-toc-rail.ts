@@ -13,13 +13,11 @@ const POINTER_REVEAL_WIDTH = 88;
 const POINTER_REVEAL_PADDING = 24;
 
 /**
- * The rail's scroll-spy and auto-hide: it tracks the section under a marker a
- * third down the viewport, shows itself on scroll, when the pointer nears the
- * left edge or when focus enters it, and hides again after a while idle.
+ * Scroll-spy against a marker a third down the viewport. The rail shows on
+ * scroll, near the left edge or on focus, and hides after a while idle.
  */
 export function useTocRail(
   navigationReference: React.RefObject<HTMLElement | null>,
-  /** Called when the rail hides after being idle. */
   onIdleHide: () => void,
 ): {
   activeId: LandingSectionId;
@@ -121,9 +119,8 @@ export function useTocRail(
       }
     };
 
-    // Section sizes change when lazy content, fonts or an accordion settles.
-    // Cache document offsets then, rather than measuring six sections after
-    // the hero has changed its styles on every scroll frame.
+    // Cached when sizes change, rather than measured on every scroll frame
+    // after the hero has changed its styles.
     const measureSections = (): void => {
       const scrollTop = window.scrollY;
       sectionTops = sectionElements.map(({ id, element }) => ({

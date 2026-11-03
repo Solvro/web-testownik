@@ -12,19 +12,10 @@ import type { createQuizPreviewState } from "@/app/(landing)/preview/preview-qui
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
 
 /**
- * The quiz behind the showcase's quiz and AI demos: the previews' sample
- * questions as a quiz of their own, numbered from 1, so what the assistant
- * adds grows a count the visitor can follow (7, then 9). One session (see
- * `ShowcaseSessionProvider`) serves both demos.
- *
- * The question it opens on carries a deliberate typo, for the assistant's
- * "fix the typos" suggestion to find.
+ * The quiz behind the showcase's quiz and AI demos. The question it opens on
+ * has a deliberate typo for the "fix the typos" suggestion to find.
  */
 
-/**
- * The quiz as the showcase's share dialog and stats card describe it: the
- * previews' quiz, with its author, which only these two panels show.
- */
 export const SHOWCASE_QUIZ_METADATA: QuizMetadata = {
   ...PREVIEW_QUIZ_METADATA,
   creator: PREVIEW_CREATOR,
@@ -51,7 +42,6 @@ export const SHOWCASE_QUIZ: Parameters<typeof createQuizPreviewState>[0] = {
   progress: null,
 };
 
-/** The quiz timer's starting point, as the demo has always shown it. */
 export const SHOWCASE_STUDY_TIME_SECONDS = 4 * 60 + 36;
 
 interface StaticAi {
@@ -80,8 +70,7 @@ function staticAi(
 }
 
 /**
- * Hints and explanations shaped like `/ai/hint` and `/ai/explain` output, so
- * the quiz demo's AI button works without an account. Module constants: the
+ * Shaped like `/ai/hint` and `/ai/explain` output. Module constants because the
  * hint card restarts whenever its payload changes identity.
  */
 const STATIC_AI = new Map<string, StaticAi>([
@@ -165,12 +154,11 @@ const FALLBACK_HINT = {
   answerHints: [],
 };
 
-/** The quiz demo's AI hint for a question; added questions get a generic one. */
+/** Added questions get a generic hint. */
 export function getShowcaseHint(question: Question): StaticAi["hint"] {
   return STATIC_AI.get(question.id)?.hint ?? FALLBACK_HINT;
 }
 
-/** An explanation for a question, from the question itself when it has one. */
 export function getShowcaseExplanation(question: Question): string {
   const own = question.explanation?.trim() ?? "";
   return own === ""

@@ -13,7 +13,6 @@ import { getShowcaseExplanation } from "./showcase-quiz";
 
 const EXPLAIN_PROMPT = "Wyjaśnij to pytanie";
 
-/** The empty chat's suggestions: what the app's assistant can do here. */
 export const SUGGESTIONS = [
   EXPLAIN_PROMPT,
   "Wygeneruj 3 podobne pytania",
@@ -24,7 +23,6 @@ export const SUGGESTIONS = [
 const UNAVAILABLE_NOTICE =
   "Asystent jest teraz niedostępny. Spróbuj ponownie za chwilę.";
 
-/** Why the last request failed, from its response. */
 export interface Failure {
   status: number;
   retryAfter: string | null;
@@ -84,12 +82,7 @@ export function explainOffline(
   });
 }
 
-/**
- * The app's chat runtime against the public demo endpoint: no account, so no
- * usage to report, and only the recent history and the quiz's first questions
- * are sent. Failures are reported; when the endpoint is down, "explain" still
- * gets the question's explanation.
- */
+/** Sends only the recent history and the quiz's first questions; no usage to report. */
 export function createShowcaseChatTransport(
   onFailure: (failure: Failure | null) => void,
 ): ChatRuntimeTransport {

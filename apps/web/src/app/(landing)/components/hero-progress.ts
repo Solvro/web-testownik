@@ -1,7 +1,6 @@
 /**
- * Scroll progress stays outside React. Only the animated elements subscribe;
- * the CSS property is registered as non-inheriting in landing.css so changing
- * a badge never restyles its SVG, text or the rest of the hero.
+ * Scroll progress stays outside React. The CSS property is registered as
+ * non-inheriting in landing.css, so updating it never restyles descendants.
  */
 export const HERO_PROGRESS_PROPERTY = "--landing-hero-progress";
 export const HERO_PROGRESS_EVENT = "landing-hero-progress";
@@ -28,7 +27,6 @@ function applyShownProgress(): void {
   }
 }
 
-/** Latest progress, readable by Three.js without a computed-style read. */
 export function getHeroProgress(): number {
   return cachedHeroProgress;
 }
@@ -65,9 +63,8 @@ export function publishHeroProgress(progress: number): void {
 }
 
 /**
- * Keeps the copy, badges and other DOM targets at the closed pose while the
- * device stack is still loading, whatever the scroll position, like the
- * scene under its cover. `getHeroProgress` always reports the real value.
+ * Keeps the DOM targets at the closed pose while the device stack loads.
+ * `getHeroProgress` still reports the real value.
  */
 export function setHeroProgressHold(held: boolean): void {
   if (held === isHeld) {
@@ -78,10 +75,8 @@ export function setHeroProgressHold(held: boolean): void {
 }
 
 /**
- * The stack, once ready, opens from the closed pose to wherever the page is
- * scrolled over a few hundred milliseconds; it publishes each frame of that
- * here so the copy and badges travel with the devices. `null` hands the DOM
- * targets back to the real progress.
+ * The stack publishes its catch-up from the closed pose here, so the copy and
+ * badges travel with the devices. `null` returns to the real progress.
  */
 export function setHeroProgressOverride(progress: number | null): void {
   const next =

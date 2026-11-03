@@ -14,11 +14,8 @@ import { SHOWCASE_QUIZ, SHOWCASE_STUDY_TIME_SECONDS } from "./showcase-quiz";
 import { ShowcaseSessionContext } from "./showcase-session-context";
 
 /**
- * One quiz session for the whole showcase. Only the open demo is mounted, so
- * the quiz session and chat runtime live above them. What the visitor answers
- * in the quiz demo is the assistant's context, and the questions the assistant
- * adds or edits are in the quiz when the visitor switches back. It is not
- * synced with the hero's devices.
+ * One quiz session for the whole showcase, held above the demos because only
+ * the open one is mounted. Not synced with the hero's devices.
  */
 export function ShowcaseSessionProvider({
   children,
