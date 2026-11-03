@@ -35,9 +35,8 @@ export function FormbricksProvider() {
       });
     };
 
-    // The landing needs no survey until the visitor starts interacting, or
-    // until the page has been idle for a while. Once loaded (a visitor coming
-    // back from an app route), routes register straight away.
+    // The landing loads the SDK on first interaction or idle. Once loaded,
+    // other routes register straight away.
     let idle = 0;
     let fallback = 0;
     if (pathname === "/" && setup === undefined) {

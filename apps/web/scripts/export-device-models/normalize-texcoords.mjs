@@ -20,15 +20,12 @@ function textureInfosOf(document, material) {
 }
 
 /**
- * glTF Transform only quantises UVs that already lie in [0, 1], and Apple's
- * tiling aluminium and glass maps do not. This remaps every material's UVs
- * into [0, 1] and puts the original range back with `KHR_texture_transform`,
- * which three applies before sampling — so the result is the same texel, and
- * the same derivative-based normal-map frame, at a third of the size.
+ * glTF Transform only quantises UVs in [0, 1], and Apple's tiling maps are
+ * not. This remaps them into [0, 1] and restores the range with
+ * `KHR_texture_transform`, which three applies before sampling.
  *
- * Materials without textures need no transform; their UVs are only read by
- * the hero to find a display's in-plane axes, which a positive per-axis scale
- * and offset leave unchanged.
+ * Untextured materials need no transform: their UVs only give a display's
+ * in-plane axes, which a positive per-axis scale and offset leave unchanged.
  */
 export function normalizeTexcoords(document) {
   const transformExtension = document.createExtension(KHRTextureTransform);

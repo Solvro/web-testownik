@@ -71,10 +71,7 @@ const listQuestionsSchema = z.object({
     .describe("Liczba pasujących pytań do pominięcia przy stronicowaniu"),
 });
 
-/**
- * Bounds on what the tools return. Results become model input on the next
- * inference step; a bound left out is not applied.
- */
+/** Results become model input on the next step; a bound left out is not applied. */
 export interface ChatToolLimits {
   /** Questions on a `list_questions` page when the model asks for no count. */
   defaultListQuestions: number;

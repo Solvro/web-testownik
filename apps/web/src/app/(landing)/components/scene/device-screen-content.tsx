@@ -16,33 +16,18 @@ import { cn } from "@/lib/utils";
 import { useSupportsHtmlInCanvas } from "../hooks/use-html-in-canvas";
 import { LaptopMenuBar } from "./laptop-menu-bar";
 
-/**
- * What each desktop device screen renders inside its iframe (see
- * `screen-frame-document.tsx`). The frame is the screen, at its native size,
- * so these lay out as the app does on a device that wide.
- */
-
 const TabletLiveCharts = lazy(async () => {
   const loaded = await import("./tablet-live-charts");
   return { default: loaded.TabletLiveCharts };
 });
 
 /**
- * The magnifier over the iPad and the iPhone. html-in-canvas only reaches
- * into its own document, which is why it lives in the frame rather than
- * around it, and why the pointer it follows is the frame's own, flat one.
+ * The magnifier over the iPad and the iPhone. It lives inside the frame
+ * because html-in-canvas only reaches into its own document.
  *
- * Glass runs its own WebGL loop per instance. The magnifier is only needed once
- * the visitor is actually pointing at a device screen, so the effect stays off
- * until first contact and then remains mounted for that surface. That also
- * keeps it out of the loading covers, which are captured untouched.
- * (Shrinking the hero Bubble on hover is the page's job; the frame element
- * sees the same enter and leave.)
- *
- * Without html-in-canvas (Safari, Firefox, Chrome without the origin trial)
- * or when WebGL2 fails, there is no lens at all: the screen renders its
- * children directly, never through Glass. The server and the hydration pass
- * render that plain screen too.
+ * Each Glass runs its own WebGL loop, so it mounts on first pointer contact
+ * (which also keeps it out of the captured loading covers). Without
+ * html-in-canvas or WebGL2 the screen renders its children directly.
  */
 function GlassScreen({
   children,
@@ -88,17 +73,13 @@ function GlassScreen({
 }
 
 /**
- * The box html-in-canvas captures, declared as an embedded surface so the
- * screen's menus and dialogs portal into it instead of the frame's body, and
- * trap focus there without locking the page's scroll.
- * Outside the captured subtree an open menu was invisible to the lens and,
- * being outside the content element, counted as the pointer leaving it, so
- * the lens vanished the moment a menu or dialog opened. `contain: paint`
- * makes this box the containing block for the dialogs' fixed backdrops.
+ * The box html-in-canvas captures, declared as an embedded surface so menus
+ * and dialogs portal inside it. Outside it they are invisible to the lens and
+ * count as the pointer leaving. `contain: paint` makes it the containing
+ * block for the dialogs' fixed backdrops.
  *
- * Glass renders its children twice while the first capture is pending (the
- * live copy and a visible stand-in), so the surface state lives here, per
- * copy, rather than in GlassScreen.
+ * Glass renders its children twice while the first capture is pending, so
+ * the surface state lives here, per copy.
  */
 function CapturedSurface({
   children,
@@ -130,7 +111,6 @@ function CapturedSurface({
 }
 
 export interface DeviceQuizControls {
-  /** The quiz the laptop and the iPhone both show. */
   session: PreviewQuizSession;
 }
 

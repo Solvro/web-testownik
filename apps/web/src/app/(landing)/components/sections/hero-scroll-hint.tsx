@@ -7,11 +7,7 @@ const progressBarStyle: CSSProperties = {
   transform: `scaleX(${HERO_PROGRESS})`,
 };
 
-/**
- * "Przewiń ... otwórz Testownik" along the bottom of the desktop stage, with
- * a bar that fills as the laptop opens. The static hero renders it too, at
- * zero, so it is there before the stage chunk arrives.
- */
+/** The static hero renders it too, at zero, before the stage chunk arrives. */
 export function HeroScrollHint({
   isStatic = false,
 }: {

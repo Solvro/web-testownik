@@ -34,7 +34,6 @@ export interface ChatRequest {
   trigger: "submit-message" | "regenerate-message";
   messageId: string | undefined;
   requestMetadata: unknown;
-  /** Extra body passed to `sendMessage`. */
   body: object | undefined;
   /** The question each user turn in `messages` was asked about. */
   questionContextSnapshots: QuestionContextSnapshot[];
@@ -51,7 +50,6 @@ export interface ChatRequest {
 /** Where the chat sends its requests and what it sends. */
 export interface ChatRuntimeTransport {
   api: string;
-  /** The JSON body of one request. */
   prepareBody: (request: ChatRequest) => object;
   /**
    * Every response, before the chat reads it. A returned response is read
@@ -65,7 +63,6 @@ export interface ChatRuntimeTransport {
   reportsUsage: boolean;
 }
 
-/** The app's assistant at `/ai/chat`. */
 const APP_CHAT_TRANSPORT: ChatRuntimeTransport = {
   api: "/ai/chat",
   prepareBody: (request) => ({
@@ -120,9 +117,8 @@ interface ChatRuntimeProps {
   canEdit: boolean;
   selectedModel?: string | null;
   children: (runtime: ChatRuntimeValue) => ReactNode;
-  /** Called with the body of a quota-exceeded response. */
   onQuotaExceeded?: (body: QuotaExceededBody) => void;
-  /** Called with the model a reply came from, read from its headers. */
+  /** The model is read from the reply's headers. */
   onModelResolved?: (
     model: string,
     quotaTier: string | null,

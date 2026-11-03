@@ -3,8 +3,7 @@ export const CONTEXT_RESTORE_MS = 15_000;
 
 /**
  * Creation failures are terminal for one scene; a desktop remount may retry.
- * A failed model download or chunk import says nothing about WebGL, so it
- * never spends that budget and the next mount simply tries again.
+ * A failed download or import says nothing about WebGL and spends no budget.
  */
 export type WebGLAvailability =
   | "available"

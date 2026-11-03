@@ -29,11 +29,8 @@ const FOCUSABLE =
   'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
 
 /**
- * Keeps the live preview out of the page's Tab order while leaving it usable
- * by pointer and touch: every focusable descendant, including ones the quiz
- * mounts or re-renders later, gets `tabindex="-1"`. Those stay focusable on
- * click, so a tapped control behaves normally; Tab simply never lands inside.
- * A React 19 ref callback, so the observer goes away with the element.
+ * Keeps the live preview out of the Tab order but usable by pointer and touch:
+ * every focusable descendant, including later ones, gets `tabindex="-1"`.
  */
 function skipSequentialFocus(
   root: HTMLElement | null,
@@ -62,12 +59,9 @@ function skipSequentialFocus(
 }
 
 /*
- * A still of the quiz's first screen while the page hydrates and the quiz
- * chunk loads; the live surface paints over it. Captured screen-only at 2x
- * the 390 × 841 screen (no island, no clock), so it maps onto it pixel for
- * pixel. In the clock's place, laid out on the status bar's own grid, a
- * spinner says the phone is still starting up. A hidden element never fetches
- * its background, so desktop does not download the still.
+ * A still of the quiz's first screen, captured at 2x the 390 × 841 screen,
+ * shown until the live surface paints over it. A spinner stands in for the
+ * clock. Hidden on desktop, where it is never fetched.
  */
 const blankScreen = (
   <div
@@ -83,15 +77,11 @@ const blankScreen = (
 );
 
 /**
- * The hero visual below `lg`: an iPhone drawn entirely in CSS (the antenna
- * lines, sensors and volume buttons are the `.lp-iphone-*` pseudo-elements in
- * landing.css) running the same live quiz as the desktop stage. No image,
- * no model, no WebGL. The phone holds still on scroll; only the chips around
- * it drift (`.lp-hero-chip`).
+ * The hero visual below `lg`: an iPhone drawn in CSS (details are the
+ * `.lp-iphone-*` pseudo-elements in landing.css) running the live quiz.
  *
  * The frame is a fixed 428 × 879 px device scaled per breakpoint, so the
- * screen keeps the 390 px logical width the quiz surface is designed for —
- * the same width the desktop iPhone renders at.
+ * screen keeps the 390 px width the quiz surface is designed for.
  */
 export function HeroPhone({
   className,
@@ -138,7 +128,6 @@ export function HeroPhone({
             </div>
           </div>
           <div aria-hidden="true" className="lp-iphone-stripe" />
-          {/* Dynamic Island. */}
           <div
             aria-hidden="true"
             className="absolute top-[29px] left-1/2 -ml-[60px] h-[35px] w-[120px] rounded-[20px] bg-[#010101]"

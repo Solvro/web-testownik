@@ -479,10 +479,8 @@ function createBubble(
         ? 1
         : 1 - Math.exp(-delta * (3 + follow * 30));
     const kScale = reducedMotion ? 1 : 1 - Math.exp(-delta * 10);
-    // Radius and trail length share one damped morph. Keeping these values
-    // inside the renderer avoids recreating the WebGL instance, while the
-    // fractional final trail sphere fades in/out instead of popping whenever
-    // the segment count crosses an integer.
+    // Morphed inside the renderer so changes never recreate the WebGL
+    // instance; the fractional last trail sphere fades instead of popping.
     const kMorph = reducedMotion ? 1 : 1 - Math.exp(-delta * 11);
 
     headX += (targetX - headX) * kHead;
@@ -576,10 +574,8 @@ function createBubble(
   }
 
   function onPointerLeave(event?: PointerEvent) {
-    // pointerout bubbles, so moving onto any button or link fires it for the
-    // element being left and it reaches the window listener. Only a null
-    // relatedTarget means the pointer genuinely left the document; anything
-    // else is just a hop between elements and must not dismiss the droplet.
+    // pointerout bubbles from every element left; only a null relatedTarget
+    // means the pointer left the document.
     if (event != null && event.relatedTarget !== null) {
       return;
     }
@@ -602,13 +598,8 @@ function createBubble(
     wakeIfNeeded();
   }
 
-  /*
-   * Tracked on the window rather than on the captured subtree. The hero renders
-   * the device mock-ups in a sibling layer above this one, so listening on the
-   * content element meant the bubble froze the moment the pointer crossed the
-   * laptop or a mock-up. pointerBounds is viewport-relative, so the maths is
-   * unchanged.
-   */
+  // On the window: the hero's device layer sits above the captured subtree, so
+  // the content element would miss the pointer over the devices.
   window.addEventListener("pointerenter", onPointerEnter, { passive: true });
   window.addEventListener("pointermove", onPointerMove, { passive: true });
   window.addEventListener("pointerout", onPointerLeave, { passive: true });
@@ -675,17 +666,15 @@ export interface BubbleProps extends BubbleOptions {
   children: ReactNode;
   className?: string;
   /**
-   * Use Chrome's experimental html-in-canvas capture path. The WebGL bubble
-   * still renders when this is false, but the page remains ordinary live DOM.
-   * This is useful for above-the-fold content where swapping the entire
-   * subtree after hydration would create a visible blank frame.
+   * When false the bubble still renders but the content stays live DOM,
+   * avoiding a blank frame when above-the-fold content is swapped after
+   * hydration.
    */
   captureHtml?: boolean;
   enabled?: boolean;
   style?: React.CSSProperties;
   /** Called when WebGL2 cannot be created or is lost; nothing renders. */
   onUnavailable?: () => void;
-  /** Called after each frame is drawn into the output canvas. */
   onRender?: (output: HTMLCanvasElement) => void;
 }
 

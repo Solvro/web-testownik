@@ -4,12 +4,7 @@ import { useLayoutEffect } from "react";
 
 import { laptopScreenRect } from "./laptop-framing";
 
-/**
- * Lays the closed-pose cover over exactly the box the camera solver gives
- * the laptop in a container of this size. `DEVICE_COVER_CLASS` holds the
- * server-rendered guess; this replaces it with the solved rectangle, which
- * also depends on the container's aspect (narrow stages are width-limited).
- */
+/** Replaces `DEVICE_COVER_CLASS`'s server-rendered guess with the solved box. */
 export function placeDeviceCover(
   cover: HTMLElement,
   width: number,
@@ -22,11 +17,6 @@ export function placeDeviceCover(
   cover.style.height = `${rect.height.toFixed(2)}px`;
 }
 
-/**
- * Keeps a cover placed in its parent across resizes. The static hero uses it
- * so its placeholder agrees with the stack's own cover before the stage has
- * even been requested.
- */
 export function useDeviceCoverPlacement(
   coverReference: React.RefObject<HTMLElement | null>,
 ): void {

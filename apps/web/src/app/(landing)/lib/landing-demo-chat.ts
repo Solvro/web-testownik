@@ -4,25 +4,18 @@ import type { UIMessage } from "ai";
 import type { QuestionContextSnapshot } from "@/lib/ai/chat-messages";
 import { isQuestion } from "@/lib/ai/request-validation";
 
-/**
- * Shared contract for the landing page's demo chat
- * (`/ai/landing-demo/chat`): the app's assistant, tools included, on the
- * showcase's sample quiz. The quiz lives in the visitor's browser, so its
- * questions come with every request. Kept free of server-only imports so the
- * client trims its requests with the same limits the server enforces.
- */
+// Free of server-only imports, so the client trims its requests with the same
+// limits the server enforces.
 
 export const LANDING_DEMO_CHAT_ENDPOINT = "/ai/landing-demo/chat";
 
 export const LANDING_DEMO_CHAT_LIMITS = {
   /** Messages of history sent with one request; older ones are dropped. */
   maxMessages: 20,
-  /** Questions of the quiz sent as context. */
   maxQuestions: 60,
   /** Characters per text part, by role; longer ones are cut. */
   maxUserTextLength: 1000,
   maxAssistantTextLength: 4000,
-  /** Parts per message. */
   maxParts: 30,
   maxQuestionTextLength: 2000,
   maxAnswerTextLength: 500,
@@ -44,7 +37,6 @@ export const LANDING_DEMO_CHAT_TOOL_LIMITS = {
   maxListPreviewLength: 180,
 } as const;
 
-/** The tools whose calls can come back in the history. */
 const TOOL_PART_TYPES = new Set([
   "tool-generate_practice_questions",
   "tool-list_questions",
@@ -107,10 +99,7 @@ function trimText(message: UIMessage): UIMessage {
   };
 }
 
-/**
- * The recent history the demo sends: the last `maxMessages`, starting on a
- * user turn, with long texts cut.
- */
+/** The last `maxMessages`, starting on a user turn, with long texts cut. */
 export function trimLandingDemoChatHistory(messages: UIMessage[]): UIMessage[] {
   const recent = messages.slice(-LANDING_DEMO_CHAT_LIMITS.maxMessages);
   const firstUser = recent.findIndex((message) => message.role === "user");
@@ -137,11 +126,7 @@ function trimQuestion(question: Question): Question {
   };
 }
 
-/**
- * Accepts `{ messages, question?, questions?, questionContextSnapshots? }`
- * within the limits above, ending on a user turn. Anything else is rejected
- * so the public endpoint stays cheap.
- */
+/** Anything outside the limits above is rejected, so the public endpoint stays cheap. */
 export function parseLandingDemoChatRequest(
   value: unknown,
 ): LandingDemoChatRequest | null {

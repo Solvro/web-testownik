@@ -19,11 +19,7 @@ const ITEM_LINK_CLASS = cn("pointer-events-auto rounded-sm", FOCUS_RING);
 const LIST_CLASS =
   "mt-4 list-disc space-y-2.5 pl-5 text-[1.25rem] leading-[1.22] marker:text-[#80722c]";
 
-/**
- * Before the blog has posts (or when the request fails): say so, and point
- * at the pencil where drawing is on (mouse and pen, as in `UpdateNote`).
- * CSS picks the line, so it matches the server render.
- */
+/** CSS picks the line for pointer type, so it matches the server render. */
 function EmptyNote(): React.JSX.Element {
   return (
     <p className="mt-4 text-[1.25rem] leading-[1.3]">
@@ -73,11 +69,9 @@ const PENCIL_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
 )}") 2 22, crosshair`;
 
 /**
- * Pen strokes from a mouse, pen or finger, just for fun. It lives on the
- * sheet itself, under the text, so the ink curls away with the paper. Nothing
- * is kept: a resize or reload wipes it. Every coalesced sample goes into the
- * stroke, so fast scribbles stay smooth, and offsets are in the note's own
- * coordinates, so the tilt does not skew the line.
+ * Scribbling on the note. It lives under the text so the ink curls away with
+ * the paper; offsets are in the note's own coordinates so the tilt does not
+ * skew the line. Nothing is kept.
  */
 function InkCanvas({
   canvasReference,
@@ -152,7 +146,6 @@ function InkCanvas({
         event.currentTarget.setPointerCapture(event.pointerId);
         const { offsetX: x, offsetY: y } = event.nativeEvent;
         strokeReference.current = { x, y };
-        // A tap leaves a dot.
         const context = event.currentTarget.getContext("2d");
         context?.beginPath();
         context?.arc(x, y, 1.2, 0, Math.PI * 2);
@@ -166,7 +159,6 @@ function InkCanvas({
   );
 }
 
-/** The sticky note under the story heading: the latest blog posts. */
 export function UpdateNote({
   posts,
 }: {

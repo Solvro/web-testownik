@@ -13,9 +13,8 @@ import type { CaptureRequest } from "./capture-request";
 const CAPTURE_DOCUMENT_CLASS = "device-capture-document";
 
 /**
- * Renders the device stack alone, on a known background, for
- * `scripts/capture-device-stack.mjs`. Never reachable outside development —
- * see `parseCaptureRequest`.
+ * The device stack alone, for `scripts/capture-device-stack.mjs`. Development
+ * only; see `parseCaptureRequest`.
  */
 export function DeviceCapture({
   request,
@@ -39,7 +38,6 @@ export function DeviceCapture({
     };
   }, [theme]);
 
-  // Poses the stack as if the hero had been scrolled this far.
   useLayoutEffect(() => {
     if (progress !== undefined) {
       publishHeroProgress(progress);

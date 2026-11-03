@@ -19,10 +19,7 @@ const landingSectionVariants = cva(
   },
 );
 
-/**
- * Shared landing measure and vertical rhythm. Like every landing section it is
- * an in-page link target, so it takes focus programmatically (no ring).
- */
+/** An in-page link target, so it takes focus programmatically (no ring). */
 export function LandingSection({
   children,
   className,

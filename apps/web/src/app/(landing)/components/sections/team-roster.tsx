@@ -29,21 +29,15 @@ const COMMUNITY_MIN_HEIGHT =
 const CREDIT_COLUMNS = "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 /*
- * Credit lists: a snap-scrolling row that bleeds to the screen edges on
- * phones, a grid from `sm` up. Every team uses the same column count at each
- * width, so avatars and names line up down the masthead. On phones two
- * entries fit with a slice of the third past the edge, so a row reads as
- * scrollable rather than complete; entries stack avatar over name there so
- * the role pills still fit. The vertical padding keeps an
- * entry's hover box (which extends 6 px past its content) and its focus ring
- * (2 px, offset 2 px) inside the scroller's clip.
+ * On phones a snap-scrolling row that shows a slice of the third entry, so it
+ * reads as scrollable. The vertical padding keeps an entry's hover box and
+ * focus ring inside the scroller's clip.
  */
 const CREDIT_LIST_CLASS =
   "-mx-4 -my-2.5 flex snap-x snap-mandatory gap-x-4 gap-y-5 overflow-x-auto overscroll-x-contain scroll-px-4 px-4 py-2.5 [scrollbar-width:none] sm:m-0 sm:grid sm:snap-none sm:gap-x-6 sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden";
 const CREDIT_ITEM_CLASS =
   "min-w-0 max-sm:w-[calc(50vw-3.1rem)] max-sm:shrink-0 max-sm:snap-start";
 
-/** Masthead order: who decides, who builds, who makes it look and sound good. */
 const TEAM_ORDER: readonly ProjectTeam[] = [
   "Product",
   "Frontend",
@@ -100,7 +94,6 @@ function formatCommitCount(count: number): string {
 
 type AvatarSize = 36 | 44;
 
-/** Twice the rendered size, for dense displays. */
 function avatarPixels(size: AvatarSize): string {
   return String(size * 2);
 }
@@ -159,7 +152,6 @@ function githubFor(
     : githubByLogin?.get(member.github.toLowerCase());
 }
 
-/** The photo, or neutral initials when there is none or it fails to load. */
 function Avatar({
   imageUrl,
   name,
@@ -207,7 +199,6 @@ function Avatar({
   );
 }
 
-/** A link when there is somewhere to go, a plain block otherwise. */
 function EntryShell({
   href,
   label,
@@ -363,7 +354,6 @@ function ContributorEntry({
   );
 }
 
-/** One masthead line: the label column on the left, credits on the right. */
 function CreditRow({
   label,
   labelledBy,

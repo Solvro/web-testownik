@@ -1,16 +1,11 @@
 /**
- * The hero's exit into the page below. The grid runs to the bottom of the
- * sticky stage and used to stop on a hard line against the next section; this
- * settles its lines and the bubbles into the page background over the last
- * stretch instead. A gradient rather than a backdrop blur: the stage repaints
- * on every scrolled frame, and a filter pass there would cost more than the
- * softer edge is worth.
+ * Fades the hero grid into the page background at the bottom of the stage. A
+ * gradient rather than a backdrop blur, because the stage repaints every
+ * scrolled frame.
  *
- * It fades the grid only, never what sits on it. Render it inside the element
- * that paints the grid (`.lp-hero-grid`, or the Bubble's content box), which is
- * an isolated stacking context: at `-z-1` it paints above that element's own
- * background and beneath every descendant, so the copy, the scroll hint, the
- * "Poznaj produkt" link, the phone and the devices all stay crisp.
+ * Render it inside the element that paints the grid (`.lp-hero-grid` or the
+ * Bubble's content box), an isolated stacking context: at `-z-1` it paints over
+ * that element's background and under all of its content.
  */
 export function HeroFade(): React.JSX.Element {
   return (

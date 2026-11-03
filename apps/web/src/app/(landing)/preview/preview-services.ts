@@ -25,24 +25,13 @@ import {
   PREVIEW_TIMELINE_ALL,
 } from "./preview-fixtures";
 
-/**
- * Services for the device previews, bound to their query cache (see
- * `bindServices`): the real app components inside a screen talk to these
- * instead of the API. Reads answer from fixtures, writes resolve without
- * persisting anything, and the clipboard is left alone. Every method the
- * previews do not implement rejects, so a component that grows a new request
- * fails inside the screen instead of reaching the network, the cookies or
- * the token refresh.
- */
+// Reads answer from fixtures and writes persist nothing. Methods the previews
+// do not implement reject, so a new request fails inside the screen instead of
+// reaching the network, the cookies or the token refresh.
 
-/** Something a preview did instead of the real action, shown in the screen. */
 export type PreviewNotify = (message: string) => void;
 
-/**
- * The preview quiz's questions, which live in its session (see
- * `preview-quiz-machine`). Question writes go here, so what the assistant
- * saves or edits shows up in the quiz.
- */
+/** Question writes go to the session, so the assistant's edits show in the quiz. */
 export interface PreviewQuizEditor {
   questions: () => Question[];
   add: (questions: Question[]) => void;
@@ -51,7 +40,6 @@ export interface PreviewQuizEditor {
 
 type CreateQuestionData = Parameters<QuizService["createQuestion"]>[1];
 
-/** What the API would answer for a created question, numbered after the rest. */
 function toCreatedQuestion(data: CreateQuestionData, order: number): Question {
   const id = `preview-added-${crypto.randomUUID()}`;
   return {
@@ -104,7 +92,7 @@ function applyQuestionUpdate(
   };
 }
 
-/** Enough of a round trip that loading states show the way they do in the app. */
+/** Enough of a round trip that loading states show as in the app. */
 const LATENCY_MS = 80;
 
 class PreviewOnlyError extends Error {
@@ -120,7 +108,6 @@ async function roundTrip(): Promise<void> {
   });
 }
 
-/** Answers like an API call: asynchronously, after a short delay. */
 function reply<Arguments extends unknown[], Result>(
   answer: (...arguments_: Arguments) => Result,
 ): (...arguments_: Arguments) => Promise<Result> {
@@ -154,7 +141,7 @@ const sharedWith: SharedQuiz[] = PREVIEW_SHARES.map((share) => ({
   access_level: AccessLevel.SHARED,
 }));
 
-/** Questions kept by the services themselves, for a cache without a session. */
+/** For a cache without a session. */
 function createLocalEditor(): PreviewQuizEditor {
   let questions = PREVIEW_QUIZ.questions;
   return {
@@ -174,11 +161,7 @@ export function createPreviewServices(
   notify: PreviewNotify,
   editor: PreviewQuizEditor = createLocalEditor(),
 ): AppServices {
-  /**
-   * Adds what is not in the quiz yet. A chat card forgets that it saved its
-   * questions when the chat remounts, so saving them again returns the ones
-   * already there instead of duplicating them.
-   */
+  /** A remounted chat card may save its questions again; they are not duplicated. */
   const createQuestions = (questions: CreateQuestionData[]): Question[] => {
     const current = editor.questions();
     const added: Question[] = [];

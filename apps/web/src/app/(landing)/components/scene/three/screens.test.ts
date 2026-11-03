@@ -9,12 +9,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { SCREEN_PLACEMENT } from "./screens";
 import type { ScreenPlacement } from "./screens";
 
-/**
- * Guards the baked screen placements against the model they were measured
- * from. Each display mesh is re-measured in the plane the baked rotation
- * describes; if `device-stack.glb` is regenerated with different geometry,
- * the placement, scale or host height stops matching and this fails.
- */
+// Fails when `device-stack.glb` is regenerated with geometry the baked screen
+// placements no longer match.
 
 const MODEL_PATH = path.resolve(
   import.meta.dirname,

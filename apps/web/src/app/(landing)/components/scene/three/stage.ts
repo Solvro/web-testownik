@@ -31,12 +31,7 @@ export interface Stage {
   dispose: () => void;
 }
 
-/**
- * The WebGL scene and the CSS3D layer that renders the live UI, driven by one
- * shared camera. The DOM screens are real objects in this scene graph rather
- * than flat overlays, which is what makes them inherit the hinge rotation and
- * the perspective for free.
- */
+/** The WebGL scene and the CSS3D layer for the live UI, sharing one camera. */
 export function createStage({
   canvas,
   container,
@@ -48,7 +43,7 @@ export function createStage({
 }: {
   canvas: HTMLCanvasElement;
   container: HTMLElement;
-  /** Forced device pixel ratio, used by the capture harness. */
+  /** For the capture harness. */
   pixelRatio?: number;
   screenLayerClassName: string;
   onUnavailable: () => void;

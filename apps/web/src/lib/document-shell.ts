@@ -1,11 +1,8 @@
 /**
- * Which document shell the root layout renders.
- *
- * The landing page's device screens (`/landing-screen/*`) are iframes of the
- * landing itself and must not carry the app around them: no navbar, footer,
- * auth, analytics or surveys. A layout cannot see the pathname, so `proxy.ts`
- * marks those requests with this header (and strips it from every other
- * request, so it cannot be forged into the app's routes).
+ * The landing's device screens (`/landing-screen/*`) are iframes and must not
+ * carry the app's navbar, footer, auth, analytics or surveys. A layout cannot
+ * see the pathname, so `proxy.ts` sets this header on those requests and strips
+ * it from every other one, so it cannot be forged.
  */
 export const DOCUMENT_SHELL_HEADER = "x-testownik-document-shell";
 

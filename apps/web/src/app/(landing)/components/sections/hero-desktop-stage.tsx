@@ -20,14 +20,10 @@ const openLogoStyle: CSSProperties = {
 };
 
 /**
- * Everything the hero only does at `lg` and above: the CanvasUI Bubble, the
- * WebGL device scene and everything that reads the scroll progress (which
- * `Hero` itself publishes). `Hero` loads this
- * module lazily once `DESKTOP_STAGE_QUERY` matches, so smaller viewports never
- * download it.
- *
- * `children` is the shared hero copy and header. It renders inside the Bubble
- * so the droplet refracts it.
+ * The hero at `lg` and above: the Bubble, the WebGL device scene and what reads
+ * the scroll progress. Loaded lazily, so smaller viewports never download it.
+ * `children` (the shared copy and header) render inside the Bubble so the
+ * droplet refracts them.
  */
 export function HeroDesktopStage({
   children,
@@ -161,11 +157,9 @@ export function HeroDesktopStage({
       />
 
       {/*
-       * Outside the Bubble on purpose. The Bubble refracts through
-       * html-in-canvas, which cannot host a nested WebGL canvas and would
-       * rasterise the device screens; as a sibling above it the whole scene
-       * stays sharp and the droplet passes underneath. Keep it mounted while
-       * hidden so its context-restoration listener can return to the live hero.
+       * Outside the Bubble: html-in-canvas cannot host a nested WebGL canvas
+       * and would rasterise the device screens. Kept mounted while hidden so
+       * its context-restoration listener can return to the live hero.
        */}
       <div
         aria-hidden={isStatic ? true : undefined}

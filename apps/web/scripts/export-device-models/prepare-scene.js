@@ -1,16 +1,9 @@
 /**
- * Runs inside headless Chrome (see `export-device-models.mjs`).
- *
- * Loads Apple's three USDZ files with three's `USDLoader`, bakes in every
- * fix-up the hero used to perform at runtime, and exports one binary glTF whose
- * interesting nodes carry stable names:
- *
- *   laptop ─ … ─ laptop-hinge ─ laptop-lid ─ … ─ laptop-display
- *   tablet ─ … ─ tablet-display
- *   phone  ─ … ─ phone-display
- *
- * The browser is used rather than Node because USDLoader decodes textures
- * through `Image` and GLTFExporter re-encodes them through a canvas.
+ * Runs inside headless Chrome (see `export-device-models.mjs`): bakes the
+ * hero's fix-ups into Apple's USDZ files and exports one glTF with the node
+ * names in `public/models/README.md`. A browser rather than Node because
+ * USDLoader decodes textures through `Image` and GLTFExporter re-encodes them
+ * through a canvas.
  */
 import { Group, Vector3 } from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
@@ -27,13 +20,10 @@ const LAPTOP_GLASS = 0x03_04_05;
 const SATELLITE_GLASS = 0x02_03_05;
 
 /**
- * The hero's iPhone is navy, not black. Apple's file ships the shell in Cosmic
- * Orange, and until commit a49fa98d the hero re-toned every orange material
- * to this navy at runtime (`retoneShell`, roughness raised to at least 0.32).
- * The trimmed `iphone.usdz` instead retints the anodised shell to near-black
- * `#020305` at roughness 0.5 and drops its roughness map, so with no
- * environment map the frame rendered pure black. The export restores the old
- * tone on both: the trim's near-black shell and the orange parts it left.
+ * The hero's iPhone is navy. The trimmed `iphone.usdz` has a near-black
+ * `#020305` shell without its roughness map, which renders pure black with no
+ * environment map, and leaves some of Apple's Cosmic Orange parts; both are
+ * re-toned.
  */
 const PHONE_SHELL_COLOR = 0x22_35_5d;
 const TRIMMED_SHELL_COLOR = 0x02_03_05;
@@ -181,9 +171,8 @@ const displayNames = new Set([
 ]);
 
 /**
- * Drops vertex data nothing reads: no material samples the second UV set, and
- * untextured parts need no UVs at all. The displays keep theirs — the hero
- * derives each screen's in-plane axes from them.
+ * No material samples the second UV set, and untextured parts need no UVs.
+ * The displays keep theirs: they give each screen's in-plane axes.
  */
 function stripUnusedAttributes(root) {
   root.traverse((object) => {

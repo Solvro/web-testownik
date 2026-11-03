@@ -4,14 +4,9 @@ import "server-only";
 
 import { API_URL } from "@/lib/api";
 
-/** A post as the update note lists it. */
 export type LandingBlogPost = Pick<BlogPostSummary, "title" | "slug">;
 
-/**
- * The latest published blog posts, for the update note. Never throws: on any
- * failure, or before anything is published, the note shows placeholder
- * bullets instead.
- */
+/** Never throws; on failure the update note shows its empty state. */
 export async function getLatestBlogPostsSSR(
   limit = 3,
 ): Promise<LandingBlogPost[]> {

@@ -3,7 +3,7 @@ type SatelliteHoverListener = (hovered: boolean) => void;
 const listeners = new Set<SatelliteHoverListener>();
 let isSatelliteHovered = false;
 
-/** Shrinks the hero Bubble while a device screen is hovered — no React state. */
+/** Shrinks the hero Bubble while a device screen is hovered, without React state. */
 export function setSatelliteHovered(hovered: boolean): void {
   if (hovered === isSatelliteHovered) {
     return;

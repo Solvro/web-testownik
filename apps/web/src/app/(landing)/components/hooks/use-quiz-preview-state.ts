@@ -38,17 +38,9 @@ const SETTINGS_HASH = hashKey(userSettingsQueryKey);
 type QuizPreviewOptions = Parameters<typeof createQuizPreviewState>[0];
 
 /**
- * The quiz session behind the device previews (see `preview-quiz-machine`).
- *
- * The mobile hero's CSS phone owns one on its own. On the desktop stage the
- * laptop and the iPhone are separate iframes, each with its own session; give
- * both the same `syncChannel` and every action and settings change is
- * forwarded to the other (see `preview-quiz-sync`), so an answer on either
- * shows on both.
- *
- * Question writes through the session's services (the assistant saving or
- * editing a question) become actions too, so they reach the quiz and, with a
- * `syncChannel`, the other screen.
+ * The quiz session behind a device preview. Sessions sharing a `syncChannel`
+ * forward every action and settings change to each other, so the desktop
+ * stage's laptop and iPhone iframes stay in step.
  */
 export function useQuizPreviewState({
   syncChannel,
@@ -57,7 +49,7 @@ export function useQuizPreviewState({
   studyTimeSeconds = PREVIEW_STUDY_TIME_SECONDS,
 }: {
   syncChannel?: string;
-  /** The quiz the session opens on; read once. */
+  /** Read once. */
   quiz?: QuizPreviewOptions;
   studyTimeSeconds?: number;
 } = {}): PreviewQuizSession {

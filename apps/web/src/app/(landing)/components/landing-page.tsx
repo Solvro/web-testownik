@@ -21,13 +21,7 @@ import { Timeline } from "./sections/timeline";
 import { LandingTableOfContents } from "./sections/toc/landing-table-of-contents";
 import { FOCUS_RING } from "./ui/focus";
 
-/**
- * The marketing page shown to anonymous visitors at `/`.
- *
- * This component is composition only. Copy lives in `landing-content.ts`, the
- * scroll choreography in `hooks/`, the 3D hero in `scene/`, and the handful of
- * rules that cannot be utilities in `landing.css`.
- */
+/** The marketing page shown to anonymous visitors at `/`. */
 export function LandingPage({
   blogPosts,
   contributors,
@@ -45,10 +39,7 @@ export function LandingPage({
   // Hover on the real header, mirrored into the copy the Bubble refracts.
   const [navHover, setNavHover] = useState<NavHover>(NAV_HOVER_NONE);
 
-  // The header shrinks as the hero's stage leaves the viewport. Where
-  // scroll-driven animations exist landing.css does that from the hero's
-  // view timeline; this handler is the fallback for the rest. It reads one
-  // rect per scroll and writes only when the state flips.
+  // Fallback for the header shrink where scroll-driven animations are missing.
   useEffect(() => {
     const hero = heroReference.current;
     const stage = hero?.querySelector("[data-hero-stage]");
@@ -83,7 +74,6 @@ export function LandingPage({
       data-landing-page
       className={cn(
         "group/landing bg-background text-foreground w-full min-w-0 overflow-clip",
-        // Tapping a control on the page should not flash the platform highlight.
         "[&_a]:[-webkit-tap-highlight-color:transparent] [&_button]:[-webkit-tap-highlight-color:transparent]",
       )}
     >

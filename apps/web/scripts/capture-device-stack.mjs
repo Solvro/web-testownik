@@ -2,15 +2,12 @@ import { chromium } from "playwright-core";
 import sharp from "sharp";
 
 const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:3000";
-// Keep the still's specular highlights and anti-aliasing identical to the live
-// Three.js scene. The production renderer intentionally caps at 1.35× in
-// `scene/three/stage.ts`; capturing at 4× made the MacBook's thin metal edges
-// look brighter during the loading-cover cross-fade.
+// The live renderer's cap (`MAX_PIXEL_RATIO` in `scene/three/stage.ts`), so
+// highlights and anti-aliasing match through the cover's cross-fade.
 const captureDpr = 1.35;
 const openPose = process.env.CAPTURE_POSE === "open";
-// Decimal byte budget for both poses: <= 60 KB per file. Keep alpha lossless
-// and preserve the capture geometry for the live handover. Lossless or
-// near-lossless RGB makes the closed covers several times too large.
+// At most 60 KB per file. Alpha stays lossless; lossless RGB would be far over
+// budget.
 const webpOptions = {
   alphaQuality: 100,
   effort: 6,
@@ -80,8 +77,7 @@ async function captureTheme(page, theme) {
     await document.fonts.ready;
   });
 
-  // Let the loading cover finish fading and give both renderers two complete
-  // frames at their final closed pose.
+  // Let the cover finish fading and both renderers settle on the final pose.
   await page.waitForTimeout(openPose ? 2600 : 900);
   await page.evaluate(
     () =>
@@ -152,11 +148,8 @@ async function captureTheme(page, theme) {
 }
 
 /**
- * `DeviceStack` stretches the cover over the box `laptopScreenRect` solves for
- * the stage, so the still must be exactly that box of the live render: no
- * trim, no resize. The camera distance is bound by the frame's height at every
- * desktop aspect, so the render is the same picture at every viewport, only
- * scaled with that box.
+ * `DeviceStack` stretches the cover over the box `laptopScreenRect` solves, so
+ * the still must be exactly that box of the live render: no trim, no resize.
  */
 async function coverCrop(page, dpr, sourceMetadata) {
   const box = await page.locator("[data-device-cover]").boundingBox();

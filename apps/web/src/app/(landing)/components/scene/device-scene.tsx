@@ -21,9 +21,8 @@ function InteractiveDeviceStack({
   onRestored?: () => void;
   onReady?: () => void;
 }): React.JSX.Element {
-  // The laptop and the iPhone share their quiz over this channel. The
-  // frames only mount once the stack has attached its hosts, which is
-  // client-side, so a random name cannot cause a hydration mismatch.
+  // The frames mount client-side only, so a random name cannot cause a
+  // hydration mismatch.
   const channelReference = useRef<string | null>(null);
   channelReference.current ??= createScreenChannelName();
   const channel = channelReference.current;
@@ -48,10 +47,6 @@ function InteractiveDeviceStack({
   );
 }
 
-/**
- * The hero's device composition: a MacBook that opens on scroll with an iPad
- * and an iPhone that ride its lid, all three running real Testownik UI.
- */
 export function DeviceScene({
   captureLoadingCover = false,
   captureMode = false,
@@ -80,10 +75,9 @@ export function DeviceScene({
       {captureMode ? null : <DeviceSceneBackdrop isStatic={isStatic} />}
 
       {/*
-       * Deliberately untransformed: a CSS transform or filter on an ancestor of
-       * the CSS3D layer is applied on top of the perspective CSS3DRenderer
-       * derives from the camera, which detaches every screen from its bezel.
-       * All framing lives in the camera instead.
+       * Keep untransformed: a transform or filter on an ancestor of the CSS3D
+       * layer applies on top of CSS3DRenderer's perspective and detaches every
+       * screen from its bezel.
        */}
       <div className="absolute inset-0 z-2 hidden lg:block">
         <InteractiveDeviceStack

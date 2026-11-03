@@ -1,9 +1,6 @@
 import { TEAM_SIZE } from "./team-data";
 
-/**
- * Shared and longer landing copy: the story, the FAQ, the partner section and
- * the links. Short headings and captions stay inline in their sections.
- */
+// Longer landing copy; short headings and captions stay inline in their sections.
 
 export interface TimelineEntry {
   date: string;
@@ -15,7 +12,6 @@ export interface TimelineEntry {
 
 export interface FaqEntry {
   question: string;
-  /** One paragraph per item. */
   answer: readonly string[];
 }
 
@@ -148,7 +144,6 @@ export const PERKS_COPY = {
     "Link partnerski. uniperks to zewnętrzna aplikacja, niezwiązana z Testownikiem. Oferty na kartach są poglądowe. Aktualne dane znajdziesz w aplikacji.",
 } as const;
 
-/** The lead paragraph, from already formatted base numbers. */
 export function perksLead({
   students,
   offers,
@@ -163,7 +158,7 @@ export function perksLead({
   return `Dołącz do ponad\u00A0${students} studentów, którzy kupują taniej z\u00A0uniperks. Odkryj ponad\u00A0${offers} zniżek do\u00A0−${maxDiscount}% i\u00A0oszczędzaj nawet ${savings}\u00A0zł rocznie.`;
 }
 
-/** The one-line lead below `lg`, where the stats and the long lead are dropped. */
+/** Below `lg`, where the stats and the long lead are dropped. */
 export function perksShortLead({
   offers,
   maxDiscount,

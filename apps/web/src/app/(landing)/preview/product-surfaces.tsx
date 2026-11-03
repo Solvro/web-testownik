@@ -64,21 +64,10 @@ import {
 import { PreviewRuntime, PreviewSandbox } from "./preview-provider";
 import type { PreviewQuizSession } from "./preview-session";
 
-/**
- * Every surface below mounts the component the app itself renders. Nothing here
- * re-implements product UI: the quiz is `QuestionCard` and `QuizInfoCard`, the
- * menus open the app's own settings, history, share and focus-mode dialogs,
- * the stats view is the stats page's cards, and the grades run through the
- * real `buildCourseView`. What this module supplies is the state those
- * components would normally get from the API (a `PreviewQuizSession`, the
- * preview services in `PreviewRuntime`), the in-screen navigation, and a
- * container and type scale for the device screens.
- */
+// Every surface mounts the app's own components; this module supplies their
+// state, the in-screen navigation and the screens' type scale.
 
-/**
- * How tightly a surface is packed. The smaller screens scale the root font size
- * rather than transforming, which would blur the text.
- */
+/** Smaller screens scale the root font size; a transform would blur the text. */
 type Density = "full" | "phone";
 
 interface PreviewSurfaceProps {
@@ -109,10 +98,6 @@ const QUIZ_DENSITY: Record<Density, string> = {
 /** Where `QuizInfoCard`'s links point, mapped to the screen's own views. */
 type ScreenView = "quiz" | "stats";
 
-/**
- * Menus, dialogs and views of one screen. The quiz itself lives in the
- * shared session; this is what each screen keeps to itself.
- */
 function usePreviewScreen(session: PreviewQuizSession) {
   const toasterId = useId();
   const [view, setView] = useState<ScreenView>("quiz");
@@ -186,10 +171,6 @@ function usePreviewScreen(session: PreviewQuizSession) {
 
 type PreviewScreen = ReturnType<typeof usePreviewScreen>;
 
-/**
- * A device screen: the sandbox, the preview runtime (query cache, services,
- * toaster) and the app context, plus the dialogs every screen can open.
- */
 function PreviewScreenShell({
   session,
   screen,
@@ -239,8 +220,8 @@ export function QuizPreviewSurface({
   answerHints?: AnswerHint[];
 }): React.JSX.Element {
   const { view } = session;
-  // QuestionCard names a ViewTransition after the quiz id. Several previews are
-  // mounted at once on this page, so each needs its own id to stay unique.
+  // QuestionCard names a ViewTransition after the quiz id, and several
+  // previews are mounted at once.
   const instanceId = useId();
 
   return (
@@ -294,10 +275,8 @@ function PreviewAiHintPanel({
 }
 
 /**
- * The quiz stats page's cards, laid out for a screen. The page picks its
- * columns from the viewport, which inside the mobile hero's CSS phone says
- * nothing about the device, so the columns follow the view's own width. Its
- * back link would leave the screen, so this has its own button.
+ * The stats page's cards, with columns from the view's own width rather than
+ * the viewport, and a back button that stays in the screen.
  */
 function PreviewStatsView({
   onBack,
@@ -341,7 +320,7 @@ function PreviewStatsView({
   );
 }
 
-/** `QuizInfoCard` on the session; it also owns the screen's settings dialog. */
+/** It also owns the screen's settings dialog. */
 function PreviewQuizInfoCard({
   session,
   screen,
@@ -398,11 +377,7 @@ const STATUS_BAR_CLOCK = new Intl.DateTimeFormat("pl-PL", {
   minute: "2-digit",
 });
 
-/**
- * iOS status bar, laid out around the Dynamic Island like the real one. The
- * clock is the visitor's, like the MacBook's menu bar; the server renders an
- * invisible stand-in of the same width.
- */
+/** The server renders an invisible stand-in for the clock, of the same width. */
 function PhoneStatusBar(): React.JSX.Element {
   const now = useCurrentMinute();
   return (
@@ -567,20 +542,7 @@ interface StandaloneProps {
   standalone?: boolean;
 }
 
-/**
- * The iPhone screen. Below the status bar it is an ordinary scrolling list
- * stacked like the app's mobile quiz page: the header, the question (at least
- * a screen tall, answer controls at its bottom), the AI hint and the quiz
- * info card. It keeps the browser's default overscroll, so it bounces at its
- * ends. In the mobile hero a new gesture at an end then scrolls the page; in
- * the desktop hero's iframe the wheel stays with the list, and only a wheel
- * over a part of the screen with nothing to scroll reaches the page
- * (`scene/screen-frame-input.ts` in the landing).
- */
-/**
- * The quiz card's action row, docked at the bottom of the phone screen so it
- * stays in reach while the question and the AI hint scroll above it.
- */
+/** Docked at the bottom of the phone screen, so it stays in reach while scrolling. */
 function PhoneQuizActions({
   session,
 }: {
@@ -618,6 +580,10 @@ function PhoneQuizActions({
   );
 }
 
+/**
+ * Stacked like the app's mobile quiz page. It keeps the default overscroll,
+ * so scrolling past its ends reaches the page.
+ */
 export function PhoneQuizSurface({
   session,
   standalone = false,
@@ -650,11 +616,7 @@ export function PhoneQuizSurface({
                 <PhoneQuizHeader session={session} screen={screen} />
                 <QuizPreviewSurface session={session} density="phone" />
               </div>
-              {/*
-               * The hint follows the question card directly, as on the
-               * mobile quiz page. The info card is behind the header's
-               * menu button, so it is not repeated below.
-               */}
+              {/* The info card is behind the header's menu, so it is not repeated. */}
               <div className="mx-1 mt-3">
                 <PreviewAiHintPanel questionId={session.view.question?.id} />
               </div>

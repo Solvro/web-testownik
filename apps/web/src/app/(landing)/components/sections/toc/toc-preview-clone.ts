@@ -1,8 +1,4 @@
-/**
- * Builds a peek's stage: a scaled, inert copy of a live section, cleaned of
- * what cannot or should not be duplicated. `toc-section-preview.ts` caches and
- * shows the stages.
- */
+/** A peek's stage: a scaled, inert copy of a live section. */
 import { DESKTOP_STAGE_QUERY } from "../../breakpoints";
 import { HERO_PROGRESS_PROPERTY } from "../../hero-progress";
 import type { LandingSectionPeek } from "../../landing-sections";
@@ -29,17 +25,15 @@ const HERO_PEEK_COVER_CLASS =
  */
 export const ACTIVE_CLASS = "lp-toc-preview-active";
 /**
- * Built peeks stay mounted in the card; parked ones keep their layout but skip
- * rendering, so revealing one is a single class flip. `visibility` hides the
- * parked stage's own background, which `content-visibility` still paints.
- * `.lp-toc-preview-stage` in landing.css stills every animation inside.
+ * Parked stages keep their layout but skip rendering, so revealing one is a
+ * class flip. `visibility` hides the stage's own background, which
+ * `content-visibility` still paints.
  */
 const STAGE_CLASS = [
   "lp-toc-preview-stage bg-background text-foreground pointer-events-none absolute top-0 left-0 origin-top-left overflow-hidden select-none contain-layout contain-paint contain-style motion-reduce:animate-none",
   "not-[.lp-toc-preview-active]:invisible not-[.lp-toc-preview-active]:[content-visibility:hidden]",
 ].join(" ");
 
-/** Scroll positions to replay on a stage's clone once it is laid out. */
 export interface PendingScroll {
   elements: readonly Element[];
   offsets: readonly ScrollOffset[];
@@ -67,10 +61,8 @@ function createStage(sectionId: string, layout: TocPreviewLayout): HTMLElement {
 }
 
 /**
- * Strip ids (no duplicates in the document) and turn copied links into text.
- * An anchor without href still looks like a broken link to crawlers. Focus is
- * covered by `inert` on the stage and motion by the `.lp-toc-preview-stage`
- * CSS rule, so no per-node style writes are needed.
+ * Strips ids so none are duplicated, and turns links into text: an anchor
+ * without href still looks like a broken link to crawlers.
  */
 function neutralizeTree(root: HTMLElement): void {
   root.removeAttribute("id");
@@ -90,9 +82,8 @@ function neutralizeTree(root: HTMLElement): void {
 }
 
 /**
- * Canvases are WebGL (no `preserveDrawingBuffer`, so they read back blank) or
- * html-in-canvas surfaces that redraw the copy at the wrong scale; video and
- * iframes are too heavy to duplicate. None of them belongs in a peek.
+ * WebGL canvases read back blank (no `preserveDrawingBuffer`), html-in-canvas
+ * ones redraw at the wrong scale, and video and iframes are too heavy.
  */
 function dropUncloneableMedia(clone: HTMLElement): void {
   for (const media of clone.querySelectorAll("canvas, video, iframe")) {
@@ -116,12 +107,8 @@ function fillWordmarks(clone: HTMLElement): void {
   }
 }
 
-/*
- * A peek shows a section as the visitor will find it, so reveal effects that
- * have not run yet on the live page are shown finished in the clone.
- */
+// Reveal effects that have not run yet on the live page are shown finished.
 
-/** Perks counters count up on reveal; show the final figure. */
 export function finishPerkCounters(clone: HTMLElement): void {
   for (const counter of clone.querySelectorAll<HTMLElement>(
     "[data-perk-count]",
@@ -130,10 +117,6 @@ export function finishPerkCounters(clone: HTMLElement): void {
   }
 }
 
-/**
- * Story events reveal as the pen stroke reaches them: the stroke draws down,
- * titles type themselves out and dates and descriptions fade in.
- */
 export function finishTimelineReveal(clone: HTMLElement): void {
   for (const event of clone.querySelectorAll<HTMLElement>(
     "[data-timeline-revealed]",
@@ -150,10 +133,7 @@ export function finishTimelineReveal(clone: HTMLElement): void {
   }
 }
 
-/**
- * Deep-clone a live section with the state `cloneNode` leaves behind: form
- * control properties now, inner scroll positions once the clone is laid out.
- */
+/** Also carries the form state and scroll positions `cloneNode` leaves behind. */
 function cloneLiveSection(section: HTMLElement): {
   clone: HTMLElement;
   scroll: PendingScroll;
@@ -209,14 +189,9 @@ function buildClonePeek(
 }
 
 /**
- * The hero at progress zero, rebuilt from parts that clone cleanly: the
- * navigation, the copy and the device-stack still the scene itself uses as a
- * loading cover. Laid out at the real hero height, then fitted into the peek
- * window so the whole stack shows instead of its top two thirds.
- *
- * Progress zero (closed lid) on purpose: following the link scrolls to the
- * top of the page, where the lid is closed, so that is the state the visitor
- * lands on whatever the scene shows mid-scroll.
+ * The hero rebuilt from parts that clone cleanly: the navigation, the copy and
+ * the device-stack still. Laid out at the real hero height, then fitted into
+ * the peek window so the whole stack shows.
  */
 function buildHeroPeek(
   section: HTMLElement,

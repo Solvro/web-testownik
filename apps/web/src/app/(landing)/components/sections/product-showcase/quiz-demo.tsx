@@ -71,10 +71,7 @@ function formatTimer(totalSeconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-/**
- * In-screen 1:1 stand-in for ShareQuizDialog using the real share pieces.
- * Contained inside the demo chrome — no page scroll, no body portal.
- */
+/** ShareQuizDialog's parts, contained in the demo panel with no body portal. */
 function QuizShareOverlay({
   open,
   onClose,
@@ -302,12 +299,7 @@ function QuizShareOverlay({
   );
 }
 
-/**
- * The quiz page's question card on the showcase's quiz session (see
- * `ShowcaseSessionProvider`), with the quiz header's AI, share and timer.
- * Questions the AI demo's assistant adds or edits are part of the same quiz,
- * so the header's question list grows and they can be opened here.
- */
+/** Shares its quiz with the AI demo, so questions the assistant adds show up here. */
 export function QuizDemo(): React.JSX.Element {
   const { quiz: session } = useShowcaseSession();
   const { view, state } = session;

@@ -17,19 +17,11 @@ import {
 } from "./preview-fixtures";
 
 /**
- * The quiz session behind the landing-page previews, as a pure reducer.
- *
- * It mirrors what `useQuizLogic` does in the app — select, check, move on,
- * look back at the previous answer, reset — with the session held in memory
- * instead of the API. Progress is computed with the same `core/quiz/session`
- * helpers the app uses, so the per-question counters and mastered count react
- * to the (preview-local) settings exactly as they would in Testownik.
- *
- * Unlike the app it is deterministic: the next question is the next one in
- * quiz order that still needs practice, record ids and timestamps come from a
- * counter, and the quiz never finishes (the finished screen loads a remote
- * animation). Two screens can therefore share one state and render the same
- * thing, and the reducer is trivially testable.
+ * `useQuizLogic` as a pure reducer, with progress from the same
+ * `core/quiz/session` helpers. Unlike the app it is deterministic (quiz order,
+ * counter-based ids and timestamps), so two screens can replay the same
+ * actions, and the quiz never finishes, since the finished screen loads a
+ * remote animation.
  */
 
 /** Progress outside the sample questions. A reset zeroes it, as in the app. */
@@ -39,7 +31,6 @@ export interface PreviewProgressBaseline {
   wrong: number;
 }
 
-/** Progress over the whole quiz as a preview opens on it. */
 export interface PreviewProgress extends PreviewProgressBaseline {
   total: number;
 }
@@ -60,7 +51,7 @@ export interface QuizPreviewState {
   historyQuestionId: string | null;
   baseline: PreviewProgressBaseline;
   focusMode: boolean;
-  /** Answers recorded so far; drives ids and timestamps. */
+  /** Drives ids and timestamps. */
   recorded: number;
 }
 
@@ -70,11 +61,9 @@ export type QuizPreviewAction =
   | { type: "back" }
   | { type: "reset" }
   | { type: "setFocusMode"; active: boolean }
-  /** Jumps to a question, as the quiz page's question list does. */
   | { type: "goTo"; questionId: string }
   /** Questions saved to the quiz (by the assistant, in the showcase). */
   | { type: "addQuestions"; questions: Question[] }
-  /** A question edited in place; its id stays. */
   | { type: "updateQuestion"; question: Question };
 
 export function createQuizPreviewState({
@@ -131,10 +120,9 @@ function findQuestion(
 }
 
 /**
- * The next question in quiz order after the current one that still has
- * attempts left. If every other question is mastered but the current one is
- * not, it stays on the current question (as the app's session does). Only when
- * everything is mastered does it simply move on, so the preview keeps going.
+ * Stays on the current question when it is the only one left, as the app
+ * does. Once everything is mastered it still moves on, so the preview keeps
+ * going.
  */
 export function pickNextPreviewQuestion(
   questions: Question[],
@@ -285,7 +273,6 @@ export function quizPreviewReducer(
   }
 }
 
-/** What a screen renders for a given state, in `QuestionCard` / `QuizInfoCard` terms. */
 export interface QuizPreviewView {
   question: Question | null;
   selectedAnswers: string[];

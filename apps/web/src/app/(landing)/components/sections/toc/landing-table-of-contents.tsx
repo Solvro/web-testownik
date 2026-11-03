@@ -139,9 +139,8 @@ export function LandingTableOfContents(): React.JSX.Element {
       </ol>
 
       {/*
-       * Always mounted while previews are enabled: the card's screen hosts
-       * every pre-built peek, so a hover flips visibility instead of
-       * inserting DOM.
+       * Always mounted while previews are enabled: the card hosts every
+       * pre-built peek, so a hover flips visibility instead of inserting DOM.
        */}
       {previewsEnabled
         ? createPortal(
@@ -198,11 +197,7 @@ export function LandingTableOfContents(): React.JSX.Element {
                       className="absolute top-0 left-0 origin-top-left"
                     />
                   </div>
-                  {/*
-                   * Every caption is rendered and stacked; only class flips on
-                   * hover, so hovering never inserts nodes into the document
-                   * (see `toc-section-preview.ts` on `:has()` invalidation).
-                   */}
+                  {/* Every caption is stacked so hovering never inserts nodes (see `toc-section-preview.ts`). */}
                   <div className="mt-2 grid px-0.5">
                     {SECTIONS.map((section, index) => (
                       <div

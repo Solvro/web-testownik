@@ -1,7 +1,6 @@
 /**
- * Keeping TOC peeks current: which section to re-clone next, and the bits of
- * live state `cloneNode` does not carry over. Free of scheduling and layout
- * so it can be unit-tested; `toc-section-preview.ts` drives it.
+ * Which TOC peek to re-clone next, and the live state `cloneNode` does not
+ * carry over. Free of scheduling and layout so it can be unit-tested.
  */
 
 /** Attribute flips that change what a section looks like (accordion, tabs). */
@@ -28,22 +27,16 @@ export interface TocPreviewSchedule {
   now: number;
   /** The rail is on screen, so a peek may be requested soon. */
   visible: boolean;
-  /** The page or an inner scroller is scrolling. */
   scrolling: boolean;
-  /** The section whose peek is on screen, if any. */
   shown: string | null;
 }
 
 /**
- * Per-section dirty tracking with a per-section rate limit.
- *
- * - Never-built sections come first, in order, whatever the rail is doing:
- *   that is the initial warm-up.
+ * - Never-built sections come first, whatever the rail is doing.
  * - The peek on screen is refreshed when anything changed, scroll included.
- * - Other dirty sections are refreshed only while the rail is visible, so a
- *   hover usually finds a current clone already parked.
- * - Nothing is rebuilt while scrolling, and a section is rebuilt at most once
- *   per `minInterval`.
+ * - Other dirty sections are refreshed only while the rail is visible.
+ * - Nothing is rebuilt while scrolling, and a section at most once per
+ *   `minInterval`.
  */
 export class TocPreviewFreshness {
   private readonly sections = new Map<string, SectionFreshness>();
@@ -118,7 +111,6 @@ export class TocPreviewFreshness {
     return schedule.visible && section.dirty;
   }
 
-  /** The one section to build in this idle slot, or `null`. */
   next(schedule: TocPreviewSchedule): string | null {
     if (schedule.scrolling) {
       return null;
@@ -175,7 +167,6 @@ export interface ScrollableLike {
   scrollLeft: number;
 }
 
-/** A scrolled element, by its index in a document-order element list. */
 export interface ScrollOffset {
   index: number;
   top: number;
@@ -183,9 +174,8 @@ export interface ScrollOffset {
 }
 
 /**
- * Inner scroll positions of a live subtree. `elements` is the subtree in
- * document order (`querySelectorAll("*")`); a fresh deep clone lists its
- * elements in the same order, so an index is enough to find the twin.
+ * `elements` is the subtree in document order; a deep clone lists its elements
+ * in the same order, so an index finds the twin.
  */
 export function captureScrollOffsets(
   elements: Iterable<ScrollableLike>,
@@ -201,7 +191,6 @@ export function captureScrollOffsets(
   return offsets;
 }
 
-/** Replay `captureScrollOffsets` onto the clone once it has been laid out. */
 export function applyScrollOffsets(
   elements: ArrayLike<ScrollableLike>,
   offsets: readonly ScrollOffset[],
@@ -217,10 +206,8 @@ export function applyScrollOffsets(
 }
 
 /**
- * Form state that lives in properties, not attributes. `input` and `textarea`
- * clone their current value and checkedness already; this covers `select`
- * and is explicit about the rest, so a peek matches the live controls.
- * Both lists must come from the same subtree shape (live and its deep clone).
+ * Form state that lives in properties, which `cloneNode` misses for `select`.
+ * Both lists must come from the same subtree shape.
  */
 export function copyControlState(
   live: ArrayLike<Element>,

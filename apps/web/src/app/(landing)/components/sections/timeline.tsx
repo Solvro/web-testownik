@@ -24,7 +24,6 @@ const INK_WIDTH = 12;
 const INK_TOP = 12;
 const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
 
-/** An event's text, with its `link` label turned into a link. */
 function StoryText({
   text,
   link,
@@ -66,12 +65,7 @@ function seeded(seed: number): () => number {
   };
 }
 
-/**
- * A vertical pen stroke `length` px long: it wanders a pixel or two either
- * side of the centre and its control points never line up, so it reads as
- * drawn by hand rather than ruled. Quadratic segments through midpoints keep
- * it smooth.
- */
+/** A vertical stroke that wanders a pixel or two, so it reads as hand-drawn. */
 function inkPath(length: number, seed: number): string {
   const random = seeded(seed);
   const centre = INK_WIDTH / 2;
@@ -168,9 +162,8 @@ function TypedTitle({
 }
 
 /**
- * The rail is a pen stroke that draws itself down to a playhead a little
- * below the middle of the viewport. An event reveals as the stroke reaches its
- * marker, and the stroke never retreats above a revealed marker.
+ * The rail draws itself down to a playhead below the middle of the viewport,
+ * revealing events as it reaches them. It never retreats above a revealed one.
  */
 export function Timeline({
   blogPosts,

@@ -1,18 +1,8 @@
 /**
- * Offline export of the hero's device models.
- *
- *   pnpm export:device-models
- *
- * 1. Serves Apple's USDZ sources and three.js from a throwaway local server.
- * 2. Headless Chrome runs `prepare-scene.js`, which bakes the hero's fix-ups
- *    into the scene and exports it with GLTFExporter.
- * 3. glTF Transform deduplicates, prunes, welds, quantises and applies meshopt
- *    compression, then writes `public/models/device-stack.glb`. The three
- *    display meshes are exempt from every lossy step; see below.
- *
- * The output is deterministic: the same sources produce the same bytes.
- *
- * See `public/models/README.md` for where the sources come from.
+ * `pnpm export:device-models`: headless Chrome runs `prepare-scene.js` on
+ * Apple's USDZ sources, then glTF Transform compresses the result into
+ * `public/models/device-stack.glb`. The display meshes are exempt from every
+ * lossy step. The output is deterministic. See `public/models/README.md`.
  */
 import { NodeIO } from "@gltf-transform/core";
 import {
@@ -160,10 +150,8 @@ function listPrimitivesExceptDisplays(document) {
 
 /**
  * USDLoader produces unindexed triangles, so welding is what makes the
- * geometry compressible at all. The three display meshes are left exactly as
- * authored: the hero measures each screen's plane, extent and in-plane axes as
- * averages over their vertices, and merging duplicates would re-weight those
- * averages — shifting the live UI by a fraction of a degree.
+ * geometry compressible. The displays are left as authored: screen placement
+ * is measured as averages over their vertices, which merging would re-weight.
  */
 function weldExceptDisplays(document) {
   for (const primitive of listPrimitivesExceptDisplays(document)) {
@@ -211,9 +199,8 @@ async function quantizeExceptDisplays(document) {
 }
 
 /**
- * Stores normals as 8-bit snorm everywhere but on the displays, whose vertex
- * normals the hero averages to find each screen's facing direction. 8-bit
- * normals tilted the MacBook's live UI by about 0.3°.
+ * 8-bit snorm normals everywhere but on the displays, whose averaged normals
+ * give each screen's facing direction.
  */
 function quantizeNormalsExceptDisplays(document) {
   for (const primitive of listPrimitivesExceptDisplays(document)) {
@@ -243,8 +230,8 @@ const io = new NodeIO()
 const document = await io.readBinary(new Uint8Array(raw));
 await document.transform(
   dedup(),
-  // Keep attributes: the displays carry UVs no material samples, which the
-  // hero uses to find each screen's in-plane axes.
+  // The displays carry UVs no material samples; they give each screen's
+  // in-plane axes.
   prune({ keepAttributes: true }),
   weldExceptDisplays,
   normalizeTexcoords,

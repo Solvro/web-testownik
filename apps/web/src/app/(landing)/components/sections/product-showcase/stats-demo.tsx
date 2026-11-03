@@ -130,7 +130,7 @@ function seedLandingStats(
   );
 }
 
-/** Lightweight stand-in — avoids pulling the pie-chart chunk into HMR. */
+/** Avoids pulling the pie-chart chunk into HMR. */
 function HardestQuestionsPreview(): React.JSX.Element {
   const [scope, setScope] = useState<StatsScope>("all");
   const data = scope === "all" ? PREVIEW_HARDEST_ALL : PREVIEW_HARDEST;
@@ -181,9 +181,8 @@ const placeholder = (
 );
 
 /**
- * Mounts `children` once they come within reach of the panel's own scroll
- * area. Four recharts charts plus the table in one frame stalled the panel
- * switch; now only what is on screen renders, the rest as it scrolls up.
+ * Mounts `children` once they near the panel's scroll viewport; rendering all
+ * the charts at once stalls the panel switch.
  */
 function WhenVisible({
   root,

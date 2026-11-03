@@ -15,11 +15,7 @@ import {
 import { createPreviewServices } from "./preview-services";
 import type { PreviewQuizEditor } from "./preview-services";
 
-/**
- * Which screen's toaster a cache's services report to. Several screens can
- * share one cache (the laptop and the iPhone), so it is whichever the visitor
- * touched last — the one the action came from.
- */
+/** Screens can share a cache, so services report to the one touched last. */
 const activeToaster = new WeakMap<QueryClient, string>();
 
 export function setActivePreviewToaster(
@@ -33,11 +29,8 @@ export function setActivePreviewToaster(
 }
 
 /**
- * A throwaway query cache for a preview, bound to the preview services (see
- * `bindServices`), so anything rendered from it never reaches the API, the
- * session or the clipboard. Nothing in it goes stale; components render what
- * is there and the services answer the rest from fixtures. A session passes
- * its `editor`, so question writes land in its quiz.
+ * A throwaway cache bound to the preview services, so nothing rendered from it
+ * reaches the API, the session or the clipboard. Nothing in it goes stale.
  */
 export function createPreviewClient(editor?: PreviewQuizEditor): QueryClient {
   const client = new QueryClient({

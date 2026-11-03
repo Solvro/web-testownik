@@ -1,14 +1,13 @@
 import "server-only";
 
 /**
- * In-memory sliding-window rate limiter (the pre-usage-service "legacy" AI
- * limiter). State lives in the server process, so limits are per instance and
- * reset on restart: good enough for guarding public, unauthenticated demos.
+ * In-memory sliding-window rate limiter. Limits are per instance and reset on
+ * restart, which is enough for public demos.
  */
 
 export interface RateLimitOptions {
   limit: number;
-  /** Window length in seconds. */
+  /** Seconds. */
   window: number;
   /** Only for fixed, server-defined buckets; never for client-controlled keys. */
   nonEvictable?: boolean;
@@ -29,7 +28,7 @@ function getEntries(options: RateLimitOptions) {
   return options.nonEvictable === true ? nonEvictableEntries : rateLimitEntries;
 }
 const CLEANUP_INTERVAL_MS = 60_000;
-/** Upper bound on distinct keys kept in memory; the oldest bucket is dropped past it. */
+/** Past this many keys the oldest bucket is dropped. */
 const MAX_ENTRIES = 5000;
 
 let lastCleanup = Date.now();

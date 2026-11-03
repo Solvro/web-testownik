@@ -19,7 +19,6 @@ export const ShowcaseSessionContext = createContext<ShowcaseSession | null>(
   null,
 );
 
-/** The showcase's shared quiz session; see `ShowcaseSessionProvider`. */
 export function useShowcaseSession(): ShowcaseSession {
   const session = use(ShowcaseSessionContext);
   if (session === null) {

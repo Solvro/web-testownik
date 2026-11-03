@@ -39,11 +39,8 @@ function QuizScreen({
 }
 
 /**
- * The document inside one device-screen iframe of the desktop hero.
- *
- * The page picks the theme in the URL and posts changes afterwards; the screen
- * tells the page once it has painted, which is what lets the loading cover
- * hand over to the live scene without a blank screen in between.
+ * Tells the page once it has painted, so the loading cover hands over without
+ * a blank screen.
  */
 export function ScreenFrameDocument({
   request,
@@ -103,9 +100,8 @@ export function ScreenFrameDocument({
     >
       <TooltipProvider delay={0}>
         {/*
-         * In development Next.js draws its indicator into every document;
-         * on a device screen it would sit on the drawing (and in the
-         * captured loading covers). The page keeps its own.
+         * Next.js draws its dev indicator into every document; keep it off
+         * the screens and their captured loading covers.
          */}
         {process.env.NODE_ENV === "development" ? (
           <style>{"nextjs-portal{display:none!important}"}</style>

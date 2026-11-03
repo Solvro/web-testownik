@@ -16,13 +16,9 @@ import { cn } from "@/lib/utils";
 import { HERO_PROGRESS, attachHeroProgress } from "../hero-progress";
 
 /**
- * Flat DOM that frames the device stack, deliberately rendered inside the
- * Bubble so the droplet refracts it along with the rest of the hero copy.
- *
- * Both groups are driven straight off `--landing-hero-progress` in CSS: the
- * study badges fade out as the lid starts to open, the product badges fade in
- * once it is most of the way there. Doing it in CSS keeps the whole choreography
- * off the React render path.
+ * Rendered inside the Bubble so the droplet refracts the badges with the hero
+ * copy. Both groups fade off `--landing-hero-progress` in CSS, keeping them off
+ * the React render path.
  */
 
 /** Fades in over the second half of the opening. */
@@ -40,7 +36,6 @@ interface ProductBadge {
   id: string;
   icon: LucideIcon;
   label: ReactNode;
-  /** Placement plus the hand-set tilt that keeps the group from reading as a grid. */
   className: string;
   /** Negative, so the bob is already under way on mount. */
   floatDelay: string;

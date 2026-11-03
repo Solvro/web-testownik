@@ -1,7 +1,6 @@
 /**
- * Cache and lifecycle of the TOC peeks: builds them in idle time, keeps them
- * parked in the card's shadow root and current as the page changes, and
- * reveals one on hover. Stages are built by `toc-preview-clone.ts`.
+ * Builds the TOC peeks in idle time, keeps them parked in the card's shadow
+ * root and current as the page changes, and reveals one on hover.
  */
 import type { LandingSectionPeek } from "../../landing-sections";
 import { ACTIVE_CLASS, buildPreview } from "./toc-preview-clone";
@@ -38,24 +37,16 @@ const PREVIEW_CACHE_LIMIT = 8;
 const FRESH_CLASS = "animate-[lp-toc-preview-fresh_100ms_ease-out_both]";
 /** `lp-toc-preview-fresh` duration plus a frame of slack. */
 const CROSSFADE_MS = 100 + 20;
-/** At most one rebuild per section per this many milliseconds. */
 const REFRESH_INTERVAL = 1000;
-/** Scrolling counts as settled after this long without a scroll event. */
 const SCROLL_IDLE_MS = 180;
-/** Upper bound on waiting for an idle period. */
 const IDLE_TIMEOUT = 1500;
 /** A refresh of the peek on screen should not wait long for idle time. */
 const SHOWN_IDLE_TIMEOUT = 150;
 
 /**
- * The peek card's screen. Stages live in a shadow root on it, permanently,
- * with `content-visibility: hidden` while parked, so showing one is a class
- * flip.
- *
- * Why a shadow root: `:has()` does not look across a shadow boundary, so
- * inserting or removing a stage in here only restyles the stage, whatever
- * `:has()` rules the app CSS holds. A stage is hundreds of nodes, so keeping
- * it out of the document's invalidation is worth it.
+ * Stages live in a shadow root on the peek card's screen because `:has()` does
+ * not look across a shadow boundary: inserting a stage of hundreds of nodes
+ * then restyles only the stage, whatever `:has()` rules the app CSS holds.
  */
 let previewHost: HTMLElement | null = null;
 /** Where stages are appended: the scope inside the shadow root (or the host). */
@@ -90,10 +81,9 @@ function shadowScope(): { root: ShadowRoot; scope: HTMLElement } | null {
 }
 
 /**
- * Put a stage into the host and lay it out while it is still renderable, then
- * park it. `content-visibility: hidden` keeps that rendering state (scroll
- * offsets included), so the first reveal does not pay for style and layout of
- * a 1440px-wide clone.
+ * Lays the stage out while it is still renderable, then parks it.
+ * `content-visibility: hidden` keeps that rendering state, so the first reveal
+ * skips style and layout.
  */
 function parkInHost(stage: HTMLElement): void {
   if (stageContainer === null || stage.parentElement === stageContainer) {
@@ -147,11 +137,7 @@ function activateStage(stage: HTMLElement | null): void {
   }
 }
 
-/**
- * Build a peek from the section as it is now and park it, replacing any
- * older one. When the replaced peek is on screen, the new one fades in on top
- * of it in the same box and the old one leaves once covered.
- */
+/** A replaced peek that is on screen leaves once the new one has faded in over it. */
 function buildAndPark(section: TocPreviewSection): HTMLElement | null {
   const element = sectionElement(section.id);
   if (element === null) {
@@ -190,10 +176,6 @@ function buildAndPark(section: TocPreviewSection): HTMLElement | null {
   return stage;
 }
 
-/**
- * The parked peek for a section, building it only if the idle warm-up has
- * not got there yet (a hover that beats it).
- */
 function ensurePreview(section: TocPreviewSection): HTMLElement | null {
   const cached = cachedPreview(section.id);
   if (cached !== undefined) {
@@ -203,10 +185,6 @@ function ensurePreview(section: TocPreviewSection): HTMLElement | null {
   return buildAndPark(section);
 }
 
-/**
- * Register the peek card's screen as the stage host. Already-built stages move
- * in immediately. Returns a detach function.
- */
 export function attachTocPreviewHost(host: HTMLElement): () => void {
   previewHost = host;
   if (
@@ -245,7 +223,6 @@ export function attachTocPreviewHost(host: HTMLElement): () => void {
   };
 }
 
-/** Reveal one section's peek in the host and park every other one. */
 export function showTocSectionPreview(section: TocPreviewSection | null): void {
   activeSection = section;
   activateStage(section === null ? null : ensurePreview(section));
@@ -264,7 +241,6 @@ export function setTocPreviewRailVisible(visible: boolean): void {
   }
 }
 
-/** Drop cached peeks (and their DOM) so the next build uses current layout. */
 export function invalidateTocSectionPreviews(): void {
   previewCache.clear();
   freshness?.reset();
@@ -276,11 +252,8 @@ type IdleScheduler = (
 ) => number;
 
 /**
- * Build peeks one section per idle period after load, then keep them current:
- * a `MutationObserver` per section marks it dirty, and dirty peeks are
- * re-cloned in idle time while the rail is visible (the one on screen
- * always), never while scrolling and at most once a second per section.
- * Returns a stop function.
+ * Builds one peek per idle period after load, then re-clones sections a
+ * `MutationObserver` marks dirty (see `TocPreviewFreshness`).
  */
 export function warmTocSectionPreviews(
   sections: readonly TocPreviewSection[],

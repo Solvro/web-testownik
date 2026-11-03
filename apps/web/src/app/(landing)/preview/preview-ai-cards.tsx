@@ -9,7 +9,6 @@ import {
 } from "@/components/ai/ai-card-shell";
 import type { AnswerHint } from "@/components/ai/ai-explain-card";
 
-/** How long the canned cards "think" before showing their content. */
 const THINKING_MS = 520;
 
 /** Thinks for a moment on mount, on `key` change and on retry. */
@@ -42,7 +41,6 @@ function useCannedLoading(key: string, onLoaded?: () => void) {
   };
 }
 
-/** The quiz page's AI hint card with canned content instead of `/ai/hint`. */
 export function PreviewAiHintCard({
   hint,
   onClose,
@@ -84,7 +82,6 @@ export function PreviewAiHintCard({
   );
 }
 
-/** The quiz page's AI explanation card with canned content instead of `/ai/explain`. */
 export function PreviewAiExplanationCard({
   explanation,
   onClose,

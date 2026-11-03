@@ -20,21 +20,17 @@ import {
   warmTocSectionPreviews,
 } from "./toc-section-preview";
 
-/** Peeks need a real hover and room beside the rail. */
 const PREVIEW_QUERY =
   "(hover: hover) and (pointer: fine) and (min-width: 960px)";
 /** Short grace period so moving between rail items does not flicker. */
 const PREVIEW_HIDE_DELAY = 120;
-/** Let a resize settle before rebuilding peeks against the new layout. */
 const PREVIEW_REWARM_DELAY = 400;
 /** `lp-toc-preview-boom` duration. */
 const PREVIEW_BOOM_MS = 360;
-/** Outer chrome: padding + screen + caption row. */
 const PREVIEW_CARD_HEIGHT = TOC_PREVIEW_INNER_HEIGHT + 8 + 8 + 36;
 
 export const TOC_PREVIEW_ATTRIBUTE = "data-landing-toc-preview";
 
-/** `in` while shown, `out` while the leaving pop plays. */
 export type TocPreviewMotion = "hidden" | "in" | "out";
 
 export interface TocPreviewState {
@@ -96,11 +92,7 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * The TOC's section peeks: warms them while idle, shows one beside a hovered
- * or focused link and pops it away on leave. The card is portalled, so a
- * pointer press outside both it and the rail dismisses it too.
- */
+/** The card is portalled, so a press outside both it and the rail dismisses it. */
 export function useTocPreview(
   navigationReference: React.RefObject<HTMLElement | null>,
 ): {
@@ -159,8 +151,8 @@ export function useTocPreview(
     }, PREVIEW_BOOM_MS);
   };
 
-  // Peeks are pre-built during idle, so showing one is only a mount: reveal
-  // on the same event. This also lets a returning cursor interrupt a boom.
+  // Peeks are pre-built, so reveal on the same event; this also lets a
+  // returning cursor interrupt a boom.
   const show = (id: LandingSectionId, anchor: HTMLElement): void => {
     if (!enabled) {
       return;
@@ -186,7 +178,6 @@ export function useTocPreview(
     }, PREVIEW_HIDE_DELAY);
   };
 
-  /** The pointer reached the card: keep it, unless it is already leaving. */
   const holdOpen = (): void => {
     if (stateReference.current.motion !== "out") {
       clearTimer();

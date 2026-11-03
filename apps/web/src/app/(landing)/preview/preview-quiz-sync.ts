@@ -9,29 +9,18 @@ import type {
 } from "./preview-quiz-machine";
 
 /**
- * Keeps one preview quiz in step across documents.
+ * Keeps one preview quiz in step across the hero's iframes. Each screen runs
+ * its own deterministic `quizPreviewReducer` and forwards every action over a
+ * `BroadcastChannel`.
  *
- * The desktop hero renders the laptop and the iPhone screens in separate
- * iframes, so they cannot share a React state. Each runs its own
- * `quizPreviewReducer` and forwards every action it dispatches over a
- * `BroadcastChannel`; the reducer is deterministic, so replaying the same
- * actions from the same state keeps both screens identical.
+ * Every action names its `parent`, and a screen only replays an action whose
+ * parent is its own latest one. When two screens act at once, the lower id
+ * wins; the other asks for a snapshot (`resync`) and adopts only the answer
+ * to its latest request. A late joiner says `hello` and adopts the snapshot of
+ * whichever screen has applied more actions. Settings travel separately with
+ * their own version, because `next` and the mastered count depend on them.
  *
- * Every action names the action it was applied after (`parent`), and a screen
- * only replays an action whose parent is its own latest one. Actions made on
- * two screens at once both fail that check. The screen with the lower id wins
- * and ignores the other's actions; the other asks it for a snapshot
- * (`resync`) and adopts only the answer to its latest request, so nothing it
- * learns later is rolled back. Local actions still apply at once.
- *
- * A screen that joins late (or reloads) says `hello` and adopts the snapshot
- * of whichever screen has applied more actions. Settings edited in either
- * screen's dialog travel separately, with their own version, because `next`
- * and the mastered count depend on them; a late joiner takes the newest.
- * Snapshots also carry the sender's study time, so a screen that adopts one
- * (after a reset it missed, or one of its own that lost) shows the same timer.
- *
- * Everything below except `openQuizSyncChannel` is pure.
+ * Everything except `openQuizSyncChannel` is pure.
  */
 
 export const QUIZ_SYNC_PROTOCOL = "testownik-preview-quiz/4";
@@ -73,7 +62,7 @@ export type QuizSyncPayload =
       head: string;
       state: QuizPreviewState;
       settings: VersionedSettings | undefined;
-      /** The sender's study timer, in seconds. */
+      /** Seconds. */
       studyTime: number;
     }
   | ({ kind: "settings" } & VersionedSettings);
@@ -83,10 +72,7 @@ export type QuizSyncMessage = QuizSyncPayload & {
   sender: string;
 };
 
-/**
- * The local quiz, how many actions produced it and the id of the last one
- * (`""` for the initial state every screen opens on).
- */
+/** The last action id is `""` for the initial state every screen opens on. */
 export interface SyncedQuizState {
   state: QuizPreviewState;
   revision: number;
@@ -209,7 +195,6 @@ function isVersionedSettings(value: unknown): boolean {
   );
 }
 
-/** Validates what arrives on the channel; anything else is ignored. */
 export function parseQuizSyncMessage(data: unknown): QuizSyncMessage | null {
   if (
     !isRecord(data) ||
@@ -254,7 +239,6 @@ export function parseQuizSyncMessage(data: unknown): QuizSyncMessage | null {
   }
 }
 
-/** What a screen should do about one message from another screen. */
 export interface QuizSyncResponse {
   event?: SyncedQuizEvent;
   reply?: QuizSyncPayload;
@@ -263,7 +247,6 @@ export interface QuizSyncResponse {
   awaiting: string | undefined;
   /** A forwarded reset also zeroes the study timer, as a local one does. */
   resetTimer?: boolean;
-  /** The study time of an adopted snapshot. */
   studyTime?: number;
 }
 
@@ -361,7 +344,6 @@ export function respondToQuizSyncMessage(
   }
 }
 
-/** Unique enough to tell screens and their actions apart. */
 export function createQuizSyncId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }

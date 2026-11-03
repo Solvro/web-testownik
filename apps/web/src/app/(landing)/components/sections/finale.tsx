@@ -42,11 +42,7 @@ export function Finale({
       />
       <ParticleLogo className="absolute inset-x-0 top-8 h-[42.73vw] sm:inset-0 sm:h-auto" />
 
-      {/*
-       * The wordmark is the particle simulation itself — icon and lettering are
-       * one object, with nothing conventional layered underneath. The canvas is
-       * decorative, so the accessible name lives on the container.
-       */}
+      {/* The canvas is decorative, so the accessible name lives on the container. */}
       <div
         role="img"
         aria-label="Testownik"
