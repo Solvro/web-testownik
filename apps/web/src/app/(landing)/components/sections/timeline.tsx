@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 import type { LandingBlogPost } from "../../lib/blog";
 import { STORY, STORY_HEADING } from "../landing-content";
+import type { TimelineEntry } from "../landing-content";
+import { FOCUS_RING } from "../ui/focus";
 import { HandNote } from "../ui/hand-note";
 import { LandingSection } from "../ui/section";
 import { DisplayHeading } from "../ui/typography";
@@ -21,6 +23,34 @@ const INK_WIDTH = 12;
 /** The stroke starts level with the first marker, at the track's `top-3`. */
 const INK_TOP = 12;
 const segmenter = new Intl.Segmenter("pl", { granularity: "grapheme" });
+
+/** An event's text, with its `link` label turned into a link. */
+function StoryText({
+  text,
+  link,
+}: Pick<TimelineEntry, "text" | "link">): React.ReactNode {
+  const at = link === undefined ? -1 : text.indexOf(link.label);
+  if (link === undefined || at === -1) {
+    return text;
+  }
+  return (
+    <>
+      {text.slice(0, at)}
+      <a
+        href={link.href}
+        target="_blank"
+        rel="noreferrer"
+        className={cn(
+          "text-foreground decoration-primary/40 hover:text-primary rounded-sm underline underline-offset-3 transition-colors hover:decoration-current",
+          FOCUS_RING,
+        )}
+      >
+        {link.label}
+      </a>
+      {text.slice(at + link.label.length)}
+    </>
+  );
+}
 
 function typeStep(length: number): number {
   return Math.min(TYPE_STEP, TYPE_BUDGET / Math.max(length, 1));
@@ -361,7 +391,7 @@ export function Timeline({
                     animationDelay: `${(TYPE_START + titleLength * typeStep(titleLength) + 120).toString()}ms`,
                   }}
                 >
-                  {event.text}
+                  <StoryText text={event.text} link={event.link} />
                 </p>
               </li>
             );
