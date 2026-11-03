@@ -89,8 +89,8 @@ export function QuestionCard({
     setSelectedAnswers(newSelectedAnswers);
   };
 
-  // Embedded previews only react to keys pressed while focus is inside them;
-  // in the app the shortcuts are page-wide.
+  // Inside an embedded surface the shortcuts only react to keys pressed within
+  // it; otherwise they are page-wide.
   const surface = useEmbeddedSurface();
 
   useEffect(() => {

@@ -1,13 +1,31 @@
 "use client";
 
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import { usePortalContainer } from "@/components/ui/portal-container";
+import {
+  usePortalContainer,
+  useSurfaceModal,
+} from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
+  // Base UI's alert dialog root is always fully modal. When the surface asks
+  // for less, the same parts run on a dialog root with the alert dialog's
+  // other rule (no dismissal on an outside press); the popup keeps its role.
+  const surfaceModal = useSurfaceModal();
+  if (surfaceModal !== undefined && surfaceModal !== true) {
+    return (
+      <DialogPrimitive.Root
+        data-slot="alert-dialog"
+        modal={surfaceModal}
+        disablePointerDismissal
+        {...props}
+      />
+    );
+  }
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
@@ -62,6 +80,7 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         data-size={size}
+        role="alertdialog"
         className={cn(
           "group/alert-dialog-content bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl p-6 ring-1 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg",
           className,

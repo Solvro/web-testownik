@@ -89,7 +89,8 @@ function GlassScreen({
 
 /**
  * The box html-in-canvas captures, declared as an embedded surface so the
- * screen's menus and dialogs portal into it instead of the frame's body.
+ * screen's menus and dialogs portal into it instead of the frame's body, and
+ * trap focus there without locking the page's scroll.
  * Outside the captured subtree an open menu was invisible to the lens and,
  * being outside the content element, counted as the pointer leaving it, so
  * the lens vanished the moment a menu or dialog opened. `contain: paint`
@@ -114,7 +115,9 @@ function CapturedSurface({
       ref={setRoot}
       className="relative isolate size-full overflow-clip [contain:layout_paint_style]"
     >
-      <EmbeddedSurfaceContext value={{ root, portalContainer }}>
+      <EmbeddedSurfaceContext
+        value={{ root, portalContainer, modal: "trap-focus" }}
+      >
         {children}
       </EmbeddedSurfaceContext>
       <div

@@ -6,19 +6,17 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  useEmbeddedSurface,
   usePortalContainer,
+  useSurfaceModal,
 } from "@/components/ui/portal-container";
 import { cn } from "@/lib/utils";
 
 function Dialog({ modal, ...props }: DialogPrimitive.Root.Props) {
-  // Inside an embedded surface the dialog still traps focus, but must not lock
-  // the scroll of the page around it.
-  const isEmbedded = useEmbeddedSurface() !== null;
+  const surfaceModal = useSurfaceModal();
   return (
     <DialogPrimitive.Root
       data-slot="dialog"
-      modal={modal ?? (isEmbedded ? "trap-focus" : undefined)}
+      modal={modal ?? surfaceModal}
       {...props}
     />
   );
