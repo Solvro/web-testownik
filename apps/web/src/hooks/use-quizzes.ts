@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { UseQueryOptions } from "@tanstack/react-query";
 import type { QuizMetadata, SharedQuiz } from "@testownik/core/quiz/types";
 
@@ -25,5 +25,21 @@ export function useSharedQuizzes(
     refetchOnWindowFocus: false,
     retry: 1,
     ...props,
+  });
+}
+
+export function useLastUsedQuizzes({
+  limit = 20,
+  enabled = true,
+}: { limit?: number; enabled?: boolean } = {}) {
+  return useInfiniteQuery({
+    queryKey: ["last-used-quizzes", limit],
+    queryFn: async ({ pageParam: offset }: { pageParam: number }) =>
+      getQuizService().getLastUsedQuizzes(limit, offset),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.next == null ? undefined : allPages.length * limit,
+    refetchOnWindowFocus: false,
+    enabled,
   });
 }
