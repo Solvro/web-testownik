@@ -1,7 +1,7 @@
 "use client";
 
 import type { QuizMetadata } from "@testownik/core/quiz/types";
-import { ChevronRightIcon, HistoryIcon } from "lucide-react";
+import { ChevronRightIcon, ClockIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -39,8 +39,12 @@ export function RecentQuizzesDialog({ userId }: RecentQuizzesDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" aria-label="Ostatnio używane">
-            <HistoryIcon />
+          <Button
+            variant="outline"
+            aria-label="Ostatnio używane"
+            className="max-sm:size-10 max-sm:px-0"
+          >
+            <ClockIcon />
             <span className="hidden sm:inline">Ostatnio używane</span>
           </Button>
         }
@@ -120,7 +124,7 @@ function RecentQuizzesList({
       <Empty className="py-8">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <HistoryIcon />
+            <ClockIcon />
           </EmptyMedia>
           <EmptyTitle>Brak ostatnio używanych quizów</EmptyTitle>
           <EmptyDescription>
