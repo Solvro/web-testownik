@@ -6,12 +6,8 @@
 }
 
 /*
- * Only what Tailwind utilities cannot express: the app shell around the
- * landing, DOM created by CanvasUI and Next.js, pseudo-element chrome,
- * keyframes and scroll-driven animation. Everything else lives in utilities
- * on the elements themselves, including the DOM the device stack creates
- * (`scene/scene-classes.ts`) and the TOC peek stages
- * (`sections/toc/toc-section-preview.ts`).
+ * Only what utilities cannot express: the app shell, DOM created by CanvasUI
+ * and Next.js, pseudo-element chrome, keyframes and scroll-driven animation.
  */
 
 .lp-hand-note {
@@ -146,11 +142,7 @@ body:has([data-landing-page]) #container > [role="alert"] {
   display: none;
 }
 
-/*
- * The hero grid, shared by the static hero (phones, and desktop until the stage
- * mounts) and the Bubble. CanvasUI samples RGB and discards alpha, so its
- * captured subtree needs this opaque background.
- */
+/* CanvasUI discards alpha, so the Bubble's captured subtree needs an opaque background. */
 .lp-hero-grid,
 .lp-bubble-capture,
 .lp-bubble-capture > canvas > div,
@@ -171,23 +163,15 @@ body:has([data-landing-page]) #container > [role="alert"] {
 }
 
 /*
- * The content canvas sits under the fixed header (z-80 in the stage) and is
- * clipped under it: the header's capture copy is drawn into the canvas for
- * the droplet, and must not show through the header's blur. The strip shows
- * the grid the Bubble itself paints. 5.3rem is the header's hero height at
- * `lg`, the only width the Bubble exists at.
+ * Clipped under the fixed header, so the header's capture copy does not show
+ * through its blur. 5.3rem is the header's hero height at `lg`.
  */
 .lp-bubble-capture > canvas:first-of-type {
   z-index: 1;
   clip-path: inset(5.3rem 0 0 0);
 }
 
-/*
- * The droplet, under the header (its top strip is copied above the bar by
- * HeroDesktopStage). Masked over the same stretch `HeroFade` fades the grid,
- * so it settles into the page with the grid instead of staying crisp over the
- * exit, while the copy and the scroll hint, which are DOM, do not fade.
- */
+/* Masked over the same stretch `HeroFade` fades the grid. */
 .lp-bubble-capture > canvas:last-of-type {
   z-index: 60;
   mask-image: linear-gradient(
@@ -204,25 +188,13 @@ body:has([data-landing-page]) #container > [role="alert"] {
 }
 
 /*
- * The MacBook panel. The host covers the display mesh exactly (see
- * `SCREEN_PLACEMENT` in scene/three/screens.ts). Measured from
- * `laptop-display` in device-stack.glb, the lit area is rounded only at the
- * top, along the lid (12.3 CSS px), and square at the bottom, like a real
- * MacBook display.
+ * The MacBook panel's lit area is rounded only at the top (12.3 CSS px, from
+ * `laptop-display` in device-stack.glb).
  *
- * The host itself stays square; the overlay below draws the rounding.
- * Clipping the content to a radius and painting a black ring on the same
- * curve anti-aliases two coincident edges, which leaves a light seam along
- * the corner. This way only the ring's inner edge is anti-aliased.
- *
- * The thin black border every MacBook display has between the lit area and
- * the bezel. The overlay is inset by the ring width with the matching inner
- * radius, and its spread shadow fills everything between it and the host's
- * edge, so the ring follows the radius exactly (an inset outline stayed
- * square on its inner edge and left a notch-like step at each corner) and the
- * host's square top corners vanish into the black bezel the mesh has there.
- * It paints above the content, so it also hides the CSS3D layer's aliased
- * edge.
+ * The host stays square and an overlay draws the black border and rounding
+ * with a spread shadow. Clipping the content to the same radius would
+ * anti-alias two coincident edges and leave a light seam. Painted above the
+ * content, it also hides the CSS3D layer's aliased edge.
  */
 .lp-screen-laptop::before {
   --lp-laptop-ring: 3px;
@@ -241,17 +213,9 @@ body:has([data-landing-page]) #container > [role="alert"] {
 }
 
 /*
- * MacBook notch and camera, scaled from a 14" MacBook Pro. Measured with
- * NSScreen on one (1800 × 1169 pt scaling): the camera housing spans 220 pt
- * of the 1800 pt width (12.2%) and the 38 pt safe-area top (3.25% of the
- * height), which is also the menu bar's height. On our 940 × 611 px screen
- * that is a 104 px wide, 19 px tall notch under the 20 px menu bar of
- * `scene/laptop-menu-bar.tsx` (the system region has a hair of margin
- * around the physical housing, so the body is a few px narrower than 12.2%).
- * Its bottom corners are rounded, and where its top meets the bezel the edge
- * flares out in concave fillets, so the lit area curves up into the bezel on
- * both sides. One SVG draws both, plus the lens; it is 8 px wider than the
- * notch body to hold the fillets.
+ * Notch and camera, scaled from a 14" MacBook Pro (220 × 38 pt of 1800 ×
+ * 1169 pt) to 104 × 19 px on the 940 × 611 px screen. The SVG is 8 px wider
+ * than the notch body to hold the concave fillets where it meets the bezel.
  */
 .lp-screen-laptop::after {
   position: absolute;
@@ -267,7 +231,6 @@ body:has([data-landing-page]) #container > [role="alert"] {
   transform: translateX(-50%);
 }
 
-/* iPhone Dynamic Island. */
 .lp-screen-phone::after {
   position: absolute;
   z-index: 20;
@@ -285,12 +248,9 @@ body:has([data-landing-page]) #container > [role="alert"] {
 
 /*
  * The mobile hero's iPhone 14 Pro, ported from devices.css v0.2.0 (MIT,
- * github.com/picturepan2/devices.css) with `lp-` names. Vendored rather than
- * imported: the package ships every device (~50 KB) and its reset sets
- * `display: block` on every descendant of `.device`, which would override the
- * Tailwind display utilities of the live screen inside. The body, frame,
- * screen, island and side buttons are utilities in `sections/hero-phone.tsx`,
- * which also sets `--lp-iphone-edge` per theme; these are its pseudo-elements.
+ * github.com/picturepan2/devices.css). Vendored because the package's reset
+ * sets `display: block` on every descendant of `.device`, overriding the live
+ * screen's utilities. The rest of the phone is in `sections/hero-phone.tsx`.
  */
 .lp-iphone-stripe::before,
 .lp-iphone-stripe::after,
@@ -390,12 +350,7 @@ body:has([data-landing-page]) #container > [role="alert"] {
   top: 140px;
 }
 
-/*
- * Mobile hero, no JavaScript: over the first stretch of page scroll the study
- * chips drift outwards, each by its own `--lp-chip-drift`. The phone itself
- * holds still. Without scroll-timeline support, or with reduced motion, the
- * chips stay in the resting pose.
- */
+/* The mobile hero's study chips drift outwards over the first stretch of scroll. */
 @keyframes lp-hero-chip-drift {
   from {
     translate: 0 0;
@@ -415,8 +370,7 @@ body:has([data-landing-page]) #container > [role="alert"] {
   }
 }
 
-/* Hero badges drift up and down a little, each on its own phase. */
-/* Lets the landing header's hero-to-compact shrink transition (see LandingNav). */
+/* Registered so the header's shrink can transition (see LandingNav). */
 @property --lp-nav-t {
   syntax: "<number>";
   inherits: true;
@@ -424,13 +378,9 @@ body:has([data-landing-page]) #container > [role="alert"] {
 }
 
 /*
- * The header's shrink, from the hero's view timeline: it runs with the
- * scroll itself as the hero's stage leaves (from the hero's top below `lg`,
- * from its bottom on desktop, where the stage is sticky), over 7rem of
- * travel, and is already right at first paint when the page loads scrolled.
- * Phones skip it and keep the settled size throughout.
- * The droplet strip above the bar goes with the stage. Without scroll-driven
- * animations, `LandingPage` flags `data-settled` and the property
+ * The header shrinks with the scroll as the hero's stage leaves, so it is
+ * already right at first paint when the page loads scrolled. Without
+ * scroll-driven animations, `LandingPage` sets `data-settled` and the property
  * transitions instead.
  */
 @keyframes lp-nav-shrink {
@@ -449,7 +399,6 @@ body:has([data-landing-page]) #container > [role="alert"] {
   }
 }
 
-/* Phones keep one size: the bar is always the settled one there. */
 @media (max-width: 39.99rem) {
   [data-landing-nav="fixed"] {
     --lp-nav-t: 1;
@@ -500,7 +449,6 @@ body:has([data-landing-page]) #container > [role="alert"] {
   }
 }
 
-/* The hero's scroll hint arrow. */
 @keyframes lp-nudge {
   50% {
     transform: translateY(0.28rem);
@@ -574,11 +522,7 @@ body:has([data-landing-page]) #container > [role="alert"] {
   }
 }
 
-/*
- * A peek is a still: no entrance, nudge or hover motion inside the clone.
- * Utilities cannot reach the clone's descendants' own pseudo-elements without
- * `before:`/`after:` variants, which would give every node one.
- */
+/* A peek is a still. Utilities would need `before:`/`after:` on every node. */
 .lp-toc-preview-stage *,
 .lp-toc-preview-stage *::before,
 .lp-toc-preview-stage *::after {
@@ -620,12 +564,9 @@ body:has([data-landing-page]) #container > [role="alert"] {
 }
 
 /*
- * The wordmark over the open laptop follows the hero's own view timeline, so
- * it moves on the compositor in step with the scroll instead of one frame
- * behind it with the JS-published progress. `contain` runs from the hero's
- * top reaching the top of the viewport to its bottom reaching the bottom, the
- * same travel `useHeroProgress` measures. Keyframes mirror its inline
- * progress style, which remains the fallback.
+ * The wordmark follows the hero's view timeline, on the compositor, instead
+ * of a frame behind with the JS progress. `contain` is the same travel
+ * `useHeroProgress` measures; the inline progress style is the fallback.
  */
 @keyframes lp-hero-open-logo {
   0% {
@@ -658,11 +599,7 @@ body:has([data-landing-page]) #container > [role="alert"] {
   }
 }
 
-/*
- * These targets animate only transform/opacity; preserve their painted
- * contents. Keyed to the attribute that registers a progress target, so the
- * static fallback (which drops it) also drops the layer promotion.
- */
+/* Keyed to the progress-target attribute, so the static fallback drops the promotion too. */
 @media (min-width: 1024px) {
   [data-hero-progress] {
     will-change: transform, opacity;
