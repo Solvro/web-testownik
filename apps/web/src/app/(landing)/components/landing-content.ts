@@ -1,8 +1,8 @@
 import { TEAM_SIZE } from "./team-data";
 
 /**
- * Every piece of landing copy lives here so the section components stay pure
- * layout. Text changes never require touching a component.
+ * Shared and longer landing copy: the story, the FAQ, the partner section and
+ * the links. Short headings and captions stay inline in their sections.
  */
 
 export interface TimelineEntry {
