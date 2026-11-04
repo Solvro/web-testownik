@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import Script from "next/script";
 import { Suspense } from "react";
 
-import { Alerts } from "@/components/alerts";
+import { AppAlerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
 import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
@@ -136,7 +136,7 @@ export default async function RootLayout({
               <Suspense>
                 <ErrorHandler />
                 <GuestAlert />
-                <Alerts />
+                <AppAlerts />
               </Suspense>
               <main>{children}</main>
             </MaintenanceWrapper>

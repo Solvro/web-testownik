@@ -114,10 +114,13 @@ function HeroContent({
 
 export function Hero({
   heroReference,
+  alerts,
   nav,
   captureNav,
 }: {
   heroReference: React.RefObject<HTMLElement | null>;
+  /** Inline above the mobile copy; over the desktop stage, outside canvas capture. */
+  alerts?: ReactNode;
   /** The page header: fixed, but rendered inside the stage (see LandingNav). */
   nav?: ReactNode;
   captureNav?: ReactNode;
@@ -165,6 +168,7 @@ export function Hero({
    */
   const staticHero = (
     <div className="lp-hero-grid relative px-4 pt-[6.5rem] pb-8 lg:absolute lg:inset-0 lg:p-0">
+      {isDesktop ? null : alerts}
       <HeroContent
         visual={
           <>
@@ -226,6 +230,7 @@ export function Hero({
         )}
       >
         {nav}
+        {isDesktop ? alerts : null}
         {isDesktop ? (
           <Suspense fallback={staticHero}>
             <HeroDesktopStage
