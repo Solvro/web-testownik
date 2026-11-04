@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { Alerts } from "@/components/alerts";
 import type { GitHubContributor } from "@/lib/contributors";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +90,17 @@ export function LandingPage({
       <LandingTableOfContents />
       <Hero
         heroReference={heroReference}
+        alerts={
+          <Alerts
+            className={cn(
+              "m-0 mb-6 min-w-0 wrap-anywhere lg:absolute lg:z-70 lg:m-0",
+              "lg:top-[6.05rem] lg:right-[max(1rem,env(safe-area-inset-right))]",
+              "lg:w-[min(26rem,calc(100%_-_2rem_-_env(safe-area-inset-left)_-_env(safe-area-inset-right)))]",
+              "lg:max-h-[min(50dvh,calc(100dvh_-_6.8rem_-_env(safe-area-inset-bottom)))] lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:thin]",
+              "[&_[data-slot=alert]]:bg-[color-mix(in_oklab,currentColor_5%,var(--background))]",
+            )}
+          />
+        }
         nav={
           <LandingNav
             isAuthenticated={isAuthenticated}
