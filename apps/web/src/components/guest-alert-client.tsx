@@ -1,7 +1,7 @@
 "use client";
 
 import { ACCOUNT_TYPE } from "@testownik/core/user/types";
-import { EyeOffIcon, IdCardLanyardIcon } from "lucide-react";
+import { IdCardLanyardIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -69,7 +69,7 @@ export function GuestAlertClient({
               }}
               className="text-muted-foreground hover:text-foreground absolute top-0 right-0 m-1"
             >
-              <EyeOffIcon />
+              <XIcon />
             </Button>
           }
         ></TooltipTrigger>

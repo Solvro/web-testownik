@@ -8,6 +8,7 @@ import {
   TriangleAlertIcon,
   XIcon,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -122,7 +123,17 @@ async function fetchAlerts(appCode: string): Promise<SolvroAlert[]> {
   return Array.isArray(payload) ? (payload as SolvroAlert[]) : [];
 }
 
-export function Alerts(): React.JSX.Element | null {
+/** The home page mounts its announcements inside the landing hero instead. */
+export function AppAlerts(): React.JSX.Element | null {
+  const pathname = usePathname();
+  return pathname === "/" ? null : <Alerts />;
+}
+
+export function Alerts({
+  className,
+}: {
+  className?: string;
+}): React.JSX.Element | null {
   const appCode = env.NEXT_PUBLIC_ALERTS_APP_CODE;
 
   const { data, error } = useQuery({
@@ -161,7 +172,7 @@ export function Alerts(): React.JSX.Element | null {
   }
 
   return (
-    <div className="mt-2 space-y-2">
+    <div className={cn("mt-2 flex flex-col gap-2", className)}>
       {visible.map((alert) => {
         const Icon = VARIANT_ICONS[alert.alert_type];
         const safeContent = DOMPurify.sanitize(alert.content, {
