@@ -1,13 +1,11 @@
 "use client";
 
-import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { UserData } from "@testownik/core/user/types";
-import { AlertCircleIcon, RotateCcwIcon, UserIcon } from "lucide-react";
+import { RotateCcwIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpdateUserProfile } from "@/hooks/use-user-profile";
-import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
 
@@ -36,13 +33,6 @@ export function ProfileChangeNameForm({
 }: ProfileChangeNameFormProps) {
   const router = useRouter();
   const updateUserProfile = useUpdateUserProfile();
-  const canChangeName = hasPermission(
-    userData.account_type,
-    PermissionAction.EDIT_PROFILE_NAME,
-    userData.account_level,
-  );
-  const isGuest = userData.account_type === ACCOUNT_TYPE.GUEST;
-
   const initialFirstName = userData.first_name.trim();
   const initialLastName = userData.last_name.trim();
 
@@ -68,7 +58,7 @@ export function ProfileChangeNameForm({
     if (event !== undefined) {
       event.preventDefault();
     }
-    if (saving || !canChangeName) {
+    if (saving) {
       return;
     }
 
@@ -138,39 +128,10 @@ export function ProfileChangeNameForm({
             Zmień nazwę profilu
           </DialogTitle>
           <DialogDescription>
-            {canChangeName
-              ? "Wprowadź nowe imię i nazwisko, które będą wyświetlane w Twoim profilu."
-              : "Informacje o możliwości zmiany nazwy dla Twojego typu konta."}
+            Wprowadź nowe imię i nazwisko, które będą wyświetlane w Twoim
+            profilu.
           </DialogDescription>
         </DialogHeader>
-
-        {canChangeName ? null : isGuest ? (
-          <Alert variant="destructive">
-            <AlertCircleIcon className="size-4" />
-            <AlertTitle>Funkcja niedostępna w trybie gościa</AlertTitle>
-            <AlertDescription>
-              Zaloguj się na swoje konto, aby móc edytować profil.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Alert>
-            <AlertCircleIcon className="size-4" />
-            <AlertTitle>Imię i nazwisko pobierane z USOS</AlertTitle>
-            <AlertDescription>
-              Twoje dane profilowe są automatycznie pobierane z systemu USOS i
-              nie mogą być edytowane w serwisie. Aby zmienić dane osobowe,
-              skontaktuj się z dziekanatem uczelni lub napisz do nas pod
-              adresem:{" "}
-              <a
-                className="font-medium underline"
-                href="mailto:kn.solvro@pwr.edu.pl"
-              >
-                kn.solvro@pwr.edu.pl
-              </a>
-              .
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="bg-muted/40 flex min-w-0 items-center gap-4 rounded-lg border p-3">
           <Avatar className="size-14 shrink-0">
@@ -195,60 +156,58 @@ export function ProfileChangeNameForm({
           </div>
         </div>
 
-        {canChangeName ? (
-          <form
-            id="profile-change-name-form"
-            onSubmit={handleSave}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="first_name">Imię</Label>
-              <Input
-                id="first_name"
-                aria-invalid={error !== null}
-                aria-describedby={
-                  error === null ? undefined : "profile-name-error"
+        <form
+          id="profile-change-name-form"
+          onSubmit={handleSave}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="first_name">Imię</Label>
+            <Input
+              id="first_name"
+              aria-invalid={error !== null}
+              aria-describedby={
+                error === null ? undefined : "profile-name-error"
+              }
+              value={firstName}
+              onChange={(event) => {
+                setFirstName(event.target.value);
+                if (error !== null) {
+                  setError(null);
                 }
-                value={firstName}
-                onChange={(event) => {
-                  setFirstName(event.target.value);
-                  if (error !== null) {
-                    setError(null);
-                  }
-                }}
-                disabled={saving}
-                placeholder="Wpisz imię"
-                maxLength={30}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Nazwisko</Label>
-              <Input
-                id="last_name"
-                aria-invalid={error !== null}
-                aria-describedby={
-                  error === null ? undefined : "profile-name-error"
-                }
-                value={lastName}
-                onChange={(event) => {
-                  setLastName(event.target.value);
-                  if (error !== null) {
-                    setError(null);
-                  }
-                }}
-                disabled={saving}
-                placeholder="Wpisz nazwisko"
-                maxLength={51}
-              />
-            </div>
-            <button
-              type="submit"
-              className="hidden"
-              aria-hidden="true"
-              tabIndex={-1}
+              }}
+              disabled={saving}
+              placeholder="Wpisz imię"
+              maxLength={30}
             />
-          </form>
-        ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="last_name">Nazwisko</Label>
+            <Input
+              id="last_name"
+              aria-invalid={error !== null}
+              aria-describedby={
+                error === null ? undefined : "profile-name-error"
+              }
+              value={lastName}
+              onChange={(event) => {
+                setLastName(event.target.value);
+                if (error !== null) {
+                  setError(null);
+                }
+              }}
+              disabled={saving}
+              placeholder="Wpisz nazwisko"
+              maxLength={51}
+            />
+          </div>
+          <button
+            type="submit"
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+        </form>
 
         {error === null ? null : (
           <p
@@ -261,7 +220,7 @@ export function ProfileChangeNameForm({
         )}
 
         <DialogFooter className="flex-row flex-wrap items-center border-t pt-4 sm:justify-between">
-          {canChangeName && hasChanges ? (
+          {hasChanges ? (
             <Button
               type="button"
               variant="ghost"
@@ -280,17 +239,15 @@ export function ProfileChangeNameForm({
               disabled={saving}
               onClick={onClose}
             >
-              {canChangeName ? "Anuluj" : "Zamknij"}
+              Anuluj
             </Button>
-            {canChangeName ? (
-              <Button
-                type="submit"
-                form="profile-change-name-form"
-                disabled={saving || isUnchanged || isEmpty}
-              >
-                {saving ? "Zapisywanie…" : "Zapisz"}
-              </Button>
-            ) : null}
+            <Button
+              type="submit"
+              form="profile-change-name-form"
+              disabled={saving || isUnchanged || isEmpty}
+            >
+              {saving ? "Zapisywanie…" : "Zapisz"}
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>

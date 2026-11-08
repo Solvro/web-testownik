@@ -6,6 +6,7 @@ import type { UserData } from "@testownik/core/user/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfileChangeNameForm } from "@/components/profile/profile-change-name-form";
+import { ProfileDetails } from "@/components/profile/profile-details";
 
 const mocks = vi.hoisted(() => ({
   updateUserProfile: vi.fn(),
@@ -61,6 +62,15 @@ const guestProfile: UserData = {
   account_type: ACCOUNT_TYPE.GUEST,
 };
 
+function renderWithClient(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  );
+}
+
 function setup(userData: UserData = emailProfile) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -85,62 +95,13 @@ afterEach(() => {
 });
 
 describe("ProfileChangeNameForm", () => {
-  describe("permissions and account types", () => {
-    it("non-EMAIL account sees the info alert and no inputs", () => {
-      setup(studentProfile);
+  it("pre-fills the inputs and shows the action buttons", () => {
+    setup(emailProfile);
 
-      expect(
-        screen.getByText("Imię i nazwisko pobierane z USOS"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          /Twoje dane profilowe są automatycznie pobierane z systemu USOS/,
-        ),
-      ).toBeInTheDocument();
-      expect(screen.queryByLabelText("Imię")).not.toBeInTheDocument();
-      expect(screen.queryByLabelText("Nazwisko")).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: "Zapisz" }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.getByText("Zamknij", { selector: "button" }),
-      ).toBeInTheDocument();
-    });
-
-    it("guest account sees the guest error alert and no inputs", () => {
-      setup(guestProfile);
-
-      expect(
-        screen.getByText("Funkcja niedostępna w trybie gościa"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(/Zaloguj się na swoje konto, aby móc edytować profil/),
-      ).toBeInTheDocument();
-      expect(screen.queryByLabelText("Imię")).not.toBeInTheDocument();
-      expect(screen.queryByLabelText("Nazwisko")).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: "Zapisz" }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.getByText("Zamknij", { selector: "button" }),
-      ).toBeInTheDocument();
-    });
-
-    it("EMAIL account sees input fields and action buttons", () => {
-      setup(emailProfile);
-
-      expect(screen.getByLabelText("Imię")).toHaveValue("Anna");
-      expect(screen.getByLabelText("Nazwisko")).toHaveValue("Nowak");
-      expect(
-        screen.getByRole("button", { name: "Anuluj" }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Zapisz" }),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByText("Imię i nazwisko pobierane z USOS"),
-      ).not.toBeInTheDocument();
-    });
+    expect(screen.getByLabelText("Imię")).toHaveValue("Anna");
+    expect(screen.getByLabelText("Nazwisko")).toHaveValue("Nowak");
+    expect(screen.getByRole("button", { name: "Anuluj" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Zapisz" })).toBeInTheDocument();
   });
 
   describe("saving and form submission", () => {
@@ -303,5 +264,39 @@ describe("ProfileChangeNameForm", () => {
         screen.queryByRole("button", { name: "Resetuj" }),
       ).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("ProfileDetails name editing", () => {
+  it("shows the rename button to accounts that can change their name", async () => {
+    const user = userEvent.setup();
+    renderWithClient(
+      <ProfileDetails userData={emailProfile} loading={false} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Zmień nazwę" }));
+
+    expect(screen.getByLabelText("Imię")).toHaveValue("Anna");
+  });
+
+  it("hides the rename button from USOS accounts", () => {
+    renderWithClient(
+      <ProfileDetails userData={studentProfile} loading={false} />,
+    );
+
+    expect(screen.getByText("Anna Nowak")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Zmień nazwę" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the rename button from guests", () => {
+    renderWithClient(
+      <ProfileDetails userData={guestProfile} loading={false} />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Zmień nazwę" }),
+    ).not.toBeInTheDocument();
   });
 });
