@@ -1,7 +1,7 @@
 "use client";
 
 import type { UserData } from "@testownik/core/user/types";
-import { RotateCcwIcon, UserIcon } from "lucide-react";
+import { UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -45,14 +45,7 @@ export function ProfileChangeNameForm({
   const isUnchanged =
     firstName.trim() === initialFirstName &&
     lastName.trim() === initialLastName;
-  const hasChanges = !isUnchanged;
   const isEmpty = firstName.trim().length === 0 && lastName.trim().length === 0;
-
-  const handleReset = () => {
-    setFirstName(initialFirstName);
-    setLastName(initialLastName);
-    setError(null);
-  };
 
   const handleSave = async (event?: React.SyntheticEvent) => {
     if (event !== undefined) {
@@ -219,36 +212,22 @@ export function ProfileChangeNameForm({
           </p>
         )}
 
-        <DialogFooter className="flex-row flex-wrap items-center border-t pt-4 sm:justify-between">
-          {hasChanges ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="mr-auto"
-              disabled={saving}
-              onClick={handleReset}
-            >
-              <RotateCcwIcon aria-hidden className="size-4" />
-              Resetuj
-            </Button>
-          ) : null}
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={onClose}
-            >
-              Anuluj
-            </Button>
-            <Button
-              type="submit"
-              form="profile-change-name-form"
-              disabled={saving || isUnchanged || isEmpty}
-            >
-              {saving ? "Zapisywanie…" : "Zapisz"}
-            </Button>
-          </div>
+        <DialogFooter className="border-t pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={saving}
+            onClick={onClose}
+          >
+            Anuluj
+          </Button>
+          <Button
+            type="submit"
+            form="profile-change-name-form"
+            disabled={saving || isUnchanged || isEmpty}
+          >
+            {saving ? "Zapisywanie…" : "Zapisz"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

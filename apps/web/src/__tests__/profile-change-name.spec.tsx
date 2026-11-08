@@ -248,22 +248,6 @@ describe("ProfileChangeNameForm", () => {
         expect(mocks.toastError).not.toHaveBeenCalled();
       },
     );
-
-    it("resets changes when clicking Resetuj", async () => {
-      const { user } = setup(emailProfile);
-
-      const firstNameInput = screen.getByLabelText("Imię");
-      await user.clear(firstNameInput);
-      await user.type(firstNameInput, "Zmienione");
-
-      const resetButton = screen.getByRole("button", { name: "Resetuj" });
-      await user.click(resetButton);
-
-      expect(firstNameInput).toHaveValue("Anna");
-      expect(
-        screen.queryByRole("button", { name: "Resetuj" }),
-      ).not.toBeInTheDocument();
-    });
   });
 });
 
