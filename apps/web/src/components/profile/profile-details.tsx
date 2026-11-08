@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AccountLevelBadge } from "@/components/account-level-badge";
 import { AccountTypeBadge } from "@/components/account-type-badge";
+import { ProfileChangeNameForm } from "@/components/profile/profile-change-name-form";
 import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateUserProfile } from "@/hooks/use-user-profile";
 import { getAccountLevelProfileAvatarClassName } from "@/lib/account-level";
+import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { cn, getInitials } from "@/lib/utils";
 
 interface ProfileDetailsProps {
@@ -28,6 +30,12 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
   const router = useRouter();
   const updateUserProfile = useUpdateUserProfile();
   const [showDialog, setShowDialog] = useState(false);
+  const [changeName, setChangeName] = useState(false);
+  const canChangeName = hasPermission(
+    userData?.account_type,
+    PermissionAction.EDIT_PROFILE_NAME,
+    userData?.account_level,
+  );
   const handleHideProfile = (hide: boolean) => {
     updateUserProfile.mutate(
       { hide_profile: hide },
@@ -140,9 +148,24 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
                 <PencilIcon className="size-4" />
               </button>
             </div>
-            <h1 className="text-xl leading-tight font-semibold">
-              {userData?.full_name}
-            </h1>
+            <div className="relative">
+              <h1 className="text-xl leading-tight font-semibold">
+                {(userData?.full_name ?? "").trim() === ""
+                  ? "Ustaw nazwę"
+                  : userData?.full_name}
+              </h1>
+              {canChangeName ? (
+                <button
+                  aria-label="Zmień nazwę"
+                  onClick={() => {
+                    setChangeName(true);
+                  }}
+                  className="bg-background hover:bg-accent absolute top-1/2 left-full ml-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full border shadow transition"
+                >
+                  <PencilIcon className="size-3.5" />
+                </button>
+              ) : null}
+            </div>
             <h2 className="text-muted-foreground text-sm">
               {userData?.student_number}
             </h2>
@@ -209,6 +232,14 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
           userData={userData}
           onClose={() => {
             setShowDialog(false);
+          }}
+        />
+      ) : null}
+      {changeName && canChangeName && userData !== null ? (
+        <ProfileChangeNameForm
+          userData={userData}
+          onClose={() => {
+            setChangeName(false);
           }}
         />
       ) : null}

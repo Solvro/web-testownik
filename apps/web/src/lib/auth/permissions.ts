@@ -26,6 +26,8 @@ export enum PermissionAction {
   VIEW_WRAPPED = "view_wrapped",
   // Uploading a personal profile photo (predefined avatars remain available to all accounts)
   UPLOAD_PROFILE_PHOTO = "upload_profile_photo",
+  // Editing the user's profile name
+  EDIT_PROFILE_NAME = "edit_profile_name",
 }
 
 export const PERMISSIONS_BY_ROLE: Record<
@@ -48,6 +50,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
     PermissionAction.VIEW_WRAPPED,
+    PermissionAction.EDIT_PROFILE_NAME,
   ],
   [ACCOUNT_TYPE.STUDENT]: [
     PermissionAction.UPLOAD_PROFILE_PHOTO,
