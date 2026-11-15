@@ -3,56 +3,35 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getQuizService } from "@/services";
+import type { CommentItem } from "@/services/types";
 
-export interface CommentItem {
-  id: string;
-  content: string;
-  created_at: string;
-  is_deleted: boolean;
-  author: {
-    id: string;
-    email?: string;
-  } | null;
-  quiz: string;
-  question: string | null;
-  parent: string | null;
-  replies?: CommentItem[];
-}
-
-interface QuizCommentsDialogProps {
-  children: React.ReactElement;
+interface QuizCommentsSectionProps {
   quizId: string;
   questionId?: string;
+  isOpen: boolean;
 }
 
-export function QuizCommentsDialog({
-  children,
+export function QuizCommentsSection({
   quizId,
   questionId,
-}: QuizCommentsDialogProps) {
+  isOpen,
+}: QuizCommentsSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [newContent, setNewContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getQuizService().getComments(quizId, questionId);
       setComments(data);
+      setHasLoaded(true);
     } catch (error) {
       console.error("Error fetching comments:", error);
       toast.error("Wystąpił błąd podczas pobierania komentarzy.");
@@ -61,14 +40,11 @@ export function QuizCommentsDialog({
     }
   }, [quizId, questionId]);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (newOpen) {
-      void fetchComments();
-    }
-  };
+  if (isOpen && !hasLoaded && !loading) {
+    void fetchComments();
+  }
 
-  const handlePostComments = async () => {
+  const handlePostComment = async () => {
     if (!newContent.trim()) {
       toast.error("Treść komentarza nie może być pusta.");
       return;
@@ -103,41 +79,39 @@ export function QuizCommentsDialog({
   };
 
   const filteredComments = comments.filter((comment) => {
-    if (questionId !== undefined) {
-      return comment.question === questionId;
-    }
-    return comment.question === null;
+    return questionId === undefined
+      ? comment.question === null
+      : comment.question === questionId;
   });
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={children}></DialogTrigger>
-      <DialogContent
-        onKeyDown={(event_) => {
-          event_.stopPropagation();
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>
-            {questionId === undefined
-              ? "Komentarze do quizu"
-              : "Dyskusja do pytania"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="my-4 max-h-[40vh] min-h-[200px] flex-1 space-y-4 overflow-y-auto pr-2">
-          {loading ? (
-            <p className="text-muted-foreground py-8 text-center">
+    <Card className="mt-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">
+          {questionId === undefined
+            ? "Komentarze do quizu"
+            : "Dyskusja do pytania"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+          {loading && !hasLoaded ? (
+            <p className="text-muted-foreground py-4 text-center text-sm">
               Ładowanie komentarzy...
             </p>
           ) : filteredComments.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">
+            <p className="text-muted-foreground py-4 text-center text-sm">
               Brak komentarzy.
             </p>
           ) : (
             filteredComments.map((comment) => (
               <div
                 key={comment.id}
-                className="bg-card text-card-foreground rounded-lg border p-3"
+                className="bg-muted/30 rounded-lg border p-3 text-sm"
               >
                 <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs">
                   <span className="font-medium">
@@ -149,10 +123,13 @@ export function QuizCommentsDialog({
                     </span>
                     {!comment.is_deleted && (
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="text-muted-foreground hover:text-destructive h-6 w-6"
-                        onClick={async () => handleDeleteComment(comment.id)}
+                        onClick={() => {
+                          void handleDeleteComment(comment.id);
+                        }}
                         aria-label="Usuń komentarz"
                       >
                         <Trash2Icon className="h-3.5 w-3.5" />
@@ -160,10 +137,10 @@ export function QuizCommentsDialog({
                     )}
                   </div>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">
+                <p className="whitespace-pre-wrap">
                   {comment.is_deleted ? (
                     <span className="text-muted-foreground italic">
-                      Komentarz został usunięty
+                      Komentarz został usunięty.
                     </span>
                   ) : (
                     comment.content
@@ -173,32 +150,40 @@ export function QuizCommentsDialog({
             ))
           )}
         </div>
-        <div className="space-y-2 border-t pt-2">
-          <Label htmlFor="new-comment-textarea">Napisz komentarz</Label>
+
+        <div className="space-y-2 border-t pt-3">
+          <Label htmlFor="inline-comment-textarea" className="text-xs">
+            Napisz komentarz
+          </Label>
           <div className="flex gap-2">
             <Textarea
-              id="new-comment-textarea"
+              id="inline-comment-textarea"
               rows={2}
               value={newContent}
               onChange={(event_) => {
                 setNewContent(event_.target.value);
               }}
-              placeholder="Podziel się swoją opinią..."
+              onKeyDown={(event_) => {
+                event_.stopPropagation();
+              }}
+              placeholder={
+                questionId === undefined
+                  ? "Podziel się opinią o quizie..."
+                  : "Skomentuj to pytanie..."
+              }
             />
             <Button
-              onClick={handlePostComments}
+              type="button"
+              onClick={() => {
+                void handlePostComment();
+              }}
               disabled={isSubmitting || !newContent.trim()}
             >
-              {isSubmitting ? "Wysyłanie..." : <SendIcon className="h-4 w-4" />}
+              {isSubmitting ? "..." : <SendIcon className="h-4 w-4" />}
             </Button>
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose
-            render={<Button variant="outline">Anuluj</Button>}
-          ></DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

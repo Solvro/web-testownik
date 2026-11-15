@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
 import { QuickEditQuestionDialog } from "@/components/quiz/quick-edit-question-dialog";
-import { QuizCommentsDialog } from "@/components/quiz/quiz-comments-dialog";
+import { QuizCommentsSection } from "@/components/quiz/quiz-comments-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -35,6 +35,7 @@ interface QuizActionButtonsProps {
   isChatOpen?: boolean;
   aiDisabled?: boolean;
   questionChecked?: boolean;
+  isQuizFinished?: boolean;
   onQuestionDeleted?: (
     deletedQuestionId: string,
     newCurrentQuestionId: string | null,
@@ -57,6 +58,7 @@ export function QuizActionButtons({
   const { checkPermission, user } = useContext(AppContext);
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
   const isCreator =
     (quiz.can_edit ?? false) || quiz.creator?.id === user?.user_id;
@@ -107,140 +109,151 @@ export function QuizActionButtons({
   };
 
   return (
-    <Card className="py-4">
-      <CardContent className="flex justify-around">
-        {canUseAi ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onExplain}
-                  disabled={!canUseQuestion || isExplainOpen}
-                  aria-label={explainLabel}
-                >
-                  <SparklesIcon />
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>{explainLabel}</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleOpenChatGPT}
-                  disabled={!canUseQuestion}
-                  aria-label="Otwórz w ChatGPT"
-                >
-                  <SiOpenai />
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>Otwórz w ChatGPT</TooltipContent>
-          </Tooltip>
-        )}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopy}
-                disabled={!canUseQuestion}
-                aria-label="Kopiuj pytanie i odpowiedzi"
-              >
-                <ClipboardCopyIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
-        </Tooltip>
-        {isCreator ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleEdit}
-                  aria-label="Edytuj pytanie"
-                >
-                  <PencilLineIcon />
-                </Button>
-              }
-            ></TooltipTrigger>
-            <TooltipContent>
-              {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
-            </TooltipContent>
-          </Tooltip>
-        ) : checkPermission(PermissionAction.COMMENT_QUIZ) ? (
-          <Tooltip>
-            <QuizCommentsDialog quizId={quiz.id} questionId={question?.id}>
+    <>
+      <Card className="py-4">
+        <CardContent className="flex justify-around">
+          {canUseAi ? (
+            <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     variant="outline"
                     size="icon"
+                    onClick={onExplain}
+                    disabled={!canUseQuestion || isExplainOpen}
+                    aria-label={explainLabel}
+                  >
+                    <SparklesIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>{explainLabel}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleOpenChatGPT}
                     disabled={!canUseQuestion}
+                    aria-label="Otwórz w ChatGPT"
+                  >
+                    <SiOpenai />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Otwórz w ChatGPT</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopy}
+                  disabled={!canUseQuestion}
+                  aria-label="Kopiuj pytanie i odpowiedzi"
+                >
+                  <ClipboardCopyIcon />
+                </Button>
+              }
+            ></TooltipTrigger>
+            <TooltipContent>Kopiuj pytanie i odpowiedzi</TooltipContent>
+          </Tooltip>
+          {isCreator ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleEdit}
+                    aria-label="Edytuj pytanie"
+                  >
+                    <PencilLineIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>
+                {question == null ? "Edytuj quiz" : "Edytuj pytanie"}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+          {checkPermission(PermissionAction.COMMENT_QUIZ) ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setIsCommentsOpen((previous) => !previous);
+                    }}
                     aria-label="Komentarze"
                   >
                     <MessageSquareIcon />
                   </Button>
                 }
               ></TooltipTrigger>
-            </QuizCommentsDialog>
-            <TooltipContent>Komentarze</TooltipContent>
-          </Tooltip>
-        ) : null}
-        {canUseAi && onOpenChat != null ? (
+              <TooltipContent>
+                {isCommentsOpen ? "Ukryj komentarze" : "Komentarze"}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+          {canUseAi && onOpenChat != null ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onOpenChat}
+                    disabled={!canUseQuestion || isChatOpen}
+                    aria-label="Czat AI"
+                  >
+                    <BotIcon />
+                  </Button>
+                }
+              ></TooltipTrigger>
+              <TooltipContent>Czat AI</TooltipContent>
+            </Tooltip>
+          ) : null}
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={onOpenChat}
-                  disabled={!canUseQuestion || isChatOpen}
-                  aria-label="Czat AI"
+                  onClick={onToggleBrainrot}
+                  aria-label="Brainrot mode"
                 >
-                  <BotIcon />
+                  <SkullIcon />
                 </Button>
               }
             ></TooltipTrigger>
-            <TooltipContent>Czat AI</TooltipContent>
+            <TooltipContent>Brainrot mode</TooltipContent>
           </Tooltip>
-        ) : null}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onToggleBrainrot}
-                aria-label="Brainrot mode"
-              >
-                <SkullIcon />
-              </Button>
-            }
-          ></TooltipTrigger>
-          <TooltipContent>Brainrot mode</TooltipContent>
-        </Tooltip>
-      </CardContent>
-      {question == null ? null : (
-        <QuickEditQuestionDialog
-          open={isEditOpen}
-          onOpenChange={setIsEditOpen}
-          question={question}
-          quizId={quiz.id}
-          onQuestionDeleted={onQuestionDeleted}
-          key={question.id}
-        />
-      )}
-    </Card>
+        </CardContent>
+        {question == null ? null : (
+          <QuickEditQuestionDialog
+            open={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            question={question}
+            quizId={quiz.id}
+            onQuestionDeleted={onQuestionDeleted}
+            key={question.id}
+          />
+        )}
+      </Card>
+      <QuizCommentsSection
+        key={question?.id ?? "quiz-level"}
+        quizId={quiz.id}
+        questionId={question?.id}
+        isOpen={isCommentsOpen}
+      />
+    </>
   );
 }
