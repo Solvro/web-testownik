@@ -19,6 +19,7 @@ import {
   Animation,
   animation,
   disabled,
+  fixedSize,
   font,
   foregroundStyle,
   listStyle,
@@ -54,12 +55,14 @@ export default function AccountContent(props: AccountContentProps) {
         <Section
           title={t("Twoje dane", "Your Information")}
           footer={
-            <Text>
+            <Text
+              modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+            >
               {props.privacyError
                 ? `${t("Nie zapisano zmiany", "The change was not saved")}: ${userError(props.privacyError, t)}`
                 : t(
-                    "Ukryty profil nie pojawia się innym osobom w wyszukiwaniu i przy udostępnianiu.",
-                    "A hidden profile doesn’t appear to other people in search or when sharing.",
+                    "Ukryty profil nie pojawia się w wyszukiwaniu po imieniu i nazwisku ani w rankingach. Nadal można cię znaleźć po pełnym numerze indeksu.",
+                    "Hiding your profile removes it from name searches and leaderboards. People can still find you by your full student number.",
                   )}
             </Text>
           }
@@ -83,7 +86,9 @@ export default function AccountContent(props: AccountContentProps) {
         <Section
           title={t("Połączone aplikacje", "Connected Apps")}
           footer={
-            <Text>
+            <Text
+              modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+            >
               {t(
                 "Aplikacje z dostępem do Twojego konta Testownika. Dotknij, aby zobaczyć uprawnienia, lub przesuń w lewo, aby odłączyć. Aplikacji, której używasz, nie można odłączyć — wyloguj się.",
                 "Apps with access to your Testownik account. Tap to see permissions or swipe left to disconnect. To remove this app, sign out instead.",

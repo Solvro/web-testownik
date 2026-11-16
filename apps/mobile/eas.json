@@ -15,7 +15,12 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://testownik.solvro.pl/api",
+        "EXPO_PUBLIC_WEB_URL": "https://testownik.solvro.pl"
+      }
     }
   }
 }

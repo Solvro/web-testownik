@@ -7,6 +7,7 @@ import { useQuizRating } from "../lib/quiz-rating";
 import { useTheme } from "../lib/theme";
 import BeerMug from "./BeerMug";
 import RatingControl from "./RatingControl";
+import { ErrorState } from "./ui";
 
 /**
  * The finish line: the web's "go have a beer" Easter egg, then a gentle ask to
@@ -62,9 +63,13 @@ export default function QuizCompleteCard({
           {t("Jak Ci się podobał ten quiz?", "How Was This Quiz?")}
         </Text>
         <RatingControl
+          disabled={mine.data === undefined || state === "saving"}
           value={current?.score ?? 0}
           onChange={(score) => void rate(score)}
         />
+        {mine.error ? (
+          <ErrorState error={mine.error} retry={() => void mine.refetch()} />
+        ) : null}
         <Text
           accessibilityLiveRegion="polite"
           style={{

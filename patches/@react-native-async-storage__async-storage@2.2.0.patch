@@ -1,0 +1,436 @@
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
+index a66e80291b3bbf8b3fa46447afea54140dcd7bd1..7d5daefb1d7ab35e878c1abfd72b88e5edb438dc 100644
+--- a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
+@@ -9,6 +9,8 @@ package com.reactnativecommunity.asyncstorage;
+ 
+ import android.database.Cursor;
+ import android.database.sqlite.SQLiteStatement;
++import android.database.sqlite.SQLiteDatabase;
++import android.database.sqlite.SQLiteBlobTooBigException;
+ import android.os.AsyncTask;
+ 
+ import com.facebook.common.logging.FLog;
+@@ -100,62 +102,70 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null), null);
+-          return;
+-        }
+-
+-        String[] columns = {ReactDatabaseSupplier.KEY_COLUMN, ReactDatabaseSupplier.VALUE_COLUMN};
+-        HashSet<String> keysRemaining = new HashSet<>();
+-        WritableArray data = Arguments.createArray();
+-        for (int keyStart = 0; keyStart < keys.size(); keyStart += MAX_SQL_KEYS) {
+-          int keyCount = Math.min(keys.size() - keyStart, MAX_SQL_KEYS);
+-          Cursor cursor = mReactDatabaseSupplier.get().query(
+-              ReactDatabaseSupplier.TABLE_CATALYST,
+-              columns,
+-              AsyncLocalStorageUtil.buildKeySelection(keyCount),
+-              AsyncLocalStorageUtil.buildKeySelectionArgs(keys, keyStart, keyCount),
+-              null,
+-              null,
+-              null);
+-          keysRemaining.clear();
+-          try {
+-            if (cursor.getCount() != keys.size()) {
+-              // some keys have not been found - insert them with null into the final array
+-              for (int keyIndex = keyStart; keyIndex < keyStart + keyCount; keyIndex++) {
+-                keysRemaining.add(keys.getString(keyIndex));
+-              }
+-            }
+-
+-            if (cursor.moveToFirst()) {
+-              do {
+-                WritableArray row = Arguments.createArray();
+-                row.pushString(cursor.getString(0));
+-                row.pushString(cursor.getString(1));
+-                data.pushArray(row);
+-                keysRemaining.remove(cursor.getString(0));
+-              } while (cursor.moveToNext());
++        WritableArray data = null;
++        WritableMap error = null;
++        try {
++          if (!ensureDatabase()) {
++            error = AsyncStorageErrorUtil.getDBError(null);
++          } else {
++            SQLiteDatabase database = mReactDatabaseSupplier.get();
++            try {
++              data = readValues(database, keys);
++            } catch (SQLiteBlobTooBigException overflow) {
++              // readValues has closed its cursor and returned no partial data.
++              data = LargeValueReader.read(database, keys);
+             }
+-          } catch (Exception e) {
+-            FLog.w(ReactConstants.TAG, e.getMessage(), e);
+-            callback.invoke(AsyncStorageErrorUtil.getError(null, e.getMessage()), null);
+-            return;
+-          } finally {
+-            cursor.close();
+           }
++        } catch (Exception e) {
++          FLog.w(ReactConstants.TAG, e.getMessage(), e);
++          error = AsyncStorageErrorUtil.getError(null, e.getMessage());
++        } catch (OutOfMemoryError e) {
++          error = AsyncStorageErrorUtil.getError(null, "Not enough memory to read saved data; data is kept");
++        }
++        // Callback after every cursor/transaction/reference has been released.
++        if (error != null) callback.invoke(error, null);
++        else callback.invoke(null, data);
++      }
++    }.executeOnExecutor(executor);
++  }
+ 
+-          for (String key : keysRemaining) {
++  /** Normal fast path; never returns a partial result on a cursor failure. */
++  private WritableArray readValues(SQLiteDatabase database, ReadableArray keys) {
++    String[] columns = {ReactDatabaseSupplier.KEY_COLUMN, ReactDatabaseSupplier.VALUE_COLUMN};
++    HashSet<String> keysRemaining = new HashSet<>();
++    WritableArray data = Arguments.createArray();
++    for (int keyStart = 0; keyStart < keys.size(); keyStart += MAX_SQL_KEYS) {
++      int keyCount = Math.min(keys.size() - keyStart, MAX_SQL_KEYS);
++      try (Cursor cursor = database.query(
++          ReactDatabaseSupplier.TABLE_CATALYST, columns,
++          AsyncLocalStorageUtil.buildKeySelection(keyCount),
++          AsyncLocalStorageUtil.buildKeySelectionArgs(keys, keyStart, keyCount),
++          null, null, null)) {
++        keysRemaining.clear();
++        if (cursor.getCount() != keyCount) {
++          for (int keyIndex = keyStart; keyIndex < keyStart + keyCount; keyIndex++) {
++            keysRemaining.add(keys.getString(keyIndex));
++          }
++        }
++        if (cursor.moveToFirst()) {
++          do {
++            LargeValueReader.requireCurrentRow(cursor);
+             WritableArray row = Arguments.createArray();
+-            row.pushString(key);
+-            row.pushNull();
++            row.pushString(cursor.getString(0));
++            row.pushString(cursor.getString(1));
+             data.pushArray(row);
+-          }
+-          keysRemaining.clear();
++            keysRemaining.remove(cursor.getString(0));
++          } while (cursor.moveToNext());
++        }
++        for (String key : keysRemaining) {
++          WritableArray row = Arguments.createArray();
++          row.pushString(key);
++          row.pushNull();
++          data.pushArray(row);
+         }
+-
+-        callback.invoke(null, data);
+       }
+-    }.executeOnExecutor(executor);
++    }
++    return data;
+   }
+ 
+   /**
+@@ -174,10 +184,7 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null));
+-          return;
+-        }
++        if (!openDatabaseOrReportError(callback, false, false)) return;
+ 
+         String sql = "INSERT OR REPLACE INTO " + ReactDatabaseSupplier.TABLE_CATALYST + " VALUES (?, ?);";
+         SQLiteStatement statement = mReactDatabaseSupplier.get().compileStatement(sql);
+@@ -240,10 +247,7 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null));
+-          return;
+-        }
++        if (!openDatabaseOrReportError(callback, false, false)) return;
+ 
+         WritableMap error = null;
+         try {
+@@ -288,10 +292,7 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null));
+-          return;
+-        }
++        if (!openDatabaseOrReportError(callback, false, false)) return;
+         WritableMap error = null;
+         try {
+           mReactDatabaseSupplier.get().beginTransaction();
+@@ -351,10 +352,7 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!mReactDatabaseSupplier.ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null));
+-          return;
+-        }
++        if (!openDatabaseOrReportError(callback, false, true)) return;
+         try {
+           mReactDatabaseSupplier.clear();
+           callback.invoke();
+@@ -375,10 +373,7 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+     new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+       @Override
+       protected void doInBackgroundGuarded(Void... params) {
+-        if (!ensureDatabase()) {
+-          callback.invoke(AsyncStorageErrorUtil.getDBError(null), null);
+-          return;
+-        }
++        if (!openDatabaseOrReportError(callback, true, false)) return;
+         WritableArray data = Arguments.createArray();
+         String[] columns = {ReactDatabaseSupplier.KEY_COLUMN};
+         Cursor cursor = mReactDatabaseSupplier.get()
+@@ -404,6 +399,22 @@ public final class AsyncStorageModule extends NativeAsyncStorageModuleSpec {
+   /**
+    * Verify the database is open for reads and writes.
+    */
++  private boolean openDatabaseOrReportError(Callback callback, boolean hasResult, boolean allowShutdown) {
++    WritableMap error;
++    try {
++      if ((allowShutdown || !mShuttingDown) && mReactDatabaseSupplier.ensureDatabase()) return true;
++      error = AsyncStorageErrorUtil.getDBError(null);
++    } catch (Exception e) {
++      FLog.w(ReactConstants.TAG, e.getMessage(), e);
++      error = AsyncStorageErrorUtil.getError(null, e.getMessage());
++    }
++    // Keep the native error message (including SQLITE_FULL) and settle once,
++    // after the supplier has released its open lock and failed database handle.
++    if (hasResult) callback.invoke(error, null);
++    else callback.invoke(error);
++    return false;
++  }
++
+   private boolean ensureDatabase() {
+     return !mShuttingDown && mReactDatabaseSupplier.ensureDatabase();
+   }
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/LargeValueReader.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/LargeValueReader.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e3d829378114a072b9f314da2a2bf99e1403e806
+--- /dev/null
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/LargeValueReader.java
+@@ -0,0 +1,149 @@
++/* Licensed under the MIT license; see LICENSE in this package. */
++package com.reactnativecommunity.asyncstorage;
++
++import android.database.AbstractWindowedCursor;
++import android.database.Cursor;
++import android.database.CursorWindow;
++import android.database.sqlite.SQLiteBlobTooBigException;
++import android.database.sqlite.SQLiteDatabase;
++import android.database.sqlite.SQLiteException;
++import android.os.Build;
++import com.facebook.react.bridge.Arguments;
++import com.facebook.react.bridge.ReadableArray;
++import com.facebook.react.bridge.WritableArray;
++import java.nio.ByteBuffer;
++import java.nio.CharBuffer;
++import java.nio.charset.CharacterCodingException;
++import java.nio.charset.CoderResult;
++import java.nio.charset.CodingErrorAction;
++import java.nio.charset.CharsetDecoder;
++import java.nio.charset.StandardCharsets;
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++/** Bounded, SELECT-only compatibility read for legacy rows that exceed CursorWindow. */
++final class LargeValueReader {
++  static final int SLICE_BYTES = 512 * 1024;
++  static final int MAX_VALUE_BYTES = 8 * 1024 * 1024;
++  static final int MAX_TOTAL_BYTES = 16 * 1024 * 1024;
++
++  private LargeValueReader() {}
++
++  static void requireCurrentRow(Cursor cursor) {
++    // Android 24–27 counts a row that did not fit, then reports a successful move
++    // with an empty window. AOSP added SQLITE_TOOBIG for this case in Android 28.
++    // Detect that precise state before getString; do not reinterpret arbitrary
++    // IllegalStateException (a closed cursor/database must remain an error).
++    if (Build.VERSION.SDK_INT < 28 && cursor instanceof AbstractWindowedCursor) {
++      CursorWindow window = ((AbstractWindowedCursor) cursor).getWindow();
++      if (window != null && window.getNumRows() == 0) {
++        throw new SQLiteBlobTooBigException("Legacy row does not fit into CursorWindow");
++      }
++    }
++  }
++
++  static WritableArray read(SQLiteDatabase database, ReadableArray keys)
++      throws CharacterCodingException {
++    database.acquireReference();
++    try {
++      if (database.inTransaction()) {
++        throw new SQLiteException("Cannot recover a value inside an existing transaction");
++      }
++      // Same database and worker thread, with no supplier monitor or extra handle.
++      // IMMEDIATE prevents any other module instance from changing later slices.
++      database.beginTransactionNonExclusive();
++      try {
++        return readSnapshot(database, keys);
++      } finally {
++        // SELECT-only: rollback releases the snapshot even if assembly failed.
++        database.endTransaction();
++      }
++    } finally {
++      database.releaseReference();
++    }
++  }
++
++  private static WritableArray readSnapshot(SQLiteDatabase database, ReadableArray keys)
++      throws CharacterCodingException {
++    try (Cursor encoding = database.rawQuery("PRAGMA encoding", null)) {
++      if (!encoding.moveToFirst() || !"UTF-8".equalsIgnoreCase(encoding.getString(0))) {
++        throw new SQLiteException("Legacy value recovery requires UTF-8 storage");
++      }
++    }
++    Map<String, Integer> lengths = new LinkedHashMap<>();
++    long total = 0;
++    // Preflight all distinct values before allocating a large buffer. Upstream
++    // returns one row per distinct key, including one null for a missing key.
++    for (int index = 0; index < keys.size(); index++) {
++      String key = keys.getString(index);
++      if (key == null) throw new SQLiteException("Invalid AsyncStorage key");
++      if (lengths.containsKey(key)) continue;
++      try (Cursor metadata = database.rawQuery(
++          "SELECT typeof(value), length(CAST(value AS BLOB)) FROM catalystLocalStorage WHERE key = ?",
++          new String[] {key})) {
++        if (!metadata.moveToFirst()) {
++          lengths.put(key, -1);
++          continue;
++        }
++        if (!"text".equals(metadata.getString(0)) || metadata.isNull(1)) {
++          throw new SQLiteException("Invalid legacy AsyncStorage value type");
++        }
++        long length = metadata.getLong(1);
++        if (length < 0 || length > MAX_VALUE_BYTES || total + length > MAX_TOTAL_BYTES) {
++          throw new SQLiteException("Legacy saved data exceeds the bounded recovery limit; data is kept");
++        }
++        total += length;
++        lengths.put(key, (int) length);
++      }
++    }
++    WritableArray data = Arguments.createArray();
++    for (Map.Entry<String, Integer> entry : lengths.entrySet()) {
++      String key = entry.getKey();
++      int length = entry.getValue();
++      WritableArray row = Arguments.createArray();
++      row.pushString(key);
++      if (length < 0) {
++        row.pushNull();
++      } else {
++        byte[] bytes = new byte[length];
++        for (int offset = 0; offset < length; offset += SLICE_BYTES) {
++          int count = Math.min(SLICE_BYTES, length - offset);
++          try (Cursor slice = database.rawQuery(
++              "SELECT substr(CAST(value AS BLOB), CAST(? AS INTEGER), CAST(? AS INTEGER)) "
++                  + "FROM catalystLocalStorage WHERE key = ?",
++              new String[] {Integer.toString(offset + 1), Integer.toString(count), key})) {
++            if (!slice.moveToFirst() || slice.isNull(0)) {
++              throw new SQLiteException("Missing legacy value slice; data is kept");
++            }
++            byte[] piece = slice.getBlob(0);
++            if (piece.length != count) {
++              throw new SQLiteException("Incomplete legacy value slice; data is kept");
++            }
++            System.arraycopy(piece, 0, bytes, offset, count);
++          }
++        }
++        validateUtf8(bytes);
++        row.pushString(new String(bytes, StandardCharsets.UTF_8));
++      }
++      data.pushArray(row);
++    }
++    return data;
++  }
++
++  private static void validateUtf8(byte[] bytes) throws CharacterCodingException {
++    CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
++        .onMalformedInput(CodingErrorAction.REPORT)
++        .onUnmappableCharacter(CodingErrorAction.REPORT);
++    ByteBuffer input = ByteBuffer.wrap(bytes);
++    CharBuffer scratch = CharBuffer.allocate(4096);
++    while (true) {
++      CoderResult result = decoder.decode(input, scratch, true);
++      if (result.isError()) result.throwException();
++      if (result.isUnderflow()) break;
++      scratch.clear();
++    }
++    scratch.clear();
++    CoderResult result = decoder.flush(scratch);
++    if (result.isError()) result.throwException();
++  }
++}
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
+index c7c59b0e32c8a9e88be43b3e7d0caf6fc3002f59..5bcae9f25aa267c6e1cca2a8a456bafdef9d0166 100644
+--- a/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
+@@ -8,6 +8,7 @@
+ package com.reactnativecommunity.asyncstorage;
+ 
+ import android.content.Context;
++import android.database.DatabaseErrorHandler;
+ import android.database.sqlite.SQLiteDatabase;
+ import android.database.sqlite.SQLiteException;
+ import android.database.sqlite.SQLiteOpenHelper;
+@@ -44,7 +45,14 @@ public class ReactDatabaseSupplier extends SQLiteOpenHelper {
+   private long mMaximumDatabaseSize =  BuildConfig.AsyncStorage_db_size * 1024L * 1024L;
+ 
+   private ReactDatabaseSupplier(Context context) {
+-    super(context, DATABASE_NAME, null, DATABASE_VERSION);
++    super(context, DATABASE_NAME, null, DATABASE_VERSION, new DatabaseErrorHandler() {
++      @Override
++      public void onCorruption(SQLiteDatabase database) {
++        // Android's default handler deletes the database before an open error
++        // reaches the caller. Keep saved answers for explicit recovery instead.
++        FLog.e(ReactConstants.TAG, "Saved database is corrupt; data is kept");
++      }
++    });
+     mContext = context;
+   }
+ 
+@@ -75,25 +83,25 @@ public class ReactDatabaseSupplier extends SQLiteOpenHelper {
+     if (mDb != null && mDb.isOpen()) {
+       return true;
+     }
+-    // Sometimes retrieving the database fails. We do 2 retries: first without database deletion
+-    // and then with deletion.
++    // A handle closed elsewhere must not mask a failed reopen.
++    mDb = null;
++    // Retry the same database once; a failed open must never discard saved data.
+     SQLiteException lastSQLiteException = null;
+     for (int tries = 0; tries < 2; tries++) {
+-      try {
+-        if (tries > 0) {
+-          deleteDatabase();
++      if (tries > 0) {
++        try {
++          Thread.sleep(SLEEP_TIME_MS);
++        } catch (InterruptedException ie) {
++          Thread.currentThread().interrupt();
++          break;
+         }
++      }
++      try {
+         mDb = getWritableDatabase();
+         break;
+       } catch (SQLiteException e) {
+         lastSQLiteException = e;
+       }
+-      // Wait before retrying.
+-      try {
+-        Thread.sleep(SLEEP_TIME_MS);
+-      } catch (InterruptedException ie) {
+-        Thread.currentThread().interrupt();
+-      }
+     }
+     if (mDb == null) {
+       throw lastSQLiteException;

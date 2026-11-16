@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 const quiz = {
   id: "history-quiz",
   title: "History fixture",
+  version: 1,
   questions: [
     {
       id: "q1",
@@ -13,6 +14,9 @@ const quiz = {
     },
   ],
   current_session: {
+    id: "history-session",
+    current_question: "q1",
+    study_time: 12,
     answers: [
       {
         id: "older",
@@ -98,12 +102,14 @@ for (const language of ["en", "pl"] as const) {
         })
         .first(),
     ).toHaveAccessibleName(
-      `${english ? "Incorrect" : "Niepoprawnie"}: Which number?`,
+      new RegExp(
+        `^${english ? "Incorrect" : "Niepoprawnie"}: Which number\\?, ${english ? "Question" : "Pytanie"} 1, .+`,
+      ),
     );
     await page
       .getByRole("button", {
         name: `${english ? "Incorrect" : "Niepoprawnie"}: Which number?`,
-        exact: true,
+        exact: false,
       })
       .click();
     // Your choice and the correct answer are told apart by text, not only color.
@@ -111,7 +117,9 @@ for (const language of ["en", "pl"] as const) {
       page.getByText(english ? "Your choice" : "Twój wybór", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByLabel(english ? /, Correct answer$/ : /, Poprawna odpowiedź$/),
+      page.getByLabel(english ? "Correct answer" : "Poprawna odpowiedź", {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(
       page.frameLocator("iframe").nth(2).getByText("Five", { exact: true }),
@@ -121,7 +129,7 @@ for (const language of ["en", "pl"] as const) {
         name: english
           ? "Correct: Question unavailable"
           : "Poprawnie: Pytanie niedostępne",
-        exact: true,
+        exact: false,
       })
       .click();
     await expect(
@@ -155,7 +163,19 @@ test("unsynced local answers remain reviewable without replacing them with the s
       "testownik.v1.offline.history-fixture",
       JSON.stringify({
         quizzes: { [quiz.id]: quiz },
-        queue: [{ quiz_id: quiz.id }],
+        queue: [
+          {
+            request_id: "newer",
+            quiz_id: quiz.id,
+            session_id: "history-session",
+            version: 1,
+            question_id: "q1",
+            selected_answers: ["a2"],
+            elapsed_seconds: 12,
+            next_question: "q1",
+            local: quiz.current_session.answers[1],
+          },
+        ],
         errors: {},
       }),
     );
@@ -177,7 +197,10 @@ test("unsynced local answers remain reviewable without replacing them with the s
   });
   await page.goto("/history?id=history-quiz");
   await expect(
-    page.getByRole("button", { name: "Incorrect: Which number?", exact: true }),
+    page.getByRole("button", {
+      name: /Incorrect: Which number\?/,
+      exact: false,
+    }),
   ).toBeVisible();
   expect(quizRequests).toBe(0);
 });

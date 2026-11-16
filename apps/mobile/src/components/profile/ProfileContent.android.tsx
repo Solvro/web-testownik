@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 
 import { usageWindowLabels } from "../../lib/ai-usage";
 import { useLocale, type LanguagePreference } from "../../lib/locale";
@@ -7,9 +7,10 @@ import { useTheme } from "../../lib/theme";
 import { Collection, CollectionDivider } from "../Collection";
 import { SectionTitle as Heading } from "../SettingsGroup";
 import SyncStatus from "../SyncStatus";
+import SolvroLogo from "../SolvroLogo";
 import Choice from "../native/Choice";
 import CollectionRow from "../native/CollectionRow";
-import { Button, Screen } from "../ui";
+import { Button, ErrorState, Screen } from "../ui";
 import type { ProfileContentProps } from "./types";
 
 // Material 3 list sections with leading icons. Mirrors the iOS list: AI usage
@@ -96,6 +97,16 @@ export default function ProfileContent(props: ProfileContentProps) {
           onPress={props.openWrapped}
         />
       </Collection>
+      {props.usageError ? (
+        <ErrorState error={props.usageError} retry={props.retryUsage} />
+      ) : props.usageLoading ? (
+        <ActivityIndicator
+          accessibilityLabel={t(
+            "Wczytuję wykorzystanie AI",
+            "Loading AI Usage",
+          )}
+        />
+      ) : null}
       {props.usage ? (
         <>
           <Heading small>{t("Wykorzystanie AI", "AI Usage")}</Heading>
@@ -195,6 +206,7 @@ export default function ProfileContent(props: ProfileContentProps) {
         <CollectionRow
           ionicon="people-outline"
           title="Solvro"
+          leading={<SolvroLogo />}
           onPress={() => props.openLink("https://solvro.pwr.edu.pl")}
         />
         <CollectionDivider />
@@ -214,8 +226,8 @@ export default function ProfileContent(props: ProfileContentProps) {
       </Collection>
       <Text style={footer}>
         {t(
-          `Testownik ${props.version} · Tworzony przez KN Solvro na Politechnice Wrocławskiej.`,
-          `Testownik ${props.version} · Made by KN Solvro at Wrocław University of Science and Technology.`,
+          `Testownik ${props.version} · Tworzony przez KN Solvro na Politechnice Wrocławskiej. Aplikacja mobilna: Antoni Czaplicki.`,
+          `Testownik ${props.version} · Made by KN Solvro at Wrocław University of Science and Technology. Mobile app by Antoni Czaplicki.`,
         )}
       </Text>
       <Button kind="danger" onPress={props.signOut}>

@@ -20,7 +20,7 @@ export default function ChatAction({
 }: ChatActionProps) {
   const c = useTheme();
   return (
-    <Host ignoreSafeArea="all" style={{ width: 36, height: 36 }}>
+    <Host ignoreSafeArea="all" style={{ width: 44, height: 44 }}>
       <Button
         onPress={onPress}
         modifiers={[
@@ -30,18 +30,18 @@ export default function ChatAction({
               : "borderedProminent",
           ),
           buttonBorderShape("circle"),
-          controlSize("small"),
+          controlSize("large"),
           tint(c.primary),
           disabled(unavailable),
           accessibilityLabel(label),
-          frame({ width: 36, height: 36 }),
+          frame({ width: 44, height: 44 }),
         ]}
       >
         <Image
           systemName={stopping ? "stop.fill" : "arrow.up"}
-          size={15}
+          size={18}
           color="#FFFFFF"
-          modifiers={[frame({ width: 18, height: 18 })]}
+          modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}
         />
       </Button>
     </Host>

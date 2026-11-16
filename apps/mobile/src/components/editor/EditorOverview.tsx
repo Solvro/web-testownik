@@ -4,6 +4,13 @@ export default function EditorOverview(_props: {
   description: string;
   questions: unknown[];
   error: string;
+  notice?: string;
+  noticeActions?: {
+    label: string;
+    onPress: () => void;
+    destructive?: boolean;
+  }[];
+  busy?: boolean;
   openDetails: () => void;
   openQuestion: (id: string) => void;
   move: (from: number, to: number) => void;

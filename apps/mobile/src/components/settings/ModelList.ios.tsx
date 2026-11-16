@@ -9,7 +9,7 @@ import {
   Text,
   VStack,
 } from "@expo/ui/swift-ui";
-import { font, frame, listStyle } from "@expo/ui/swift-ui/modifiers";
+import { disabled, font, frame, listStyle } from "@expo/ui/swift-ui/modifiers";
 
 import { useLocale } from "../../lib/locale";
 import { useTheme } from "../../lib/theme";
@@ -27,6 +27,8 @@ export default function ModelList({
   selected,
   select,
   defaultModel,
+  scope = "account",
+  disabled: unavailable = false,
 }: ModelListProps) {
   const c = useTheme();
   const { t } = useLocale();
@@ -40,7 +42,7 @@ export default function ModelList({
     <Button
       key={value ?? "default"}
       onPress={() => select(value)}
-      modifiers={[rowLabel]}
+      modifiers={[rowLabel, disabled(unavailable)]}
     >
       <HStack spacing={12}>
         {provider ? (
@@ -69,16 +71,23 @@ export default function ModelList({
         <Section
           footer={
             <Text>
-              {t(
-                "Domyślny model wybiera Testownik i może się zmieniać.",
-                "Testownik picks the default model, and it may change over time.",
-              )}
+              {scope === "quiz"
+                ? t(
+                    "Ten wybór dotyczy tylko tego quizu. Domyślny model konta zmienisz w ustawieniach nauki.",
+                    "This choice applies only to this quiz. Change your account default in Study Settings.",
+                  )
+                : t(
+                    "Domyślny model wybiera Testownik i może się zmieniać.",
+                    "Testownik picks the default model, and it may change over time.",
+                  )}
             </Text>
           }
         >
           {row(
             null,
-            t("Domyślny", "Default"),
+            scope === "quiz"
+              ? t("Użyj ustawień nauki", "Use Study Settings")
+              : t("Domyślny", "Default"),
             defaultModel?.provider,
             defaultModel?.label,
           )}

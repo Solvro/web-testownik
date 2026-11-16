@@ -37,10 +37,8 @@ export function HardestQuestionsChart({
   canViewAll,
 }: HardestQuestionsChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
-  const { data, isFetching, isPending } = useQuizHardestQuestions(
-    quizId,
-    scope,
-  );
+  const { data, isFetching, isPending, isError, refetch } =
+    useQuizHardestQuestions(quizId, scope);
   const isRefreshing = isFetching && !isPending;
 
   const totalWrong = useMemo(
@@ -84,6 +82,17 @@ export function HardestQuestionsChart({
       isLoading={isPending}
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
+      queryError={
+        isError
+          ? {
+              hasCachedData: data !== undefined,
+              isFetching,
+              onRetry: () => {
+                void refetch();
+              },
+            }
+          : undefined
+      }
       placeholderClassName="min-h-[390px] w-full rounded-lg lg:min-h-[300px]"
     >
       <div className="flex flex-col items-center gap-4 lg:flex-row">

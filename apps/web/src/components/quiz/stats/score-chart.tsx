@@ -68,11 +68,15 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
     data: raw,
     isFetching: isTimelineFetching,
     isPending: isTimelinePending,
+    isError: isTimelineError,
+    refetch: refetchTimeline,
   } = useQuizTimeline(quizId, scope, TIMELINE_DAYS);
   const {
     data: sessionsRaw,
     isFetching: isSessionsFetching,
     isPending: isSessionsPending,
+    isError: isSessionsError,
+    refetch: refetchSessions,
   } = useQuizSessions(
     quizId,
     "me",
@@ -81,6 +85,26 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
   );
 
   const effectiveMode = canUseSessions ? mode : "timeline";
+  const queryError =
+    effectiveMode === "sessions"
+      ? isSessionsError
+        ? {
+            hasCachedData: sessionsRaw !== undefined,
+            isFetching: isSessionsFetching,
+            onRetry: () => {
+              void refetchSessions();
+            },
+          }
+        : undefined
+      : isTimelineError
+        ? {
+            hasCachedData: raw !== undefined,
+            isFetching: isTimelineFetching,
+            onRetry: () => {
+              void refetchTimeline();
+            },
+          }
+        : undefined;
   const isPending =
     effectiveMode === "sessions" ? isSessionsPending : isTimelinePending;
   const isRefreshing =
@@ -156,6 +180,7 @@ export function ScoreChart({ quizId, canViewAll }: ScoreChartProps) {
       onScopeChange={handleScopeChange}
       canViewAll={canViewAll}
       isLoading={isPending}
+      queryError={queryError}
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
       toolbar={

@@ -1,6 +1,6 @@
 import { parseEmbeddedTheme } from "../lib/embed-theme";
 import type { EmbeddedTheme } from "../lib/embed-theme";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -11,11 +11,17 @@ import {
 import WebView from "react-native-webview";
 
 import { hideWebViewTopEdgeEffects } from "../../modules/library-drag/src/nativeChrome";
-import { canNavigateEmbedded, embeddedPath } from "../lib/embed-navigation";
+import {
+  canNavigateEmbedded,
+  canReceiveEmbeddedMessage,
+  embeddedPath,
+} from "../lib/embed-navigation";
 import { useLocale } from "../lib/locale";
 import { WEB_URL } from "../lib/api";
 import { ApiError } from "../lib/client";
 import { useTheme } from "../lib/theme";
+import { UserFacingError } from "../lib/user-error";
+import { embeddedSessionExpired } from "../lib/embed-session";
 import { ErrorScreen } from "./ui";
 
 export default function EmbeddedWeb({
@@ -40,7 +46,7 @@ export default function EmbeddedWeb({
   // A load failure is a connection problem; an HTTP status is the server’s.
   const [failed, setFailed] = useState<Error | null>(null);
   const c = useTheme();
-  const dark = useColorScheme() === "dark";
+  const scheme = useColorScheme();
   const { t } = useLocale();
   const destination = embeddedPath({ quizId, global });
   const source = useMemo(
@@ -50,6 +56,30 @@ export default function EmbeddedWeb({
     }),
     [access, global, quizId],
   );
+  const deadline = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopDeadline = useCallback(() => {
+    if (deadline.current !== null) clearTimeout(deadline.current);
+    deadline.current = null;
+  }, []);
+  const startDeadline = useCallback(() => {
+    stopDeadline();
+    deadline.current = setTimeout(() => {
+      setFailed(new UserFacingError("timeout"));
+    }, 30_000);
+  }, [stopDeadline]);
+  useEffect(() => {
+    startDeadline();
+    return stopDeadline;
+  }, [source, startDeadline, stopDeadline]);
+  useEffect(() => {
+    if (failed && onTheme) {
+      onTheme({
+        background: c.bg,
+        foreground: c.text,
+        dark: scheme === "dark",
+      });
+    }
+  }, [failed, onTheme, c.bg, c.text, scheme]);
   if (failed)
     return (
       <ErrorScreen
@@ -69,29 +99,32 @@ export default function EmbeddedWeb({
           topInset
             ? `document.documentElement.style.setProperty("--mobile-embed-top", "${Math.round(topInset)}px");`
             : "",
-          // Statistics match the app's scheme and surfaces instead of the
-          // web's own palette (Wrapped paints its slides itself).
-          quizId
-            ? `try { localStorage.setItem("theme", "${dark ? "dark" : "light"}"); } catch {}
-              var style = document.documentElement.style;
-              style.setProperty("--background", "${c.bg}");
-              style.setProperty("--background-gradient-from", "${c.bg}");
-              style.setProperty("--card", "${c.surface}");
-              style.setProperty("--popover", "${c.surface}");`
-            : "",
           "true;",
         ].join("\n")}
         contentInsetAdjustmentBehavior={topInset ? "never" : undefined}
-        onLoadEnd={topInset ? hideWebViewTopEdgeEffects : undefined}
+        onLoadStart={startDeadline}
+        onLoadEnd={() => {
+          stopDeadline();
+          if (topInset) hideWebViewTopEdgeEffects();
+        }}
         onMessage={(event) => {
           if (
-            !onTheme ||
-            quizId ||
-            !canNavigateEmbedded(event.nativeEvent.url, WEB_URL, destination)
+            !canReceiveEmbeddedMessage(
+              event.nativeEvent.url,
+              WEB_URL,
+              destination,
+            )
           )
             return;
-          const theme = parseEmbeddedTheme(event.nativeEvent.data);
-          if (theme) onTheme(theme);
+          if (embeddedSessionExpired(event.nativeEvent.data)) {
+            stopDeadline();
+            setFailed(new UserFacingError("refresh"));
+            return;
+          }
+          if (onTheme && !quizId) {
+            const theme = parseEmbeddedTheme(event.nativeEvent.data);
+            if (theme) onTheme(theme);
+          }
         }}
         incognito
         sharedCookiesEnabled={false}
@@ -108,30 +141,51 @@ export default function EmbeddedWeb({
             ]}
           >
             <ActivityIndicator
+              accessibilityLabel={t("Ładowanie raportu", "Loading report")}
               size="large"
               color={loadingBackground ? "#ffffff" : undefined}
             />
           </View>
         )}
-        onError={() => setFailed(new TypeError("Network request failed"))}
+        onError={() => {
+          stopDeadline();
+          setFailed(new TypeError("Network request failed"));
+        }}
+        onContentProcessDidTerminate={() => {
+          stopDeadline();
+          setFailed(new UserFacingError("operation"));
+        }}
+        onRenderProcessGone={() => {
+          stopDeadline();
+          setFailed(new UserFacingError("operation"));
+        }}
         onHttpError={(e) => {
           const status = e.nativeEvent.statusCode;
-          if (status >= 400)
+          if (status >= 400) {
+            stopDeadline();
             setFailed(
               new ApiError(
                 status,
                 "",
                 undefined,
-                status === 503 ? "maintenance" : "operation",
+                status === 401
+                  ? "refresh"
+                  : status === 503
+                    ? "maintenance"
+                    : "operation",
               ),
             );
+          }
         }}
         onShouldStartLoadWithRequest={(request) => {
           if (canNavigateEmbedded(request.url, WEB_URL, destination))
             return true;
           try {
             const u = new URL(request.url);
-            if (/^https?:$/.test(u.protocol)) void Linking.openURL(u.href);
+            if (/^https?:$/.test(u.protocol))
+              void Linking.openURL(u.href).catch(() => {
+                setFailed(new UserFacingError("operation"));
+              });
           } catch {}
           return false;
         }}

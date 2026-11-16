@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import type { ImageProps } from "@expo/ui/swift-ui";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useTheme } from "../../lib/theme";
@@ -21,6 +21,7 @@ export interface CollectionRowProps {
   symbol?: ImageProps["systemName"];
   ionicon?: ComponentProps<typeof Ionicons>["name"];
   disabled?: boolean;
+  leading?: ReactElement;
 }
 export default function CollectionRow({
   title,
@@ -31,6 +32,7 @@ export default function CollectionRow({
   accessibilityLabel,
   ionicon,
   disabled = false,
+  leading,
 }: CollectionRowProps) {
   const c = useTheme(),
     { fontScale } = useWindowDimensions();
@@ -52,26 +54,28 @@ export default function CollectionRow({
         opacity: disabled ? 0.45 : pressed ? 0.55 : 1,
       })}
     >
-      <Ionicons
-        name={
-          ionicon ??
-          (kind === "folder"
-            ? "folder"
-            : kind === "archive"
-              ? "archive-outline"
-              : kind === "trash"
-                ? "trash-outline"
-                : kind === "offline"
-                  ? "download-outline"
-                  : kind === "library"
-                    ? "library-outline"
-                    : kind === "continue"
-                      ? "play-circle"
-                      : "document-text-outline")
-        }
-        size={kind === "continue" ? 38 : 24}
-        color={kind === "continue" || kind === "folder" ? c.primary : c.muted}
-      />
+      {leading ?? (
+        <Ionicons
+          name={
+            ionicon ??
+            (kind === "folder"
+              ? "folder"
+              : kind === "archive"
+                ? "archive-outline"
+                : kind === "trash"
+                  ? "trash-outline"
+                  : kind === "offline"
+                    ? "download-outline"
+                    : kind === "library"
+                      ? "library-outline"
+                      : kind === "continue"
+                        ? "play-circle"
+                        : "document-text-outline")
+          }
+          size={kind === "continue" ? 38 : 24}
+          color={kind === "continue" || kind === "folder" ? c.primary : c.muted}
+        />
+      )}
       <View style={{ flex: 1, gap: 4 }}>
         <Text
           numberOfLines={fontScale > 1.3 ? undefined : 2}

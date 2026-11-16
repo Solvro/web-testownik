@@ -19,8 +19,8 @@ export default function AccountContent(props: AccountContentProps) {
         <ToggleRow
           label={t("Ukryj profil", "Hide Profile")}
           detail={t(
-            "Ukryty profil nie pojawia się innym osobom w wyszukiwaniu i przy udostępnianiu.",
-            "A hidden profile doesn’t appear to other people in search or when sharing.",
+            "Ukryty profil nie pojawia się w wyszukiwaniu po imieniu i nazwisku ani w rankingach. Nadal można cię znaleźć po pełnym numerze indeksu.",
+            "Hiding your profile removes it from name searches and leaderboards. People can still find you by your full student number.",
           )}
           value={props.hideProfile}
           busy={props.busy}

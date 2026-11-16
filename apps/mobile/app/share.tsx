@@ -14,6 +14,7 @@ import ToggleRow from "../src/components/ToggleRow";
 import SettingsGroup, { SectionTitle } from "../src/components/SettingsGroup";
 import {
   Button,
+  EmptyState,
   ErrorScreen,
   ErrorState,
   Field,
@@ -22,50 +23,88 @@ import {
   Loading,
   Screen,
 } from "../src/components/ui";
-import { WEB_URL, api, listOf } from "../src/lib/api";
+import { WEB_URL, listOf } from "../src/lib/api";
 import { notify, useConfirm } from "../src/lib/alerts";
 import { useLocale } from "../src/lib/locale";
 import { useSession } from "../src/lib/session";
-import { userError } from "../src/lib/user-error";
+import {
+  commitSharingAck,
+  confirmSharingGrant,
+  sharingTargetKey,
+  sharingRead,
+  sharingQuizAck,
+} from "../src/lib/sharing-ack";
+import { useSharingAction } from "../src/lib/use-sharing-action";
+import { UserFacingError, userError } from "../src/lib/user-error";
 
 export default function Sharing() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
+  const { t } = useLocale();
+  if (!user) return null;
+  if (typeof id !== "string" || !id.trim())
+    return (
+      <EmptyState
+        symbol="books.vertical"
+        ionicon="library-outline"
+        title={t("Wybierz quiz", "Choose a Quiz")}
+        description={t(
+          "Otwórz quiz z biblioteki, aby zarządzać dostępem.",
+          "Open a quiz from the library to manage access.",
+        )}
+        actions={[
+          {
+            label: t("Przeglądaj bibliotekę", "Browse Library"),
+            onPress: () => router.navigate("/library"),
+          },
+        ]}
+      />
+    );
   return (
     <SharingForm key={`${user?.id}:${id}`} id={id} userId={user?.id ?? ""} />
   );
 }
 function SharingForm({ id, userId }: { id: string; userId: string }) {
+  const { client, session, busy, failure, mutate, heldTargets } =
+    useSharingAction(id, userId);
   const { t } = useLocale(),
     confirm = useConfirm(),
     cache = useQueryClient();
   const [search, setSearch] = useState(""),
     [submitted, setSubmitted] = useState(""),
     [invite, setInvite] = useState(false),
-    [edit, setEdit] = useState(false),
-    [busy, setBusy] = useState(false),
-    [failure, setFailure] = useState<unknown>(null);
-  const lock = useRef(false),
-    anchor = useRef<View>(null);
+    [edit, setEdit] = useState(false);
+  const anchor = useRef<View>(null);
   const quiz = useQuery({
     queryKey: ["sharing-quiz", id, userId],
-    queryFn: () => api.request<Quiz>(`quizzes/${id}/`),
+    networkMode: "always",
+    queryFn: ({ signal }) =>
+      client.request<Quiz>(`quizzes/${encodeURIComponent(id)}/`, { signal }),
   });
   const shares = useQuery({
     queryKey: ["shares", id, userId],
-    queryFn: async () =>
-      listOf(await api.request<SharedQuiz[]>(`shared-quizzes/?quiz=${id}`)),
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
+      sharingRead(
+        await client.request<unknown>(
+          `shared-quizzes/?quiz=${encodeURIComponent(id)}`,
+          { signal },
+        ),
+      ),
     enabled: !!quiz.data?.can_edit,
   });
   const groups = useQuery({
     queryKey: ["groups", userId],
-    queryFn: async () => listOf(await api.request<Group[]>("study-groups/")),
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
+      listOf(await client.request<Group[]>("study-groups/", { signal })),
     enabled: !!quiz.data?.can_edit && invite,
   });
   const users = useQuery({
     queryKey: ["share-search", userId, submitted],
+    networkMode: "always",
     queryFn: ({ signal }) =>
-      api
+      client
         .request<User[]>(`users/?search=${encodeURIComponent(submitted)}`, {
           signal,
         })
@@ -100,24 +139,19 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
       "This quiz appears in search and is available to other users.",
     ),
   ];
-  async function mutate(action: () => Promise<unknown>) {
-    if (lock.current) return;
-    lock.current = true;
-    setBusy(true);
-    setFailure(null);
-    try {
-      await action();
-    } catch (error) {
-      setFailure(error);
-    } finally {
-      lock.current = false;
-      setBusy(false);
-    }
-  }
   async function updateQuiz(patch: Partial<Quiz>) {
-    const value = await api.patch<Quiz>(`quizzes/${id}/`, patch);
-    cache.setQueryData(["sharing-quiz", id, userId], value);
-    await Promise.all([
+    const value = await client.patch<Quiz>(
+      `quizzes/${encodeURIComponent(id)}/`,
+      patch,
+    );
+    await commitSharingAck<Quiz>(
+      cache,
+      ["sharing-quiz", id, userId],
+      session,
+      (previous) => sharingQuizAck(previous, value),
+    );
+    if (session.aborted) return;
+    void Promise.all([
       cache.invalidateQueries({ queryKey: ["quiz", id] }),
       cache.invalidateQueries({ queryKey: ["library"] }),
     ]);
@@ -140,18 +174,48 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
     target: { user_id: string } | { study_group_id: string },
   ) {
     await mutate(async () => {
-      const added = await api.post<SharedQuiz>("shared-quizzes/", {
-        quiz_id: id,
-        ...target,
-        allow_edit: edit,
-      });
-      cache.setQueryData<SharedQuiz[]>(["shares", id, userId], (previous) => [
-        ...(previous ?? []).filter((s) => s.id !== added.id),
-        added,
-      ]);
-      await shares.refetch();
+      await confirmSharingGrant(cache, id, userId, session, target, () =>
+        client.post("shared-quizzes/", {
+          quiz_id: id,
+          ...target,
+          allow_edit: edit,
+        }),
+      );
     });
   }
+  async function setRole(share: SharedQuiz, allow_edit: boolean) {
+    const ack = await client.patch<Partial<SharedQuiz>>(
+      `shared-quizzes/${encodeURIComponent(share.id)}/`,
+      { allow_edit },
+    );
+    await commitSharingAck<SharedQuiz[]>(
+      cache,
+      ["shares", id, userId],
+      session,
+      (previous) =>
+        previous?.map((item) =>
+          item.id === share.id &&
+          ack?.id === share.id &&
+          typeof ack.allow_edit === "boolean"
+            ? { ...item, allow_edit: ack.allow_edit }
+            : item,
+        ),
+    );
+    if (!session.aborted) haptics.selection();
+  }
+  async function removeShare(share: SharedQuiz) {
+    await client.delete(`shared-quizzes/${encodeURIComponent(share.id)}/`);
+    await commitSharingAck<SharedQuiz[]>(
+      cache,
+      ["shares", id, userId],
+      session,
+      (previous) => previous?.filter((item) => item.id !== share.id),
+    );
+  }
+  const failureTitle =
+    failure instanceof UserFacingError && failure.code === "sharingUnconfirmed"
+      ? t("Nie potwierdzono dostępu", "Access Not Confirmed")
+      : t("Nie zapisano zmiany", "Change Not Saved");
   if (quiz.isPending) return <Loading />;
   if (!quiz.data)
     return <ErrorScreen error={quiz.error} retry={() => void quiz.refetch()} />;
@@ -168,8 +232,13 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
   // Stack.Toolbar drops SF-symbol and text-only items on Android; use the JS controls.
   const native = Platform.OS === "ios";
   const shareLink = async () => {
-    const url = `${WEB_URL}/quiz/${id}`;
+    const url = `${WEB_URL}/quiz/${encodeURIComponent(id)}`;
     try {
+      if (Platform.OS === "web" && !navigator.share) {
+        await navigator.clipboard.writeText(url);
+        if (!session.aborted) notify(t("Link skopiowany", "Link Copied"), url);
+        return;
+      }
       await Share.share(
         Platform.OS === "ios" ? { url } : { message: url, title: value.title },
         {
@@ -180,6 +249,14 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
         },
       );
     } catch (error) {
+      if (
+        session.aborted ||
+        (error &&
+          typeof error === "object" &&
+          "name" in error &&
+          error.name === "AbortError")
+      )
+        return;
       notify(
         t("Nie udostępniono linku", "Couldn’t Share Link"),
         userError(error, t),
@@ -193,6 +270,9 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
         shares={shares.data}
         sharesLoading={!!value.can_edit && shares.isPending}
         sharesError={shares.error}
+        quizError={quiz.error}
+        retryQuiz={() => void quiz.refetch()}
+        failureTitle={failureTitle}
         retryShares={() => void shares.refetch()}
         busy={busy}
         failure={failure}
@@ -228,11 +308,7 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
         }
         setRole={(share, allow_edit) => {
           if (share.allow_edit === allow_edit) return;
-          void mutate(async () => {
-            await api.patch(`shared-quizzes/${share.id}/`, { allow_edit });
-            haptics.selection();
-            await shares.refetch();
-          });
+          void mutate(() => setRole(share, allow_edit));
         }}
         remove={(share) =>
           confirm(
@@ -241,11 +317,7 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
               `${share.user?.full_name ?? share.group?.name ?? ""} straci dostęp do tego quizu.`,
               `${share.user?.full_name ?? share.group?.name ?? ""} will lose access to this quiz.`,
             ),
-            () =>
-              mutate(async () => {
-                await api.delete(`shared-quizzes/${share.id}/`);
-                await shares.refetch();
-              }),
+            () => mutate(() => removeShare(share)),
             { action: t("Odbierz dostęp", "Remove") },
           )
         }
@@ -333,12 +405,10 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
             />
           </SettingsGroup>
           <Label muted>{explanations[value.visibility]}</Label>
-          {failure ? (
-            <ErrorState
-              title={t("Nie zapisano zmiany", "Change Not Saved")}
-              error={failure}
-            />
+          {quiz.error ? (
+            <ErrorState error={quiz.error} retry={() => void quiz.refetch()} />
           ) : null}
+          {failure ? <ErrorState title={failureTitle} error={failure} /> : null}
           <SectionTitle>
             {t("Osoby i grupy z dostępem", "People and Groups with Access")}
           </SectionTitle>
@@ -438,6 +508,9 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                         detail: u.student_number,
                         group: false,
                         added: shares.data?.some((s) => s.user?.id === u.id),
+                        held: heldTargets.includes(
+                          sharingTargetKey({ user_id: u.id }),
+                        ),
                         grant: () => grant({ user_id: u.id }),
                       })),
                       ...foundGroups.map((g) => ({
@@ -446,6 +519,9 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                         detail: t("Grupa", "Group"),
                         group: true,
                         added: shares.data?.some((s) => s.group?.id === g.id),
+                        held: heldTargets.includes(
+                          sharingTargetKey({ study_group_id: g.id }),
+                        ),
                         grant: () => grant({ study_group_id: g.id }),
                       })),
                     ].map((entry, index) => (
@@ -457,7 +533,9 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                           detail={
                             entry.added
                               ? t("Ma dostęp", "Has access")
-                              : entry.detail || undefined
+                              : entry.held
+                                ? t("Sprawdzam dostęp…", "Checking access…")
+                                : entry.detail || undefined
                           }
                           ionicon={
                             entry.added
@@ -484,10 +562,7 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                                   )
                           }
                           disabled={
-                            busy ||
-                            !!entry.added ||
-                            shares.isPending ||
-                            !!shares.error
+                            busy || !!entry.added || entry.held || !shares.data
                           }
                           onPress={entry.grant}
                         />
@@ -497,13 +572,19 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                 ) : null}
               </SettingsGroup>
             ))}
-          {shares.isPending ? (
-            <Label muted>{t("Wczytuję uprawnienia…", "Loading access…")}</Label>
-          ) : shares.error ? (
+          {heldTargets.length > 0 && !shares.error ? (
+            <Button kind="secondary" onPress={() => void shares.refetch()}>
+              {t("Sprawdź dostęp", "Check Access")}
+            </Button>
+          ) : null}
+          {shares.error ? (
             <ErrorState
               error={shares.error}
               retry={() => void shares.refetch()}
             />
+          ) : null}
+          {shares.isPending ? (
+            <Label muted>{t("Wczytuję uprawnienia…", "Loading access…")}</Label>
           ) : (
             <SettingsGroup>
               {!shares.data?.length && (
@@ -546,12 +627,7 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                           ? t("Zmień na tylko naukę", "Change to Study Only")
                           : t("Zezwól na edycję", "Allow Editing"),
                         onPress: () =>
-                          mutate(async () => {
-                            await api.patch(`shared-quizzes/${share.id}/`, {
-                              allow_edit: !share.allow_edit,
-                            });
-                            await shares.refetch();
-                          }),
+                          mutate(() => setRole(share, !share.allow_edit)),
                       },
                       {
                         disabled: busy,
@@ -564,11 +640,7 @@ function SharingForm({ id, userId }: { id: string; userId: string }) {
                               "Wybrana osoba lub grupa straci dostęp wynikający z tego udostępnienia.",
                               "This person or group will lose access granted by this invitation.",
                             ),
-                            () =>
-                              mutate(async () => {
-                                await api.delete(`shared-quizzes/${share.id}/`);
-                                await shares.refetch();
-                              }),
+                            () => mutate(() => removeShare(share)),
                             { action: t("Odbierz dostęp", "Remove") },
                           ),
                       },

@@ -103,3 +103,12 @@ export function hasChatContent(parts: ChatPart[]) {
       : part.state.startsWith("output-"),
   );
 }
+
+/** Failed tool output stays visible in history but is not a successful reply. */
+export function hasSuccessfulChatContent(parts: ChatPart[]) {
+  return parts.some((part) =>
+    part.type === "text"
+      ? !!part.text.trim()
+      : part.state === "output-available",
+  );
+}

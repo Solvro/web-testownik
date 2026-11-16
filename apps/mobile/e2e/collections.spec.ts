@@ -20,7 +20,14 @@ for (const language of ["en", "pl"] as const) {
             saved: {
               id: "saved",
               title: "Saved quiz",
-              questions: [{ id: "q1" }],
+              questions: [
+                {
+                  id: "q1",
+                  text: "Saved question",
+                  multiple: false,
+                  answers: [],
+                },
+              ],
             },
           },
           queue: [],
@@ -191,18 +198,38 @@ for (const language of ["en", "pl"] as const) {
                 id: "quiz",
                 title: "Algorithms",
                 version: 3,
-                questions: [{ id: "one" }, { id: "two" }],
+                questions: [
+                  {
+                    id: "one",
+                    text: "First saved question",
+                    multiple: false,
+                    answers: [
+                      { id: "one-a", text: "First answer", is_correct: true },
+                    ],
+                  },
+                  {
+                    id: "two",
+                    text: "Second saved question",
+                    multiple: false,
+                    answers: [
+                      { id: "two-a", text: "Second answer", is_correct: true },
+                    ],
+                  },
+                ],
                 user_settings: {
                   initial_reoccurrences: 1,
                   wrong_answer_reoccurrences: 1,
                   max_question_reoccurrences: null,
                 },
                 current_session: {
+                  id: "summary-session",
                   is_active: true,
                   ended_at: null,
                   answers: [
                     {
+                      id: "summary-answer-one",
                       question: "one",
+                      selected_answers: ["one-a"],
                       was_correct: true,
                       answered_at: "2026-09-26T10:00:00Z",
                     },

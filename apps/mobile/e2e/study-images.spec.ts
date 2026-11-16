@@ -45,7 +45,7 @@ for (const language of ["en", "pl"] as const)
                       {
                         id: "answer",
                         text: "Answer",
-                        image: "http://localhost:8765/media/answer.svg",
+                        image: "https://s3.b.solvro.pl/media/answer.svg",
                         is_correct: true,
                       },
                     ],

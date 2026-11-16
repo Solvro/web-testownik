@@ -49,6 +49,7 @@ import { useSession } from "../../../src/lib/session";
 import { useTheme } from "../../../src/lib/theme";
 
 export default function Grades() {
+  const [client] = useState(() => api.forSession());
   const s = useSession(),
     c = useTheme(),
     insets = useSafeAreaInsets();
@@ -68,7 +69,9 @@ export default function Grades() {
   const [scrolledPast, setScrolledPast] = useState(false);
   const result = useQuery({
     queryKey: ["grades", s.user?.id],
-    queryFn: () => loadGrades(() => api.request<GradesData>("grades/")),
+    networkMode: "always",
+    queryFn: ({ signal }) =>
+      loadGrades(() => client.request<GradesData>("grades/", { signal })),
     enabled: s.user?.account_type === "student",
     staleTime: 5 * 60 * 1000,
   });
@@ -386,7 +389,17 @@ export default function Grades() {
                 </Text>
                 <Text
                   testID="grade-average"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                   accessibilityLiveRegion="polite"
+                  accessibilityLabel={
+                    mode === "simulator"
+                      ? t("Prognozowana średnia", "Projected average")
+                      : t("Średnia ważona", "Weighted average")
+                  }
+                  accessibilityValue={{
+                    text: fmt(mode === "simulator" ? projected : average, 3),
+                  }}
                   style={[
                     styles.average,
                     {
@@ -454,7 +467,8 @@ export default function Grades() {
                     setScenarios((previous) => ({ ...previous, [termId]: {} }))
                   }
                   style={{
-                    minHeight: 32,
+                    minHeight: 48,
+                    minWidth: 48,
                     justifyContent: "center",
                     opacity: changedCount ? 1 : 0.45,
                   }}
@@ -764,6 +778,12 @@ export default function Grades() {
                 </Text>
                 <Text
                   testID="combined-average"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  accessibilityLabel={t("Średnia ważona", "Weighted average")}
+                  accessibilityValue={{
+                    text: fmt(weightedAverage(combined), 3),
+                  }}
                   style={[
                     styles.average,
                     { color: gradeTone(weightedAverage(combined), c, dark).fg },
@@ -812,6 +832,7 @@ export default function Grades() {
                 <Pressable
                   accessibilityRole="button"
                   hitSlop={8}
+                  style={{ minHeight: 48, justifyContent: "center" }}
                   onPress={() =>
                     setSelection(
                       selectedTerms.length === terms.length

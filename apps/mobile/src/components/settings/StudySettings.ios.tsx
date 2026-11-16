@@ -19,6 +19,7 @@ import {
   animation,
   contentTransition,
   font,
+  fixedSize,
   frame,
   foregroundStyle,
   listStyle,
@@ -85,7 +86,9 @@ export default function StudySettings({
         <Section
           title={t("Powtórki", "Repetition")}
           footer={
-            <Text>
+            <Text
+              modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+            >
               {t(
                 "Pytanie jest opanowane po tylu poprawnych odpowiedziach. Błędna odpowiedź dodaje kolejne powtórki. Limit określa, ile razy jedno pytanie może wrócić.",
                 "A question is mastered after this many correct answers. A wrong answer adds more repetitions. The limit caps how many times one question can come back.",
@@ -145,9 +148,15 @@ export default function StudySettings({
             title={t("Asystent AI", "AI Assistant")}
             footer={
               modelsError ? (
-                <Text>{userError(modelsError, t)}</Text>
+                <Text
+                  modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+                >
+                  {userError(modelsError, t)}
+                </Text>
               ) : (
-                <Text>
+                <Text
+                  modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+                >
                   {t(
                     "Podpowiedzi i asystent w quizach. Odpowiedzi AI mogą zawierać błędy.",
                     "Hints and the assistant in quizzes. AI answers can contain mistakes.",
@@ -198,7 +207,9 @@ export default function StudySettings({
           <Section
             title={t("Powiadomienia", "Notifications")}
             footer={
-              <Text>
+              <Text
+                modifiers={[fixedSize({ horizontal: false, vertical: true })]}
+              >
                 {t(
                   "Wybierz, które powiadomienia chcesz otrzymywać. Zmiany zapisują się automatycznie.",
                   "Choose which notifications you get. Changes are saved automatically.",

@@ -37,6 +37,9 @@ export default function Profile() {
           : null
       }
       language={preference}
+      usageLoading={usage.isLoading}
+      usageError={usage.error}
+      retryUsage={() => void usage.refetch()}
       setLanguage={(value) =>
         void setPreference(value).catch((error: unknown) =>
           notify(
@@ -58,7 +61,14 @@ export default function Profile() {
       openNotifications={() => router.push("/notifications")}
       openAccount={() => router.push("/account")}
       openFeedback={() => router.push("/feedback")}
-      openLink={(url) => void openBrowserAsync(url)}
+      openLink={(url) =>
+        void openBrowserAsync(url).catch((error: unknown) =>
+          notify(
+            t("Nie udało się otworzyć linku", "Couldn’t Open Link"),
+            userError(error, t),
+          ),
+        )
+      }
       version={Constants.expoConfig?.version ?? ""}
       webUrl={WEB_URL}
       signOut={() =>

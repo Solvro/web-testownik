@@ -1,3 +1,4 @@
+import { quizCreateResponse } from "./quiz-create-response";
 import { expect, test } from "@playwright/test";
 
 for (const language of ["en", "pl"] as const) {
@@ -155,11 +156,18 @@ test("server retry and failed draft cleanup never repeat a committed save", asyn
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("/quizzes/") && route.request().method() === "POST") {
-      writes.push(route.request().postDataJSON());
+      writes.push(
+        route.request().postDataJSON().quiz ?? route.request().postDataJSON(),
+      );
       await route.fulfill(
         writes.length === 1
           ? { status: 503, json: { detail: "Fixture unavailable" } }
-          : { json: { ...draft, id: quizId } },
+          : {
+              json: quizCreateResponse(route.request().postDataJSON(), {
+                ...draft,
+                id: quizId,
+              }),
+            },
       );
     } else
       await route.fulfill({
@@ -227,6 +235,7 @@ test("attached images preview and removal is sent explicitly for question and an
   const id = "77777777-7777-4777-8777-777777777777";
   const quiz = {
     id,
+    version: 1,
     title: "Image editing",
     description: "",
     questions: [

@@ -3,7 +3,14 @@ import * as Crypto from "expo-crypto";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { Fragment, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import EditorImage from "../src/components/EditorImage";
 import AnswerEditor from "../src/components/editor/AnswerEditor";
@@ -137,6 +144,32 @@ export default function EditorQuestion() {
     question.image_upload
   );
 
+  // Expo Router inspects direct toolbar items; arrays flatten, fragments do not.
+  const questionActions = [
+    <Stack.Toolbar.Button
+      key="add"
+      icon="plus"
+      disabled={busy}
+      onPress={() => show(session.addQuestion())}
+    >
+      {t("Dodaj pytanie", "Add Question")}
+    </Stack.Toolbar.Button>,
+    <Stack.Toolbar.Button
+      key="save"
+      variant="prominent"
+      tintColor={c.prominent}
+      disabled={busy || session.uploads > 0 || !session.canSave}
+      onPress={() => {
+        // The list screen saves and replaces itself with the quiz; invalid
+        // drafts reopen the question that needs fixing.
+        router.back();
+        void session.save();
+      }}
+    >
+      {busy ? t("Zapisywanie…", "Saving…") : t("Zapisz", "Save")}
+    </Stack.Toolbar.Button>,
+  ];
+
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <Stack.Screen
@@ -153,6 +186,20 @@ export default function EditorQuestion() {
           icon="ellipsis"
           accessibilityLabel={t("Opcje pytania", "Question options")}
         >
+          <Stack.Toolbar.MenuAction
+            icon="chevron.up"
+            disabled={busy || index === 0}
+            onPress={() => show(questions[index - 1].id)}
+          >
+            {t("Poprzednie pytanie", "Previous Question")}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            icon="chevron.down"
+            disabled={busy || index >= questions.length - 1}
+            onPress={() => show(questions[index + 1].id)}
+          >
+            {t("Następne pytanie", "Next Question")}
+          </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
             icon="photo"
             disabled={busy}
@@ -194,6 +241,7 @@ export default function EditorQuestion() {
             {t("Usuń pytanie", "Delete Question")}
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
+        {Platform.OS === "ios" ? questionActions : null}
       </Stack.Toolbar>
       <Stack.Toolbar placement="bottom">
         <Stack.Toolbar.Button
@@ -211,26 +259,7 @@ export default function EditorQuestion() {
           {t("Następne pytanie", "Next Question")}
         </Stack.Toolbar.Button>
         <Stack.Toolbar.Spacer />
-        <Stack.Toolbar.Button
-          icon="plus"
-          disabled={busy}
-          onPress={() => show(session.addQuestion())}
-        >
-          {t("Dodaj pytanie", "Add Question")}
-        </Stack.Toolbar.Button>
-        <Stack.Toolbar.Button
-          variant="prominent"
-          tintColor={c.prominent}
-          disabled={busy || session.uploads > 0 || !session.canSave}
-          onPress={() => {
-            // The list screen saves and replaces itself with the quiz; invalid
-            // drafts reopen the question that needs fixing.
-            router.back();
-            void session.save();
-          }}
-        >
-          {busy ? t("Zapisywanie…", "Saving…") : t("Zapisz", "Save")}
-        </Stack.Toolbar.Button>
+        {Platform.OS !== "ios" ? questionActions : null}
       </Stack.Toolbar>
       <ScrollView
         key={question.id}

@@ -6,7 +6,9 @@ import { Platform } from "react-native";
 import { z } from "zod";
 
 import { api } from "./api";
+import type { ApiClient } from "./client";
 import { parseQuestion } from "./legacy-parser";
+import { readZipEntry } from "./bounded-zip";
 
 const image = z.string().nullable().optional();
 const answer = z.object({
@@ -46,6 +48,7 @@ export function normalizeImport(
       text: q.text ?? q.question ?? "",
       explanation: q.explanation ?? "",
       multiple:
+        !!q.multiple ||
         q.answers.filter((a) => a.is_correct ?? a.correct ?? false).length > 1,
       image_url: q.image_url ?? q.image ?? null,
       answers: q.answers.map((a, j) => ({
@@ -75,19 +78,32 @@ export async function readArchive(
       ),
     );
   }
-  const files = Object.values(zip.files).filter((f) => !f.dir);
-  if (files.length > 12000)
+  const entries = Object.values(zip.files).filter((f) => !f.dir);
+  if (entries.length > 12000)
     throw new Error(
       t(
         "Archiwum zawiera zbyt wiele plików.",
         "The archive contains too many files.",
       ),
     );
+  // Finder adds AppleDouble files whose extensions match the actual quiz.
+  const files = entries.filter((file) => {
+    const parts = file.name.split("/");
+    const name = parts.at(-1)!;
+    return (
+      !parts.includes("__MACOSX") &&
+      !name.startsWith("._") &&
+      name !== ".DS_Store"
+    );
+  });
   const json = files.find((f) => f.name.toLowerCase().endsWith(".json"));
   if (json) {
-    const contents = await json.async("string");
-    if (contents.length > 20_000_000)
-      throw new Error(t("Quiz jest zbyt duży.", "The quiz is too large."));
+    const contents = await readZipEntry(
+      json,
+      "string",
+      20_000_000,
+      t("Quiz jest zbyt duży.", "The quiz is too large."),
+    );
     return JSON.parse(contents.replace(/^\uFEFF/, ""));
   }
   const questions = [];
@@ -97,13 +113,16 @@ export async function readArchive(
     .sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { numeric: true }),
     )) {
-    const text = await file.async("string");
+    const text = await readZipEntry(
+      file,
+      "string",
+      20_000_000 - total,
+      t("Quiz jest zbyt duży.", "The quiz is too large."),
+    );
     total += text.length;
-    if (total > 20_000_000)
-      throw new Error(t("Quiz jest zbyt duży.", "The quiz is too large."));
     const q = parseQuestion(
       text.replace(/^\uFEFF/, "").split(/\r?\n/),
-      file.name,
+      file.name.split("/").at(-1)!,
       questions.length + 1,
     );
     if (!q)
@@ -123,15 +142,13 @@ export async function readArchive(
   for (const f of files.filter((f) =>
     /\.(png|jpe?g|gif|webp)$/i.test(f.name),
   )) {
-    const base64 = await f.async("base64");
+    const base64 = await readZipEntry(
+      f,
+      "base64",
+      30_000_000 - total,
+      t("Obrazy w archiwum są zbyt duże.", "The archive images are too large."),
+    );
     total += base64.length;
-    if (total > 30_000_000)
-      throw new Error(
-        t(
-          "Obrazy w archiwum są zbyt duże.",
-          "The archive images are too large.",
-        ),
-      );
     const ext = f.name.split(".").at(-1)?.toLowerCase();
     images.set(
       f.name.split("/").at(-1)!,
@@ -167,6 +184,7 @@ export async function uploadImportedImages<
   quiz: T,
   uploaded = new Map<string, string>(),
   t: Translate = (pl) => pl,
+  client: Pick<ApiClient, "request"> = api.forSession(),
 ): Promise<T> {
   const copy = JSON.parse(JSON.stringify(quiz)) as T;
   for (const q of copy.questions) {
@@ -202,7 +220,7 @@ export async function uploadImportedImages<
         body.append("image", new File(temporary));
       }
       try {
-        const result = await api.request<{ id: string }>("upload/", {
+        const result = await client.request<{ id: string }>("upload/", {
           method: "POST",
           body,
         });

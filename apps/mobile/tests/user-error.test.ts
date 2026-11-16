@@ -15,6 +15,7 @@ it("localizes API fallbacks while preserving specific server validation", async 
   const api = new ApiClient(
     "http://fixture.invalid",
     {
+      session: () => new AbortController().signal,
       get: async () => null,
       set: async () => {},
     },
@@ -73,4 +74,59 @@ it("treats the Android client timeout as a timeout", () => {
   const timeout = new Error("fetch failed: Fetch request has been canceled");
   expect(errorKind(timeout)).toBe("timeout");
   expect(userError(timeout, en)).toContain("took too long");
+});
+
+it.each([undefined, "operation"] as const)(
+  "classifies a final HTTP401 as expired authentication with code %s",
+  (code) => {
+    expect(errorKind(new ApiError(401, "Rejected credentials", {}, code))).toBe(
+      "signIn",
+    );
+  },
+);
+
+it("retains explicit failure priority when an HTTP401 also has a known code", () => {
+  expect(errorKind(new ApiError(401, "Deadline exceeded", {}, "timeout"))).toBe(
+    "timeout",
+  );
+  expect(
+    errorKind(new ApiError(401, "Service unavailable", {}, "maintenance")),
+  ).toBe("maintenance");
+});
+
+it("classifies a second401 after a successful OAuth refresh without another query retry", async () => {
+  const signal = new AbortController().signal;
+  let tokens = { access: "original", refresh: "original-refresh" };
+  const paths: string[] = [];
+  const client = new ApiClient(
+    "http://fixture.invalid/api",
+    {
+      session: () => signal,
+      get: async () => tokens,
+      set: async (value) => {
+        if (value) tokens = value;
+      },
+    },
+    async (input) => {
+      const path = new URL(String(input)).pathname;
+      paths.push(path);
+      return path.endsWith("/oauth/token/")
+        ? Response.json({
+            access_token: "rotated",
+            refresh_token: "rotated-refresh",
+            token_type: "Bearer",
+          })
+        : Response.json({}, { status: 401 });
+    },
+  );
+  const failure = await client
+    .request("library/private/")
+    .catch((error: unknown) => error);
+  expect(failure).toBeInstanceOf(ApiError);
+  expect(errorKind(failure)).toBe("signIn");
+  expect(paths).toEqual([
+    "/api/library/private/",
+    "/api/oauth/token/",
+    "/api/library/private/",
+  ]);
 });

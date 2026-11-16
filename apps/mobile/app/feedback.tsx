@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { TextInput } from "react-native";
 
 import ComposeSheet, { ComposeField } from "../src/components/ComposeSheet";
 import { api } from "../src/lib/api";
@@ -6,6 +7,8 @@ import { useLocale } from "../src/lib/locale";
 import { useSession } from "../src/lib/session";
 
 export default function Feedback() {
+  const message = useRef<TextInput>(null);
+  const [client] = useState(() => api.forSession());
   const { t } = useLocale();
   const s = useSession(),
     [title, setTitle] = useState(""),
@@ -21,7 +24,7 @@ export default function Feedback() {
         "We read every message and may reply to your account’s email address.",
       )}
       send={async () => {
-        await api.post("feedback/send", {
+        await client.post("feedback/send", {
           title: title.trim(),
           content: content.trim(),
           name: s.user?.full_name || t("Użytkownik aplikacji", "App user"),
@@ -37,8 +40,11 @@ export default function Feedback() {
         onChangeText={setTitle}
         autoFocus
         returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => message.current?.focus()}
       />
       <ComposeField
+        ref={message}
         divider
         multiline
         placeholder={t("Co możemy poprawić?", "What could we do better?")}

@@ -4,6 +4,7 @@ import {
   ScrollView,
   Text,
   useColorScheme,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -41,6 +42,9 @@ export default function SemesterChart({
 }) {
   const c = useTheme();
   const dark = useColorScheme() === "dark";
+  const { fontScale } = useWindowDimensions();
+  const textScale = Math.max(1, fontScale);
+  const labelHeight = 32 * textScale;
   const scroll = useRef<ScrollView>(null);
   return (
     <ScrollView
@@ -68,8 +72,8 @@ export default function SemesterChart({
               position: "absolute",
               left: 0,
               right: 0,
-              // Bars sit on the label (32pt) and the 6pt gap above it.
-              bottom: 38 + height(combined),
+              // Keep the reference line aligned as semester labels scale.
+              bottom: labelHeight + 6 + height(combined),
               borderTopWidth: 1.5,
               borderStyle: "dashed",
               borderColor: gradeTone(combined, c, dark).fg,
@@ -90,13 +94,15 @@ export default function SemesterChart({
                 onToggle(point.id);
               }}
               style={({ pressed }) => ({
-                width: 64,
+                width: 64 * textScale,
                 alignItems: "center",
                 gap: 6,
                 opacity: pressed ? 0.6 : point.selected ? 1 : 0.4,
               })}
             >
               <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
                 style={{
                   color: tone.fg,
                   fontSize: 15,
@@ -118,7 +124,7 @@ export default function SemesterChart({
               <Text
                 numberOfLines={2}
                 style={{
-                  height: 32,
+                  height: labelHeight,
                   color: point.selected ? c.text : c.muted,
                   fontSize: 12,
                   textAlign: "center",

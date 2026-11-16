@@ -6,12 +6,14 @@ export interface ChoiceProps {
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
   segmented?: boolean;
+  disabled?: boolean;
 }
 export default function Choice({
   label,
   value,
   options,
   onChange,
+  disabled = false,
 }: ChoiceProps) {
   return (
     <View style={{ gap: 4 }}>
@@ -20,6 +22,7 @@ export default function Choice({
         <Button
           key={option.value}
           kind={value === option.value ? "primary" : "secondary"}
+          disabled={disabled}
           onPress={() => onChange(option.value)}
         >
           {option.label}

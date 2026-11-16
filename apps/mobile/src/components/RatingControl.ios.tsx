@@ -4,6 +4,7 @@ import {
   accessibilityLabel,
   buttonStyle,
   contentShape,
+  disabled as disabledModifier,
   frame,
   shapes,
 } from "@expo/ui/swift-ui/modifiers";
@@ -11,7 +12,11 @@ import { useLocale } from "../lib/locale";
 import { useTheme } from "../lib/theme";
 import type { RatingControlProps } from "./RatingControl";
 
-export default function RatingControl({ value, onChange }: RatingControlProps) {
+export default function RatingControl({
+  value,
+  onChange,
+  disabled = false,
+}: RatingControlProps) {
   const c = useTheme();
   const { t } = useLocale();
   return (
@@ -26,6 +31,7 @@ export default function RatingControl({ value, onChange }: RatingControlProps) {
             key={score}
             onPress={() => onChange(score)}
             modifiers={[
+              disabledModifier(disabled),
               buttonStyle("plain"),
               accessibilityLabel(
                 t(`Ocena ${score} z 5`, `Rate ${score} out of 5`),

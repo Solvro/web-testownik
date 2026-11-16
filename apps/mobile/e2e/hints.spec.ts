@@ -68,3 +68,63 @@ test("per-answer AI hints appear under their answers and regenerate", async ({
   );
   expect(requests).toBe(2);
 });
+
+test("empty direct hint response exposes retry instead of endless preparation", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      "testownik.oauth-session.v2",
+      JSON.stringify({ access: "hint-fixture", refresh: "fixture" }),
+    );
+    localStorage.setItem("testownik.v1.language", JSON.stringify("en"));
+    localStorage.setItem(
+      "testownik.v1.quiz-ai-model.hint-fixture.hints",
+      JSON.stringify("fixture/deep"),
+    );
+  });
+  await page.route("**/api/**", (route) =>
+    route.fulfill({
+      json: new URL(route.request().url()).pathname.endsWith("/user/")
+        ? { id: "hint-fixture", is_guest: false }
+        : {
+            id: "hints",
+            questions: [
+              {
+                id: "question",
+                text: "Red planet?",
+                answers: [{ id: "a", text: "Mars", is_correct: true }],
+                multiple: false,
+              },
+            ],
+          },
+    }),
+  );
+  let requests = 0;
+  await page.route("**/ai/hint", (route) => {
+    requests++;
+    expect(route.request().postDataJSON()).toMatchObject({
+      language: "en",
+      config: { modelName: "fixture/deep" },
+    });
+    return route.fulfill({
+      contentType: "text/plain",
+      body:
+        requests === 1
+          ? ""
+          : '<general_hint>Look for iron oxide.</general_hint><hint answer="1">Rusty surface.</hint>',
+    });
+  });
+  await page.goto("/hint?id=hints&question=question&mode=hint");
+  await expect(page.getByRole("alert")).toHaveText(
+    "No response received. Please try again.",
+  );
+  await page.getByRole("button", { name: "Try Again", exact: true }).click();
+  await expect(page.getByTestId("hint-response")).toHaveAccessibleName(
+    "Look for iron oxide.",
+  );
+  await expect(
+    page.getByLabel("AI tip: Rusty surface.", { exact: true }),
+  ).toBeVisible();
+  expect(requests).toBe(2);
+});

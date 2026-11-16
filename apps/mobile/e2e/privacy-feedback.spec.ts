@@ -35,6 +35,14 @@ for (const language of ["en", "pl"] as const) {
       return route.fulfill({ json: [] });
     });
     await page.goto("/account");
+    await expect(
+      page.getByText(
+        language === "en"
+          ? "Hiding your profile removes it from name searches and leaderboards. People can still find you by your full student number."
+          : "Ukryty profil nie pojawia się w wyszukiwaniu po imieniu i nazwisku ani w rankingach. Nadal można cię znaleźć po pełnym numerze indeksu.",
+        { exact: true },
+      ),
+    ).toBeVisible();
     const control = page.getByRole("switch", {
       name: language === "en" ? "Hide Profile" : "Ukryj profil",
       exact: true,
@@ -134,7 +142,11 @@ test("a device profile-cache failure does not undo a confirmed server setting", 
     localStorage.setItem("testownik.v1.language", JSON.stringify("en"));
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (key === "testownik.v1.last-user" && JSON.parse(value).hide_profile)
+      if (
+        this === sessionStorage &&
+        key === "testownik.v1.last-user" &&
+        JSON.parse(value).hide_profile
+      )
         throw new DOMException("Device cache is full", "QuotaExceededError");
       return original.call(this, key, value);
     };
@@ -168,7 +180,7 @@ test("a device profile-cache failure does not undo a confirmed server setting", 
     page.getByText("Privacy settings were not saved", { exact: true }),
   ).toHaveCount(0);
   expect(
-    await page.evaluate(() => localStorage.getItem("testownik.v1.last-user")),
+    await page.evaluate(() => sessionStorage.getItem("testownik.v1.last-user")),
   ).toBe(null);
   // A missing optional cache must not prevent the next confirmed save from
   // updating the still-authenticated profile.

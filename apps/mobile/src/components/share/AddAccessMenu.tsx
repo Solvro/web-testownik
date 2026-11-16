@@ -21,6 +21,10 @@ export default function AddAccessMenu({
       onPress={() => add("study")}
       hitSlop={6}
       style={({ pressed }) => ({
+        minHeight: 48,
+        minWidth: 48,
+        alignItems: "center",
+        justifyContent: "center",
         paddingHorizontal: 14,
         paddingVertical: 6,
         borderRadius: 16,

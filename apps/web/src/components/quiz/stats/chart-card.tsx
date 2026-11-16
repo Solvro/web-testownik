@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
+import { StatsQueryError } from "./query-error";
+import type { StatsQueryErrorState } from "./query-error";
 import { ScopeToggle } from "./scope-toggle";
 
 const DEFAULT_CHART_PLACEHOLDER_CLASS =
@@ -82,6 +84,7 @@ interface ChartCardProps {
   isEmpty: boolean;
   placeholderClassName?: string;
   toolbar?: React.ReactNode;
+  queryError?: StatsQueryErrorState;
   children: React.ReactNode;
 }
 
@@ -96,6 +99,7 @@ export function ChartCard({
   isEmpty,
   placeholderClassName = DEFAULT_CHART_PLACEHOLDER_CLASS,
   toolbar,
+  queryError,
   children,
 }: ChartCardProps) {
   return (
@@ -117,14 +121,17 @@ export function ChartCard({
         ) : null}
       </CardHeader>
       <CardContent>
-        <ChartCardContent
-          isLoading={isLoading}
-          isRefreshing={isRefreshing}
-          isEmpty={isEmpty}
-          placeholderClassName={placeholderClassName}
-        >
-          {children}
-        </ChartCardContent>
+        {queryError == null ? null : <StatsQueryError {...queryError} />}
+        {queryError?.hasCachedData === false ? null : (
+          <ChartCardContent
+            isLoading={isLoading}
+            isRefreshing={isRefreshing}
+            isEmpty={isEmpty}
+            placeholderClassName={placeholderClassName}
+          >
+            {children}
+          </ChartCardContent>
+        )}
       </CardContent>
     </Card>
   );

@@ -6,8 +6,13 @@ import { useTheme } from "../lib/theme";
 export interface RatingControlProps {
   value: number;
   onChange: (value: number) => void;
+  disabled?: boolean;
 }
-export default function RatingControl({ value, onChange }: RatingControlProps) {
+export default function RatingControl({
+  value,
+  onChange,
+  disabled = false,
+}: RatingControlProps) {
   const c = useTheme();
   const { t } = useLocale();
   return (
@@ -17,7 +22,8 @@ export default function RatingControl({ value, onChange }: RatingControlProps) {
           key={score}
           accessibilityRole="button"
           accessibilityLabel={t(`Ocena ${score} z 5`, `Rate ${score} out of 5`)}
-          accessibilityState={{ selected: value === score }}
+          accessibilityState={{ selected: value === score, disabled }}
+          disabled={disabled}
           onPress={() => onChange(score)}
           style={{
             width: 48,

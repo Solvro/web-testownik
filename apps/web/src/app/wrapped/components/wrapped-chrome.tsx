@@ -115,10 +115,10 @@ export function WrappedChrome({
               border: "none",
               color: "currentColor",
               fontFamily: "var(--fm)",
-              fontSize: "11px",
+              fontSize: "13px",
               letterSpacing: ".12em",
               textTransform: "uppercase",
-              opacity: 0.65,
+              opacity: 1,
               cursor: "pointer",
               padding: "4px",
             }}

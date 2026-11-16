@@ -16,6 +16,7 @@ export default function CollectionRow({
   accessibilityLabel: label,
   symbol: customSymbol,
   disabled = false,
+  leading,
 }: CollectionRowProps) {
   const c = useTheme(),
     { fontScale } = useWindowDimensions();
@@ -56,13 +57,17 @@ export default function CollectionRow({
       })}
     >
       <View style={{ width: featured ? 40 : 28, alignItems: "center" }}>
-        <SymbolView
-          name={symbol}
-          size={featured ? 38 : 24}
-          tintColor={
-            featured || kind === "folder" || customSymbol ? c.primary : c.muted
-          }
-        />
+        {leading ?? (
+          <SymbolView
+            name={symbol}
+            size={featured ? 38 : 24}
+            tintColor={
+              featured || kind === "folder" || customSymbol
+                ? c.primary
+                : c.muted
+            }
+          />
+        )}
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <Text

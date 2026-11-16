@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { StatsScope } from "@testownik/core/quiz/stats";
 import type { QuizMetadata } from "@testownik/core/quiz/types";
 
+import { notifyMobileSessionExpired } from "@/lib/auth/mobile-embed";
 import { getQuizService } from "@/services";
 
 // Embedded (mobile WebView) sessions keep their token in an HttpOnly cookie, so
@@ -33,6 +34,7 @@ async function requestStats<T>(
     credentials: "same-origin",
   });
   if (!response.ok) {
+    notifyMobileSessionExpired(response.status);
     throw new Error("Nie udało się wczytać statystyk. Spróbuj ponownie.");
   }
   return (await response.json()) as T;

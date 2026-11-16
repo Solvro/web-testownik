@@ -6,6 +6,7 @@ import {
   font,
   frame,
   controlSize,
+  disabled as disabledModifier,
 } from "@expo/ui/swift-ui/modifiers";
 import type { ChoiceProps } from "./Choice";
 import { useTheme } from "../../lib/theme";
@@ -15,6 +16,7 @@ export default function Choice({
   options,
   onChange,
   segmented,
+  disabled = false,
 }: ChoiceProps) {
   const c = useTheme();
   return (
@@ -42,6 +44,7 @@ export default function Choice({
           selection={value}
           onSelectionChange={onChange}
           modifiers={[
+            disabledModifier(disabled),
             pickerStyle(segmented ? "segmented" : "menu"),
             controlSize("regular"),
           ]}

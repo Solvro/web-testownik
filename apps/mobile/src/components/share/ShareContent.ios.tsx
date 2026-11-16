@@ -70,6 +70,18 @@ export default function ShareContent(props: ShareContentProps) {
           </Button>
         </Section>
 
+        {props.quizError ? (
+          <Section>
+            <Label
+              title={userError(props.quizError, t)}
+              systemImage="exclamationmark.triangle"
+            />
+            <Button
+              label={t("Spróbuj ponownie", "Try Again")}
+              onPress={props.retryQuiz}
+            />
+          </Section>
+        ) : null}
         {!owner ? (
           <Section
             title={t("Dostęp", "Access")}
@@ -100,7 +112,7 @@ export default function ShareContent(props: ShareContentProps) {
               footer={
                 <Text>
                   {props.failure
-                    ? `${t("Nie zapisano zmiany", "The change was not saved")}: ${userError(props.failure, t)}`
+                    ? `${props.failureTitle ?? t("Nie zapisano zmiany", "The change was not saved")}: ${userError(props.failure, t)}`
                     : props.explanations[quiz.visibility]}
                 </Text>
               }

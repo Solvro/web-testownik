@@ -25,7 +25,10 @@ const chartConfig = {
 
 export function SessionsChart({ quizId, canViewAll }: SessionsChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
-  const { data, isFetching, isPending } = useQuizTimeline(quizId, scope);
+  const { data, isFetching, isPending, isError, refetch } = useQuizTimeline(
+    quizId,
+    scope,
+  );
   const isRefreshing = isFetching && !isPending;
 
   const hasData = data?.some((d) => d.sessions_count > 0) ?? false;
@@ -40,6 +43,17 @@ export function SessionsChart({ quizId, canViewAll }: SessionsChartProps) {
       isLoading={isPending}
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
+      queryError={
+        isError
+          ? {
+              hasCachedData: data !== undefined,
+              isFetching,
+              onRetry: () => {
+                void refetch();
+              },
+            }
+          : undefined
+      }
     >
       <ChartContainer config={chartConfig} className="min-h-62.5">
         <BarChart data={data} accessibilityLayer>

@@ -13,6 +13,9 @@ export interface ProfileContentProps {
     weekly: UsageWindowView;
     exhausted: boolean;
   } | null;
+  usageLoading?: boolean;
+  usageError?: unknown;
+  retryUsage?: () => void;
   sync: { offline: boolean; pending: number; error: unknown; run: () => void };
   changePhoto: () => void;
   openSettings: () => void;

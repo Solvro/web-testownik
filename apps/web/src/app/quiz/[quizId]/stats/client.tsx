@@ -2,6 +2,7 @@
 
 import { ArrowLeftIcon } from "lucide-react";
 
+import { Loader } from "@/components/loader";
 import { HardestQuestionsChart } from "@/components/quiz/stats/hardest-questions-chart";
 import { HourlyChart } from "@/components/quiz/stats/hourly-chart";
 import { ScoreChart } from "@/components/quiz/stats/score-chart";
@@ -10,7 +11,8 @@ import { StatsCardErrorBoundaryGroup } from "@/components/quiz/stats/stats-card-
 import { StatsInfoCard } from "@/components/quiz/stats/stats-info-card";
 import { StatsTable } from "@/components/quiz/stats/stats-table";
 import { StudyTimeChart } from "@/components/quiz/stats/study-time-chart";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useQuizMetadata, useQuizStats } from "@/hooks/use-quiz-stats";
 
 interface StatsPageClientProps {
@@ -18,11 +20,32 @@ interface StatsPageClientProps {
 }
 
 export function StatsPageClient({ quizId }: StatsPageClientProps) {
-  const { data: quiz } = useQuizMetadata(quizId);
+  const { data: quiz, error, isFetching, refetch } = useQuizMetadata(quizId);
   const { data: myStats } = useQuizStats(quizId, "me");
 
   if (quiz === undefined) {
-    return null;
+    return (
+      <Card>
+        <CardContent className="space-y-3 py-8 text-center">
+          {error === null ? (
+            <div
+              role="status"
+              className="flex items-center justify-center gap-3"
+            >
+              <Loader size={15} />
+              Ładowanie statystyk…
+            </div>
+          ) : (
+            <>
+              <p role="alert">Nie udało się wczytać statystyk.</p>
+              <Button disabled={isFetching} onClick={() => void refetch()}>
+                {isFetching ? "Ładowanie…" : "Spróbuj ponownie"}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
   }
 
   const canViewAll = quiz.can_edit === true;

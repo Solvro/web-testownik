@@ -2,9 +2,10 @@ import type { AIUsageSummary } from "@testownik/core/ai/usage";
 import { AI_USAGE_SCOPE_LABELS } from "@testownik/core/ai/usage";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
+import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { ErrorScreen, Loading } from "../src/components/ui";
+import { ErrorScreen, ErrorState, Loading } from "../src/components/ui";
 import { usageWindow, usageWindowLabels } from "../src/lib/ai-usage";
 import { api } from "../src/lib/api";
 import { useLocale } from "../src/lib/locale";
@@ -24,17 +25,23 @@ export default function Usage() {
   const s = useSession();
   const c = useTheme();
   const { t, language } = useLocale();
+  const [client] = useState(() => api.forSession());
   const usage = useQuery({
     queryKey: ["ai-usage", s.user?.id],
-    queryFn: () => api.request<AIUsageSummary>("ai/usage/me/?days=7"),
+    networkMode: "always",
+    refetchOnReconnect: true,
+    queryFn: ({ signal }) =>
+      client.request<AIUsageSummary>("ai/usage/me/?days=7", { signal }),
   });
   // Same cache as the settings screen; only used to name models.
   const catalog = useQuery({
     queryKey: ["ai-models", s.user?.id],
-    queryFn: () =>
-      api.request<{
+    networkMode: "always",
+    refetchOnReconnect: true,
+    queryFn: ({ signal }) =>
+      client.request<{
         models: { model: string; label: string; provider?: string }[];
-      }>("ai/models/"),
+      }>("ai/models/", { signal }),
   });
   const modelName = (id: string) =>
     catalog.data?.models.find((model) => model.model === id)?.label || id;
@@ -97,6 +104,9 @@ export default function Usage() {
             {t("Zamknij", "Close")}
           </Stack.Toolbar.Button>
         </Stack.Toolbar>
+      ) : null}
+      {usage.error ? (
+        <ErrorState error={usage.error} retry={() => void usage.refetch()} />
       ) : null}
       <View style={{ flexDirection: "row", gap: 12 }}>
         {(

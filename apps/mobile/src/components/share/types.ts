@@ -5,6 +5,9 @@ export interface ShareContentProps {
   shares: SharedQuiz[] | undefined;
   sharesLoading: boolean;
   sharesError: unknown;
+  quizError?: unknown;
+  retryQuiz?: () => void;
+  failureTitle?: string;
   retryShares: () => void;
   busy: boolean;
   failure: unknown;

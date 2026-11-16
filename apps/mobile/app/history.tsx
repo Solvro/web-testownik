@@ -1,17 +1,24 @@
 import type { QuizWithUserProgress } from "@testownik/core/quiz/types";
-import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import SyncStatus from "../src/components/SyncStatus";
+import SavedCopyNotice from "../src/components/SavedCopyNotice";
 import OptionIndicator from "../src/components/native/OptionIndicator";
 import ResultIcon from "../src/components/native/ResultIcon";
 import RichText from "../src/components/RichText";
 import StudyImage from "../src/components/StudyImage";
 import ExternalImageNotice from "../src/components/ExternalImageNotice";
 import { StatusContent } from "../src/components/native/StatusView";
-import { ErrorScreen, Label, Loading, Screen } from "../src/components/ui";
+import {
+  EmptyState,
+  ErrorScreen,
+  Label,
+  Loading,
+  Screen,
+} from "../src/components/ui";
 import { api, API_URL } from "../src/lib/api";
 import { ApiError } from "../src/lib/client";
 import {
@@ -22,13 +29,41 @@ import {
 import { useLocale } from "../src/lib/locale";
 import { useSession } from "../src/lib/session";
 import { useTheme } from "../src/lib/theme";
+import {
+  isLocalQuery,
+  markLocalQuery,
+  isSavedQuery,
+  markSavedQuery,
+} from "../src/lib/saved-query";
+import { useRefreshOnRecovery } from "../src/lib/use-refresh-on-recovery";
 
 export default function History() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
+  const { t } = useLocale();
+  if (typeof id !== "string" || !id.trim())
+    return (
+      <EmptyState
+        symbol="books.vertical"
+        ionicon="library-outline"
+        title={t("Wybierz quiz", "Choose a Quiz")}
+        description={t(
+          "Otwórz quiz z biblioteki, aby przejrzeć swoje odpowiedzi.",
+          "Open a quiz from the library to review your answers.",
+        )}
+        actions={[
+          {
+            label: t("Przeglądaj bibliotekę", "Browse Library"),
+            onPress: () => router.navigate("/library"),
+          },
+        ]}
+      />
+    );
   return <AnswerHistory key={`${user?.id}:${id}`} id={id} />;
 }
 function AnswerHistory({ id }: { id: string }) {
+  const [client] = useState(() => api.forSession());
+  const cache = useQueryClient();
   const s = useSession(),
     c = useTheme(),
     { t, language } = useLocale();
@@ -48,25 +83,56 @@ function AnswerHistory({ id }: { id: string }) {
     queryKey: ["answer-history", id, s.user?.id],
     enabled: !!id && !!s.library,
     networkMode: "always",
-    queryFn: async () => {
+    // Symbol metadata must be replaced even when server fields are identical.
+    structuralSharing: false,
+    queryFn: async ({ signal }) => {
       const state = await s.library!.read();
       const saved = state.quizzes[id];
+      const previous = cache.getQueryData<QuizWithUserProgress>([
+        "answer-history",
+        id,
+        s.user?.id,
+      ]);
       if (
         saved &&
         (s.offline || state.queue.some((item) => item.quiz_id === id))
       )
-        return saved;
+        return isSavedQuery(previous)
+          ? markSavedQuery(saved)
+          : markLocalQuery(saved);
+      const snapshot = s.library!.captureSnapshot(id, state);
       try {
-        return await api.request<QuizWithUserProgress>(
+        const fresh = await client.request<QuizWithUserProgress>(
           `quizzes/${id}/?include=current_session`,
+          { signal, timeoutMs: saved ? 4000 : undefined },
         );
+        // Local answers may have synchronized while this GET was in flight.
+        const latestState = await s.library!.read();
+        if (!s.library!.matchesSnapshot(id, snapshot, latestState)) {
+          const latest = latestState.quizzes[id];
+          if (latest)
+            return isSavedQuery(previous)
+              ? markSavedQuery(latest)
+              : markLocalQuery(latest);
+        }
+        return fresh;
       } catch (error) {
+        if (signal.aborted) throw error;
         if (error instanceof ApiError && [401, 403, 404].includes(error.status))
           throw error;
-        if (saved) return saved;
+        const latest = (await s.library!.read()).quizzes[id];
+        if (latest) return markSavedQuery(latest);
         throw error;
       }
     },
+  });
+  useRefreshOnRecovery({
+    scope: `${s.user?.id}:${id}`,
+    offline: s.offline,
+    pending: s.pending,
+    local: isLocalQuery(q.data),
+    enabled: !!s.library && !q.isFetching,
+    refresh: q.refetch,
   });
   const questions = useMemo(
     () =>
@@ -106,6 +172,12 @@ function AnswerHistory({ id }: { id: string }) {
         ListHeaderComponent={
           <View style={{ gap: 4, paddingBottom: 12 }}>
             <SyncStatus />
+            {isSavedQuery(q.data) &&
+            !s.offline &&
+            !s.pending &&
+            !s.syncError ? (
+              <SavedCopyNotice retry={q.refetch} disabled={q.isFetching} />
+            ) : null}
             <Text style={{ color: c.text, fontSize: 17, fontWeight: "600" }}>
               {q.data?.title}
             </Text>
@@ -177,8 +249,15 @@ function AnswerHistory({ id }: { id: string }) {
               )}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${result}: ${title}`}
-                accessibilityHint={when ?? undefined}
+                accessibilityLabel={[
+                  `${result}: ${title}`,
+                  entry
+                    ? t(`Pytanie ${entry.number}`, `Question ${entry.number}`)
+                    : null,
+                  when,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
                 accessibilityState={{ expanded: open }}
                 onPress={() => setExpanded(open ? null : item.id)}
                 style={({ pressed }) => ({
@@ -260,15 +339,6 @@ function AnswerHistory({ id }: { id: string }) {
                       return (
                         <View
                           key={answer.id}
-                          accessibilityLabel={[
-                            answer.text,
-                            selected ? t("Twój wybór", "Your choice") : null,
-                            answer.is_correct
-                              ? t("Poprawna odpowiedź", "Correct answer")
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
                           style={{
                             flexDirection: "row",
                             alignItems: "center",
@@ -283,17 +353,37 @@ function AnswerHistory({ id }: { id: string }) {
                                 : c.bg,
                           }}
                         >
-                          <OptionIndicator
-                            multiple={question.multiple}
-                            selected={selected}
-                            result={
+                          <View
+                            accessible={answer.is_correct || wrong}
+                            accessibilityRole="text"
+                            accessibilityLabel={[
                               answer.is_correct
-                                ? "correct"
-                                : wrong
-                                  ? "wrong"
-                                  : null
-                            }
-                          />
+                                ? t("Poprawna odpowiedź", "Correct answer")
+                                : t(
+                                    "Niepoprawna odpowiedź",
+                                    "Incorrect answer",
+                                  ),
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          >
+                            <View
+                              accessibilityElementsHidden
+                              importantForAccessibility="no-hide-descendants"
+                            >
+                              <OptionIndicator
+                                multiple={question.multiple}
+                                selected={selected}
+                                result={
+                                  answer.is_correct
+                                    ? "correct"
+                                    : wrong
+                                      ? "wrong"
+                                      : null
+                                }
+                              />
+                            </View>
+                          </View>
                           <View style={{ flex: 1, gap: 4 }}>
                             <RichText text={answer.text} allowImages={images} />
                             {answer.image && images(answer.image) ? (

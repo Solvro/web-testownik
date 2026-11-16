@@ -1,8 +1,14 @@
 import { userError } from "../src/lib/user-error";
 import { canMoveTo, type LibraryData } from "@testownik/core/quiz/library";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import {
+  Stack,
+  router,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePreventRemove } from "expo-router/react-navigation";
 import { FlatList, Platform, Text, View } from "react-native";
 import { Collection, CollectionDivider } from "../src/components/Collection";
 import CollectionRow from "../src/components/native/CollectionRow";
@@ -23,6 +29,7 @@ import { useLocale } from "../src/lib/locale";
 const created = new Set<(folder: string) => void>();
 
 export default function Organize() {
+  const [client] = useState(() => api.forSession());
   const {
     action,
     id = "",
@@ -41,20 +48,42 @@ export default function Organize() {
   const qc = useQueryClient();
   const [text, setText] = useState(name);
   const [busy, setBusy] = useState(false);
+  const mounted = useRef(true);
+  const pending = useRef(false);
+  const allowRemoval = useRef(false);
+  const navigation = useNavigation();
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  usePreventRemove(busy, ({ data }) => {
+    if (allowRemoval.current) navigation.dispatch(data.action);
+  });
   const [destination, setDestination] = useState<string | undefined>();
+  const destinationRef = useRef<string | undefined>(undefined);
+  const previousFolders = useRef(new Map<string, string | undefined>());
+  const openFolder = useCallback((folder: string) => {
+    previousFolders.current.set(folder, destinationRef.current);
+    destinationRef.current = folder;
+    setDestination(folder);
+  }, []);
   const moving = action === "move";
   // A folder made from this picker is where the item is going: open it.
   useEffect(() => {
     if (!moving) return;
-    const open = (folder: string) => setDestination(folder);
-    created.add(open);
-    return () => void created.delete(open);
-  }, [moving]);
+    created.add(openFolder);
+    return () => void created.delete(openFolder);
+  }, [moving, openFolder]);
   const q = useQuery({
     queryKey: ["library-destination", destination],
-    queryFn: () =>
-      api.request<LibraryData>(
+    networkMode: "always",
+    refetchOnReconnect: true,
+    queryFn: ({ signal }) =>
+      client.request<LibraryData>(
         destination ? `library/${destination}/` : "library/",
+        { signal },
       ),
     enabled: moving,
   });
@@ -71,33 +100,50 @@ export default function Organize() {
         item.can_edit &&
         item.id !== id,
     ) ?? [];
+  const goToParent = () => {
+    const folder =
+      q.data?.path.at(-2)?.id ??
+      (destination ? previousFolders.current.get(destination) : undefined);
+    destinationRef.current = folder;
+    setDestination(folder);
+  };
+  const canMove =
+    !q.error && Boolean(q.data && canMoveTo(q.data, { id, type, parent }));
   async function save() {
-    if (busy) return;
+    if (pending.current) return;
+    pending.current = true;
     setBusy(true);
     try {
       if (moving) {
-        if (!q.data || !canMoveTo(q.data, { id, type, parent })) return;
+        if (!q.data || !canMove) return;
         const target = q.data.path.at(-1)!.id;
-        await api.post(
+        await client.post(
           `${type === "quiz" ? "quizzes" : type === "shortcut" ? "quiz-shortcuts" : "folders"}/${id}/move/`,
           type === "folder" ? { parent_id: target } : { folder_id: target },
         );
       } else if (action === "rename")
-        await api.request(`folders/${id}/`, {
+        await client.request(`folders/${id}/`, {
           method: "PATCH",
           body: JSON.stringify({ name: text.trim() }),
         });
       else {
-        const folder = await api.post<{ id: string }>("folders/", {
+        const folder = await client.post<{ id: string }>("folders/", {
           name: text.trim(),
           ...(parent ? { parent } : {}),
         });
-        for (const listener of created) listener(folder.id);
+        if (mounted.current) {
+          for (const listener of created) listener(folder.id);
+        }
       }
-      await qc.invalidateQueries({ queryKey: ["library"] });
-      await qc.invalidateQueries({ queryKey: ["library-destination"] });
-      router.back();
+      void qc.invalidateQueries({ queryKey: ["library"] });
+      void qc.invalidateQueries({ queryKey: ["library-destination"] });
+      if (mounted.current) {
+        allowRemoval.current = true;
+        if (router.canGoBack()) router.back();
+        else router.replace("/");
+      }
     } catch (error) {
+      if (!mounted.current) return;
       notify(
         moving
           ? t("Nie przeniesiono", "Couldn’t Move Item")
@@ -107,7 +153,8 @@ export default function Organize() {
         userError(error, t),
       );
     } finally {
-      setBusy(false);
+      pending.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
   return (
@@ -119,7 +166,7 @@ export default function Organize() {
             : action === "rename"
               ? t("Zmień nazwę folderu", "Rename Folder")
               : t("Nowy folder", "New Folder"),
-          headerBackVisible: false,
+          headerBackVisible: Platform.OS !== "ios",
           gestureEnabled: !busy,
         }}
       />
@@ -133,9 +180,7 @@ export default function Organize() {
           <Stack.Toolbar.Button
             variant="prominent"
             tintColor={c.prominent}
-            disabled={
-              busy || !q.data || !canMoveTo(q.data, { id, type, parent })
-            }
+            disabled={busy || !canMove}
             onPress={save}
           >
             {t("Przenieś", "Move")}
@@ -165,12 +210,7 @@ export default function Organize() {
         scroll={!moving}
         footer={
           moving && Platform.OS !== "ios" ? (
-            <Button
-              disabled={
-                busy || !q.data || !canMoveTo(q.data, { id, type, parent })
-              }
-              onPress={save}
-            >
+            <Button disabled={busy || !canMove} onPress={save}>
               {t("Przenieś tutaj", "Move Here")}
             </Button>
           ) : Platform.OS !== "ios" ? (
@@ -191,9 +231,25 @@ export default function Organize() {
       >
         {moving ? (
           q.isPending ? (
-            <Loading />
-          ) : q.error ? (
-            <ErrorState error={q.error} retry={() => void q.refetch()} />
+            <View style={{ flex: 1 }}>
+              {destination ? (
+                <View style={{ padding: 20 }}>
+                  <Button disabled={busy} onPress={goToParent}>
+                    {t("Folder nadrzędny", "Parent Folder")}
+                  </Button>
+                </View>
+              ) : null}
+              <Loading />
+            </View>
+          ) : q.error && !q.data ? (
+            <View style={{ padding: 20, gap: 12 }}>
+              <ErrorState error={q.error} retry={() => void q.refetch()} />
+              {destination ? (
+                <Button disabled={busy} onPress={goToParent}>
+                  {t("Folder nadrzędny", "Parent Folder")}
+                </Button>
+              ) : null}
+            </View>
           ) : (
             <FlatList
               data={folders}
@@ -202,6 +258,12 @@ export default function Organize() {
               contentContainerStyle={{ padding: 20 }}
               ListHeaderComponent={
                 <View style={{ gap: 8, paddingBottom: 8 }}>
+                  {q.error ? (
+                    <ErrorState
+                      error={q.error}
+                      retry={() => void q.refetch()}
+                    />
+                  ) : null}
                   <Text
                     style={{
                       color: c.muted,
@@ -229,9 +291,8 @@ export default function Organize() {
                           symbol="arrow.turn.left.up"
                           ionicon="return-up-back"
                           disclosure={false}
-                          onPress={() =>
-                            setDestination(q.data?.path.at(-2)?.id)
-                          }
+                          disabled={busy}
+                          onPress={goToParent}
                         />
                       </>
                     ) : null}
@@ -243,6 +304,7 @@ export default function Organize() {
                           symbol="folder.badge.plus"
                           ionicon="add-circle-outline"
                           disclosure={false}
+                          disabled={busy}
                           onPress={() =>
                             router.push({
                               pathname: "/organize",
@@ -295,7 +357,8 @@ export default function Organize() {
                   <CollectionRow
                     title={item.name}
                     kind="folder"
-                    onPress={() => setDestination(item.id)}
+                    disabled={busy}
+                    onPress={() => openFolder(item.id)}
                   />
                 </View>
               )}
@@ -312,6 +375,7 @@ export default function Organize() {
         ) : (
           <Field
             label={t("Nazwa folderu", "Folder name")}
+            editable={!busy}
             value={text}
             onChangeText={setText}
             autoFocus

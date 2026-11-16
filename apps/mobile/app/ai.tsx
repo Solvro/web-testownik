@@ -13,11 +13,19 @@ import { userError } from "../src/lib/user-error";
 import { DraftWriter, waitForDraftWrites } from "../src/lib/draft-writer";
 import ChatAction from "../src/components/native/ChatAction";
 import { assistantError } from "../src/lib/assistant-error";
+import { createCompletionAnnouncement } from "../src/lib/accessibility-feedback";
 import type { Quiz } from "@testownik/core/quiz/types";
 import type { AIUsageSummary } from "@testownik/core/ai/usage";
 import { useQuery } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
 import * as Crypto from "expo-crypto";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import {
+  Stack,
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
 import {
   Fragment,
   useCallback,
@@ -37,6 +45,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   AppState,
+  BackHandler,
   Keyboard,
   Pressable,
 } from "react-native";
@@ -50,12 +59,14 @@ import {
   Label,
   Screen,
 } from "../src/components/ui";
-import { ai, api } from "../src/lib/api";
+import { ai as sessionAi, api as sessionApi } from "../src/lib/api";
+import { useQuizAiModel } from "../src/lib/quiz-ai-model";
 import { useSession } from "../src/lib/session";
-import { storage } from "../src/lib/storage";
+import { storage, tokenStore } from "../src/lib/storage";
 import {
   consumeChat,
   hasChatContent,
+  hasSuccessfulChatContent,
   type ChatPart,
 } from "../src/lib/chat-stream";
 
@@ -99,6 +110,22 @@ interface ChatSummary {
 }
 
 function AssistantConversation() {
+  const navigation = useNavigation();
+  const [api] = useState(() => sessionApi.forSession());
+  const [ai] = useState(() => sessionAi.forSession());
+  const [owner] = useState(() => tokenStore.session());
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const modelPickerLock = useRef(false);
+  const conversationLock = useRef(false);
+  const [startingConversation, setStartingConversation] = useState(false);
+  const [openingModel, setOpeningModel] = useState(false);
+  const [modelSaveFailed, setModelSaveFailed] = useState(false);
   const { t, language } = useLocale();
   const c = useTheme();
   const [composerHeight, setComposerHeight] = useState(36);
@@ -121,6 +148,17 @@ function AssistantConversation() {
       answerOrder?: string;
     }>(),
     s = useSession();
+  const selectedModel = useQuizAiModel(id);
+  const models = useQuery({
+    queryKey: ["ai-models", s.user?.id],
+    enabled: !selectedModel.isPending,
+    queryFn: () =>
+      api.request<{
+        models: { model: string; label: string }[];
+        default_model: string | null;
+      }>("ai/models/"),
+  });
+  const modelName = selectedModel.effectiveModel ?? models.data?.default_model;
   const quiz = useQuery({
       queryKey: ["ai-quiz", s.user?.id, id],
       queryFn: async () => {
@@ -134,6 +172,8 @@ function AssistantConversation() {
     [busy, setBusy] = useState(false),
     [failure, setFailure] = useState(""),
     [historyReady, setHistoryReady] = useState(false),
+    [historyFailure, setHistoryFailure] = useState(false),
+    [historyAttempt, setHistoryAttempt] = useState(0),
     [historyOpen, setHistoryOpen] = useState(false),
     [opening, setOpening] = useState<string | null>(null);
   // Conversations are stored on the server (the web saves them too), so earlier
@@ -167,20 +207,36 @@ function AssistantConversation() {
   }, [busy, messages.length, headerHeight]);
   const draftKey = `chat-draft.${s.user?.id}.${id}.${questionId}`;
   const draftError = useCallback(() => {
+    if (owner.aborted) return;
     setFailure(
       t(
         "Nie udało się zapisać szkicu na urządzeniu.",
         "Could not save your draft on this device.",
       ),
     );
-  }, [t]);
+  }, [owner, t]);
   const draftWriter = useMemo(
     () => new DraftWriter<string>(draftKey, storage, draftError),
     [draftKey, draftError],
   );
   const abort = useRef<AbortController | null>(null),
+    openingRequest = useRef<AbortController | null>(null),
     conversation = useRef<string | null>(null);
   if (conversation.current === null) conversation.current = Crypto.randomUUID();
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android" || !historyOpen) return;
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          if (opening) return true;
+          setHistoryOpen(false);
+          return true;
+        },
+      );
+      return () => subscription.remove();
+    }, [historyOpen, opening]),
+  );
   const question = questionInStudyOrder(
     quiz.data?.questions.find((q) => q.id === questionId),
     answerOrder,
@@ -205,13 +261,7 @@ function AssistantConversation() {
         }
       })
       .catch(() => {
-        if (current)
-          setFailure(
-            t(
-              "Nie udało się otworzyć rozmowy. Zamknij asystenta i spróbuj ponownie.",
-              "Could not open this conversation. Close the assistant and try again.",
-            ),
-          );
+        if (current) setHistoryFailure(true);
       });
     return () => {
       current = false;
@@ -219,16 +269,60 @@ function AssistantConversation() {
       void draftWriter.flush();
       abort.current?.abort();
       abort.current = null;
+      openingRequest.current?.abort();
+      openingRequest.current = null;
     };
-  }, [draftKey, draftWriter, id, s.user?.id, t]);
+  }, [draftKey, draftWriter, id, s.user?.id, t, historyAttempt]);
+  async function openModelPicker() {
+    if (
+      modelPickerLock.current ||
+      conversationLock.current ||
+      busy ||
+      opening ||
+      !historyReady ||
+      owner.aborted
+    )
+      return;
+    modelPickerLock.current = true;
+    setOpeningModel(true);
+    setModelSaveFailed(false);
+    setFailure("");
+    Keyboard.dismiss();
+    try {
+      draftWriter.schedule(prompt);
+      await draftWriter.flushOrThrow();
+      if (!mounted.current || owner.aborted || !navigation.isFocused()) return;
+      router.push({ pathname: "/settings-model", params: { quiz: id } });
+    } catch {
+      if (!mounted.current || owner.aborted) return;
+      // Retry the local save beside the model row, without sending a message.
+      setFailure("");
+      setModelSaveFailed(true);
+    } finally {
+      modelPickerLock.current = false;
+      if (mounted.current && !owner.aborted) setOpeningModel(false);
+    }
+  }
   async function run(text = prompt) {
     const submitted = text.trim();
-    if (!question || !historyReady || abort.current || !submitted) return;
+    if (
+      !question ||
+      !historyReady ||
+      modelPickerLock.current ||
+      conversationLock.current ||
+      selectedModel.isPending ||
+      selectedModel.error ||
+      openingRequest.current ||
+      abort.current ||
+      !submitted
+    )
+      return;
     setBusy(true);
     setFailure("");
     setOutput([]);
     const controller = new AbortController();
     abort.current = controller;
+    const announce = createCompletionAnnouncement(controller.signal);
     let final: ChatPart[] = [];
     let committed = false;
     let presentedExercise = false;
@@ -260,8 +354,10 @@ function AssistantConversation() {
           question,
           userName: s.user?.full_name,
           conversationId: conversation.current,
+          config: { modelName: selectedModel.effectiveModel },
         }),
         signal: controller.signal,
+        timeoutMs: 120000,
       });
       final = await consumeChat(
         response,
@@ -310,6 +406,8 @@ function AssistantConversation() {
         setMessages(history);
         setOutput([]);
         setPrompt("");
+        if (navigation.isFocused() && hasSuccessfulChatContent(final))
+          announce(t("Odpowiedź gotowa", "Reply ready"));
         try {
           await storage.write(`chat.${s.user?.id}.${id}`, history);
         } catch {
@@ -342,6 +440,17 @@ function AssistantConversation() {
     }
   }
   async function openChat(chatId: string) {
+    if (modelPickerLock.current || conversationLock.current) return;
+    if (
+      !historyReady ||
+      modelPickerLock.current ||
+      conversationLock.current ||
+      abort.current ||
+      openingRequest.current
+    )
+      return;
+    const controller = new AbortController();
+    openingRequest.current = controller;
     setOpening(chatId);
     try {
       const chat = await api.request<{
@@ -352,7 +461,9 @@ function AssistantConversation() {
           content: ChatPart[];
           order: number;
         }[];
-      }>(`ai/chats/${chatId}/`);
+      }>(`ai/chats/${chatId}/`, { signal: controller.signal });
+      if (openingRequest.current !== controller || controller.signal.aborted)
+        return;
       const history: Message[] = [...chat.messages]
         .sort((a, b) => a.order - b.order)
         .filter((m) => m.role === "user" || m.role === "assistant")
@@ -371,31 +482,62 @@ function AssistantConversation() {
         .write(`chat.${s.user?.id}.${id}`, history)
         .catch(() => undefined);
     } catch (error) {
+      if (controller.signal.aborted) return;
       notify(
         t("Nie udało się otworzyć rozmowy", "Couldn’t Open Conversation"),
         userError(error, t),
       );
     } finally {
-      setOpening(null);
+      if (openingRequest.current === controller) {
+        openingRequest.current = null;
+        setOpening(null);
+      }
     }
   }
   // Earlier conversations stay in history, so starting over needs no warning.
   async function newConversation() {
+    if (
+      !historyReady ||
+      abort.current ||
+      openingRequest.current ||
+      modelPickerLock.current ||
+      conversationLock.current ||
+      owner.aborted
+    )
+      return;
+    conversationLock.current = true;
+    setStartingConversation(true);
+    setFailure("");
+    const current = () =>
+      mounted.current && !owner.aborted && navigation.isFocused();
     try {
+      // Starting a new thread retains its unsent composer. Complete its save
+      // before acknowledging the new conversation or clearing the old cache.
+      draftWriter.schedule(prompt);
+      await draftWriter.flushOrThrow();
+      if (!current()) return;
       await storage.remove(`chat.${s.user?.id}.${id}`);
+      // A completed removal also clears a temporarily covered conversation.
+      if (!mounted.current || owner.aborted) return;
+      setMessages([]);
+      setOutput([]);
+      setFailure("");
+      conversation.current = Crypto.randomUUID();
+      haptics.selection();
     } catch (error) {
+      if (!current()) return;
+      // A local save retry must never become the generic Send-message retry.
+      setFailure("");
       notify(
         t("Nie rozpoczęto nowej rozmowy", "Couldn’t Start New Conversation"),
         userError(error, t),
       );
-      return;
+    } finally {
+      conversationLock.current = false;
+      if (mounted.current && !owner.aborted) setStartingConversation(false);
     }
-    setMessages([]);
-    setOutput([]);
-    setFailure("");
-    conversation.current = Crypto.randomUUID();
-    haptics.selection();
   }
+
   return (
     <Screen
       backgroundColor={Platform.OS === "ios" ? c.surface : undefined}
@@ -438,9 +580,16 @@ function AssistantConversation() {
                   ),
                 )
               }
-              editable={!busy && historyReady}
+              editable={
+                !busy &&
+                !opening &&
+                !openingModel &&
+                !startingConversation &&
+                historyReady
+              }
               value={prompt}
               onChangeText={(text) => {
+                if (modelPickerLock.current || conversationLock.current) return;
                 setPrompt(text);
                 draftWriter.schedule(text);
               }}
@@ -468,7 +617,17 @@ function AssistantConversation() {
                   : t("Wyślij wiadomość", "Send message")
               }
               stopping={busy}
-              disabled={!busy && (!historyReady || !prompt.trim() || !question)}
+              disabled={
+                !busy &&
+                (!historyReady ||
+                  !!opening ||
+                  openingModel ||
+                  startingConversation ||
+                  selectedModel.isPending ||
+                  !!selectedModel.error ||
+                  !prompt.trim() ||
+                  !question)
+              }
               onPress={() => (busy ? abort.current?.abort() : void run())}
             />
           </View>
@@ -481,6 +640,55 @@ function AssistantConversation() {
         </View>
       }
     >
+      {Platform.OS !== "ios" ? (
+        <Stack.Screen
+          options={{
+            headerRight: () => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(
+                  "Poprzednie rozmowy",
+                  "Previous Conversations",
+                )}
+                accessibilityState={{
+                  expanded: historyOpen,
+                  disabled:
+                    busy ||
+                    !!opening ||
+                    openingModel ||
+                    startingConversation ||
+                    !historyReady,
+                }}
+                disabled={
+                  busy ||
+                  !!opening ||
+                  openingModel ||
+                  startingConversation ||
+                  !historyReady
+                }
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setHistoryOpen((open) => !open);
+                }}
+                style={({ pressed }) => ({
+                  width: 48,
+                  height: 48,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity:
+                    busy || opening || !historyReady ? 0.45 : pressed ? 0.6 : 1,
+                })}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={24}
+                  color={historyOpen ? c.primary : c.text}
+                />
+              </Pressable>
+            ),
+          }}
+        />
+      ) : null}
       <ScrollView
         testID="assistant-conversation"
         style={{ flex: 1 }}
@@ -524,12 +732,95 @@ function AssistantConversation() {
             });
         }}
       >
+        <Collection>
+          <CollectionRow
+            title={t("Model AI", "AI Model")}
+            detail={
+              openingModel
+                ? t("Zapisuję szkic…", "Saving draft…")
+                : selectedModel.isPending
+                  ? t("Wczytuję…", "Loading…")
+                  : selectedModel.error
+                    ? t("Wybierz model", "Choose a Model")
+                    : models.isLoading
+                      ? t("Wczytuję…", "Loading…")
+                      : models.data?.models?.find(
+                          (model) => model.model === modelName,
+                        )?.label ||
+                        modelName ||
+                        t("Domyślny", "Default")
+            }
+            symbol="sparkles"
+            ionicon="sparkles-outline"
+            disabled={
+              busy ||
+              !!opening ||
+              openingModel ||
+              startingConversation ||
+              !historyReady
+            }
+            onPress={() => void openModelPicker()}
+          />
+        </Collection>
+        {modelSaveFailed ? (
+          <View accessibilityRole="alert" style={{ gap: 8 }}>
+            <Label>
+              {t(
+                "Nie udało się zapisać szkicu na urządzeniu.",
+                "Could not save your draft on this device.",
+              )}
+            </Label>
+            <Button
+              kind="secondary"
+              disabled={openingModel}
+              onPress={() => void openModelPicker()}
+            >
+              {t(
+                "Spróbuj otworzyć wybór modelu ponownie",
+                "Retry Opening Model Picker",
+              )}
+            </Button>
+          </View>
+        ) : null}
+        {selectedModel.error ? (
+          <ErrorState
+            error={selectedModel.error}
+            retry={() => void selectedModel.refetch()}
+          />
+        ) : null}
+        {historyFailure ? (
+          <View accessibilityRole="alert" style={{ gap: 8 }}>
+            <Label>
+              {t(
+                "Nie udało się otworzyć zapisanej rozmowy na urządzeniu.",
+                "Could not open the saved conversation on this device.",
+              )}
+            </Label>
+            <Button
+              kind="secondary"
+              onPress={() => {
+                setHistoryFailure(false);
+                setHistoryAttempt((attempt) => attempt + 1);
+              }}
+            >
+              {t("Spróbuj ponownie", "Try Again")}
+            </Button>
+          </View>
+        ) : !historyReady ? (
+          <Label>{t("Otwieram rozmowę…", "Opening conversation…")}</Label>
+        ) : null}
         {Platform.OS === "ios" ? (
           <Stack.Toolbar placement="left">
             <Stack.Toolbar.Button
               icon="clock.arrow.circlepath"
               selected={historyOpen}
-              disabled={busy}
+              disabled={
+                busy ||
+                !!opening ||
+                openingModel ||
+                startingConversation ||
+                !historyReady
+              }
               onPress={() => setHistoryOpen((open) => !open)}
             >
               {t("Poprzednie rozmowy", "Previous Conversations")}
@@ -537,7 +828,13 @@ function AssistantConversation() {
             <Stack.Toolbar.Button
               icon="square.and.pencil"
               hidden={messages.length === 0}
-              disabled={busy}
+              disabled={
+                busy ||
+                !!opening ||
+                openingModel ||
+                startingConversation ||
+                !historyReady
+              }
               onPress={newConversation}
             >
               {t("Nowa rozmowa", "New Conversation")}
@@ -605,6 +902,11 @@ function AssistantConversation() {
               {t("Poprzednie rozmowy", "Previous Conversations")}
             </Text>
             {chats.isPending ? <ActivityIndicator /> : null}
+            {opening ? (
+              <Label muted>
+                {t("Otwieram rozmowę…", "Opening conversation…")}
+              </Label>
+            ) : null}
             {chats.error ? (
               <ErrorState
                 error={chats.error}
@@ -740,20 +1042,28 @@ function AssistantConversation() {
                         symbol={action.symbol}
                         ionicon={action.ionicon}
                         disclosure={false}
-                        disabled={!historyReady || !!prompt.trim()}
+                        disabled={
+                          !historyReady ||
+                          selectedModel.isPending ||
+                          !!selectedModel.error ||
+                          !!prompt.trim()
+                        }
                         onPress={() => void run(action.prompt)}
                       />
                     </Fragment>
                   ))}
                 </Collection>
-                <Collection>
-                  <CollectionRow
-                    title={t("Poprzednie rozmowy", "Previous Conversations")}
-                    symbol="clock.arrow.circlepath"
-                    ionicon="time-outline"
-                    onPress={() => setHistoryOpen(true)}
-                  />
-                </Collection>
+                {Platform.OS === "ios" ? (
+                  <Collection>
+                    <CollectionRow
+                      title={t("Poprzednie rozmowy", "Previous Conversations")}
+                      symbol="clock.arrow.circlepath"
+                      ionicon="time-outline"
+                      disabled={!historyReady}
+                      onPress={() => setHistoryOpen(true)}
+                    />
+                  </Collection>
+                ) : null}
               </View>
             ) : null}
             {messages.map((message) => {
@@ -843,7 +1153,9 @@ function AssistantConversation() {
             {messages.length > 0 && Platform.OS !== "ios" ? (
               <Button
                 kind="secondary"
-                disabled={busy}
+                disabled={
+                  busy || !!opening || openingModel || startingConversation
+                }
                 onPress={newConversation}
               >
                 {t("Nowa rozmowa", "New Conversation")}

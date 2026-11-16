@@ -326,9 +326,11 @@ export function ErrorState({
           <Pressable
             accessibilityRole="button"
             onPress={retry}
-            hitSlop={8}
             style={({ pressed }) => ({
               alignSelf: "flex-start",
+              minHeight: Platform.OS === "ios" ? 44 : 48,
+              minWidth: 48,
+              justifyContent: "center",
               marginTop: 6,
               opacity: pressed ? 0.5 : 1,
             })}
@@ -349,17 +351,20 @@ export function ErrorScreen({
   title,
   retry,
   actions = [],
+  canLeave = true,
 }: {
   error: unknown;
   title?: string;
   retry?: () => void;
   actions?: StatusAction[];
+  /** Startup failures have no working screen to navigate back to. */
+  canLeave?: boolean;
 }) {
   const { t } = useLocale();
   const which = errorKind(error);
   const kind = KINDS[which];
   // Retrying can't bring back something deleted or unshared; leaving can.
-  const gone = which === "notFound" || which === "forbidden";
+  const gone = canLeave && (which === "notFound" || which === "forbidden");
   return (
     <StatusView
       testID="error-screen"

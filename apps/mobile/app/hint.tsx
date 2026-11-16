@@ -1,14 +1,17 @@
 import type { Quiz } from "@testownik/core/quiz/types";
+import { useQuery } from "@tanstack/react-query";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { View } from "react-native";
 
 import RichText from "../src/components/RichText";
-import { Button, ErrorState, Label, Screen } from "../src/components/ui";
-import { ai, api } from "../src/lib/api";
+import InlineHint, { AnswerHint } from "../src/components/InlineHint";
+import { Button, ErrorState, Loading, Screen } from "../src/components/ui";
+import { api } from "../src/lib/api";
 import { useSession } from "../src/lib/session";
-import { consumeText } from "../src/lib/stream";
 import { useLocale } from "../src/lib/locale";
 import { UserFacingError } from "../src/lib/user-error";
+import { useAiResponse } from "../src/lib/use-ai-response";
 
 export default function Hint() {
   const { t } = useLocale();
@@ -16,46 +19,51 @@ export default function Hint() {
     id,
     question: questionId,
     mode,
-  } = useLocalSearchParams<{ id: string; question: string; mode: string }>();
-  const { library } = useSession();
-  const [text, setText] = useState("");
-  const [error, setError] = useState<unknown>(null);
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
+  } = useLocalSearchParams<{
+    id: string;
+    question: string;
+    mode: string;
+  }>();
+  const { library, user } = useSession();
+  const [client] = useState(() => api.forSession());
+  const query = useQuery({
+    queryKey: ["hint-question", user?.id, id, questionId],
+    networkMode: "always",
+    queryFn: async ({ signal }) => {
+      if (
+        typeof id !== "string" ||
+        !id ||
+        id === "." ||
+        id === ".." ||
+        typeof questionId !== "string" ||
+        !questionId
+      )
+        throw new UserFacingError("missingQuestion");
       const cached = await library?.read();
-      const quiz =
-        cached?.quizzes[id] ??
-        (await api.request<Quiz>(`quizzes/${id}/`, {
-          signal: controller.signal,
-        }));
+      const saved =
+        cached && Object.hasOwn(cached.quizzes, id)
+          ? cached.quizzes[id]
+          : undefined;
+      const savedQuestion = saved?.questions.find(
+        (item) => item.id === questionId,
+      );
+      if (savedQuestion) return savedQuestion;
+      const quiz = await client.request<Quiz>(
+        `quizzes/${encodeURIComponent(id)}/`,
+        { signal },
+      );
+      if (!Array.isArray(quiz?.questions))
+        throw new UserFacingError("missingQuestion");
       const question = quiz.questions.find((item) => item.id === questionId);
       if (!question) throw new UserFacingError("missingQuestion");
-      const response = await ai.response(
-        mode === "explain" ? "ai/explain" : "ai/hint",
-        {
-          method: "POST",
-          body: JSON.stringify({ question }),
-          signal: controller.signal,
-        },
-      );
-      await consumeText(
-        response,
-        (value) => {
-          if (!controller.signal.aborted) setText(value);
-        },
-        false,
-      );
-    })().catch((failure: unknown) => {
-      if (!controller.signal.aborted) setError(failure);
-    });
-    return () => controller.abort();
-  }, [id, questionId, mode, library, attempt]);
+      return question;
+    },
+  });
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/"));
   return (
     <Screen
       footer={
-        <Button kind="secondary" onPress={() => router.back()}>
+        <Button kind="secondary" onPress={back}>
           {t("Wróć do pytania", "Back to Question")}
         </Button>
       }
@@ -68,30 +76,52 @@ export default function Hint() {
               : t("Podpowiedź AI", "AI Hint"),
         }}
       />
-      {error ? (
-        <ErrorState
-          error={error}
-          retry={() => {
-            setError(null);
-            setText("");
-            setAttempt((n) => n + 1);
-          }}
+      {query.isPending ? (
+        <Loading />
+      ) : query.error ? (
+        <ErrorState error={query.error} retry={() => void query.refetch()} />
+      ) : query.data ? (
+        <HintResponse
+          key={`${user?.id}:${id}:${questionId}:${mode}`}
+          question={query.data}
+          quizId={id}
+          mode={mode === "explain" ? "explain" : "hint"}
+          onClose={back}
         />
-      ) : text ? (
-        <RichText text={text} />
-      ) : (
-        <Label>
-          {mode === "explain"
-            ? t("Przygotowuję wyjaśnienie…", "Preparing an explanation…")
-            : t("Przygotowuję podpowiedź…", "Preparing a hint…")}
-        </Label>
-      )}
-      <Label muted>
-        {t(
-          "AI może się mylić. Sprawdzaj odpowiedzi w materiałach do zajęć.",
-          "AI can make mistakes. Check answers against your course materials.",
-        )}
-      </Label>
+      ) : null}
     </Screen>
+  );
+}
+
+function HintResponse({
+  question,
+  quizId,
+  mode,
+  onClose,
+}: {
+  question: Quiz["questions"][number];
+  quizId: string;
+  mode: "hint" | "explain";
+  onClose: () => void;
+}) {
+  const response = useAiResponse(question, mode, quizId);
+  return (
+    <View style={{ gap: 12 }}>
+      <RichText text={question.text} />
+      {response.answers.size
+        ? question.answers.map((answer, index) => (
+            <View key={answer.id} style={{ gap: 4 }}>
+              <RichText text={answer.text} />
+              {response.answers.get(index) ? (
+                <AnswerHint
+                  text={response.answers.get(index)!}
+                  streaming={response.busy}
+                />
+              ) : null}
+            </View>
+          ))
+        : null}
+      <InlineHint mode={mode} state={response} onClose={onClose} />
+    </View>
   );
 }

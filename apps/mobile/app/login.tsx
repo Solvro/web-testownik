@@ -3,9 +3,15 @@ import { Redirect, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
 import { Image, View } from "react-native";
-import { Button, Heading, Label, Screen } from "../src/components/ui";
+import {
+  Button,
+  ErrorState,
+  Heading,
+  Label,
+  Screen,
+} from "../src/components/ui";
 import { WEB_URL } from "../src/lib/api";
-import { saveOAuth } from "../src/lib/oauth";
+import { clearOAuth, saveOAuth, type OAuthFlow } from "../src/lib/oauth";
 import {
   OAUTH_CLIENT_ID,
   OAUTH_REDIRECT_URI,
@@ -20,11 +26,14 @@ export default function Login() {
   const { t } = useLocale();
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   if (s.user) return <Redirect href="/" />;
   async function signIn() {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
+    setError(null);
+    let flow: OAuthFlow | undefined;
     try {
       const verifier =
         Crypto.randomUUID().replaceAll("-", "") +
@@ -35,7 +44,8 @@ export default function Login() {
         { encoding: Crypto.CryptoEncoding.BASE64 },
       );
       const state = Crypto.randomUUID().replaceAll("-", "");
-      await saveOAuth({ verifier, state });
+      flow = { verifier, state };
+      await saveOAuth(flow);
       const params = new URLSearchParams({
         client_id: OAUTH_CLIENT_ID,
         redirect_uri: OAUTH_REDIRECT_URI,
@@ -58,7 +68,10 @@ export default function Login() {
           pathname: "/auth",
           params: Object.fromEntries(url.searchParams),
         });
-      } else await saveOAuth(null);
+      } else if (result.type === "cancel") await clearOAuth(flow);
+    } catch (failure) {
+      if (flow) await clearOAuth(flow).catch(() => undefined);
+      setError(failure);
     } finally {
       lock.current = false;
       setBusy(false);
@@ -80,6 +93,7 @@ export default function Login() {
           )}
         </Label>
       </View>
+      {error ? <ErrorState error={error} /> : null}
       <Button disabled={busy} onPress={signIn}>
         {t("Zaloguj się do Testownika", "Sign in to Testownik")}
       </Button>

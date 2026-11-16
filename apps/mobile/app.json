@@ -53,7 +53,8 @@
       "./plugins/with-provider-icons",
       "./plugins/with-material3-theme",
       "expo-image",
-      "./plugins/with-brand-logo"
+      "./plugins/with-brand-logo",
+      "./plugins/with-async-storage-capacity"
     ],
     "web": {
       "bundler": "metro",

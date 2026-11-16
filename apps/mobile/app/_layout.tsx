@@ -6,8 +6,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LocaleProvider, useLocale } from "../src/lib/locale";
 
-import { Loading } from "../src/components/ui";
-import { SessionProvider, useSession } from "../src/lib/session";
+import { ErrorScreen, Loading } from "../src/components/ui";
+import { useSession } from "../src/lib/session";
 import { useTheme } from "../src/lib/theme";
 
 export { ErrorBoundary } from "expo-router";
@@ -33,10 +33,8 @@ export default function Layout() {
     <SafeAreaProvider>
       <ThemeProvider value={navigationTheme}>
         <LocaleProvider>
-          <SessionProvider>
-            <StatusBar style="auto" />
-            <SessionNavigator />
-          </SessionProvider>
+          <StatusBar style="auto" />
+          <SessionNavigator />
         </LocaleProvider>
       </ThemeProvider>
     </SafeAreaProvider>
@@ -62,8 +60,64 @@ function tabTitle(
 function SessionNavigator() {
   const { t } = useLocale();
   const c = useTheme();
-  const { ready, user } = useSession();
+  const {
+    ready,
+    user,
+    initializationError,
+    accountDeletion,
+    finishAccountDeletion,
+    leaveAccountDeletionRecovery,
+    reload,
+    logout,
+  } = useSession();
+  if (accountDeletion)
+    return accountDeletion.busy ? (
+      <Loading />
+    ) : (
+      <ErrorScreen
+        title={
+          accountDeletion.canSignIn
+            ? t(
+                "Dokończ czyszczenie danych urządzenia",
+                "Finish Clearing Device Data",
+              )
+            : t("Konto zostało usunięte.", "Your account has been deleted.")
+        }
+        error={accountDeletion.error}
+        canLeave={false}
+        actions={[
+          {
+            label: t("Wyczyść dane urządzenia", "Clear Device Data"),
+            onPress: () => void finishAccountDeletion(accountDeletion.ownerId),
+          },
+          ...(accountDeletion.canSignIn
+            ? [
+                {
+                  label: t("Przejdź do logowania", "Return to Sign In"),
+                  onPress: () =>
+                    void leaveAccountDeletionRecovery(accountDeletion.ownerId),
+                },
+              ]
+            : []),
+        ]}
+      />
+    );
   if (!ready) return <Loading />;
+  if (initializationError)
+    return (
+      <ErrorScreen
+        title={t("Nie udało się otworzyć aplikacji", "Couldn’t Open Testownik")}
+        error={initializationError}
+        retry={() => void reload()}
+        canLeave={false}
+        actions={[
+          {
+            label: t("Wyloguj", "Sign Out"),
+            onPress: () => void logout().catch(() => undefined),
+          },
+        ]}
+      />
+    );
   // Sheets show one continuous background instead of a lighter header band.
   const sheetHeader = {
     headerStyle: { backgroundColor: c.bg },
@@ -71,6 +125,7 @@ function SessionNavigator() {
   };
   return (
     <Stack
+      key={user?.id ?? "signed-out"}
       screenOptions={{
         headerStyle: {
           backgroundColor:

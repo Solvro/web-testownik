@@ -57,7 +57,7 @@ for (const language of ["en", "pl"] as const)
             none: "No Results for “missing-phrase”",
             clear: "Clear Search",
             row: "Question 1: Żółć i łódź",
-            correct: "Źródło energii, Correct answer",
+            correct: "Correct answer",
           }
         : {
             field: "Pytanie, odpowiedź lub wyjaśnienie",
@@ -67,7 +67,7 @@ for (const language of ["en", "pl"] as const)
             none: "Brak wyników dla „missing-phrase”",
             clear: "Wyczyść wyszukiwanie",
             row: "Pytanie 1: Żółć i łódź",
-            correct: "Źródło energii, Poprawna odpowiedź",
+            correct: "Poprawna odpowiedź",
           };
     await page.goto("/search-quiz?id=quiz");
     await expect(
@@ -80,7 +80,13 @@ for (const language of ["en", "pl"] as const)
     await field.fill("lodz zrodlo");
     await expect(page.getByText(c.one, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: c.row, exact: true }).click();
-    await expect(page.getByLabel(c.correct)).toBeVisible();
+    await expect(page.getByLabel(c.correct, { exact: true })).toBeVisible();
+    await expect(
+      page
+        .frameLocator("iframe")
+        .first()
+        .getByText("Źródło energii", { exact: true }),
+    ).toBeVisible();
     await field.fill("missing-phrase");
     await expect(page.getByText(c.none, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: c.clear, exact: true }).click();

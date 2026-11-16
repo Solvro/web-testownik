@@ -13,6 +13,7 @@ import {
 } from "@expo/ui/swift-ui";
 import {
   accessibilityLabel,
+  disabled,
   font,
   foregroundStyle,
   frame,
@@ -35,6 +36,9 @@ export default function EditorOverview({
   description,
   questions,
   error,
+  notice,
+  noticeActions,
+  busy,
   openDetails,
   openQuestion,
   move,
@@ -45,6 +49,13 @@ export default function EditorOverview({
   description: string;
   questions: Question[];
   error: string;
+  notice?: string;
+  noticeActions?: {
+    label: string;
+    onPress: () => void;
+    destructive?: boolean;
+  }[];
+  busy?: boolean;
   openDetails: () => void;
   openQuestion: (id: string, validate?: boolean) => void;
   move: (from: number, to: number) => void;
@@ -56,7 +67,24 @@ export default function EditorOverview({
   const plain = (text: string) => text.replace(/\s+/g, " ").trim();
   return (
     <Host style={{ flex: 1 }}>
-      <List modifiers={[listStyle("insetGrouped")]}>
+      <List modifiers={[listStyle("insetGrouped"), disabled(!!busy)]}>
+        {notice ? (
+          <Section>
+            <Text modifiers={[font({ textStyle: "subheadline" }), secondary]}>
+              {notice}
+            </Text>
+            {noticeActions?.map((action) => (
+              <Button
+                key={action.label}
+                role={action.destructive ? "destructive" : undefined}
+                modifiers={[disabled(!!busy)]}
+                onPress={action.onPress}
+              >
+                <Text>{action.label}</Text>
+              </Button>
+            ))}
+          </Section>
+        ) : null}
         {error ? (
           <Section>
             <HStack spacing={10}>
@@ -78,7 +106,10 @@ export default function EditorOverview({
         ) : null}
 
         <Section title={t("Quiz", "Quiz")}>
-          <Button onPress={openDetails} modifiers={[rowLabel]}>
+          <Button
+            onPress={openDetails}
+            modifiers={[rowLabel, disabled(!!busy)]}
+          >
             <HStack spacing={14}>
               <IconTile symbol="character.cursor.ibeam" color={tile.blue} />
               <VStack alignment="leading" spacing={2} modifiers={[fill]}>
@@ -127,8 +158,12 @@ export default function EditorOverview({
           }
         >
           <List.ForEach
-            onMove={(from, to) => move(from[0], to)}
-            onDelete={(indices) => remove(indices[0])}
+            onMove={(from, to) => {
+              if (!busy) move(from[0], to);
+            }}
+            onDelete={(indices) => {
+              if (!busy) remove(indices[0]);
+            }}
           >
             {questions.map((question, index) => {
               const blank = isBlankQuestion(question);
@@ -147,6 +182,7 @@ export default function EditorOverview({
                   onPress={() => openQuestion(question.id, !!issue)}
                   modifiers={[
                     rowLabel,
+                    disabled(!!busy),
                     accessibilityLabel(
                       [
                         t(`Pytanie ${index + 1}`, `Question ${index + 1}`),
@@ -214,7 +250,7 @@ export default function EditorOverview({
               );
             })}
           </List.ForEach>
-          <Button onPress={add} modifiers={[rowLabel]}>
+          <Button onPress={add} modifiers={[rowLabel, disabled(!!busy)]}>
             <HStack spacing={12}>
               <Image
                 systemName="plus.circle.fill"

@@ -1,5 +1,32 @@
 android {
-    defaultConfig { testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner" }
+    if (findProperty("isolatedNativeQaPackage") == "true") {
+        def qaApi = System.getenv("EXPO_PUBLIC_API_URL")
+        def qaWeb = System.getenv("EXPO_PUBLIC_WEB_URL")
+        if (qaApi != "http://127.0.0.1:8768/api" || qaWeb != "http://127.0.0.1:8769") {
+            throw new GradleException("Isolated native QA requires the explicit synthetic fixture URLs")
+        }
+        buildTypes {
+            nativeQa {
+                initWith release
+                applicationIdSuffix ".nativeqa"
+                matchingFallbacks = ["release"]
+                buildConfigField "String", "NATIVE_QA_API", '"' + qaApi + '"'
+                buildConfigField "String", "NATIVE_QA_WEB", '"' + qaWeb + '"'
+            }
+        }
+        sourceSets.nativeQa.manifest.srcFile file("../../e2e/android/AndroidManifest-qa.xml")
+        testBuildType "nativeQa"
+    }
+    defaultConfig {
+        // Separate package for storage probes when a developer's installed app
+        // uses another debug certificate. Never replace or uninstall that app.
+        if (findProperty("isolatedStorageProbePackage") == "true") {
+            applicationIdSuffix ".storageqa"
+        }
+        testInstrumentationRunner(findProperty("isolatedStorageProbeRunner") == "true"
+            ? 'pl.solvro.testownik.StorageLimitsRunner'
+            : "androidx.test.runner.AndroidJUnitRunner")
+    }
     sourceSets { androidTest.java.srcDirs += file("../../e2e/android") }
 }
 dependencies {

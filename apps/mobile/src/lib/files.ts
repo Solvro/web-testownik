@@ -17,6 +17,7 @@ export async function pickImage<T = UploadedImage>(
   endpoint = "upload/",
   field = "image",
 ) {
+  const client = api.forSession();
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     quality: 0.85,
@@ -33,7 +34,7 @@ export async function pickImage<T = UploadedImage>(
     // Expo's fetch serializes Blob/File bytes, not RN's legacy uri objects.
     body.append(field, new File(asset.uri));
   }
-  return api.request<T>(endpoint, {
+  return client.request<T>(endpoint, {
     method: "POST",
     body,
   });

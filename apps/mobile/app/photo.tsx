@@ -3,7 +3,8 @@ import { getProfileAvatarOptions } from "@testownik/core/user/avatars";
 import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
 import { File } from "expo-file-system";
-import { Stack, router } from "expo-router";
+import { Stack, router, useNavigation } from "expo-router";
+import { usePreventRemove } from "expo-router/react-navigation";
 import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { Platform, Pressable, Text, View } from "react-native";
@@ -16,13 +17,18 @@ import { api } from "../src/lib/api";
 import { pickImage } from "../src/lib/files";
 import { useLocale } from "../src/lib/locale";
 import { useSession } from "../src/lib/session";
+import { tokenStore } from "../src/lib/storage";
 import { useTheme } from "../src/lib/theme";
 
 export default function Photo() {
+  const [signal] = useState(() => tokenStore.session());
+  const [client] = useState(() => api.forSession(signal));
   const session = useSession();
   const mounted = useRef(true);
   // Blocks a second tap before the disabled state renders.
   const busy = useRef(false);
+  const allowRemoval = useRef(false);
+  const navigation = useNavigation();
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -34,6 +40,9 @@ export default function Photo() {
   const [selected, setSelected] = useState<string | null>(null);
   const [gravatar, setGravatar] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  usePreventRemove(saving, ({ data }) => {
+    if (allowRemoval.current) navigation.dispatch(data.action);
+  });
   const email = session.user?.email;
   useEffect(() => {
     let active = true;
@@ -51,14 +60,19 @@ export default function Photo() {
       active = false;
     };
   }, [email]);
-  const options = getProfileAvatarOptions(session.user?.full_name ?? "", null);
-  if (gravatar) options[options.length - 1] = gravatar;
+  const options = getProfileAvatarOptions(
+    session.user?.full_name ?? "",
+    gravatar,
+  );
   async function finish(action: () => Promise<UserData>) {
     setSaving(true);
     try {
       const user = await action();
       await session.reload(user);
-      if (mounted.current) router.back();
+      if (mounted.current && !signal.aborted) {
+        allowRemoval.current = true;
+        router.back();
+      }
     } finally {
       if (mounted.current) setSaving(false);
     }
@@ -68,24 +82,38 @@ export default function Photo() {
     await finish(async () => {
       const body = new FormData();
       let temporary: string | undefined;
+      const signal = AbortSignal.timeout(30000);
       try {
-        if (Platform.OS === "web") {
-          const response = await fetch(selected);
-          if (!response.ok)
-            throw new Error(
-              t("Nie udało się pobrać awatara.", "Could not load this avatar."),
+        try {
+          if (Platform.OS === "web") {
+            const response = await fetch(selected, { signal });
+            if (!response.ok)
+              throw new Error(
+                t(
+                  "Nie udało się pobrać awatara.",
+                  "Could not load this avatar.",
+                ),
+              );
+            body.append("photo", await response.blob(), "avatar.png");
+          } else {
+            temporary = `${FileSystem.cacheDirectory}avatar-${Crypto.randomUUID()}.png`;
+            const file = await File.downloadFileAsync(
+              selected,
+              new File(temporary),
+              {
+                idempotent: true,
+                signal,
+              },
             );
-          body.append("photo", await response.blob(), "avatar.png");
-        } else {
-          temporary = `${FileSystem.cacheDirectory}avatar-${Crypto.randomUUID()}.png`;
-          const result = await FileSystem.downloadAsync(selected, temporary);
-          if (result.status !== 200)
-            throw new Error(
-              t("Nie udało się pobrać awatara.", "Could not load this avatar."),
-            );
-          body.append("photo", new File(result.uri));
+            body.append("photo", file);
+          }
+        } catch (error) {
+          // Convert only the download deadline; later upload validation has its
+          // own request timeout and must retain the server's actionable detail.
+          if (signal.aborted) throw signal.reason;
+          throw error;
         }
-        return await api.request<UserData>("user/photo/", {
+        return await client.request<UserData>("user/photo/", {
           method: "POST",
           body,
         });
@@ -101,10 +129,11 @@ export default function Photo() {
   // Stack.Toolbar drops SF-symbol and text-only items on Android; use the JS controls.
   const native = Platform.OS === "ios";
   const run = (action: () => Promise<void>) => {
-    if (busy.current) return;
+    if (busy.current || !mounted.current || signal.aborted) return;
     busy.current = true;
-    void action()
+    return action()
       .catch((error: unknown) => {
+        if (!mounted.current || signal.aborted) return;
         haptics.error();
         notify(
           t("Nie zmieniono zdjęcia", "Couldn’t Update Photo"),
@@ -121,30 +150,46 @@ export default function Photo() {
       const result = await pickImage<UserData>("user/photo/", "photo");
       if (result) {
         await session.reload(result);
-        haptics.success();
-        if (mounted.current) router.back();
+        if (mounted.current && !signal.aborted) {
+          haptics.success();
+          allowRemoval.current = true;
+          router.back();
+        }
       }
     } finally {
       if (mounted.current) setSaving(false);
     }
   };
   const removePhoto = () =>
-    finish(() => api.request<UserData>("user/photo/", { method: "DELETE" }));
+    finish(() => client.request<UserData>("user/photo/", { method: "DELETE" }));
   return (
     <Screen
       footer={
         native ? undefined : (
-          <Button disabled={!selected || saving} onPress={saveAvatar}>
+          <Button
+            disabled={!selected || saving}
+            onPress={() => run(saveAvatar)}
+          >
             {t("Zapisz zdjęcie", "Save Photo")}
           </Button>
         )
       }
     >
-      <Stack.Screen options={{ gestureEnabled: !selected }} />
+      <Stack.Screen
+        options={{
+          gestureEnabled: !selected && !saving,
+          headerBackVisible: !saving,
+        }}
+      />
       {native ? (
         <>
           <Stack.Toolbar placement="left">
-            <Stack.Toolbar.Button onPress={() => router.back()}>
+            <Stack.Toolbar.Button
+              disabled={saving}
+              onPress={() => {
+                if (!busy.current) router.back();
+              }}
+            >
               {t("Anuluj", "Cancel")}
             </Stack.Toolbar.Button>
           </Stack.Toolbar>
@@ -155,7 +200,7 @@ export default function Photo() {
               disabled={!selected || saving}
               onPress={() => run(saveAvatar)}
             >
-              {t("Zapisz", "Save")}
+              {saving ? t("Zapisywanie…", "Saving…") : t("Zapisz", "Save")}
             </Stack.Toolbar.Button>
           </Stack.Toolbar>
         </>
@@ -240,6 +285,7 @@ export default function Photo() {
           <Pressable
             key={url}
             accessibilityRole="radio"
+            aria-checked={selected === url}
             accessibilityLabel={
               url === gravatar
                 ? "Gravatar"

@@ -4,6 +4,13 @@ import type { NextRequest } from "next/server";
 import { API_URL } from "@/lib/api";
 
 export async function GET(request: NextRequest) {
+  // Email links never carry authority to transfer a browser guest account.
+  if (request.nextUrl.searchParams.has("guest_id")) {
+    return NextResponse.json(
+      { error: "Restart sign-in to transfer guest data securely." },
+      { status: 403 },
+    );
+  }
   const token = request.nextUrl.searchParams.get("token");
 
   if (token === null || token.trim() === "") {
@@ -11,14 +18,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const guestId = request.nextUrl.searchParams.get("guest_id");
-
     const backendResponse = await fetch(`${API_URL}/login-link/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token,
-        ...(guestId === null ? {} : { guest_id: guestId }),
       }),
     });
 

@@ -2,8 +2,8 @@
 // body-medium supporting text, full-row ripple. No trailing chevron: Material
 // lists don't mark navigation rows.
 import { Icon, ListItem, RNHostView, Text } from "@expo/ui/jetpack-compose";
-import { clickable } from "@expo/ui/jetpack-compose/modifiers";
 import { Ionicons } from "@expo/vector-icons";
+import { Pressable, View } from "react-native";
 
 import { useTheme } from "../../lib/theme";
 import type { CollectionRowProps } from "./CollectionRow";
@@ -15,8 +15,10 @@ export default function CollectionRow({
   detail,
   kind = "quiz",
   onPress,
+  accessibilityLabel,
   ionicon,
   disabled = false,
+  leading,
 }: CollectionRowProps) {
   const c = useTheme();
   const icon =
@@ -38,54 +40,59 @@ export default function CollectionRow({
   const source = symbolForIonicon(icon);
   const tint = hero || kind === "folder" ? c.primary : c.muted;
   return (
-    <M3Host
-      matchContents={{ vertical: true }}
-      style={{ width: "100%", opacity: disabled ? 0.38 : 1 }}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={detail}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      android_ripple={{ color: c.fill, foreground: true }}
+      style={{ width: "100%", minHeight: 48, opacity: disabled ? 0.38 : 1 }}
     >
-      <ListItem
-        colors={{
-          containerColor: c.surface,
-          contentColor: c.text,
-          supportingContentColor: c.muted,
-        }}
-        // Keep the clickable modifier mounted: swapping it for none when
-        // `disabled` flips makes Compose reject the modifiers prop update.
-        modifiers={[
-          clickable(() => {
-            if (!disabled) onPress();
-          }),
-        ]}
-      >
-        <ListItem.HeadlineContent>
-          <Text
-            maxLines={2}
-            overflow="ellipsis"
-            style={{ typography: hero ? "titleLarge" : "bodyLarge" }}
+      <View importantForAccessibility="no-hide-descendants">
+        <M3Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+          <ListItem
+            colors={{
+              containerColor: c.surface,
+              contentColor: c.text,
+              supportingContentColor: c.muted,
+            }}
           >
-            {title}
-          </Text>
-        </ListItem.HeadlineContent>
-        {detail ? (
-          <ListItem.SupportingContent>
-            <Text
-              maxLines={1}
-              overflow="ellipsis"
-              style={{ typography: "bodyMedium" }}
-            >
-              {detail}
-            </Text>
-          </ListItem.SupportingContent>
-        ) : null}
-        <ListItem.LeadingContent>
-          {source ? (
-            <Icon source={source} tint={tint} size={hero ? 40 : 24} />
-          ) : (
-            <RNHostView matchContents>
-              <Ionicons name={icon} size={hero ? 40 : 24} color={tint} />
-            </RNHostView>
-          )}
-        </ListItem.LeadingContent>
-      </ListItem>
-    </M3Host>
+            <ListItem.HeadlineContent>
+              <Text
+                maxLines={2}
+                overflow="ellipsis"
+                style={{ typography: hero ? "titleLarge" : "bodyLarge" }}
+              >
+                {title}
+              </Text>
+            </ListItem.HeadlineContent>
+            {detail ? (
+              <ListItem.SupportingContent>
+                <Text
+                  maxLines={1}
+                  overflow="ellipsis"
+                  style={{ typography: "bodyMedium" }}
+                >
+                  {detail}
+                </Text>
+              </ListItem.SupportingContent>
+            ) : null}
+            <ListItem.LeadingContent>
+              {leading ? (
+                <RNHostView matchContents>{leading}</RNHostView>
+              ) : source ? (
+                <Icon source={source} tint={tint} size={hero ? 40 : 24} />
+              ) : (
+                <RNHostView matchContents>
+                  <Ionicons name={icon} size={hero ? 40 : 24} color={tint} />
+                </RNHostView>
+              )}
+            </ListItem.LeadingContent>
+          </ListItem>
+        </M3Host>
+      </View>
+    </Pressable>
   );
 }

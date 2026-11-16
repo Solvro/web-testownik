@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 import { useLocale } from "../lib/locale";
+import { useSession } from "../lib/session";
 import { offlineImage } from "../lib/offline-images";
 import { useTheme } from "../lib/theme";
 
@@ -16,19 +17,33 @@ export default function StudyImage({
 }) {
   const { t } = useLocale(),
     c = useTheme();
-  const [failed, setFailed] = useState(false),
+  const { offline } = useSession();
+  const [failure, setFailure] = useState<{
+      uri: string;
+      offline: boolean;
+    } | null>(null),
     [attempt, setAttempt] = useState(0);
-  return failed ? (
+  if (failure && (failure.uri !== uri || (failure.offline && !offline)))
+    setFailure(null);
+  return failure?.uri === uri ? (
     <View style={{ gap: 4, paddingVertical: 8 }}>
       <Text style={{ color: c.muted }}>
-        {t("Nie udało się wczytać obrazu.", "The image could not be loaded.")}
+        {offline
+          ? t(
+              "Ten obraz nie jest zapisany na urządzeniu. Połącz się z internetem, aby go pobrać.",
+              "This image is not saved on this device. Connect to the internet to download it.",
+            )
+          : t(
+              "Nie udało się wczytać obrazu.",
+              "The image could not be loaded.",
+            )}
       </Text>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t(`Wczytaj ponownie: ${label}`, `Reload: ${label}`)}
         onPress={(event) => {
           event.stopPropagation();
-          setFailed(false);
+          setFailure(null);
           setAttempt((n) => n + 1);
         }}
         style={{
@@ -49,7 +64,7 @@ export default function StudyImage({
       accessibilityLabel={label}
       // A copy saved with the offline quiz works without a connection.
       source={{ uri: offlineImage(uri) ?? uri }}
-      onError={() => setFailed(true)}
+      onError={() => setFailure({ uri, offline })}
       contentFit="contain"
       transition={120}
       style={{ height, width: "100%" }}

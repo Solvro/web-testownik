@@ -1,5 +1,6 @@
 "use client";
 
+import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
@@ -30,6 +31,12 @@ function getErrorMessage(errorCode: string | undefined): string | null {
     case "missing_otp": {
       return "Brak kodu. Wprowadź 6-cyfrowy kod.";
     }
+    case "guest_auth_required": {
+      return "Nie można potwierdzić konta gościa. Twoje dane pozostają zapisane. Odśwież sesję i spróbuj ponownie.";
+    }
+    case "guest_migration_failed": {
+      return "Nie udało się przenieść danych gościa. Dane i kod nie zostały usunięte. Spróbuj ponownie.";
+    }
     case "server_error": {
       return "Wystąpił błąd serwera. Spróbuj ponownie.";
     }
@@ -52,23 +59,18 @@ export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
     if (submitting || otp.length < 6) {
+      event.preventDefault();
       return;
     }
     setSubmitting(true);
-    const guestId = appContext.user?.user_id;
-    const guestParameter =
-      guestId === undefined ? "" : `&guest_id=${encodeURIComponent(guestId)}`;
-    router.push(
-      `/auth/login-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}${guestParameter}`,
-    );
-    setTimeout(() => {
-      setSubmitting(false);
-    }, 1000);
   };
 
   const errorMessage = getErrorMessage(error);
+  const guestId =
+    appContext.user?.account_type === ACCOUNT_TYPE.GUEST
+      ? appContext.user.user_id
+      : undefined;
 
   return (
     <div className="flex justify-center">
@@ -80,7 +82,17 @@ export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col items-center">
+          <form
+            action="/auth/login-otp"
+            method="POST"
+            onSubmit={handleSubmit}
+            className="flex flex-col items-center"
+          >
+            <input type="hidden" name="email" value={email} />
+            <input type="hidden" name="otp" value={otp} />
+            {guestId !== undefined && (
+              <input type="hidden" name="guest_id" value={guestId} />
+            )}
             <Label className="mb-2 text-sm font-medium" htmlFor="otp">
               Wprowadź kod jednorazowy
             </Label>

@@ -6,7 +6,11 @@ import type { RatingControlProps } from "./RatingControl";
 
 // A star row, matching the "Tap a star to rate" copy. Borderless ripples give
 // Material touch feedback on each star.
-export default function RatingControl({ value, onChange }: RatingControlProps) {
+export default function RatingControl({
+  value,
+  onChange,
+  disabled = false,
+}: RatingControlProps) {
   const c = useTheme();
   const { t } = useLocale();
   return (
@@ -20,7 +24,8 @@ export default function RatingControl({ value, onChange }: RatingControlProps) {
           key={score}
           accessibilityRole="radio"
           accessibilityLabel={t(`Ocena ${score} z 5`, `Rate ${score} out of 5`)}
-          accessibilityState={{ checked: value === score }}
+          accessibilityState={{ checked: value === score, disabled }}
+          disabled={disabled}
           android_ripple={{ color: c.fill, borderless: true, radius: 24 }}
           onPress={() => onChange(score)}
           style={{

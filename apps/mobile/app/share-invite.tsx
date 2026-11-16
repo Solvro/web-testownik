@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { SharedQuiz } from "@testownik/core/quiz/types";
 import type { Group, User } from "@testownik/core/user/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Fragment, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,14 +14,18 @@ import {
 
 import PersonAvatar from "../src/components/PersonAvatar";
 import AddAccessMenu from "../src/components/share/AddAccessMenu";
-import { ErrorState, Field } from "../src/components/ui";
-import { notify } from "../src/lib/alerts";
-import { api, listOf } from "../src/lib/api";
+import { Button, EmptyState, ErrorState, Field } from "../src/components/ui";
+import { listOf } from "../src/lib/api";
 import { haptics } from "../src/lib/haptics";
 import { useLocale } from "../src/lib/locale";
 import { useSession } from "../src/lib/session";
 import { useTheme } from "../src/lib/theme";
-import { userError } from "../src/lib/user-error";
+import {
+  confirmSharingGrant,
+  sharingRead,
+  sharingTargetKey,
+} from "../src/lib/sharing-ack";
+import { useSharingAction } from "../src/lib/use-sharing-action";
 
 type Target =
   | {
@@ -39,7 +42,31 @@ type Target =
 export default function ShareInvite() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
-  const userId = user?.id ?? "";
+  const { t } = useLocale();
+  if (!user) return null;
+  if (typeof id !== "string" || !id.trim())
+    return (
+      <EmptyState
+        symbol="books.vertical"
+        ionicon="library-outline"
+        title={t("Wybierz quiz", "Choose a Quiz")}
+        description={t(
+          "Otwórz quiz z biblioteki, aby zaprosić osoby lub grupy.",
+          "Open a quiz from the library to invite people or groups.",
+        )}
+        actions={[
+          {
+            label: t("Przeglądaj bibliotekę", "Browse Library"),
+            onPress: () => router.navigate("/library"),
+          },
+        ]}
+      />
+    );
+  return <InviteForm key={`${user.id}:${id}`} id={id} userId={user.id} />;
+}
+function InviteForm({ id, userId }: { id: string; userId: string }) {
+  const { client, session, busy, mutate, mounted, heldTargets } =
+    useSharingAction(id, userId, true);
   const { t } = useLocale();
   const c = useTheme();
   const cache = useQueryClient();
@@ -53,32 +80,47 @@ export default function ShareInvite() {
 
   const shares = useQuery({
     queryKey: ["shares", id, userId],
-    queryFn: async () =>
-      listOf(await api.request<SharedQuiz[]>(`shared-quizzes/?quiz=${id}`)),
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
+      sharingRead(
+        await client.request<unknown>(
+          `shared-quizzes/?quiz=${encodeURIComponent(id)}`,
+          { signal },
+        ),
+      ),
   });
   const groups = useQuery({
     queryKey: ["groups", userId],
-    queryFn: async () => listOf(await api.request<Group[]>("study-groups/")),
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
+      listOf(await client.request<Group[]>("study-groups/", { signal })),
   });
   const people = useQuery({
     queryKey: ["share-search", userId, term],
-    queryFn: async () =>
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
       listOf(
-        await api.request<User[]>(`users/?search=${encodeURIComponent(term)}`),
+        await client.request<User[]>(
+          `users/?search=${encodeURIComponent(term)}`,
+          { signal },
+        ),
       ),
-    enabled: term.length >= 3,
+    enabled: term.length >= 3 && term === query.trim(),
   });
 
   const shared = new Set(
     (shares.data ?? []).map((share) => share.user?.id ?? share.group?.id),
   );
-  const needle = term.toLocaleLowerCase();
+  const currentSearch = term === query.trim();
+  const needle = query.trim().toLocaleLowerCase();
   const groupTargets: Target[] = (groups.data ?? [])
     .filter(
       (group) => !needle || group.name.toLocaleLowerCase().includes(needle),
     )
     .map((group) => ({ kind: "group", id: group.id, name: group.name }));
-  const peopleTargets: Target[] = (term.length >= 3 ? (people.data ?? []) : [])
+  const peopleTargets: Target[] = (
+    currentSearch && term.length >= 3 ? (people.data ?? []) : []
+  )
     .filter((person) => person.id !== userId)
     .map((person) => ({
       kind: "user",
@@ -90,23 +132,30 @@ export default function ShareInvite() {
     }));
 
   async function add(target: Target, role: "study" | "edit") {
+    if (busy || !shares.data) return;
     setAdding(target.id);
-    try {
-      await api.post("shared-quizzes/", {
-        quiz_id: id,
-        ...(target.kind === "user"
+    await mutate(async () => {
+      const targetId =
+        target.kind === "user"
           ? { user_id: target.id }
-          : { study_group_id: target.id }),
-        allow_edit: role === "edit",
-      });
-      haptics.success();
-      await cache.invalidateQueries({ queryKey: ["shares", id, userId] });
-    } catch (error) {
-      haptics.error();
-      notify(t("Nie dodano", "Couldn’t Add"), userError(error, t));
-    } finally {
-      setAdding(null);
-    }
+          : { study_group_id: target.id };
+      if (heldTargets.includes(sharingTargetKey(targetId))) return;
+      const confirmed = await confirmSharingGrant(
+        cache,
+        id,
+        userId,
+        session,
+        targetId,
+        () =>
+          client.post("shared-quizzes/", {
+            quiz_id: id,
+            ...targetId,
+            allow_edit: role === "edit",
+          }),
+      );
+      if (confirmed && !session.aborted) haptics.success();
+    });
+    if (mounted.current) setAdding(null);
   }
 
   const section = (title: string, targets: Target[]) =>
@@ -138,6 +187,13 @@ export default function ShareInvite() {
         >
           {targets.map((target, index) => {
             const added = shared.has(target.id);
+            const held = heldTargets.includes(
+              sharingTargetKey(
+                target.kind === "user"
+                  ? { user_id: target.id }
+                  : { study_group_id: target.id },
+              ),
+            );
             return (
               <Fragment key={target.id}>
                 {index ? (
@@ -168,6 +224,11 @@ export default function ShareInvite() {
                     <Text style={{ fontSize: 16, color: c.text }}>
                       {target.name}
                     </Text>
+                    {held ? (
+                      <Text style={{ color: c.muted, fontSize: 13 }}>
+                        {t("Sprawdzam dostęp…", "Checking access…")}
+                      </Text>
+                    ) : null}
                     {target.kind === "user" && target.detail ? (
                       <Text style={{ fontSize: 13, color: c.muted }}>
                         {target.detail}
@@ -196,7 +257,7 @@ export default function ShareInvite() {
                     <AddAccessMenu
                       name={target.name}
                       busy={adding === target.id}
-                      disabled={adding !== null}
+                      disabled={busy || held || !shares.data}
                       add={(role) => void add(target, role)}
                     />
                   )}
@@ -251,24 +312,38 @@ export default function ShareInvite() {
             onChangeText={setQuery}
           />
         ) : null}
+        {heldTargets.length > 0 && !shares.error ? (
+          <Button kind="secondary" onPress={() => void shares.refetch()}>
+            {t("Sprawdź dostęp", "Check Access")}
+          </Button>
+        ) : null}
         {shares.error ? (
           <ErrorState
             error={shares.error}
             retry={() => void shares.refetch()}
           />
         ) : null}
-        {people.error ? (
+        {shares.isPending || groups.isPending ? (
+          <ActivityIndicator style={{ paddingTop: 12 }} />
+        ) : null}
+        {groups.error ? (
+          <ErrorState
+            error={groups.error}
+            retry={() => void groups.refetch()}
+          />
+        ) : null}
+        {currentSearch && people.error ? (
           <ErrorState
             error={people.error}
             retry={() => void people.refetch()}
           />
         ) : null}
-        {people.isFetching ? (
+        {currentSearch && people.isFetching ? (
           <ActivityIndicator style={{ paddingTop: 12 }} />
         ) : null}
         {section(t("Osoby", "People"), peopleTargets)}
         {section(t("Twoje grupy", "Your Groups"), groupTargets)}
-        {term.length > 0 && term.length < 3 ? (
+        {query.trim().length > 0 && query.trim().length < 3 ? (
           <Text style={{ color: c.muted, fontSize: 13, paddingHorizontal: 16 }}>
             {t(
               "Wpisz co najmniej 3 znaki, aby szukać osób.",
@@ -276,8 +351,12 @@ export default function ShareInvite() {
             )}
           </Text>
         ) : null}
-        {term.length >= 3 &&
+        {currentSearch &&
+        term.length >= 3 &&
         !people.isFetching &&
+        !people.error &&
+        !groups.error &&
+        !groups.isPending &&
         !peopleTargets.length &&
         !groupTargets.length ? (
           <Text style={{ color: c.muted, fontSize: 13, paddingHorizontal: 16 }}>

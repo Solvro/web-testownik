@@ -9,11 +9,11 @@ the signed-in simulator's database. Prints fixture tokens to the caller only.
 
 import json
 import os
-from pathlib import Path
 import secrets
 import sys
 import tempfile
 from datetime import timedelta
+from pathlib import Path
 
 backend = Path(os.environ["MOBILE_E2E_BACKEND"]).resolve()
 database = Path(os.environ["MOBILE_E2E_DB"])
@@ -33,6 +33,14 @@ os.environ.update(
     DEBUG="True",
     SECRET_KEY="disposable-mobile-e2e-only",
     JWT_SECRET="disposable-mobile-e2e-only",
+    PYTHON_DOTENV_DISABLED="1",
+    S3_BUCKET_NAME="",
+    INTERNAL_API_KEY="",
+    USOS_CONSUMER_KEY="",
+    USOS_CONSUMER_SECRET="",
+    SOLVRO_AUTH_CLIENT_ID="",
+    SOLVRO_AUTH_CLIENT_SECRET="",
+    OPENAI_API_KEY="",
 )
 sys.path.insert(0, str(backend))
 import django
@@ -46,23 +54,29 @@ from users.models import User
 
 settings.MEDIA_ROOT = database.parent / "media"
 
-assert Path(settings.DATABASES["default"]["NAME"]).resolve() == database
+if Path(settings.DATABASES["default"]["NAME"]).resolve() != database:
+    raise RuntimeError("Unexpected fixture database")
+if settings.STORAGES["default"]["BACKEND"] != "django.core.files.storage.FileSystemStorage":
+    raise RuntimeError("Fixture uploads must stay local")
+if settings.EMAIL_BACKEND != "django.core.mail.backends.locmem.EmailBackend":
+    raise RuntimeError("Fixture email must stay local")
 if sys.argv[1:] == ["migrate"]:
     call_command("migrate", verbosity=0)
     call_command("register_mobile_oauth", verbosity=0)
 elif sys.argv[1:] == ["serve"]:
     call_command("runserver", "127.0.0.1:8768", use_reloader=False)
 else:
-    user = User.objects.create_user(
-        email=f"e2e-{secrets.token_hex(12)}@example.invalid", password=None
-    )
+    user = User.objects.create_user(email=f"e2e-{secrets.token_hex(12)}@example.invalid", password=None)
     app = get_application_model().objects.get(client_id="testownik-mobile")
     access = AccessToken.objects.create(
         user=user,
         application=app,
         token=secrets.token_urlsafe(32),
         expires=timezone.now() + timedelta(hours=1),
-        scope="quizzes:read quizzes:write study:read study:write user:read user:write grades:read notifications:read notifications:write feedback:write ai:read ai:write web:read",
+        scope=(
+            "quizzes:read quizzes:write study:read study:write user:read user:write "
+            "grades:read notifications:read notifications:write feedback:write ai:read ai:write web:read"
+        ),
     )
     refresh = RefreshToken.objects.create(
         user=user, application=app, token=secrets.token_urlsafe(32), access_token=access

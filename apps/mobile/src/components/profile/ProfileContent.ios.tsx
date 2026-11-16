@@ -28,6 +28,7 @@ import { useLocale } from "../../lib/locale";
 import { useTheme } from "../../lib/theme";
 import { userError } from "../../lib/user-error";
 import { NavRow, tile } from "../settings/SettingsRows";
+import SolvroLogo from "../SolvroLogo";
 import type { ProfileContentProps } from "./types";
 
 function Avatar({
@@ -175,6 +176,19 @@ export default function ProfileContent(props: ProfileContentProps) {
           />
         </Section>
 
+        {props.usageError ? (
+          <Section title={t("Wykorzystanie AI", "AI Usage")}>
+            <Text>{userError(props.usageError, t)}</Text>
+            <Button
+              label={t("Spróbuj ponownie", "Try Again")}
+              onPress={props.retryUsage}
+            />
+          </Section>
+        ) : props.usageLoading ? (
+          <Section title={t("Wykorzystanie AI", "AI Usage")}>
+            <ProgressView />
+          </Section>
+        ) : null}
         {props.usage ? (
           <Section
             title={t("Wykorzystanie AI", "AI Usage")}
@@ -263,8 +277,8 @@ export default function ProfileContent(props: ProfileContentProps) {
           footer={
             <Text>
               {t(
-                `Testownik ${props.version} · Tworzony przez KN Solvro na Politechnice Wrocławskiej.`,
-                `Testownik ${props.version} · Made by KN Solvro at Wrocław University of Science and Technology.`,
+                `Testownik ${props.version} · Tworzony przez KN Solvro na Politechnice Wrocławskiej. Aplikacja mobilna: Antoni Czaplicki.`,
+                `Testownik ${props.version} · Made by KN Solvro at Wrocław University of Science and Technology. Mobile app by Antoni Czaplicki.`,
               )}
             </Text>
           }
@@ -273,6 +287,11 @@ export default function ProfileContent(props: ProfileContentProps) {
             symbol="person.3.fill"
             color={tile.blue}
             title={t("Solvro", "Solvro")}
+            leading={
+              <RNHostView matchContents>
+                <SolvroLogo />
+              </RNHostView>
+            }
             onPress={() => props.openLink("https://solvro.pwr.edu.pl")}
           />
           <NavRow

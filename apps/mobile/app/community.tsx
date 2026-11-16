@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,6 +24,7 @@ import { haptics } from "../src/lib/haptics";
 import { useLocale } from "../src/lib/locale";
 import { useQuizRating } from "../src/lib/quiz-rating";
 import { useSession } from "../src/lib/session";
+import { tokenStore } from "../src/lib/storage";
 import { useTheme } from "../src/lib/theme";
 import { userError } from "../src/lib/user-error";
 
@@ -43,43 +44,68 @@ export default function Community() {
 }
 
 function Reviews({ id }: { id: string }) {
+  const [session] = useState(() => tokenStore.session());
+  const [client] = useState(() => api.forSession(session));
   const { t, language } = useLocale();
   const c = useTheme();
   const insets = useSafeAreaInsets();
   const confirm = useConfirm();
   const s = useSession(),
     [content, setContent] = useState(""),
-    [posting, setPosting] = useState(false);
+    [posting, setPosting] = useState(false),
+    [deletingId, setDeletingId] = useState<string | null>(null);
+  const cache = useQueryClient();
+  const postingRef = useRef(false);
+  const [postedNotice, setPostedNotice] = useState(false);
+  const commentsKey = ["comments", id, s.user?.id];
   const { mine, current, state: ratingState, rate } = useQuizRating(id);
   const comments = useQuery({
-    queryKey: ["comments", id, s.user?.id],
-    queryFn: async () =>
-      listOf(await api.request<Comment[]>(`comments/?quiz=${id}`)).filter(
-        (comment) => !comment.is_deleted,
-      ),
+    queryKey: commentsKey,
+    networkMode: "always",
+    queryFn: async ({ signal }) =>
+      listOf(
+        await client.request<Comment[]>(`comments/?quiz=${id}`, { signal }),
+      ).filter((comment) => !comment.is_deleted),
   });
 
   async function post() {
     const submitted = content.trim();
-    if (!submitted || posting) return;
+    if (!submitted || postingRef.current) return;
+    postingRef.current = true;
     setPosting(true);
     try {
-      await api.post("comments/", { quiz: id, content: submitted });
+      const saved = await client.post<Comment>("comments/", {
+        quiz: id,
+        content: submitted,
+      });
+      await cache.cancelQueries({ queryKey: commentsKey, exact: true });
+      if (session.aborted) return;
+      // An accepted write is complete even when a later list refresh fails.
+      // Keep an unknown thread unknown; the receipt still confirms the post.
+      setPostedNotice(cache.getQueryData(commentsKey) === undefined);
+      cache.setQueryData<Comment[]>(commentsKey, (previous) =>
+        previous
+          ? [saved, ...previous.filter((item) => item.id !== saved.id)]
+          : undefined,
+      );
       setContent((value) => (value.trim() === submitted ? "" : value));
       haptics.success();
-      await comments.refetch();
+      void cache.invalidateQueries({ queryKey: commentsKey, exact: true });
     } catch (error) {
+      if (session.aborted) return;
+      void cache.invalidateQueries({ queryKey: commentsKey, exact: true });
       notify(
         t("Nie dodano komentarza", "Couldn’t Post Comment"),
         userError(error, t),
       );
     } finally {
+      postingRef.current = false;
       setPosting(false);
     }
   }
 
   // Both failing means the connection or server is down: say it once.
-  if (mine.error && comments.error && !comments.data)
+  if (mine.error && comments.error && !comments.data && !postedNotice)
     return (
       <ErrorScreen
         error={comments.error}
@@ -98,6 +124,7 @@ function Reviews({ id }: { id: string }) {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           padding: 20,
           gap: 12,
@@ -124,6 +151,7 @@ function Reviews({ id }: { id: string }) {
             {t("Oceń ten quiz", "Rate This Quiz")}
           </Text>
           <RatingControl
+            disabled={mine.data === undefined || ratingState === "saving"}
             value={current?.score ?? 0}
             onChange={(score) => void rate(score)}
           />
@@ -167,6 +195,11 @@ function Reviews({ id }: { id: string }) {
         >
           {t("Komentarze", "Comments")}
         </Text>
+        {postedNotice && comments.data === undefined ? (
+          <Text accessibilityLiveRegion="polite" style={{ color: c.text }}>
+            {t("Komentarz został dodany.", "Comment posted.")}
+          </Text>
+        ) : null}
         {comments.isPending ? (
           <ActivityIndicator
             accessibilityLabel={t("Wczytywanie komentarzy", "Loading comments")}
@@ -240,7 +273,18 @@ function Reviews({ id }: { id: string }) {
                             "Usuń komentarz",
                             "Delete comment",
                           )}
-                          hitSlop={10}
+                          accessibilityHint={comment.content}
+                          disabled={deletingId !== null}
+                          style={{
+                            opacity:
+                              deletingId !== null && deletingId !== comment.id
+                                ? 0.5
+                                : 1,
+                            width: 48,
+                            height: 48,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
                           onPress={() =>
                             confirm(
                               t("Usunąć komentarz?", "Delete Comment?"),
@@ -249,18 +293,57 @@ function Reviews({ id }: { id: string }) {
                                 "The comment will be hidden.",
                               ),
                               async () => {
-                                await api.delete(`comments/${comment.id}/`);
-                                await comments.refetch();
+                                setDeletingId(comment.id);
+                                try {
+                                  await client.delete(
+                                    `comments/${comment.id}/`,
+                                  );
+                                  await cache.cancelQueries({
+                                    queryKey: commentsKey,
+                                    exact: true,
+                                  });
+                                  if (session.aborted) return;
+                                  cache.setQueryData<Comment[]>(
+                                    commentsKey,
+                                    (previous) =>
+                                      previous?.filter(
+                                        (item) => item.id !== comment.id,
+                                      ),
+                                  );
+                                  void cache.invalidateQueries({
+                                    queryKey: commentsKey,
+                                    exact: true,
+                                  });
+                                } catch (error) {
+                                  if (session.aborted) return;
+                                  void cache.invalidateQueries({
+                                    queryKey: commentsKey,
+                                    exact: true,
+                                  });
+                                  throw error;
+                                } finally {
+                                  setDeletingId(null);
+                                }
                               },
                               { action: t("Usuń", "Delete") },
                             )
                           }
                         >
-                          <Ionicons
-                            name="trash-outline"
-                            size={17}
-                            color={c.muted}
-                          />
+                          {deletingId === comment.id ? (
+                            <ActivityIndicator
+                              accessibilityLabel={t(
+                                "Usuwanie komentarza",
+                                "Deleting comment",
+                              )}
+                              color={c.muted}
+                            />
+                          ) : (
+                            <Ionicons
+                              name="trash-outline"
+                              size={17}
+                              color={c.muted}
+                            />
+                          )}
                         </Pressable>
                       ) : null}
                     </View>

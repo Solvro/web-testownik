@@ -27,3 +27,18 @@ export function canNavigateEmbedded(
     return false;
   }
 }
+
+/** Bootstrap and blank documents cannot control the native report chrome. */
+export function canReceiveEmbeddedMessage(
+  url: string,
+  origin: string,
+  destination: string,
+): boolean {
+  if (url === "about:blank" || !canNavigateEmbedded(url, origin, destination))
+    return false;
+  try {
+    return new URL(url).pathname !== "/auth/mobile";
+  } catch {
+    return false;
+  }
+}

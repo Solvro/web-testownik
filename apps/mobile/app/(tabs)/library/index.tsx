@@ -7,7 +7,7 @@ import {
 import type { QuizMetadata, SharedQuiz } from "@testownik/core/quiz/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Alert, Platform, View } from "react-native";
 import type { SearchBarCommands } from "react-native-screens";
 
@@ -24,6 +24,10 @@ import type {
 import { useConfirm } from "../../../src/components/ui";
 import { notify } from "../../../src/lib/alerts";
 import { WEB_URL, api, listOf } from "../../../src/lib/api";
+import {
+  createTrashDeletion,
+  trashItems,
+} from "../../../src/lib/library-trash";
 import { openedDate, questionCount } from "../../../src/lib/collection-copy";
 import { haptics } from "../../../src/lib/haptics";
 import { useLocale } from "../../../src/lib/locale";
@@ -31,11 +35,14 @@ import { searchQuizzes, searchSections } from "../../../src/lib/quiz-search";
 import { useSession } from "../../../src/lib/session";
 import { storage } from "../../../src/lib/storage";
 import { useTheme } from "../../../src/lib/theme";
-import { userError } from "../../../src/lib/user-error";
+import { errorKind, userError } from "../../../src/lib/user-error";
 
 const sorts: LibrarySort[] = ["recent", "newest", "oldest", "az", "za"];
+const accessFailure = (error: unknown) =>
+  ["signIn", "notFound", "forbidden"].includes(errorKind(error));
 
 export default function Library() {
+  const [client] = useState(() => api.forSession());
   const { folder, kind } = useLocalSearchParams<{
     folder?: string;
     kind?: string;
@@ -64,9 +71,13 @@ export default function Library() {
 
   const result = useQuery<LibraryData>({
     queryKey: ["library", folder],
+    networkMode: "always",
+    refetchOnReconnect: true,
     queryFn: () =>
-      api.request<LibraryData>(folder ? `library/${folder}/` : "library/"),
+      client.request<LibraryData>(folder ? `library/${folder}/` : "library/"),
   });
+  // Keep transient failures readable, but stop presenting revoked results.
+  const resultData = accessFailure(result.error) ? undefined : result.data;
   // At the top level the library also lists quizzes shared with you and
   // recently opened ones; the folders stay visible so you can drop into them.
   const [scope, setScope] = useState<"library" | "shared" | "recent">(
@@ -75,16 +86,24 @@ export default function Library() {
   const listing = folder ? "library" : scope;
   const shared = useQuery({
     queryKey: ["library-shared", s.user?.id],
+    networkMode: "always",
+    refetchOnReconnect: true,
     queryFn: async () =>
-      listOf(await api.request<SharedQuiz[]>("shared-quizzes/")),
+      listOf(await client.request<SharedQuiz[]>("shared-quizzes/")),
     enabled: listing === "shared",
   });
   const recent = useQuery({
     queryKey: ["library-recent", s.user?.id],
+    networkMode: "always",
+    refetchOnReconnect: true,
     queryFn: async () =>
-      listOf(await api.request<QuizMetadata[]>("last-used-quizzes/?limit=30")),
+      listOf(
+        await client.request<QuizMetadata[]>("last-used-quizzes/?limit=30"),
+      ),
     enabled: listing === "recent",
   });
+  const sharedData = accessFailure(shared.error) ? undefined : shared.data;
+  const recentData = accessFailure(recent.error) ? undefined : recent.data;
   const asItem = (quiz: QuizMetadata): Item => ({
     id: quiz.id,
     name: quiz.title,
@@ -100,7 +119,7 @@ export default function Library() {
     listing === "shared"
       ? [
           ...new Map(
-            (shared.data ?? [])
+            (sharedData ?? [])
               // The endpoint also lists your own quizzes you shared with others
               // (as the web does, Shared is only what others shared with you).
               .filter((entry) => entry.quiz.creator?.id !== s.user?.id)
@@ -108,35 +127,64 @@ export default function Library() {
           ).values(),
         ]
       : listing === "recent"
-        ? (recent.data ?? []).map(asItem)
+        ? (recentData ?? []).map(asItem)
         : [];
   const extraQuery = listing === "shared" ? shared : recent;
   // Offline, the quizzes kept on this device are still there to study.
+  const showSavedFallback =
+    !folder && !!result.error && !resultData && !accessFailure(result.error);
   const saved = useQuery({
     queryKey: ["offline", s.user?.id],
     queryFn: () => s.library!.read(),
-    enabled: !!s.library && !folder && !!result.error && !result.data,
+    enabled: !!s.library && showSavedFallback,
     networkMode: "always",
   });
-  const savedItems: Item[] =
-    !folder && result.error && !result.data
-      ? Object.values(saved.data?.quizzes ?? {}).map((quiz) =>
-          asItem({
-            ...quiz,
-            question_count: quiz.questions.length,
-            created_at: "",
-            updated_at: "",
-            last_used_at: null,
-          }),
+  const savedItems: Item[] = showSavedFallback
+    ? Object.values(saved.data?.quizzes ?? {}).map((quiz) =>
+        asItem({
+          ...quiz,
+          question_count: quiz.questions.length,
+          created_at: "",
+          updated_at: "",
+          last_used_at: null,
+        }),
+      )
+    : [];
+  const [searchAccessDenied, setSearchAccessDenied] = useState(false);
+  useLayoutEffect(
+    () =>
+      qc.getQueryCache().subscribe((event) => {
+        if (
+          event.type !== "updated" ||
+          event.query.queryKey[0] !== "library-search" ||
+          event.query.queryKey[1] !== s.user?.id
         )
-      : [];
+          return;
+        if (event.action.type === "error" && accessFailure(event.action.error))
+          setSearchAccessDenied(true);
+        else if (
+          event.action.type === "success" &&
+          !event.action.manual &&
+          event.query.queryKey[2] === search &&
+          event.query.isActive()
+        )
+          setSearchAccessDenied(false);
+      }),
+    [qc, s.user?.id, search],
+  );
   const found = useQuery({
     queryKey: ["library-search", s.user?.id, search],
+    networkMode: "always",
+    refetchOnReconnect: true,
     queryFn: () => searchQuizzes(search),
     enabled: !!search,
-    placeholderData: (previous) => previous,
+    placeholderData: (previous, previousQuery) =>
+      searchAccessDenied || accessFailure(previousQuery?.state.error)
+        ? undefined
+        : previous,
   });
 
+  const foundData = accessFailure(found.error) ? undefined : found.data;
   const folderName = (type: string | undefined, name: string) =>
     type === "archive"
       ? t("Archiwum", "Archive")
@@ -154,9 +202,9 @@ export default function Library() {
   const moveQuiz = (item: Item, destination: "root" | "trash" | "archive") =>
     perform(async () => {
       if (destination === "archive")
-        await api.post(`quizzes/${item.id}/move-to-archive/`);
+        await client.post(`quizzes/${item.id}/move-to-archive/`);
       else {
-        const root = await api.request<LibraryData>("library/");
+        const root = await client.request<LibraryData>("library/");
         const folderId =
           destination === "root"
             ? root.path[0]?.id
@@ -169,7 +217,7 @@ export default function Library() {
             ),
           );
         // Moving to trash is idempotent; a repeated DELETE would permanently delete.
-        await api.post(`quizzes/${item.id}/move/`, { folder_id: folderId });
+        await client.post(`quizzes/${item.id}/move/`, { folder_id: folderId });
         // A trashed quiz can't be studied, so it leaves this device and Study.
         if (destination === "trash")
           await s.library?.discard(item.id).catch(() => undefined);
@@ -230,7 +278,7 @@ export default function Library() {
           onPress: () =>
             void perform(
               () =>
-                api.post("quiz-shortcuts/", {
+                client.post("quiz-shortcuts/", {
                   quiz_id: source.id,
                   folder_id: target.id,
                 }),
@@ -242,10 +290,10 @@ export default function Library() {
           onPress: () =>
             void perform(
               async () => {
-                const copy = await api.post<{ id: string }>(
+                const copy = await client.post<{ id: string }>(
                   `quizzes/${source.id}/copy/`,
                 );
-                await api.post(`quizzes/${copy.id}/move/`, {
+                await client.post(`quizzes/${copy.id}/move/`, {
                   folder_id: target.id,
                 });
               },
@@ -256,17 +304,17 @@ export default function Library() {
       ],
     );
   async function drop({ id, type, destination }: LibraryMove) {
-    const pool = [...(result.data?.items ?? []), ...extras];
+    const pool = [...(resultData?.items ?? []), ...extras];
     const source =
       type === "shortcut"
         ? pool.find((item) => item.shortcut_id === id)
         : pool.find((item) => item.id === id && item.type === type);
-    const target = result.data?.items.find((item) => item.id === destination);
+    const target = resultData?.items.find((item) => item.id === destination);
     if (moving.current || !source || !target || id === destination) return;
     if (!canDrag(source) || !canDrop(target, source)) return;
     if (source.shortcut_id)
       return perform(() =>
-        api.post(`quiz-shortcuts/${source.shortcut_id}/move/`, {
+        client.post(`quiz-shortcuts/${source.shortcut_id}/move/`, {
           folder_id: destination,
         }),
       );
@@ -274,15 +322,15 @@ export default function Library() {
     if (target.folder_type === "trash") return trashQuiz(source);
     return perform(() =>
       target.folder_type === "archive"
-        ? api.post(`quizzes/${id}/move-to-archive/`)
+        ? client.post(`quizzes/${id}/move-to-archive/`)
         : type === "quiz"
-          ? api.post(`quizzes/${id}/move/`, { folder_id: destination })
-          : api.post(`folders/${id}/move/`, { parent_id: destination }),
+          ? client.post(`quizzes/${id}/move/`, { folder_id: destination })
+          : client.post(`folders/${id}/move/`, { parent_id: destination }),
     );
   }
   const removeShortcut = (item: Item) =>
     perform(
-      () => api.delete(`quiz-shortcuts/${item.shortcut_id}/`),
+      () => client.delete(`quiz-shortcuts/${item.shortcut_id}/`),
       t("Nie usunięto skrótu", "Couldn’t Remove Shortcut"),
     );
 
@@ -294,7 +342,7 @@ export default function Library() {
         id: item.shortcut_id ?? item.id,
         type: item.shortcut_id ? "shortcut" : item.type,
         name: item.name,
-        parent: folder ?? result.data?.path.at(-1)?.id,
+        parent: folder ?? resultData?.path.at(-1)?.id,
       },
     });
   // Trash is recoverable (Restore), so it needs no confirmation.
@@ -309,30 +357,32 @@ export default function Library() {
       ),
       () =>
         perform(
-          () => api.delete(`quizzes/${item.id}/`),
+          () => client.delete(`quizzes/${item.id}/`),
           t("Nie udało się usunąć", "Couldn’t Delete Quiz"),
         ),
       { action: t("Usuń", "Delete") },
     );
-  const trashed = (result.data?.items ?? []).filter(
-    (item) => item.type === "quiz",
-  );
-  const emptyTrash = () =>
+  const trashed = trashItems(resultData?.items);
+  const emptyTrash = () => {
+    const removeApproved = createTrashDeletion(
+      trashed,
+      () => qc.getQueryData<LibraryData>(["library", folder])?.items,
+      (id) => client.delete(`quizzes/${id}/`),
+    );
     confirm(
       t("Opróżnić kosz?", "Empty Trash?"),
       t(
         `Quizy w koszu (${trashed.length}) zostaną trwale usunięte. Tego nie można cofnąć.`,
         `${trashed.length === 1 ? "1 quiz" : `${trashed.length} quizzes`} will be deleted permanently. This can’t be undone.`,
       ),
-      // Not through perform(): the header menu is built during render, where
-      // its move lock (a ref) may not be read. confirm() blocks repeats.
-      async () => {
-        for (const item of trashed) await api.delete(`quizzes/${item.id}/`);
-        haptics.success();
-        await refreshLibrary();
-      },
+      () =>
+        perform(
+          removeApproved,
+          t("Nie udało się opróżnić kosza", "Couldn’t Empty Trash"),
+        ),
       { action: t("Opróżnij kosz", "Empty Trash") },
     );
+  };
   const deleteFolder = (item: Item) =>
     confirm(
       t("Usunąć folder?", "Delete This Folder?"),
@@ -342,7 +392,7 @@ export default function Library() {
       ),
       () =>
         perform(
-          () => api.delete(`folders/${item.id}/`),
+          () => client.delete(`folders/${item.id}/`),
           t("Nie usunięto folderu", "Couldn’t Delete Folder"),
         ),
       { action: t("Usuń folder", "Delete Folder") },
@@ -564,7 +614,7 @@ export default function Library() {
     };
   };
 
-  const sorted = sortLibrary(result.data?.items ?? [], sort, language);
+  const sorted = sortLibrary(resultData?.items ?? [], sort, language);
   const special = (item: Item) =>
     ["archive", "trash"].includes(item.folder_type ?? "");
   const folders = sorted.filter(
@@ -625,7 +675,7 @@ export default function Library() {
     <View collapsable={false} style={{ flex: 1, backgroundColor: c.bg }}>
       <Stack.Title large={!folder} largeStyle={{ color: c.text }}>
         {folder
-          ? folderName(kind, result.data?.path.at(-1)?.name ?? "Folder")
+          ? folderName(kind, resultData?.path.at(-1)?.name ?? "Folder")
           : t("Biblioteka", "Library")}
       </Stack.Title>
       <Stack.Screen
@@ -652,6 +702,7 @@ export default function Library() {
                   },
                 },
           ...headerMenus(
+            // eslint-disable-next-line react-hooks/refs -- This only stores menu callbacks; the move lock is read after confirmation.
             [
               {
                 label: t("Sortuj", "Sort"),
@@ -681,7 +732,8 @@ export default function Library() {
                               title: t("Opróżnij kosz", "Empty Trash"),
                               icon: "trash" as const,
                               destructive: true,
-                              onPress: emptyTrash,
+                              onPress: () => emptyTrash(),
+                              disabled: isMoving,
                             },
                           ],
                         ],
@@ -707,7 +759,7 @@ export default function Library() {
                               onPress: () => router.push("/import"),
                             },
                           ],
-                          result.data?.can_create_folder
+                          resultData?.can_create_folder
                             ? [
                                 {
                                   title: t("Nowy folder", "New Folder"),
@@ -736,7 +788,7 @@ export default function Library() {
         sections={sections}
         searching={!!query.trim()}
         searchSections={
-          found.data && search ? searchSections(found.data, t, language) : []
+          foundData && search ? searchSections(foundData, t, language) : []
         }
         searchLoading={query.trim() !== search || found.isFetching}
         searchError={found.error}
@@ -839,7 +891,13 @@ export default function Library() {
             search ? found.refetch() : null,
           ])
         }
-        retry={() => void (query.trim() ? found.refetch() : result.refetch())}
+        retry={() =>
+          void (query.trim()
+            ? found.refetch()
+            : result.error || listing === "library"
+              ? result.refetch()
+              : extraQuery.refetch())
+        }
         name={(item) => folderName(item.folder_type, item.name)}
         detail={(item) =>
           item.type === "folder"
@@ -872,7 +930,7 @@ export default function Library() {
         drop={(move) => void drop(move)}
         quizActions={quizActions}
         backToLibrary={
-          folder && (result.data?.path.length ?? 0) > 2
+          folder && (resultData?.path.length ?? 0) > 2
             ? () => router.dismissTo("/library")
             : undefined
         }

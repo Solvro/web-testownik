@@ -21,6 +21,7 @@ export default function Choice({
   options,
   onChange,
   segmented,
+  disabled = false,
 }: ChoiceProps) {
   const c = useTheme();
   const menu = useRef<MenuComponentRef>(null);
@@ -32,6 +33,7 @@ export default function Choice({
             <SegmentedButton
               key={option.value}
               selected={option.value === value}
+              enabled={!disabled}
               onClick={() => onChange(option.value)}
               modifiers={[weight(1)]}
             >
@@ -49,6 +51,8 @@ export default function Choice({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${label}: ${current?.label ?? ""}`}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       android_ripple={{ color: c.fill }}
       onPress={() => menu.current?.show()}
       style={{

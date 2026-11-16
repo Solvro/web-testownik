@@ -6,9 +6,11 @@ export interface ModelOption {
 
 export interface ModelListProps {
   models: ModelOption[];
-  /** null picks the account default. */
+  /** null follows Study Settings for a quiz, or Testownik's default for an account. */
   selected: string | null;
-  /** The model "Default" uses right now. */
+  /** The model the default row uses right now. */
   defaultModel?: { label: string; provider?: string };
+  scope?: "account" | "quiz";
   select: (model: string | null) => void;
+  disabled?: boolean;
 }

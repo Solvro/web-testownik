@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import { useQuizStats } from "@/hooks/use-quiz-stats";
 
+import { StatsQueryError } from "./query-error";
+
 interface StatsTableProps {
   quizId: string;
   canViewAll: boolean;
@@ -117,11 +119,12 @@ function UniqueUsersDescription({
 }
 
 export function StatsTable({ quizId, canViewAll }: StatsTableProps) {
-  const { data: myStats, isPending: myLoading } = useQuizStats(quizId, "me");
-  const { data: allStats, isPending: allLoading } = useQuizStats(
-    quizId,
-    "all",
-    canViewAll,
+  const mine = useQuizStats(quizId, "me");
+  const all = useQuizStats(quizId, "all", canViewAll);
+  const { data: myStats, isPending: myLoading } = mine;
+  const { data: allStats, isPending: allLoading } = all;
+  const failed = [mine, ...(canViewAll ? [all] : [])].filter(
+    (query) => query.isError,
   );
 
   return (
@@ -138,6 +141,17 @@ export function StatsTable({ quizId, canViewAll }: StatsTableProps) {
         ) : null}
       </CardHeader>
       <CardContent>
+        {failed.length > 0 ? (
+          <StatsQueryError
+            hasCachedData={failed.every((query) => query.data !== undefined)}
+            isFetching={failed.some((query) => query.isFetching)}
+            onRetry={() => {
+              for (const query of failed) {
+                void query.refetch();
+              }
+            }}
+          />
+        ) : null}
         <Table wrapperClassName="rounded-md">
           <TableHeader>
             <TableRow>

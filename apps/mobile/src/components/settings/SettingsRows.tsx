@@ -16,6 +16,7 @@ import {
   frame,
   shapes,
 } from "@expo/ui/swift-ui/modifiers";
+import type { ReactNode } from "react";
 
 import { Chevron, rowLabel, secondary } from "../quiz-list/QuizRow";
 
@@ -60,6 +61,7 @@ export function NavRow({
   detail,
   value,
   onPress,
+  leading,
 }: {
   symbol: ImageProps["systemName"];
   color: string;
@@ -67,6 +69,7 @@ export function NavRow({
   detail?: string;
   value?: string;
   onPress: () => void;
+  leading?: ReactNode;
 }) {
   return (
     <Button
@@ -77,7 +80,7 @@ export function NavRow({
       ]}
     >
       <HStack spacing={14}>
-        <IconTile symbol={symbol} color={color} />
+        {leading ?? <IconTile symbol={symbol} color={color} />}
         <VStack alignment="leading" spacing={2}>
           <Text>{title}</Text>
           {detail ? (

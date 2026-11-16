@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { User } from "@testownik/core/user/types";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -36,6 +36,7 @@ interface Impact {
 }
 
 export default function DeleteAccount() {
+  const [client] = useState(() => api.forSession());
   // Material 3 on Android: primary list subheaders, no hairline dividers,
   // leading radio buttons and a filled error-coloured delete button.
   const android = Platform.OS === "android";
@@ -49,6 +50,8 @@ export default function DeleteAccount() {
   const [heir, setHeir] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [failure, setFailure] = useState<unknown>(null);
+  const removal = useRef(false);
+  const searchReady = search.trim().length >= 3 && search.trim() === term;
   useEffect(() => {
     const timer = setTimeout(() => setTerm(search.trim()), 300);
     return () => clearTimeout(timer);
@@ -56,16 +59,25 @@ export default function DeleteAccount() {
 
   const impact = useQuery({
     queryKey: ["account-deletion", s.user?.id],
-    queryFn: () => api.request<Impact>("mobile/account/deletion/"),
+    networkMode: "always",
+    refetchOnReconnect: true,
+    queryFn: ({ signal }) =>
+      client.request<Impact>("mobile/account/deletion/", { signal }),
     gcTime: 0,
+    enabled: !deleting,
   });
   const people = useQuery({
     queryKey: ["deletion-heir-search", s.user?.id, term],
-    queryFn: async () =>
+    networkMode: "always",
+    refetchOnReconnect: true,
+    queryFn: async ({ signal }) =>
       listOf(
-        await api.request<User[]>(`users/?search=${encodeURIComponent(term)}`),
+        await client.request<User[]>(
+          `users/?search=${encodeURIComponent(term)}`,
+          { signal },
+        ),
       ).filter((person) => person.id !== s.user?.id),
-    enabled: keep === "transfer" && term.length >= 3,
+    enabled: keep === "transfer" && searchReady && !deleting,
   });
 
   const data = impact.data;
@@ -78,20 +90,27 @@ export default function DeleteAccount() {
       data.public_quizzes > 0);
 
   async function remove() {
+    if (removal.current) return;
+    if (transferring && !heir) return;
+    const ownerId = s.user?.id;
+    if (!ownerId) return;
+    removal.current = true;
     setDeleting(true);
     setFailure(null);
     try {
-      await api.post(
+      await client.post(
         "mobile/account/deletion/",
         transferring && heir ? { transfer_to_user_id: heir.id } : {},
       );
       haptics.success();
       // The server removed the account; clear this device and return to sign-in.
-      await s.logout().catch(() => undefined);
+      await s.finishAccountDeletion(ownerId);
     } catch (error) {
       haptics.error();
       setFailure(error);
       setDeleting(false);
+    } finally {
+      removal.current = false;
     }
   }
 
@@ -325,7 +344,12 @@ export default function DeleteAccount() {
                   <Pressable
                     key={value}
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: keep === value }}
+                    accessibilityLabel={label}
+                    accessibilityState={{
+                      checked: keep === value,
+                      disabled: deleting,
+                    }}
+                    disabled={deleting}
                     onPress={() => {
                       haptics.selection();
                       setKeep(value);
@@ -386,6 +410,7 @@ export default function DeleteAccount() {
                       </View>
                       <Pressable
                         accessibilityRole="button"
+                        disabled={deleting}
                         onPress={() => setHeir(null)}
                         hitSlop={8}
                       >
@@ -397,6 +422,7 @@ export default function DeleteAccount() {
                   ) : (
                     <>
                       <TextInput
+                        editable={!deleting}
                         value={search}
                         onChangeText={setSearch}
                         placeholder={t(
@@ -416,8 +442,35 @@ export default function DeleteAccount() {
                           color: c.text,
                         }}
                       />
-                      {people.isFetching ? <ActivityIndicator /> : null}
-                      {term.length >= 3 && people.data?.length === 0 ? (
+                      <Text
+                        style={{
+                          color: c.muted,
+                          fontSize: 13,
+                          paddingHorizontal: 16,
+                        }}
+                      >
+                        {search.trim().length < 3
+                          ? t(
+                              "Wpisz co najmniej 3 znaki, aby znaleźć osobę.",
+                              "Enter at least 3 characters to find a person.",
+                            )
+                          : t(
+                              "Wybierz osobę, która otrzyma Twoje quizy, aby kontynuować.",
+                              "Choose who will receive your quizzes to continue.",
+                            )}
+                      </Text>
+                      {searchReady && people.isFetching ? (
+                        <ActivityIndicator />
+                      ) : null}
+                      {searchReady && people.error ? (
+                        <ErrorState
+                          error={people.error}
+                          retry={() => void people.refetch()}
+                        />
+                      ) : null}
+                      {searchReady &&
+                      !people.error &&
+                      people.data?.length === 0 ? (
                         <Text
                           style={{
                             color: c.muted,
@@ -431,12 +484,14 @@ export default function DeleteAccount() {
                           )}
                         </Text>
                       ) : null}
-                      {people.data?.length ? (
+                      {searchReady && people.data?.length ? (
                         <View style={card}>
                           {people.data.slice(0, 8).map((person, index) => (
                             <Pressable
                               key={person.id}
                               accessibilityRole="button"
+                              accessibilityLabel={person.full_name}
+                              disabled={deleting}
                               onPress={() => {
                                 haptics.selection();
                                 setHeir(person);

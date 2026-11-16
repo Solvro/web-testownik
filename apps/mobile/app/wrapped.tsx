@@ -4,13 +4,14 @@ import { useLocale } from "../src/lib/locale";
 import type { EmbeddedTheme } from "../src/lib/embed-theme";
 import { Stack, router, useIsFocused } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import EmbeddedWeb from "../src/components/EmbeddedWeb";
 import Overflow from "../src/components/Overflow";
 import { ErrorScreen, Loading } from "../src/components/ui";
 import { api } from "../src/lib/api";
+import { tokenStore } from "../src/lib/storage";
 import { useSession } from "../src/lib/session";
 import { useTheme } from "../src/lib/theme";
 
@@ -28,9 +29,12 @@ export default function Wrapped() {
   const s = useSession(),
     [global, setGlobal] = useState(false),
     [generation, setGeneration] = useState(0);
+  const owner = tokenStore.session();
+  const client = useMemo(() => api.forSession(owner), [owner]);
   const q = useQuery({
     queryKey: ["embedded-wrapped", s.user?.id, generation],
-    queryFn: () => api.post<{ access: string }>("mobile/auth/web-session/"),
+    queryFn: () => client.post<{ access: string }>("mobile/auth/web-session/"),
+    enabled: !!s.user,
     gcTime: 0,
     staleTime: 0,
     refetchOnWindowFocus: false,
@@ -117,12 +121,19 @@ export default function Wrapped() {
           />
         ) : q.data ? (
           <EmbeddedWeb
-            key={`${global}-${generation}`}
+            key={`${s.user?.id}-${global}-${generation}`}
             access={q.data.access}
             loadingBackground={slide.background}
             onTheme={setTheme}
             global={global}
-            onRetry={() => setGeneration((v) => v + 1)}
+            onRetry={() => {
+              setGeneration((v) => v + 1);
+              setTheme({
+                background: "#15171c",
+                foreground: "#ffffff",
+                dark: true,
+              });
+            }}
             topInset={
               Platform.OS === "ios" ? insets.top + NAV_BAR_HEIGHT : undefined
             }

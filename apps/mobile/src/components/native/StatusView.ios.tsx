@@ -64,7 +64,7 @@ function StatusStack({
               onPress={action.onPress}
               modifiers={[
                 buttonStyle(action.primary ? "borderedProminent" : "bordered"),
-                controlSize("regular"),
+                controlSize("large"),
                 tint(c.primary),
               ]}
             />

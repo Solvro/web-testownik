@@ -5,6 +5,7 @@ import type {
 import {
   checkAnswerCorrectness,
   deriveSettings,
+  ensureQuizCurrentQuestion,
   getMasteredCount,
   isQuizComplete,
   pickNextQuestion,
@@ -12,8 +13,20 @@ import {
 } from "@testownik/core/quiz/session";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Stack,
+  router,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AppState, Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -40,6 +53,7 @@ import OptionIndicator from "../../src/components/native/OptionIndicator";
 import ResultIcon from "../../src/components/native/ResultIcon";
 import {
   Button,
+  Card,
   ErrorScreen,
   Label,
   Loading,
@@ -47,19 +61,61 @@ import {
   notify,
   useConfirm,
 } from "../../src/components/ui";
-import { api, API_URL } from "../../src/lib/api";
+import { api as sessionApi, API_URL } from "../../src/lib/api";
 import { haptics } from "../../src/lib/haptics";
+import { createCompletionAnnouncement } from "../../src/lib/accessibility-feedback";
 import { removeQuizImages, saveQuizImages } from "../../src/lib/offline-images";
-import { failureTitle, userError } from "../../src/lib/user-error";
+import {
+  failureTitle,
+  errorKind,
+  userError,
+  UserFacingError,
+} from "../../src/lib/user-error";
 import { ApiError } from "../../src/lib/client";
 import QuizCompleteCard from "../../src/components/QuizCompleteCard";
 import { useSession } from "../../src/lib/session";
 import { useTheme } from "../../src/lib/theme";
+import QuizStorageNotice from "../../src/components/QuizStorageNotice";
+import {
+  quizStorageIssue,
+  quizStorageMessage,
+  type QuizStorageIssue,
+} from "../../src/lib/quiz-storage-issue";
+import { isLocalQuery, markLocalQuery } from "../../src/lib/saved-query";
+import { useRefreshOnRecovery } from "../../src/lib/use-refresh-on-recovery";
+
+// Normalize once when query data arrives, so answer selections cannot cause a
+// null/deleted current question to be picked again during render.
+const pinQuestion = (quiz: QuizWithUserProgress) =>
+  quiz.current_session
+    ? ensureQuizCurrentQuestion(quiz, deriveSettings(quiz.user_settings))
+    : quiz;
+
+// Query-only metadata: symbols are omitted by JSON when answers are persisted.
+const savedCopy = Symbol("saved-copy-updates-unavailable");
+const storageCopy = Symbol("saved-copy-storage-issue");
+type StudyQuiz = QuizWithUserProgress & {
+  [savedCopy]?: true;
+  [storageCopy]?: QuizStorageIssue;
+};
+const fromSavedCopy = (
+  quiz: QuizWithUserProgress | undefined,
+  issue?: QuizStorageIssue,
+) =>
+  quiz
+    ? {
+        ...markLocalQuery(pinQuestion(quiz)),
+        [savedCopy]: true as const,
+        ...(issue ? { [storageCopy]: issue } : {}),
+      }
+    : undefined;
 
 // Event handlers and effects only; reading the clock during render is impure.
 const clock = () => Date.now();
 
 export default function Study() {
+  const navigation = useNavigation();
+  const [api] = useState(() => sessionApi.forSession());
   const { t } = useLocale();
   const confirm = useConfirm();
   const [hint, setHint] = useState<{
@@ -86,6 +142,22 @@ export default function Study() {
     } | null>(null),
     [saving, setSaving] = useState(false);
   const mediaScope = `${s.user?.id}:${id}`;
+  const [enqueueStorage, setEnqueueStorage] = useState<{
+    scope: string;
+    issue: QuizStorageIssue;
+  } | null>(null);
+  const feedbackScope = useRef<AbortController | null>(null);
+  const copyPending = useRef<AbortSignal | null>(null);
+  const [copying, setCopying] = useState<{
+    scope: string;
+    signal: AbortSignal;
+  } | null>(null);
+  const copyBusy = copying?.scope === mediaScope && !copying.signal.aborted;
+  useEffect(() => {
+    const controller = new AbortController();
+    feedbackScope.current = controller;
+    return () => controller.abort();
+  }, [mediaScope]);
   const images = useCallback(
     (url: string) =>
       imageAllowed(
@@ -108,31 +180,272 @@ export default function Study() {
     queryKey: ["quiz", id, s.user?.id],
     enabled: !!s.library,
     networkMode: "always",
-    queryFn: async () => {
+    // Structural sharing ignores symbol properties and could keep an obsolete
+    // notice after an otherwise identical server response succeeds.
+    structuralSharing: false,
+    retry: (count, error) =>
+      count < 1 &&
+      !quizStorageIssue(error) &&
+      !["timeout", "notFound", "forbidden", "signIn"].includes(
+        errorKind(error),
+      ),
+    queryFn: async ({ signal }) => {
       const cached = await s.library!.read();
-      if (s.offline && cached.quizzes[id]) return cached.quizzes[id];
-      if (cached.queue.some((x) => x.quiz_id === id)) return cached.quizzes[id];
+      const previous = qc.getQueryData<StudyQuiz>(["quiz", id, s.user?.id]);
+      if (s.offline && cached.quizzes[id])
+        return previous?.[savedCopy]
+          ? fromSavedCopy(cached.quizzes[id], previous?.[storageCopy])
+          : markLocalQuery(pinQuestion(cached.quizzes[id]));
+      if (cached.queue.some((x) => x.quiz_id === id))
+        return previous?.[savedCopy]
+          ? fromSavedCopy(cached.quizzes[id], previous?.[storageCopy])
+          : cached.quizzes[id] &&
+              markLocalQuery(pinQuestion(cached.quizzes[id]));
+      const snapshot = s.library!.captureSnapshot(id, cached);
+      let incoming: QuizWithUserProgress | undefined;
       try {
         const q = await api.request<QuizWithUserProgress>(
           `quizzes/${id}/?include=user_settings,current_session`,
+          // A saved quiz remains usable on a connection that accepts requests
+          // but never responds. Keep the full deadline for first-time downloads.
+          {
+            signal,
+            timeoutMs: cached.quizzes[id]?.current_session ? 4000 : undefined,
+          },
         );
-        await s.library!.cache(q);
-        void saveQuizImages(q);
-        return q;
+        const normalized = pinQuestion(q);
+        incoming = normalized;
+        const retained = await s.library!.cache(normalized, snapshot);
+        if (!retained) throw new UserFacingError("operation");
+        void saveQuizImages(retained);
+        // A local mutation may have prevented this response from replacing the
+        // saved quiz. Keep its status until an authoritative refresh is applied.
+        return retained !== normalized && previous?.[savedCopy]
+          ? fromSavedCopy(retained, previous?.[storageCopy])
+          : retained !== normalized
+            ? markLocalQuery(retained)
+            : retained;
       } catch (e) {
+        if (signal.aborted) throw e;
         if (e instanceof ApiError && [401, 403, 404].includes(e.status)) {
           // Deleted, trashed or unshared: stop offering it on this device.
           if (e.status !== 401 && cached.quizzes[id]) {
-            await s.library!.discard(id).catch(() => undefined);
+            // A local answer may have been saved while this GET was in flight.
+            // remove() refuses to erase it; discard() would lose that answer.
+            await s.library!.remove(id).catch(() => undefined);
             void qc.invalidateQueries({ queryKey: ["offline"] });
             void qc.invalidateQueries({ queryKey: ["recent"] });
           }
           throw e;
         }
-        if (cached.quizzes[id]) return cached.quizzes[id];
+        const latest = await s.library!.read();
+        const storage = quizStorageIssue(e);
+        if (storage && latest.quizzes[id])
+          return fromSavedCopy(latest.quizzes[id], {
+            ...storage,
+            stale:
+              !!incoming && incoming.version !== latest.quizzes[id].version,
+          });
+        if (latest.quizzes[id])
+          return fromSavedCopy(
+            latest.quizzes[id],
+            previous?.[storageCopy]?.stale ? previous[storageCopy] : undefined,
+          );
         throw e;
       }
     },
+  });
+  const currentQuestion = useMemo(
+    () =>
+      query.data
+        ? resolveCurrentQuestion(
+            query.data,
+            deriveSettings(query.data.user_settings),
+          )
+        : null,
+    [query.data],
+  );
+  const answerAttempt = useRef(0);
+  const [answerImageRecovery, setAnswerImageRecovery] = useState({
+    generation: 0,
+    scope: "",
+    failed: false,
+  });
+  const [answerDocumentRecovery, setAnswerDocumentRecovery] = useState({
+    generation: 0,
+    scope: "",
+    failed: false,
+  });
+  const answerImageScope = JSON.stringify([
+    mediaScope,
+    query.data?.current_session?.id,
+    (result?.question ?? currentQuestion)?.id,
+  ]);
+  const activeAnswerImageScope = useRef<string | null>(null);
+  if (
+    answerImageRecovery.scope &&
+    answerImageRecovery.scope !== answerImageScope
+  ) {
+    setAnswerImageRecovery((previous) => ({
+      ...previous,
+      scope: "",
+      failed: false,
+    }));
+  }
+  if (
+    answerDocumentRecovery.scope &&
+    answerDocumentRecovery.scope !== answerImageScope
+  ) {
+    setAnswerDocumentRecovery((previous) => ({
+      ...previous,
+      scope: "",
+      failed: false,
+    }));
+  }
+  useLayoutEffect(() => {
+    activeAnswerImageScope.current = answerImageScope;
+    return () => {
+      activeAnswerImageScope.current = null;
+    };
+  }, [answerImageScope]);
+  const announcedAnswerImage = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !answerImageRecovery.failed ||
+      answerImageRecovery.scope !== answerImageScope
+    ) {
+      announcedAnswerImage.current = null;
+      return;
+    }
+    const signature = JSON.stringify([
+      answerImageScope,
+      answerImageRecovery.generation,
+    ]);
+    if (
+      Platform.OS === "ios" &&
+      navigation.isFocused() &&
+      announcedAnswerImage.current !== signature
+    ) {
+      announcedAnswerImage.current = signature;
+      createCompletionAnnouncement(feedbackScope.current?.signal)(
+        t(
+          "Nie udało się wczytać obrazu w odpowiedzi. Możesz wczytać obrazy ponownie.",
+          "An image in an answer could not be loaded. You can reload the answer images.",
+        ),
+      );
+    }
+  }, [
+    answerImageRecovery.failed,
+    answerImageRecovery.scope,
+    answerImageRecovery.generation,
+    answerImageScope,
+    navigation,
+    t,
+  ]);
+  const announcedAnswerDocument = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !answerDocumentRecovery.failed ||
+      answerDocumentRecovery.scope !== answerImageScope
+    ) {
+      announcedAnswerDocument.current = null;
+      return;
+    }
+    const signature = JSON.stringify([
+      answerImageScope,
+      answerDocumentRecovery.generation,
+    ]);
+    if (
+      Platform.OS === "ios" &&
+      navigation.isFocused() &&
+      announcedAnswerDocument.current !== signature
+    ) {
+      announcedAnswerDocument.current = signature;
+      createCompletionAnnouncement(feedbackScope.current?.signal)(
+        t(
+          "Nie udało się wyświetlić formatowania odpowiedzi. Treść jest dostępna jako tekst. Możesz wczytać odpowiedzi ponownie.",
+          "Answer formatting could not be displayed. The content is available as text. You can reload the answers.",
+        ),
+      );
+    }
+  }, [
+    answerDocumentRecovery.failed,
+    answerDocumentRecovery.scope,
+    answerDocumentRecovery.generation,
+    answerImageScope,
+    navigation,
+    t,
+  ]);
+  const quizData = query.data;
+  useEffect(() => {
+    if (quizData && !s.offline) void saveQuizImages(quizData);
+  }, [quizData, s.offline]);
+  const refetchQuiz = query.refetch;
+  const refreshQuiz = useCallback(async () => {
+    if (working.current) return;
+    const attempt = answerAttempt.current;
+    const signal = feedbackScope.current?.signal;
+    const before = quizData;
+    const refreshed = await refetchQuiz();
+    // Check may have started while this GET was in flight. Keep that feedback's
+    // selected answers even if the saved session now points at another question.
+    if (
+      signal?.aborted ||
+      attempt !== answerAttempt.current ||
+      !before ||
+      !refreshed.data
+    )
+      return;
+    if (
+      refreshed.isSuccess &&
+      refreshed.data !== before &&
+      !isLocalQuery(refreshed.data)
+    )
+      setEnqueueStorage(null);
+    const nextQuestion = resolveCurrentQuestion(
+      refreshed.data,
+      deriveSettings(refreshed.data.user_settings),
+    );
+    if (
+      refreshed.data.version !== before.version ||
+      nextQuestion?.id !== currentQuestion?.id
+    )
+      setSelected([]);
+    else
+      setSelected((values) =>
+        values.filter((value) =>
+          nextQuestion?.answers.some((answer) => answer.id === value),
+        ),
+      );
+  }, [quizData, refetchQuiz, currentQuestion?.id]);
+  useRefreshOnRecovery({
+    scope: mediaScope,
+    offline: s.offline,
+    pending: s.pending,
+    local: isLocalQuery(query.data),
+    enabled:
+      !!s.library &&
+      !!query.data &&
+      !query.isFetching &&
+      !saving &&
+      !result &&
+      !hint,
+    refresh: refreshQuiz,
+  });
+  const syncState = useQuery({
+    queryKey: [
+      "quiz-sync",
+      id,
+      s.user?.id,
+      s.pending,
+      s.syncError instanceof Error ? s.syncError.message : s.syncError,
+    ],
+    enabled: !!s.library,
+    networkMode: "always",
+    // A previously used count/error key may still hold a resolved conflict.
+    // Re-read storage immediately when sync moves back to that key.
+    staleTime: 0,
+    queryFn: async () => (await s.library!.read()).errors[id] ?? null,
   });
   useEffect(() => {
     started.current = clock();
@@ -145,11 +458,19 @@ export default function Study() {
     return () => listener.remove();
   }, []);
   const restoreQuiz = async () => {
+    const before = query.data;
     try {
       await api.post(`quizzes/${id}/restore/`);
       haptics.success();
       void qc.invalidateQueries({ queryKey: ["library"] });
-      await query.refetch();
+      const refreshed = await query.refetch();
+      if (
+        refreshed.isSuccess &&
+        refreshed.data &&
+        refreshed.data !== before &&
+        !isLocalQuery(refreshed.data)
+      )
+        setEnqueueStorage(null);
     } catch (error) {
       notify(
         t("Nie udało się przywrócić", "Couldn’t Restore Quiz"),
@@ -166,24 +487,54 @@ export default function Study() {
         </Button>
       </Screen>
     );
+  const loadStorageIssue = quizStorageIssue(query.error);
   if (query.error || !query.data)
     return (
       <ErrorScreen
-        error={query.error}
-        retry={() => void query.refetch()}
+        retry={
+          loadStorageIssue?.fitsAlone === false
+            ? undefined
+            : () => void query.refetch()
+        }
+        title={
+          loadStorageIssue
+            ? t("Nie można zapisać quizu", "Can’t Save Quiz")
+            : undefined
+        }
+        error={
+          loadStorageIssue
+            ? new Error(quizStorageMessage(loadStorageIssue, t))
+            : query.error
+        }
         actions={
           // Your own quiz in the trash can come straight back.
-          query.error instanceof ApiError &&
-          query.error.status === 403 &&
-          /restore/i.test(query.error.message)
+          loadStorageIssue
             ? [
                 {
-                  label: t("Przywróć quiz", "Restore Quiz"),
-                  primary: true,
-                  onPress: () => void restoreQuiz(),
+                  label:
+                    loadStorageIssue.fitsAlone === false
+                      ? t("Przeglądaj bibliotekę", "Browse Library")
+                      : t(
+                          "Zarządzaj zapisanymi quizami",
+                          "Manage Saved Quizzes",
+                        ),
+                  onPress: () =>
+                    loadStorageIssue.fitsAlone === false
+                      ? router.navigate("/library")
+                      : router.push("/downloads"),
                 },
               ]
-            : []
+            : query.error instanceof ApiError &&
+                query.error.status === 403 &&
+                /restore/i.test(query.error.message)
+              ? [
+                  {
+                    label: t("Przywróć quiz", "Restore Quiz"),
+                    primary: true,
+                    onPress: () => void restoreQuiz(),
+                  },
+                ]
+              : []
         }
       />
     );
@@ -193,12 +544,42 @@ export default function Study() {
     answers = session?.answers ?? [],
     done = isQuizComplete(quiz.questions, answers, settings),
     checked = result ? result.correct : null,
-    question = result?.question ?? resolveCurrentQuestion(quiz, settings),
+    question = result?.question ?? currentQuestion,
     mastered = getMasteredCount(quiz.questions, answers, settings);
+  const cachedStorage = (quiz as StudyQuiz)[storageCopy];
+  const failedSaveStorage =
+    enqueueStorage?.scope === mediaScope ? enqueueStorage.issue : null;
+  const displayedStorage = cachedStorage?.stale
+    ? cachedStorage
+    : (failedSaveStorage ?? cachedStorage);
   async function submit() {
-    if (!question || !session || working.current) return;
+    if (!question || working.current) return;
+    if (
+      qc.getQueryData<StudyQuiz>(["quiz", id, s.user?.id])?.[storageCopy]?.stale
+    ) {
+      notify(
+        t("Nie można zapisać odpowiedzi", "Can’t Save Answer"),
+        userError(new UserFacingError("quizRefresh"), t),
+      );
+      return;
+    }
+    if (!session) {
+      notify(
+        t("Nie można zapisać odpowiedzi", "Can’t Save Answer"),
+        t(
+          "Sesja nauki jest niedostępna. Wczytaj quiz ponownie i spróbuj jeszcze raz.",
+          "This study session is unavailable. Reload the quiz and try again.",
+        ),
+      );
+      void query.refetch();
+      return;
+    }
+    answerAttempt.current++;
     working.current = true;
     setSaving(true);
+    const feedbackSignal = feedbackScope.current?.signal;
+    const announce = createCompletionAnnouncement(feedbackSignal);
+    let progressChanged = false;
     try {
       const correct = checkAnswerCorrectness(question, selected);
       const record: AnswerRecord = {
@@ -232,7 +613,7 @@ export default function Study() {
           ...session,
           answers: history,
           current_question: next?.id ?? null,
-          study_time: session.study_time + elapsed,
+          study_time: (session.study_time ?? 0) + elapsed,
         },
       };
       await s.library!.enqueue(
@@ -249,25 +630,56 @@ export default function Study() {
         },
         updated,
       );
+      setEnqueueStorage(null);
       if (correct) haptics.success();
       else haptics.error();
       setResult({ question, correct });
-      void s.sync();
+      // Android/web already announce the result through its live region.
+      if (Platform.OS === "ios" && feedbackSignal && navigation.isFocused())
+        announce(
+          correct
+            ? t("Dobrze!", "Correct!")
+            : t(
+                "Nie tym razem. To pytanie wróci później w tej sesji.",
+                "Not Quite. This question will come back later in the session.",
+              ),
+        );
+      void s.sync().finally(() => syncState.refetch());
     } catch (error) {
+      progressChanged =
+        error instanceof UserFacingError &&
+        error.code === "quizProgressChanged";
+      // A rejection can arrive between the last render and this tap.
+      if (error instanceof UserFacingError && error.code === "syncConflict")
+        void syncState.refetch();
+      const storage = quizStorageIssue(error);
+      if (storage && !feedbackSignal?.aborted)
+        setEnqueueStorage({ scope: mediaScope, issue: storage });
       // The selection stays, so checking again retries.
       haptics.error();
       notify(
         t("Nie zapisano odpowiedzi", "Couldn’t Save Answer"),
-        userError(error, t),
+        storage ? quizStorageMessage(storage, t) : userError(error, t),
       );
     } finally {
       working.current = false;
       setSaving(false);
     }
+    // Refresh only after the submit guard is released. The existing refresh
+    // preserves selected choices when the saved question has not changed.
+    if (progressChanged && !feedbackSignal?.aborted) void refreshQuiz();
   }
   async function next() {
     const state = await s.library!.read();
-    qc.setQueryData(["quiz", id, s.user?.id], state.quizzes[id]);
+    qc.setQueryData(
+      ["quiz", id, s.user?.id],
+      (query.data as StudyQuiz)[savedCopy]
+        ? fromSavedCopy(
+            state.quizzes[id],
+            (query.data as StudyQuiz)[storageCopy],
+          )
+        : state.quizzes[id],
+    );
     setResult(null);
     setHint(null);
     setSelected([]);
@@ -297,6 +709,7 @@ export default function Study() {
         );
       await api.delete(`quizzes/${id}/progress/`);
       await s.library!.discard(id);
+      setEnqueueStorage(null);
       setResult(null);
       setHint(null);
       setSelected([]);
@@ -312,7 +725,8 @@ export default function Study() {
       setSaving(false);
     }
   };
-  const askAssistant = (target: NonNullable<typeof question>) =>
+  const askAssistant = (target: NonNullable<typeof question>) => {
+    setHint(null);
     router.push({
       pathname: "/ai",
       params: {
@@ -321,9 +735,23 @@ export default function Study() {
         answerOrder: JSON.stringify(target.answers.map((a) => a.id)),
       },
     });
+  };
   const makeCopy = async () => {
-    const copy = await api.post<{ id: string }>(`quizzes/${id}/copy/`);
-    router.push({ pathname: "/editor", params: { id: copy.id } });
+    const signal = feedbackScope.current?.signal;
+    if (!signal || signal.aborted || copyPending.current === signal) return;
+    copyPending.current = signal;
+    setCopying({ scope: mediaScope, signal });
+    try {
+      const copy = await api.post<{ id: string }>(`quizzes/${id}/copy/`);
+      if (!signal.aborted)
+        router.push({ pathname: "/editor", params: { id: copy.id } });
+    } catch (error) {
+      if (!signal.aborted) throw error;
+    } finally {
+      if (copyPending.current === signal) copyPending.current = null;
+      if (!signal.aborted)
+        setCopying((current) => (current?.signal === signal ? null : current));
+    }
   };
   const removeLocalCopy = () =>
     confirm(
@@ -334,16 +762,32 @@ export default function Study() {
       ),
       async () => {
         await s.library!.discard(id);
-        removeQuizImages(quiz);
+        void qc.invalidateQueries({ queryKey: ["offline"] });
+        void s.sync();
+        setEnqueueStorage(null);
+        await syncState.refetch();
+        await removeQuizImages(quiz);
         setResult(null);
         setHint(null);
         setSelected([]);
         await query.refetch();
-        await s.sync();
       },
       { action: t("Usuń", "Remove") },
     );
   const complete = done && checked === null;
+  const requestRestart = () => {
+    if (!done && answers.length > 0)
+      confirm(
+        t("Rozpocząć nową sesję?", "Start a New Session?"),
+        t(
+          "Bieżąca sesja zostanie zakończona. Nowa sesja rozpocznie się bez odpowiedzi. Niezsynchronizowane odpowiedzi trzeba najpierw zsynchronizować.",
+          "Your current session will end. The new session starts with no answers. Unsynced answers must sync first.",
+        ),
+        restart,
+        { action: t("Nowa sesja", "New Session") },
+      );
+    else void restart();
+  };
   const total = quiz.questions.length;
   const minutes = Math.round((session?.study_time ?? 0) / 60);
   const studyTime =
@@ -367,7 +811,10 @@ export default function Study() {
   };
   // Checking with nothing selected is valid: some questions have no correct answer.
   const primaryDisabled =
-    (primary === "check" || primary === "restart") && saving;
+    (primary === "check" || primary === "restart") &&
+    (saving ||
+      !!syncState.data ||
+      (primary === "check" && !!cachedStorage?.stale));
   const runPrimary = () =>
     primary === "restart"
       ? void restart()
@@ -399,6 +846,14 @@ export default function Study() {
   const native = Platform.OS === "ios";
   const menu: (MenuAction & { icon: NonNullable<MenuAction["icon"]> })[][] = [
     [
+      {
+        title: t("Model AI", "AI Model"),
+        icon: "sparkles",
+        onPress: () => {
+          setHint(null);
+          router.push({ pathname: "/settings-model", params: { quiz: id } });
+        },
+      },
       {
         title: t("Historia odpowiedzi", "Answer History"),
         icon: "clock.arrow.circlepath",
@@ -436,9 +891,12 @@ export default function Study() {
         onPress: () => go("/community"),
       },
       {
-        title: t("Utwórz kopię", "Make a Copy"),
+        title: copyBusy
+          ? t("Tworzenie kopii…", "Creating Copy…")
+          : t("Utwórz kopię", "Make a Copy"),
         icon: "doc.on.doc",
         onPress: makeCopy,
+        disabled: copyBusy,
       },
       ...(question && !complete
         ? [
@@ -458,7 +916,7 @@ export default function Study() {
       {
         title: t("Nowa sesja", "New Session"),
         icon: "arrow.counterclockwise",
-        onPress: () => void restart(),
+        onPress: requestRestart,
       },
       {
         title: t("Usuń lokalną kopię", "Remove Local Copy"),
@@ -502,6 +960,7 @@ export default function Study() {
                     key={item.title}
                     icon={item.icon}
                     destructive={item.destructive}
+                    disabled={item.disabled}
                     onPress={() =>
                       void Promise.resolve()
                         .then(item.onPress)
@@ -642,8 +1101,61 @@ export default function Study() {
               }}
             />
           </View>
+          {displayedStorage ? (
+            <QuizStorageNotice
+              issue={displayedStorage}
+              retry={
+                !failedSaveStorage || cachedStorage?.stale
+                  ? refreshQuiz
+                  : undefined
+              }
+              disabled={saving || !!result || query.isFetching}
+            />
+          ) : null}
+          {(query.data as StudyQuiz)[savedCopy] &&
+          !displayedStorage &&
+          !s.offline &&
+          !s.pending &&
+          !s.syncError &&
+          !syncState.data ? (
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontSize: 13, lineHeight: 19, color: c.muted }}>
+                {t(
+                  "Zapisana kopia. Nie udało się odświeżyć quizu.",
+                  "Saved copy. Couldn’t refresh this quiz.",
+                )}
+              </Text>
+              <Button
+                kind="secondary"
+                disabled={saving || !!result || query.isFetching}
+                onPress={refreshQuiz}
+              >
+                {t("Sprawdź aktualizacje", "Retry Updates")}
+              </Button>
+            </View>
+          ) : null}
         </View>
-        <SyncStatus />
+        {!syncState.data ? <SyncStatus /> : null}
+        {syncState.data ? (
+          <Card>
+            <Label>
+              {t("Odpowiedzi wymagają uwagi", "Answers Need Attention")}
+            </Label>
+            <Label>{userError(new UserFacingError("syncConflict"), t)}</Label>
+            <Button
+              kind="secondary"
+              onPress={async () => {
+                await s.sync();
+                await syncState.refetch();
+              }}
+            >
+              {t("Ponów synchronizację", "Retry Sync")}
+            </Button>
+            <Button kind="danger" onPress={removeLocalCopy}>
+              {t("Usuń lokalną kopię", "Remove Local Copy")}
+            </Button>
+          </Card>
+        ) : null}
         {complete ? (
           <QuizCompleteCard quizId={id} total={total} studyTime={studyTime} />
         ) : question ? (
@@ -677,6 +1189,7 @@ export default function Study() {
               />
             </View>
             <HintScope
+              quizId={id}
               question={question}
               mode={hint?.question === question.id ? hint.mode : null}
               attempt={hint?.attempt ?? 0}
@@ -770,8 +1283,54 @@ export default function Study() {
                             >
                               <View pointerEvents="none">
                                 <RichText
+                                  key={answerImageScope}
                                   text={answer.text}
                                   allowImages={images}
+                                  passiveImages
+                                  documentGeneration={
+                                    answerDocumentRecovery.generation
+                                  }
+                                  onDocumentFailure={() => {
+                                    if (
+                                      activeAnswerImageScope.current !==
+                                      answerImageScope
+                                    )
+                                      return;
+                                    setAnswerDocumentRecovery((previous) =>
+                                      previous.generation !==
+                                        answerDocumentRecovery.generation ||
+                                      (previous.failed &&
+                                        previous.scope === answerImageScope)
+                                        ? previous
+                                        : {
+                                            ...previous,
+                                            scope: answerImageScope,
+                                            failed: true,
+                                          },
+                                    );
+                                  }}
+                                  retryGeneration={
+                                    answerImageRecovery.generation
+                                  }
+                                  onImageFailure={() => {
+                                    if (
+                                      activeAnswerImageScope.current !==
+                                      answerImageScope
+                                    )
+                                      return;
+                                    setAnswerImageRecovery((previous) =>
+                                      previous.generation !==
+                                        answerImageRecovery.generation ||
+                                      (previous.failed &&
+                                        previous.scope === answerImageScope)
+                                        ? previous
+                                        : {
+                                            ...previous,
+                                            scope: answerImageScope,
+                                            failed: true,
+                                          },
+                                    );
+                                  }}
                                 />
                               </View>
                               {answer.image && images(answer.image) ? (
@@ -821,6 +1380,76 @@ export default function Study() {
                       );
                     })}
                   </View>
+                  {answerImageRecovery.scope === answerImageScope &&
+                  !(
+                    answerDocumentRecovery.scope === answerImageScope &&
+                    answerDocumentRecovery.failed
+                  ) ? (
+                    <View style={{ gap: 8 }}>
+                      {answerImageRecovery.failed ? (
+                        <Text
+                          accessibilityRole="alert"
+                          accessibilityLiveRegion="polite"
+                          style={{ color: c.muted }}
+                        >
+                          {t(
+                            "Nie udało się wczytać obrazu w odpowiedzi.",
+                            "An image in an answer could not be loaded.",
+                          )}
+                        </Text>
+                      ) : null}
+                      <Button
+                        kind="secondary"
+                        testID="retry-answer-images"
+                        onPress={() =>
+                          setAnswerImageRecovery((previous) => ({
+                            generation: previous.generation + 1,
+                            scope: answerImageScope,
+                            failed: false,
+                          }))
+                        }
+                      >
+                        {t(
+                          "Wczytaj ponownie obrazy odpowiedzi",
+                          "Reload Answer Images",
+                        )}
+                      </Button>
+                    </View>
+                  ) : null}
+                  {answerDocumentRecovery.scope === answerImageScope ? (
+                    <View style={{ gap: 8 }}>
+                      {answerDocumentRecovery.failed ? (
+                        <Text
+                          accessibilityRole="alert"
+                          accessibilityLiveRegion="polite"
+                          style={{ color: c.muted }}
+                        >
+                          {t(
+                            "Formatowanie odpowiedzi jest niedostępne. Treść jest dostępna jako tekst.",
+                            "Answer formatting is unavailable. The content is available as text.",
+                          )}
+                        </Text>
+                      ) : null}
+                      <Button
+                        kind="secondary"
+                        testID="retry-answer-content"
+                        onPress={() => {
+                          setAnswerImageRecovery((previous) => ({
+                            ...previous,
+                            scope: "",
+                            failed: false,
+                          }));
+                          setAnswerDocumentRecovery((previous) => ({
+                            generation: previous.generation + 1,
+                            scope: answerImageScope,
+                            failed: false,
+                          }));
+                        }}
+                      >
+                        {t("Wczytaj ponownie odpowiedzi", "Reload Answers")}
+                      </Button>
+                    </View>
+                  ) : null}
                   {checked !== null ? (
                     <View
                       accessibilityLiveRegion="polite"
@@ -962,11 +1591,13 @@ type AiState = ReturnType<typeof useAiResponse>;
 
 // The AI request only runs while a hint is open; hooks cannot be conditional.
 function HintScope({
+  quizId,
   question,
   mode,
   attempt,
   children,
 }: {
+  quizId: string;
   question: StudyQuestion;
   mode: "hint" | "explain" | null;
   attempt: number;
@@ -976,6 +1607,7 @@ function HintScope({
     <ActiveHint
       key={`${question.id}:${mode}:${attempt}`}
       question={question}
+      quizId={quizId}
       mode={mode}
     >
       {children}
@@ -986,13 +1618,15 @@ function HintScope({
 }
 
 function ActiveHint({
+  quizId,
   question,
   mode,
   children,
 }: {
+  quizId: string;
   question: StudyQuestion;
   mode: "hint" | "explain";
   children: (ai: AiState) => ReactNode;
 }) {
-  return <>{children(useAiResponse(question, mode))}</>;
+  return <>{children(useAiResponse(question, mode, quizId))}</>;
 }

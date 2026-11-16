@@ -14,8 +14,15 @@ export default function Auth() {
       code: string;
       state: string;
     }>(),
-    { login } = useSession(),
+    { login, user } = useSession(),
     [error, setError] = useState<unknown>(null);
+  const staleCallback =
+    error instanceof UserFacingError && error.code === "oauthState" && !!user;
+  useEffect(() => {
+    // A consumed callback can arrive again after sign-in has already finished.
+    // Keep a surviving session usable without redeeming or clearing any flow.
+    if (staleCallback) router.replace("/");
+  }, [staleCallback]);
   useEffect(() => {
     let active = true;
     (async () => {
@@ -37,7 +44,7 @@ export default function Auth() {
       active = false;
     };
   }, [params.error, params.code, params.state, login]);
-  return error ? (
+  return error && !staleCallback ? (
     <ErrorScreen
       title={t("Nie udało się zalogować", "Couldn’t Sign In")}
       error={error}

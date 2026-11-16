@@ -1,5 +1,9 @@
 import { expect, it, vi } from "vitest";
-import { consumeChat, hasChatContent } from "../src/lib/chat-stream";
+import {
+  consumeChat,
+  hasChatContent,
+  hasSuccessfulChatContent,
+} from "../src/lib/chat-stream";
 const event = (value: object) => `data: ${JSON.stringify(value)}\n\n`;
 it("preserves text/tool/text ordering across single-byte UTF-8 chunks and replays SDK parts", async () => {
   const input = { questions: [{ text: "Żółć", answers: [] }] };
@@ -53,6 +57,7 @@ it("preserves text/tool/text ordering across single-byte UTF-8 chunks and replay
   ]);
   expect(publish.mock.calls[1][0][1].state).toBe("input-streaming");
   expect(hasChatContent(result)).toBe(true);
+  expect(hasSuccessfulChatContent(result)).toBe(true);
   expect(response.body?.locked).toBe(false);
 });
 it("commits tool-only replies and marks unfinished tools as failures instead of permanent loading", async () => {
@@ -72,7 +77,33 @@ it("commits tool-only replies and marks unfinished tools as failures instead of 
     state: "output-error",
   });
   expect(hasChatContent(result)).toBe(true);
+  expect(hasSuccessfulChatContent(result)).toBe(false);
   expect(hasChatContent([{ type: "text", text: " " }])).toBe(false);
+});
+it("only successful tool output or nonempty text qualifies as a ready reply", () => {
+  const failed = {
+    type: "dynamic-tool" as const,
+    toolName: "list_questions",
+    toolCallId: "find",
+    state: "output-error" as const,
+    input: {},
+    errorText: "Could not load questions",
+  };
+  expect(hasSuccessfulChatContent([failed])).toBe(false);
+  expect(hasSuccessfulChatContent([failed, { type: "text", text: " " }])).toBe(
+    false,
+  );
+  expect(
+    hasSuccessfulChatContent([
+      failed,
+      { type: "text", text: "Try a narrower query." },
+    ]),
+  ).toBe(true);
+  expect(
+    hasSuccessfulChatContent([
+      { ...failed, state: "output-available", output: [] },
+    ]),
+  ).toBe(true);
 });
 it("cancels pending tool streams without persisting a result", async () => {
   const controller = new AbortController();

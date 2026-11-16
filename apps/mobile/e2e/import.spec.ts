@@ -14,7 +14,8 @@ for (const language of ["en", "pl"] as const)
     await page.route("**/api/**", (route) => {
       const path = new URL(route.request().url()).pathname;
       if (route.request().method() === "POST") {
-        expect(route.request().postDataJSON().visibility).toBe(0);
+        const body = route.request().postDataJSON();
+        expect((body.quiz ?? body).visibility).toBe(0);
         writes++;
         return route.fulfill({ status: 503, json: {} });
       }
@@ -32,6 +33,7 @@ for (const language of ["en", "pl"] as const)
             preview: "Preview Quiz",
             invalid: "Invalid JSON. Check the file contents or pasted text.",
             save: "Import and Start Studying",
+            retry: "Retry Import",
             private: "The quiz will be added to your library as private.",
             fail: "Couldn’t Import Quiz",
             answer: "Question 1: mark at least one correct answer.",
@@ -43,6 +45,7 @@ for (const language of ["en", "pl"] as const)
             invalid:
               "Nieprawidłowy JSON. Sprawdź zawartość pliku lub wklejony tekst.",
             save: "Importuj i rozpocznij naukę",
+            retry: "Ponów import",
             private: "Quiz zostanie dodany do Twojej biblioteki jako prywatny.",
             fail: "Nie udało się zaimportować quizu",
             answer: "Pytanie 1: zaznacz przynajmniej jedną poprawną odpowiedź.",
@@ -84,6 +87,6 @@ for (const language of ["en", "pl"] as const)
     await expect(
       page.getByRole("heading", { name: "Preview fixture", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: c.save, exact: true }).click();
+    await page.getByRole("button", { name: c.retry, exact: true }).click();
     expect(writes).toBe(2);
   });

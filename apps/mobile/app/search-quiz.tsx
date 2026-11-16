@@ -1,6 +1,6 @@
 import type { Quiz } from "@testownik/core/quiz/types";
 import { useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import {
   useCallback,
   useDeferredValue,
@@ -29,21 +29,53 @@ import {
   isTrustedImage,
 } from "../src/lib/image-policy";
 import RichText from "../src/components/RichText";
+import SavedCopyNotice from "../src/components/SavedCopyNotice";
 import { StatusContent } from "../src/components/native/StatusView";
-import { ErrorState, Field, Label, Screen } from "../src/components/ui";
+import {
+  EmptyState,
+  ErrorState,
+  Field,
+  Label,
+  Screen,
+} from "../src/components/ui";
 import { api, API_URL } from "../src/lib/api";
 import { ApiError } from "../src/lib/client";
 import { useSession } from "../src/lib/session";
 import { useLocale } from "../src/lib/locale";
 import { useTheme } from "../src/lib/theme";
 import { findQuestions, indexQuestions } from "../src/lib/question-search";
+import { isSavedQuery, markSavedQuery } from "../src/lib/saved-query";
+import { useRefreshOnRecovery } from "../src/lib/use-refresh-on-recovery";
+
+const accessDenied = (error: unknown) =>
+  error instanceof ApiError && [401, 403, 404].includes(error.status);
 
 export default function SearchQuiz() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
+  const { t } = useLocale();
+  if (typeof id !== "string" || !id.trim())
+    return (
+      <EmptyState
+        symbol="books.vertical"
+        ionicon="library-outline"
+        title={t("Wybierz quiz", "Choose a Quiz")}
+        description={t(
+          "Otwórz quiz z biblioteki, aby wyszukać jego pytania.",
+          "Open a quiz from the library to search its questions.",
+        )}
+        actions={[
+          {
+            label: t("Przeglądaj bibliotekę", "Browse Library"),
+            onPress: () => router.navigate("/library"),
+          },
+        ]}
+      />
+    );
   return <QuestionSearch key={`${user?.id}:${id}`} id={id} />;
 }
 function QuestionSearch({ id }: { id: string }) {
+  const [client] = useState(() => api.forSession());
   const s = useSession(),
     { t } = useLocale(),
     c = useTheme();
@@ -66,19 +98,31 @@ function QuestionSearch({ id }: { id: string }) {
     queryKey: ["search-quiz", id, s.user?.id],
     enabled: !!id && !!s.library,
     networkMode: "always",
-    queryFn: async () => {
+    structuralSharing: false,
+    queryFn: async ({ signal }) => {
       const saved = s.library ? (await s.library.read()).quizzes[id] : null;
       if (s.offline && saved) return saved;
       try {
-        return await api.request<Quiz>(`quizzes/${id}/`);
+        return await client.request<Quiz>(`quizzes/${id}/`, {
+          signal,
+          timeoutMs: saved ? 4000 : undefined,
+        });
       } catch (error) {
-        if (error instanceof ApiError && [401, 403, 404].includes(error.status))
-          throw error;
-        if (saved) return saved;
+        if (signal.aborted) throw error;
+        if (accessDenied(error)) throw error;
+        const latest = s.library ? (await s.library.read()).quizzes[id] : null;
+        if (latest) return markSavedQuery(latest);
         throw error;
       }
     },
   });
+  useRefreshOnRecovery({
+    scope: `${s.user?.id}:${id}`,
+    offline: s.offline,
+    enabled: !!s.library && !q.isFetching,
+    refresh: q.refetch,
+  });
+  const denied = accessDenied(q.error);
   const index = useMemo(
     () => indexQuestions(q.data?.questions ?? []),
     [q.data?.questions],
@@ -118,7 +162,7 @@ function QuestionSearch({ id }: { id: string }) {
         }}
       />
       <FlatList
-        data={q.error ? [] : questions}
+        data={denied ? [] : questions}
         keyExtractor={({ question }) => question.id}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -135,6 +179,11 @@ function QuestionSearch({ id }: { id: string }) {
             {Platform.OS === "web" && (
               <Field label={placeholder} value={text} onChangeText={setText} />
             )}
+            {!q.error && q.data && s.offline ? (
+              <Label muted>{t("Na tym urządzeniu", "On This Device")}</Label>
+            ) : !q.error && isSavedQuery(q.data) ? (
+              <SavedCopyNotice retry={q.refetch} disabled={q.isFetching} />
+            ) : null}
             {q.isLoading ? (
               <ActivityIndicator style={{ paddingVertical: 24 }} />
             ) : q.error ? (
@@ -150,7 +199,7 @@ function QuestionSearch({ id }: { id: string }) {
           </View>
         }
         ListEmptyComponent={
-          !q.isLoading && !q.error ? (
+          !q.isLoading && !denied && q.data ? (
             text.trim() ? (
               <StatusContent
                 symbol="magnifyingglass"
@@ -170,7 +219,7 @@ function QuestionSearch({ id }: { id: string }) {
                   },
                 ]}
               />
-            ) : (
+            ) : !q.error ? (
               <StatusContent
                 symbol="doc.text"
                 ionicon="document-text-outline"
@@ -180,7 +229,7 @@ function QuestionSearch({ id }: { id: string }) {
                   "This quiz doesn’t have any questions yet.",
                 )}
               />
-            )
+            ) : null
           ) : null
         }
         renderItem={({ item: { question, number }, index }) => {
@@ -276,14 +325,6 @@ function QuestionSearch({ id }: { id: string }) {
                   {question.answers.map((answer) => (
                     <View
                       key={answer.id}
-                      accessibilityLabel={[
-                        answer.text,
-                        answer.is_correct
-                          ? t("Poprawna odpowiedź", "Correct answer")
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
@@ -294,11 +335,26 @@ function QuestionSearch({ id }: { id: string }) {
                         backgroundColor: answer.is_correct ? c.successBg : c.bg,
                       }}
                     >
-                      <OptionIndicator
-                        multiple={question.multiple}
-                        selected={false}
-                        result={answer.is_correct ? "correct" : null}
-                      />
+                      <View
+                        accessible={answer.is_correct}
+                        accessibilityRole="text"
+                        accessibilityLabel={
+                          answer.is_correct
+                            ? t("Poprawna odpowiedź", "Correct answer")
+                            : t("Niepoprawna odpowiedź", "Incorrect answer")
+                        }
+                      >
+                        <View
+                          accessibilityElementsHidden
+                          importantForAccessibility="no-hide-descendants"
+                        >
+                          <OptionIndicator
+                            multiple={question.multiple}
+                            selected={false}
+                            result={answer.is_correct ? "correct" : null}
+                          />
+                        </View>
+                      </View>
                       <View style={{ flex: 1, gap: 4 }}>
                         <RichText text={answer.text} allowImages={images} />
                         {answer.image && images(answer.image) ? (

@@ -313,7 +313,10 @@ export function ensureQuizCurrentQuestion(
   }
 
   if (
-    session.current_question !== null ||
+    (session.current_question != null &&
+      quiz.questions.some(
+        (question) => question.id === session.current_question,
+      )) ||
     isQuizComplete(quiz.questions, session.answers, settings)
   ) {
     return quiz;

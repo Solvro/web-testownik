@@ -494,6 +494,8 @@ function Combined(p: GradesContentProps) {
         </RNText>
         <RNText
           testID="combined-average"
+          numberOfLines={1}
+          adjustsFontSizeToFit
           style={{
             color: gradeTone(p.combinedAverage, c, dark).fg,
             fontSize: 45,

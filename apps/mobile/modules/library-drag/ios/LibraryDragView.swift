@@ -129,3 +129,111 @@ class EditorQuestionListView: ExpoView, UITableViewDataSource, UITableViewDelega
     return true
   }
 }
+
+/// Installs chrome on this screen's navigation item, without searching other tabs.
+final class NavigationTitleImageView: ExpoView {
+  var imageName = "" { didSet { applyImage() } }
+  var inlineHeight: Double = 20 { didSet { applyImage() } }
+  var expandedHeight: Double = 34 { didSet { applyImage() } }
+  private weak var observedItem: UINavigationItem?
+  private var titleObservation: NSKeyValueObservation?
+  private var appliedImage: UIImage?
+  private var appliedHeights: (Double, Double)?
+  private var applying = false
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window == nil {
+      titleObservation = nil
+      observedItem = nil
+      appliedImage = nil
+    } else { applyImage() }
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    applyImage()
+  }
+
+  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+    super.traitCollectionDidChange(previousTraitCollection)
+    if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+      appliedImage = nil
+      applyImage()
+    }
+  }
+
+  private func navigationItem() -> UINavigationItem? {
+    var responder: UIResponder? = self
+    while let current = responder {
+      if let controller = current as? UIViewController {
+        var candidate: UIViewController? = controller
+        while let screen = candidate {
+          if screen.parent is UINavigationController {
+            return screen.navigationItem
+          }
+          candidate = screen.parent
+        }
+        return nil
+      }
+      responder = current.next
+    }
+    return nil
+  }
+
+  private func applyImage() {
+    guard !applying, window != nil, #available(iOS 26.0, *),
+      let item = navigationItem(),
+      let image = UIImage(named: imageName, in: nil, compatibleWith: traitCollection),
+      inlineHeight > 0, expandedHeight > 0 else { return }
+    applying = true
+    defer { applying = false }
+    if observedItem !== item {
+      observedItem = item
+      appliedImage = nil
+      titleObservation = item.observe(\.title, options: [.new]) { [weak self] _, _ in
+        guard let self, !self.applying, let image = self.appliedImage,
+          let item = self.observedItem else { return }
+        self.applying = true
+        defer { self.applying = false }
+        self.applyTitle(item, image: image)
+      }
+    }
+    if appliedImage === image,
+      appliedHeights?.0 == inlineHeight, appliedHeights?.1 == expandedHeight { return }
+    appliedImage = image
+    appliedHeights = (inlineHeight, expandedHeight)
+    let ratio = image.size.width / max(image.size.height, 1)
+    applyTitle(item, image: image)
+
+    let logo = UIImageView(image: image)
+    logo.contentMode = .scaleAspectFit
+    logo.translatesAutoresizingMaskIntoConstraints = false
+    logo.isAccessibilityElement = true
+    logo.accessibilityLabel = "Testownik"
+    logo.accessibilityTraits = .header
+    let container = UIView()
+    container.translatesAutoresizingMaskIntoConstraints = false
+    container.addSubview(logo)
+    NSLayoutConstraint.activate([
+      logo.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+      logo.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+      logo.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+      logo.widthAnchor.constraint(equalToConstant: ratio * expandedHeight),
+      logo.heightAnchor.constraint(equalToConstant: expandedHeight),
+      // UIKit retains its large-title line even with an empty title. Keep the
+      // subtitle slot compact and draw the logo inside that existing bar area.
+      container.heightAnchor.constraint(equalToConstant: 1),
+    ])
+    item.largeSubtitleView = container
+  }
+
+  @available(iOS 26.0, *)
+  private func applyTitle(_ item: UINavigationItem, image: UIImage) {
+    let attachment = NSTextAttachment(image: image)
+    attachment.accessibilityLabel = "Testownik"
+    attachment.bounds = CGRect(x: 0, y: 0, width: image.size.width * inlineHeight / max(image.size.height, 1), height: inlineHeight)
+    item.attributedTitle = AttributedString(NSAttributedString(attachment: attachment))
+    item.largeTitle = ""
+  }
+}

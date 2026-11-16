@@ -11,6 +11,7 @@ import { AppContext } from "@/app-context";
 import Logo from "@/assets/logo.svg";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { notifyMobileSessionExpired } from "@/lib/auth/mobile-embed";
 import { PermissionAction } from "@/lib/auth/permissions";
 import { getWrappedService } from "@/services";
 
@@ -192,6 +193,7 @@ export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
           { cache: "no-store" },
         );
         if (!response.ok) {
+          notifyMobileSessionExpired(response.status);
           throw new Error(
             `Nie udało się pobrać Wrapped (${String(response.status)}).`,
           );

@@ -28,7 +28,10 @@ const chartConfig = {
 
 export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
   const [scope, setScope] = useState<StatsScope>("me");
-  const { data, isFetching, isPending } = useQuizHourly(quizId, scope);
+  const { data, isFetching, isPending, isError, refetch } = useQuizHourly(
+    quizId,
+    scope,
+  );
   const isRefreshing = isFetching && !isPending;
 
   const chartData = useMemo(
@@ -55,6 +58,17 @@ export function HourlyChart({ quizId, canViewAll }: HourlyChartProps) {
       isLoading={isPending}
       isRefreshing={isRefreshing}
       isEmpty={!hasData}
+      queryError={
+        isError
+          ? {
+              hasCachedData: data !== undefined,
+              isFetching,
+              onRetry: () => {
+                void refetch();
+              },
+            }
+          : undefined
+      }
     >
       <ChartContainer config={chartConfig} className="max-h-87.5 min-h-62.5">
         <RadarChart data={chartData} accessibilityLayer>

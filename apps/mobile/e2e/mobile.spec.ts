@@ -90,11 +90,11 @@ test("create, study, persist progress, inspect statistics and settings", async (
   await page
     .getByRole("button", {
       name: "Poprawnie: Ile wynosi $2 + 2$?",
-      exact: true,
+      exact: false,
     })
     .click();
   await expect(
-    page.getByLabel(/, Twój wybór, Poprawna odpowiedź$/),
+    page.getByLabel("Poprawna odpowiedź", { exact: true }),
   ).toBeVisible();
   await expect(
     page.frameLocator("iframe").nth(1).getByText("Cztery", { exact: true }),

@@ -1,12 +1,15 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 
 import { usageWindowLabels } from "../../lib/ai-usage";
 import { useLocale, type LanguagePreference } from "../../lib/locale";
 import { useTheme } from "../../lib/theme";
 import Card, { SectionTitle as Heading } from "../SettingsGroup";
 import SyncStatus from "../SyncStatus";
+import { Collection, CollectionDivider } from "../Collection";
+import CollectionRow from "../native/CollectionRow";
+import SolvroLogo from "../SolvroLogo";
 import Choice from "../native/Choice";
-import { Button, Row, Screen } from "../ui";
+import { Button, ErrorState, Row, Screen } from "../ui";
 import type { ProfileContentProps } from "./types";
 
 // Browser preview and Android. iOS renders a native SwiftUI list instead.
@@ -83,6 +86,16 @@ export default function ProfileContent(props: ProfileContentProps) {
           onPress={props.openWrapped}
         />
       </Card>
+      {props.usageError ? (
+        <ErrorState error={props.usageError} retry={props.retryUsage} />
+      ) : props.usageLoading ? (
+        <ActivityIndicator
+          accessibilityLabel={t(
+            "Wczytuję wykorzystanie AI",
+            "Loading AI Usage",
+          )}
+        />
+      ) : null}
       {props.usage ? (
         <>
           <Heading small>{t("Wykorzystanie AI", "AI Usage")}</Heading>
@@ -137,6 +150,34 @@ export default function ProfileContent(props: ProfileContentProps) {
           onPress={props.openFeedback}
         />
       </Card>
+      <Heading small>{t("O aplikacji", "About")}</Heading>
+      <Collection>
+        <CollectionRow
+          title="Solvro"
+          leading={<SolvroLogo />}
+          onPress={() => props.openLink("https://solvro.pwr.edu.pl")}
+        />
+        <CollectionDivider />
+        <CollectionRow
+          title={t("Kod źródłowy na GitHubie", "Source Code on GitHub")}
+          ionicon="logo-github"
+          onPress={() =>
+            props.openLink("https://github.com/Solvro/web-testownik")
+          }
+        />
+        <CollectionDivider />
+        <CollectionRow
+          title={t("Polityka prywatności", "Privacy Policy")}
+          ionicon="document-text-outline"
+          onPress={() => props.openLink(`${props.webUrl}/privacy-policy`)}
+        />
+      </Collection>
+      <Text style={{ color: c.muted, fontSize: 13 }}>
+        {t(
+          `Testownik ${props.version} · Tworzony przez KN Solvro na Politechnice Wrocławskiej. Aplikacja mobilna: Antoni Czaplicki.`,
+          `Testownik ${props.version} · Made by KN Solvro at Wrocław University of Science and Technology. Mobile app by Antoni Czaplicki.`,
+        )}
+      </Text>
       <Button kind="danger" onPress={props.signOut}>
         {t("Wyloguj się", "Sign Out")}
       </Button>

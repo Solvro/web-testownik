@@ -5,7 +5,7 @@ import { useCallback, useEffect } from "react";
 import { Image, Platform, View, useColorScheme } from "react-native";
 
 import { headerMenus } from "../../../src/components/header-action";
-import { setNavigationTitleImage } from "../../../modules/library-drag/src/nativeChrome";
+import { NavigationTitleImage } from "../../../modules/library-drag/src/NavigationTitleImage";
 import HomeContent from "../../../src/components/home/HomeContent";
 import type { QuizListItem } from "../../../src/components/quiz-list/types";
 import { api, listOf } from "../../../src/lib/api";
@@ -81,24 +81,11 @@ export default function Home() {
   const first = available[0] ?? offline[0];
   const dark = useColorScheme() === "dark";
   const title = t("Nauka", "Study");
-  // iOS: the native navigation title is the logo (an image in the title's
-  // attributed string), so it collapses from large to inline like every other
-  // tab. The screen's title text stays for the back menu and accessibility.
-  const applyLogo = () =>
-    setNavigationTitleImage(title, "brand-logo", 20, 34, -8);
-  // The header re-applies its text title whenever its options change (e.g. a
-  // light/dark switch), so the logo goes back on after every render too.
-  useEffect(() => {
-    applyLogo();
-    // The header sets its title after this runs on first mount.
-    const retry = setTimeout(applyLogo, 400);
-    return () => clearTimeout(retry);
-  });
-  useFocusEffect(
-    useCallback(() => {
-      setNavigationTitleImage(title, "brand-logo", 20, 34, -8);
-    }, [title]),
-  );
+  const nativeBrand =
+    Platform.OS === "ios" &&
+    Number.parseInt(String(Platform.Version), 10) >= 26;
+  // iOS uses a native large title image and an inline title attachment.
+  // The screen title stays available to the back menu and accessibility.
   // Web and Android show the logo at the start of the bar.
   const logo = (
     <Image
@@ -121,11 +108,17 @@ export default function Home() {
         options={{
           title,
           // Android's toolbar shows the logo on the left instead.
-          headerTitle: Platform.OS === "android" ? () => null : undefined,
-          headerLargeTitleEnabled: Platform.OS === "ios",
-          // The large logo is drawn below an empty large title; collapse its line.
-          headerLargeTitleStyle:
-            Platform.OS === "ios" ? { fontSize: 1 } : undefined,
+          headerTitle:
+            Platform.OS === "android"
+              ? () => null
+              : Platform.OS === "ios" && !nativeBrand
+                ? () => logo
+                : undefined,
+          headerLargeTitleEnabled: nativeBrand,
+          // The native image uses the existing large title line; hide its text.
+          headerLargeTitleStyle: nativeBrand
+            ? { fontSize: 1, color: "transparent" }
+            : undefined,
           headerStyle: { backgroundColor: "transparent" },
           headerLeft: Platform.OS === "web" ? () => logo : undefined,
           ...headerMenus(
@@ -167,7 +160,7 @@ export default function Home() {
           .map(toHome)}
         savedCount={offline.length}
         loading={recent.isLoading || saved.isPending}
-        error={s.offline ? null : recent.error}
+        error={saved.error ?? (s.offline ? null : recent.error)}
         sync={{
           offline: s.offline,
           pending: s.pending,
@@ -175,7 +168,7 @@ export default function Home() {
           run: s.sync,
         }}
         refresh={() => Promise.all([recent.refetch(), saved.refetch()])}
-        retry={() => void recent.refetch()}
+        retry={() => void Promise.all([recent.refetch(), saved.refetch()])}
         open={(id) => push("/quiz/[id]", id)}
         edit={(id) => push("/editor", id)}
         share={(id) => push("/share", id)}
@@ -184,6 +177,7 @@ export default function Home() {
         openLibrary={() => router.push("/library")}
         openSaved={() => router.push("/downloads")}
       />
+      {nativeBrand ? <NavigationTitleImage imageName="brand-logo" /> : null}
     </View>
   );
 }

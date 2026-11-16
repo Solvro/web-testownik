@@ -27,7 +27,12 @@ vi.mock("expo-file-system", () => ({
     }
   },
 }));
-vi.mock("../src/lib/api", () => ({ api: { request: mocks.request } }));
+vi.mock("../src/lib/api", () => ({
+  api: {
+    request: mocks.request,
+    forSession: () => ({ request: mocks.request }),
+  },
+}));
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -47,6 +52,22 @@ it("reads uppercase JSON filenames and a UTF-8 BOM inside archives", async () =>
     title: "Archive quiz",
     questions: [],
   });
+});
+it("ignores Finder metadata and parses numbered questions inside a folder", async () => {
+  const zip = new JSZip();
+  zip.file("__MACOSX/._quiz.json", "not quiz JSON");
+  zip.file("__MACOSX/Quiz/._001.txt", "AppleDouble metadata");
+  zip.file("Quiz/._002.txt", "AppleDouble metadata");
+  zip.file("Quiz/.DS_Store", "Finder preferences");
+  zip.file("Quiz/001.txt", "X10\n1. First question\nYes\nNo\n");
+  const bytes = await zip.generateAsync({ type: "arraybuffer" });
+  const result = normalizeImport(await readArchive(bytes, "Quiz.zip"));
+  expect(result.questions).toHaveLength(1);
+  expect(result.questions[0].text).toBe("First question");
+  expect(result.questions[0].answers.map((a) => a.is_correct)).toEqual([
+    true,
+    false,
+  ]);
 });
 it("rejects oversized decompressed JSON before parsing it", async () => {
   const zip = new JSZip();
@@ -142,4 +163,36 @@ it("native imported images use File multipart and reuse committed uploads on ret
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("preserves explicitly imported multiple-choice mode with a single correct answer", () => {
+  const imported = normalizeImport({
+    title: "Multiple mode",
+    questions: [
+      {
+        text: "Choose all applicable",
+        multiple: true,
+        answers: [
+          { text: "Currently correct", is_correct: true },
+          { text: "Currently wrong", is_correct: false },
+        ],
+      },
+    ],
+  });
+  expect(imported.questions[0].multiple).toBe(true);
+});
+
+it("uploads through the client captured for the importing account", async () => {
+  const request = vi.fn(async (..._args: unknown[]) => ({
+    id: "bound-upload",
+  }));
+  const image = "data:image/png;base64,YQ==";
+  await uploadImportedImages(
+    { questions: [{ image_url: image, answers: [] }] },
+    new Map(),
+    (_pl, en) => en,
+    { request: async <T>(...args: unknown[]) => (await request(...args)) as T },
+  );
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(mocks.request).not.toHaveBeenCalled();
 });
