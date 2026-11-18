@@ -114,8 +114,8 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
             <p className="text-muted-foreground max-w-prose text-xs">
               Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami
               pod adresem:{" "}
-              <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
-                kn.solvro@pwr.edu.pl
+              <a className="underline" href="mailto:testownik@solvro.pl">
+                testownik@solvro.pl
               </a>
             </p>
           </CardContent>
@@ -220,8 +220,8 @@ export function ProfileDetails({ userData, loading }: ProfileDetailsProps) {
             <p className="text-muted-foreground max-w-prose text-xs">
               Aby usunąć konto, pobrać lub zmienić dane, skontaktuj się z nami
               pod adresem:{" "}
-              <a className="underline" href="mailto:kn.solvro@pwr.edu.pl">
-                kn.solvro@pwr.edu.pl
+              <a className="underline" href="mailto:testownik@solvro.pl">
+                testownik@solvro.pl
               </a>
             </p>
           </CardContent>

@@ -1,4 +1,5 @@
 import type { AIUsageSummary } from "@testownik/core/ai/usage";
+import type { PendingLegalNotices } from "@testownik/core/legal/types";
 
 import type { AIModelsResponse } from "@/lib/ai/models";
 import type {
@@ -158,6 +159,16 @@ export class UserService extends BaseApiService {
   /**
    * Fetch current user data
    */
+  /** The terms and privacy policy versions the user still has to confirm. */
+  async getPendingLegalNotices(): Promise<PendingLegalNotices> {
+    const response = await this.get<PendingLegalNotices>("legal/pending/");
+    return response.data;
+  }
+
+  async confirmLegalVersions(versionIds: string[]): Promise<void> {
+    await this.post("legal/acceptances/", { versions: versionIds });
+  }
+
   async getUserData(): Promise<UserData> {
     const response = await this.get<UserData>("user/");
     return response.data;

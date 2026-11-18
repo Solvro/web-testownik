@@ -2,7 +2,7 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useRouter } from "next/navigation";
-import { useContext, useState } from "react";
+import { useContext, useState, useSyncExternalStore } from "react";
 
 import { AppContext } from "@/app-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -21,6 +21,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+import { OTP_EMAIL_STORAGE_KEY } from "@/lib/auth/constants";
 
 function getErrorMessage(errorCode: string | undefined): string | null {
   switch (errorCode) {
@@ -40,32 +41,42 @@ function getErrorMessage(errorCode: string | undefined): string | null {
   }
 }
 
+function subscribeToStorage(onStoreChange: () => void): () => void {
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getStoredEmail(): string | null {
+  return sessionStorage.getItem(OTP_EMAIL_STORAGE_KEY);
+}
+
+function getServerEmail(): string | null {
+  return null;
+}
+
 interface LoginOTPCodeClientProps {
-  email: string;
   error?: string;
 }
 
-export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
+export function LoginOTPCodeClient({ error }: LoginOTPCodeClientProps) {
   const appContext = useContext(AppContext);
   const router = useRouter();
+  const email = useSyncExternalStore(
+    subscribeToStorage,
+    getStoredEmail,
+    getServerEmail,
+  );
   const [otp, setOtp] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
     if (submitting || otp.length < 6) {
+      event.preventDefault();
       return;
     }
     setSubmitting(true);
-    const guestId = appContext.user?.user_id;
-    const guestParameter =
-      guestId === undefined ? "" : `&guest_id=${encodeURIComponent(guestId)}`;
-    router.push(
-      `/auth/login-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}${guestParameter}`,
-    );
-    setTimeout(() => {
-      setSubmitting(false);
-    }, 1000);
   };
 
   const errorMessage = getErrorMessage(error);
@@ -80,39 +91,68 @@ export function LoginOTPCodeClient({ email, error }: LoginOTPCodeClientProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col items-center">
-            <Label className="mb-2 text-sm font-medium" htmlFor="otp">
-              Wprowadź kod jednorazowy
-            </Label>
-            <InputOTP
-              id="otp"
-              maxLength={6}
-              value={otp}
-              onChange={(value) => {
-                setOtp(value);
-              }}
-              pattern={REGEXP_ONLY_DIGITS}
+          {email === null ? (
+            <p className="text-muted-foreground text-center text-sm">
+              Nie znamy adresu e-mail, na który wysłano kod.{" "}
+              <Button
+                variant="link"
+                className="h-auto p-0"
+                onClick={() => {
+                  router.push("/login-otp");
+                }}
+              >
+                Wprowadź go ponownie
+              </Button>
+            </p>
+          ) : (
+            <form
+              method="post"
+              action="/auth/login-otp"
+              onSubmit={handleSubmit}
+              className="flex flex-col items-center"
             >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-            <Button
-              type="submit"
-              disabled={submitting || otp.length < 6}
-              className="mt-6 w-full"
-            >
-              {submitting ? "Logowanie..." : "Zaloguj się"}
-            </Button>
-          </form>
+              <input type="hidden" name="email" value={email} />
+              <input type="hidden" name="otp" value={otp} />
+              {appContext.user?.user_id === undefined ? null : (
+                <input
+                  type="hidden"
+                  name="guest_id"
+                  value={appContext.user.user_id}
+                />
+              )}
+              <Label className="mb-2 text-sm font-medium" htmlFor="otp">
+                Wprowadź kod jednorazowy
+              </Label>
+              <InputOTP
+                id="otp"
+                maxLength={6}
+                value={otp}
+                onChange={(value) => {
+                  setOtp(value);
+                }}
+                pattern={REGEXP_ONLY_DIGITS}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+              <Button
+                type="submit"
+                disabled={submitting || otp.length < 6}
+                className="mt-6 w-full"
+              >
+                {submitting ? "Logowanie..." : "Zaloguj się"}
+              </Button>
+            </form>
+          )}
           {errorMessage != null && (
             <Alert variant="destructive" className="mt-4 space-y-2">
               <AlertDescription>

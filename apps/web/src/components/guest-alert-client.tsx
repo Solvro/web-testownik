@@ -1,19 +1,13 @@
 "use client";
 
 import { ACCOUNT_TYPE } from "@testownik/core/user/types";
-import { IdCardLanyardIcon, XIcon } from "lucide-react";
+import { IdCardLanyardIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { AppContext } from "@/app-context";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { CompactNotice } from "@/components/compact-notice";
 import { setCookie } from "@/lib/cookies";
 
 interface GuestAlertClientProps {
@@ -52,64 +46,27 @@ export function GuestAlertClient({
   }
 
   return (
-    <Alert variant="default">
-      <IdCardLanyardIcon />
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Ukryj"
-              onClick={() => {
-                setIsHidden(true);
-                setCookie("guest-alert-hidden", "true", {
-                  maxAge: 60 * 60 * 24 * 3,
-                }); // 3 days
-              }}
-              className="text-muted-foreground hover:text-foreground absolute top-0 right-0 m-1"
-            >
-              <XIcon />
-            </Button>
-          }
-        ></TooltipTrigger>
-        <TooltipContent>Ukryj na 3 dni</TooltipContent>
-      </Tooltip>
-      <AlertTitle>Korzystasz z konta gościa</AlertTitle>
-      <AlertDescription>
-        {isJustCreated ? (
-          <>
-            <p>
-              Utworzyliśmy dla Ciebie tymczasowe konto gościa, abyś mógł zacząć
-              korzystać z Testownika bez rejestracji. Pamiętaj jednak, że konto
-              gościa ma ograniczone możliwości i dane z tego konta{" "}
-              <b>zostaną usunięte po 30 dniach bez aktywności</b>.{" "}
-              <Link
-                href="/login"
-                className="underline-offset-2 hover:underline"
-              >
-                Zaloguj się
-              </Link>{" "}
-              aby korzystać ze wszystkich funkcji Testownika i zachować swoje
-              postępy!
-            </p>
-            <p>
-              Kontynuując korzystanie z Testownika, potwierdzasz, że akceptujesz{" "}
-              <Link href="/privacy-policy">politykę prywatności</Link> i warunki
-              korzystania z aplikacji.
-            </p>
-          </>
-        ) : (
-          <p>
-            Konto gościa jest tymczasowe. Dane{" "}
-            <b>zostaną usunięte po 30 dniach bez aktywności</b>.{" "}
-            <Link href="/login" className="underline-offset-2 hover:underline">
-              Zaloguj się
-            </Link>{" "}
-            aby zachować postępy i korzystać ze wszystkich funkcji
-          </p>
-        )}
-      </AlertDescription>
-    </Alert>
+    <CompactNotice
+      icon={IdCardLanyardIcon}
+      dismissLabel="Ukryj na 3 dni"
+      onDismiss={() => {
+        setIsHidden(true);
+        setCookie("guest-alert-hidden", "true", {
+          maxAge: 60 * 60 * 24 * 3,
+        }); // 3 days
+      }}
+    >
+      Konto gościa jest tymczasowe – dane{" "}
+      <b>znikną po 30 dniach bez aktywności</b>.{" "}
+      <Link href="/login">Zaloguj się</Link>, aby je zachować.
+      {isJustCreated ? (
+        <>
+          {" "}
+          Korzystając dalej, akceptujesz <Link href="/terms">Regulamin</Link> i
+          potwierdzasz zapoznanie się z{" "}
+          <Link href="/privacy-policy">Polityką Prywatności</Link>.
+        </>
+      ) : null}
+    </CompactNotice>
   );
 }

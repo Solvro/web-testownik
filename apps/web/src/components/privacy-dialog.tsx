@@ -62,19 +62,21 @@ export function PrivacyDialog({ open, onOpenChange }: PrivacyDialogProps) {
             </li>
             <li>
               <TypographyInlineCode>studies</TypographyInlineCode> - Informacje
-              o Twoich studiach, takie jak numer indeksu, kierunek studiów oraz
-              twoje grupy zajęciowe. Użyjemy to żeby ułatwić ci udostępnianie
-              quizów dla twoich grup.
+              o Twoich studiach: numer indeksu, grupy zajęciowe, wydział,
+              kierunek i aktualny semestr. Grupy ułatwiają udostępnianie quizów,
+              a wydział, kierunek i semestr pomagają nam analizować korzystanie
+              z Testownika oraz dopasowywać do Ciebie treści i polecane quizy.
             </li>
             <li>
               <TypographyInlineCode>email</TypographyInlineCode> - Twój adres
-              email (najczęściej [nr_indeksu]@student.pwr.edu.pl), który jest
-              używany do kontaktu przy zgłaszaniu błędów w quizach.
+              email (najczęściej [nr_indeksu]@student.pwr.edu.pl), na który
+              wysyłamy kody logowania i powiadomienia. Gdy zgłosisz problem z
+              pytaniem, przekażemy go autorowi quizu, żeby mógł Ci odpowiedzieć.
             </li>
             <li>
               <TypographyInlineCode>photo</TypographyInlineCode> - Twoje zdjęcie
-              profilowe, które jest wyświetlane w górnym prawym rogu strony oraz
-              przy wyszukiwaniu osób.
+              profilowe, które jest wyświetlane w górnym prawym rogu strony,
+              przy wyszukiwaniu osób oraz przy Twoich quizach i komentarzach.
             </li>
             <li>
               <TypographyInlineCode>grades</TypographyInlineCode> - Twoje oceny

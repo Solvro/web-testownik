@@ -11,17 +11,26 @@ export async function fetchProfileAvatar(url: string): Promise<File> {
   });
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** A stable avatar seed that doesn't reveal who the user is to DiceBear. */
+export async function getAvatarSeed(userId: string): Promise<string> {
+  return await sha256Hex(userId);
+}
+
 export async function getGravatarUrl(email: string): Promise<string | null> {
   const normalizedEmail = email.trim().toLowerCase();
   if (normalizedEmail.length === 0) {
     return null;
   }
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(normalizedEmail),
-  );
-  const hash = [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+  const hash = await sha256Hex(normalizedEmail);
   return `https://gravatar.com/avatar/${hash}?s=256&d=identicon&r=g`;
 }

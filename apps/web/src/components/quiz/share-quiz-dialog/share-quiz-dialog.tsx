@@ -158,13 +158,10 @@ export function ShareQuizDialog({
       );
       data = [...data, ...matchedGroups];
 
-      // If query is exactly 6 digits, prioritize matching student_number
+      // A bare student number only matches that user exactly, so keep it first
       let userByIndex: User | undefined;
-      if (query.length === 6 && !Number.isNaN(Number.parseInt(query))) {
-        userByIndex = data.find(
-          (object) =>
-            "student_number" in object && object.student_number === query,
-        ) as User | undefined;
+      if (/^\d{6}$/.test(query)) {
+        userByIndex = users.at(0);
         if (userByIndex != null) {
           data = data.filter((item) => item !== userByIndex);
         }

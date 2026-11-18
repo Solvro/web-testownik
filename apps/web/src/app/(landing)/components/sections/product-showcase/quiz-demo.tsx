@@ -112,7 +112,7 @@ function QuizShareOverlay({
         (user) =>
           !takenIds.has(user.id) &&
           (user.full_name.toLowerCase().includes(normalized) ||
-            user.student_number.includes(normalized)),
+            user.student_number === normalized),
       ),
     );
   };

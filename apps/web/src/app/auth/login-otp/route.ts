@@ -3,50 +3,45 @@ import type { NextRequest } from "next/server";
 
 import { API_URL } from "@/lib/api";
 
-export async function GET(request: NextRequest) {
-  const email = request.nextUrl.searchParams.get("email");
-  const otp = request.nextUrl.searchParams.get("otp");
+// 303 turns the form POST into a GET on the redirect target.
+function redirectTo(path: string, request: NextRequest) {
+  return NextResponse.redirect(new URL(path, request.url), 303);
+}
 
-  if (email === null || email.trim() === "") {
-    return NextResponse.redirect(
-      new URL("/login-otp?error=missing_email", request.url),
-    );
+// Form POST keeps the email and code out of URLs, where analytics and logs would see them.
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const email = formData.get("email");
+  const otp = formData.get("otp");
+  const guestId = formData.get("guest_id");
+
+  if (typeof email !== "string" || email.trim() === "") {
+    return redirectTo("/login-otp?error=missing_email", request);
   }
 
-  if (otp === null || otp.trim() === "") {
-    return NextResponse.redirect(
-      new URL(
-        `/login-otp/code?email=${encodeURIComponent(email)}&error=missing_otp`,
-        request.url,
-      ),
-    );
+  if (typeof otp !== "string" || otp.trim() === "") {
+    return redirectTo("/login-otp/code?error=missing_otp", request);
   }
 
   try {
-    const guestId = request.nextUrl.searchParams.get("guest_id");
-
     const backendResponse = await fetch(`${API_URL}/login-otp/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email.trim(),
         otp,
-        ...(guestId === null ? {} : { guest_id: guestId }),
+        ...(typeof guestId === "string" && guestId !== ""
+          ? { guest_id: guestId }
+          : {}),
       }),
     });
 
     if (!backendResponse.ok) {
       console.error("Failed to login with OTP", await backendResponse.json());
-      return NextResponse.redirect(
-        new URL(
-          `/login-otp/code?email=${encodeURIComponent(email)}&error=invalid_otp`,
-          request.url,
-        ),
-      );
+      return redirectTo("/login-otp/code?error=invalid_otp", request);
     }
 
-    const redirectUrl = new URL("/", request.url);
-    const result = NextResponse.redirect(redirectUrl);
+    const result = redirectTo("/", request);
 
     const setCookieHeaders = backendResponse.headers.getSetCookie();
     for (const cookie of setCookieHeaders) {
@@ -55,11 +50,6 @@ export async function GET(request: NextRequest) {
 
     return result;
   } catch {
-    return NextResponse.redirect(
-      new URL(
-        `/login-otp/code?email=${encodeURIComponent(email)}&error=server_error`,
-        request.url,
-      ),
-    );
+    return redirectTo("/login-otp/code?error=server_error", request);
   }
 }
