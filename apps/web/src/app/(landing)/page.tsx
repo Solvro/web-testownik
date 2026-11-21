@@ -42,10 +42,16 @@ export const metadata: Metadata = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<LandingSearchParameters>;
+  searchParams: Promise<LandingSearchParameters & { error?: string }>;
 }) {
-  const user = await getServerCurrentUser();
   const parameters = await searchParams;
+  // The layout's ErrorHandler shows the banned screen, which the landing's
+  // hero would otherwise cover.
+  if (parameters.error === "user_banned") {
+    return null;
+  }
+
+  const user = await getServerCurrentUser();
 
   if (user != null && !isLandingRequest(parameters)) {
     redirect("/quizzes");
