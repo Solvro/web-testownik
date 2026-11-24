@@ -28,6 +28,8 @@ export enum PermissionAction {
   UPLOAD_PROFILE_PHOTO = "upload_profile_photo",
   // Editing the user's profile name
   EDIT_PROFILE_NAME = "edit_profile_name",
+  // Connecting third-party apps (ChatGPT, Claude, MCP clients) over OAuth
+  CONNECT_APPS = "connect_apps",
 }
 
 export const PERMISSIONS_BY_ROLE: Record<
@@ -50,6 +52,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
     PermissionAction.VIEW_WRAPPED,
+    PermissionAction.CONNECT_APPS,
     PermissionAction.EDIT_PROFILE_NAME,
   ],
   [ACCOUNT_TYPE.STUDENT]: [
@@ -65,6 +68,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
     PermissionAction.VIEW_WRAPPED,
+    PermissionAction.CONNECT_APPS,
   ],
   [ACCOUNT_TYPE.LECTURER]: [
     PermissionAction.UPLOAD_PROFILE_PHOTO,
@@ -77,6 +81,7 @@ export const PERMISSIONS_BY_ROLE: Record<
     PermissionAction.AI_FEATURES,
     PermissionAction.VIEW_QUIZ_STATS,
     PermissionAction.VIEW_WRAPPED,
+    PermissionAction.CONNECT_APPS,
   ],
 };
 
