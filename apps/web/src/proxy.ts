@@ -39,6 +39,7 @@ function authRedirect(url: string | URL): NextResponse {
  * their parameter looks like.
  */
 const PUBLIC_ASSET_PREFIXES = [
+  "/.well-known/",
   "/banned-screen/",
   "/favicon/",
   "/images/",
