@@ -37,3 +37,18 @@ describe("profile photo upload permission", () => {
     ).toBe(false);
   });
 });
+
+describe("connecting apps over OAuth", () => {
+  it.each(ACCOUNT_TYPES)(
+    "%s accounts follow the no-guests rule",
+    (accountType) => {
+      expect(hasPermission(accountType, PermissionAction.CONNECT_APPS)).toBe(
+        accountType !== "guest",
+      );
+    },
+  );
+
+  it("is not granted without an account", () => {
+    expect(hasPermission(undefined, PermissionAction.CONNECT_APPS)).toBe(false);
+  });
+});

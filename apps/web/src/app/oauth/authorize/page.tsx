@@ -1,4 +1,3 @@
-import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -7,6 +6,7 @@ import {
   buildOAuthAuthorizePath,
   splitLoginError,
 } from "@/lib/auth/login-redirect";
+import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
 import { getServerCurrentUser } from "@/lib/auth/server";
 
 import { OAuthAuthorizeClient } from "./client";
@@ -45,7 +45,7 @@ export default async function OAuthAuthorizePage({
     redirect(buildLoginPath(returnPath, loginError));
   }
 
-  if (currentUser.account_type === ACCOUNT_TYPE.GUEST) {
+  if (!hasPermission(currentUser.account_type, PermissionAction.CONNECT_APPS)) {
     return <OAuthGuestNotice loginPath={buildLoginPath(returnPath)} />;
   }
 
