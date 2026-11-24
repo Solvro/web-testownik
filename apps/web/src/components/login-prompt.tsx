@@ -18,20 +18,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
-
-function buildLoginUrl(
-  base: string,
-  redirectUrl: string,
-  guestId?: string,
-): string {
-  const url = new URL(`${API_URL}${base}`);
-  url.searchParams.set("jwt", "true");
-  url.searchParams.set("redirect", redirectUrl);
-  if (guestId !== undefined) {
-    url.searchParams.set("guest_id", guestId);
-  }
-  return url.toString();
-}
+import {
+  buildBackendLoginUrl,
+  isOAuthAuthorizePath,
+} from "@/lib/auth/login-redirect";
 
 const createGuestAccount = async (): Promise<boolean> => {
   try {
@@ -59,6 +49,8 @@ export function LoginPrompt(): React.JSX.Element {
   const searchParameters = useSearchParams();
 
   const redirect = searchParameters.get("redirect");
+  // Apps cannot be connected to a guest account.
+  const canContinueAsGuest = !isOAuthAuthorizePath(redirect);
 
   useEffect(() => {
     const url = new URL(redirect ?? "/quizzes", window.location.origin);
@@ -85,7 +77,14 @@ export function LoginPrompt(): React.JSX.Element {
                 size="lg"
                 className="w-full"
                 render={
-                  <a href={buildLoginUrl("/login/usos", redirectUrl, guestId)}>
+                  <a
+                    href={buildBackendLoginUrl(
+                      API_URL,
+                      "/login/usos/",
+                      redirectUrl,
+                      guestId,
+                    )}
+                  >
                     <LogInIcon />
                     Zaloguj przez USOS
                   </a>
@@ -110,7 +109,12 @@ export function LoginPrompt(): React.JSX.Element {
                 render={(props) => (
                   <a
                     {...props}
-                    href={buildLoginUrl("/login", redirectUrl, guestId)}
+                    href={buildBackendLoginUrl(
+                      API_URL,
+                      "/login/",
+                      redirectUrl,
+                      guestId,
+                    )}
                   >
                     <LogInIcon />
                     Zaloguj się przez e-mail
@@ -118,27 +122,29 @@ export function LoginPrompt(): React.JSX.Element {
                 )}
               ></Button>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={async () => {
-                  if (user?.account_type === ACCOUNT_TYPE.GUEST) {
-                    router.push(redirect ?? "/quizzes");
-                  } else {
-                    const result = await createGuestAccount();
-                    if (result) {
+              {canContinueAsGuest ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    if (user?.account_type === ACCOUNT_TYPE.GUEST) {
                       router.push(redirect ?? "/quizzes");
                     } else {
-                      toast.error(
-                        "Nie udało się utworzyć konta gościa. Spróbuj ponownie.",
-                      );
+                      const result = await createGuestAccount();
+                      if (result) {
+                        router.push(redirect ?? "/quizzes");
+                      } else {
+                        toast.error(
+                          "Nie udało się utworzyć konta gościa. Spróbuj ponownie.",
+                        );
+                      }
                     }
-                  }
-                }}
-              >
-                <IdCardLanyardIcon />
-                Kontynuuj jako gość
-              </Button>
+                  }}
+                >
+                  <IdCardLanyardIcon />
+                  Kontynuuj jako gość
+                </Button>
+              ) : null}
             </div>
 
             <div className="text-center">
