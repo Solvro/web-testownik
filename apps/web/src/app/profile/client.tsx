@@ -26,6 +26,7 @@ import {
   useUpdateUserSettings,
   useUserSettings,
 } from "@/hooks/use-user-settings";
+import { PermissionAction } from "@/lib/auth/permissions";
 import type { JWTPayload } from "@/lib/auth/types";
 
 const PROFILE_TABS = [
@@ -39,12 +40,18 @@ const PROFILE_TAB_QUERY_PARAM = "tab";
 
 type ProfileTab = (typeof PROFILE_TABS)[number];
 
-function isProfileTab(value: string): value is ProfileTab {
-  return PROFILE_TABS.includes(value as ProfileTab);
+function isProfileTab(
+  value: string,
+  availableTabs: readonly ProfileTab[],
+): value is ProfileTab {
+  return availableTabs.includes(value as ProfileTab);
 }
 
-function getProfileTabFromQuery(tab: string | null): ProfileTab | null {
-  return tab !== null && isProfileTab(tab) ? tab : null;
+function getProfileTabFromQuery(
+  tab: string | null,
+  availableTabs: readonly ProfileTab[],
+): ProfileTab | null {
+  return tab !== null && isProfileTab(tab, availableTabs) ? tab : null;
 }
 
 function getUserProfilePlaceholder(
@@ -67,9 +74,14 @@ export function ProfilePageClient(): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const searchParameters = useSearchParams();
-  const { user } = useContext(AppContext);
+  const { user, checkPermission } = useContext(AppContext);
+  const canConnectApps = checkPermission(PermissionAction.CONNECT_APPS);
+  const availableTabs = canConnectApps
+    ? PROFILE_TABS
+    : PROFILE_TABS.filter((tab) => tab !== "authorized-apps");
   const tabParameter = searchParameters.get(PROFILE_TAB_QUERY_PARAM);
-  const activeTab = getProfileTabFromQuery(tabParameter) ?? DEFAULT_PROFILE_TAB;
+  const activeTab =
+    getProfileTabFromQuery(tabParameter, availableTabs) ?? DEFAULT_PROFILE_TAB;
   const { data: userData, isPending: isUserDataPending } = useUserProfile({
     placeholderData: getUserProfilePlaceholder(user),
   });
@@ -88,7 +100,7 @@ export function ProfilePageClient(): React.JSX.Element {
   useEffect(() => {
     if (
       tabParameter === null ||
-      getProfileTabFromQuery(tabParameter) !== null
+      getProfileTabFromQuery(tabParameter, availableTabs) !== null
     ) {
       return;
     }
@@ -100,7 +112,7 @@ export function ProfilePageClient(): React.JSX.Element {
     router.replace(
       queryString === "" ? pathname : `${pathname}?${queryString}`,
     );
-  }, [pathname, router, searchParameters, tabParameter]);
+  }, [availableTabs, pathname, router, searchParameters, tabParameter]);
 
   const handleSettingChange = <K extends keyof UserSettings>(
     name: K,
@@ -113,7 +125,7 @@ export function ProfilePageClient(): React.JSX.Element {
     if (tabKey === "privacy-policy" || tabKey === "terms") {
       return;
     }
-    if (!isProfileTab(tabKey)) {
+    if (!isProfileTab(tabKey, availableTabs)) {
       return;
     }
 
@@ -141,7 +153,9 @@ export function ProfilePageClient(): React.JSX.Element {
           <TabsTrigger value="account">Konto</TabsTrigger>
           <TabsTrigger value="settings">Ustawienia</TabsTrigger>
           <TabsTrigger value="notifications">Powiadomienia</TabsTrigger>
-          <TabsTrigger value="authorized-apps">Integracje</TabsTrigger>
+          {canConnectApps ? (
+            <TabsTrigger value="authorized-apps">Integracje</TabsTrigger>
+          ) : null}
           <TabsTrigger
             value="terms"
             className="hidden md:inline-flex"
@@ -202,9 +216,11 @@ export function ProfilePageClient(): React.JSX.Element {
               disabled={areSettingsDisabled}
             />
           </TabsContent>
-          <TabsContent value="authorized-apps" className="space-y-6 md:mt-0">
-            <AuthorizedAppsList />
-          </TabsContent>
+          {canConnectApps ? (
+            <TabsContent value="authorized-apps" className="space-y-6 md:mt-0">
+              <AuthorizedAppsList />
+            </TabsContent>
+          ) : null}
         </div>
       </ResponsiveTabs>
     </div>
