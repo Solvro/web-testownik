@@ -40,7 +40,9 @@ export function GuestAlertClient({
   if (
     user?.account_type !== ACCOUNT_TYPE.GUEST ||
     isHidden ||
-    pathname === "/login"
+    pathname === "/login" ||
+    // The authorize page explains that guests have to sign in.
+    pathname.startsWith("/oauth/")
   ) {
     return null;
   }

@@ -1,9 +1,16 @@
+import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import {
+  buildLoginPath,
+  buildOAuthAuthorizePath,
+  splitLoginError,
+} from "@/lib/auth/login-redirect";
 import { getServerCurrentUser } from "@/lib/auth/server";
 
 import { OAuthAuthorizeClient } from "./client";
+import { OAuthGuestNotice } from "./guest-notice";
 
 export const metadata: Metadata = {
   title: "Autoryzacja aplikacji",
@@ -21,39 +28,25 @@ function normalizeSearchParameters(
   );
 }
 
-function buildReturnPath(
-  authorizationParameters: Record<string, string | string[]>,
-) {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(authorizationParameters)) {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        query.append(key, item);
-      }
-    } else {
-      query.set(key, value);
-    }
-  }
-
-  const queryString = query.toString();
-  return queryString.length > 0
-    ? `/oauth/authorize?${queryString}`
-    : "/oauth/authorize";
-}
-
 export default async function OAuthAuthorizePage({
   searchParams,
 }: {
   searchParams: Promise<SearchParameters>;
 }) {
-  const authorizationParameters = normalizeSearchParameters(await searchParams);
+  // A failed sign-in comes back here with `?error=`; it belongs to the login
+  // page, not to the authorization request.
+  const { parameters: authorizationParameters, loginError } = splitLoginError(
+    normalizeSearchParameters(await searchParams),
+  );
+  const returnPath = buildOAuthAuthorizePath(authorizationParameters);
   const currentUser = await getServerCurrentUser();
 
   if (currentUser === null) {
-    const loginParameters = new URLSearchParams({
-      redirect: buildReturnPath(authorizationParameters),
-    });
-    redirect(`/login?${loginParameters.toString()}`);
+    redirect(buildLoginPath(returnPath, loginError));
+  }
+
+  if (currentUser.account_type === ACCOUNT_TYPE.GUEST) {
+    return <OAuthGuestNotice loginPath={buildLoginPath(returnPath)} />;
   }
 
   return (
