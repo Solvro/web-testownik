@@ -7,7 +7,7 @@ import {
   LogInIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useContext } from "react";
 
 import { AppContext } from "@/app-context";
@@ -22,6 +22,7 @@ import {
   getAccountLevelAvatarClassName,
   getAccountLevelCtaClassName,
 } from "@/lib/account-level";
+import { getHeaderLoginHref } from "@/lib/auth/login-redirect";
 import { cn } from "@/lib/utils";
 
 interface AuthButtonsProps {
@@ -34,10 +35,8 @@ export function AuthButtons({ onNavigate }: AuthButtonsProps) {
   const profilePicture = user?.photo;
 
   const pathname = usePathname();
-  const loginHref =
-    pathname === "/" || pathname === "/login"
-      ? "/login"
-      : `/login?redirect=${encodeURIComponent(pathname)}`;
+  const searchParameters = useSearchParams();
+  const loginHref = getHeaderLoginHref(pathname, searchParameters.toString());
 
   if (isGuest) {
     return (
