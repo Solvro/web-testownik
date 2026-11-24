@@ -233,7 +233,7 @@ export function createPreviewServices(
       return PREVIEW_DIRECTORY.filter(
         (user) =>
           user.full_name.toLowerCase().includes(needle) ||
-          user.student_number.includes(needle),
+          user.student_number === needle,
       );
     }),
     updateQuiz: reply((_quizId: string, data: Partial<Quiz>) => {

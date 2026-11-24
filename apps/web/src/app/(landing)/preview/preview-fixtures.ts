@@ -239,7 +239,10 @@ function avatar(name: string): string {
   return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
-export const PREVIEW_CREATOR: User = {
+/** The API never returns index numbers; the fixtures keep them so search can match one exactly. */
+type PreviewUser = User & { student_number: string };
+
+export const PREVIEW_CREATOR: PreviewUser = {
   id: "u-0",
   full_name: "Antoni Czaplicki",
   photo: "https://github.com/Antoni-Czaplicki.png",
@@ -248,7 +251,7 @@ export const PREVIEW_CREATOR: User = {
   account_level: ACCOUNT_LEVEL.GOLD,
 };
 
-export const PREVIEW_SHARED_WITH: User[] = [
+export const PREVIEW_SHARED_WITH: PreviewUser[] = [
   {
     id: "u-1",
     full_name: "Ola Nowak",
@@ -264,7 +267,7 @@ export const PREVIEW_SHARED_WITH: User[] = [
   },
 ];
 
-export const PREVIEW_DIRECTORY: User[] = [
+export const PREVIEW_DIRECTORY: PreviewUser[] = [
   ...PREVIEW_SHARED_WITH,
   {
     id: "u-3",

@@ -70,7 +70,6 @@ describe("Version history labels", () => {
         id: "u1",
         full_name: "Ada Autorka",
         photo: "",
-        student_number: "",
       },
       source: "editor",
       restored_from: null,

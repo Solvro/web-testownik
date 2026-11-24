@@ -19,7 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { useUpdateProfilePhoto } from "@/hooks/use-user-profile";
 import { PermissionAction, hasPermission } from "@/lib/auth/permissions";
-import { fetchProfileAvatar, getGravatarUrl } from "@/lib/profile-avatars";
+import {
+  fetchProfileAvatar,
+  getAvatarSeed,
+  getGravatarUrl,
+} from "@/lib/profile-avatars";
 import { cn, getInitials } from "@/lib/utils";
 import { getUserService } from "@/services";
 
@@ -64,10 +68,20 @@ export function ProfilePhotoDialog({
     PermissionAction.UPLOAD_PROFILE_PHOTO,
     userData.account_level,
   );
-  const avatarOptions = getProfileAvatarOptions(
-    userData.full_name,
-    gravatarUrl,
-  );
+  const { data: avatarSeed = null } = useQuery({
+    queryKey: ["profile-avatar-seed", userData.id],
+    queryFn: async () => await getAvatarSeed(userData.id),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const avatarOptions =
+    avatarSeed === null
+      ? []
+      : getProfileAvatarOptions(
+          avatarSeed,
+          getInitials(userData.full_name),
+          gravatarUrl,
+        );
 
   useEffect(() => {
     if (upload === null) {

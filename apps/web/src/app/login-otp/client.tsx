@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OTP_EMAIL_STORAGE_KEY } from "@/lib/auth/constants";
 import { getUserService } from "@/services";
 
 function getUrlErrorMessage(errorCode: string | null): string | null {
@@ -48,8 +49,8 @@ export function LoginOTPPageClient() {
     try {
       await getUserService().generateOTP(email);
       setError(null);
-      // Redirect to code entry page
-      router.push(`/login-otp/code?email=${encodeURIComponent(email.trim())}`);
+      sessionStorage.setItem(OTP_EMAIL_STORAGE_KEY, email.trim());
+      router.push("/login-otp/code");
     } catch (error_) {
       const apiError = error_ as Error;
       if (apiError.message.includes("404")) {

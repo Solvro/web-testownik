@@ -83,6 +83,10 @@ export function ReportQuestionIssueDialog({
             }}
             placeholder="Opisz co jest nie tak z tym pytaniem..."
           />
+          <p className="text-muted-foreground text-xs">
+            Zgłoszenie trafi e-mailem do autora quizu razem z Twoim imieniem,
+            nazwiskiem i adresem e-mail, aby mógł Ci odpowiedzieć.
+          </p>
         </div>
         <DialogFooter>
           <DialogClose

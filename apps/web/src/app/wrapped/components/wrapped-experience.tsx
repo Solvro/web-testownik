@@ -152,8 +152,11 @@ function WrappedLogin({
 
 export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
   const { checkPermission, user } = useContext(AppContext);
+  const isGlobalForbidden = mode === "global" && user?.is_staff !== true;
   const canViewWrapped =
-    checkPermission(PermissionAction.VIEW_WRAPPED) || mode === "global";
+    mode === "global"
+      ? !isGlobalForbidden
+      : checkPermission(PermissionAction.VIEW_WRAPPED);
 
   // Theme settings: defaults < easter-egg (temporary React state).
   const [easterSettings, setEasterSettings] =
@@ -192,6 +195,16 @@ export function WrappedExperience({ mode }: { mode: "user" | "global" }) {
     enabled: canViewWrapped,
     staleTime: 5 * 60 * 1000,
   });
+
+  if (isGlobalForbidden) {
+    return (
+      <WrappedCard>
+        <p style={{ fontSize: "18px", opacity: 0.85 }}>
+          Testownik Wrapped jest obecnie niedostępny.
+        </p>
+      </WrappedCard>
+    );
+  }
 
   if (!canViewWrapped) {
     return (

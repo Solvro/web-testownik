@@ -2,14 +2,14 @@
 
 import { ACCOUNT_TYPE } from "@testownik/core/user/types";
 import { IdCardLanyardIcon, LogInIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppContext } from "@/app-context";
-import { AppLogo } from "@/components/app-logo";
+import { AppLogoFull } from "@/components/app-logo";
 import { PrivacyDialog } from "@/components/privacy-dialog";
-import { SolvroLogo } from "@/components/solvro-logo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -74,7 +74,7 @@ export function LoginPrompt(): React.JSX.Element {
         <>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex justify-center">
-              <AppLogo />
+              <AppLogoFull />
             </div>
             <CardDescription>Twoje narzędzie do nauki</CardDescription>
           </CardHeader>
@@ -153,26 +153,20 @@ export function LoginPrompt(): React.JSX.Element {
               </Button>
             </div>
           </CardContent>
-          <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-1 border-t p-4 text-center text-xs">
-            <span>Powered by</span>
-            <a
-              className="inline-flex items-center gap-1"
-              href="https://solvro.pwr.edu.pl/"
-              target="_blank"
-              rel="noopener noreferrer"
+          <p className="text-muted-foreground border-t p-4 text-center text-xs text-balance">
+            Logując się, akceptujesz{" "}
+            <Link href="/terms" className="underline underline-offset-2">
+              Regulamin
+            </Link>{" "}
+            i potwierdzasz zapoznanie się z{" "}
+            <Link
+              href="/privacy-policy"
+              className="underline underline-offset-2"
             >
-              <SolvroLogo width={16} /> Solvro
-            </a>
-            <span className="font-semibold">&</span>
-            <span>created by</span>
-            <a
-              href="https://github.com/Antoni-Czaplicki"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Antoni Czaplicki
-            </a>
-          </div>
+              Polityką Prywatności
+            </Link>
+            .
+          </p>
         </>
       </Card>
 

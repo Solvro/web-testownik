@@ -133,15 +133,26 @@ export function Finale({
             Maksym Tarasiuk
           </a>
         </span>
-        <Link
-          href="/privacy-policy"
-          className={cn(
-            "inline-flex min-h-11 items-center justify-center rounded-sm sm:min-h-6",
-            FOCUS_RING,
-          )}
-        >
-          PRYWATNOŚĆ
-        </Link>
+        <nav aria-label="Dokumenty" className="flex justify-center gap-6">
+          <Link
+            href="/terms"
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center rounded-sm sm:min-h-6",
+              FOCUS_RING,
+            )}
+          >
+            REGULAMIN
+          </Link>
+          <Link
+            href="/privacy-policy"
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center rounded-sm sm:min-h-6",
+              FOCUS_RING,
+            )}
+          >
+            PRYWATNOŚĆ
+          </Link>
+        </nav>
       </footer>
     </section>
   );

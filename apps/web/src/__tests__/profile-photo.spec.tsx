@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { UserData } from "@testownik/core/user/types";
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfilePhotoDialog } from "@/components/profile/profile-photo-dialog";
@@ -42,6 +42,8 @@ vi.mock("@/services", () => ({
 const profile: UserData = {
   id: "user-1",
   full_name: "Anna Nowak",
+  first_name: "Anna",
+  last_name: "Nowak",
   photo: null,
   student_number: "123",
   email: "anna@example.com",
@@ -190,17 +192,43 @@ describe("profile photo editor", () => {
   });
 
   it.each([null, "", "   "])(
-    "keeps initials as the eighth option without an email (%s)",
-    (email) => {
+    "keeps eight generated avatars without an email (%s)",
+    async (email) => {
       setup({ ...profile, email });
+      expect(
+        await screen.findByRole("button", { name: "Awatar 8" }),
+      ).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "Gravatar" }),
       ).not.toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Awatar 8" }),
-      ).toBeInTheDocument();
     },
   );
+
+  it("sends only the first letters for the initials avatar", async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: vi
+        .fn()
+        .mockResolvedValue(new Blob(["initials"], { type: "image/png" })),
+    });
+    vi.stubGlobal("fetch", fetch);
+    mocks.upload.mockResolvedValue({ ...profile, has_custom_photo: true });
+    const { onClose } = setup({ ...profile, email: null });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Awatar 8" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Zapisz zdjęcie" }),
+    );
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.dicebear.com/9.x/initials/png?seed=AN",
+    );
+  });
 
   it.each(levelsWithoutUpload)(
     "lets %s users pick a predefined avatar but not upload a file",
@@ -229,9 +257,11 @@ describe("profile photo editor", () => {
       expect(
         screen.queryByRole("button", { name: "Dodaj własne zdjęcie" }),
       ).not.toBeInTheDocument();
-      expect(screen.getAllByRole("button", { name: /^Awatar / })).toHaveLength(
-        8,
-      );
+      expect(
+        await screen.findAllByRole("button", {
+          name: /^(Awatar |Gravatar$)/,
+        }),
+      ).toHaveLength(8);
       await userEvent.click(screen.getByRole("button", { name: "Awatar 2" }));
       expect(screen.getByRole("button", { name: "Awatar 2" })).toHaveAttribute(
         "aria-pressed",
@@ -243,9 +273,11 @@ describe("profile photo editor", () => {
       await waitFor(() => {
         expect(onClose).toHaveBeenCalledOnce();
       });
+      const seed = createHash("sha256").update(profile.id).digest("hex");
       expect(fetch).toHaveBeenCalledWith(
-        "https://api.dicebear.com/9.x/adventurer/png?seed=Anna%20Nowak%202",
+        `https://api.dicebear.com/9.x/adventurer/png?seed=${seed}%202`,
       );
+      expect(JSON.stringify(fetch.mock.calls)).not.toContain("Anna");
       const uploaded = mocks.upload.mock.calls[0][0] as File;
       expect(uploaded).toBeInstanceOf(File);
       expect(uploaded.name).toBe("avatar.png");
@@ -257,7 +289,9 @@ describe("profile photo editor", () => {
   it("keeps a failed preset selection available for retry without uploading a URL", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     const { onClose } = setup(profile);
-    await userEvent.click(screen.getByRole("button", { name: "Awatar 1" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Awatar 1" }),
+    );
     await userEvent.click(
       screen.getByRole("button", { name: "Zapisz zdjęcie" }),
     );

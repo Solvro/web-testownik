@@ -110,7 +110,7 @@ export function ProfilePageClient(): React.JSX.Element {
   };
 
   const handleTabSelect = (tabKey: string) => {
-    if (tabKey === "privacy-policy") {
+    if (tabKey === "privacy-policy" || tabKey === "terms") {
       return;
     }
     if (!isProfileTab(tabKey)) {
@@ -143,6 +143,17 @@ export function ProfilePageClient(): React.JSX.Element {
           <TabsTrigger value="notifications">Powiadomienia</TabsTrigger>
           <TabsTrigger value="authorized-apps">Integracje</TabsTrigger>
           <TabsTrigger
+            value="terms"
+            className="hidden md:inline-flex"
+            nativeButton={false}
+            render={(props) => (
+              <Link {...props} href="/terms" target="_blank">
+                Regulamin
+                <SquareArrowOutUpRightIcon />
+              </Link>
+            )}
+          />
+          <TabsTrigger
             value="privacy-policy"
             className="hidden md:inline-flex"
             nativeButton={false}
@@ -161,7 +172,10 @@ export function ProfilePageClient(): React.JSX.Element {
               loading={isUserDataPending || userData == null}
             />
             {showAIUsageCard ? <AIUsageCard /> : null}
-            <div className="w-full text-center md:hidden">
+            <div className="flex w-full justify-center gap-4 md:hidden">
+              <Link href="/terms" className="text-sm underline">
+                Regulamin
+              </Link>
               <Link href="/privacy-policy" className="text-sm underline">
                 Polityka prywatności
               </Link>

@@ -8,6 +8,7 @@ import { AppAlerts } from "@/components/alerts";
 import { AppFooter } from "@/components/app-footer";
 import { ErrorHandler } from "@/components/error-handler";
 import { GuestAlert } from "@/components/guest-alert";
+import { LegalNotice } from "@/components/legal/legal-notice";
 import { MaintenanceWrapper } from "@/components/maintenance";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
@@ -136,6 +137,7 @@ export default async function RootLayout({
               <Suspense>
                 <ErrorHandler />
                 <GuestAlert />
+                <LegalNotice />
                 <AppAlerts />
               </Suspense>
               <main>{children}</main>
@@ -153,9 +155,6 @@ export default async function RootLayout({
         <Script
           src={`${env.NEXT_PUBLIC_UMAMI_ORIGIN}/recorder.js`}
           data-website-id={env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
-          data-sample-rate="1"
-          data-mask-level="moderate"
-          data-max-duration="300000"
           strategy="lazyOnload"
         />
       </body>
